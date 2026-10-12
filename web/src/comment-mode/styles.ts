@@ -61,7 +61,7 @@ a { color: var(--cm-gold); text-underline-offset: 3px; }
 .btn-primary:hover { background: #e3c57f; border-color: #e3c57f; }
 .btn-quiet { border-color: transparent; padding-inline: 8px; color: var(--cm-muted); text-decoration: underline; text-underline-offset: 3px; }
 .btn-quiet:hover { border-color: transparent; color: var(--cm-fg); }
-.btn:focus-visible, a:focus-visible, textarea:focus-visible, summary:focus-visible {
+.btn:focus-visible, a:focus-visible, textarea:focus-visible, .rich:focus-visible, summary:focus-visible {
   outline: 2px solid var(--cm-gold);
   outline-offset: 2px;
 }
@@ -245,7 +245,7 @@ a { color: var(--cm-gold); text-underline-offset: 3px; }
 .draft { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; }
 .field { display: grid; gap: 6px; }
 .field-label { font-size: 13px; font-weight: 600; }
-textarea {
+textarea, .rich {
   width: 100%;
   padding: 10px 12px;
   font: inherit;
@@ -255,13 +255,93 @@ textarea {
   background: var(--cm-raised);
   border: 1px solid var(--cm-line);
   border-radius: 8px;
-  resize: vertical;
+}
+textarea { resize: vertical; }
+
+/* The markup editor (richField.ts) grows with its text to fourteen lines, never past half of what
+   is visible above a phone's keyboard, and scrolls beyond. */
+.rich {
+  min-height: calc(4.5em + 22px);
+  max-height: min(calc(21em + 22px), calc(var(--cm-visible, 100vh) / 2));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+}
+.rich.is-pending { color: var(--cm-muted); }
+.rich em { font-style: italic; }
+.rich strong { font-weight: 600; }
+.rich code { font-family: ui-monospace, monospace; font-size: 0.92em; }
+.rich a { text-decoration: underline; cursor: text; }
+.rich .slot { white-space: nowrap; }
+
+/* The markup editor's controls over the text, and the link targets the Polish offers. */
+.rich-field { display: grid; gap: 6px; }
+.tools { display: flex; flex-wrap: wrap; gap: 6px; }
+.tool { padding-inline: 12px; font-size: 13px; }
+.tool-em { font-style: italic; }
+.tool-strong { font-weight: 700; }
+.tool[aria-pressed="true"], .tool[aria-expanded="true"] { color: #1c1b18; background: var(--cm-gold); border-color: var(--cm-gold); }
+.link-chooser {
+  display: grid;
+  gap: 8px;
+  padding: 10px 12px;
+  background: var(--cm-raised);
+  border: 1px solid var(--cm-line);
+  border-radius: 8px;
+}
+.link-chooser .choices { margin: 0; }
+.link-chooser .choice-scope { overflow-wrap: anywhere; }
+.chooser-actions { display: flex; justify-content: flex-end; }
+
+/* The checklist under the field: what the server checks before it accepts a trusted save. */
+.checks { display: grid; gap: 4px; }
+.checks-head { font-size: 13px; font-weight: 600; }
+.checks-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.check { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 8px; font-size: 13px; color: var(--cm-muted); }
+.check.is-missing { color: var(--cm-gold); }
+.check-mark { flex: none; width: 1em; text-align: center; }
+.check-text { flex: 0 1 auto; min-width: 0; overflow-wrap: anywhere; }
+.check-href { font-family: ui-monospace, monospace; font-size: 0.92em; }
+.check .btn-quiet { min-height: 28px; }
+@media (pointer: coarse) { .check .btn-quiet { min-height: 44px; } }
+.sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* ProseMirror's own rules (prosemirror-view/style/prosemirror.css), which the site's CSS cannot
+   bring into the shadow root. Without pre-wrap a browser types U+00A0 for a space at a line's end. */
+.ProseMirror {
+  position: relative;
+  word-wrap: break-word;
+  white-space: pre-wrap;
+  white-space: break-spaces;
+  -webkit-font-variant-ligatures: none;
+  font-variant-ligatures: none;
+  font-feature-settings: "liga" 0;
+}
+.ProseMirror-hideselection *::selection { background: transparent; }
+.ProseMirror-hideselection { caret-color: transparent; }
+.ProseMirror [draggable][contenteditable=false] { user-select: text; }
+.ProseMirror-selectednode { outline: 2px solid var(--cm-gold); outline-offset: 1px; }
+img.ProseMirror-separator {
+  display: inline !important;
+  border: none !important;
+  margin: 0 !important;
 }
 details { border-top: 1px solid var(--cm-line); padding-top: 10px; }
 summary { cursor: pointer; font-size: 13px; font-weight: 600; }
 .reference { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 10px; }
 .reference-head { font-size: 12px; color: var(--cm-muted); }
 .reference-text { white-space: pre-wrap; overflow-wrap: anywhere; }
+.reference-text p + p { margin-top: 8px; }
+.reference-text strong { font-weight: 600; }
+.reference-text code { font-family: ui-monospace, monospace; font-size: 0.92em; }
 .reference-empty { font-style: italic; color: var(--cm-muted); }
 
 /* Another language in the sheet: its text and "Popraw", or an editor of its own. */

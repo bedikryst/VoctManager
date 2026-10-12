@@ -17,7 +17,19 @@
  *  NOTHING TYPED IS LOST. A failed save keeps the text. `persist` keeps unsaved text as a draft
  *  per field in `sessionStorage` until the tab closes, which also carries it across a sign-in.
  *
- *  THE TEXTAREA STARTS FROM WHAT THE PAGE SHOWS THE EDITOR: their open proposal, else their
+ *  THE FIELD IS A TEXTAREA OR THE MARKUP EDITOR (`fieldInput.ts`), and everything here reads its
+ *  value as the string it saves. The markup editor opens where `opensMarkupEditor` says, once the
+ *  sheet has the decided Polish (`readPolish`) and the editor's chunk is in; until then a box holds
+ *  the field's place, so the tags never flash in a textarea first. A value the markup editor
+ *  refuses, a chunk that does not load and a history that does not arrive leave the textarea.
+ *
+ *  THE CHECKLIST UNDER THE FIELD reads the string the field saves against the decided Polish
+ *  (`checklist.ts`), so the textarea has it as much as the markup editor: what the server checks
+ *  before it accepts a trusted save, in the server's order. In a trusted language a line under it
+ *  says what a save will do; elsewhere an unticked item only warns. A missing slot is put back at
+ *  the caret from its line. A quiet line compares emphasis with the Polish, which nothing holds.
+ *
+ *  THE FIELD STARTS FROM WHAT THE PAGE SHOWS THE EDITOR: their open proposal, else their
  *  accepted one not yet published (the preview prints it), else the published value. Starting an
  *  accepted field from the published text would make a second edit undo the first: the new
  *  proposal, once accepted, is the last decision `copy:apply` writes. The note starts empty
@@ -47,7 +59,9 @@ import {
   type StoredProposal,
 } from "./api";
 import type { Locale } from "../i18n/config";
-import { button, el } from "./dom";
+import { checklist, emphasis, fieldMarkup, linkChoices, opensMarkupEditor, type ChecklistItem } from "./checklist";
+import { button, el, fill, type Child } from "./dom";
+import { loadRichField, pendingInput, textareaInput, type ValueInput } from "./fieldInput";
 import { htmlText } from "./match";
 import type { Strings } from "./strings";
 
@@ -72,6 +86,11 @@ export interface EditorOptions {
   readonly startFromFallback: boolean;
   /** The reader's saves in this language are accepted without a review. */
   readonly trusted: boolean;
+  /**
+   * The decided Polish when the sheet already has the history (`null`: it holds none); left out,
+   * `readPolish` brings it.
+   */
+  readonly polish?: string | null;
   readonly events: EditorEvents;
 }
 
@@ -184,16 +203,11 @@ function missingFrenchSpaces(value: string, kind: string): string[] {
   return found;
 }
 
-export function textareaRows(value: string): number {
-  return Math.min(14, Math.max(3, Math.ceil(value.length / 46) + value.split("\n").length - 1));
-}
-
 export class FieldEditor {
   readonly row: IndexRow;
   readonly locale: Locale;
-  readonly value: HTMLTextAreaElement;
   readonly comment: HTMLTextAreaElement;
-  /** The textarea with its label and the hint beneath. */
+  /** The text field with its label and the hints beneath. */
   readonly valueField: HTMLElement;
   /** The note with its label. */
   readonly commentField: HTMLElement;
@@ -207,7 +221,18 @@ export class FieldEditor {
   private readonly strings: Strings;
   private readonly events: EditorEvents;
   private readonly trusted: boolean;
+  /** What holds the text: a textarea, the markup editor, or the box keeping its place. */
+  private input: ValueInput;
+  private readonly valueLabel: HTMLLabelElement;
   private readonly hint: HTMLElement;
+  /** How to type tags, over a textarea only. */
+  private readonly markupNote: HTMLElement;
+  /** What the server checks before it accepts a trusted save, ticked against `reference`. */
+  private readonly checks: HTMLElement;
+  /** The value's emphasis against the Polish's, where they differ. */
+  private readonly emphasisNote: HTMLElement;
+  /** The decided Polish the checklist reads, once the history is in; `null` before or without it. */
+  private reference: string | null = null;
   /**
    * The editor's accepted proposal awaiting publication beneath the one they may still revise, or
    * the one the page shows when there is nothing to revise: it stands again after a withdrawal.
@@ -223,10 +248,22 @@ export class FieldEditor {
   private saving = false;
   /** The editor has typed: from then on a disabled Save says why. */
   private touched = false;
+  /** The editor has typed into the text: a textarea they typed in stays a textarea. */
+  private valueTyped = false;
   /** The sheet let go of this editor; answers still arriving only patch the row. */
   private released = false;
 
-  constructor({ row, locale, strings, startFromFallback, trusted, events }: EditorOptions) {
+  private readonly typed = (): void => {
+    this.touched = true;
+    this.refresh();
+  };
+
+  private readonly typedValue = (): void => {
+    this.valueTyped = true;
+    this.typed();
+  };
+
+  constructor({ row, locale, strings, startFromFallback, trusted, polish, events }: EditorOptions) {
     this.row = row;
     this.locale = locale;
     this.strings = strings;
@@ -243,25 +280,36 @@ export class FieldEditor {
     const draft = readDraft(row.id);
     const start = draft ?? this.baseline;
 
-    this.value = el("textarea", "");
-    this.value.value = start.value;
-    this.value.rows = textareaRows(start.value);
-    this.value.spellcheck = true;
-    this.value.lang = locale;
-    this.value.id = `comment-mode-value-${locale}`;
+    this.valueLabel = el("label", "field-label", s.textLabel);
+    this.valueLabel.id = `comment-mode-value-label-${locale}`;
+    // Until the decided Polish is in, the Polish the page prints in the field's place stands for it.
+    this.input = opensMarkupEditor({ kind: row.kind, value: start.value, polish: polish ?? row.fallback_value })
+      ? pendingInput(start.value, row.kind, locale, this.valueLabel.id)
+      : this.textarea(start.value);
 
     this.comment = el("textarea", "");
     this.comment.value = start.comment;
     this.comment.rows = 2;
     this.comment.id = `comment-mode-comment-${locale}`;
 
-    const valueLabel = el("label", "field-label", s.textLabel);
-    valueLabel.htmlFor = this.value.id;
     const commentLabel = el("label", "field-label", s.commentLabel);
     commentLabel.htmlFor = this.comment.id;
 
     this.hint = el("p", "note");
-    this.valueField = el("div", "field", valueLabel, this.value, this.hint);
+    this.markupNote = el("p", "note", s.markupNote);
+    this.checks = el("div", "checks");
+    this.emphasisNote = el("p", "note");
+    this.valueField = el(
+      "div",
+      "field",
+      this.valueLabel,
+      this.input.element,
+      this.checks,
+      this.emphasisNote,
+      this.hint,
+      this.markupNote,
+    );
+    this.fitInput();
     const commentHint = trusted ? s.commentHintTrusted : s.commentHint;
     this.commentField = el("div", "field", commentLabel, el("p", "note", commentHint), this.comment);
     this.status = el("div", "notes");
@@ -273,19 +321,99 @@ export class FieldEditor {
       ? el("div", "draft note note-warn", s.draftRestored, button(s.discardDraft, () => this.discardDraft(), "btn btn-quiet"))
       : null;
 
-    const typed = (): void => {
-      this.touched = true;
-      this.refresh();
-    };
-    this.value.addEventListener("input", typed);
-    this.comment.addEventListener("input", typed);
+    this.comment.addEventListener("input", this.typed);
     this.renderStatus();
     this.refresh();
+    if (polish !== undefined) this.readPolish(polish);
   }
 
   /** The text differs from what the editor opened with or last saved. */
   get dirty(): boolean {
-    return this.value.value !== this.baseline.value || this.comment.value !== this.baseline.comment;
+    return this.input.value !== this.baseline.value || this.comment.value !== this.baseline.comment;
+  }
+
+  focus(): void {
+    this.input.focus();
+  }
+
+  /**
+   * The decided Polish beside the field (`decidedPolish`), or `null` when the sheet could not read
+   * the history. Where the field opens the markup editor, it mounts once its chunk is in too; a
+   * field left without it is a textarea.
+   */
+  readPolish(polish: string | null): void {
+    void this.settle(polish);
+  }
+
+  private async settle(polish: string | null): Promise<void> {
+    const { kind } = this.row;
+    if (this.released) return;
+    this.reference = polish;
+    this.refresh();
+    if (polish === null || !opensMarkupEditor({ kind, value: this.input.value, polish })) {
+      this.leavePending();
+      return;
+    }
+    if (!this.swappable()) return;
+    let chunk: Awaited<ReturnType<typeof loadRichField>> | null = null;
+    try {
+      chunk = await loadRichField();
+    } catch {
+      // The textarea stands in.
+    }
+    if (this.released || !this.swappable()) return;
+    const rich = chunk?.richField({
+      value: this.input.value,
+      markup: fieldMarkup(kind, polish),
+      // On a Polish row the text it started from is Polish too: its links are offered beside these.
+      links: linkChoices(polish, ...(this.locale === "pl" ? [this.baseline.value, this.input.value] : [])),
+      strings: this.strings,
+      locale: this.locale,
+      labelledBy: this.valueLabel.id,
+      onInput: this.typedValue,
+    });
+    if (rich) this.useInput(rich);
+    else this.leavePending();
+  }
+
+  /** The input may still give way to the markup editor: it holds the place, or nobody typed in it. */
+  private swappable(): boolean {
+    return this.input.kind === "pending" || (this.input.kind === "textarea" && !this.valueTyped);
+  }
+
+  private leavePending(): void {
+    if (this.input.kind === "pending") this.useInput(this.textarea(this.input.value));
+  }
+
+  private textarea(value: string): ValueInput {
+    return textareaInput(value, `comment-mode-value-${this.locale}`, this.locale, this.typedValue);
+  }
+
+  /** `next` in the field in place of the current input, with the focus if the current one had it. */
+  private useInput(next: ValueInput): void {
+    const previous = this.input;
+    const root = previous.element.getRootNode();
+    const active = root instanceof ShadowRoot || root instanceof Document ? root.activeElement : null;
+    const focused = active !== null && previous.element.contains(active);
+    previous.element.replaceWith(next.element);
+    previous.destroy();
+    this.input = next;
+    this.fitInput();
+    // The checklist offers to put a slot back only where the input can.
+    this.refresh();
+    if (focused) next.focus();
+  }
+
+  /** The label and the markup note follow the input that holds the text. */
+  private fitInput(): void {
+    if (this.input.kind === "textarea") this.valueLabel.htmlFor = this.input.element.id;
+    else this.valueLabel.removeAttribute("for");
+    this.markupNote.hidden = !(this.input.kind === "textarea" && this.row.kind === "HTML");
+  }
+
+  /** `value` in the field; one the markup editor refuses opens in a textarea. */
+  private show(value: string): void {
+    if (!this.input.setValue(value)) this.useInput(this.textarea(value));
   }
 
   get busy(): boolean {
@@ -304,7 +432,7 @@ export class FieldEditor {
 
   /** Keep unsaved text as this tab's draft, or drop a draft the text has caught up with. */
   persist(): void {
-    if (this.dirty) writeDraft(this.row.id, { value: this.value.value, comment: this.comment.value });
+    if (this.dirty) writeDraft(this.row.id, { value: this.input.value, comment: this.comment.value });
     else clearDraft(this.row.id);
   }
 
@@ -312,13 +440,13 @@ export class FieldEditor {
   release(): void {
     this.persist();
     this.released = true;
+    this.input.destroy();
   }
 
   private discardDraft(): void {
     clearDraft(this.row.id);
-    this.value.value = this.baseline.value;
+    this.show(this.baseline.value);
     this.comment.value = this.baseline.comment;
-    this.value.rows = textareaRows(this.baseline.value);
     this.draftNote?.remove();
     this.refresh();
   }
@@ -326,7 +454,7 @@ export class FieldEditor {
   /** Why Save is off, or `null` when it may go. */
   private blocker(): string | null {
     const s = this.strings;
-    const value = this.value.value;
+    const value = this.input.value;
     const comment = this.comment.value.trim();
     if (value.trim() === "") return s.empty;
     const accepted = acceptedProposal(this.row.mine);
@@ -346,10 +474,11 @@ export class FieldEditor {
     this.save.disabled = this.saving || blocker !== null;
     this.save.textContent = this.saving ? s.saving : s.save;
 
-    const french = this.locale === "fr" ? missingFrenchSpaces(this.value.value, this.row.kind) : [];
+    const value = this.input.value;
+    const french = this.locale === "fr" ? missingFrenchSpaces(value, this.row.kind) : [];
     let hint = "";
     let warn = false;
-    if (blocker === s.empty && (this.touched || this.value.value !== "")) {
+    if (blocker === s.empty && (this.touched || value !== "")) {
       hint = blocker;
       warn = true;
     } else if (french.length > 0) {
@@ -361,6 +490,87 @@ export class FieldEditor {
     this.hint.textContent = hint;
     this.hint.className = warn ? "note note-warn" : "note";
     this.hint.hidden = hint === "";
+    this.renderChecks(value);
+  }
+
+  /** The checklist and the emphasis hint for `value`, once the decided Polish is in. */
+  private renderChecks(value: string): void {
+    const s = this.strings;
+    const polish = this.reference;
+    const { kind } = this.row;
+    // "Not empty" is the Save hint's to say.
+    const items = polish === null ? [] : checklist({ value, polish, kind }).filter((item) => item.kind !== "filled");
+    if (polish === null || items.length === 0) {
+      this.checks.replaceChildren();
+      this.checks.hidden = true;
+    } else {
+      const words = new Map(linkChoices(polish).map((link) => [link.href, link.words]));
+      const braceLink = fieldMarkup(kind, polish).braceLink;
+      const ok = items.every((item) => item.ok);
+      const outcome = !this.trusted
+        ? null
+        : !ok
+          ? s.checkTrustedHeld
+          : this.comment.value.trim() !== ""
+            ? s.checkTrustedNoted
+            : s.checkTrustedOk;
+      fill(
+        this.checks,
+        el("p", "checks-head", s.checksHead),
+        el("ul", "checks-list", ...items.map((item) => this.checkLine(item, words, braceLink))),
+        outcome ? el("p", ok ? "note" : "note note-warn", outcome) : null,
+      );
+      this.checks.hidden = false;
+    }
+
+    const compared =
+      polish !== null && kind === "HTML" && this.locale !== "pl" && value.trim() !== "" ? emphasis(value, polish) : null;
+    if (compared && !compared.same) {
+      const { value: here, polish: there } = compared;
+      this.emphasisNote.textContent = s.emphasisHint(
+        here.em === there.em ? null : [here.em, there.em],
+        here.strong === there.strong ? null : [here.strong, there.strong],
+      );
+      this.emphasisNote.hidden = false;
+    } else {
+      this.emphasisNote.hidden = true;
+    }
+  }
+
+  /** One line of the checklist: ticked or not, what it checks, and a way to put a slot back. */
+  private checkLine(item: ChecklistItem, words: ReadonlyMap<string, string>, braceLink: boolean): HTMLElement {
+    const s = this.strings;
+    let parts: Child[] = [];
+    if (item.kind === "slot") {
+      parts = [el("span", "slot", item.slot)];
+    } else if (item.kind === "braces") {
+      parts = [(braceLink ? s.checkBraceLink : s.checkBraces)(item.actual, item.expected)];
+    } else if (item.kind === "link") {
+      const said = words.get(item.href);
+      parts = [said ? `${s.quoted(said)} → ` : null, el("span", "check-href", item.href)];
+    } else if (item.kind === "extraLink") {
+      parts = [`${s.checkExtraLink} → `, el("span", "check-href", item.href)];
+    }
+    const mark = el("span", "check-mark", item.ok ? "✓" : "✗");
+    mark.setAttribute("aria-hidden", "true");
+    const missing = !item.ok && item.kind !== "extraLink";
+    const insert = this.input.insertSlot;
+    return el(
+      "li",
+      item.ok ? "check" : "check is-missing",
+      mark,
+      el("span", "check-text", ...parts),
+      missing ? el("span", "sr", s.checkMissing) : null,
+      item.kind === "slot" && !item.ok && insert
+        ? button(s.insertSlot, () => this.putBack(insert, item.slot), "btn btn-quiet")
+        : null,
+    );
+  }
+
+  /** A slot back at the caret; the focus follows it where that raises no touch keyboard. */
+  private putBack(insert: (slot: string) => void, slot: string): void {
+    insert(slot);
+    if (!window.matchMedia("(pointer: coarse)").matches) this.input.focus();
   }
 
   private renderStatus(): void {
@@ -398,7 +608,7 @@ export class FieldEditor {
   private async submit(): Promise<void> {
     if (this.saving || this.blocker() !== null) return;
     const s = this.strings;
-    const typed = this.value.value;
+    const typed = this.input.value;
     const comment = this.comment.value;
     this.saving = true;
     this.say("", "plain");
@@ -430,7 +640,7 @@ export class FieldEditor {
       this.baseline = clean ? { value: typed, comment } : { value: stored.value, comment: stored.comment };
       if (!this.released) {
         if (!clean) {
-          this.value.value = stored.value;
+          this.show(stored.value);
           this.comment.value = stored.comment;
         }
         const said = this.outcome(stored, clean);
@@ -480,8 +690,7 @@ export class FieldEditor {
     clearDraft(this.row.id);
     if (!this.released) {
       this.baseline = { value: this.accepted?.value ?? this.published, comment: "" };
-      this.value.value = this.baseline.value;
-      this.value.rows = textareaRows(this.baseline.value);
+      this.show(this.baseline.value);
       this.comment.value = "";
       this.touched = false;
       this.say(this.strings.withdrawnHere, "plain");
@@ -493,7 +702,7 @@ export class FieldEditor {
   private failed(error: unknown, fallback: string): void {
     const s = this.strings;
     if (error instanceof ApiError && error.status === 401) {
-      writeDraft(this.row.id, { value: this.value.value, comment: this.comment.value });
+      writeDraft(this.row.id, { value: this.input.value, comment: this.comment.value });
       this.say(s.sessionEnded, "error");
       this.events.signedOut();
     } else if (error instanceof ApiError && error.status === 403 && !error.csrf) {

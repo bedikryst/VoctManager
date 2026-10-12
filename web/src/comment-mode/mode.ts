@@ -56,6 +56,7 @@ import { documentLocale } from "../i18n/documentLocale";
 import { ApiError, fetchSiteIndex, notifyReviewers, type IndexRow, type SiteIndex } from "./api";
 import { Bar, type BarState, type BarView, type ListCounts } from "./bar";
 import { button, el } from "./dom";
+import { loadRichField } from "./fieldInput";
 import { Highlights } from "./highlights";
 import { Host } from "./host";
 import { listSignature, mineList, pageFields, restList, type ListKind, type PageFields } from "./lists";
@@ -441,6 +442,8 @@ class CommentMode {
     this.language = LOCALES.find((candidate) => candidate === loaded.index.language) ?? this.language;
     this.readText();
     this.setState({ kind: "ready", editing: this.editing });
+    // The markup editor's chunk, ahead of the first sheet that needs it; a failure leaves the textarea.
+    void loadRichField().catch(() => undefined);
   }
 
   private scanNow(loaded: LoadedIndex): PageScan {

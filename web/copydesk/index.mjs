@@ -90,13 +90,11 @@ function warnOrphans(corpus, orphans) {
 }
 
 /**
- * Read both corpora, write the desk's view of them, and hand the payload back. Exported so that
- * `copy:sync` runs the SAME extraction it then posts, rather than reading a file somebody may
- * have generated from a different tree.
- *
- * @param {{ out?: string, quiet?: boolean }} [options]
+ * Read both corpora and return the desk's view of them, writing nothing. The tests read the corpus
+ * through here: `segments.json` is generated and untracked, so a test that read it would check
+ * whatever tree last ran `copy:extract`.
  */
-export async function extractToFile({ out = DEFAULT_OUT, quiet = false } = {}) {
+export async function extractSegments() {
   /** @type {Record<string, Map<string, string>>} */
   const concertOverlays = {};
   /** @type {Record<string, Map<string, string>>} */
@@ -121,6 +119,18 @@ export async function extractToFile({ out = DEFAULT_OUT, quiet = false } = {}) {
     segments: [...concerts.segments, ...pages.segments],
     paths: mergePaths(concerts.paths, pages.paths),
   };
+  return { payload, orphans: { concerts: concerts.orphans, pages: pages.orphans } };
+}
+
+/**
+ * Read both corpora, write the desk's view of them, and hand the payload back. Exported so that
+ * `copy:sync` runs the SAME extraction it then posts, rather than reading a file somebody may
+ * have generated from a different tree.
+ *
+ * @param {{ out?: string, quiet?: boolean }} [options]
+ */
+export async function extractToFile({ out = DEFAULT_OUT, quiet = false } = {}) {
+  const { payload, orphans } = await extractSegments();
   await writeFile(path.join(WEB_ROOT, out), `${JSON.stringify(payload, null, 2)}\n`, "utf8");
 
   if (!quiet) {
@@ -130,8 +140,8 @@ export async function extractToFile({ out = DEFAULT_OUT, quiet = false } = {}) {
       `  ${stats.concerts} concerts · ${stats.pages} page(s) · ${stats.keys} keys · ` +
         `${stats.rows} rows · ${stats.translated} already translated`,
     );
-    warnOrphans("concerts", concerts.orphans);
-    warnOrphans("pages", pages.orphans);
+    warnOrphans("concerts", orphans.concerts);
+    warnOrphans("pages", orphans.pages);
   }
   return payload;
 }

@@ -21,15 +21,24 @@
  *
  *  ON A PHONE the sheet sits on the keyboard: what the keyboard covers is read from
  *  `visualViewport` on `resize` and `scroll` (the formula of the panel's `useKeyboardInset`), and
- *  the sheet never grows taller than what is visible. A touch tap does not focus the textarea, so
+ *  the sheet never grows taller than what is visible. A touch tap does not focus the text field, so
  *  the keyboard does not cover the page the moment the sheet opens.
+ *
+ *  THE HISTORY CARRIES THE POLISH every field is read against (`decidedPolish`): the markup editor
+ *  mounts in a field only once it is in (`FieldEditor.readPolish`).
+ *
+ *  THE OTHER TEXTS READ AS THE PAGE PRINTS THEM (`proposalNodes`): emphasis shows, a link is
+ *  underlined, a slot is marked. A translator matches the Polish's emphasis by seeing it, not by
+ *  reading its tags.
  * @module comment-mode/sheet
  */
 
 import { fetchScopeSegments, type DeskProposal, type DeskSegment, type IndexRow, type OwnProposal } from "./api";
 import { LOCALES, type Locale } from "../i18n/config";
+import { decidedPolish } from "./checklist";
 import { button, el, fill } from "./dom";
 import { FieldEditor, hasDraft, revisableProposal, type EditorEvents } from "./editor";
+import { proposalNodes } from "./preview";
 import { FRENCH_SPACING_NOTE, type Strings } from "./strings";
 
 export interface SheetEvents {
@@ -106,6 +115,13 @@ function ownShipping(proposals: readonly DeskProposal[], except?: string): OwnPr
 function ownProposalOf(proposals: readonly DeskProposal[]): OwnProposal | null {
   const open = proposals.find((p) => p.is_mine && (p.status === "PROPOSED" || p.status === "DRAFT"));
   return open ? ownOf(open) : ownShipping(proposals);
+}
+
+/** A value of `row`'s field laid out as the page prints it in `locale`. */
+function reading(row: IndexRow, value: string, locale: Locale): HTMLElement {
+  const text = proposalNodes(row, value, locale);
+  text.className = "reference-text";
+  return text;
 }
 
 /** Another language of `main` as an index row, so it is edited exactly as the tapped one is. */
@@ -195,10 +211,6 @@ export class Sheet {
     session.polish.hidden = true;
     this.current = session;
 
-    const notes: Node[] = [];
-    if (locale === "fr") notes.push(el("p", "note", FRENCH_SPACING_NOTE));
-    if (row.kind === "HTML") notes.push(el("p", "note", s.markupNote));
-
     const back = options.back;
     this.element.setAttribute("aria-label", s.sheetLabel);
     this.element.replaceChildren(
@@ -224,7 +236,7 @@ export class Sheet {
         session.polish,
         main.draftNote,
         main.valueField,
-        notes.length > 0 ? el("div", "notes", ...notes) : null,
+        locale === "fr" ? el("p", "note", FRENCH_SPACING_NOTE) : null,
         main.commentField,
         main.message,
         session.details,
@@ -235,7 +247,7 @@ export class Sheet {
     void this.loadDetails(session);
 
     if (window.matchMedia("(pointer: coarse)").matches) this.element.focus({ preventScroll: true });
-    else main.value.focus({ preventScroll: true });
+    else main.focus();
   }
 
   /** A list of fields in place of a field; picking one opens it through `open`. */
@@ -264,10 +276,10 @@ export class Sheet {
     (after[Math.min(at, after.length - 1)] ?? this.element).focus({ preventScroll: true });
   }
 
-  /** The field tapped again: the textarea takes focus, except where that raises a touch keyboard. */
+  /** The field tapped again: the text takes focus, except where that raises a touch keyboard. */
   focusText(): void {
     if (window.matchMedia("(pointer: coarse)").matches) return;
-    this.current?.main.value.focus({ preventScroll: true });
+    this.current?.main.focus();
   }
 
   /** Close, keeping unsaved text as a draft for this tab in every language that holds some. */
@@ -330,18 +342,23 @@ export class Sheet {
     try {
       rows = (await fetchScopeSegments(session.row.scope)).filter((segment) => segment.key === session.row.key);
     } catch {
-      if (this.current === session) session.details.replaceChildren(el("p", "note", s.detailsFailed));
+      if (this.current === session) {
+        session.main.readPolish(null);
+        session.details.replaceChildren(el("p", "note", s.detailsFailed));
+      }
       return;
     }
     if (this.current !== session) return;
+
+    const polishRow = rows.find((segment) => segment.locale === "pl");
+    const reference = polishRow ? decidedPolish(polishRow) : null;
+    session.main.readPolish(reference);
 
     const own = rows.find((segment) => segment.locale === session.locale);
     if (own) session.main.shipsBeneath(ownShipping(own.proposals, session.row.mine?.id));
     const polish = own?.source_value || rows.find((segment) => segment.locale === "pl")?.value || "";
     if (session.row.is_stale && polish) {
-      const text = el("p", "reference-text", polish);
-      text.lang = "pl";
-      session.polish.replaceChildren(el("p", "reference-head", s.polishNow), text);
+      session.polish.replaceChildren(el("p", "reference-head", s.polishNow), reading(session.row, polish, "pl"));
       session.polish.hidden = false;
     }
 
@@ -350,7 +367,7 @@ export class Sheet {
       .map((locale) => rows.find((segment) => segment.locale === locale))
       .filter((segment): segment is DeskSegment => segment !== undefined);
     const languages = el("details", "");
-    const blocks = sides.map((segment) => this.sideBlock(session, segment));
+    const blocks = sides.map((segment) => this.sideBlock(session, segment, reference));
     languages.append(el("summary", "", s.otherLanguages), el("ul", "reference", ...blocks));
     languages.open = session.others.size > 0;
 
@@ -379,7 +396,7 @@ export class Sheet {
                   "",
                   el("p", "reference-head", proposal.author_name),
                   proposal === decided ? el("p", "note note-warn", s.statusAccepted) : null,
-                  el("p", "reference-text", proposal.value),
+                  reading(session.row, proposal.value, session.locale),
                   proposal.comment ? el("p", "note", proposal.comment) : null,
                 ),
               ),
@@ -393,9 +410,9 @@ export class Sheet {
 
   /**
    * One other language: its text and "Popraw", or its editor straight away when it holds the
-   * editor's draft or open proposal.
+   * editor's draft or open proposal. `polish` is the decided Polish, `null` where the history has none.
    */
-  private sideBlock(session: Session, segment: DeskSegment): HTMLElement {
+  private sideBlock(session: Session, segment: DeskSegment, polish: string | null): HTMLElement {
     const s = session.strings;
     const { locale } = segment;
     const row = sideRow(session.row, segment);
@@ -409,6 +426,7 @@ export class Sheet {
         strings: s,
         startFromFallback: false,
         trusted,
+        polish,
         events: this.editorEvents(),
       });
       editor.shipsBeneath(ownShipping(segment.proposals, row.mine?.id));
@@ -424,11 +442,10 @@ export class Sheet {
         editor.message,
         el("div", "side-actions", editor.save, editor.withdraw),
       );
-      if (focus && !window.matchMedia("(pointer: coarse)").matches) editor.value.focus({ preventScroll: true });
+      if (focus && !window.matchMedia("(pointer: coarse)").matches) editor.focus();
     };
 
-    const text = row.value ? el("p", "reference-text", row.value) : el("p", "reference-empty", s.notTranslated);
-    if (row.value) text.lang = locale;
+    const text = row.value ? reading(row, row.value, locale) : el("p", "reference-empty", s.notTranslated);
     const state = row.mine?.status === "ACCEPTED" ? s.statusAccepted : row.is_stale ? s.stale : "";
     fill(
       block,

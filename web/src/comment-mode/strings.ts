@@ -119,6 +119,36 @@ export interface Strings {
   readonly detailsFailed: string;
   readonly markupNote: string;
   readonly frenchMissingSpace: (fragments: string) => string;
+  /** Words in the chrome's own quotation marks. */
+  readonly quoted: (words: string) => string;
+
+  /** The markup editor's controls (`richField.ts`). */
+  readonly toolsLabel: string;
+  readonly italic: string;
+  readonly bold: string;
+  readonly link: string;
+  readonly unlink: string;
+  /** Over the link targets on offer: only the Polish text's. */
+  readonly linkChoose: string;
+  readonly linkSelectFirst: string;
+
+  /** The checklist under the field (`checklist.ts`). */
+  readonly checksHead: string;
+  /** Read out for an unticked item; the mark beside it says it on screen. */
+  readonly checkMissing: string;
+  readonly checkExtraLink: string;
+  /** Puts a missing slot back at the caret. */
+  readonly insertSlot: string;
+  /** The braces that make a `TEXT` field's link, counted. */
+  readonly checkBraceLink: (actual: number, expected: number) => string;
+  /** Other braces that are not slots, counted. */
+  readonly checkBraces: (actual: number, expected: number) => string;
+  /** In a trusted language: what a save will do with the list as it stands. */
+  readonly checkTrustedOk: string;
+  readonly checkTrustedNoted: string;
+  readonly checkTrustedHeld: string;
+  /** `em` and `strong` against the Polish, `[here, Polish]` where they differ. */
+  readonly emphasisHint: (em: readonly [number, number] | null, strong: readonly [number, number] | null) => string;
   readonly localeNames: Readonly<Record<Locale, string>>;
   /** "in English": the form a sentence takes the language in. */
   readonly localeAdverbs: Readonly<Record<Locale, string>>;
@@ -232,6 +262,32 @@ const PL: Strings = {
   markupNote:
     "W niektórych polach widać znaczniki strony: „<em>” wyróżnia słowo, „<a …>” robi odnośnik. Poprawiaj tekst między nimi i zostaw je na miejscu — skasowany znacznik zabiera ze strony wyróżnienie albo odnośnik.",
   frenchMissingSpace: (fragments) => `Brak spacji przed znakiem: ${fragments}`,
+  quoted: (words) => `„${words}”`,
+
+  toolsLabel: "Wyróżnienia i odnośniki",
+  italic: "Kursywa",
+  bold: "Pogrubienie",
+  link: "Odnośnik",
+  unlink: "Usuń odnośnik",
+  linkChoose: "Dokąd prowadzi odnośnik? Do wyboru są adresy z polskiego tekstu.",
+  linkSelectFirst: "Najpierw zaznacz słowa, które mają być odnośnikiem.",
+
+  checksHead: "Do zachowania:",
+  checkMissing: "brak",
+  checkExtraLink: "Odnośnik spoza polskiego tekstu",
+  insertSlot: "Wstaw",
+  checkBraceLink: (actual, expected) => `Odnośnik w klamrach { }: ${actual} z ${expected}`,
+  checkBraces: (actual, expected) => `Inne klamry { }: ${actual} z ${expected}`,
+  checkTrustedOk: "Wszystko jest na miejscu: zmiana bez uwagi zostanie przyjęta od razu.",
+  checkTrustedNoted: "Z uwagą zmiana poczeka na decyzję redakcji.",
+  checkTrustedHeld: "Dopóki czegoś tu brakuje, zmiana poczeka na decyzję redakcji.",
+  emphasisHint: (em, strong) =>
+    `Wyróżnienia inaczej niż w polskim: ${[
+      em && `kursywa ${em[0]} zamiast ${em[1]}`,
+      strong && `pogrubienie ${strong[0]} zamiast ${strong[1]}`,
+    ]
+      .filter(Boolean)
+      .join(", ")}.`,
   localeNames: { pl: "polski", en: "angielski", fr: "francuski" },
   localeAdverbs: { pl: "po polsku", en: "po angielsku", fr: "po francusku" },
 };
@@ -341,6 +397,32 @@ const EN: Strings = {
   markupNote:
     "Some fields show the page's own markup: “<em>” emphasises a word, “<a …>” makes a link. Edit the text between them and leave them where they are — a tag you delete takes the emphasis or the link off the site with it.",
   frenchMissingSpace: (fragments) => `No space before: ${fragments}`,
+  quoted: (words) => `“${words}”`,
+
+  toolsLabel: "Emphasis and links",
+  italic: "Italic",
+  bold: "Bold",
+  link: "Link",
+  unlink: "Remove link",
+  linkChoose: "Where does the link go? The choices are the addresses in the Polish text.",
+  linkSelectFirst: "First select the words that should become the link.",
+
+  checksHead: "To keep:",
+  checkMissing: "missing",
+  checkExtraLink: "Link not in the Polish text",
+  insertSlot: "Insert",
+  checkBraceLink: (actual, expected) => `Link in braces { }: ${actual} of ${expected}`,
+  checkBraces: (actual, expected) => `Other braces { }: ${actual} of ${expected}`,
+  checkTrustedOk: "Everything is in place: without a note, the change is accepted at once.",
+  checkTrustedNoted: "With a note, the change waits for the reviewers’ decision.",
+  checkTrustedHeld: "While something here is missing, the change waits for the reviewers’ decision.",
+  emphasisHint: (em, strong) =>
+    `Emphasis differs from the Polish: ${[
+      em && `italics ${em[0]} instead of ${em[1]}`,
+      strong && `bold ${strong[0]} instead of ${strong[1]}`,
+    ]
+      .filter(Boolean)
+      .join(", ")}.`,
   localeNames: { pl: "Polish", en: "English", fr: "French" },
   localeAdverbs: { pl: "in Polish", en: "in English", fr: "in French" },
 };
@@ -453,6 +535,32 @@ const FR: Strings = {
   markupNote:
     "Certains champs laissent voir le balisage de la page : « <em> » met un mot en valeur, « <a …> » crée un lien. Modifiez le texte entre les balises et laissez-les en place — une balise supprimée emporte avec elle la mise en valeur ou le lien.",
   frenchMissingSpace: (fragments) => `Espace manquante avant : ${fragments}`,
+  quoted: (words) => `« ${words} »`,
+
+  toolsLabel: "Mise en valeur et liens",
+  italic: "Italique",
+  bold: "Gras",
+  link: "Lien",
+  unlink: "Retirer le lien",
+  linkChoose: "Où mène le lien ? Les choix sont les adresses du texte polonais.",
+  linkSelectFirst: "Sélectionnez d’abord les mots qui doivent devenir le lien.",
+
+  checksHead: "À conserver :",
+  checkMissing: "manquant",
+  checkExtraLink: "Lien absent du texte polonais",
+  insertSlot: "Insérer",
+  checkBraceLink: (actual, expected) => `Lien entre accolades { } : ${actual} sur ${expected}`,
+  checkBraces: (actual, expected) => `Autres accolades { } : ${actual} sur ${expected}`,
+  checkTrustedOk: "Tout est en place : sans remarque, la modification est acceptée aussitôt.",
+  checkTrustedNoted: "Avec une remarque, la modification attend la décision de la relecture.",
+  checkTrustedHeld: "Tant qu’il manque quelque chose ici, la modification attend la décision de la relecture.",
+  emphasisHint: (em, strong) =>
+    `Mise en valeur différente du polonais : ${[
+      em && `italique ${em[0]} au lieu de ${em[1]}`,
+      strong && `gras ${strong[0]} au lieu de ${strong[1]}`,
+    ]
+      .filter(Boolean)
+      .join(", ")}.`,
   localeNames: { pl: "polonais", en: "anglais", fr: "français" },
   localeAdverbs: { pl: "en polonais", en: "en anglais", fr: "en français" },
 };
