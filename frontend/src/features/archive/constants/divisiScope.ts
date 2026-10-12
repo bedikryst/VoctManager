@@ -15,7 +15,6 @@
  * recordings contradicts nothing. That resolution happens server-side only
  * (`tracks_for_edition`); the panel never slices tracks by edition, so do not
  * reach for the helper below to do it.
- * @architecture Enterprise SaaS 2026
  * @module features/archive/constants/divisiScope
  */
 

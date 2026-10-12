@@ -18,7 +18,6 @@
  *  `pages/kolofon.astro`, the only consumer; this file owns the hooks and nothing else. An
  *  element added below needs one of the two classes, or it will sit there fully present
  *  while the rest of the seal is still being written.
- * @architecture Astro islands 2026
  * @module lib/sigil
  */
 

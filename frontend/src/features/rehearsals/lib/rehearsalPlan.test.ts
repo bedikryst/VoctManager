@@ -6,7 +6,6 @@
  * suites, so the count on an exclusion chip and the seats the server stops
  * calling cannot drift apart without one of the two suites failing. The
  * lengths a row's clocks imply are client-only and tested here alone.
- * @architecture Enterprise SaaS 2026
  * @module features/rehearsals/lib/rehearsalPlan.test
  */
 

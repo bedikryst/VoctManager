@@ -35,7 +35,6 @@
  *  differ from the Polish) keeps the sheet open and says why; the acceptance beneath still ships.
  *  A save with a note is addressed to the reviewers, so it waits for them, and the server takes
  *  the editor's own acceptance on the field along with it (`CopyDeskService.save_proposal`).
- * @architecture Astro islands 2026
  * @module comment-mode/editor
  */
 

@@ -15,7 +15,6 @@
  * for a surface the member opened, and it locks the document because iOS
  * rubber-bands whatever sits behind a fixed overlay. The desktop keeps its
  * two-pane card and never mounts this.
- * @architecture Enterprise SaaS 2026
  * @module features/messages/components
  */
 

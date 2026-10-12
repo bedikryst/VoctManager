@@ -25,7 +25,6 @@
  *  a clock, and every one of them has already happened. So the test for "ahead" is a dated evening
  *  whose slot has not closed (`lib/calendar`'s `isEveningAhead`), and everything else falls to the
  *  record — where the vague moment is exactly what the column wants to print.
- * @architecture Astro islands 2026
  * @module lib/noticeRegister
  */
 import { isEveningAhead } from "./calendar";

@@ -17,7 +17,6 @@
  * comes from the SOURCE (and corroboration by a canonical catalogue), not from
  * the model grading its own homework. A field with no provenance row renders
  * nothing (graceful for manually-entered pieces).
- * @architecture Enterprise SaaS 2026
  * @module features/archive/components/ProvenanceChip
  */
 

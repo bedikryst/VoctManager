@@ -6,7 +6,6 @@
     and the push notification cannot name one evening three different things.
     Separate from ``liturgy`` on purpose: a concert has a kind too, and naming
     the event is not part of the order of the rite.
-@architecture Enterprise SaaS 2026
 @module roster/domain/event_kind
 """
 

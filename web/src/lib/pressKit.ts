@@ -21,7 +21,6 @@
  *
  *  IMPORTED BY BARE NODE as well as by Astro, so every relative import carries its `.ts` extension
  *  and type-only imports say `import type`: Node strips types, it does not resolve specifiers.
- * @architecture Astro islands 2026
  * @module lib/pressKit
  */
 import { createHash } from "node:crypto";

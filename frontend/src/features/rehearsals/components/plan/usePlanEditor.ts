@@ -19,7 +19,6 @@
  * a row: the draft holds where the divider stands, and `is_reserve` is derived
  * from that position only when the list is sent. A per-row flag would let a
  * drag put a main row under a reserve one, which the server refuses whole.
- * @architecture Enterprise SaaS 2026
  * @module features/rehearsals/components/plan/usePlanEditor
  */
 

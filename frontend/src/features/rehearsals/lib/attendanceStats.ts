@@ -3,7 +3,6 @@
  * @description Pure, framework-free attendance maths shared by the rail rows,
  * the inspector header, the cross-project pulse and the reliability board.
  * One definition of "invited", "marked" and "rate" keeps every surface honest.
- * @architecture Enterprise SaaS 2026
  * @module features/rehearsals/lib/attendanceStats
  */
 

@@ -5,7 +5,6 @@
  * English and never reaches the screen. A code this table does not know falls
  * through to the shared toast, which picks words by the kind of failure. A
  * refused payment also names what it refused, so a list can mark those rows.
- * @architecture Enterprise SaaS 2026
  * @module features/finance/lib/financeErrors
  */
 

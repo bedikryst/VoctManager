@@ -1,7 +1,6 @@
 /**
  * @file main.tsx
  * @description Application entry point. Bootstraps React, Context Providers, Data Query Client, and routing.
- * @architecture Enterprise 2026 Standards
  * @module core/main
  */
 

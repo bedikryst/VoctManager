@@ -13,7 +13,6 @@
  * exists. How long the oldest decision has been waiting is the figure that
  * matters most: it is the only thing on the desk that says the command has been
  * forgotten.
- * @architecture Enterprise SaaS 2026
  * @module features/copydesk/components/PatchBand
  */
 

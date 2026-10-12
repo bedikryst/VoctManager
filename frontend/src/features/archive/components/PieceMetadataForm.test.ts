@@ -9,7 +9,6 @@
  * error slot, so a schema that rejects it does not produce a visible error. It
  * produces a save button that does nothing, on a form the typecheck, the build
  * and the screen all call healthy.
- * @architecture Enterprise SaaS 2026
  * @module features/archive/components/PieceMetadataForm.test
  */
 

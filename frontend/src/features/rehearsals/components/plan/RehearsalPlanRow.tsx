@@ -36,7 +36,6 @@
  * Rows stay within 48 px on a desktop and keep 44-px touch targets on a
  * coarse pointer: this is the editor, not what the stand reads — the stand
  * reads the plan's read view.
- * @architecture Enterprise SaaS 2026
  * @module features/rehearsals/components/plan/RehearsalPlanRow
  */
 

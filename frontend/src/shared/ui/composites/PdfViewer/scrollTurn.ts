@@ -9,7 +9,6 @@
  * moves it by the overlap alone. Pure, so the stop count per page — the thing a
  * singer counts in taps — is checked without a browser.
  * @module shared/ui/composites/PdfViewer
- * @architecture Enterprise SaaS 2026
  */
 
 import { FIT_SCROLL_OVERLAP_PX, SCROLL_EDGE_TOLERANCE_PX } from "./constants";

@@ -15,7 +15,6 @@
  *  - A CSRF refusal and a permission refusal are both 403 with the same generic `detail`; only
  *    `errors.detail` starting with "CSRF Failed" tells them apart. A CSRF refusal is retried once
  *    with a fresh cookie, since it means the token rotated (a login in another tab).
- * @architecture Astro islands 2026
  * @module comment-mode/api
  */
 

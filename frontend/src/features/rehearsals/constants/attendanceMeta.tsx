@@ -5,7 +5,6 @@
  * (Centrum Obecności) module. Keeps row toggles, roster headers, roll-call
  * cards and the reliability board in lock-step so a status colour — and a rate
  * colour — means the same thing on every surface.
- * @architecture Enterprise SaaS 2026
  * @module features/rehearsals/constants/attendanceMeta
  */
 

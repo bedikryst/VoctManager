@@ -4,7 +4,6 @@
  * track record (stats + per-project casting history + attendance reliability +
  * project leadership) served by GET /api/artists/{id}/dossier/. Derived from
  * relational state on the backend; the frontend only presents it.
- * @architecture Enterprise SaaS 2026
  */
 
 import type { DecimalString } from "@/features/finance/types/finance.dto";

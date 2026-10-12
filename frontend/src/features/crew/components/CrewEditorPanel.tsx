@@ -3,7 +3,6 @@
  * @description Slide-over editor for creating or updating a collaborator profile.
  * Built on Ethereal primitives — Heading/Eyebrow typography, Select primitive,
  * Input with native label slot — and a portal-managed motion shell.
- * @architecture Enterprise SaaS 2026
  * @module features/crew/components/CrewEditorPanel
  */
 

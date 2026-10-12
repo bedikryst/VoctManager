@@ -6,7 +6,6 @@
              whole stylesheets. Same failure mode as the annotation payload
              sanitizer — a serializer that rebuilds its payload silently drops
              whatever is not on the list, so the list is the specification.
-@architecture Enterprise SaaS 2026
 @module copydesk/sanitizers
 """
 from __future__ import annotations

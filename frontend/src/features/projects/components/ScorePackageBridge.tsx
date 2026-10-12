@@ -4,7 +4,6 @@
  * lives in its own "Partytura" work area, so the Program tab keeps only a compact,
  * glanceable status of the book plus a deep-link to go build it — the adjacency is
  * preserved without burying a heavy cockpit beneath the setlist editor.
- * @architecture Enterprise SaaS 2026
  * @module features/projects/components/ScorePackageBridge
  */
 

@@ -5,7 +5,6 @@
  * runtime in the footer. The whole programme is listed: a concert is a dozen or two
  * rows, and a click on the card leads away to the Program tab, so a truncated tail
  * would promise an expansion it cannot give.
- * @architecture Enterprise SaaS 2026
  * @module features/projects/ProjectCard/widgets/ProgramWidget
  */
 

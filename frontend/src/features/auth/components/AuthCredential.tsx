@@ -14,7 +14,6 @@
  * because the rail it sits on — `GlassCard variant="dark"` — is dark under both
  * themes. Ink and ground move together; a rung here would follow the page
  * instead of the plate and go near-black on the dark theme.
- * @architecture Enterprise SaaS 2026
  * @module features/auth/components/AuthCredential
  */
 

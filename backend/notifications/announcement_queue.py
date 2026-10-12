@@ -25,7 +25,6 @@
              immediately lives one level up, in announcements.py; how a briefing
              reads lives in message_content.py.
 
-@architecture Enterprise SaaS 2026
 @module notifications/announcement_queue
 """
 from __future__ import annotations

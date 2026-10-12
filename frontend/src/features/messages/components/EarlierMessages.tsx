@@ -7,7 +7,6 @@
  * bounded box inside a portalled surface, and an infinite scroll there is a
  * reader who cannot reach the beginning of a day without triggering a request
  * they did not ask for — while a phone on mobile data pays for each one.
- * @architecture Enterprise SaaS 2026
  * @module features/messages/components
  */
 

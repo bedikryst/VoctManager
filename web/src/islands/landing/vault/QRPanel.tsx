@@ -9,7 +9,6 @@
  *  payload generated out of band) that a banking app scans with the phone's camera — which the
  *  phone showing it cannot do. On a touch screen the stylesheet hides the code and its scanning
  *  note and prints `qr.noteTouch` instead, so the card leads with the copy buttons there.
- * @architecture Astro islands 2026
  * @module islands/landing/vault/QRPanel
  */
 

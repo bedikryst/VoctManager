@@ -13,7 +13,6 @@
  * The writes live here too — the evening's plan before, the debrief after —
  * because they are the only things on the sheet a leader may change, and the
  * server answers each with the sheet.
- * @architecture Enterprise SaaS 2026
  * @module features/rehearsals/api
  */
 

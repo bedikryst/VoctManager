@@ -11,7 +11,6 @@
  *  `markupNote` repeats the desk's `copy_desk.editor.markup_note` in all three locales, and
  *  `frenchSpacing` the desk's `FRENCH_SPACING_NOTE`, which is French in every chrome because it is
  *  addressed to whoever types French. Change them together with the desk.
- * @architecture Astro islands 2026
  * @module comment-mode/strings
  */
 

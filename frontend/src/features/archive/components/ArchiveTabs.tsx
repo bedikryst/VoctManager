@@ -4,7 +4,6 @@
  * `Utwory` (pieces list) and `Kompozytorzy` (composers list). Rendered
  * under the PageHeader of both pages so the conductor can flip without
  * navigating up and back.
- * @architecture Enterprise SaaS 2026
  * @module features/archive/components/ArchiveTabs
  */
 

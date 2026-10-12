@@ -4,7 +4,6 @@
     identifier. Reports every way the current data would violate that rule:
     case-insensitive duplicates across accounts, blank addresses, and roster rows
     whose e-mail has drifted from the account they are linked to.
-@architecture Enterprise SaaS 2026
 @module core/management/commands/audit_account_emails
 """
 

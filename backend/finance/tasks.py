@@ -7,7 +7,6 @@
              archive lands under MEDIA_ROOT/finance/, which nginx serves to
              nobody (`internal`): it leaves the server only through the
              manager-only download view, never as a public media URL.
-@architecture Enterprise SaaS 2026
 @module finance/tasks
 """
 import io

@@ -3,7 +3,6 @@
  * @description Pins the finance overview's client-only derivations: what has
  * costs, what requires a board decision, and which live agreements are near a
  * deadline.
- * @architecture Enterprise SaaS 2026
  * @module features/finance/lib/portfolio.test
  */
 

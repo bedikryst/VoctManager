@@ -10,7 +10,6 @@
  *  Credentials come from the environment and never from a file in the repo. The account is staff —
  *  the same power that accepts a proposal in the first place, because both ends of this loop decide
  *  what the public site will say.
- * @architecture Astro islands 2026
  * @module copydesk/client
  */
 

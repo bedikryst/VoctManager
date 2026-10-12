@@ -9,7 +9,6 @@
  * that hosts us); the icon says which one. Chasing a distinct colour per
  * category is what put a hotel in `ethereal-crimson`, so every hotel pin on the
  * atlas wore the colour this product reserves for something being wrong.
- * @architecture Enterprise SaaS 2026
  * @module features/logistics/constants/locationCategories
  */
 

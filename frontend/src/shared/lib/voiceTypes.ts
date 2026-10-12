@@ -15,7 +15,6 @@
  * everyone else it is the localized voice type. Group HEADINGS keep the
  * generic label — a section of two organists and a trumpeter has no single
  * instrument to be named after.
- * @architecture Enterprise SaaS 2026
  * @module shared/lib/voiceTypes
  */
 

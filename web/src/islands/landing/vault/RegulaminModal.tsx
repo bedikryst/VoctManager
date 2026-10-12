@@ -8,7 +8,6 @@
  *  arrives resolved for this locale as a prop, and its § numerals are the only thing set here —
  *  they are the same in every language, and they are what the text's own cross-references point
  *  at. The Polish version is the binding one; § 5 ust. 3 of the document says so itself.
- * @architecture Astro islands 2026
  * @module islands/landing/vault/RegulaminModal
  */
 

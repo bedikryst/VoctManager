@@ -11,7 +11,6 @@
  * server's raw `absent_count`, which also counts declined seats and singers the
  * evening no longer calls. It opens a list, not the attendance matrix: the
  * matrix is an entry tool where a tap changes a mark.
- * @architecture Enterprise SaaS 2026
  * @module panel/dashboard/components/NextRehearsalAlert
  */
 

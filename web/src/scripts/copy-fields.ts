@@ -30,7 +30,6 @@
  *  mail client is configured, and this is the escape hatch. On /press the strings are longer than
  *  anybody retypes correctly — an IBAN, a 2000-character biogram — and a mis-typed account number
  *  is the worst outcome on the page.
- * @architecture Astro islands 2026
  * @module scripts/copy-fields
  */
 

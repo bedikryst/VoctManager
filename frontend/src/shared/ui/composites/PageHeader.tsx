@@ -2,7 +2,6 @@
  * @file PageHeader.tsx
  * @description Standardized page header composite with strict Ethereal UI typography.
  * Supports different scale variants for main dashboards vs standard subpages.
- * @architecture Enterprise SaaS 2026
  */
 
 import React from "react";

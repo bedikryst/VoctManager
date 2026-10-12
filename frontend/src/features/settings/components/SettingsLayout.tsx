@@ -4,7 +4,6 @@
  * nav (desktop sidebar / mobile rail) with animated panes. URL-driven via
  * /panel/settings/:section so every pane is shareable and survives refresh.
  * A pending-dot on "Logistyka" nudges users with missing wardrobe data.
- * @architecture Enterprise SaaS 2026
  * @module features/settings/components/SettingsLayout
  */
 

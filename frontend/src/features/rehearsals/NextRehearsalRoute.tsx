@@ -9,7 +9,6 @@
  * returns to whatever came before the shortcut rather than to this route. With
  * no evening ahead — an empty season, or a reader with no seat — the schedule
  * is the honest landing, and it says so itself.
- * @architecture Enterprise SaaS 2026
  * @module features/rehearsals
  */
 

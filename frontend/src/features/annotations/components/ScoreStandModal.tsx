@@ -10,7 +10,6 @@
  * owns this composite. The PDF byte source is INJECTED (`fetchBlob`) rather than
  * imported, so this stays free of any materials/archive dependency (no feature
  * cycle) and `shared/` stays domain-free.
- * @architecture Enterprise SaaS 2026
  * @module features/annotations/components/ScoreStandModal
  */
 

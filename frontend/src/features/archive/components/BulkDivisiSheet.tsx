@@ -14,7 +14,6 @@
  * already share (when any do): the common case is "these thirty are SATB
  * like the rest", and an empty editor would make the user rebuild the
  * layout they can see on the rows behind the sheet.
- * @architecture Enterprise SaaS 2026
  * @module features/archive/components/BulkDivisiSheet
  */
 

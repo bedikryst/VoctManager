@@ -4,7 +4,6 @@
  *  split into ordered partials under ./landing/ for navigability. This file is a pure,
  *  order-PRESERVING manifest: the @import sequence reproduces the original cascade exactly
  *  (verified byte-for-byte at split time). Edit the partials, not this list; keep the order.
- * @architecture Enterprise SaaS 2026
  * @module app/styles/marketing-landing
  */
 

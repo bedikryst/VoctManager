@@ -8,7 +8,6 @@
  * manager taps — a stand-in learning a second set of buttons on the evening they
  * are already nervous is the one thing this feature cannot afford. Anything that
  * control does not need (contact details, settlement) the server never sends.
- * @architecture Enterprise SaaS 2026
  * @module features/rehearsals/types
  */
 

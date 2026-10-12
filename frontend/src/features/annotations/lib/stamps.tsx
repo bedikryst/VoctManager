@@ -15,7 +15,6 @@
  * hole. Group ids deliberately live under a `group:` key rather than an `id:`
  * one: the parity test reads stamp ids out of this file with a regex.
  * @module features/annotations/lib
- * @architecture Enterprise SaaS 2026
  */
 
 import React from "react";

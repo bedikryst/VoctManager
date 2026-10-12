@@ -6,7 +6,6 @@
  * The disclosure listing the attached context is not decoration: the snapshot is
  * the reason this feature works, and a member who cannot see what they are
  * sending is right to distrust the button. Showing it costs one collapsed row.
- * @architecture Enterprise SaaS 2026
  * @module features/feedback/components/FeedbackSheet
  */
 

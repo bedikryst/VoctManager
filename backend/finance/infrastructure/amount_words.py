@@ -5,7 +5,6 @@
              pięćset złotych zero groszy", or "… złotych 00/100" where the
              board's wording has it). Pure functions; Polish only, like the
              documents that use them.
-@architecture Enterprise SaaS 2026
 @module finance/infrastructure/amount_words
 """
 from decimal import ROUND_HALF_UP, Decimal

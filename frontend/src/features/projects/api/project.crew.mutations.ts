@@ -4,7 +4,6 @@
  * booking is a row of the project's fee ledger, so every write marks the
  * project's budget stale, and a removal the ledger refuses (a paid or
  * contracted fee) says so in the finance module's words.
- * @architecture Enterprise SaaS 2026
  * @module features/projects/api
  */
 

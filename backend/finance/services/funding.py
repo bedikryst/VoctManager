@@ -9,7 +9,6 @@
              plan's split changes while the plan does; charging costs is an act
              on the actuals, open until the budget closes; what is charged to a
              settled source no longer changes at all. Every change is logged.
-@architecture Enterprise SaaS 2026
 @module finance/services/funding
 """
 from collections.abc import Iterable

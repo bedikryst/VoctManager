@@ -8,7 +8,6 @@
              These guard the regression this work fixed: enrichment silently
              doing nothing (cache-poisoned empties, blank-only no-ops, and a
              portrait gap when Wikidata lacks the P434 backlink).
-@architecture Enterprise SaaS 2026
 @module archive/tests
 """
 import tempfile

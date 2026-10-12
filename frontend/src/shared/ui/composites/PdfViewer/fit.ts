@@ -7,7 +7,6 @@
  * the width" — is a number, and a number can be checked without a browser.
  * `zoom` is NOT part of it: the fit is the base width, zoom multiplies it.
  * @module shared/ui/composites/PdfViewer
- * @architecture Enterprise SaaS 2026
  */
 
 import {

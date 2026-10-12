@@ -5,7 +5,6 @@
              before and after, and why — in JSON a person can read in the admin.
              An act on a funding source belongs to no single budget and is
              recorded without one.
-@architecture Enterprise SaaS 2026
 @module finance/services/audit
 """
 from collections.abc import Mapping

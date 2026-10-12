@@ -7,7 +7,6 @@
              targets, both against the Polish the translation ships beside. A
              value that fails waits in the review queue, where checking a slot
              or a link needs no French.
-@architecture Enterprise SaaS 2026
 @module copydesk/trust
 """
 from __future__ import annotations

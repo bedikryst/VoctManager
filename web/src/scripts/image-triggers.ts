@@ -21,7 +21,6 @@
  *  export is a script to TypeScript and its top-level names are global, where `onClick` collides
  *  with vault-triggers.ts's identically named handler; `astro check` catches it, a plain build
  *  does not. If the contract import ever goes, an `export {}` has to take its place.
- * @architecture Astro islands 2026
  * @module scripts/image-triggers
  */
 

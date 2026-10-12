@@ -21,7 +21,6 @@
              - an artist merge's folded seat, paid and removed, whose fee the
                merge copied onto the survivor's seat without its paid flag — the
                payment is copied onto the survivor's seat, once.
-@architecture Enterprise SaaS 2026
 @module finance/data_copy
 """
 from dataclasses import dataclass

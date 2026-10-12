@@ -7,7 +7,6 @@
  * the evening starts). Every send goes out at once; what a caption or a
  * toast may claim is what the server says became of the notice
  * (`delivery`), never "sent" for one that waits or was dropped.
- * @architecture Enterprise SaaS 2026
  * @module features/rehearsals/components/plan/usePlanPublication
  */
 

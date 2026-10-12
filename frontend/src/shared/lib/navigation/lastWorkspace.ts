@@ -3,7 +3,6 @@
  * @description Device-local memory of the panel surface a person last used.
  * Storage may be unavailable in a private or locked-down browser, so reads and
  * writes are best-effort and never interrupt navigation.
- * @architecture Enterprise SaaS 2026
  * @module shared/lib/navigation/lastWorkspace
  */
 

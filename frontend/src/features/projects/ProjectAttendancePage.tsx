@@ -2,7 +2,6 @@
  * @file ProjectAttendancePage.tsx
  * @description Route wrapper for the attendance matrix work area.
  * Mounts the existing AttendanceMatrixTab with the project resolved by the hub layout.
- * @architecture Enterprise SaaS 2026
  * @module features/projects/ProjectAttendancePage
  */
 

@@ -5,7 +5,6 @@
  * or a checkbox must pass through untouched. Swallowing the space bar there eats
  * the character the person is typing and toggles the row under them — a defect
  * that is invisible to the typecheck, the build and any static look at the JSX.
- * @architecture Enterprise SaaS 2026
  * @module shared/lib/dom/a11y.test
  */
 

@@ -6,7 +6,6 @@
  * until something is charged; a line past the overrun its sources tolerate
  * says so in gold — work the manager has to look at — and a line over its plan
  * but within that tolerance says it is within it.
- * @architecture Enterprise SaaS 2026
  * @module features/finance/budget/components/PlanLineRow
  */
 

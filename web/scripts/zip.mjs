@@ -13,7 +13,6 @@
  *
  *  NAMES ARE UTF-8 and the language-encoding flag is set, so a Polish filename would survive; the
  *  pack keeps them ASCII anyway, because the reader on the other end may be unzipping on anything.
- * @architecture Astro islands 2026
  * @module scripts/zip
  */
 import { crc32, deflateRawSync } from "node:zlib";

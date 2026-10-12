@@ -4,7 +4,6 @@
  * management when ordering concert attire. Catering/dietary fields were removed
  * (client + server) because allergy data is a GDPR art. 9 special category we
  * chose not to hold; catering is coordinated off-system.
- * @architecture Enterprise SaaS 2026
  * @module features/settings/components/LogisticsTab
  */
 

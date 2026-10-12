@@ -10,7 +10,6 @@
  * answer, which is the question the conductor asks of it. Its options each
  * name the range, because the closed field shows only the option and hides its
  * icon on a phone.
- * @architecture Enterprise SaaS 2026
  * @module features/artists/components/RosterToolbar
  */
 

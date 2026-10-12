@@ -10,7 +10,6 @@
  * revising a sentence the site has never carried). Reading both is this screen's
  * job, and so is saying the thing the reviewer cannot see: accepting one does
  * NOT close the other.
- * @architecture Enterprise SaaS 2026
  * @module features/copydesk/components/QueueField
  */
 

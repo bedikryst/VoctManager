@@ -8,7 +8,6 @@
  * column gathers every public grant and the notes cover every funder but the
  * foundation's own money. Each download is offered once there is something
  * in it; before that the card says what brings it.
- * @architecture Enterprise SaaS 2026
  * @module features/finance/budget/components/GrantorCard
  */
 

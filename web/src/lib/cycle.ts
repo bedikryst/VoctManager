@@ -16,7 +16,6 @@
  *  announced as "the next Spiritual Concert". `cycle: false` in the corpus is what says so, and it
  *  is a claim about the EVENING rather than about its layout — `variant: liturgy` is the plate the
  *  page draws it on, and the two are independent (Aeternam is a memoriam plate and a station).
- * @architecture Astro islands 2026
  * @module lib/cycle
  */
 // Explicit extension: `lib/pressKit` imports this module, and the press-pack generator loads that

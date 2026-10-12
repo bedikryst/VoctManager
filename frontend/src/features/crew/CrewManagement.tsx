@@ -5,7 +5,6 @@
  * click-to-open cards. Mirrors the artists roster; collaborators have no
  * accounts, so there is no dossier or bulk lifecycle — editing is the primary
  * open action.
- * @architecture Enterprise SaaS 2026
  * @module features/crew/CrewManagement
  */
 

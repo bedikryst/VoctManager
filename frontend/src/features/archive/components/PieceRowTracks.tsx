@@ -20,7 +20,6 @@
  * share one length, the second is heard on its own (see [trackSlots]). A
  * Tutti take can be moved across in place — the target-tempo recording often
  * arrives as the piece's first Tutti, before the practice mix exists.
- * @architecture Enterprise SaaS 2026
  * @module features/archive/components/PieceRowTracks
  */
 

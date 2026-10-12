@@ -5,7 +5,6 @@
              naming what was refused (the offending batch row, the ids a
              payment could not cover). The views render them through the
              canonical error envelope with the params attached.
-@architecture Enterprise SaaS 2026
 @module finance/exceptions
 """
 from typing import Any

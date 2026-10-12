@@ -31,7 +31,6 @@
  * collapsed row from leaving its actions in the tab order and in the
  * accessibility tree — `overflow-hidden` hides them from the eye only.
  * @module features/notes/components
- * @architecture Enterprise SaaS 2026
  */
 
 import React, { useEffect, useRef, useState } from "react";

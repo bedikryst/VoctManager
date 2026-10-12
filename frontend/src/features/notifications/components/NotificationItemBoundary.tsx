@@ -6,7 +6,6 @@
  * (and the route's error fallback takes over — exactly the crash we just fixed).
  * Here it degrades to a quiet placeholder so the rest of the inbox keeps working.
  * @module features/notifications/components
- * @architecture Enterprise SaaS 2026
  */
 import React from "react";
 

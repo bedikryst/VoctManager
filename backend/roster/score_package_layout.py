@@ -8,7 +8,6 @@
     with no PDF/WeasyPrint/ORM dependency — lets the recto-start + duplex-numbering
     parity be proven in fast unit tests, independent of the (host-unavailable)
     WeasyPrint renderer the builder needs.
-@architecture Enterprise SaaS 2026
 @module roster/score_package_layout
 """
 

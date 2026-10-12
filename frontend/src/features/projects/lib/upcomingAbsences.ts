@@ -10,7 +10,6 @@
  * participation is off the cast, exactly as the attendance matrix treats it),
  * and the rehearsal actually calls them — a record left against a sectional
  * that no longer names their section is not a gap in anybody's room.
- * @architecture Enterprise SaaS 2026
  * @module features/projects/lib/upcomingAbsences
  */
 

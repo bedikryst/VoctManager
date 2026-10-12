@@ -4,7 +4,6 @@
  * cost, line or contract, what it changed, and — for every act that undid a
  * settled fact — why. The log is append-only on the server; this card only
  * reads it, a page at a time.
- * @architecture Enterprise SaaS 2026
  * @module features/finance/budget/components/HistoryCard
  */
 

@@ -4,7 +4,6 @@
  * the tab reads: one chronological runway (rehearsals + the concert) split at
  * "now" into what can still be acted on and what is already on the record.
  * Uses explicit location relations and timezone-safe payload construction.
- * @architecture Enterprise SaaS 2026
  * @module features/projects/editors/hooks/useRehearsalsTab
  */
 

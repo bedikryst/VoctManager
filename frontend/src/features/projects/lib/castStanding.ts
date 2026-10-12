@@ -5,7 +5,6 @@
  * tab reads it through: the status filter's segments and rows, the section
  * headers and the balance rail. A segment's count is the rows it shows, and a
  * section header and the rail's figure for that section are the same number.
- * @architecture Enterprise SaaS 2026
  * @module features/projects/lib/castStanding
  */
 

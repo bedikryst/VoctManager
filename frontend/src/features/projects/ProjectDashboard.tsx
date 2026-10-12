@@ -4,7 +4,6 @@
  * Renders projects as a dense, scannable row list (archive PieceRow model);
  * each row inline-edits its title and navigates to the project hub
  * (`/panel/projects/:id`) for all deep editing. No slide-over panel.
- * @architecture Enterprise SaaS 2026
  * @module features/projects/ProjectDashboard
  */
 

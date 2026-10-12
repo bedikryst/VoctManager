@@ -24,7 +24,6 @@
  *
  *  Shared by the concert detail page and the collective archive: one set of numbers, so a
  *  correction to the packing lands on both surfaces at once.
- * @architecture Astro islands 2026
  * @module lib/galleryLayout
  */
 

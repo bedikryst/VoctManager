@@ -2,7 +2,6 @@
  * @file scopeGroups.ts
  * @description Turns the flat contents payload into the shape the desk reads it
  * in: families of pages, each family sorted by the title an editor knows it by.
- * @architecture Enterprise SaaS 2026
  * @module features/copydesk/lib/scopeGroups
  */
 

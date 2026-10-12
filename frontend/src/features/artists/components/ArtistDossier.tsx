@@ -6,7 +6,6 @@
  * lines they actually sing, and a per-project casting history ("sang T1 in X,
  * B2 in Y"). All derived from relational state via GET /artists/{id}/dossier/.
  * Editing lives one click deeper, behind the "Edit profile" action.
- * @architecture Enterprise SaaS 2026
  * @module features/artists/components/ArtistDossier
  */
 

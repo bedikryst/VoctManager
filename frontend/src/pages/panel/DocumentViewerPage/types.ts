@@ -5,7 +5,6 @@
  * descriptor and path builder eagerly without pulling the heavyweight page chunk
  * into the main bundle. The page component lives in `./index.tsx` and is loaded
  * lazily by the router.
- * @architecture Enterprise SaaS 2026
  * @module pages/app/DocumentViewerPage/types
  */
 

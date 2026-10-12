@@ -8,7 +8,6 @@
  * Nothing in this module writes: `order` stays the single source of truth for
  * the running order, a programme may contradict the canon on purpose, and the
  * sort is only ever offered to the producer as a proposed edit.
- * @architecture Enterprise SaaS 2026
  * @module features/projects/lib/liturgy
  */
 

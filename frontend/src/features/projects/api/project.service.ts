@@ -2,7 +2,6 @@
  * @file project.service.ts
  * @description Pure HTTP service for the Project domain.
  * Keeps transport logic isolated from React state and presentation concerns.
- * @architecture Enterprise SaaS 2026
  */
 
 import type { AxiosResponse } from "axios";

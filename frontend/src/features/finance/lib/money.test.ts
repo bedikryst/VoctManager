@@ -3,7 +3,6 @@
  * @description Pins the grosze parser the draft preview sums on. The failure it
  * prevents is silent: a float sum prints a grosz nobody paid, or a lenient
  * parse turns a half-typed amount into a price nobody meant.
- * @architecture Enterprise SaaS 2026
  * @module features/finance/lib/money.test
  */
 

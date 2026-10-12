@@ -6,7 +6,6 @@
  * dive) in the exposed upper band while reading its data below. A grab handle
  * initiates a drag (so the inner body still scrolls); it snaps between a peek
  * (~42dvh) and an expanded (~88dvh) state, and a downward fling dismisses it.
- * @architecture Enterprise SaaS 2026
  * @module features/logistics/components/LocationSheet
  */
 

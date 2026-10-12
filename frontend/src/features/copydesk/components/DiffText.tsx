@@ -18,7 +18,6 @@
  * Gold for what arrives, graphite for what leaves. A deletion is not an alarm,
  * and crimson on the desk would be the one colour the panel spends on things
  * that are actually wrong.
- * @architecture Enterprise SaaS 2026
  * @module features/copydesk/components/DiffText
  */
 

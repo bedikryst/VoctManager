@@ -31,7 +31,6 @@
  *  and the shape `content/pages/polityka-prywatnosci.yaml` was already written for (see the note
  *  above its *Lista zaproszeń* section). Anything this clause stops saying must be findable
  *  there BEFORE it leaves here; a detail that exists in neither place is one nobody was told.
- * @architecture Astro islands 2026
  * @module i18n/content/nuntius
  */
 

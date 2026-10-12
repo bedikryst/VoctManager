@@ -6,7 +6,6 @@
  *  lightness is normalized to the base gold's, so cool hues stay readable at the same
  *  small sizes the gold manages today. Computed at BUILD time (plain hex out) — no
  *  relative-color-syntax browser risk, graceful everywhere.
- * @architecture Astro assets 2026
  * @module lib/candle
  */
 

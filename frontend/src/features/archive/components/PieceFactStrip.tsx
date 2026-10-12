@@ -12,7 +12,6 @@
  * footer stays the single save contract. A third contract on this screen (a per
  * field mutation of its own) is precisely the defect `usePieceDirty` was added
  * to repair, and it would arrive here first.
- * @architecture Enterprise SaaS 2026
  * @module features/archive/components/PieceFactStrip
  */
 

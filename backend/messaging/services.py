@@ -6,7 +6,6 @@
              logic lives here: NotificationService fans out to in-app/email/push.
              Also erases the copies of an author's words that delivery left in
              other people's inboxes, since it is what wrote them there.
-@architecture Enterprise SaaS 2026
 @module messaging/services
 """
 import logging

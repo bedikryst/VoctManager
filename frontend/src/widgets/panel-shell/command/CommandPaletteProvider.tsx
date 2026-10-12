@@ -6,7 +6,6 @@
  * a future quick-action — opens it via `useCommandPalette()`, so the trigger and
  * the surface stay decoupled.
  * @module widgets/panel-shell/command
- * @architecture Enterprise SaaS 2026
  */
 
 import React, {

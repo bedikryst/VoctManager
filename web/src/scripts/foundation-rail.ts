@@ -14,7 +14,6 @@
  *
  *  ClientRouter-safe: re-armed on every `astro:page-load`, and a page without a rail drops the
  *  listener.
- * @architecture Astro islands 2026
  * @module scripts/foundation-rail
  */
 

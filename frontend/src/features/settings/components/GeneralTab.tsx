@@ -6,7 +6,6 @@
  * and interface preferences (language, the pitch notation a manager reads
  * vocal ranges in, timezone, salutation). Voice type lives in the identity card
  * at the layout level.
- * @architecture Enterprise SaaS 2026
  * @module features/settings/components/GeneralTab
  */
 

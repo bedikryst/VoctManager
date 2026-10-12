@@ -7,7 +7,6 @@
     what tells them apart on the page. Also keeps the Python palette and the
     editor's TypeScript one from drifting: a swatch offered on screen and refused
     by the server is a mark a chorister cannot make and is never told why.
-@architecture Enterprise SaaS 2026
 @module archive/test_annotation_palette
 """
 

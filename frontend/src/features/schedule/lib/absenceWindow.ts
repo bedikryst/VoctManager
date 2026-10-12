@@ -5,7 +5,6 @@
  * it for one purpose only — so the count a span states before it is sent is the
  * count the write comes back with. A client that counted evenings the server
  * will refuse would promise a fortnight and deliver a week.
- * @architecture Enterprise SaaS 2026
  * @module features/schedule/lib/absenceWindow
  */
 

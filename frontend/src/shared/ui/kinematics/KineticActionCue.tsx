@@ -1,7 +1,6 @@
 /**
  * @file KineticActionCue.tsx
  * @description Universal interaction cue. Responds to generic 'group' hover states.
- * @architecture Enterprise SaaS 2026
  */
 import React from "react";
 import { ArrowRight, ArrowUpRight, ChevronRight } from "lucide-react";

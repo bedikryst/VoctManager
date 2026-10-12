@@ -4,7 +4,6 @@
  * A quick-glance preview: composer summary, divisi, an ingestion-status chip +
  * "N pól do weryfikacji" counter, in-app score preview (annotations default,
  * download secondary), and tracks. One CTA hands off to the full Piece Card.
- * @architecture Enterprise SaaS 2026
  * @module features/archive/components/PieceRowExpanded
  */
 

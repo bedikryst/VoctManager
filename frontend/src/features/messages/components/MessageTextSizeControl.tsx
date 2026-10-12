@@ -7,7 +7,6 @@
  * settings: you adjust a reading size while reading, and the menu deliberately
  * stays open so the stream behind it can be compared step by step. Each entry is
  * drawn at the size it sets, which is the whole explanation the labels need.
- * @architecture Enterprise SaaS 2026
  * @module features/messages/components
  */
 

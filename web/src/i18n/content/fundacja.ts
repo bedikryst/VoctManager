@@ -11,7 +11,6 @@
  *  straight from here. Keep it free of `?raw`, `astro:assets` and anything only a bundler resolves.
  *
  *  Chrome carries no typography — `lib/typo.ts` gives each locale its own at build.
- * @architecture Astro islands 2026
  * @module i18n/content/fundacja
  */
 

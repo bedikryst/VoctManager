@@ -16,7 +16,6 @@
  *  the order they were taken (content.config.ts states this as the gallery's contract), so the
  *  boundary between two runs is exactly where the evening changed. Grouping by key instead would
  *  silently weld those two visits into one and put a photograph under the wrong date.
- * @architecture Astro assets 2026
  * @module lib/galleryRuns
  */
 import { longDate } from "./dates";

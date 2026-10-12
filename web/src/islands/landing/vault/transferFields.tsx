@@ -12,7 +12,6 @@
  *  what the visitor pastes into their bank, and the transfer title is the string the foundation's
  *  own statement has to carry, so it stays Polish in every locale. Which is why the two are built
  *  here from a locale's chrome rather than being one translated object.
- * @architecture Astro islands 2026
  * @module islands/landing/vault/transferFields
  */
 

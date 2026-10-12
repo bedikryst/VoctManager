@@ -6,7 +6,6 @@
  * looking — instead of as a vague form-wide toast. The named example the team
  * called out: forms that today only say "coś jest źle".
  * @module shared/api/errors/applyFieldErrors
- * @architecture Enterprise SaaS 2026
  */
 
 import type {

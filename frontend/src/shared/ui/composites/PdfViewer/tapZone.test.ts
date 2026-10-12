@@ -4,7 +4,6 @@
  * meets: a whole page floating in black on a landscape screen, and a page
  * wider than the screen. The failure this prevents is a tap beside the paper
  * that leaves performance mode when the reader meant to turn.
- * @architecture Enterprise SaaS 2026
  * @module shared/ui/composites/PdfViewer/tapZone.test
  */
 

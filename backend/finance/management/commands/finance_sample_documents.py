@@ -9,7 +9,6 @@
     funding — lives in a transaction that is rolled back, so no row and no
     contract number survives it. The PDFs land in MEDIA_ROOT/finance/samples/, which nginx never
     serves. Needs WeasyPrint's native libraries, so it runs in the web container.
-@architecture Enterprise SaaS 2026
 @module finance/management/commands/finance_sample_documents
 """
 import uuid

@@ -30,7 +30,6 @@
  *  the evening's, so a guest opening the link afterwards is not offered a form that can only
  *  refuse. That check runs in an effect, never in the first render — the page is static HTML and
  *  the first client render must match it.
- * @architecture Astro islands 2026
  * @module islands/landing/RsvpForm
  */
 

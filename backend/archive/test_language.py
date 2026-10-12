@@ -4,7 +4,6 @@
              canonicaliser that ended the "Polish / polski / pol / Polish+Latin"
              free-text mess in `Piece.language`. Pure function, no DB, so a fast
              SimpleTestCase.
-@architecture Enterprise SaaS 2026
 @module archive/test_language
 """
 from django.test import SimpleTestCase

@@ -6,7 +6,6 @@
  * `onUnhandledRequest: "error"`. In a suite whose whole subject is writes that
  * cannot be undone, a request nobody stubbed is the finding — not noise to be
  * silenced by a permissive fallback.
- * @architecture Enterprise SaaS 2026
  * @module test/server
  */
 

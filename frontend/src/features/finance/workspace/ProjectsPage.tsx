@@ -8,7 +8,6 @@
  * A project with nothing on its books is left out unless `?all=1` asks for it;
  * the nav's count is the default list, so it never jumps when the toggle
  * flips. Sort is `?ordering=` and in-memory: the overview carries every project.
- * @architecture Enterprise SaaS 2026
  * @module features/finance/workspace/ProjectsPage
  */
 

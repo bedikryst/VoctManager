@@ -3,7 +3,6 @@
  * @description Full-screen apology after a rejected payment. Listens for `?donated=failure` on
  *  mount, clears the `donated` + `donation` query params, and offers a retry that reopens the
  *  donation vault (via VaultContext). Web/Astro port.
- * @architecture Astro islands 2026
  * @module islands/landing/vault/FailureModal
  */
 

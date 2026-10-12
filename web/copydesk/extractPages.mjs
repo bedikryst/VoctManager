@@ -22,7 +22,6 @@
  *  `.strict()` means a hand-added `en:` beside a Polish value fails here rather than being dropped:
  *  translations live in `src/content/pages.{en,fr}.yaml` under these same keys, and one fact with
  *  two homes is exactly what §8 settled against.
- * @architecture Astro islands 2026
  * @module copydesk/extractPages
  */
 

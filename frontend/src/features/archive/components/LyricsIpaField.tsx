@@ -13,7 +13,6 @@
  *
  * A guide a human has edited or verified is replaced only after a confirmation;
  * the server enforces the same rule, so a stale card cannot skip it.
- * @architecture Enterprise SaaS 2026
  * @module features/archive/components/LyricsIpaField
  */
 

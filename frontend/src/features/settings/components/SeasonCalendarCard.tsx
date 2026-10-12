@@ -7,7 +7,6 @@
  * dates. The server decides both who is offered it (`season_calendar` is null
  * for everyone else) and what it carries: the published dates the personal
  * feed does not already hold.
- * @architecture Enterprise SaaS 2026
  * @module features/settings/components/SeasonCalendarCard
  */
 

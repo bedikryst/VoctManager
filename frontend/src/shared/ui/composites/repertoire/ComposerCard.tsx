@@ -3,7 +3,6 @@
  * @description Composer biographical card. Shows portrait, lifespan,
  * nationality/period, short bio, plus MusicBrainz + Wikidata deep links
  * when the composer was enriched via the AI ingestion pipeline.
- * @architecture Enterprise SaaS 2026
  * @module shared/ui/composites/repertoire/ComposerCard
  */
 

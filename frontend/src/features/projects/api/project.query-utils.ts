@@ -1,7 +1,6 @@
 /**
  * @file project.query-utils.ts
  * @description Shared cache policies and optimistic list helpers for project queries.
- * @architecture Enterprise SaaS 2026
  * @module features/projects/api
  */
 

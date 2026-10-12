@@ -2,7 +2,6 @@
  * @file messages.service.ts
  * @description Thin Axios client for the messaging API. The global interceptor
  * leaves the unpaginated array responses untouched (no `.results` wrapper).
- * @architecture Enterprise SaaS 2026
  * @module features/messages/api
  */
 

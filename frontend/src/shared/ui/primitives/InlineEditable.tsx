@@ -8,7 +8,6 @@
  * Designed for fast quick-fix interactions where opening a full editor
  * would be excessive — fixing a typo in a piece title, bumping the
  * composition year, etc.
- * @architecture Enterprise SaaS 2026
  * @module shared/ui/primitives/InlineEditable
  */
 

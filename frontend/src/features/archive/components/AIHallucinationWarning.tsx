@@ -13,7 +13,6 @@
  * contradiction stands between the conductor and an irreversible publication,
  * so it is crimson; at rest it is ordinary work in progress and takes gold,
  * because crimson is spent on the one thing that is actually broken.
- * @architecture Enterprise SaaS 2026
  * @module features/archive/components/AIHallucinationWarning
  */
 

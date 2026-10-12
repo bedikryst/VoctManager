@@ -10,7 +10,6 @@
  *  - amounts are always PLN and always Polish-formatted, whatever the interface
  *    language: the figure is a sum of Polish paperwork, and `6,750.00` for a
  *    French reader would misstate what is on it. Only the labels translate.
- * @architecture Enterprise SaaS 2026
  * @module features/finance/lib/money
  */
 

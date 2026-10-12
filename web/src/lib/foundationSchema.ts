@@ -15,7 +15,6 @@
  *  act's (the KRS entry date has not been read off the extract yet), the board's role names are
  *  the register's own Polish terms — the entity is the same in every locale, so they are not
  *  translated — and `sameAs` lists only the foundation's own profiles that exist.
- * @architecture Astro islands 2026
  * @module lib/foundationSchema
  */
 

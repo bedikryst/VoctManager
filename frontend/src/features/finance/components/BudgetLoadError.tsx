@@ -2,7 +2,6 @@
  * @file BudgetLoadError.tsx
  * @description What a budget sub-tab shows when the budget could not be
  * read: the failure in one sentence and the one thing to do about it.
- * @architecture Enterprise SaaS 2026
  * @module features/finance/components/BudgetLoadError
  */
 

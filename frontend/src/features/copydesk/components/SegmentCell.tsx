@@ -17,7 +17,6 @@
  * appear once the editor has written something, and the chips only where a
  * fact exists (a settled verdict, a Polish that has moved, somebody else at the
  * same paragraph).
- * @architecture Enterprise SaaS 2026
  * @module features/copydesk/components/SegmentCell
  */
 

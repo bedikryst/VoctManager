@@ -18,7 +18,6 @@
  *  field. The walk skips them, so a proposal's wording is never matched against the corpus, and a
  *  tap inside one goes straight to its field. Skipping one breaks the line on both sides, so the
  *  words around it never join into a phrase the page does not print.
- * @architecture Astro islands 2026
  * @module comment-mode/pageText
  */
 

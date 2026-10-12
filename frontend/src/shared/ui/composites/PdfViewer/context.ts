@@ -7,7 +7,6 @@
  * leaves room beside it for a labelled floating trigger. Both default to
  * `false`, so slots rendered outside a viewer read "not immersive" and keep
  * their labels.
- * @architecture Enterprise SaaS 2026
  * @module shared/ui/composites/PdfViewer
  */
 

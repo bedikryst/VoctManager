@@ -3,7 +3,6 @@
  * @description Compact crew controls — search, company + contact-completeness
  * filters, sort order, and a grid/list density toggle. Mirrors the artists'
  * RosterToolbar; the specialty filter lives in the balance bar above.
- * @architecture Enterprise SaaS 2026
  * @module features/crew/components/CrewToolbar
  */
 

@@ -8,7 +8,6 @@
  *   4. a localized fallback for the error's kind.
  * This is where "something went wrong" becomes "Ten adres e-mail jest już zajęty".
  * @module shared/api/errors/errorCopy
- * @architecture Enterprise SaaS 2026
  */
 
 import type { TFunction } from "i18next";

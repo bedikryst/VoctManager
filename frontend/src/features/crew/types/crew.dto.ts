@@ -2,7 +2,6 @@
  * @file crew.dto.ts
  * @description Feature-local DTOs for the Crew domain.
  * Specialty taxonomy lives in `constants/crewSpecialties.ts`.
- * @architecture Enterprise SaaS 2026
  * @module features/crew/types/crew.dto
  */
 

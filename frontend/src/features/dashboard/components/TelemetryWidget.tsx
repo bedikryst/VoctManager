@@ -7,7 +7,6 @@
  * says so in its own words: it shares a row with the next-concert card, and
  * unlabelled it reads as that concert's balance. A concert's balance is read on
  * that project's cast tab.
- * @architecture Enterprise SaaS 2026
  */
 
 import React, { useMemo } from "react";

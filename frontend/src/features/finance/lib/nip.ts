@@ -4,7 +4,6 @@
  * (`finance/rules.py::is_valid_nip`), so a mistyped NIP is caught on its field
  * in the manager's language instead of coming back as the API's English
  * validation sentence.
- * @architecture Enterprise SaaS 2026
  * @module features/finance/lib/nip
  */
 

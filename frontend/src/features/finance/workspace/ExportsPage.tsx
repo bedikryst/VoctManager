@@ -6,7 +6,6 @@
  * patron's reports, the grantor's settlement files, the office's ledger and the
  * contracts — picked by project (`?project=`, so the choice survives a reload
  * and can be linked to) and drawn by the same cards the project's budget uses.
- * @architecture Enterprise SaaS 2026
  * @module features/finance/workspace/ExportsPage
  */
 

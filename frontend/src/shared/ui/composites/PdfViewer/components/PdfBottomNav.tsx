@@ -7,7 +7,6 @@
  * The page counter opens the jump panel, so "from page 25" is one gesture
  * rather than twenty-four turns.
  * @module shared/ui/composites/PdfViewer
- * @architecture Enterprise SaaS 2026
  */
 
 import { useEffect, useRef, useState } from "react";

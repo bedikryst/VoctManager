@@ -3,7 +3,6 @@
 @description Copy desk tests. Weighted towards the two things that fail silently
              rather than loudly: a stale translation that looks perfectly fine on
              screen, and a sanitizer that accepts what it was supposed to rebuild.
-@architecture Enterprise SaaS 2026
 @module copydesk/tests
 """
 from __future__ import annotations

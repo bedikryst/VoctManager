@@ -10,7 +10,6 @@
              Notification emission is asserted by mocking NotificationService where
              it is *looked up* (messaging.services), keeping the suite decoupled from
              the email/push transport.
-@architecture Enterprise SaaS 2026
 @module messaging/tests
 """
 import json

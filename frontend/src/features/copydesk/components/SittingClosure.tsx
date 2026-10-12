@@ -14,7 +14,6 @@
  * back if the editor carries on writing after pressing it: work nobody has been
  * told about is the exception the button exists for, and an offer that is
  * always on screen is a control nobody reads.
- * @architecture Enterprise SaaS 2026
  * @module features/copydesk/components/SittingClosure
  */
 

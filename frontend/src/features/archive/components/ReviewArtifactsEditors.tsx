@@ -10,7 +10,6 @@
  * language, and a programme note in a chosen language and tone. Both run in
  * Celery; the piece reports each job until it lands or fails, and the cockpit
  * says which.
- * @architecture Enterprise SaaS 2026
  * @module features/archive/components/ReviewArtifactsEditors
  */
 

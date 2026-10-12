@@ -7,7 +7,6 @@
  * Every `Date` built here is therefore a FLOATING date — noon local, used only
  * to lay out a month and to ask date-fns for a localised label — and never
  * travels back into a value.
- * @architecture Enterprise SaaS 2026
  * @module shared/ui/composites/DateTimeField
  */
 

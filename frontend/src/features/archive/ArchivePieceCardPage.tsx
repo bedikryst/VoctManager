@@ -23,7 +23,6 @@
  *
  * Reachable at `/panel/archive-management/:id`; the legacy `/edit` and `/review`
  * routes redirect here. Default export: consumed by App.tsx via React.lazy.
- * @architecture Enterprise SaaS 2026
  * @module features/archive/ArchivePieceCardPage
  */
 

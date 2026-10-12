@@ -13,7 +13,6 @@
              not invent them. Which grant "z dotacji" reads is `?source=`, or
              every public grant on the project. The column set is the generic
              one until the first grantor's form is known (spec Q1).
-@architecture Enterprise SaaS 2026
 @module finance/infrastructure/kosztorys_csv
 """
 from decimal import Decimal

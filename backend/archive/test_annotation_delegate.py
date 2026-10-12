@@ -12,7 +12,6 @@
     has to stop working on its own — when it expires, and when the concert is
     over — or the choir slowly accumulates people who can still read everything.
 
-@architecture Enterprise SaaS 2026
 @module archive/test_annotation_delegate
 """
 

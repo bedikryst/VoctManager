@@ -4,7 +4,6 @@
  * demand from the Archive header "Wgraj PDF" button rather than living
  * inline — the drop zone is a once-a-week action and shouldn't dominate
  * the daily-use library view.
- * @architecture Enterprise SaaS 2026
  * @module features/archive/components/EditionUploadDrawer
  */
 

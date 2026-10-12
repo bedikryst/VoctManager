@@ -1,7 +1,6 @@
 /**
  * @file project.optimistic.ts
  * @description Builders for typed optimistic Project domain cache entries.
- * @architecture Enterprise SaaS 2026
  * @module features/projects/api
  */
 

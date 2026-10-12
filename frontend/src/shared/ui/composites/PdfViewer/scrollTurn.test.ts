@@ -3,7 +3,6 @@
  * @description Pins how many taps a page costs. The two-thirds fit makes a page
  * one and a half screens tall, and its promise — every system whole on one of
  * two screens — holds only if a page takes exactly two stops, top and bottom.
- * @architecture Enterprise SaaS 2026
  * @module shared/ui/composites/PdfViewer/scrollTurn.test
  */
 

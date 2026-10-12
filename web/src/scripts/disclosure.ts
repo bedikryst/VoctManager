@@ -16,7 +16,6 @@
  *  only one reconciled a `<details>` the BROWSER opens rather than the reader (find-in-page, a
  *  `#:~:text=` fragment), so on the other a search result scrolled to text pinned at height 0.
  *  Same reason scripts/reveal.ts is one file — the geometry is the site's, not the page's.
- * @architecture Astro islands 2026
  * @module scripts/disclosure
  */
 

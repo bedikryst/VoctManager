@@ -3,7 +3,6 @@
  * @description Public donation initiation client. Posts to the Django Axepta BNP Paribas
  * adapter and returns the gateway redirect URL. Endpoint is intentionally public and
  * cookie-less so the SPA session CSRF token is not required.
- * @architecture Enterprise SaaS 2026
  * @module features/landing/api/donations
  */
 

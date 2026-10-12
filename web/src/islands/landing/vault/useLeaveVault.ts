@@ -7,7 +7,6 @@
  *  router scrolls without a swap, nothing unmounts, and the sheet would stay open over the
  *  anchor. Used by the sheet's own closing link (VaultModal); `leaveVaultOnInternalLink` also
  *  serves as a delegate should desk-written copy inside the sheet ever carry an internal link.
- * @architecture Astro islands 2026
  * @module islands/landing/vault/useLeaveVault
  */
 

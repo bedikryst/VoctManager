@@ -44,7 +44,6 @@
  *  eyes. The page's ground is not island state; `scripts/landing.ts` settles it at module
  *  time and in `astro:after-swap`, long before anyone reaches the foot of the page. What
  *  this island still owns is the clock, which is the one thing that must be live.
- * @architecture Enterprise SaaS 2026
  * @module widgets/landing/SiteFooter
  */
 

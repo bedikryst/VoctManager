@@ -11,7 +11,6 @@
  * A second view, "Utwory", reads the same rehearsals across the programme —
  * pieces × evenings — full width, since its columns are the rehearsals and the
  * compose form has nothing to say to it. Both views open the one plan sheet.
- * @architecture Enterprise SaaS 2026
  * @module features/projects/editors/tabs/RehearsalsTab
  */
 

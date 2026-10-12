@@ -5,7 +5,6 @@
  * progress, program casting completeness, ensemble size — as compact, tappable
  * metric tiles. Each tile deep-links to the work area that resolves it. Derives
  * everything from already-cached suspense queries, so it adds no network cost.
- * @architecture Enterprise SaaS 2026
  * @module features/projects/ProjectCard/widgets/ProjectStatusStrip
  */
 

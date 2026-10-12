@@ -3,7 +3,6 @@
  * @description Inbox column. One row per conversation: counterpart avatar, an unread
  * gold marker, name, snippet, relative stamp, and — only when the thread has left
  * OPEN — a status chip. OPEN is the resting state and says nothing.
- * @architecture Enterprise SaaS 2026
  * @module features/messages/components
  */
 

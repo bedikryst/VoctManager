@@ -16,7 +16,6 @@
  * also holds the past sessions this list leaves out; a caller that passes no
  * `onOpenMatrix` gets no footer — the dashboard banner opens the sheet for one
  * evening, and the matrix is an entry tool, not a reading list.
- * @architecture Enterprise SaaS 2026
  * @module features/projects/ProjectCard/widgets/UpcomingAbsencesSheet
  */
 

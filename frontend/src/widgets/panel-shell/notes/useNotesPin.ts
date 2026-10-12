@@ -6,7 +6,6 @@
  * `<main>` once pinned. Drives the `--rail-pad` CSS var `DashboardLayout`
  * reads for its `wide-shell:pr-*` slot.
  * @module widgets/panel-shell/notes
- * @architecture Enterprise SaaS 2026
  */
 
 import { useCallback, useEffect, useState } from "react";

@@ -3,7 +3,6 @@
  * @description Droppable container for the micro-casting Kanban.
  * Wraps `useDroppable` and renders a tactile, motion-aware highlight while
  * a draggable artist hovers above it.
- * @architecture Enterprise SaaS 2026
  * @module features/projects/editors/tabs/components/DroppableBucket
  */
 

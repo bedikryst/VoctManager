@@ -14,7 +14,6 @@
  * with, so the drawn band is the band that turns. The layer never takes a
  * pointer event: it must not intercept the taps it illustrates.
  * @module shared/ui/composites/PdfViewer
- * @architecture Enterprise SaaS 2026
  */
 
 import { useEffect, useState, type RefObject } from "react";

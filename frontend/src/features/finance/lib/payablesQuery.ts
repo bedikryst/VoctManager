@@ -11,7 +11,6 @@
  * absent value is never sent. A paid-date bound or the paid-date sort only
  * exists on Zapłacone; a project must be one the overview knows; two bounds
  * that cross stay on screen, to be corrected, but neither is sent.
- * @architecture Enterprise SaaS 2026
  * @module features/finance/lib/payablesQuery
  */
 

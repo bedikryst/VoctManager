@@ -14,7 +14,6 @@ This reports **candidates, never verdicts**. Two people can genuinely share a
 name — which is why the printed sheet collapses a repeated name to "(2 entries)"
 rather than deleting one, and why the merge is a decision a manager takes with
 both records in front of them.
-@architecture Enterprise SaaS 2026
 @module roster/duplicates
 """
 

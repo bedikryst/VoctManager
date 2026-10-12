@@ -15,7 +15,6 @@
  *
  * It never gates and never saves: the words were on the server as they were
  * typed. All it does is clear a page off a list.
- * @architecture Enterprise SaaS 2026
  * @module features/copydesk/components/ScopeReviewMark
  */
 

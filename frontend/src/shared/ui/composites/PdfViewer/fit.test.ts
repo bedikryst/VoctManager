@@ -11,7 +11,6 @@
  *
  * Viewport sizes are CSS pixels of the viewer's own box (the modal is
  * full-bleed, so on an installed PWA that is the screen).
- * @architecture Enterprise SaaS 2026
  * @module shared/ui/composites/PdfViewer/fit.test
  */
 

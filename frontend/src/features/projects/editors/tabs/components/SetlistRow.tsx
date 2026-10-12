@@ -9,7 +9,6 @@
  * The row sits in a flat divided list rather than on its own bordered card;
  * the surface, the gold edge and the shadow arrive when it is picked up, so
  * the only thing that looks liftable is the thing being lifted.
- * @architecture Enterprise SaaS 2026
  * @module features/projects/editors/tabs/components/SetlistRow
  */
 

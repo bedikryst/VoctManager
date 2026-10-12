@@ -20,7 +20,6 @@
  * computed where they are declared, so overriding the dock height alone would
  * leave every portalled `bottom-dock` bar floating over a dock that is not
  * there.
- * @architecture Enterprise SaaS 2026
  * @module widgets/finance-shell/FinanceShell
  */
 

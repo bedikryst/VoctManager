@@ -13,7 +13,6 @@
     nobody. The window is derived per reader and never written back: the
     rehearsal keeps one start and one end, and a row outside them is the
     conductor's warning to himself, not an error.
-@architecture Enterprise SaaS 2026
 @module roster/domain/rehearsal_plan
 """
 

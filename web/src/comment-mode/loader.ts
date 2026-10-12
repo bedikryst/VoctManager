@@ -17,7 +17,6 @@
  *
  *  Checked at module load and on every `astro:page-load`: a bundled script runs once per full load,
  *  and a client-router navigation can carry `?uwagi` as well.
- * @architecture Astro islands 2026
  * @module comment-mode/loader
  */
 

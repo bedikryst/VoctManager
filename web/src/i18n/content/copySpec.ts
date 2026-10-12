@@ -24,7 +24,6 @@
  *  declaring it per field means the two can never disagree, and it holds the authoring convention
  *  the content modules already state: `…Html` is authored with inline markup, everything else
  *  without.
- * @architecture Astro islands 2026
  * @module i18n/content/copySpec
  */
 

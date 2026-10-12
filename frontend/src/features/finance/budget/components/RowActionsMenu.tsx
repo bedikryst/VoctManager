@@ -8,7 +8,6 @@
  * take right now stays in the menu, disabled, with the reason under it; a
  * board act is not offered to a manager outside the board, and the menu says
  * so in one line rather than holding a button that would answer 403.
- * @architecture Enterprise SaaS 2026
  * @module features/finance/budget/components/RowActionsMenu
  */
 

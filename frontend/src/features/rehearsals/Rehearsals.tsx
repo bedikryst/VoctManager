@@ -8,7 +8,6 @@
  * "Plan · Obecność" switch, and "Frekwencja" for reliability analytics.
  * Scheduling/CRUD lives in the project hub; this surface is purely
  * operational + analytical.
- * @architecture Enterprise SaaS 2026
  */
 
 import React, { useEffect } from "react";

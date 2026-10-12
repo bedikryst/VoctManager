@@ -35,7 +35,6 @@
  *  the transform is still RECORDED at the number asked for: the ladder gets clamped to the
  *  source and the fallback does not, and the two then hash apart into twin files of identical
  *  pixels. Asking for `Math.min(img.width, top)` is asking for the file that already exists.
- * @architecture Astro islands 2026
  * @module lib/photos
  */
 import type { ImageMetadata } from "astro";

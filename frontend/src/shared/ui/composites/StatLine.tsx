@@ -12,7 +12,6 @@
  * Sibling figures on one line share one denominator, or they are not siblings:
  * a segment counted over a filtered set beside two counted over the library is
  * the defect this shape makes easy to ship.
- * @architecture Enterprise SaaS 2026
  * @module shared/ui/composites/StatLine
  */
 

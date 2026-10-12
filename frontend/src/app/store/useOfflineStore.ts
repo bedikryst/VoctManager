@@ -12,7 +12,6 @@
  *     score markings made while offline, replayed in order once the network
  *     returns.
  *
- * @architecture Enterprise SaaS 2026
  * @module store/useOfflineStore
  */
 

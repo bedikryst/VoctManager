@@ -8,7 +8,6 @@
              Decimal, and the warnings. The client renders all of it and
              computes none of it — so the hub tab, the global page and the
              project card cannot disagree about what a number means.
-@architecture Enterprise SaaS 2026
 @module finance/services/budget
 """
 from collections.abc import Iterable, Sequence

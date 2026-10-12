@@ -26,7 +26,6 @@
  *  then the incoming hero rises out of the dark — is the alternative. To switch back: give the
  *  OLD layer z-index:1 + a fade-out, and the NEW layer z-index:2 + a delayed fade-in from 0,
  *  instead of the dissolve pair below. Kept in git history + the project memory.)
- * @architecture Astro islands 2026
  * @module styles/transitions
  */
 

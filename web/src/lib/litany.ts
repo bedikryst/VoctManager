@@ -28,7 +28,6 @@
  *  THE JOIN RUNS ON THE CORPUS'S POLISH; only what is printed is localized. A name Polish spells
  *  its own way ("Rachmaninow") is joined as written and printed as the locale spells it
  *  (`lib/programmeTerms`), so the two files keep one key while the English plate reads "Rachmaninoff".
- * @architecture Astro islands 2026
  * @module lib/litany
  */
 import type { CollectionEntry } from "astro:content";

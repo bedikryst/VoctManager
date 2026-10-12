@@ -2,7 +2,6 @@
  * @file conductorParser.ts
  * @description Anti-Corruption Layer for raw conductor string extraction.
  * Safely extracts the conductor's name, strictly discarding legacy role suffixes.
- * @architecture Enterprise SaaS 2026
  */
 
 export function parseConductorName(rawString?: string | null): string | null {

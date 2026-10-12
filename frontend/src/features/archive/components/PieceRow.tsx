@@ -14,7 +14,6 @@
  *      mini-player + upload, audio list, AI status summary, and a CTA to
  *      `/panel/archive-management/:id` — the Piece Card — for the full
  *      edit + AI verification cockpit.
- * @architecture Enterprise SaaS 2026
  * @module features/archive/components/PieceRow
  */
 

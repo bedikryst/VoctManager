@@ -2,7 +2,6 @@
  * @file PrivacyTab.tsx
  * @description "Prywatność i dane" pane: GDPR data export plus the account
  * deletion danger zone (re-auth with password, soft delete on the backend).
- * @architecture Enterprise SaaS 2026
  * @module features/settings/components/PrivacyTab
  */
 

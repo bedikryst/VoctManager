@@ -14,7 +14,6 @@
  * "no document": the number and date fields leave, and what was paid for
  * becomes required, since the office books it from the payer's description.
  * A receipt says whether it bears the foundation's NIP.
- * @architecture Enterprise SaaS 2026
  * @module features/finance/budget/components/ExpenseSheet
  */
 

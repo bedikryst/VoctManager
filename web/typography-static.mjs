@@ -19,7 +19,6 @@
  *  runs the rules over those subtrees anyway and WARNS with what would have changed, so a line
  *  breaking badly inside an island shows up in the build instead of on the live site. It does not
  *  fail the build: an island warning is a copy job, not a broken artifact.
- * @architecture Astro islands 2026
  * @module build/typography-static
  */
 

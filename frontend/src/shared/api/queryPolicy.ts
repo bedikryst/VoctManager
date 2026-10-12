@@ -19,7 +19,6 @@
  * silently replaced when the network answers. Static dictionaries opt out — a
  * 24h cache is the whole point there, and their writers invalidate explicitly.
  *
- * @architecture Enterprise SaaS 2026
  * @module shared/api/queryPolicy
  */
 

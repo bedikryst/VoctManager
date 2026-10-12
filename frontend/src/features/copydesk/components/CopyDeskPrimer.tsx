@@ -13,7 +13,6 @@
  * text is what those are for. The third step is deliberately vague about
  * timing: the honest answer is "when the developer next writes the patch out",
  * and inventing an interval would promise something nobody is holding.
- * @architecture Enterprise SaaS 2026
  * @module features/copydesk/components/CopyDeskPrimer
  */
 

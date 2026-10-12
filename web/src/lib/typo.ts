@@ -23,7 +23,6 @@
  *  rewriting text React is about to hydrate is a hydration mismatch — React would discard the
  *  server HTML and re-render, dropping the fix on the floor. Island prose calls `typoFor()` /
  *  `nbsp()` itself, at render time, so server and client produce the same string.
- * @architecture Astro islands 2026
  * @module lib/typo
  */
 

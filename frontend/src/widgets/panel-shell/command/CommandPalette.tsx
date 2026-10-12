@@ -7,7 +7,6 @@
  * fetched lazily and non-blocking (see useCommandItems), so the surface stays
  * instant and never suspends the shell.
  * @module widgets/panel-shell/command
- * @architecture Enterprise SaaS 2026
  */
 
 import React, {

@@ -11,7 +11,6 @@
  * The context value is the registrar alone (a stable callback), never the set —
  * so a keystroke in one row re-renders the page that owns the state, not every
  * other row subscribing to it.
- * @architecture Enterprise SaaS 2026
  * @module features/archive/hooks/usePieceDirty
  */
 

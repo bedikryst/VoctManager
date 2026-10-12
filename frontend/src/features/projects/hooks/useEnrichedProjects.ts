@@ -5,7 +5,6 @@
  * against their dictionaries so every surface — dashboard list and project hub —
  * renders an identical, fully-resolved Project. Extracted from the dashboard hook
  * to guarantee the hub never re-derives this with subtly different logic.
- * @architecture Enterprise SaaS 2026
  * @module features/projects/hooks/useEnrichedProjects
  */
 

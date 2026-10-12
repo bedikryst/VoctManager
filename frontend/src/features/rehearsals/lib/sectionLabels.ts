@@ -4,7 +4,6 @@
  * letters) is spelled out wherever a rehearsal's scope is shown — the
  * inspector badge, the timeline row, the dashboard widget, the chorister's
  * schedule card. One reading so "SA" is "Soprany, Alty" on every surface.
- * @architecture Enterprise SaaS 2026
  * @module features/rehearsals/lib/sectionLabels
  */
 

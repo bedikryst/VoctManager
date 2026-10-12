@@ -8,7 +8,6 @@
              the export sums to the figure the panel states as the cost. The
              office reads Polish, as the contracts do, so the column heads and
              the vocabulary are Polish whatever language the manager uses.
-@architecture Enterprise SaaS 2026
 @module finance/infrastructure/ledger_csv
 """
 from collections.abc import Iterable

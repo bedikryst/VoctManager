@@ -8,7 +8,6 @@
  * question each warning asks of the manager.
  * Severity follows the canon: `work` is gold, ordinary unfinished business;
  * `problem` is crimson and reserved for something actually wrong.
- * @architecture Enterprise SaaS 2026
  * @module features/finance/lib/financePresentation
  */
 

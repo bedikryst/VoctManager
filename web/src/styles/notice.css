@@ -23,7 +23,6 @@
  *
  *  Tokens (--paper, --candle, --ink, --serif, --sans, --capitalis, --mono, --ease) come from the
  *  globally imported tokens.css.
- * @architecture Astro islands 2026
  * @module styles/notice
  */
 

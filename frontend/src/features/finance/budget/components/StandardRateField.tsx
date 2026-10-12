@@ -8,7 +8,6 @@
  * row it would change, and the shared save bar owns the commit — so a standard
  * rate can be looked at and taken back like any other edit. Paid, contracted,
  * volunteer and invoiced rows are out of its reach, and the count says so.
- * @architecture Enterprise SaaS 2026
  * @module features/finance/budget/components/StandardRateField
  */
 

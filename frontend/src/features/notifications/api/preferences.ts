@@ -6,7 +6,6 @@
  * those writes change. Every write is optimistic and patches the same flat
  * `preferences` list inside the envelope, so the ledger never flickers through
  * a refetch; the preview is composed on the server and only ever refetched.
- * @architecture Enterprise SaaS 2026
  * @module notifications/api/preferences
  */
 import {

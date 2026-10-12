@@ -10,7 +10,6 @@
  * It is also where a manager unpins. An announcement pinned in March is outside
  * the stream's window, so its bubble, and the pin toggle on it, may never be on
  * screen.
- * @architecture Enterprise SaaS 2026
  * @module features/messages/components
  */
 

@@ -9,7 +9,6 @@
  * the dashboard itself. A draft has asked nobody yet, so it shows the size of
  * the cast and no pending figure: a shortfall nobody could have answered is not
  * one.
- * @architecture Enterprise SaaS 2026
  */
 
 import React, { useMemo, useState } from "react";

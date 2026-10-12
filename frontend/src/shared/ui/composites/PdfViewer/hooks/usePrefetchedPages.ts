@@ -7,7 +7,6 @@
  * ready canvases instead of flashing a loader. Neighbour prefetch is dropped
  * at study zooms, where canvases get large enough to pressure tablet memory.
  * @module shared/ui/composites/PdfViewer
- * @architecture Enterprise SaaS 2026
  */
 
 import { useCallback, useLayoutEffect, useMemo, useRef, useState } from "react";

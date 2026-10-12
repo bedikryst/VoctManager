@@ -8,7 +8,6 @@
  * the history down to the bottom, repeatedly, without them having done anything.
  * The reader's own send is the exception: it must always land in view, whatever
  * they were looking at when they typed it.
- * @architecture Enterprise SaaS 2026
  * @module features/messages/lib/useStickyScroll
  */
 

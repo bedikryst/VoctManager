@@ -11,7 +11,6 @@
  * card height is what put the composer ON the bar it was annotating — near the
  * foot of a page the clamp pulled the card back up over its own anchor.
  * @module features/annotations/lib
- * @architecture Enterprise SaaS 2026
  */
 
 export interface NoteCardPlacementInput {

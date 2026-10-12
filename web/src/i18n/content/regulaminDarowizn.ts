@@ -22,7 +22,6 @@
  *
  *  THIS FILE IS IMPORTED BY NODE, not only by Vite — keep it free of `?raw`, `astro:assets` and
  *  anything else only a bundler can resolve.
- * @architecture Astro islands 2026
  * @module i18n/content/regulaminDarowizn
  */
 

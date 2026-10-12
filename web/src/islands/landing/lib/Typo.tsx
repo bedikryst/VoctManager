@@ -17,7 +17,6 @@
  *
  *  Only children are touched. Attribute strings (`aria-label`, `title`, `placeholder`) are left
  *  alone: nothing wraps them onto a second line, so a pinned space there would buy nothing.
- * @architecture Astro islands 2026
  * @module islands/landing/lib/Typo
  */
 

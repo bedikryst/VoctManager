@@ -5,7 +5,6 @@
  * that is still short is ordinary work in progress, not an alarm, and washing
  * the whole box in crimson made the board unreadable long before the deficit
  * itself did. Only the figure and the empty slot carry the state.
- * @architecture Enterprise SaaS 2026
  * @module features/projects/editors/tabs/components/DivisiBucket
  */
 

@@ -4,7 +4,6 @@
  * crop stage (drag to reposition, zoom slider/wheel) before upload. The client
  * exports a square WebP so the network payload is tiny and the conductor sees
  * exactly the framing they'll get; the server re-encodes defensively regardless.
- * @architecture Enterprise SaaS 2026
  * @module features/settings/components/AvatarEditorModal
  */
 

@@ -1,7 +1,6 @@
 /**
  * @file schedule.service.ts
  * @description Pure HTTP service for the Schedule domain.
- * @architecture Enterprise SaaS 2026
  */
 
 import api from "@/shared/api/api";

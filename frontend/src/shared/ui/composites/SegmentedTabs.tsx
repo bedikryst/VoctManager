@@ -6,7 +6,6 @@
  * Full-width on touch, hugging on desktop. Pass `wrap` when the control lives in a
  * narrow, fixed-width container (e.g. a sidebar) so segments wrap onto a second row
  * instead of overflowing behind a hidden scrollbar.
- * @architecture Enterprise SaaS 2026
  */
 
 import React from "react";

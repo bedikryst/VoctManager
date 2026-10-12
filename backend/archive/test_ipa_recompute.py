@@ -5,7 +5,6 @@
              writes and bills, the card's endpoint (including the refusal to
              replace a hand-edited guide without a yes), the Celery task's job
              state, the system recorded by ingestion, and the bulk command.
-@architecture Enterprise SaaS 2026
 @module archive/test_ipa_recompute
 """
 from decimal import Decimal

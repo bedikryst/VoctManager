@@ -20,7 +20,6 @@
  * the old one; the app thread drives the swap (see the activate listener).
  *
  * Runs outside the main thread; no DOM access.
- * @architecture Enterprise SaaS 2026
  * @module notifications/infrastructure/sw
  */
 /// <reference lib="webworker" />

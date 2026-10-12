@@ -10,7 +10,6 @@
  *
  * No alarm colour on the refusal: crimson is the panel's alarm, and being
  * outside a capability two people hold is not something going wrong.
- * @architecture Enterprise SaaS 2026
  * @module features/copydesk/components/CopyDeskAccessRefusal
  */
 

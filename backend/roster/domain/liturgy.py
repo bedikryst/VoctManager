@@ -8,7 +8,6 @@
     do that, which is why this table exists at all.
     Repeats are numbered here and nowhere else: "Na Komunię 1 / 2" is a property
     of one programme, not of one row, so no surface may derive it on its own.
-@architecture Enterprise SaaS 2026
 @module roster/domain/liturgy
 """
 

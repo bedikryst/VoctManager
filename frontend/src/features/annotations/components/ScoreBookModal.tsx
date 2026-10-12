@@ -15,7 +15,6 @@
  *
  * FSD: the map and the PDF bytes are INJECTED, so this composite stays free of
  * any projects/materials import (no feature cycle).
- * @architecture Enterprise SaaS 2026
  * @module features/annotations/components/ScoreBookModal
  */
 

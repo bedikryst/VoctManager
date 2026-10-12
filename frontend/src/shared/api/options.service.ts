@@ -1,7 +1,6 @@
 /**
  * @file options.service.ts
  * @description Centralized HTTP service for fetching global dictionary options (enums, dropdowns).
- * @architecture Enterprise SaaS 2026
  * @module shared/api/options
  */
 

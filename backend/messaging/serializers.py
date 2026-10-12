@@ -4,7 +4,6 @@
              per-viewer state (unread, is_mine) from request/context; write
              serializers validate inbound payloads only — role resolution and
              persistence live in the view + service layers.
-@architecture Enterprise SaaS 2026
 @module messaging/serializers
 """
 from typing import Any

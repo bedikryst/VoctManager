@@ -6,7 +6,6 @@
  * fact that is almost always true.
  * The manager picks which row survives, because that choice decides who keeps
  * the concert history, and it is the only roster action with no way back.
- * @architecture Enterprise SaaS 2026
  * @module features/artists/components/DuplicateReview
  */
 

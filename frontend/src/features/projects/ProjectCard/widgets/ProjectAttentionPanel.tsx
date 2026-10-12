@@ -9,7 +9,6 @@
  * single screen there answers "which ones?". Reported absences are that case:
  * they sit one rehearsal at a time, so their row opens them as one list instead,
  * and an absence request's notification opens the same list through `?absences=1`.
- * @architecture Enterprise SaaS 2026
  * @module features/projects/ProjectCard/widgets/ProjectAttentionPanel
  */
 

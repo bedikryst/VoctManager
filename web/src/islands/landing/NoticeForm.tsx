@@ -46,7 +46,6 @@
  *  unread receipt is an address that expires in seven days having consented to nothing. So the
  *  island freezes the surrounding box, marks it, and the sheet hides what it was saying before.
  *  Which box that is differs by composition — see `holdBand`.
- * @architecture Astro islands 2026
  * @module islands/landing/NoticeForm
  */
 

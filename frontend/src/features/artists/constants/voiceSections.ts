@@ -13,7 +13,6 @@
  * Colour comes from the shared accent scale, which has no crimson: a soprano is
  * not an alarm, and while the sections wore one, every roster showed a dozen
  * crimson chips beside the one singer whose invitation had actually expired.
- * @architecture Enterprise SaaS 2026
  * @module features/artists/constants/voiceSections
  */
 

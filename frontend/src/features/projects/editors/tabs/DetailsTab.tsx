@@ -14,7 +14,6 @@
  * A fifth block, the assistant conductor, sits BELOW the form rather than in it:
  * appointing is its own mutation with its own buttons, and a text field inside
  * `details-form` would submit the concert's metadata on Enter.
- * @architecture Enterprise SaaS 2026
  * @module features/projects/editors/tabs/DetailsTab
  */
 

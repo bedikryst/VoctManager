@@ -3,7 +3,6 @@
 @description Copy desk routes, mounted under /api/copydesk/. The panel's own
              route tree for this feature is `/redakcja/*` (a layout takeover, not
              a tab); these are the endpoints behind it.
-@architecture Enterprise SaaS 2026
 @module copydesk/urls
 """
 from django.urls import path

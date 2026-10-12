@@ -7,7 +7,6 @@
  * failures). Producing this is the job of `parseApiError`; turning it into
  * localized words is the job of `resolveErrorCopy`.
  * @module shared/api/errors/types
- * @architecture Enterprise SaaS 2026
  */
 
 /** Coarse category that drives the headline, tone and recovery affordance. */

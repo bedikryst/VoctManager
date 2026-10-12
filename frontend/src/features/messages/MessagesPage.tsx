@@ -11,7 +11,6 @@
  * and becomes `ConversationSurface` — a page header announcing "Wiadomości /
  * + NOWA" over the conversation you are reading is the chrome that made this
  * screen feel crowded, and the card it sat in cost another 45% of the width.
- * @architecture Enterprise SaaS 2026
  * @module features/messages/MessagesPage
  */
 

@@ -16,7 +16,6 @@
  * seventy-odd fields whose resting state is editable, while here the resting
  * state is a diff — a reading no textarea can hold — and correcting is the rare
  * path.
- * @architecture Enterprise SaaS 2026
  * @module features/copydesk/components/ProposalVerdict
  */
 

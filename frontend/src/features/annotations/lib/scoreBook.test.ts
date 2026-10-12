@@ -7,7 +7,6 @@
  * first — the way a thumb does in a paper binder — instead of skipping to the
  * one before it.
  * @module features/annotations/lib/scoreBook.test
- * @architecture Enterprise SaaS 2026
  */
 
 import { describe, expect, it } from "vitest";

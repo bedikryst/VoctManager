@@ -6,7 +6,6 @@
  *
  *  PURE, and kept apart from `lib/pressPack` for that reason: that module reads the disk at build,
  *  and the composer's script would drag `node:fs` into the browser bundle with it.
- * @architecture Astro islands 2026
  * @module lib/fileSize
  */
 

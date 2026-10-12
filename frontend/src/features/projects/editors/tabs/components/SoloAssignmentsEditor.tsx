@@ -8,7 +8,6 @@
  * the board. Positions may overlap musically and one singer may hold several.
  * Legacy SOLO rows — solos written before positions had names — are listed
  * apart, read-only, with one action: give the passage a name.
- * @architecture Enterprise SaaS 2026
  * @module features/projects/editors/tabs/components/SoloAssignmentsEditor
  */
 

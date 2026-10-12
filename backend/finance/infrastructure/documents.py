@@ -20,7 +20,6 @@
              document's source is
              `docs/specs/project-finance-contract-drafts-2026-09.md`. A
              correction lands in its source first, then in the template.
-@architecture Enterprise SaaS 2026
 @module finance/infrastructure/documents
 """
 import calendar

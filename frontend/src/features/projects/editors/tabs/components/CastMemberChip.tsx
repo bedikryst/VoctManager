@@ -6,7 +6,6 @@
  * buttons inside the chip instead of a separate editor.
  * Everything here is a draft: edits route through the parent hook and are only
  * persisted by the board's own save.
- * @architecture Enterprise SaaS 2026
  * @module features/projects/editors/tabs/components/CastMemberChip
  */
 

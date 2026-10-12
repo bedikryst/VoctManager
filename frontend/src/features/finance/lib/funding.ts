@@ -6,7 +6,6 @@
  * volunteer-work source. A gift in kind has no cost row to charge at all. The
  * panel offers only the sources the server would accept. It also tallies which
  * sources carry a ledger section, so Honoraria can say it without a menu.
- * @architecture Enterprise SaaS 2026
  * @module features/finance/lib/funding
  */
 

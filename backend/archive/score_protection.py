@@ -10,7 +10,6 @@
     read model and both download choke points can all import it without dragging
     in the renderer. The watermark *rendering* lives in
     roster.infrastructure.score_watermark; this module only decides and records.
-@architecture Enterprise SaaS 2026
 @module archive/score_protection
 """
 

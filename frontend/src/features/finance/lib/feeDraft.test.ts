@@ -5,7 +5,6 @@
  * per-person exception land, and totals in exact grosze. A preview that
  * disagrees with the save is the rail promising a cost the ledger then does
  * not show.
- * @architecture Enterprise SaaS 2026
  * @module features/finance/lib/feeDraft.test
  */
 

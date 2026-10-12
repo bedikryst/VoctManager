@@ -4,7 +4,6 @@
  * project — attendance and single-evening absences alike — fold while they stay
  * within half an hour of the newest one, whoever else writes in between; a span
  * stands alone; a thread folds whole.
- * @architecture Enterprise SaaS 2026
  * @module features/notifications/lib/notificationFold.test
  */
 

@@ -20,7 +20,6 @@
  *
  *  Tokens (--paper, --ink, --dark, --candle, --serif, --sans, --ease) come from the globally
  *  imported tokens.css. `cqw` resolves against the letter's stage.
- * @architecture Astro islands 2026
  * @module styles/notice-blank
  */
 

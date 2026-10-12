@@ -1,7 +1,6 @@
 /**
  * @file panelDataPreloaders.ts
  * @description Authenticated panel data warm-up pipeline for React Query.
- * @architecture Enterprise SaaS 2026
  */
 
 import type { QueryClient, QueryKey } from "@tanstack/react-query";

@@ -10,7 +10,6 @@
  * `takesStandardRate` the service's skip rules and `summarizeDraft` its rule
  * for a repriced mandate's contributions, line for line.
  * Every sum here is integer grosze.
- * @architecture Enterprise SaaS 2026
  * @module features/finance/lib/feeDraft
  */
 

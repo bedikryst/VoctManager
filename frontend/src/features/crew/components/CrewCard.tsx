@@ -4,7 +4,6 @@
  * editor (click-to-open, matching projects/artists); the inline delete action
  * and the contact links stop propagation. Specialty colour comes from the shared
  * taxonomy badge.
- * @architecture Enterprise SaaS 2026
  * @module features/crew/components/CrewCard
  */
 

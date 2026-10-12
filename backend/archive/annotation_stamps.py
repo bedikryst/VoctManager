@@ -15,7 +15,6 @@
     the two id sets are identical, and this file must be updated in the same
     change as the TSX one. The editor's palette GROUPS are not mirrored here:
     print has no palette, and a grouping is a fact about a toolbar.
-@architecture Enterprise SaaS 2026
 @module archive/annotation_stamps
 """
 

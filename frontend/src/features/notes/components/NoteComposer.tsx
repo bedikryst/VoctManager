@@ -9,7 +9,6 @@
  * two-line clamp readable. Multi-line detail is added afterwards, in the
  * expanded row's own editor (`NoteRow`).
  * @module features/notes/components
- * @architecture Enterprise SaaS 2026
  */
 
 import React, { useEffect, useRef, useState } from "react";

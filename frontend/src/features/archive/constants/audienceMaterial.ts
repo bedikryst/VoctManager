@@ -5,7 +5,6 @@
  * (`AUDIENCE_LANGUAGES` in `shared/types`) and for the three registers a note
  * can take (backend `ProgramNoteTone`). Polish and the accessible register
  * lead their lists because they are what the approval writes on its own.
- * @architecture Enterprise SaaS 2026
  * @module features/archive/constants/audienceMaterial
  */
 

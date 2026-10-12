@@ -8,7 +8,6 @@
  * It is one component because the archive had typed the same affordance twice,
  * in two heights and two corner radii, for the two actions that use it. The
  * caller supplies the icon, the labels and the tone; the shape is not theirs.
- * @architecture Enterprise SaaS 2026
  * @module features/archive/components/InlineConfirmAction
  */
 

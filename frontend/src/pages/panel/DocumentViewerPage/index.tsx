@@ -5,7 +5,6 @@
  * shared headless PdfViewer primitive in a fullscreen frame with a slim header
  * (back navigation + title). Display metadata is hinted through `location.state`
  * for in-app navigations and falls back to localized per-type copy on deep-links.
- * @architecture Enterprise SaaS 2026
  * @module pages/app/DocumentViewerPage
  */
 

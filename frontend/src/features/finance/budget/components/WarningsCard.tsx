@@ -6,7 +6,6 @@
  * link to that row on its own tab. The server computes the warnings per request, so "the concert
  * has passed" is never stale here. A long list of names is cut, and the cut
  * says how many it hides.
- * @architecture Enterprise SaaS 2026
  * @module features/finance/budget/components/WarningsCard
  */
 

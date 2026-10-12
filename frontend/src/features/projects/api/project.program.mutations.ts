@@ -1,7 +1,6 @@
 /**
  * @file project.program.mutations.ts
  * @description React Query mutations for project program items.
- * @architecture Enterprise SaaS 2026
  * @module features/projects/api
  */
 

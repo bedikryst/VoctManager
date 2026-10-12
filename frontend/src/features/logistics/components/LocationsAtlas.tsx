@@ -9,7 +9,6 @@
  * sheet (never a full modal), that dive stays visible. Auto-fits to the dataset
  * when nothing is selected. Camera choreography is the shared `cameraFlight`;
  * pins and atmosphere are the shared `MapPinShell` / `MapAtmosphere`.
- * @architecture Enterprise SaaS 2026
  * @module features/logistics/components/LocationsAtlas
  */
 

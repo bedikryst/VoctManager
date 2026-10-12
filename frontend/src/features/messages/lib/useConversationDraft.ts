@@ -3,7 +3,6 @@
  * @description The composer's text, and the way an undelivered reply gets back
  * into it. Shared by the thread and the channel pane so both treat a failed
  * send the same way.
- * @architecture Enterprise SaaS 2026
  * @module features/messages/lib
  */
 

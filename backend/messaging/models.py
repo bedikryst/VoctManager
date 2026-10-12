@@ -5,7 +5,6 @@
              real-time: no presence, no typing state. Delivery (in-app/email/push)
              is delegated to the notifications pipeline — this app owns only the
              persistent thread + message records.
-@architecture Enterprise SaaS 2026
 @module messaging/models
 """
 from django.conf import settings

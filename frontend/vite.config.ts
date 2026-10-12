@@ -6,7 +6,6 @@
  *  - Hidden source maps (debuggable from sentry-style symbol uploads, never exposed publicly).
  *  - Optional bundle visualizer in `analyze` mode (npm run build:analyze).
  *  - PWA in injectManifest mode for push-only integration.
- * @architecture Enterprise SaaS 2026
  * @module build/vite
  */
 

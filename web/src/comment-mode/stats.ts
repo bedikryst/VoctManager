@@ -11,7 +11,6 @@
  *
  *  The pageview of the very load that carried `?uwagi` is counted: Plausible's deferred script
  *  runs before the loader's module. Every later one is not.
- * @architecture Astro islands 2026
  * @module comment-mode/stats
  */
 

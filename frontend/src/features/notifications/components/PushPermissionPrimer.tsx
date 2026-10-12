@@ -3,7 +3,6 @@
  * @description "Soft" pre-prompt that explains the value of push notifications
  * before triggering the browser's irreversible permission dialog. Best-practice
  * UX: prevents accidental "Block" decisions which can never be re-asked.
- * @architecture Enterprise SaaS 2026
  * @module notifications/components/PushPermissionPrimer
  */
 import React, { useEffect, useId, useState } from "react";

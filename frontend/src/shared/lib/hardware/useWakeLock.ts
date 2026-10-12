@@ -7,7 +7,6 @@
  * unsupported or denied (battery saver) — a sleeping screen is an acceptable
  * fallback, a broken viewer is not.
  * @module shared/lib/hardware
- * @architecture Enterprise SaaS 2026
  */
 
 import { useEffect } from "react";

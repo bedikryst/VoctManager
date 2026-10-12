@@ -1,7 +1,6 @@
 # core/authentication.py
 """
 Custom JWT Authentication with Cookie Support.
-@architecture Enterprise SaaS 2026 Security Standards.
 """
 
 import logging

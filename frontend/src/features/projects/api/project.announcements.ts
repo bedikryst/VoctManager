@@ -5,7 +5,6 @@
  * so a run of edits reaches the cast as one considered message. These hooks read
  * the review sheet (keyed to the current selection so its counts never lie about
  * what the confirm button will send), publish it, and abandon it.
- * @architecture Enterprise SaaS 2026
  * @module features/projects/api
  */
 

@@ -17,7 +17,6 @@
  * jobs are to write the preference, re-stamp the attribute, and keep a
  * `matchMedia` listener alive so an OS that flips while the app is open — an
  * Android auto-dark schedule at dusk, mid-rehearsal — is followed.
- * @architecture Enterprise SaaS 2026
  * @module shared/theme/themeController
  */
 

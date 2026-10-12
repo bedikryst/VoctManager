@@ -2,7 +2,6 @@
  * @file useArchiveData.ts
  * @description Encapsulates purely visual state, filtering logic, and modal visibility
  * for the Archive domain. Server state is fully delegated to React Query hooks.
- * @architecture Enterprise SaaS 2026
  */
 
 import { useState, useMemo, useCallback } from "react";

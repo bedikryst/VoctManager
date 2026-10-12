@@ -6,7 +6,6 @@
  * which is a positive claim about the concert, not a wait. The card keeps the
  * tab's own icon and title so the header does not appear a beat after the
  * surface it belongs to.
- * @architecture Enterprise SaaS 2026
  * @module features/projects/editors/tabs/components/TabLoadingCard
  */
 

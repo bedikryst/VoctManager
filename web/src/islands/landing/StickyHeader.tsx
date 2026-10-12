@@ -7,7 +7,6 @@
  *  "Wesprzyj" dispatches `voct:open-vault`. The audio controller (Faza 3b) and vault island
  *  (Faza 3c) own those events; until then the listeners are dormant (graceful no-op).
  *  Adaptive tint (`is-on-dark`/`is-active`) is driven by the page motion script, not here.
- * @architecture Astro islands 2026
  * @module islands/landing/StickyHeader
  */
 

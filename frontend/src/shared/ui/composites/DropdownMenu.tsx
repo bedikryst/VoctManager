@@ -6,7 +6,6 @@
  * portalling for free. Use for occasional, grouped actions (exports, overflow) that
  * would otherwise crowd a header, or — via the radio group — for a setting that
  * belongs beside them rather than in a settings page.
- * @architecture Enterprise SaaS 2026
  * @module shared/ui/composites/DropdownMenu
  */
 

@@ -12,7 +12,6 @@
  *  story at the same sigma would show the ring's letterforms through the ground. It is 28 per 630
  *  px of the frame's short edge, so the share card is unchanged and the larger graphics read the
  *  same.
- * @architecture Astro islands 2026
  * @module scripts/press-pack/graphics
  */
 import sharp from "sharp";

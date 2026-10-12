@@ -12,7 +12,6 @@
  *
  * Nothing else belongs here: the popover's chrome, the address block and the two
  * exits stay in `LocationPreview`, because they render with or without a map.
- * @architecture Enterprise SaaS 2026
  * @module features/logistics/components/VenueMiniMap
  */
 

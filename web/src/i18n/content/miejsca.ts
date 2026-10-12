@@ -27,7 +27,6 @@
  *  place nobody has named — an unnamed venue would otherwise print Polish on a French page in
  *  silence, and only the build can say so. Adding a concert with photographs therefore means naming
  *  its room here, in three languages, which is the price of the guarantee.
- * @architecture Astro islands 2026
  * @module i18n/content/miejsca
  */
 

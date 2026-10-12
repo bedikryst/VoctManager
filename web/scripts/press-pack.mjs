@@ -35,7 +35,6 @@
  *  build against a pack cut from sources other than the ones it holds.
  *
  *  Run from `web/`: `npm run press:pack`.
- * @architecture Astro islands 2026
  * @module scripts/press-pack
  */
 import { createHash } from "node:crypto";

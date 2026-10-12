@@ -5,7 +5,6 @@
  * English call sites. Returns the normalized error so the caller can branch
  * further (e.g. also apply field errors to a form) without re-parsing.
  * @module shared/api/errors/errorToast
- * @architecture Enterprise SaaS 2026
  */
 
 import { toast } from "sonner";

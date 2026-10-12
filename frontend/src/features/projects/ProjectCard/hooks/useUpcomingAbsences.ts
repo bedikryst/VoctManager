@@ -9,7 +9,6 @@
  * minute: the grouping recomputes once a minute rather than once per tick, and
  * a rehearsal that starts while the Overview is open leaves the figure without
  * a remount.
- * @architecture Enterprise SaaS 2026
  * @module features/projects/ProjectCard/hooks/useUpcomingAbsences
  */
 

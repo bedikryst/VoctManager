@@ -14,7 +14,6 @@
     The WeasyPrint render is isolated behind ``render_footer_overlay`` so the
     merge/placement contract is unit-testable on a host without the native
     rendering libraries (which the binder builder also needs).
-@architecture Enterprise SaaS 2026
 @module roster/infrastructure/score_watermark
 """
 

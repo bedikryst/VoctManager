@@ -10,7 +10,6 @@
  * because the only thing that ever writes the durable copy is a real list GET
  * and a successful POST is not one. Neither `tsc`, nor a build, nor looking at
  * the screen can tell that apart from working; the request log can.
- * @architecture Enterprise SaaS 2026
  * @module features/annotations/api
  */
 

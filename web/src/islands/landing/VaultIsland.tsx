@@ -13,7 +13,6 @@
  *  need a locale nobody supplied.
  *
  *  Styles: the landing gets them from landing.css; subpages must import styles/vault.css.
- * @architecture Astro islands 2026
  * @module islands/landing/VaultIsland
  */
 

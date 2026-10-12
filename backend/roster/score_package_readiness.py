@@ -12,7 +12,6 @@
 
     Provenance is loaded in two batched queries for the whole programme, so the
     cockpit read stays O(1) in round-trips regardless of repertoire size.
-@architecture Enterprise SaaS 2026
 @module roster/score_package_readiness
 """
 

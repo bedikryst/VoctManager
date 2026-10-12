@@ -7,7 +7,6 @@
              manager uses, so these are fixed strings and deliberately not
              gettext'd, like the contracts. The panel's own labels live in the
              client's locales; the two are kept saying the same thing.
-@architecture Enterprise SaaS 2026
 @module finance/infrastructure/vocabulary
 """
 from ..models import (

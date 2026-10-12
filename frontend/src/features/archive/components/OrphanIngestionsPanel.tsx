@@ -10,7 +10,6 @@
  *
  * Renders nothing in the healthy case, which is nearly always — it must cost
  * the daily library view no space at all.
- * @architecture Enterprise SaaS 2026
  * @module features/archive/components/OrphanIngestionsPanel
  */
 

@@ -3,7 +3,6 @@
  * @description m:ss formatter shared by the video player chrome (time label, ARIA
  *  valuetext) and the site cursor's seek state (the cursor renders the hover timestamp
  *  over the scrub rail, so both must speak the same format).
- * @architecture Astro islands 2026
  * @module islands/landing/video/formatTime
  */
 

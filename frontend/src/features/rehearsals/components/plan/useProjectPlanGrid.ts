@@ -16,7 +16,6 @@
  * evening once; a second copy is the editor's to sort out. An editor draft of
  * the same evening wins on its next save — the editor is a modal sheet, so the
  * two are never open side by side.
- * @architecture Enterprise SaaS 2026
  * @module features/rehearsals/components/plan/useProjectPlanGrid
  */
 

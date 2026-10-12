@@ -6,7 +6,6 @@
  * the card), a faint parchment warmth in the corners, and a top sheen — tuned
  * to stay clear of the map's legible centre. Works regardless of whether the
  * cloud-based map style has propagated, so the surface always feels on-brand.
- * @architecture Enterprise SaaS 2026
  * @module features/logistics/components/MapAtmosphere
  */
 

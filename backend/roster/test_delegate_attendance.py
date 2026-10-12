@@ -13,7 +13,6 @@
     must not reach that singer as a verdict on an excuse they never filed — that
     is a manager's answer to a request, not an observation of who turned up.
 
-@architecture Enterprise SaaS 2026
 @module roster/test_delegate_attendance
 """
 

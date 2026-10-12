@@ -6,7 +6,6 @@
  * submission that leaves without consent, or with a version the screen did not
  * display, is a consent record that does not describe what happened. Both
  * assertions are about what reaches `users/activate/`, or does not.
- * @architecture Enterprise SaaS 2026
  * @module pages/auth
  */
 

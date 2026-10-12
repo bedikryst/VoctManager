@@ -2,7 +2,6 @@
  * @file ProjectRehearsalsPage.tsx
  * @description Route wrapper for the rehearsal scheduling work area.
  * Mounts the existing RehearsalsTab with the project resolved by the hub layout.
- * @architecture Enterprise SaaS 2026
  * @module features/projects/ProjectRehearsalsPage
  */
 

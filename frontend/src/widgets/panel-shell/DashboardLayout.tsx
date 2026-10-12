@@ -4,7 +4,6 @@
  * Implements the Persistent App Shell pattern. Delegates background kinetics to
  * isolated persistent layers, and the entrance of a route to the page itself
  * (`PageTransition`) — the shell decides only WHEN a route is a new mount.
- * @architecture Enterprise SaaS 2026
  * @module widgets/panel-shell/DashboardLayout
  */
 

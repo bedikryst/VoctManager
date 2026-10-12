@@ -7,7 +7,6 @@
  * Shared by every two-pane transfer board in the hub, because a second copy of
  * a recipe is how the panel drifted into sixteen letter-spacings in the first
  * place.
- * @architecture Enterprise SaaS 2026
  * @module features/projects/editors/tabs/components/ListGroupHeader
  */
 

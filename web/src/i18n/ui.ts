@@ -17,7 +17,6 @@
  *  nobis, Via, Scribe nobis, Sustinete nos) are locale-neutral and stay in the markup — only the
  *  vernacular gloss is translated here. The Polish column is the source of truth and is copied
  *  verbatim from the pre-i18n markup, so `lang="pl"` renders byte-identical to before.
- * @architecture Astro islands 2026
  * @module i18n/ui
  */
 

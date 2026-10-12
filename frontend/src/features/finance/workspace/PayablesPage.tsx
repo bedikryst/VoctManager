@@ -13,7 +13,6 @@
  * marked with its reason and taken out of the selection, so the next attempt
  * pays the rest. Reverting a payment stays in the project's hub, where the
  * board states its reason. A row opens that cost in its project's hub.
- * @architecture Enterprise SaaS 2026
  * @module features/finance/workspace/PayablesPage
  */
 

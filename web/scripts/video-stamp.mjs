@@ -19,7 +19,6 @@
  *
  *   node scripts/video-stamp.mjs            stamp public/video/, print the literals
  *   node scripts/video-stamp.mjs --verify   confirm the names match the bytes, change nothing
- * @architecture Astro assets 2026
  * @module scripts/video-stamp
  */
 

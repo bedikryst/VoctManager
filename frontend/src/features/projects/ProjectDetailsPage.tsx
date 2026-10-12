@@ -4,7 +4,6 @@
  * Mounts the existing DetailsTab with the hydrated project. Leaving the route
  * discards any unsaved draft — consistent with the archive edit-page precedent;
  * the floating save bar surfaces the dirty state.
- * @architecture Enterprise SaaS 2026
  * @module features/projects/ProjectDetailsPage
  */
 

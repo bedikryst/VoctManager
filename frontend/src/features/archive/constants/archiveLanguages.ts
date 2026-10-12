@@ -5,7 +5,6 @@
  * score); this module turns that code into a localised, human label so the UI
  * never shows a bare "la" / "pl". Mirrors {@link archiveEpochs} — a static
  * definition list feeding both a `<Select>` option builder and a display helper.
- * @architecture Enterprise SaaS 2026
  * @module features/archive/constants/archiveLanguages
  */
 

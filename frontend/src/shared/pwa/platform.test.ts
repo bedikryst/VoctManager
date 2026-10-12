@@ -9,7 +9,6 @@
  * through the same share sheet, but an in-app WebView has no route at all, and
  * pointing at the wrong edge of the screen sends someone hunting for a button
  * that is not there.
- * @architecture Enterprise SaaS 2026
  * @module shared/pwa/platform.test
  */
 

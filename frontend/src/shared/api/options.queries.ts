@@ -2,7 +2,6 @@
  * @file options.queries.ts
  * @description React Query hooks for globally shared dictionary options.
  * Implements aggressive caching strategies (24h stale time) for static datasets.
- * @architecture Enterprise SaaS 2026
  * @module shared/api/options
  */
 

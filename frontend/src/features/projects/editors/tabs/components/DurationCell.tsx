@@ -5,7 +5,6 @@
  * Sans + `tabular-nums`: this is one of the few figures in the panel that
  * genuinely aligns down a column, which is the reason it left the metadata line
  * where it used to read "· 3 min 30 sek" halfway through a sentence.
- * @architecture Enterprise SaaS 2026
  * @module features/projects/editors/tabs/components/DurationCell
  */
 

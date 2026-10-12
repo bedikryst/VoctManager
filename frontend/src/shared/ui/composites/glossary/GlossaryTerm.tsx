@@ -12,7 +12,6 @@
  *
  * Mark ONE occurrence per view. A term glossed on every row is the resting
  * default stated in every slot, which is the bug this layer must not become.
- * @architecture Enterprise SaaS 2026
  * @module shared/ui/composites/glossary/GlossaryTerm
  */
 

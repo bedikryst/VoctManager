@@ -6,7 +6,6 @@
  * (notifications/delivery.py) — nothing here re-decides them, so the ledger a
  * reader operates and the policy the router applies cannot drift apart. Labels
  * and descriptions live in i18n (settings.notifications.groups.* / .type_desc.*).
- * @architecture Enterprise SaaS 2026
  * @module settings/constants/notificationPreferenceGroups
  */
 import {

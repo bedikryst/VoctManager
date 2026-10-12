@@ -17,7 +17,6 @@
  *  a title in a vernacular phrase is prose, and Florent may well word it otherwise.
  *
  *  Pure and import-free, so `node --test` runs it against both corpora (copydesk/programmeTerms.test.mjs).
- * @architecture Astro islands 2026
  * @module lib/programmeTerms
  */
 

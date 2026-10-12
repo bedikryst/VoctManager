@@ -2,7 +2,6 @@
  * @file MetricBlock.tsx
  * @description Standardized semantic artifact for statistical representation.
  * Handles glassmorphism hover kinematics internally.
- * @architecture Enterprise SaaS 2026
  */
 
 import React from "react";

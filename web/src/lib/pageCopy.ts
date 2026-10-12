@@ -22,7 +22,6 @@
  *
  *  BUILD-TIME ONLY. The sources are inlined by Vite as raw text and parsed per render of a page;
  *  the site is static, so no reader downloads them. Do not import this from a client island.
- * @architecture Astro islands 2026
  * @module lib/pageCopy
  */
 import YAML from "yaml";

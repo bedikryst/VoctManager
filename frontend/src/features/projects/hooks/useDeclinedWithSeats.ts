@@ -12,7 +12,6 @@
  * Derived from the two lists the hub already prefetches rather than a new endpoint,
  * and with plain queries rather than the tabs' suspense hooks — the header must
  * render at once and never suspend the shell.
- * @architecture Enterprise SaaS 2026
  * @module features/projects/hooks
  */
 

@@ -3,7 +3,6 @@
  * @description Public patronage (mecenat) interest client. POSTs the volunteered contact details
  * to the Django endpoint, which persists a lead and notifies the foundation. Intentionally public
  * and cookie-less, mirroring the donation client — no card data, no session token required.
- * @architecture Enterprise SaaS 2026
  * @module features/landing/api/patronage
  */
 

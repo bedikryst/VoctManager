@@ -2,7 +2,6 @@
  * @file useDonationProgress.ts
  * @description Fetches the static donation progress JSON exactly once and computes
  * derived display values (percent, min-visible width with a 3% floor when raised > 0).
- * @architecture Enterprise SaaS 2026
  * @module features/landing/hooks/useDonationProgress
  */
 

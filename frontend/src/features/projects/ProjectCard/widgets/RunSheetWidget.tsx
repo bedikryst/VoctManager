@@ -9,7 +9,6 @@
  * typed windows merged into the points — because a producer reading three lists of hours
  * for one day is reading three chances to miss a collision. A trip's plan is titled as
  * one and heads each day with its date, as those two do.
- * @architecture Enterprise SaaS 2026
  * @module features/projects/ProjectCard/widgets/RunSheetWidget
  */
 

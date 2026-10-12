@@ -15,7 +15,6 @@
  *     one from `npm run preview`.
  *   - a dev server that was already running when this file (or lib/typo.ts) changed can keep
  *     serving the module it loaded at startup. Restart it after touching a rule.
- * @architecture Astro islands 2026
  * @module middleware
  */
 

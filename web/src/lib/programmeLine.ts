@@ -13,7 +13,6 @@
  *  the gap reads its neighbour's title.
  *
  *  Build-time only: it reads the overlays through `lib/copyOverlay`.
- * @architecture Astro islands 2026
  * @module lib/programmeLine
  */
 

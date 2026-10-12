@@ -4,7 +4,6 @@
  * Implements strict RBAC structures, i18next extraction marking, and pure component references
  * to ensure zero Layout Projection warping and flawless React rendering cycles.
  * @module shared/config/navigation/dashboard
- * @architecture Enterprise SaaS 2026
  */
 
 import {

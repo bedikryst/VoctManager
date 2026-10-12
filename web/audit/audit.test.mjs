@@ -13,7 +13,6 @@
  *  which is the failure mode a hand-written stub would hide.
  *
  *  Run: `npm run test:audit` (node --test).
- * @architecture Astro islands 2026
  * @module audit/audit.test
  */
 

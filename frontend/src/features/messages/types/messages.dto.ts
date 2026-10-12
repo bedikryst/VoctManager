@@ -2,7 +2,6 @@
  * @file messages.dto.ts
  * @description Client-side contracts for the messaging domain (async conductor↔chorister
  * threads). Mirrors the DRF serializers in backend/messaging.
- * @architecture Enterprise SaaS 2026
  * @module features/messages/types
  */
 

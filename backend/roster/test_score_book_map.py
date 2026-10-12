@@ -12,7 +12,6 @@
     Also asserted: that a book with no map (hand-uploaded, or never generated)
     answers "no pencil here" instead of failing, and that the endpoint's access
     follows the file's — a closed concert's binder is not a singer's to read.
-@architecture Enterprise SaaS 2026
 @module roster/test_score_book_map
 """
 

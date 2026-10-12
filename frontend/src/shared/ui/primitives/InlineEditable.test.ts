@@ -12,7 +12,6 @@
  * These assertions therefore run on RESOLVED class lists — the same `cn()` the
  * component calls, so tailwind-merge has already dropped the losers. A class
  * that loses at runtime loses here too.
- * @architecture Enterprise SaaS 2026
  * @module shared/ui/primitives/InlineEditable.test
  */
 

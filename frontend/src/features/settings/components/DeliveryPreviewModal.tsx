@@ -8,7 +8,6 @@
  * row arrives — only not on its own. Render-only: every example and every
  * outcome comes from the preview endpoint, so nothing here can disagree with
  * what the router does.
- * @architecture Enterprise SaaS 2026
  * @module settings/DeliveryPreviewModal
  */
 import React, { useState } from "react";

@@ -9,7 +9,6 @@
  * editor reads first: how big a page is and how much work stands on it are
  * plain type, while what is NEW and what has gone STALE wear a chip, because
  * those are the rows worth going back to.
- * @architecture Enterprise SaaS 2026
  * @module pages/copydesk/CopyDeskContentsPage
  */
 

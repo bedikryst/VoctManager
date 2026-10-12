@@ -7,7 +7,6 @@
  * `will-change` is opt-in via the hover variant — Framer manages compositor promotion for animated subtrees.
  * Children live in a content wrapper that stacks above the decorative layers; `className` styles the
  * card surface, `contentClassName` styles that wrapper (see the prop docs).
- * @architecture Enterprise SaaS 2026
  * @module shared/ui/composites/GlassCard
  */
 

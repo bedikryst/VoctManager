@@ -4,7 +4,6 @@
  * bounds the list server-side) and no PUT (`backend/core/views.py::NoteViewSet`
  * drops it from `http_method_names`).
  * @module features/notes/api
- * @architecture Enterprise SaaS 2026
  */
 
 import api from "@/shared/api/api";

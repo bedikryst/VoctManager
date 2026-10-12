@@ -18,7 +18,6 @@
  *  string where no translation exists yet, which is the column the desk offers for editing.
  *  A translation found INSIDE `concerts.yaml` is refused rather than read: after stage C3 that file
  *  is Polish-only, and quietly accepting a stray `en:` would put one fact back in two homes.
- * @architecture Astro islands 2026
  * @module copydesk/extract
  */
 

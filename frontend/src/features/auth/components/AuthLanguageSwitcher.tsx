@@ -3,7 +3,6 @@
  * @description Compact 3-button language selector for unauthenticated auth pages.
  * Persists to localStorage via i18next's built-in LanguageDetector.
  * No API calls needed — the user is not yet authenticated.
- * @architecture Enterprise SaaS 2026
  * @module features/auth/components/AuthLanguageSwitcher
  */
 

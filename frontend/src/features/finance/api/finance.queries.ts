@@ -15,7 +15,6 @@
  *    projects it paid on instead.
  * Nothing here is queued offline: a finance write either reaches the server
  * or visibly does not happen.
- * @architecture Enterprise SaaS 2026
  * @module features/finance/api/finance.queries
  */
 

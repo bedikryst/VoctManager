@@ -2,7 +2,6 @@
  * @file planPublication.test.ts
  * @description The rail's word for an evening's plan, before and after the
  * downbeat, against the stamps the rehearsal read carries.
- * @architecture Enterprise SaaS 2026
  * @module features/rehearsals/lib/planPublication.test
  */
 

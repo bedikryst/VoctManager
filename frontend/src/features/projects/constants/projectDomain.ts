@@ -2,7 +2,6 @@
  * @file projectDomain.ts
  * @description Centralized domain constants for the Project module.
  * Ensures type safety and eliminates "magic strings" across the application.
- * @architecture Enterprise SaaS 2026
  * @module features/projects/constants
  */
 

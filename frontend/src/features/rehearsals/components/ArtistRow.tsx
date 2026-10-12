@@ -7,7 +7,6 @@
  * no room for four long Polish status words and no viewport breakpoint can
  * know that. Status presentation is sourced from the shared attendance meta so
  * the colour and the glyph of "late" never drift between surfaces.
- * @architecture Enterprise SaaS 2026
  * @module features/rehearsals/components/ArtistRow
  */
 

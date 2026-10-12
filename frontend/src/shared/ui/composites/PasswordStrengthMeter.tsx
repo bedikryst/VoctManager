@@ -3,7 +3,6 @@
  * @description Presentational four-segment strength read for a password field.
  * Pure UI over the shared `passwordStrength` heuristic — used on the activation
  * flow and in security settings so the strength UX never drifts between them.
- * @architecture Enterprise SaaS 2026
  * @module shared/ui/composites/PasswordStrengthMeter
  */
 

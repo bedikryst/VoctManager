@@ -4,7 +4,6 @@
  * and absence alerts. Rehearsal *progress* (done / total) is owned by the Overview's KPI
  * strip, so it is intentionally not duplicated here. The absence figure per session
  * comes from `useUpcomingAbsences`, the same count the attention panel states and lists.
- * @architecture Enterprise SaaS 2026
  * @module features/projects/ProjectCard/widgets/RehearsalsWidget
  */
 

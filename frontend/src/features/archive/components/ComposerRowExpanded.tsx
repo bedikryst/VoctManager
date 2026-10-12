@@ -4,7 +4,6 @@
  * Wikidata-enriched biography + portrait + external IDs, lists pieces
  * attached to this composer, and exposes "Odśwież z MusicBrainz" to
  * re-pull missing canonical fields.
- * @architecture Enterprise SaaS 2026
  * @module features/archive/components/ComposerRowExpanded
  */
 

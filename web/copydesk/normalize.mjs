@@ -14,7 +14,6 @@
  *    2. Line endings to LF.
  *    3. Hard spaces (NBSP, narrow NBSP, thin space) to ordinary spaces.
  *    4. Strip the ends. Interior whitespace is deliberately left alone.
- * @architecture Astro islands 2026
  * @module copydesk/normalize
  */
 

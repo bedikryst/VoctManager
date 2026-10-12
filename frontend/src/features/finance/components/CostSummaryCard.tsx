@@ -5,7 +5,6 @@
  * it is always the cost. What qualifies it — how much has already left the
  * account, how much is still unpriced — rides the rail, and a fact that has not
  * happened yet ("0 zapłacone" before any payment) takes no slot at all.
- * @architecture Enterprise SaaS 2026
  * @module features/finance/components/CostSummaryCard
  */
 

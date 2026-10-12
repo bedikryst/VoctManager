@@ -14,7 +14,6 @@
  * dropped after the pick. The analysis always writes German Latin, so any
  * other choice costs one extra recompute, and only for a Latin piece whose
  * guide this upload writes; the piece card's recompute covers the rest.
- * @architecture Enterprise SaaS 2026
  * @module features/archive/components/EditionUploadZone
  */
 

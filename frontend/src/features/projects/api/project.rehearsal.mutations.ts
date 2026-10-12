@@ -1,7 +1,6 @@
 /**
  * @file project.rehearsal.mutations.ts
  * @description React Query mutations for project rehearsal scheduling.
- * @architecture Enterprise SaaS 2026
  * @module features/projects/api
  */
 

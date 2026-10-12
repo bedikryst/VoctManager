@@ -10,7 +10,6 @@
  * player has no choral family, and before `resolveAutoSeat` decided them
  * first, they fell through to the TUTTI fallback: the fill would have written
  * a sung part for the organist on every a cappella motet that declares one.
- * @architecture Enterprise SaaS 2026
  * @module features/projects/lib/autoCast.test
  */
 

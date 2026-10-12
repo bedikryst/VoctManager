@@ -12,7 +12,6 @@
  *  belong to `backend/copydesk/dtos.py` rather than to either corpus. A second copy of these would
  *  drift the expensive way: an extractor that goes on emitting rows the ingest run rejects three
  *  thousand rows into a batch.
- * @architecture Astro islands 2026
  * @module copydesk/segment
  */
 

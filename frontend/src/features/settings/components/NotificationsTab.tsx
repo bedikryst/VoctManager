@@ -7,7 +7,6 @@
  * Turning a recommended channel off says what it costs instead of blocking it.
  * "Co dostanę?" beside the description opens examples of what these settings
  * actually deliver, composed by the server.
- * @architecture Enterprise SaaS 2026
  * @module settings/NotificationsTab
  */
 import React, { useState } from "react";

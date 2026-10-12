@@ -16,7 +16,6 @@
  * compute from its width — the score stand and the PDF viewer do both, which is
  * why a panel opening over them is wrong rather than merely untidy.
  * @module shared/lib/dom
- * @architecture Enterprise SaaS 2026
  */
 
 import { useEffect } from "react";

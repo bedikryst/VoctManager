@@ -3,7 +3,6 @@
  * @description Eight Benedictine canonical hours of the day, mapped to three-hour slices.
  * Used by the footer signal clock to label the current liturgical hour in Latin + Polish,
  * and by `scripts/landing.ts` to decide which of the footer's two palettes the page ends on.
- * @architecture Enterprise SaaS 2026
  * @module features/landing/lib/horaeCanonicae
  */
 

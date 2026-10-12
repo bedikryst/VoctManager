@@ -1,7 +1,6 @@
 /**
  * @file Divider.tsx
  * @description Fluid separation kinematics for semantic boundaries.
- * @architecture Enterprise SaaS 2026
  */
 
 import React from "react";

@@ -6,7 +6,6 @@
  * server will store; the server computes the stored one.
  * A proposal (the "from the cast" helper) opens here pre-filled and says where
  * its figures came from: nothing is written until the manager saves.
- * @architecture Enterprise SaaS 2026
  * @module features/finance/budget/components/LineSheet
  */
 

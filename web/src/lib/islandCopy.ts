@@ -14,7 +14,6 @@
  *  A link inside such a fragment needs two more things, for reasons the vault stated first:
  *  its target has to be this locale's URL, and following it must not cost the reader what they had
  *  typed into the form standing beside it.
- * @architecture Astro islands 2026
  * @module lib/islandCopy
  */
 

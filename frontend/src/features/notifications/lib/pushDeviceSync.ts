@@ -10,7 +10,6 @@
  * session repairs the row (the endpoint is an update_or_create) instead of
  * waiting for the member to guess that toggling push off and on again is the
  * cure.
- * @architecture Enterprise SaaS 2026
  * @module notifications/lib/pushDeviceSync
  */
 import { registerPushDevice } from "../api/devices";

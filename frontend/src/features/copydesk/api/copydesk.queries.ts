@@ -2,7 +2,6 @@
  * @file copydesk.queries.ts
  * @description Cache keys, reads and the desk's three writes — the autosave, the
  * withdrawal, and the digest an editor raises when they have finished.
- * @architecture Enterprise SaaS 2026
  * @module features/copydesk/api/copydesk.queries
  */
 

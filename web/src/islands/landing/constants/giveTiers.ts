@@ -3,7 +3,6 @@
  * @description Donation tier configuration per currency, and the bounds the form validates
  *  against. The sentence describing which methods each currency supports is COPY and lives in
  *  `src/content/pages/skarbiec.yaml` — it is a claim a reader reads, not a constant.
- * @architecture Astro islands 2026
  * @module islands/landing/constants/giveTiers
  */
 

@@ -10,7 +10,6 @@
  *  inline markup, build-filled `{placeholder}` slots, one word shared by six concerts, French
  *  guillemets, a year range, an untranslated row printing its Polish, and several fields composed
  *  into one line.
- * @architecture Astro islands 2026
  * @module copydesk/match.test
  */
 

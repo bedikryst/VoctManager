@@ -5,7 +5,6 @@
              between cells, a decimal comma without digit grouping, dd.mm.yyyy
              dates, a hand-typed cell that cannot run as a formula, and an
              identifier Excel does not turn into a number or a date.
-@architecture Enterprise SaaS 2026
 @module finance/infrastructure/csv_format
 """
 import csv

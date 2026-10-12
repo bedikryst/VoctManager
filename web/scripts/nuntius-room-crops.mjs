@@ -25,7 +25,6 @@
  *  The frame and its cuts live under `src/assets/photos/`, which is gitignored: photographs are
  *  collaborator-owned and travel to the host out of band. This script is the record of HOW the
  *  cuts were made, so they can be remade wherever the frame is.
- * @architecture Astro islands 2026
  * @module scripts/nuntius-room-crops
  */
 import path from "node:path";

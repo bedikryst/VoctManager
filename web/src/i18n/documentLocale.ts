@@ -16,7 +16,6 @@
  *
  *  Falls back to Polish for the same reason `SiteFooter`'s `lang` prop does — an un-migrated or
  *  attribute-less document renders exactly as it did before.
- * @architecture Astro islands 2026
  * @module i18n/documentLocale
  */
 

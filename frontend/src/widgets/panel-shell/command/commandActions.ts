@@ -5,7 +5,6 @@
  * where they exist, e.g. /panel/projects/new; otherwise the operational
  * surface). RBAC-scoped so a chorister never sees a manager-only action.
  * @module widgets/panel-shell/command
- * @architecture Enterprise SaaS 2026
  */
 
 import {

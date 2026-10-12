@@ -18,7 +18,6 @@
  * host — a read that never answered must not pass for a project with no
  * programme. The register is not part of that gate: the rows do not wait for a
  * strip that reads it.
- * @architecture Enterprise SaaS 2026
  * @module features/rehearsals/components/plan/usePlanEditorData
  */
 

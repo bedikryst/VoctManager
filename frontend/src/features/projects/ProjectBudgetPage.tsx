@@ -4,7 +4,6 @@
  * sub-navigation above whichever of its sub-routes is open (Przegląd,
  * Kosztorys, Honoraria, Wydatki, Finansowanie). The hub's own context — the
  * project and the unsaved-changes guard — is handed through to them unchanged.
- * @architecture Enterprise SaaS 2026
  * @module features/projects/ProjectBudgetPage
  */
 

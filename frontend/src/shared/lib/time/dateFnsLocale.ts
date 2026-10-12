@@ -4,7 +4,6 @@
  * relative-date helpers (`formatDistanceToNow`, …) render in the user's language
  * instead of always defaulting to English. Falls back to Polish — the app's
  * primary locale — for anything unrecognised.
- * @architecture Enterprise SaaS 2026
  * @module shared/lib/time
  */
 

@@ -7,7 +7,6 @@
  * stated where none was made.
  * The same figure in the read view and the editor, so a save changes nothing
  * about how it reads.
- * @architecture Enterprise SaaS 2026
  * @module features/rehearsals/components/plan/PlanBudget
  */
 

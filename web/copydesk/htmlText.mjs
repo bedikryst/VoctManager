@@ -11,7 +11,6 @@
  *  matcher needs. Implied end tags change nothing in that order. Which elements hide their text
  *  and which break a line come from the matcher, so the live walk and this one draw both lines in
  *  the same place.
- * @architecture Astro islands 2026
  * @module copydesk/htmlText
  */
 

@@ -8,7 +8,6 @@
              inbox and the 30s frontend polling model; a CONVERSATION is windowed
              (see selectors.paginate_messages), because that one is polled every 10s
              and its history only grows.
-@architecture Enterprise SaaS 2026
 @module messaging/views
 """
 import logging

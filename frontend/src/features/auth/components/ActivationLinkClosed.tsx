@@ -9,7 +9,6 @@
  * member did nothing wrong — the medallion is the warm tone, and the way home
  * is the shell's own back link rather than a second gold slab competing with the
  * one action that actually resolves this.
- * @architecture Enterprise SaaS 2026
  * @module features/auth/components/ActivationLinkClosed
  */
 

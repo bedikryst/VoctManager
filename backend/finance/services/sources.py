@@ -8,7 +8,6 @@
              administration, the amount it awarded. Also the list of every cost
              charged to one source, which is what its settlement reports. Read
              only; the writes are `services/funding.py`.
-@architecture Enterprise SaaS 2026
 @module finance/services/sources
 """
 from collections.abc import Sequence

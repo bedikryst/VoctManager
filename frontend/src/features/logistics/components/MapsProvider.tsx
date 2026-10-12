@@ -20,7 +20,6 @@
  * Consumers must wrap AROUND their own `useMap` / `useMapsLibrary` calls, i.e.
  * a component that hooks the SDK exports a thin wrapper over its own body — a
  * provider rendered inside that body would sit below the hooks that need it.
- * @architecture Enterprise SaaS 2026
  * @module features/logistics/components/MapsProvider
  */
 

@@ -6,7 +6,6 @@
     the assembler's page-range trimming + placeholder behaviour. WeasyPrint's native
     renderer is absent on host CI, so the one assembly test stubs ``_render_pdf`` and
     binds real (blank) pypdf editions — every other test is pure ORM/domain logic.
-@architecture Enterprise SaaS 2026
 @module roster/test_score_package_cockpit
 """
 

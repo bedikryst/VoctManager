@@ -5,7 +5,6 @@
  * printed sheet cannot disagree about who comes before whom.
  * The conductor's arrangement of a section decides it; everything under that is
  * a tie-breaker for sections nobody has arranged yet.
- * @architecture Enterprise SaaS 2026
  * @module features/projects/lib/castOrder
  */
 

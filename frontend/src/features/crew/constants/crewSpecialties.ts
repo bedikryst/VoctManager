@@ -5,7 +5,6 @@
  * downstream surface (cards, badges, filters, balance bar) speaks the same
  * dialect. The accent scale has no crimson, so a trade cannot claim the alarm
  * colour — "Wizualizacje" wore it, on every projection specialist in the base.
- * @architecture Enterprise SaaS 2026
  * @module features/crew/constants/crewSpecialties
  */
 

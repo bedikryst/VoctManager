@@ -5,7 +5,6 @@
  * canonical `projectKeys.projects.all` cache, so it reuses whatever the dashboard /
  * projects tab already loaded. Deliberately NOT `useProjects` (that one is a
  * `useSuspenseQuery` and would suspend the modal / conversation pane on a cold cache).
- * @architecture Enterprise SaaS 2026
  * @module features/messages/api
  */
 

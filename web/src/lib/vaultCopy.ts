@@ -29,7 +29,6 @@
  *
  *  BUILD-TIME ONLY, like the two modules it stands on. `components/VaultMount.astro` is its one
  *  caller and hands the result to the island as a prop.
- * @architecture Astro islands 2026
  * @module lib/vaultCopy
  */
 

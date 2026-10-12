@@ -9,7 +9,6 @@
  * the settled state until a full reload. The glows are held static (the old
  * infinite "breath" was an imperceptible animation that kept the compositor
  * re-blending huge layers every frame). A quiet stage for the content.
- * @architecture Enterprise SaaS 2026
  * @module shared/ui/kinematics/EtherealBackground
  */
 

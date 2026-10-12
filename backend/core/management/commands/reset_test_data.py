@@ -6,7 +6,6 @@
     the SQL level on purpose — the ORM's `.delete()` on a soft-delete model only
     flips `is_deleted`, which leaves every row in place while looking like a
     successful wipe.
-@architecture Enterprise SaaS 2026
 @module core/management/commands/reset_test_data
 """
 

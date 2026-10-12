@@ -26,7 +26,6 @@
  *
  *  PURE BY CONTRACT. Imported by Astro pages AND by `scripts/press-pack.mjs` under plain Node,
  *  so it stays free of `?raw`, `astro:*` and anything else only a bundler resolves.
- * @architecture Astro islands 2026
  * @module data/foundation
  */
 

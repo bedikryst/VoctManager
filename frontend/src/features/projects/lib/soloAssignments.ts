@@ -5,7 +5,6 @@
  * board saves choral seats only, the solo editor saves named positions only,
  * and neither payload can carry the other's rows — which is what lets the two
  * editors share one screen without one save erasing the other.
- * @architecture Enterprise SaaS 2026
  * @module features/projects/lib/soloAssignments
  */
 

@@ -8,7 +8,6 @@
  * The category line resolves through the shared dictionary. It used to print
  * `location.category` verbatim, so half the panel showed a reader the string
  * `CONCERT_HALL`, uppercase and tracked out as though it were a label.
- * @architecture Enterprise SaaS 2026
  * @module features/logistics/components/LocationPreview
  */
 

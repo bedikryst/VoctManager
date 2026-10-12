@@ -26,7 +26,6 @@
  *  BUILD-TIME ONLY. The two files are inlined by Vite as raw text and parsed once per build; the
  *  site is static, so no reader ever downloads them. Do not import this from a client island — it
  *  would ship both locales' prose into the bundle.
- * @architecture Astro islands 2026
  * @module lib/copyOverlay
  */
 import YAML from "yaml";

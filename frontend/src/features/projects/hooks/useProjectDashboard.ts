@@ -4,7 +4,6 @@
  * Filters + sorts the hydrated projects and owns the list-level delete flow.
  * Deep editing lives on dedicated `/panel/projects/:id/*` routes, so this hook
  * carries no slide-over panel state.
- * @architecture Enterprise SaaS 2026
  * @module features/projects/hooks/useProjectDashboard
  */
 

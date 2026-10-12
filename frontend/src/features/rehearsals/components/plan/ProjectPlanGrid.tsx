@@ -16,7 +16,6 @@
  * Layout follows the attendance register: a frozen name rail, the dates
  * scrolling sideways under it on a phone, the programme's own figure frozen on
  * the right once the project has a verdict to count.
- * @architecture Enterprise SaaS 2026
  * @module features/rehearsals/components/plan/ProjectPlanGrid
  */
 

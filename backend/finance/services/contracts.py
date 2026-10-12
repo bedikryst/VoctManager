@@ -7,7 +7,6 @@
              from the contract row by the documents layer, never from the item,
              so a document always prints its number and the frozen amount. The
              first recorded signature freezes the whole document as printed.
-@architecture Enterprise SaaS 2026
 @module finance/services/contracts
 """
 from decimal import Decimal

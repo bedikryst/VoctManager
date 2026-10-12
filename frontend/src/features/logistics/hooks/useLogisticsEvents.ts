@@ -8,7 +8,6 @@
  *
  * Derives: upcoming event feed, per-venue activity (for the dossier), a live
  * timezone roster (world-clock band) and headline schedule metrics.
- * @architecture Enterprise SaaS 2026
  * @module features/logistics/hooks/useLogisticsEvents
  */
 

@@ -8,7 +8,6 @@
  *  (bubbling, registered earlier in <head>), so a bubbling listener here would lose the race and
  *  let the router navigate to /?donate first. Capturing runs before any bubbling document
  *  listener, so our preventDefault lands before the router sees the event.
- * @architecture Astro islands 2026
  * @module scripts/vault-triggers
  */
 

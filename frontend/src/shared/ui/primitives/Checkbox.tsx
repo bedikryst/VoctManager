@@ -8,7 +8,6 @@
  * Use this anywhere bulk-select or boolean form fields are needed in the
  * panel UI. Native checkboxes render OS-default white squares that break
  * the design system.
- * @architecture Enterprise SaaS 2026
  * @module shared/ui/primitives/Checkbox
  */
 

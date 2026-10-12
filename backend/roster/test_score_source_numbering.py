@@ -5,7 +5,6 @@
     placement keeps the book's own folio strip free of source content. Both are
     pure geometry over hand-built PDFs — no DB, no WeasyPrint — so they run on a
     host without the native renderer the full assembler needs.
-@architecture Enterprise SaaS 2026
 @module roster/test_score_source_numbering
 """
 

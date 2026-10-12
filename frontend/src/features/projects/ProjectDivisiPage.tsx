@@ -2,7 +2,6 @@
  * @file ProjectDivisiPage.tsx
  * @description Route wrapper for the divisi / micro-casting work area (/divisi).
  * Mounts the existing MicroCastingTab with the project resolved by the hub layout.
- * @architecture Enterprise SaaS 2026
  * @module features/projects/ProjectDivisiPage
  */
 

@@ -3,7 +3,6 @@
  * @description Turns the flat segment payload into what the desk reads: one
  * entry per FIELD of the page, in the site's own reading order, carrying its
  * languages side by side.
- * @architecture Enterprise SaaS 2026
  * @module features/copydesk/lib/fields
  */
 

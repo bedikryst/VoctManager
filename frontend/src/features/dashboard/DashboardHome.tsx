@@ -6,7 +6,6 @@
  * `PageTransition`, which under the ink law is the single ramp this surface is
  * allowed. A fade of its own here would sit directly above that one and
  * multiply with it.
- * @architecture Enterprise SaaS 2026
  * @module features/dashboard/DashboardHome
  */
 

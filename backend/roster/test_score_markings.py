@@ -7,7 +7,6 @@
     filled band), and that drawing on a score ages the book that carries the
     drawing — and only that book. WeasyPrint's native renderer is absent on host
     CI, so both render paths are stubbed and asserted on the markup they produce.
-@architecture Enterprise SaaS 2026
 @module roster/test_score_markings
 """
 

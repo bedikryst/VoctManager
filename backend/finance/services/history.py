@@ -5,7 +5,6 @@
              The log stores a bare subject id so it outlives every row; the
              names are looked up when the page is read, soft-deleted rows
              included, so a removed expense still reads as its vendor.
-@architecture Enterprise SaaS 2026
 @module finance/services/history
 """
 from dataclasses import dataclass

@@ -17,7 +17,6 @@
  * viewport (iPad landscape) can open the rail as an overlay but cannot benefit
  * from it reflowing a layout no cursor will hover back out of.
  * @module widgets/panel-shell/notes
- * @architecture Enterprise SaaS 2026
  */
 
 import React, { useEffect } from "react";

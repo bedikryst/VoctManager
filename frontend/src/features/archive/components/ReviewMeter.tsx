@@ -4,7 +4,6 @@
  * record a human has already confirmed. Reads the rollup from
  * `pieceReviewBreakdown`, so it counts exactly the fields that carry a verify
  * control and never a set the pipeline never populated.
- * @architecture Enterprise SaaS 2026
  * @module features/archive/components/ReviewMeter
  */
 

@@ -15,7 +15,6 @@
  * its mirror have to be the same shape or the box is the wrong height — a pair
  * that only agrees by two call sites remembering to pass the same string is a
  * pair that will one day not.
- * @architecture Enterprise SaaS 2026
  * @module features/copydesk/components/GrowingTextarea
  */
 

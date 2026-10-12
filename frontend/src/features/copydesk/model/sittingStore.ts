@@ -14,7 +14,6 @@
  * not a record of anything. Every proposal is already on the server the moment
  * it is typed, the digest goes out on the clock regardless, and reloading the
  * page loses nothing but the offer of an early one.
- * @architecture Enterprise SaaS 2026
  * @module features/copydesk/model/sittingStore
  */
 

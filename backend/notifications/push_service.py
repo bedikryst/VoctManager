@@ -14,7 +14,6 @@
              a browser. A native client would arrive with its own vendor SDK and
              its own subprocessor entry — neither of which should exist here
              before that client does.
-@architecture Enterprise SaaS 2026
 @module notifications/push_service
 """
 from __future__ import annotations

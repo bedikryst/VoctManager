@@ -10,7 +10,6 @@
  * other person and the alignment already says who spoke, so both were the same
  * fact stated a third time — and on a phone they cost 36px of the reading width
  * that was the complaint.
- * @architecture Enterprise SaaS 2026
  * @module features/messages/components
  */
 

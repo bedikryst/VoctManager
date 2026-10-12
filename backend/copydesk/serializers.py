@@ -5,7 +5,6 @@
              unique constraints, and DRF builds unique validators from those that
              read the condition's fields straight out of a PATCH payload and
              raise KeyError when a partial update omits them.
-@architecture Enterprise SaaS 2026
 @module copydesk/serializers
 """
 from rest_framework import serializers

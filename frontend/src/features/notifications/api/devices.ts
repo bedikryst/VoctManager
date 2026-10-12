@@ -2,7 +2,6 @@
  * @file devices.ts
  * @description React Query hooks for Web Push devices: registration, deregistration,
  * one-shot test push dispatch, and the account's active-device count.
- * @architecture Enterprise SaaS 2026
  * @module notifications/api/devices
  */
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";

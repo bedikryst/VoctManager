@@ -17,7 +17,6 @@
  *
  *  THE RESULT IS A LIST OF PARTS, not one buffer. `new Blob(parts)` takes them as they are, so a
  *  forty-megabyte selection is never copied into a second forty-megabyte array to be handed over.
- * @architecture Astro islands 2026
  * @module lib/zipStore
  */
 

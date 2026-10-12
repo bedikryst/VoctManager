@@ -2,7 +2,6 @@
 @file dtos.py
 @description Pydantic V2 boundary contracts for the messaging domain. Guarantee
              structural integrity before data reaches the service layer.
-@architecture Enterprise SaaS 2026
 @module messaging/dtos
 """
 from uuid import UUID

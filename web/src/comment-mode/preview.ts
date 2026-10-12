@@ -32,7 +32,6 @@
  *  children are the nodes the preview last put there. Once a page script has replaced them (the
  *  menu's canonical hour, the litany's readout), the preview is forgotten and nothing is written
  *  back: a restore never lays stale text over the script's, and a tap there is read afresh.
- * @architecture Astro islands 2026
  * @module comment-mode/preview
  */
 

@@ -1,7 +1,6 @@
 """
 @file admin.py
 @description Django admin registration for messaging entities (support / triage).
-@architecture Enterprise SaaS 2026
 @module messaging/admin
 """
 from django.contrib import admin

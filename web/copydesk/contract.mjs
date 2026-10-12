@@ -31,7 +31,6 @@
  *  READS a Polish value, not where its translation goes: `map` is one of the `*Gloss` locale maps
  *  stage A introduced, whose `en`/`fr` slots are now empty by rule and whose Polish sits at `.pl`.
  *  Stage C3 emptied the last exception, the `about.en`/`about.fr` block, into the overlays.
- * @architecture Astro islands 2026
  * @module copydesk/contract
  */
 

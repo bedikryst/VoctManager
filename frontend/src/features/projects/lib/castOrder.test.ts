@@ -5,7 +5,6 @@
  * `backend/roster/cast_order.py` for the songbook, the call sheet and the DTP
  * export — so these cases mirror `backend/roster/test_cast_order.py`, and this
  * file fails the moment the two sides start reading the choir differently.
- * @architecture Enterprise SaaS 2026
  * @module features/projects/lib/castOrder.test
  */
 

@@ -3,7 +3,6 @@
  * @description Locks Tab focus inside the referenced element while `active` is true.
  * Returns focus to the previously focused element on deactivation. Honors Escape via
  * the optional onEscape callback.
- * @architecture Enterprise SaaS 2026
  * @module features/landing/hooks/useFocusTrap
  */
 

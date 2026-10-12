@@ -28,7 +28,6 @@
  *  at the guard. The page would read "checking" forever, in development only. There is nothing
  *  to cancel either: the island lives as long as the document, and React no longer warns about
  *  a state update that arrives after unmount.
- * @architecture Astro islands 2026
  * @module islands/landing/NuntiusIsland
  */
 

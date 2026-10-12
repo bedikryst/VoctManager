@@ -5,7 +5,6 @@
  * SOLO seat outright, so one stray row would fail the whole save), and the solo
  * payload never carries a choral seat. Coverage is counted per position, so one
  * singer on three passages fills three and an open position stays a gap.
- * @architecture Enterprise SaaS 2026
  * @module features/projects/lib/soloAssignments.test
  */
 

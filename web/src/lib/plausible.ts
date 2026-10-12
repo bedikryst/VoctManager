@@ -36,7 +36,6 @@
  *
  *  Names are Polish with `+` for space (the form the `plausible-event-name=` class needs), and they
  *  are stable identifiers, not copy — renaming one orphans its history in the dashboard.
- * @architecture Astro assets 2026
  * @module lib/plausible
  */
 

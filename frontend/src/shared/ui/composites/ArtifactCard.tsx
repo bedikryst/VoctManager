@@ -3,7 +3,6 @@
  * @description The cinematic centerpiece composite. Domain-agnostic.
  * Features semantic overlay links, group-hover kinematics, and precise artifact stratums.
  * Refactored to eliminate strict typograhic layout violations.
- * @architecture Enterprise SaaS 2026
  */
 
 import React from "react";

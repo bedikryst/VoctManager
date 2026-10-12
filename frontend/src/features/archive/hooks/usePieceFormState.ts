@@ -9,7 +9,6 @@
  *   - The Zod-validated RHF form (text/numeric fields)
  *   - Composer picker state (existing FK selection OR inline-create draft)
  *   - Divisi requirements list (voice_requirements)
- * @architecture Enterprise SaaS 2026
  * @module features/archive/hooks/usePieceFormState
  */
 

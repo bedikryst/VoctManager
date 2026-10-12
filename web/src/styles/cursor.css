@@ -11,7 +11,6 @@
  *    `.is-frame` / `.is-frame-prev` / `.is-frame-next` (photographs), `.is-download`. Each one
  *    owns its whole glyph, and each one that sits above `.is-pointer` also drops the magnetic
  *    snap — precision over a scrubber, a control strip or a picture beats settling on a centre.
- * @architecture Astro islands 2026
  * @module styles/cursor
  */
 .has-custom-cursor,

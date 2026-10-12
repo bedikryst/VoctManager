@@ -19,7 +19,6 @@
  *  Carries no typography: write the prose plainly and let the build pass (lib/typo.ts) pin Polish
  *  orphans and French punctuation spacing in the rendered HTML. In particular, type an ORDINARY
  *  space before a French colon.
- * @architecture Astro islands 2026
  * @module i18n/content/koncert
  */
 

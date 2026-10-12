@@ -8,7 +8,6 @@
  * It fills whatever chassis it is handed and knows about neither: a `GlassCard`
  * pane on a desktop, `ConversationSurface` on a phone. Both give it a bounded
  * height, so the stream is the only band that scrolls.
- * @architecture Enterprise SaaS 2026
  * @module features/messages/components
  */
 

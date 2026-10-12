@@ -8,7 +8,6 @@
  *  `vault/transferFields.tsx` — two files, each certain it was the only one, each holding its own
  *  copy of the account number. Neither was lying; both were written before the facts had a home.
  *  They do now, because the press pack needs them under plain Node as well.
- * @architecture Enterprise SaaS 2026
  * @module features/landing/constants/vaultConfig
  */
 

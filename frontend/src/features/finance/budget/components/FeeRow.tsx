@@ -10,7 +10,6 @@
  * silent until the concert has passed, and only then turn into gold work.
  * The currency sits outside the field in every state, which is the only way
  * the amounts line up when some rows are fields and some are text.
- * @architecture Enterprise SaaS 2026
  * @module features/finance/budget/components/FeeRow
  */
 

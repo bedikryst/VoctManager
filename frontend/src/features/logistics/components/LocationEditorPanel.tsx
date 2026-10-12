@@ -4,7 +4,6 @@
  * Built on Ethereal primitives (Input, Select, Textarea, Heading, Eyebrow), the
  * shared EditorActionBar, and a portal-managed motion shell. Re-uses the proven
  * react-hook-form + Zod pipeline exposed by `useLocationForm`.
- * @architecture Enterprise SaaS 2026
  * @module features/logistics/components/LocationEditorPanel
  */
 

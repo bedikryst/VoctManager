@@ -25,7 +25,6 @@
  * argue for it on its own terms rather than reading this ceiling as an
  * oversight.
  *
- * @architecture Enterprise SaaS 2026
  * @module build/vitest
  */
 import { defineConfig } from "vitest/config";

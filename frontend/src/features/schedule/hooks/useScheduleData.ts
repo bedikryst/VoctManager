@@ -10,7 +10,6 @@
  * reader from the seat: a manager has the first and not the second, and gets
  * the same evenings with every seat-bound affordance — RSVP, absence range,
  * the "that line is mine" highlight — absent rather than broken.
- * @architecture Enterprise SaaS 2026
  */
 
 import { useCallback, useEffect, useMemo, useState } from "react";

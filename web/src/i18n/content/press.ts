@@ -26,7 +26,6 @@
  *  THIS FILE IS IMPORTED BY NODE, not only by Vite: the desk's extractor and the press-pack
  *  generator read it straight from here. Keep it free of `?raw`, `astro:assets` and anything a
  *  bundler must resolve, and keep every cross-module import `import type`.
- * @architecture Astro islands 2026
  * @module i18n/content/press
  */
 

@@ -7,7 +7,6 @@
  *
  * State + submit logic stays in the parent page — this component only
  * renders inputs against the [usePieceFormState] state object.
- * @architecture Enterprise SaaS 2026
  * @module features/archive/components/PieceFormBody
  */
 

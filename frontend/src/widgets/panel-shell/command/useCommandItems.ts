@@ -13,7 +13,6 @@
  * cast in and lands on their practice page for that piece *in that project*.
  * Same section, same question ("where is that piece"), two honest answers.
  * @module widgets/panel-shell/command
- * @architecture Enterprise SaaS 2026
  */
 
 import { useMemo, useState } from "react";

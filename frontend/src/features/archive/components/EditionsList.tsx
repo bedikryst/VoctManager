@@ -9,7 +9,6 @@
  * action tray, which blocks it while the conductor has unsaved corrections. A
  * second approve button on this row skipped that guard and published a record
  * with its fixes still in the form.
- * @architecture Enterprise SaaS 2026
  * @module features/archive/components/EditionsList
  */
 

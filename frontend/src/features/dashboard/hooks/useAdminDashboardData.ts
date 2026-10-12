@@ -2,7 +2,6 @@
  * @file useAdminDashboardData.ts
  * @description Encapsulates data fetching, telemetric aggregations, and scheduling logic.
  * Implements strict Adapter Pattern to map raw API domain to UI DTOs.
- * @architecture Enterprise SaaS 2026
  * @module panel/dashboard/hooks/useAdminDashboardData
  */
 

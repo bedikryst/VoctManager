@@ -6,7 +6,6 @@
  * same row language and search placement — it used to be a form column beside
  * a list, a third composition for a job the hub already does twice.
  * Every write is immediate; the shared `AutosaveStatus` pill confirms it.
- * @architecture Enterprise SaaS 2026
  * @module features/projects/editors/tabs/CrewTab
  */
 

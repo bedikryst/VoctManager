@@ -7,7 +7,6 @@
  * channel repeating the same name and avatar down twelve rows states the fact
  * eleven times too often, and the gutter alone is enough to hold the block
  * together. Callers pass a single day group, so a day divider always breaks a run.
- * @architecture Enterprise SaaS 2026
  * @module features/messages/lib/messageRuns
  */
 

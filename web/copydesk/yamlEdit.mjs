@@ -32,7 +32,6 @@
  *
  *  The file is CRLF on a Windows checkout, so the line ending is read from the text and restored on
  *  write — a script that assumes `\n` here matches nothing and reports a clean run over no changes.
- * @architecture Astro islands 2026
  * @module copydesk/yamlEdit
  */
 

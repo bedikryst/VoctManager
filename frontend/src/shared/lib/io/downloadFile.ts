@@ -3,7 +3,6 @@
  * @description Utility function for securely downloading binary files (PDF/ZIP/Audio).
  * Fetches the blob using the authorized JWT API instance and triggers
  * the browser's native save dialog.
- * @architecture Enterprise 2026 Standards
  * @module utils/downloadFile
  */
 

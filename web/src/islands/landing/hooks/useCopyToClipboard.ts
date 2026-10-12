@@ -1,7 +1,6 @@
 /**
  * @file useCopyToClipboard.ts
  * @description Clipboard copy with a transient "copied" state for visual feedback.
- * @architecture Enterprise SaaS 2026
  * @module features/landing/hooks/useCopyToClipboard
  */
 

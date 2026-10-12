@@ -7,7 +7,6 @@
  * the source's own page, where every project it funds reads them.
  * What the project expects is part of the plan and changes only while the plan
  * does; what arrived is a fact and is recorded whenever it arrives.
- * @architecture Enterprise SaaS 2026
  * @module features/finance/budget/components/FundingSheet
  */
 

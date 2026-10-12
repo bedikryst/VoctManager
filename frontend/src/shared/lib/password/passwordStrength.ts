@@ -4,7 +4,6 @@
  * password-strength heuristic shared by the auth flow (activation) and the
  * in-panel security settings. Pure scoring + level metadata only — the
  * presentation lives in `PasswordStrengthMeter`.
- * @architecture Enterprise SaaS 2026
  * @module shared/lib/password/passwordStrength
  */
 

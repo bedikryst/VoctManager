@@ -5,7 +5,6 @@
  * its own declarative write, so a board save and a solo save never carry each
  * other's rows. Legacy SOLO rows are read-only here; the one action on them is
  * conversion into a named position, which the server performs atomically.
- * @architecture Enterprise SaaS 2026
  * @module features/projects/editors/hooks/useSoloAssignments
  */
 

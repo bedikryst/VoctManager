@@ -19,7 +19,6 @@
  * answered or who declined — the list the conductor chases and re-invites
  * from — and each section header and the balance rail give the confirmed
  * figure with the unanswered invitations after it as "+N".
- * @architecture Enterprise SaaS 2026
  * @module features/projects/editors/tabs/CastTab
  */
 

@@ -10,7 +10,6 @@
  * NFD for free; `ł` does not decompose at all, so it needs the explicit map and
  * a plain `.normalize("NFD")` implementation would pass every other assertion
  * here while still failing Łukaszewski.
- * @architecture Enterprise SaaS 2026
  * @module shared/lib/text.test
  */
 

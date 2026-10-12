@@ -7,7 +7,6 @@
  * opens with a few sentences the manager writes here, and may single out one
  * source to show what that patron's money covered. Until the budget is closed
  * the paper is marked as a draft, and the card says so before the download.
- * @architecture Enterprise SaaS 2026
  * @module features/finance/budget/components/ReportsCard
  */
 

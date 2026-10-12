@@ -22,7 +22,6 @@
  *  the catalogue's datings ("ok. 1727", "pocz. XVI w.", "aranż. współczesna"), and those print
  *  Polish in every locale. The fix is structural — the treatment `inscriptioRef` got in stage A —
  *  not a translation, because a dating is never copy on this site.
- * @architecture Astro islands 2026
  * @module i18n/content/repertuar
  */
 

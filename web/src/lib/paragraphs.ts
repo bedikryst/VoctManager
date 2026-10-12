@@ -9,7 +9,6 @@
  *  paragraphs instead — a shape the sanitizer keeps — and the page wraps each paragraph here.
  *
  *  PURE: no `?raw`, no `astro:*`, so plain Node can import it.
- * @architecture Astro islands 2026
  * @module lib/paragraphs
  */
 

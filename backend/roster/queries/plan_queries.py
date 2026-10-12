@@ -7,7 +7,6 @@
     by row by `roster.domain.rehearsal_plan` — the schedule dashboard and the
     single-rehearsal read both come through here so a card and its page can
     never state two different windows.
-@architecture Enterprise SaaS 2026
 @module roster/queries/plan_queries
 """
 

@@ -6,7 +6,6 @@
     of what happened. This module holds the one line between them, so the single
     rehearsal, the span of days and the preview that counts them all read the
     same rule.
-@architecture Enterprise SaaS 2026
 @module roster/domain/attendance_window
 """
 

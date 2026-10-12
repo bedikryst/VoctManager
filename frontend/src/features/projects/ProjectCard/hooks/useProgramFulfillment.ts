@@ -2,7 +2,6 @@
  * @file useProgramFulfillment.ts
  * @description The overview's reading of the programme: how far each piece is
  * from cast, who sings its named solos, and the running time.
- * @architecture Enterprise SaaS 2026
  * @module features/projects/ProjectCard/hooks/useProgramFulfillment
  */
 

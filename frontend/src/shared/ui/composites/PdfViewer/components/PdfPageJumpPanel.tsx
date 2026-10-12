@@ -7,7 +7,6 @@
  * every committed page is a render, and a sweep across forty pages on the way
  * to one would be forty renders nobody reads.
  * @module shared/ui/composites/PdfViewer
- * @architecture Enterprise SaaS 2026
  */
 
 import { useEffect, useRef, useState } from "react";

@@ -6,7 +6,6 @@
  * open across a long working session. Drives the shared `--sidebar-pad` CSS var
  * the shell reads, so the layout reflows with zero prop drilling.
  * @module widgets/panel-shell/hooks
- * @architecture Enterprise SaaS 2026
  */
 
 import { useCallback, useEffect, useState } from "react";

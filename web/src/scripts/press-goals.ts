@@ -15,7 +15,6 @@
  *
  *  DOCUMENT-DELEGATED and installed once per document, behind the guard `copy-fields.ts` uses,
  *  so a ClientRouter navigation back to /press finds it live.
- * @architecture Astro islands 2026
  * @module scripts/press-goals
  */
 import { GOALS, track } from "../lib/plausible";

@@ -7,7 +7,6 @@
  *  - Sets `--knot-intensity` (0..1) on every `.aether-knot` element @ ~30Hz when audio plays.
  *  - Toggles `body.audio-on` so the candle halo / portrait breathe CSS animations engage.
  *  - Auto-pauses on `visibilitychange` and rehydrates on return.
- * @architecture Enterprise SaaS 2026
  * @module features/landing/hooks/useChantAudio
  */
 

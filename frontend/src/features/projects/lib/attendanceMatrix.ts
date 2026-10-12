@@ -15,7 +15,6 @@
  * `features/rehearsals` (Centrum Obecności), and the second copy of it that
  * used to live in this tab is why one product called the same record
  * "Zwolniony" on one screen and "Usprawiedliwiony" on the next.
- * @architecture Enterprise SaaS 2026
  * @module features/projects/lib/attendanceMatrix
  */
 

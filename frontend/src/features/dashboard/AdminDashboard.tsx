@@ -4,7 +4,6 @@
  * operations cockpit (not a mobile-scaled grid). A commanding header, the most
  * time-sensitive alerts up top, then a focus row (next concert + ensemble
  * balance), an actionable production pipeline, and a dense module strip.
- * @architecture Enterprise SaaS 2026
  */
 
 import React from "react";

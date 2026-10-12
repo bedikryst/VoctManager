@@ -10,7 +10,6 @@
  *  §6r of the copy desk gives: five seasons is a closed table the calendar walks on its own, and a
  *  locale missing from one of them is a broken line in a footer that stands under EVERY page —
  *  not a paragraph waiting for review. `Record<Locale, …>` is what makes the compiler say so.
- * @architecture Astro islands 2026
  * @module lib/tempusLiturgicus
  */
 

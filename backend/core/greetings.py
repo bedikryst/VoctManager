@@ -5,7 +5,6 @@
     supported languages address people in the nominative, and a missing vocative
     always falls back to the plain first name rather than to nothing. Six copies
     of that logic had drifted across `core` and `notifications` before this.
-@architecture Enterprise SaaS 2026
 @module core/greetings
 """
 

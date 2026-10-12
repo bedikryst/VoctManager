@@ -13,7 +13,6 @@
  * Most surfaces read the server's `*_display`, which already applies this. Use
  * these helpers where the client composes a label itself — the divisi editor
  * and the casting board, which name lines the manager has not saved yet.
- * @architecture Enterprise SaaS 2026
  * @module shared/lib/voiceLabels
  */
 

@@ -6,7 +6,6 @@
  * The run sheet is held chronologically, but only ever re-sorted on an explicit
  * commit — the day is a list the user types into, and reordering it under an
  * active cursor is the one thing it must not do.
- * @architecture Enterprise SaaS 2026
  * @module features/projects/editors/hooks/useDetailsForm
  */
 

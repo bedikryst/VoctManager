@@ -8,7 +8,6 @@
  * rehearsal calls them. The two implementations have to answer identically —
  * the grid, the tallies and the roll call read this one, and the schedule and
  * the notifications read the other.
- * @architecture Enterprise SaaS 2026
  * @module features/rehearsals/lib/attendanceStats.test
  */
 

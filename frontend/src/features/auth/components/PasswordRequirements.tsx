@@ -6,7 +6,6 @@
  * anything is typed, so nobody has to guess what will be accepted and no static
  * prose above the field has to repeat it. Mirrors the rules the hooks enforce
  * on submit.
- * @architecture Enterprise SaaS 2026
  * @module features/auth/components/PasswordRequirements
  */
 

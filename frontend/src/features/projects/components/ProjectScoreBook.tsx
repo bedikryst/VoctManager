@@ -13,7 +13,6 @@
  * to see one set of marks, one of them uneditable, is a worse answer than one.
  * That switch belongs on the full document viewer, which is where a reader goes
  * for a copy to keep or to print.
- * @architecture Enterprise SaaS 2026
  * @module features/projects/components
  */
 

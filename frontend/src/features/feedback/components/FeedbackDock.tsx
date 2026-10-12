@@ -16,7 +16,6 @@
  * It stays BELOW the nav's own z-layer: a floating button that paints over
  * navigation is a trap, not an affordance, which also means every modal and sheet
  * simply covers it.
- * @architecture Enterprise SaaS 2026
  * @module features/feedback/components/FeedbackDock
  */
 

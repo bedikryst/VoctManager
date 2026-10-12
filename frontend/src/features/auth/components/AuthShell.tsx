@@ -6,7 +6,6 @@
  * page's card composition. Both auth screens share this so they read as one
  * cohesive vestibule before the panel. PageTransition is applied by the router,
  * so this shell deliberately does not re-wrap it.
- * @architecture Enterprise SaaS 2026
  * @module features/auth/components/AuthShell
  */
 

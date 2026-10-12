@@ -3,7 +3,6 @@
  * @description Pins the saved name of a download whose name has Polish
  * letters: without the RFC 5987 decode, "Łukasz Żółć" is saved as
  * `utf-8Umowa-…%C5%81ukasz….pdf`.
- * @architecture Enterprise SaaS 2026
  * @module features/finance/lib/contentDisposition.test
  */
 

@@ -3,7 +3,6 @@
  * @description React Query mutations a manager takes on a project's attendance
  * record outside the roll call: accepting a singer's reported absence from the
  * project's absence list.
- * @architecture Enterprise SaaS 2026
  * @module features/projects/api
  */
 

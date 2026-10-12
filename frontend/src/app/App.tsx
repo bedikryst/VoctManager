@@ -4,7 +4,6 @@
  * Dynamically resolves rendering trees for the secure panel and public auth routes.
  * Implements Persistent App Shell architecture for the Dashboard with local route
  * suspension and idle preloading for panel modules.
- * @architecture Enterprise 2026 Standards
  * @module core/App
  */
 

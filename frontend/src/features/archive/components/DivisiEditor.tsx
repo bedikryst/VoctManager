@@ -7,7 +7,6 @@
  *
  * Purely controlled — the parent owns the requirements list and the mutators
  * (from [usePieceFormState] or an equivalent), so this component only renders.
- * @architecture Enterprise SaaS 2026
  * @module features/archive/components/DivisiEditor
  */
 

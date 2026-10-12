@@ -4,7 +4,6 @@
  *  seven-century repertoire catalog as typed DATA (Zod-validated), not hard-coded markup.
  *  The team edits two YAML files (src/content/*.yaml); KoncertyPage renders from them.
  *  Image fields hold bare photo() names (no extension) resolved at build via src/assets.
- * @architecture Astro islands 2026
  * @module content.config
  */
 import { defineCollection } from "astro:content";

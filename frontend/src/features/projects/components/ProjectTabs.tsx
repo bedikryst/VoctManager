@@ -5,7 +5,6 @@
  * the ten tabs fit, so the strip scrolls sideways — and since it has no
  * scrollbar, it says so itself: the active tab is brought to the middle on
  * every route change, and an edge fades on each side that still hides tabs.
- * @architecture Enterprise SaaS 2026
  * @module features/projects/components/ProjectTabs
  */
 

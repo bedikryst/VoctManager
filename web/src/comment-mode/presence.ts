@@ -10,7 +10,6 @@
  *  one window event.
  *
  *  Tiny on purpose: the cursor island imports it on every page, for every visitor.
- * @architecture Astro islands 2026
  * @module comment-mode/presence
  */
 

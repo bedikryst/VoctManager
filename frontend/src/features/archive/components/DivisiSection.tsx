@@ -9,7 +9,6 @@
  * ambiguity and gets exactly the single editor it always had; the layered form
  * appears only where there is something to tell apart, and an edition left
  * empty simply inherits the piece-wide lines rather than declaring none.
- * @architecture Enterprise SaaS 2026
  * @module features/archive/components/DivisiSection
  */
 

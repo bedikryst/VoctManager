@@ -6,7 +6,6 @@
  * bar ("Unsaved changes → Save"), instant surfaces show this autosave pill
  * ("Saving…" → "Saved"). Failures are intentionally NOT shown here — they stay
  * in the dedicated red toast channel so a transient success never masks an error.
- * @architecture Enterprise SaaS 2026
  * @module shared/ui/composites/AutosaveStatus
  */
 

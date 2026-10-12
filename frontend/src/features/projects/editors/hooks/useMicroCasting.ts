@@ -9,7 +9,6 @@
  * can render a guard — including when only the piece's solo draft is dirty.
  * The board is choral only: legacy SOLO rows and declared SOLO counts stay off it,
  * and named solos live in `useSoloAssignments`, a separate draft and write.
- * @architecture Enterprise SaaS 2026
  * @module features/projects/editors/hooks/useMicroCasting
  */
 

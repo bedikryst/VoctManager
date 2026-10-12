@@ -9,7 +9,6 @@
  * It renders only while there is something to activate. A rail promising what
  * waits inside, standing next to a card that has just refused entry (or beside
  * one confirming the act is already done), is the screen arguing with itself.
- * @architecture Enterprise SaaS 2026
  * @module features/auth/components/ActivationNave
  */
 

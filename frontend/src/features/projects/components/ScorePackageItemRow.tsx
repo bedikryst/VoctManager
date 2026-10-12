@@ -6,7 +6,6 @@
  * the card that prints before it, then (rarely) the per-concert text overrides.
  * The row language is the Overview setlist's: gold ordinal, gaps in gold, a quiet
  * tick when there is nothing to do. Every override persists optimistically.
- * @architecture Enterprise SaaS 2026
  * @module features/projects/components/ScorePackageItemRow
  */
 

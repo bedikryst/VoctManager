@@ -13,7 +13,6 @@
  *  All three have to be printed. A run headed by one photographer's name over six frames of which
  *  two are theirs reads as a claim over the other four, and a colophon naming six hands with
  *  nothing said about the remaining photographs reads the same way one page up.
- * @architecture Astro assets 2026
  * @module lib/photoCredit
  */
 import type { Locale } from "../i18n/config";

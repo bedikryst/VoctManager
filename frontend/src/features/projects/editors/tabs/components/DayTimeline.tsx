@@ -13,7 +13,6 @@
  * A plan that reaches past concert day is a trip, and each of its days opens
  * under its date, the same days the printed sheet and the singer's card head.
  * An anchor off concert day therefore needs no date of its own.
- * @architecture Enterprise SaaS 2026
  * @module features/projects/editors/tabs/components/DayTimeline
  */
 

@@ -8,7 +8,6 @@
              nobody signs for the foundation, through
              `report_foundation_context`), the way fonts arrive through
              `_brand_font_context()`.
-@architecture Enterprise SaaS 2026
 @module finance/foundation
 """
 from dataclasses import dataclass

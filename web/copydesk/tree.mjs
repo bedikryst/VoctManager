@@ -11,7 +11,6 @@
  *
  *  This can only live on the client. The server has no checkout to inspect; what it can offer is
  *  traceability — the revision the payload claimed — and not enforcement.
- * @architecture Astro islands 2026
  * @module copydesk/tree
  */
 

@@ -11,7 +11,6 @@
  * A fact that is a day and not a moment — the date a payment left, the date on
  * a signed paper — takes `granularity="date"`: the same panel without the clock,
  * and a `yyyy-MM-dd` value, so no invented hour ever travels with it.
- * @architecture Enterprise SaaS 2026
  * @module shared/ui/composites/DateTimeField
  */
 

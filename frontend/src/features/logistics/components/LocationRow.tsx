@@ -7,7 +7,6 @@
  * of the atlas is quiet most of the time and forty em-dashes hide the two rows
  * that matter. Quiet inline edit stays always-visible (touch-safe), never
  * hover-gated.
- * @architecture Enterprise SaaS 2026
  * @module features/logistics/components/LocationRow
  */
 

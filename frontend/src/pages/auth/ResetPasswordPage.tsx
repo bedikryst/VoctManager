@@ -4,7 +4,6 @@
  * One route, two modes derived from the URL: without a signed link it asks for
  * an e-mail (enumeration-safe "we sent it if it exists"); with uid+token it
  * lets the member set a new password. Mirrors the login card aesthetic.
- * @architecture Enterprise SaaS 2026
  * @module pages/auth/ResetPasswordPage
  */
 

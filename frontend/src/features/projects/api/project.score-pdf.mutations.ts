@@ -2,7 +2,6 @@
  * @file project.score-pdf.mutations.ts
  * @description React Query mutations for the Project score PDF resource.
  * Manages upload and removal with full cache synchronisation.
- * @architecture Enterprise SaaS 2026
  * @module features/projects/api
  */
 

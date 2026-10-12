@@ -7,7 +7,6 @@
  * the cap on administration, the overrun a kosztorys line may carry, the
  * report's deadline, and the formula for describing accounting documents.
  * Every rule a source states becomes a warning on the projects it funds.
- * @architecture Enterprise SaaS 2026
  * @module features/finance/components/SourceSheet
  */
 

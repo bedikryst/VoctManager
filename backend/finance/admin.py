@@ -5,7 +5,6 @@
              services, which enforce the paid and contract locks and log the
              act; an admin edit would do neither. The database's check
              constraints hold either way.
-@architecture Enterprise SaaS 2026
 @module finance/admin
 """
 from typing import Any

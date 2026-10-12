@@ -5,7 +5,6 @@
  * with a dense command rail (venues / upcoming feed). All domain logic stays in
  * `useLocationsData` (filters, archive, selection) and `useLogisticsEvents`
  * (the client-side join of schedule → coordinates); this file only composes.
- * @architecture Enterprise SaaS 2026
  * @module features/logistics/components/LocationsManager
  */
 

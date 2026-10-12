@@ -2,7 +2,6 @@
  * @file queue.ts
  * @description The reviewer's reading of the payload: which fields are waiting,
  * what stands on each of them, and in what order a person meets them.
- * @architecture Enterprise SaaS 2026
  * @module features/copydesk/lib/queue
  */
 

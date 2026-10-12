@@ -8,7 +8,6 @@
  * finance workspace's payment across projects. Each sheet is mounted when it
  * opens, so it always starts from its defaults, and closes itself once the
  * server has answered with the new budget.
- * @architecture Enterprise SaaS 2026
  * @module features/finance/budget/components/ActSheets
  */
 

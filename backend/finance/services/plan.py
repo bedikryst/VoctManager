@@ -9,7 +9,6 @@
              budget changes not at all. A budget with no plan and no awarded
              grant closes straight from PLANNING. Also the patron report's opening
              sentences, which are words about the concert rather than money.
-@architecture Enterprise SaaS 2026
 @module finance/services/plan
 """
 from typing import Any

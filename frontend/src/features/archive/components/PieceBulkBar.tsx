@@ -5,7 +5,6 @@
  * (everything visible / only the pieces still without a divisi) and the one
  * bulk act the archive offers: writing a voice layout to the selection.
  * Portals to body and sits on `bottom-dock` so it clears the mobile nav.
- * @architecture Enterprise SaaS 2026
  * @module features/archive/components/PieceBulkBar
  */
 

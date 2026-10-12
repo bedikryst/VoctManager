@@ -16,7 +16,6 @@
  *  static reader can do honestly. This measures the ASSET. A host that spends the range itself is
  *  still a manual judgement — and the register is granted by ROLE, so a dark frame is a note about
  *  a photograph, never an instruction to move a component into another register.
- * @architecture Astro islands 2026
  * @module audit/assets
  */
 

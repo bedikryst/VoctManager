@@ -5,7 +5,6 @@
              still stand. No write logic, no notification side-effects — keeps
              the serializer layer free of any dependency on the
              service/notifications stack.
-@architecture Enterprise SaaS 2026
 @module messaging/selectors
 """
 from collections.abc import Mapping

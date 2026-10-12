@@ -7,7 +7,6 @@
  * conductor's announcement review sheet) resolves them here, so the same stored
  * payload never reads two different ways depending on which component happens to
  * display it — including the sheet where the conductor decides whether to send it.
- * @architecture Enterprise SaaS 2026
  * @module features/notifications/lib
  */
 

@@ -8,7 +8,6 @@
  * screen read as several products stacked together.
  * The header always lives INSIDE the card. A title floating above a bare
  * surface is the other half of that inconsistency and is not an option here.
- * @architecture Enterprise SaaS 2026
  * @module shared/ui/composites/SectionCard
  */
 

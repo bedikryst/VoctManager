@@ -13,7 +13,6 @@
     the render. No template may reach for a webfont CDN: a PDF that fetches its
     type at render time both leaks the request and prints differently the day
     the network blinks.
-@architecture Enterprise SaaS 2026
 @module roster/infrastructure/print_fonts
 """
 

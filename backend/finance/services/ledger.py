@@ -9,7 +9,6 @@
              and moving the costs' date when the concert moves. Every rule of
              spec §5.1 that the database cannot state is enforced here, and
              every change except the concert's date is logged.
-@architecture Enterprise SaaS 2026
 @module finance/services/ledger
 """
 from dataclasses import dataclass

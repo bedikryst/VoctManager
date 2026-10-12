@@ -14,7 +14,6 @@
  *
  * Upload zone stays in a drawer triggered by the header CTA. Fresh-archive
  * empty state hosts the drop zone inline as the dominant CTA.
- * @architecture Enterprise SaaS 2026
  * @module features/archive/ArchiveManagement
  */
 

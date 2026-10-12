@@ -21,7 +21,6 @@
  * opinion about wording, it is the decision to put a value into the repository.
  * An editor who reaches this address is told that rather than shown a queue
  * they could look at and never settle.
- * @architecture Enterprise SaaS 2026
  * @module pages/copydesk/CopyDeskReviewPage
  */
 

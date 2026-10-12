@@ -18,7 +18,6 @@
 
              Pure functions, no I/O. Composers call gettext() at build time, so
              the builder must run inside a translation.override() context.
-@architecture Enterprise SaaS 2026
 @module notifications/message_content
 """
 from __future__ import annotations

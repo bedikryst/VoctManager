@@ -2,7 +2,6 @@
 @file tests.py
 @description Covers the address normalization that runs on every write, and the
     command that applies it to rows imported before it existed.
-@architecture Enterprise SaaS 2026
 @module logistics/tests
 """
 

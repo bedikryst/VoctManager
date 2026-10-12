@@ -8,7 +8,6 @@
  * is handed ONE evening by the server and joins it to the register. Every piece
  * of arithmetic below is imported from `../lib/attendanceStats`, so the progress
  * a stand-in reads and the progress the conductor reads are the same number.
- * @architecture Enterprise SaaS 2026
  * @module features/rehearsals/hooks
  */
 

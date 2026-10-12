@@ -13,7 +13,6 @@
  * shows a save the moment it lands; the rehearsal's own copy stands in until
  * that read arrives. The stand-in who may not plan never gets here — they
  * read `RehearsalPlanTimeline` at stand size, without the publication.
- * @architecture Enterprise SaaS 2026
  * @module features/rehearsals/components/plan/RehearsalPlanReadView
  */
 

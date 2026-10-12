@@ -5,7 +5,6 @@
  * every exclusion here is a number the conductor would otherwise click on and
  * not find: a rehearsal already over, a singer who left the project, a
  * sectional that does not call them.
- * @architecture Enterprise SaaS 2026
  * @module features/projects/lib/upcomingAbsences.test
  */
 

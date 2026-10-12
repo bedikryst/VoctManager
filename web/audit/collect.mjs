@@ -15,7 +15,6 @@
  *  sibling combinators are treated as satisfiable (the element scanner keeps no sibling order),
  *  and a class the runtime adds — `voct-motion`, `is-in`, `vt-nav`, `menu-open` — is treated as
  *  present, because the static artifact never carries it and every register rule is gated on one.
- * @architecture Astro islands 2026
  * @module audit/collect
  */
 

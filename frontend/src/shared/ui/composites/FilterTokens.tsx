@@ -6,7 +6,6 @@
  * the shape `Badge` exists to prevent. Here the button is a bare wrapper and
  * the `Badge` draws the chip; a token carries user content (a typed phrase, a
  * company name), so it is `casing="natural"`.
- * @architecture Enterprise SaaS 2026
  * @module shared/ui/composites/FilterTokens
  */
 

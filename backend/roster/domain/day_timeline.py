@@ -12,7 +12,6 @@
     concert and a stored point without a day is simply on concert day.
     Every document and read-model that shows an arrival time or a day plan reads
     this, so none of them can invent its own threshold or its own ordering.
-@architecture Enterprise SaaS 2026
 @module roster/domain/day_timeline
 """
 

@@ -6,7 +6,6 @@
  * the picker's vocabulary, the immediate write of one row's slot, and the
  * proposed canonical reordering — proposed, because `order` remains the single
  * source of truth for the running order and only the producer commits it.
- * @architecture Enterprise SaaS 2026
  * @module features/projects/editors/hooks/useProgramTab
  */
 

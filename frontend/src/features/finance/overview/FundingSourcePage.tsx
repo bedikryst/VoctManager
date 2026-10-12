@@ -10,7 +10,6 @@
  * marked. The formula for describing documents is kept here; the notes are
  * printed from it in Stage 6. It sits under the finance workspace's Źródła
  * section, and both ways out of it lead back there.
- * @architecture Enterprise SaaS 2026
  * @module features/finance/overview/FundingSourcePage
  */
 

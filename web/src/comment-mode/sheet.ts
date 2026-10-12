@@ -23,7 +23,6 @@
  *  `visualViewport` on `resize` and `scroll` (the formula of the panel's `useKeyboardInset`), and
  *  the sheet never grows taller than what is visible. A touch tap does not focus the textarea, so
  *  the keyboard does not cover the page the moment the sheet opens.
- * @architecture Astro islands 2026
  * @module comment-mode/sheet
  */
 

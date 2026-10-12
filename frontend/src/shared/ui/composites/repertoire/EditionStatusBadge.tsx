@@ -3,7 +3,6 @@
  * @description A ScoreEdition's ingestion phase as a `Badge` — this file owns
  * the phase→tone→sentence mapping, never the chip's own surface. The icon spins
  * while the pipeline is working, so the conductor can tell it has not stalled.
- * @architecture Enterprise SaaS 2026
  * @module shared/ui/composites/repertoire/EditionStatusBadge
  */
 

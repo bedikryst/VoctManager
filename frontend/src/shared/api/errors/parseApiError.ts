@@ -15,7 +15,6 @@
  *
  * Pure and side-effect free — safe to unit test and to call from anywhere.
  * @module shared/api/errors/parseApiError
- * @architecture Enterprise SaaS 2026
  */
 
 import type { NormalizedApiError, ApiErrorKind } from "./types";

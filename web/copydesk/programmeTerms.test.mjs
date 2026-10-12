@@ -6,7 +6,6 @@
  *  (copydesk/contract.mjs `NOT_COPY`), so this is where they are held: the renderings themselves,
  *  and a walk over both corpora proving every value the site prints has an English and a French
  *  form. The build fails on an unknown term too; this says so without a build.
- * @architecture Astro islands 2026
  * @module copydesk/programmeTerms.test
  */
 

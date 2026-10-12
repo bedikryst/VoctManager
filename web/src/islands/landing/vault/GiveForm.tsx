@@ -9,7 +9,6 @@
  *  (`paywall.axepta.pl/<lang>/pay/…`), so the backend rewrites that segment from what is posted
  *  here — otherwise a reader of any language meets whichever page the gateway defaults to, which
  *  is not the one they were reading a second earlier.
- * @architecture Astro islands 2026
  * @module islands/landing/vault/GiveForm
  */
 

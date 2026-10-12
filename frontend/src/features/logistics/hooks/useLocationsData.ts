@@ -4,7 +4,6 @@
  * filter state, active filter chips, view-mode persistence, and archive lifecycle on
  * top of the React Query cache. Server state stays delegated to `logistics.queries`;
  * this hook owns purely UI logic.
- * @architecture Enterprise SaaS 2026
  * @module features/logistics/hooks/useLocationsData
  */
 

@@ -7,7 +7,6 @@
  * them, and their fee then comes from there. The sheet says so, because that
  * is the mistake this form invites.
  * There is no roster record to derive a form from, so the form is chosen here.
- * @architecture Enterprise SaaS 2026
  * @module features/finance/budget/components/OneOffPayeeSheet
  */
 

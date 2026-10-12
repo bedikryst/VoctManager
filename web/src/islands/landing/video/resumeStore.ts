@@ -4,7 +4,6 @@
  *  keyed by the emitted media `src` and kept in sessionStorage for the current tab session,
  *  so the same MP4 can resume across the landing lightbox, inline sections, and press
  *  surfaces without sharing state between different video files.
- * @architecture Astro islands 2026
  * @module islands/landing/video/resumeStore
  */
 

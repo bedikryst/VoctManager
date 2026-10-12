@@ -5,7 +5,6 @@
  * right-aligned column in `m:ss`, where the shape of the programme can be
  * scanned down the edge, not buried mid-sentence in a meta line as
  * "3 min 30 sek".
- * @architecture Enterprise SaaS 2026
  * @module features/projects/lib/programDuration
  */
 

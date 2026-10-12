@@ -14,7 +14,6 @@
     the message then becomes a push and an e-mail is the notification router's,
     and it has its own tests.
 
-@architecture Enterprise SaaS 2026
 @module roster/test_delegation_notifications
 """
 

@@ -5,7 +5,6 @@
  * (exports, score PDF, lifecycle status, delete) and the sub-route tab nav, then
  * yields to the active work area through `<Outlet>`. Replaces the old slide-over
  * `ProjectEditorPanel` — every section is now a real, deep-linkable route.
- * @architecture Enterprise SaaS 2026
  * @module features/projects/ProjectHubLayout
  */
 

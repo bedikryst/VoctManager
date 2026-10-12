@@ -11,7 +11,6 @@
  * and says who can open it for a correction.
  * The "from the cast" helper proposes a line — billable cast × the most common
  * fee — and opens it in the form; it never writes one on its own.
- * @architecture Enterprise SaaS 2026
  * @module features/finance/budget/PlanPage
  */
 

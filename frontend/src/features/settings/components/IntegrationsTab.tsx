@@ -15,7 +15,6 @@
  * time. Pasting the https address into Calendar's own "add subscription" never
  * leaves TLS. The button stays for macOS, Outlook and Android, where the same
  * link is frictionless.
- * @architecture Enterprise SaaS 2026
  * @module features/settings/components/IntegrationsTab
  */
 

@@ -12,7 +12,6 @@
  * Opens empty from the add tray, or filled with the rehearsal's topic when
  * the topic is really a list (the editor's empty state). Ctrl/⌘+Enter adds,
  * Escape closes.
- * @architecture Enterprise SaaS 2026
  * @module features/rehearsals/components/plan/PlanTextEntry
  */
 

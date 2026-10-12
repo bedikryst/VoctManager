@@ -4,7 +4,6 @@
  * Uses session tokens for billing optimisation, the shared Input primitive for
  * styling, and a portal-free dropdown anchored to the input. Use it when the
  * caller does not need the in-line map picker.
- * @architecture Enterprise SaaS 2026
  * @module features/logistics/components/LocationAutocomplete
  */
 

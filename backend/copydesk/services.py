@@ -3,7 +3,6 @@
 @description Copy desk domain service. Owns the two derived states §4 names —
              stale and new-since-last-visit — the proposal lifecycle, and the
              extractor's write path into the git mirror.
-@architecture Enterprise SaaS 2026
 @module copydesk/services
 """
 from __future__ import annotations

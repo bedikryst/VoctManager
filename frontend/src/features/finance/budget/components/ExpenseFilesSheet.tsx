@@ -6,7 +6,6 @@
  * file is a PDF or a photo of a document; the server
  * reads the type from the file itself and refuses anything else. There is no
  * public link to any of them: a download streams through the manager-only view.
- * @architecture Enterprise SaaS 2026
  * @module features/finance/budget/components/ExpenseFilesSheet
  */
 

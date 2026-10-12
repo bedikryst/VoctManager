@@ -4,7 +4,6 @@
  * shared `Badge`. A domain wrapper owns the mapping, never a surface of its own
  * — this file used to draw its own chip, at a corner radius and a letter-spacing
  * the panel uses nowhere else.
- * @architecture Enterprise SaaS 2026
  * @module features/logistics/components/LocationCategoryBadge
  */
 

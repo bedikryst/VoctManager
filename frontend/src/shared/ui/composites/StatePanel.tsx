@@ -2,7 +2,6 @@
  * @file StatePanel.tsx
  * @description Reusable empty, warning, and recovery surface for feature states.
  * Provides a consistent editorial layout for iconography, copy, and actions.
- * @architecture Enterprise SaaS 2026
  */
 
 import React from "react";

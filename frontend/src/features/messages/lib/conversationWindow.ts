@@ -8,7 +8,6 @@
  * The client is therefore the only party that knows the full conversation, and
  * every response has to be folded into what it already holds rather than
  * replacing it.
- * @architecture Enterprise SaaS 2026
  * @module features/messages/lib/conversationWindow
  */
 

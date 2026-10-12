@@ -1,7 +1,6 @@
 """
 @file apps.py
 @description App configuration for the messaging domain (async conductor ↔ chorister threads).
-@architecture Enterprise SaaS 2026
 @module messaging/apps
 """
 from django.apps import AppConfig

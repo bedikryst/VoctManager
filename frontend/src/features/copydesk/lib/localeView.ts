@@ -2,7 +2,6 @@
  * @file localeView.ts
  * @description The locale switch: which languages of a page are on screen at
  * once. Four views, and Polish is in every one of them.
- * @architecture Enterprise SaaS 2026
  * @module features/copydesk/lib/localeView
  */
 

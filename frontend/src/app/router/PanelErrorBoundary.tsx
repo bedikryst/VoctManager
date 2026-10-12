@@ -11,7 +11,6 @@
  * import that has no file left to fetch; and any route change auto-clears the
  * error (via `resetKey`) so navigating away always works even if neither can.
  * @module app/router/PanelErrorBoundary
- * @architecture Enterprise SaaS 2026
  */
 
 import React from "react";

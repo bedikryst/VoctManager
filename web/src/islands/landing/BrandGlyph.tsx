@@ -8,7 +8,6 @@
  * ~110px optical-size crossover, so the mask is the raster master — see the note on
  * `.brand-glyph-shape` in styles/base.css. The `strokeWidth` prop is preserved purely
  * for source-compat with existing call sites.
- * @architecture Enterprise SaaS 2026
  * @module widgets/landing/BrandGlyph
  */
 

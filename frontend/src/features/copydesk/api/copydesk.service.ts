@@ -3,7 +3,6 @@
  * @description Transport for the copy desk. The desk READS the corpus and
  * writes proposals about it — it never writes the mirror, which only the
  * extractor's staff-only ingest may do.
- * @architecture Enterprise SaaS 2026
  * @module features/copydesk/api/copydesk.service
  */
 

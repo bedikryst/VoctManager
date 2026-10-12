@@ -4,7 +4,6 @@
  * Each tile shows the local time, a day/night cue, how many venues sit in that
  * zone, and the soonest event there — the quick "what time is it on tour right
  * now" glance a conductor needs before calling a venue.
- * @architecture Enterprise SaaS 2026
  * @module features/logistics/components/LogisticsTimezoneBand
  */
 

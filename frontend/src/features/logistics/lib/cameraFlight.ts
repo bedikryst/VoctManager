@@ -10,7 +10,6 @@
  * glide at altitude, descend precisely onto the target. Tilt/heading ride the
  * same eased clock so a 3D dive feels like one gesture. Honours
  * `prefers-reduced-motion` by snapping. Pure + framework-agnostic.
- * @architecture Enterprise SaaS 2026
  * @module features/logistics/lib/cameraFlight
  */
 

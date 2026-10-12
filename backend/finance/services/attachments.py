@@ -5,7 +5,6 @@
              name or the browser's word for it. Fees take no file: a signed
              contract or a bill carries a handwritten PESEL, and whether the app
              holds those is undecided (spec §4 Q6b).
-@architecture Enterprise SaaS 2026
 @module finance/services/attachments
 """
 from django.contrib.auth.models import User

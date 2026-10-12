@@ -14,7 +14,6 @@
  *  classes an outside observer had already set with it. `lineHtml` has met `lib/typoHtml` before it
  *  got here (LandingPage.astro): the build's typographic pass copies island subtrees through
  *  untouched, and `<Typo>` pins string LEAVES, which an injected field does not have.
- * @architecture Astro islands 2026
  * @module islands/landing/VoxMoment
  */
 

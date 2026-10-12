@@ -28,7 +28,6 @@
  *  looking at. This surface does not exist until it is asked for, so there is no hole to keep
  *  open — see the apparition clause in docs/web-landing-guardrails.md §5. The frame gets a plain
  *  authored entrance in its own stylesheet instead.
- * @architecture Astro islands 2026
  * @module islands/landing/ImageLightbox
  */
 

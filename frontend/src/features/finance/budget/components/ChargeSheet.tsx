@@ -8,7 +8,6 @@
  * what the source would then carry against its limit; the server writes it.
  * Honoraria opens the same act from the costs' side: the fees are ticked on
  * the ledger and only the source is chosen here.
- * @architecture Enterprise SaaS 2026
  * @module features/finance/budget/components/ChargeSheet
  */
 

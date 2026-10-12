@@ -4,7 +4,6 @@
  * counted fee and expense whose cost date falls in a range, across every
  * project at once. The range defaults to the current month, the period the
  * office books by.
- * @architecture Enterprise SaaS 2026
  * @module features/finance/workspace/components/OfficeExport
  */
 

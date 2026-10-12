@@ -6,7 +6,6 @@
     timeline, the subscribed calendar, and the reminder that lands the evening
     before. Polish is asserted directly, because a Mass whose run sheet falls
     back to "Koncert" is precisely the defect the typed kind exists to prevent.
-@architecture Enterprise SaaS 2026
 @module roster/test_event_naming
 """
 

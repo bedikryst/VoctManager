@@ -5,7 +5,6 @@
  * (mirrors crew's CrewSpecialtyBar). Header carries the headline schedule
  * stats; the tile grid is the category filter, each tile showing a venue count
  * + proportional bar and doubling as a toggle.
- * @architecture Enterprise SaaS 2026
  * @module features/logistics/components/LogisticsOverviewBar
  */
 

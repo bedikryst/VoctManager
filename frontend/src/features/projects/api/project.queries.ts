@@ -2,7 +2,6 @@
  * @file project.queries.ts
  * @description Public React Query API for the Project domain.
  * Keep this barrel stable for feature-level imports while implementation stays split by responsibility.
- * @architecture Enterprise SaaS 2026
  * @module features/projects/api
  */
 

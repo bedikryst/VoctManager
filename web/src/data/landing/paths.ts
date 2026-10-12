@@ -14,7 +14,6 @@
  *  list from the `concerts` collection via `concertId` (SSoT), edited in exactly one place.
  *  `poster` is the bare asset name under src/assets/photos (resolved with `photo()` → optimized
  *  <Picture>), not a public URL.
- * @architecture Astro islands 2026
  * @module data/landing/paths
  */
 

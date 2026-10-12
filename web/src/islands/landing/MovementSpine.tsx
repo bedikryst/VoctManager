@@ -13,7 +13,6 @@
  *  prints itself on that content. Such a section marks itself `data-spine-clear` and the spine
  *  withdraws for as long as it holds the viewport centre. Withdrawing is the right way round:
  *  the spine is orientation, the bled object is the page.
- * @architecture Astro islands 2026
  * @module islands/landing/MovementSpine
  */
 

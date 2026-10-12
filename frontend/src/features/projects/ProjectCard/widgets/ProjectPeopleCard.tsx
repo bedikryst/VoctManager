@@ -6,7 +6,6 @@
  * deep-link. Each section stays glanceable by default (a capped chip cloud) but expands
  * in place on demand, so a full roster never forces a trip to the work-area tab nor a
  * useless "+N" dead end.
- * @architecture Enterprise SaaS 2026
  * @module features/projects/ProjectCard/widgets/ProjectPeopleCard
  */
 

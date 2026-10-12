@@ -7,7 +7,6 @@
  * then reads as fact. So these tests assert the request itself: method, URL and
  * payload, plus that a refused write leaves no trace of a confirmation that
  * never happened.
- * @architecture Enterprise SaaS 2026
  * @module features/schedule/hooks
  */
 

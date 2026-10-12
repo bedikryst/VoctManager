@@ -6,7 +6,6 @@
  * past. The weekday is read from the event's own calendar day, never from the
  * UTC one, and the preposition inflects with it ("we wtorek"). The change chips
  * name stored codes (a status, an event kind, a minute count) in words.
- * @architecture Enterprise SaaS 2026
  * @module features/notifications/lib/notificationFormat.test
  */
 

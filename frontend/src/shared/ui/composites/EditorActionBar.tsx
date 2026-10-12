@@ -7,7 +7,6 @@
  *  - Form-bound: pass `formId` to make the confirm button submit a foreign form.
  * A surface whose save can be carried one step further ("Zapisz i wyślij")
  * adds it as `secondaryAction`, an outline button before the primary one.
- * @architecture Enterprise SaaS 2026
  * @module shared/ui/composites/EditorActionBar
  */
 

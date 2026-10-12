@@ -7,7 +7,6 @@
  *  one shared controller, scripts/reveal.ts, on every page including the landing. What this
  *  file still owns is the document-level question the register cannot answer for itself: when
  *  motion is not live, content must simply be visible.
- * @architecture Astro islands 2026
  * @module styles/base
  */
 

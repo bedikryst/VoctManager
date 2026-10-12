@@ -5,7 +5,6 @@
  * MB/Wikidata links, pieces in the library, refresh-from-MB action.
  *
  * Bulk select via leading checkbox enables the parent page's merge UI.
- * @architecture Enterprise SaaS 2026
  * @module features/archive/components/ComposerRow
  */
 

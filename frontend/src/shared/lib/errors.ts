@@ -7,7 +7,6 @@
  * URLs that no longer exist and the dynamic `import()` rejects. That is not a
  * crash the user caused — it just means "reload to get the fresh app".
  * @module shared/lib/errors
- * @architecture Enterprise SaaS 2026
  */
 
 /**

@@ -3,7 +3,6 @@
 @description Builders for the finance tests: people with the three kinds of
              access (singer, manager, board), a project with a cast and a crew,
              and a one-line way to price a row through the real service.
-@architecture Enterprise SaaS 2026
 @module finance/tests/factories
 """
 from datetime import timedelta

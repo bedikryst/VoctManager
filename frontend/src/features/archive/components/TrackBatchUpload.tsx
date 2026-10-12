@@ -11,7 +11,6 @@
  * multipart POST per track and eight of them at once on a phone is how a
  * batch ends with three "network error" rows and no clue which. Failed rows
  * stay in the queue with a retry; the rest leave as they succeed.
- * @architecture Enterprise SaaS 2026
  * @module features/archive/components/TrackBatchUpload
  */
 

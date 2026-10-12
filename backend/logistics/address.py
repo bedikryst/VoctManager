@@ -16,7 +16,6 @@ value is the canonical one: it is what a maps query is built from and what any
 postal use would need. The call sheet's `_format_address` composes that removal
 on top of this, so there is one implementation of "the same fragment twice" and
 one place that knows which country goes without saying.
-@architecture Enterprise SaaS 2026
 @module logistics/address
 """
 

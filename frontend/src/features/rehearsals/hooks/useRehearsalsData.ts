@@ -6,7 +6,6 @@
  * All maths is delegated to ../lib/attendanceStats so every surface agrees.
  * Every way of changing the evening on screen goes through one guard that
  * holds the move while the plan editor has an unsaved draft.
- * @architecture Enterprise SaaS 2026
  */
 
 import { useCallback, useEffect, useMemo, useState } from "react";

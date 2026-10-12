@@ -31,7 +31,6 @@
  *   - `error` still fires on the VIDEO, not on a `<source>` (that one does not bubble), and only
  *     once the selection algorithm has exhausted every candidate. The failure path is unchanged:
  *     a broken AV1 file is not a failure while H.264 still answers.
- * @architecture Astro islands 2026
  * @module islands/landing/video/VideoPlayer
  */
 

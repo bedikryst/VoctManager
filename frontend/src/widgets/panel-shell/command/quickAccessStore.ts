@@ -8,7 +8,6 @@
  * (deleted projects) are tolerated — the palette resolves ids against the live
  * project list and silently drops misses.
  * @module widgets/panel-shell/command
- * @architecture Enterprise SaaS 2026
  */
 
 import { useSyncExternalStore } from "react";

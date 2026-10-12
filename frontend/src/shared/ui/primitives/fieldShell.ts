@@ -8,7 +8,6 @@
  * cannot be allowed to drift into two different golds. Padding, flex and
  * typography stay at the call site: the shell says what the box is made of, not
  * how its contents are arranged.
- * @architecture Enterprise SaaS 2026
  * @module shared/ui/primitives/fieldShell
  */
 

@@ -18,7 +18,6 @@
  *  overlay's two YAML files — out of the client bundle. Calling `toRibbons` from an island
  *  would ship both locales' prose to every reader; derive the list on the server and pass it
  *  as props, which is what index.astro does.
- * @architecture Astro islands 2026
  * @module lib/registrum
  */
 import { concertKey, withOverlay } from "./copyOverlay";

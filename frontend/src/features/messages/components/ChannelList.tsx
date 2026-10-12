@@ -3,7 +3,6 @@
  * @description Inbox section listing project channels the user belongs to. One row per
  * channel: a rounded project glyph (square = group, vs. circular person avatars), an
  * unread gold marker, project name, member count, snippet, and a relative stamp.
- * @architecture Enterprise SaaS 2026
  * @module features/messages/components
  */
 

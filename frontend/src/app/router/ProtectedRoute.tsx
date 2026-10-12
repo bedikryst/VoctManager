@@ -3,7 +3,6 @@
  * @description Higher-Order Component for securing private routes.
  * Intercepts unauthorized access attempts and redirects to the authentication gateway,
  * preserving the intended destination via navigation state.
- * @architecture Enterprise 2026 Standards
  * @author Krystian Bugalski
  */
 

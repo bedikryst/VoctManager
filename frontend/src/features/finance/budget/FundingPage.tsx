@@ -9,7 +9,6 @@
  * What a project expects of a source belongs to the plan and changes while the
  * plan does; what arrives and what is charged are facts, recorded until the
  * budget closes.
- * @architecture Enterprise SaaS 2026
  * @module features/finance/budget/FundingPage
  */
 

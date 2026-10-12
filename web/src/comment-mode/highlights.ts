@@ -15,7 +15,6 @@
  *
  *  The gold is the tool's own (`styles.ts` `--cm-gold`), translucent so it reads on parchment and
  *  night pages alike.
- * @architecture Astro islands 2026
  * @module comment-mode/highlights
  */
 

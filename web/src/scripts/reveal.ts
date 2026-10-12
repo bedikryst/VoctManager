@@ -11,7 +11,6 @@
  *  page's. Before 2026-08 they were two controllers whose geometries had quietly drifted apart
  *  (a ratio threshold on one side, a flat inset on the other), which is the kind of divergence
  *  this file exists to make impossible rather than to police.
- * @architecture Astro islands 2026
  * @module scripts/reveal
  */
 

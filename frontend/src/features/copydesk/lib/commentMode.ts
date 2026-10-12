@@ -5,7 +5,6 @@
  * parameter from the address bar, so a copied link never turns the mode on for
  * somebody else. The site shares the panel's origin, which is what lets the
  * mode reuse this session's cookies.
- * @architecture Enterprise SaaS 2026
  * @module features/copydesk/lib/commentMode
  */
 

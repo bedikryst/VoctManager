@@ -7,7 +7,6 @@
  * coordinates. Built on the shared cameraFlight choreography, MapPinShell, and
  * MapAtmosphere so it is visually identical to the global atlas. Session tokens
  * keep Places billing optimal; everything speaks Ethereal tokens.
- * @architecture Enterprise SaaS 2026
  * @module features/logistics/components/LocationMapPicker
  */
 

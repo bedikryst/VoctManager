@@ -18,7 +18,6 @@
  *  `--locale <pl|en|fr>` and
  *  `--page <path>` narrow the details (the table always lists every page). From Git Bash, run
  *  `--page` under `MSYS_NO_PATHCONV=1`, which otherwise rewrites `/fr/…` into a Windows path.
- * @architecture Astro islands 2026
  * @module copydesk/coverage
  */
 

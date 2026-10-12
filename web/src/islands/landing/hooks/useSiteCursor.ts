@@ -17,7 +17,6 @@
  *
  *  CSS hides the native cursor only when `has-custom-cursor` is set, and only inside the
  *  `(pointer: fine) and (hover: hover)` media query, so touch users keep their OS cursor.
- * @architecture Enterprise SaaS 2026
  * @module features/landing/hooks/useSiteCursor
  */
 

@@ -6,7 +6,6 @@
  *  exactly as readable as the one `Expand-Archive` already opened.
  *
  *  Run from `web/`: `npm run test:zip`.
- * @architecture Astro islands 2026
  * @module scripts/zip.test
  */
 import assert from "node:assert/strict";

@@ -24,7 +24,6 @@
  *
  *  Plain erasable TypeScript importing only `.ts` modules by their full name, so bare `node` runs
  *  it for the coverage script and the tests, and Vite bundles it for the mode.
- * @architecture Astro islands 2026
  * @module comment-mode/match
  */
 

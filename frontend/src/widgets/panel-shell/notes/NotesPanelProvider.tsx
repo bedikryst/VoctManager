@@ -14,7 +14,6 @@
  * component state on an unchanged URL: `isFullscreenSurfaceOpen()` is what
  * answers for it, since `PdfViewerModal` registers itself there.
  * @module widgets/panel-shell/notes
- * @architecture Enterprise SaaS 2026
  */
 
 import React, { useEffect } from "react";

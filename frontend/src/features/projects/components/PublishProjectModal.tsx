@@ -7,7 +7,6 @@
  * as the invitation modal on the artist's side; the gaps are stated as warnings,
  * never as blocks, because an incomplete project can still be a deliberate
  * announcement.
- * @architecture Enterprise SaaS 2026
  * @module features/projects/components/PublishProjectModal
  */
 

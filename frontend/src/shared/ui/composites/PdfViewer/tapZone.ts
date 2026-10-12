@@ -13,7 +13,6 @@
  * `tapZoneBands` is the one geometry both the hit test and the drawn zone
  * hints read, so what the reader is shown and what a tap does cannot drift.
  * @module shared/ui/composites/PdfViewer
- * @architecture Enterprise SaaS 2026
  */
 
 import { TAP_ZONE_FRACTION } from "./constants";

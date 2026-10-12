@@ -11,7 +11,6 @@
  * each section — the board shows the choir as it stands, not as it was dragged.
  * Named solos sit under the board as a second layer with its own draft; one
  * action bar saves whichever of the two changed, each through its own write.
- * @architecture Enterprise SaaS 2026
  * @module features/projects/editors/tabs/MicroCastingTab
  */
 

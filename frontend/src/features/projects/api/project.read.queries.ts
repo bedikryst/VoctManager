@@ -1,7 +1,6 @@
 /**
  * @file project.read.queries.ts
  * @description Read-only React Query hooks for Project server state.
- * @architecture Enterprise SaaS 2026
  * @module features/projects/api
  */
 

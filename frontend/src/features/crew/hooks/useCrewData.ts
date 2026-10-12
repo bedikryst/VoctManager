@@ -3,7 +3,6 @@
  * @description Operational orchestrator for the Crew domain — derives metrics, filter state,
  * active filter chips, and deletion lifecycle on top of the React Query cache.
  * Server state stays delegated to `crew.queries`; this hook owns purely UI logic.
- * @architecture Enterprise SaaS 2026
  * @module features/crew/hooks/useCrewData
  */
 

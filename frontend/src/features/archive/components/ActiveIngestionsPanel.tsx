@@ -6,7 +6,6 @@
  * AI is doing, even right after upload (before the piece resolves) and even
  * after a page reload. This is the durable counterpart to the in-session live
  * row inside the upload zone.
- * @architecture Enterprise SaaS 2026
  * @module features/archive/components/ActiveIngestionsPanel
  */
 

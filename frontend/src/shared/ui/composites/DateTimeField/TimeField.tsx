@@ -4,7 +4,6 @@
  * run sheet, where every point belongs to the concert date above it. No popup:
  * at this size the two segments ARE the control, and opening a panel to set a
  * quarter past would cost more than typing it.
- * @architecture Enterprise SaaS 2026
  * @module shared/ui/composites/DateTimeField
  */
 

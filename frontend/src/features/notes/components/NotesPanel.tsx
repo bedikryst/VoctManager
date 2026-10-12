@@ -11,7 +11,6 @@
  * between two notes — folds it back to its two-line clamp. A row that has
  * something to say about a click stops it before it gets here.
  * @module features/notes/components
- * @architecture Enterprise SaaS 2026
  */
 
 import React, { useCallback, useState } from "react";

@@ -4,7 +4,6 @@
  * public site's text. Mirrors `backend/copydesk/dtos.py`; every field here is
  * server-authoritative, because the desk reads a PROJECTION of git and owns
  * nothing about it.
- * @architecture Enterprise SaaS 2026
  * @module features/copydesk/types/copydesk.dto
  */
 

@@ -9,7 +9,6 @@
  * notice (`delivery`) rides on the plan read itself. Every write settles by
  * invalidating the rehearsal lists, the lead sheet, the planner's reads of the
  * other evenings and the schedule dashboard, since all of them embed the plan.
- * @architecture Enterprise SaaS 2026
  * @module features/rehearsals/api/plan.queries
  */
 

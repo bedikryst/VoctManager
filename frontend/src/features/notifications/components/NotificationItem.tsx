@@ -10,7 +10,6 @@
  * incense=message) and escalated to crimson only for genuine alarms
  * (URGENT level, cancellations, rejections) — crimson stays alarm-only.
  * @module features/notifications/components
- * @architecture Enterprise SaaS 2026
  */
 
 import React from "react";

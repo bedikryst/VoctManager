@@ -25,7 +25,6 @@
              vendor contract — this one states what we send, that one states
              what comes back — and neither is complete without the other, since
              the suppression ledger depends on the events.
-@architecture Enterprise SaaS 2026
 @module notifications/emaillabs_backend
 """
 from __future__ import annotations

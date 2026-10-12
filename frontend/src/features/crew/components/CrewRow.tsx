@@ -3,7 +3,6 @@
  * @description Dense, click-to-open list row — the list-view counterpart to
  * CrewCard. Click opens the editor; inline delete and contact links stop
  * propagation. Mirrors the artists' ArtistRow rhythm.
- * @architecture Enterprise SaaS 2026
  * @module features/crew/components/CrewRow
  */
 

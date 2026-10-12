@@ -13,7 +13,6 @@
  * native control) — in draw mode the annotation surface therefore wins every
  * single touch, while `data-pdf-pinch-through` lets two-finger zoom past it.
  * @module shared/ui/composites/PdfViewer
- * @architecture Enterprise SaaS 2026
  */
 
 import { useEffect, useRef, type RefObject } from "react";

@@ -25,7 +25,6 @@
  *    nobody sees. Changes are still noted, and the page is read on `resume` only if there were any.
  *
  *  The client router replaces `<body>`: `watch()` observes the one in place now.
- * @architecture Astro islands 2026
  * @module comment-mode/watch
  */
 

@@ -10,7 +10,6 @@
  * distinguished only by fill — so one object had two shapes inside one feature.
  * What a group genuinely adds is the sender, and that is drawn once per run of
  * consecutive messages rather than on all twelve.
- * @architecture Enterprise SaaS 2026
  * @module features/messages/components
  */
 

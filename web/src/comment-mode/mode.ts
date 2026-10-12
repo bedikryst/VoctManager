@@ -47,7 +47,6 @@
  *  `astro:page-load`, and `<html lang>` read every time, never cached. The custom cursor steps
  *  aside through `presence.ts`, and the statistics through `stats.ts`. The window listeners are
  *  bound once and removed by "Zakończ", which also puts every published text back.
- * @architecture Astro islands 2026
  * @module comment-mode/mode
  */
 

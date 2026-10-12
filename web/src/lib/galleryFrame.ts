@@ -9,7 +9,6 @@
  *  two callers asking for different widths would emit two sets of files for one photograph. The
  *  1200 candidate is deliberately the SAME transform the grid already requests, so Astro's asset
  *  pipeline dedupes it and each photograph costs one extra file rather than two.
- * @architecture Astro islands 2026
  * @module lib/galleryFrame
  */
 

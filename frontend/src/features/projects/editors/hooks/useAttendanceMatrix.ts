@@ -12,7 +12,6 @@
  * were touched, so a background refetch updates the untouched ones underneath
  * and cannot destroy work — and after a partial save the flushed cells simply
  * stop differing from the server and drop out of the diff on their own.
- * @architecture Enterprise SaaS 2026
  * @module features/projects/editors/hooks/useAttendanceMatrix
  */
 

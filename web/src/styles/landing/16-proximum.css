@@ -23,7 +23,6 @@
  *  paper contract tokens.css states for the parchment rooms does not apply. The trap runs the other
  *  way instead: light on dark optically THICKENS a stroke, so every hairline here is mixed thinner
  *  in alpha than the same rule would be on paper.
- * @architecture Astro islands 2026
  * @module app/styles/marketing-landing/proximum
  */
 

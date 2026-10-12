@@ -9,7 +9,6 @@
  * copy. The locale is read through the caller's `t` (`common.locale`), which is
  * already bound to the active language, so this module stays free of the i18n
  * instance and runs in the node test project.
- * @architecture Enterprise SaaS 2026
  * @module features/messages/lib/time
  */
 

@@ -34,7 +34,6 @@
  * docked bar would sit under the sheet's scrim — so the sheet asks for
  * `actions="inline"` and hands over its own footer for the buttons. No done
  * checkbox here: ticking is the debrief's step, taken on the read view.
- * @architecture Enterprise SaaS 2026
  * @module features/rehearsals/components/plan/RehearsalPlanEditor
  */
 

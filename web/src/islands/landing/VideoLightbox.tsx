@@ -6,7 +6,6 @@
  *  player mounts only while open, so its unmount cleanup pauses the video and
  *  restores the ambient bed. Sets `window.__voctVideoReady` and emits `voct:video-ready`
  *  so static-DOM triggers can queue an early click until hydration completes.
- * @architecture Astro islands 2026
  * @module islands/landing/VideoLightbox
  */
 

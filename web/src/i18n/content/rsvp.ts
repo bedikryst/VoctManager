@@ -24,7 +24,6 @@
  *  collection — what is kept, why, on what basis, for how long, and where to ask — and links to the
  *  rest. Its "30 days after" is `RESERVATION_RETENTION` in `backend/outreach/models.py`, and the
  *  three move together.
- * @architecture Astro islands 2026
  * @module i18n/content/rsvp
  */
 

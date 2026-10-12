@@ -7,7 +7,6 @@
  * whichever book exists, and a second full card gave a rare alternative the same
  * weight as the generator. Uploading/removing reconciles the generator state, so
  * the two producers never silently fight over the field.
- * @architecture Enterprise SaaS 2026
  * @module features/projects/components/ScoreManualUploadRail
  */
 

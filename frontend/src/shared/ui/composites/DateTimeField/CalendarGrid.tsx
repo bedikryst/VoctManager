@@ -5,7 +5,6 @@
  * the caller has marked. The board matters more than it looks — a concert booked
  * eight months out is one click away instead of eight, which is the single
  * reason a month grid usually loses to typing a date by hand.
- * @architecture Enterprise SaaS 2026
  * @module shared/ui/composites/DateTimeField
  */
 

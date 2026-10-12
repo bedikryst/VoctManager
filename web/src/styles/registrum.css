@@ -110,7 +110,6 @@
  *  keeps a visibility grace over the withdraw so a slip of the wrist doesn't snap the
  *  set away. Desktop only (≥760px, matching the nave-menu boundary); touch desktops get
  *  the standard first-tap-opens behaviour.
- * @architecture Astro islands 2026
  * @module styles/registrum
  */
 

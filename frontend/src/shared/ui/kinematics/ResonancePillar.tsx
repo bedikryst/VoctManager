@@ -9,7 +9,6 @@
  * gold, B sage, so three of the four voices were one colour on the manager's
  * dashboard and a different one on the roster two clicks away. Nobody chose
  * that; two private copies of one table did.
- * @architecture Enterprise SaaS 2026
  * @module shared/ui/kinematics/ResonancePillar
  */
 

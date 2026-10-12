@@ -6,7 +6,6 @@
  * optimistically — the server's answer is the new baseline. Filling the whole
  * programme from the line-up sends the same shape, many boards at a time.
  * Named solos are a separate layer with their own declarative write per piece.
- * @architecture Enterprise SaaS 2026
  * @module features/projects/api
  */
 

@@ -2,7 +2,6 @@
  * @file UnreadMessagesAlert.tsx
  * @description Slim dashboard banner surfacing unread conversation threads. Self-gating:
  * renders nothing when the inbox is clear, so it never leaves an empty grid cell.
- * @architecture Enterprise SaaS 2026
  * @module panel/dashboard/components/UnreadMessagesAlert
  */
 

@@ -6,7 +6,6 @@
  * chevrons give the same value a pointer-only path. Figures are sans and
  * tabular here by rule: this is a clock, not a display metric, and the digits
  * must not shift width as they change.
- * @architecture Enterprise SaaS 2026
  * @module shared/ui/composites/DateTimeField
  */
 

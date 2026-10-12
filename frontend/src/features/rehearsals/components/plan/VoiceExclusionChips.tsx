@@ -12,7 +12,6 @@
  * server's own rule, so an uncast bass still called under "bez B2" is a
  * visible fact rather than a mystery Florent reports as "exclusions don't
  * work". The chips draw through `Badge`; the button is a bare wrapper.
- * @architecture Enterprise SaaS 2026
  * @module features/rehearsals/components/plan/VoiceExclusionChips
  */
 

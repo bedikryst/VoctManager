@@ -4,7 +4,6 @@
              capability to EDIT is a flag on the profile, deliberately not a
              fourth AppRole; the capability to REVIEW is staff, because a review
              ends in a commit.
-@architecture Enterprise SaaS 2026
 @module copydesk/permissions
 """
 from __future__ import annotations

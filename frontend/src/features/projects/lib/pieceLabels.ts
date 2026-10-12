@@ -4,7 +4,6 @@
  * tolerant of the partial shape the AI-enriched archive can return (full_name
  * present, parts missing, or the other way round), which is why it is resolved
  * here once instead of at each call site.
- * @architecture Enterprise SaaS 2026
  * @module features/projects/lib/pieceLabels
  */
 

@@ -5,7 +5,6 @@
  * float on the way would lose the grosz before anything was rendered. The
  * client parses them into integer grosze (`lib/money.ts`) only to preview a
  * draft; everything persisted is rendered from the server's own totals.
- * @architecture Enterprise SaaS 2026
  * @module features/finance/types/finance.dto
  */
 

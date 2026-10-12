@@ -1,7 +1,6 @@
 /**
  * @file project.participation.mutations.ts
  * @description React Query mutations for project participation assignments.
- * @architecture Enterprise SaaS 2026
  * @module features/projects/api
  */
 

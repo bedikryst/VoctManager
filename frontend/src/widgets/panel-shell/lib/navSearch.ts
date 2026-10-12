@@ -4,7 +4,6 @@
  * Command Palette and the mobile search sheet, so both surfaces resolve a query
  * to the exact same destination set (one matching contract, zero drift).
  * @module widgets/panel-shell/lib
- * @architecture Enterprise SaaS 2026
  */
 
 import type { TFunction } from "i18next";

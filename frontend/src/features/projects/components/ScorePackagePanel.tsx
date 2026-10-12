@@ -7,7 +7,6 @@
  * stacked sentences that used to say "stale" four ways. Settings summarise
  * themselves while collapsed; the hand-upload alternative rides the footer rather
  * than a second card of equal weight.
- * @architecture Enterprise SaaS 2026
  * @module features/projects/components/ScorePackagePanel
  */
 

@@ -60,7 +60,6 @@
  *  always-mounted AudioController starts the ambient inside the same click call stack
  *  (autoplay-policy compliant). Scroll lock: `preload-open` during the rite,
  *  `threshold-open` during the choice — GratitudeModal polls exactly these two classes.
- * @architecture Astro islands 2026
  * @module islands/landing/Preloader
  */
 

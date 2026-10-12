@@ -8,7 +8,6 @@
  * panel error boundary — and that boundary is a class component sitting above
  * the widget in the tree. A module-level store lets it ask for the sheet without
  * either side importing the other.
- * @architecture Enterprise SaaS 2026
  * @module store/useFeedbackStore
  */
 

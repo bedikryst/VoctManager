@@ -33,7 +33,6 @@
  * unfolded and the person locked: who a grant is about is its identity, not its
  * content, and the server refuses to re-point one for the same reason.
  * The server keeps the model's name (`RehearsalDelegate`, URL `/delegates/`).
- * @architecture Enterprise SaaS 2026
  * @module features/projects/editors/tabs/components
  */
 

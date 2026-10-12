@@ -9,7 +9,6 @@
              every act that changed a settled fact. Amounts are the foundation's
              cost in PLN; no VAT is modelled because the foundation is not a VAT
              payer.
-@architecture Enterprise SaaS 2026
 @module finance/models
 """
 import uuid

@@ -21,7 +21,6 @@
              Manager-facing signals (attendance, RSVP, absence requests) and the
              manager digest are a different axis entirely and never come through
              this module.
-@architecture Enterprise SaaS 2026
 @module notifications/announcements
 """
 from __future__ import annotations

@@ -5,7 +5,6 @@
  * how a group's control reads when its members are polled, and the minimal
  * payloads for Restore-recommended and a whole-group channel decision. Shared by
  * the preferences API and the settings ledger so each rule has one definition.
- * @architecture Enterprise SaaS 2026
  * @module notifications/lib/preferences
  */
 import type {

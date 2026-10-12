@@ -8,7 +8,6 @@
  * The ZIP is offered only once a contract exists; before that there is
  * nothing to pack, and the card says so instead of offering a button that
  * would answer "no contracts".
- * @architecture Enterprise SaaS 2026
  * @module features/finance/budget/components/DocumentsCard
  */
 

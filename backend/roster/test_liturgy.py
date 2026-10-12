@@ -6,7 +6,6 @@
     arrive — the setlist API, the score-book card and the printed day card. The
     Polish catalogue is asserted directly, because a slot whose label falls back
     to English is exactly the failure a typed vocabulary exists to prevent.
-@architecture Enterprise SaaS 2026
 @module roster/test_liturgy
 """
 

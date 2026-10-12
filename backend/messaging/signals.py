@@ -13,7 +13,6 @@
     • GDPR (Right to Erasure) on `account_soft_deleted`: blanks message content authored
       by the user (1:1 threads AND channels) and the copies of it in other people's
       notifications, and drops their conversations/memberships.
-@architecture Enterprise SaaS 2026
 @module messaging/signals
 """
 import logging

@@ -6,7 +6,6 @@
  *  available for the smooth scroll back (matches the rest of the site's scroll lifecycle),
  *  falls back to native smooth scroll otherwise. Gold (--candle) reads on parchment and dark
  *  alike, so no blend-mode tricks are needed.
- * @architecture Astro islands 2026
  * @module islands/global/ScrollTopButton
  */
 

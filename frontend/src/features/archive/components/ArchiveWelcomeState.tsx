@@ -7,7 +7,6 @@
  *
  * Conductor mental model: "First time here — what do I do?" Answer: drag a
  * PDF in. No filters to navigate, no metrics to puzzle over.
- * @architecture Enterprise SaaS 2026
  * @module features/archive/components/ArchiveWelcomeState
  */
 

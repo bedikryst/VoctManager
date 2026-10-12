@@ -8,7 +8,6 @@
  * answers at once; there is no draft to save, so nothing waits in a dock.
  * A person is never an expense: whoever invoices for performing or crewing is
  * paid through Honoraria, and the page says so where the mistake is made.
- * @architecture Enterprise SaaS 2026
  * @module features/finance/budget/ExpensesPage
  */
 

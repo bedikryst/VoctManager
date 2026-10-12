@@ -9,7 +9,6 @@
     seats carry no names, pieces none of the archive's business, evenings no
     debrief, and a field added to a model does not reach this reader until
     somebody adds it here.
-@architecture Enterprise SaaS 2026
 @module roster/queries/plan_editor_queries
 """
 

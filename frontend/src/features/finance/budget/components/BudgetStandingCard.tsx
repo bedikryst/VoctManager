@@ -10,7 +10,6 @@
  * A manager outside the board sees the state and one sentence saying who acts
  * on it, never a button that would answer 403. Closing is refused by the
  * server while anything is unsettled; the card says so before the click.
- * @architecture Enterprise SaaS 2026
  * @module features/finance/budget/components/BudgetStandingCard
  */
 

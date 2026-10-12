@@ -20,7 +20,6 @@
  * It also counts signed-in members none of whose devices takes a push — the
  * people to ask in person, matching the bell-off marks on their rows. Hidden at
  * zero: unlike the range question, nobody is waiting to see that figure move.
- * @architecture Enterprise SaaS 2026
  * @module features/artists/components/EnsembleBalance
  */
 

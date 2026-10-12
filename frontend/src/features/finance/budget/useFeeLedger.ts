@@ -9,7 +9,6 @@
  * invoice or a volunteer keeps its own); one typed afterwards still wins,
  * because the server applies the rate first and the rows after, and further
  * keystrokes in the rate leave it standing.
- * @architecture Enterprise SaaS 2026
  * @module features/finance/budget/useFeeLedger
  */
 

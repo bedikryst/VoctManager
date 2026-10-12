@@ -8,7 +8,6 @@
  * also carries the appearance (light/dark) switch and lets users hand the app
  * to the ensemble via link, native share sheet, or a scannable QR. Closes with
  * the colophon: the build this device is running, the dedication, the credit.
- * @architecture Enterprise SaaS 2026
  * @module features/settings/components/AppTab
  */
 import { lazy, Suspense, useCallback, useMemo, useState } from "react";

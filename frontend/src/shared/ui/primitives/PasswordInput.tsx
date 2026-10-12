@@ -4,7 +4,6 @@
  * visibility toggle, optional Caps-Lock awareness and inline error/hint copy.
  * Shared by the auth flow (login, activation) and security settings so the
  * password UX stays identical everywhere a secret is entered.
- * @architecture Enterprise SaaS 2026
  * @module shared/ui/primitives/PasswordInput
  */
 

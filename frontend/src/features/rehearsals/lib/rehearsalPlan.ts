@@ -14,7 +14,6 @@
  * calls them by; a player answers to the rehearsal's flag and the row's; a
  * break calls nobody. A reserve row is not read here at all — it counts
  * toward the window, which promises the worst case.
- * @architecture Enterprise SaaS 2026
  * @module features/rehearsals/lib/rehearsalPlan
  */
 

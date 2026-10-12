@@ -15,7 +15,6 @@
  * first paint) and pure presentational primitives — never on app stores,
  * providers or query state, any of which may be the very thing that failed.
  * @module shared/ui/feedback/ErrorScreen
- * @architecture Enterprise SaaS 2026
  */
 
 import React from "react";

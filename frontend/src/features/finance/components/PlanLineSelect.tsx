@@ -3,7 +3,6 @@
  * @description Which kosztorys line a cost is charged to. The caller passes
  * only the lines of the cost's own category — the server refuses any other —
  * and "outside the plan" is a real choice here, so it is offered as one.
- * @architecture Enterprise SaaS 2026
  * @module features/finance/components/PlanLineSelect
  */
 

@@ -4,7 +4,6 @@
  * on the shared `Badge`. A domain wrapper owns the mapping, never a surface of
  * its own — this file used to draw its own chip (a fourth corner radius and a
  * fifth letter-spacing for the panel's one chip role).
- * @architecture Enterprise SaaS 2026
  * @module features/crew/components/CrewSpecialtyBadge
  */
 

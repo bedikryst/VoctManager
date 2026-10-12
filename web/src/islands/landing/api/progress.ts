@@ -7,7 +7,6 @@
  *  - `donation-progress.json` — hand-maintained baseline for money the backend never
  *    sees (zrzutka, direct bank transfers).
  *  The two are summed; either source failing degrades gracefully to the other.
- * @architecture Astro islands 2026
  * @module features/landing/api/progress
  */
 

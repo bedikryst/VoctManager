@@ -7,7 +7,6 @@
  * stacks full-width entries for a workspace's side column.
  *
  * An item may carry a `count` — the section's own size, said once, on the tab.
- * @architecture Enterprise SaaS 2026
  * @module shared/ui/composites/RouteTabs
  */
 

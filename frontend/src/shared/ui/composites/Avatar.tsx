@@ -4,7 +4,6 @@
  * otherwise a graceful initials fallback. One component for every surface that
  * shows a person (settings, shell, roster) so avatars look identical everywhere
  * and gracefully degrade to initials on missing/broken images.
- * @architecture Enterprise SaaS 2026
  * @module shared/ui/composites/Avatar
  */
 

@@ -10,7 +10,6 @@
  *  speaks only in register and runtime classes is the register talking about itself, and a rule
  *  naming a page object (`.path-entry-title`, `.station-poster`) is a page talking about a
  *  register node. The first is the language; the second is what collides with it.
- * @architecture Astro islands 2026
  * @module audit/checks
  */
 

@@ -13,7 +13,6 @@
  * It wears the conversation's own type scale rather than the form shell's: the
  * reading size the member picked is the size they write at too, held at 16px on
  * touch however small they set the reading (see `MESSAGE_COMPOSER_TEXT`).
- * @architecture Enterprise SaaS 2026
  * @module features/messages/components
  */
 

@@ -2,7 +2,6 @@
  * @file finance.service.test.ts
  * @description Keeps finance endpoints that use `results` as a page payload
  * from being flattened by the shared HTTP client's ordinary list behaviour.
- * @architecture Enterprise SaaS 2026
  * @module features/finance/api/finance.service.test
  */
 

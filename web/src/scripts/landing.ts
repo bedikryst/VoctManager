@@ -29,7 +29,6 @@
  *  the fixed cross-browser one), chrome tint (the StickyHeader island owns it via React state),
  *  and the footer wordmark cursor reactivity (the SiteFooter island). All re-bind on
  *  `astro:page-load` so ClientRouter navigations stay live; bindings target only `.voct-landing`.
- * @architecture Astro islands 2026
  * @module scripts/landing
  */
 

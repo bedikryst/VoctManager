@@ -11,7 +11,6 @@
  * surface around it AND one sentence settles it. A term that needs two
  * sentences needs renaming instead — that goes to the remediation file's
  * "Still open", not here.
- * @architecture Enterprise SaaS 2026
  * @module shared/ui/composites/glossary/glossaryTerms
  */
 

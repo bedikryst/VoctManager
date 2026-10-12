@@ -5,7 +5,6 @@
  * it, so the ledger never answers a click with a 400; the few it cannot
  * predict (a row changed under another hand) still come back as a refusal
  * with words.
- * @architecture Enterprise SaaS 2026
  * @module features/finance/lib/ledgerActs
  */
 

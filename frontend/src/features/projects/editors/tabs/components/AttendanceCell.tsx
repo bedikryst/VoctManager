@@ -6,7 +6,6 @@
  * Shift-click walks it back.
  * Memoised on value: a project can hold several hundred of these, and a single
  * click must not repaint the grid.
- * @architecture Enterprise SaaS 2026
  * @module features/projects/editors/tabs/components/AttendanceCell
  */
 

@@ -623,7 +623,6 @@ class ScorePackage(EnterpriseBaseModel):
     build status, and a content hash of the inputs, so the output can be flagged
     stale when the repertoire or settings change.
 
-    @architecture Enterprise SaaS 2026
     @module roster/ScorePackage
     """
 

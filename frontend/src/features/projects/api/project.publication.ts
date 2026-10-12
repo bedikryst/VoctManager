@@ -4,7 +4,6 @@
  * from the ordinary status mutation: publication is not a field edit but the act
  * that ends a project's silence and writes to the whole cast at once, so it has
  * its own endpoint, its own preview read and its own cache invalidation.
- * @architecture Enterprise SaaS 2026
  * @module features/projects/api
  */
 

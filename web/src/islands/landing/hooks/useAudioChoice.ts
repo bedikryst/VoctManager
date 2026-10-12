@@ -2,7 +2,6 @@
  * @file useAudioChoice.ts
  * @description Persists the user's threshold gate decision (silence | voice) with a 3h TTL.
  * Legacy raw-string format from the static HTML is auto-migrated on read.
- * @architecture Enterprise SaaS 2026
  * @module features/landing/hooks/useAudioChoice
  */
 

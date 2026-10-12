@@ -4,7 +4,6 @@
  * the one form the app uses for it: the date picker's column heads (date-fns'
  * short weekday — "pon", "wto", "śro" in Polish). Read in the zone the caller
  * names, so it always agrees with the day number beside it.
- * @architecture Enterprise SaaS 2026
  * @module shared/lib/time/weekday
  */
 

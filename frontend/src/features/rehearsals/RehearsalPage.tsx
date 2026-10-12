@@ -15,7 +15,6 @@
  * supplies the seat, so the RSVP written here is the same write as the one on
  * the card. A reader with no seat in the programme — a manager following the
  * link — gets the evening without the RSVP, which is the truth about them.
- * @architecture Enterprise SaaS 2026
  * @module features/rehearsals
  */
 

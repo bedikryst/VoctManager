@@ -6,7 +6,6 @@
  * tab so the two drawers read as one design language. The entry covering the
  * current page is highlighted, which doubles as "where am I in the programme".
  * @module shared/ui/composites/PdfViewer
- * @architecture Enterprise SaaS 2026
  */
 
 import React, { useMemo, useState } from "react";

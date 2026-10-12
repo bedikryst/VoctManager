@@ -1,6 +1,5 @@
 """
 Handles compilation of binary (PDF) and text (CSV/TXT) artifacts.
-@architecture Enterprise SaaS 2026
 
 Strictly isolated from core business logic. Acts as an infrastructure adapter
 for the rendering engine (WeasyPrint / Django Templates). This design enables

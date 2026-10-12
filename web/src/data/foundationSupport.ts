@@ -20,7 +20,6 @@
  *
  *  THE RECORD IS NOT HERE. The ensemble's evenings before the foundation are computed from the
  *  corpus against `FOUNDATION.foundedOn` (lib/realisations), so no list of ids can go stale.
- * @architecture Astro islands 2026
  * @module data/foundationSupport
  */
 

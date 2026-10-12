@@ -22,7 +22,6 @@
  * the way out is the defect they replaced: it declared the whole corpus read
  * because somebody opened one page of it.
  *
- * @architecture Enterprise SaaS 2026
  * @module widgets/copy-desk-shell/CopyDeskShell
  */
 

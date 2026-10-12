@@ -2,7 +2,6 @@
  * @file portfolio.ts
  * @description Derivations over the foundation's finance overview that more
  * than one surface of the workspace must agree on.
- * @architecture Enterprise SaaS 2026
  * @module features/finance/lib/portfolio
  */
 

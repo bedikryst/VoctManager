@@ -17,7 +17,6 @@
  * plain type. What is NEW, what has CHANGED, and what has gone stale under an
  * edited Polish are exceptions — they wear a chip, they appear only when they
  * exist, and a page nobody has touched says nothing beyond how big it is.
- * @architecture Enterprise SaaS 2026
  * @module features/copydesk/components/ScopeContentsList
  */
 

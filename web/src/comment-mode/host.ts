@@ -14,7 +14,6 @@
  *
  *  The client router replaces `<body>`, so the host is re-attached on every swap; it keeps its
  *  shadow root and everything in it.
- * @architecture Astro islands 2026
  * @module comment-mode/host
  */
 

@@ -8,7 +8,6 @@
  *  page being corrected. No full-viewport layer anywhere, not even a scrim behind the sheet: a
  *  fixed layer over the whole viewport changes what iOS samples for its edge bands
  *  (docs/web-landing-guardrails.md §3a). Every field is 16px or more, or iOS zooms on focus.
- * @architecture Astro islands 2026
  * @module comment-mode/styles
  */
 

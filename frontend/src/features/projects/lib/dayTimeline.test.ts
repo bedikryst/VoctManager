@@ -13,7 +13,6 @@
  * last within its day — is `point_sort_key` on the backend and
  * `compareRunSheetItems` here, and the suites below mirror the backend's own
  * cases for it (`TripPlanDomainTests`).
- * @architecture Enterprise SaaS 2026
  * @module features/projects/lib/dayTimeline.test
  */
 

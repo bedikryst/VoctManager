@@ -8,7 +8,6 @@
  * only when it has something to say: rows still unpriced — "0 bez stawki" on a
  * finished ledger is the resting case in the loudest slot the card has — or
  * which sources carry the section, which otherwise lives only in row menus.
- * @architecture Enterprise SaaS 2026
  * @module features/finance/budget/components/LedgerCard
  */
 

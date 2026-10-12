@@ -2,7 +2,6 @@
  * @file DashboardFilterMenu.tsx
  * @description Segmented filter control for project lifecycle views.
  * Aligns dashboard filtering with shared glass and typography primitives.
- * @architecture Enterprise SaaS 2026
  * @module features/projects/components/DashboardFilterMenu
  */
 

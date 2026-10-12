@@ -9,7 +9,6 @@
  * tablet and wasteful everywhere else, so the fit is a mode, and `auto` picks
  * it from the measured box rather than from a device guess.
  * @module shared/ui/composites/PdfViewer
- * @architecture Enterprise SaaS 2026
  */
 
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";

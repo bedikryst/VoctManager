@@ -20,7 +20,6 @@
              only `cache.add` creates; and the stamp of the latest report. Each
              report schedules its own flush, and a flush never schedules another:
              under eager Celery a re-scheduled task runs inline and recurses.
-@architecture Enterprise SaaS 2026
 @module notifications/push_fold
 """
 from __future__ import annotations

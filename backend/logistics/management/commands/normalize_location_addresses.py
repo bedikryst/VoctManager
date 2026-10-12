@@ -4,7 +4,6 @@
     stored. Every write path normalizes from now on, so this is only for rows
     imported before that — chiefly the Places shape that repeats the postal code
     (`02-532, Rakowiecka 61, 02-532 Warszawa, Poland`).
-@architecture Enterprise SaaS 2026
 @module logistics/management/commands/normalize_location_addresses
 """
 

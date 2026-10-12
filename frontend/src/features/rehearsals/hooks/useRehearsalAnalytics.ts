@@ -5,7 +5,6 @@
  * realised attendance, and the rehearsal-over-rehearsal trend. Only graded
  * (already-happened) rehearsals count, and unrecorded slots are treated as
  * "unknown" rather than punished — so data gaps never masquerade as absences.
- * @architecture Enterprise SaaS 2026
  */
 
 import { useMemo } from "react";

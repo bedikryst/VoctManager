@@ -6,7 +6,6 @@
              same question, so a stand-in cannot be privileged on one screen and
              a stranger on the next. Also which evenings call a stand-in who
              holds no seat, for every audience built from the cast.
-@architecture Enterprise SaaS 2026
 @module roster/permissions
 """
 

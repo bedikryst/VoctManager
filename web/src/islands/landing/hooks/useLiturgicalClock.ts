@@ -4,7 +4,6 @@
  * Minute tick is synced to the minute boundary (then refreshed every 30s as safety);
  * seconds tick is synced to the second boundary (then 1s interval). Returns a stable
  * object the consumer can render directly.
- * @architecture Enterprise SaaS 2026
  * @module features/landing/hooks/useLiturgicalClock
  */
 

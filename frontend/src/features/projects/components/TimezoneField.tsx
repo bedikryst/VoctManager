@@ -7,7 +7,6 @@
  * Both the concert form and the rehearsal form need exactly this, which is why
  * it lives here instead of being typed twice — two copies of one recipe is how
  * the panel drifted in the first place.
- * @architecture Enterprise SaaS 2026
  * @module features/projects/components/TimezoneField
  */
 

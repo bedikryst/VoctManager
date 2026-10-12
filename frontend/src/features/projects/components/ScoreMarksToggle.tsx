@@ -9,7 +9,6 @@
  * It appears only where there is something to draw. A reader with no marks, and
  * a hand-uploaded book that has no page map to place them on, both get no
  * switch rather than one that hands back an identical file.
- * @architecture Enterprise SaaS 2026
  * @module features/projects/components
  */
 

@@ -10,7 +10,6 @@
              keeps its amount and vendor until the board reverts the payment,
              and every change is logged. Paying and reverting a payment go
              through the ledger service, as for fees.
-@architecture Enterprise SaaS 2026
 @module finance/services/expenses
 """
 from datetime import date

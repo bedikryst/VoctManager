@@ -4,7 +4,6 @@
              who reads the corpus and proposes changes to it, and a reviewer, who
              settles those proposals and reads the patch that is waiting to be
              written into the repository.
-@architecture Enterprise SaaS 2026
 @module copydesk/views
 """
 from __future__ import annotations

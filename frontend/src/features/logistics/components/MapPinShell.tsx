@@ -10,7 +10,6 @@
  * riding the ladder: the Google raster is a light map in both themes (the dark
  * one is deferred to its own stage), so a pin that inverted with the panel would
  * turn into a dark disc casting a pale halo over tiles that never moved.
- * @architecture Enterprise SaaS 2026
  * @module features/logistics/components/MapPinShell
  */
 

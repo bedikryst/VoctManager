@@ -2,7 +2,6 @@
  * @file ProjectCastPage.tsx
  * @description Route wrapper for the main casting work area of a project.
  * Mounts the existing CastTab with the project resolved by the hub layout.
- * @architecture Enterprise SaaS 2026
  * @module features/projects/ProjectCastPage
  */
 

@@ -21,7 +21,6 @@
  *
  * The clock is kept as typed: an "8:59" is the conductor's habit, not a typo.
  * Pure: the editor previews what this returns before anything is inserted.
- * @architecture Enterprise SaaS 2026
  * @module features/rehearsals/lib/planText
  */
 

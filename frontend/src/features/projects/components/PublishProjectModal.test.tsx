@@ -7,7 +7,6 @@
  * confirming sends exactly one request, that an unpublishable project cannot be
  * sent at all, and that the dialog cannot be dismissed out from under a write
  * already in flight.
- * @architecture Enterprise SaaS 2026
  * @module features/projects/components
  */
 

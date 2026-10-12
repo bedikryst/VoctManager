@@ -9,7 +9,6 @@
              (`reachable_devices`) and whether the account takes e-mail
              (`notification_email_block`). The client renders; nothing here is
              decided a second time.
-@architecture Enterprise SaaS 2026
 @module notifications/preview
 """
 from __future__ import annotations

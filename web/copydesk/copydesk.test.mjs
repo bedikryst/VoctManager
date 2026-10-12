@@ -15,7 +15,6 @@
  *    original".
  *  - **Determinism.** Two runs over unchanged corpora are byte-identical, so a diff of the
  *    artifact is a diff of the site's text and nothing else.
- * @architecture Astro islands 2026
  * @module copydesk/copydesk.test
  */
 

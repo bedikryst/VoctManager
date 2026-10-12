@@ -8,7 +8,6 @@
  * The book with someone's private marks on it is a different document each time
  * it is asked for, so remembering "on" would quietly hand a singer a heavier
  * download every time they open the score to check a page number.
- * @architecture Enterprise SaaS 2026
  * @module features/projects/api
  */
 

@@ -4,7 +4,6 @@
  * the live grant deadlines and budget warnings. It intentionally has no
  * cross-grant balance: an agreement's remaining amount is meaningful only on
  * that agreement's own page.
- * @architecture Enterprise SaaS 2026
  * @module features/finance/workspace/OverviewPage
  */
 

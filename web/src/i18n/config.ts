@@ -8,7 +8,6 @@
  *  translated page (/koncerty) lands on the real Polish page instead of a 404 in an empty
  *  locale folder. Grow `TRANSLATED_ROUTES` as each page is translated — that single set is the
  *  switch that lights a page up in the nav, the language switcher and the hreflang graph.
- * @architecture Astro islands 2026
  * @module i18n/config
  */
 

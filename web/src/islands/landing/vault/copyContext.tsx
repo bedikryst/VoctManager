@@ -16,7 +16,6 @@
  *  FUNCTIONS — a Polish plural, an interpolated amount — and a function cannot be serialized into
  *  an island's props, so it is imported here and all three locales ship in the bundle. They are
  *  short affordances and the file they come from carries no zod, which is why that split exists.
- * @architecture Astro islands 2026
  * @module islands/landing/vault/copyContext
  */
 

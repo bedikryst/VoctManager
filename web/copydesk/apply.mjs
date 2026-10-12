@@ -32,7 +32,6 @@
  *  AND AFTER WRITING, the files are read back FROM DISK and checked again — every edited value
  *  where it should be, every untouched field byte-identical, the comment count unchanged. A write
  *  that fails that check is rolled back to the bytes it started from, every file of it.
- * @architecture Astro islands 2026
  * @module copydesk/apply
  */
 

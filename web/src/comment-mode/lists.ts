@@ -12,7 +12,6 @@
  *
  *  "On show" means the text takes room and is not `visibility: hidden` (the vault's closed state).
  *  Opacity is not asked: the site fades text in as it scrolls into view, and that text is there.
- * @architecture Astro islands 2026
  * @module comment-mode/lists
  */
 

@@ -5,7 +5,6 @@
  * primitive — used as-is, per spec: portal to `document.body`,
  * drag-to-dismiss, safe-area padding, `z-focus-trap`, centred modal from `sm:`.
  * @module widgets/panel-shell/notes
- * @architecture Enterprise SaaS 2026
  */
 
 import React from "react";

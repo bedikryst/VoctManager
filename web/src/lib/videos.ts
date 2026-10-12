@@ -29,7 +29,6 @@
  *  checks them at build time: a mismatch renders every page correctly and 404s the players.
  *  Re-encoding a film is therefore: drop it in `public/video/`, `npm run video:stamp`, paste
  *  what it prints below, upload, and `npm run video:stamp -- --verify` on the host.
- * @architecture Astro assets 2026
  * @module lib/videos
  */
 

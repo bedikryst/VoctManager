@@ -18,7 +18,6 @@
              or a span, which is one request over several evenings. A burst
              holding two absences is two decisions, and one tap must not make
              both.
-@architecture Enterprise SaaS 2026
 @module notifications/absence_accept
 """
 from __future__ import annotations

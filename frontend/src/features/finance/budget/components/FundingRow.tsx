@@ -5,7 +5,6 @@
  * they exist — what has arrived and what is charged to it. The warnings the
  * server raised about this source are spoken on the row, in their own tone;
  * a source with nothing wrong says nothing more.
- * @architecture Enterprise SaaS 2026
  * @module features/finance/budget/components/FundingRow
  */
 

@@ -10,7 +10,6 @@
  * would only make the writer choose. What is left is the part a symbol cannot
  * carry: diction, ensemble, and the size of a gesture.
  * @module features/annotations/lib
- * @architecture Enterprise SaaS 2026
  */
 
 export interface QuickPhrase {

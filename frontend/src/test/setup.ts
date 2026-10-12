@@ -9,7 +9,6 @@
  * instance seeded with test strings would let the locale files rot while the
  * suite stayed green — and react-i18next keeps a single default instance
  * anyway, so two `initReactI18next` calls would race.
- * @architecture Enterprise SaaS 2026
  * @module test/setup
  */
 

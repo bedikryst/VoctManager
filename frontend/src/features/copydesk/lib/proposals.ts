@@ -3,7 +3,6 @@
  * @description What one cell of the desk is actually in — read off the segment
  * and the proposals hanging on it, in one place, so the editor, the chips and
  * the "original" toggle cannot disagree about it.
- * @architecture Enterprise SaaS 2026
  * @module features/copydesk/lib/proposals
  */
 

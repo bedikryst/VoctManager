@@ -18,7 +18,6 @@
     Text-layer only — a pure scan yields nothing and its pages are left
     untouched, which is the correct failure mode: no detection is better than a
     white patch over engraving.
-@architecture Enterprise SaaS 2026
 @module roster/infrastructure/score_source_numbering
 """
 

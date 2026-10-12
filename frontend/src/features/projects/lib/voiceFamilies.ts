@@ -7,7 +7,6 @@
  * mapping a sectional rehearsal calls by, mirrored from the server's
  * `core/voice_labels.py`. Which family a `VoiceLine` belongs to, and the
  * families' score order, live in `shared/lib/voiceFamilies`.
- * @architecture Enterprise SaaS 2026
  * @module features/projects/lib/voiceFamilies
  */
 

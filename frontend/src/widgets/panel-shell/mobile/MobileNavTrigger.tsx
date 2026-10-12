@@ -10,7 +10,6 @@
  * `backdrop-filter`: a fixed bar with one re-samples whatever scrolls beneath it
  * on every frame, and at 94% opacity there was nothing left to see through.
  *
- * @architecture Enterprise SaaS 2026
  * @module widgets/panel-shell/mobile
  */
 

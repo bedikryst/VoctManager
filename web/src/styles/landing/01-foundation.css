@@ -2,7 +2,6 @@
  * @file landing.css
  * @description Design system & component styles for the public landing page (`/`).
  * Verbatim port of the hand-crafted styles from LandingPage.html (concert vault edition).
- * @architecture Enterprise SaaS 2026
  * @module app/styles/marketing-landing
  *
  * Scoping: global body/html/preloader states are gated under `body.theme-marketing`

@@ -5,7 +5,6 @@
  * accent + atlas marker colour so the rail rows, dossier and map markers all
  * speak the same temporal dialect. Colour discipline: crimson stays an alarm,
  * so "today" reads as gold (active/now), not crimson.
- * @architecture Enterprise SaaS 2026
  * @module features/logistics/constants/eventImminence
  */
 

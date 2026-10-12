@@ -10,7 +10,6 @@
  * sheet opened is not written back — and applies the rest in the same
  * transaction. Only what changed is sent. The hourly rate a volunteer
  * agreement prints is frozen once the agreement is issued.
- * @architecture Enterprise SaaS 2026
  * @module features/finance/budget/components/FeeDetailsSheet
  */
 

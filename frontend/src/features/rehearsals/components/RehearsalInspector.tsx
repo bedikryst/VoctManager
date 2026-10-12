@@ -26,7 +26,6 @@
  * editable where it is read, for the manager and the leader alike.
  * `onSaveDebrief` is the leader's: the debrief is written at the foot of the
  * card, under both panes, and the manager reads the same block there.
- * @architecture Enterprise SaaS 2026
  * @module features/rehearsals/components/RehearsalInspector
  */
 

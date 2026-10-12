@@ -4,7 +4,6 @@
              effective preference per type, asks `plan_delivery` what each
              channel does with the event, and hands the answer to the email and
              push transport tasks. Pure routing — no template logic.
-@architecture Enterprise SaaS 2026
 @module notifications/router
 """
 from typing import Any

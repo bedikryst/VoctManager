@@ -20,7 +20,6 @@
              set of candidates and anything unrecognized is logged whole. The
              first production events are expected to narrow this — see the
              runbook in docs/specs/messaging-providers-2026-09.md.
-@architecture Enterprise SaaS 2026
 @module notifications/emaillabs_webhook
 """
 from __future__ import annotations

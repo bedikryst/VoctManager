@@ -4,7 +4,6 @@
  *  only — GDPR hard rule: no YouTube/Vimeo embeds (an outbound link is fine, an iframe
  *  is not). The files themselves are served off disk at stable `/video/*.mp4` paths and
  *  never enter the build — see lib/videos for why, and for the revision that busts them.
- * @architecture Astro islands 2026
  * @module data/landing/video
  */
 

@@ -10,7 +10,6 @@
  * A taken row stays in place instead of vanishing, so the list does not
  * reshuffle under the pointer between two picks — but it reads as taken, not
  * struck out: a line through a title means cancelled, not chosen.
- * @architecture Enterprise SaaS 2026
  * @module features/projects/editors/tabs/components/PickerRow
  */
 

@@ -2,7 +2,6 @@
  * @file ArchiveEmptyState.tsx
  * @description Empty state for the archive collection list.
  * Adapts its copy and actions to search-driven and filter-driven no-result scenarios.
- * @architecture Enterprise SaaS 2026
  */
 
 import React from "react";

@@ -19,7 +19,6 @@
  *     invalidates (when online) rather than trusting the mutation response,
  *     so the optimistic row is dropped the moment the list disagrees.
  * @module features/notes/api
- * @architecture Enterprise SaaS 2026
  */
 
 import { useCallback } from "react";

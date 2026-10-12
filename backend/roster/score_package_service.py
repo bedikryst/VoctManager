@@ -5,7 +5,6 @@
     per-item build cockpit), per-item override persistence, the live card preview,
     and the async dispatch + persistence lifecycle. Views and tasks talk to this —
     never to the builder directly.
-@architecture Enterprise SaaS 2026
 @module roster/score_package_service
 """
 

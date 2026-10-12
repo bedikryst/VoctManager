@@ -18,7 +18,6 @@
  *    into an empty locale folder.
  *  - Prefetch + ClientRouter (set in BaseLayout)
  *  - A dev-only `/api` proxy to the nginx stack, for the comment mode.
- * @architecture Astro islands 2026
  * @module build/astro
  */
 import { defineConfig } from "astro/config";

@@ -10,7 +10,6 @@
              Polish only and deliberately not gettext'd, like the contracts: a
              patron, the board and a grantor's auditor read these in Polish. Dates
              are rendered under the Polish locale whatever the request's language.
-@architecture Enterprise SaaS 2026
 @module finance/infrastructure/reports
 """
 from collections.abc import Callable

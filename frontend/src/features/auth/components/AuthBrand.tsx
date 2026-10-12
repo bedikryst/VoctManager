@@ -4,7 +4,6 @@
  * screens. On entry a single warm "struck pitch" halo rings out behind the
  * mark — a quiet nod to a tuning fork settling to A before the choir sings —
  * then the field goes still. Tone adapts to light (card) or dark (nave) ground.
- * @architecture Enterprise SaaS 2026
  * @module features/auth/components/AuthBrand
  */
 

@@ -16,7 +16,6 @@
  * Once the project is published the cast can be narrowed to who has not
  * answered or who declined. That segment, the section headers and the balance
  * rail all count seats through `castStanding`, so no two of them can disagree.
- * @architecture Enterprise SaaS 2026
  * @module features/projects/editors/hooks/useCastTab
  */
 

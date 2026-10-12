@@ -4,7 +4,6 @@
              fingerprint of a Polish value that a translation was rendered
              against. A translation whose Polish moved looks perfectly fine on
              screen; this hash is the only thing that can say otherwise.
-@architecture Enterprise SaaS 2026
 @module copydesk/hashing
 """
 from __future__ import annotations

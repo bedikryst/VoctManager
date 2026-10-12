@@ -15,7 +15,6 @@
  * ledger can select all its rows at once. The row menu stays for exceptions.
  * Nothing is queued offline: while the device has no network the save bar and
  * every act are disabled, and each says why.
- * @architecture Enterprise SaaS 2026
  * @module features/finance/budget/FeesPage
  */
 

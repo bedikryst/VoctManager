@@ -7,7 +7,6 @@
     way: to no place, never to an error. The flat plan-start facts a
     notification carries (the reminder, the invitation) are assembled here too,
     since naming that moment's place is the part that needs the database.
-@architecture Enterprise SaaS 2026
 @module roster/queries/day_plan_queries
 """
 

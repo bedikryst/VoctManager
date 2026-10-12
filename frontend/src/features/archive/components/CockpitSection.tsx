@@ -5,7 +5,6 @@
  * provenance-chip header that sits over a single control. Presentation only —
  * they hold no piece data and no form state, which is what lets the long review
  * cockpit be assembled from them without the page owning their internals.
- * @architecture Enterprise SaaS 2026
  * @module features/archive/components/CockpitSection
  */
 

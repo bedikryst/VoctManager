@@ -13,7 +13,6 @@
  * A grant also changes what a DIFFERENT person's browser is allowed to fetch, at
  * URLs this client has no say over — see `invalidateDelegationReach` for the half
  * of that problem this side can actually solve.
- * @architecture Enterprise SaaS 2026
  * @module features/projects/api
  */
 

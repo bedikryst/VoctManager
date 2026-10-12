@@ -12,7 +12,6 @@
              value is not a new claim), and `updated_at` is not bumped (a cosmetic
              cleanup should not trip the app's freshness / refetch machinery).
 
-@architecture Enterprise SaaS 2026
 @module archive/management/commands/normalize_piece_languages
 """
 from __future__ import annotations

@@ -4,7 +4,6 @@
  * filter) → search / range filter / sort / density toolbar → grid or list of
  * singers. Editing happens in a slide-over; one-click messaging is wired at
  * the page level so a single thread composer serves every card and row.
- * @architecture Enterprise SaaS 2026
  * @module features/artists/ArtistManagement
  */
 

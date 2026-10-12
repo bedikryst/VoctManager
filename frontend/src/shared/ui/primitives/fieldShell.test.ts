@@ -10,7 +10,6 @@
  *
  * The frozen block is evidence, not code under maintenance. It records what
  * shipped before 2026-07-26 and must never be "updated to match".
- * @architecture Enterprise SaaS 2026
  * @module shared/ui/primitives/fieldShell.test
  */
 

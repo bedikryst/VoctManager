@@ -4,7 +4,6 @@
  *  foundation's Zrzutka.pl page in a new tab (BLIK, card, Apple/Google Pay, recurring). The
  *  service's name is a brand and stays itself in every locale, so it is written here rather than
  *  on the desk.
- * @architecture Astro islands 2026
  * @module islands/landing/vault/ZrzutkaPanel
  */
 

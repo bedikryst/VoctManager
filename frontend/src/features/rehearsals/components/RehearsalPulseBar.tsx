@@ -6,7 +6,6 @@
  * today and past sessions whose roll call is still open. It carries no action:
  * the workspace opens on the spotlit rehearsal, so its register is already the
  * card below.
- * @architecture Enterprise SaaS 2026
  * @module features/rehearsals/components/RehearsalPulseBar
  */
 

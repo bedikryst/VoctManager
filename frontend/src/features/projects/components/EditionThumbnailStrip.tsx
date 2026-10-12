@@ -7,7 +7,6 @@
  * Pages outside the kept range dim out; the AI-suggested start is flagged.
  * Presentational: the row owns the manifest query, because whether the strip can
  * render at all decides what the row shows in its place.
- * @architecture Enterprise SaaS 2026
  * @module features/projects/components/EditionThumbnailStrip
  */
 

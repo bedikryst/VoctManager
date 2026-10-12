@@ -12,7 +12,6 @@
  *
  *  Leaving the page from inside an open overlay goes through `navigateFromOverlay`, which spends
  *  the pushed entry rather than stacking the destination on top of it — see its own note.
- * @architecture Astro islands 2026
  * @module lib/overlayHistory
  */
 

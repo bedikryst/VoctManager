@@ -1,7 +1,6 @@
 /**
  * @file useProjectCard.ts
  * @description Custom hook managing the asynchronous document generation and download lifecycle.
- * @architecture Enterprise SaaS 2026
  * @module features/projects/ProjectCard/hooks/useProjectCard
  */
 

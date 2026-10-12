@@ -6,7 +6,6 @@
  * the list. Each system carries two sample words in IPA — the same two for all
  * three — because the names alone ("niemiecka", "włoska") do not tell a
  * manager what a choir will actually sing.
- * @architecture Enterprise SaaS 2026
  * @module features/archive/constants/latinPronunciation
  */
 

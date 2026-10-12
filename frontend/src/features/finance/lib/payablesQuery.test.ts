@@ -3,7 +3,6 @@
  * @description Pins what Do zapłaty sends from its URL. The payables endpoint
  * answers an unexpected key with a 400, so a URL left over from the paid list,
  * or typed by hand, must never turn into a request the server refuses.
- * @architecture Enterprise SaaS 2026
  * @module features/finance/lib/payablesQuery.test
  */
 

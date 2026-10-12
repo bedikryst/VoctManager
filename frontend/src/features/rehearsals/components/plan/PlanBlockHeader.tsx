@@ -11,7 +11,6 @@
  * it everywhere. Lines ("bez B2") stay per row. Editor only: nothing here
  * reaches the choir, and the header is not a container — a row dragged into
  * the block keeps its own exclusions, and the chip then reads "some".
- * @architecture Enterprise SaaS 2026
  * @module features/rehearsals/components/plan/PlanBlockHeader
  */
 

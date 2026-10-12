@@ -21,7 +21,6 @@
  *
  *  NOT a replacement for `framedShot` (lib/galleryFrame). That one hands the lightbox the WHOLE
  *  photograph, uncropped, and the surfaces that crop a thumbnail ask for both at once.
- * @architecture Astro islands 2026
  * @module lib/croppedShot
  */
 

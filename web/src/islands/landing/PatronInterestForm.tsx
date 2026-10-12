@@ -13,7 +13,6 @@
  *  THE RECEIPT IS SHOWN ONLY AFTER THE ENDPOINT ACCEPTED. A refusal keeps every value the reader
  *  typed and prints one line under the fields, with the patronage address as the way out; the
  *  button is disabled for the length of the request so a double tap cannot post twice.
- * @architecture Astro islands 2026
  * @module islands/landing/PatronInterestForm
  */
 

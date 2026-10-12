@@ -3,7 +3,6 @@
  * @description Authentication Context Provider.
  * Manages global authentication state, JWT lifecycle, and user profile data.
  * Exposes a custom hook (useAuth) to protect routes and conditionally render UI.
- * @architecture Enterprise 2026 Standards
  * @module context/AuthContext
  */
 

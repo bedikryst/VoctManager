@@ -4,7 +4,6 @@
  * a filled check when active. Every on/off decision in the tab goes through it
  * (book structure, card elements), so "on" is stated one way everywhere instead
  * of a check circle on one row and a bare gold fill on the next.
- * @architecture Enterprise SaaS 2026
  * @module features/projects/components/TogglePill
  */
 

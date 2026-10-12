@@ -2,7 +2,6 @@
  * @file index.ts
  * @description Comprehensive Data Dictionary for the production frontend.
  * Directly maps to Django backend models (roster & archive applications).
- * @architecture Enterprise SaaS 2026
  * @module shared/types
  */
 

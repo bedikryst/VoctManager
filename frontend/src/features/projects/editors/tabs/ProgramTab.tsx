@@ -6,7 +6,6 @@
  * metadata, and the figure on the right edge.
  * Reordering is a deferred edit committed through the shared `EditorActionBar`;
  * adding, removing and the encore flag write immediately.
- * @architecture Enterprise SaaS 2026
  * @module features/projects/editors/tabs/ProgramTab
  */
 

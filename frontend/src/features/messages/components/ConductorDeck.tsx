@@ -16,7 +16,6 @@
  *
  * The two buckets are a partition: a thread that is both unassigned and unread
  * appears under assignment only, or the manager reads the same row twice.
- * @architecture Enterprise SaaS 2026
  * @module features/messages/components
  */
 

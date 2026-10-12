@@ -19,7 +19,6 @@
  *  register's paper follows it up and never crosses it. All of that is gated on
  *  `animation-timeline` support AND on motion being wanted — without the timelines a pinned room
  *  would let the paper come up over the letter and cut it, so the page simply scrolls.
- * @architecture Astro islands 2026
  * @module styles/notice-letter
  */
 

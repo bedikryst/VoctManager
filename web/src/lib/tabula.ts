@@ -14,7 +14,6 @@
  *  The numerals are the INDEX'S, not necessarily the page's. On `/obrazy` they happen to be the
  *  concerts' own Via numerals; on a concert page the bands carry no number anywhere and the index
  *  numbers them I…N itself, which is what a table of contents has always done.
- * @architecture Astro islands 2026
  * @module lib/tabula
  */
 

@@ -20,7 +20,6 @@
  *
  *  Credentials come from the environment (`COPYDESK_EMAIL` / `COPYDESK_PASSWORD`), never from a
  *  file in the repo: the account is staff, which is the account that can review and accept.
- * @architecture Astro islands 2026
  * @module copydesk/sync
  */
 

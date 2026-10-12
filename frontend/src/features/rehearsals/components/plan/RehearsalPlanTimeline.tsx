@@ -26,7 +26,6 @@
  * Shared by the plan band of the rehearsal card, the lead sheet, the
  * chorister's rehearsal page and the schedule previews (which pass the main
  * rows only); a row can link out through `hrefOf`.
- * @architecture Enterprise SaaS 2026
  * @module features/rehearsals/components/plan/RehearsalPlanTimeline
  */
 

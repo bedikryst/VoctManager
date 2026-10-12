@@ -12,7 +12,6 @@
  * Pair it with the `inert` attribute, never with it alone: this constant is the
  * look, `inert` is the death — it takes the subtree out of hit-testing, out of
  * the tab order and out of the accessibility tree at once, which no class can.
- * @architecture Enterprise SaaS 2026
  * @module shared/ui/primitives/inertSurface
  */
 

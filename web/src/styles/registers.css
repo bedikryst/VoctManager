@@ -9,7 +9,6 @@
  *  CASCADE: this sheet is emitted BEFORE base.css and before any page's own styles, on every
  *  page — so at equal specificity it loses to both. Rules here that must win are written to win
  *  on specificity rather than on order; do not rely on source position when adding to it.
- * @architecture Astro islands 2026
  * @module styles/registers
  */
 

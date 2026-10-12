@@ -189,7 +189,6 @@
  *  (c) the ROW (`.voice`) carries the ink, the WORD carries the press, and they stay on
  *      separate elements: `transition` is a shorthand, so an entrance declared on the word
  *      would replace the give it already runs under a finger rather than add to it.
- * @architecture Astro islands 2026
  * @module styles/nave-menu
  */
 

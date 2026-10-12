@@ -23,7 +23,6 @@
  *  checkout's Polish. The hash stamped at apply time asserts "this translation renders that
  *  Polish", and a mirror older than the corpus would make that assertion false while looking
  *  perfectly healthy. A drift stops the run and names the key.
- * @architecture Astro islands 2026
  * @module copydesk/propose
  */
 

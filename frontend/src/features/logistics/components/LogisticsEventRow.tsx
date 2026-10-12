@@ -4,7 +4,6 @@
  * by imminence, the concert/rehearsal title and its venue. Clicking flies the
  * atlas to the venue and opens its dossier (events without coordinates are
  * inert but still listed so nothing silently disappears).
- * @architecture Enterprise SaaS 2026
  * @module features/logistics/components/LogisticsEventRow
  */
 

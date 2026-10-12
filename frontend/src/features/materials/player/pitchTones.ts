@@ -8,7 +8,6 @@
  * oscillator with a gentle attack/release envelope. Framework-agnostic — React
  * consumes the returned handle.
  * @module features/materials/player
- * @architecture Enterprise SaaS 2026
  */
 
 import {

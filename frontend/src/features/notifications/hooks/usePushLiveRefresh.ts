@@ -5,7 +5,6 @@
  * polled query does; without this bridge the reader gets a banner about a
  * message the panel keeps refusing to show until its next tick. Mounted once in
  * the shell, so it covers every route the reader can be standing on.
- * @architecture Enterprise SaaS 2026
  * @module notifications/hooks/usePushLiveRefresh
  */
 import { useEffect } from "react";

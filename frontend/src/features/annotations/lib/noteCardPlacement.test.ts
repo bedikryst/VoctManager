@@ -5,7 +5,6 @@
  * a fixed "below the anchor" plus a clamp against a guessed card height, which
  * near the foot of a page pulled the card back up over its own anchor.
  * @module features/annotations/lib/noteCardPlacement.test
- * @architecture Enterprise SaaS 2026
  */
 
 import { describe, expect, it } from "vitest";

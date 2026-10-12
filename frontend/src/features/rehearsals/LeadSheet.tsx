@@ -25,7 +25,6 @@
  * plan") and opens by itself only on an empty plan for an evening still
  * ahead; a non-manager's send goes to the called singers at once. At the
  * music stand nobody should be one stray drag from reordering the evening.
- * @architecture Enterprise SaaS 2026
  * @module features/rehearsals
  */
 

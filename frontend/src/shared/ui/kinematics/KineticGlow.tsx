@@ -1,7 +1,6 @@
 /**
  * @file KineticGlow.tsx
  * @description Sacral atmosphere shader element for background blending.
- * @architecture Enterprise SaaS 2026
  */
 import React from "react";
 import { cva, type VariantProps } from "class-variance-authority";

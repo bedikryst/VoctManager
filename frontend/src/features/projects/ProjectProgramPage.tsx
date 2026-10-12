@@ -4,7 +4,6 @@
  * Mounts the setlist editor and a thin status bridge to the score-book cockpit
  * (which now lives in its own "Partytura" work area) — the adjacency stays, the
  * heavy generator no longer sits buried beneath the editor.
- * @architecture Enterprise SaaS 2026
  * @module features/projects/ProjectProgramPage
  */
 

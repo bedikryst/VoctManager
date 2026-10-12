@@ -1,7 +1,6 @@
 /**
  * @file project.query-keys.ts
  * @description Stable React Query cache keys for the Project feature.
- * @architecture Enterprise SaaS 2026
  * @module features/projects/api
  */
 

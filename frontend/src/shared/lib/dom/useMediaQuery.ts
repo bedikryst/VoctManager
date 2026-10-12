@@ -4,7 +4,6 @@
  * input modality (e.g. a left drawer on a fine pointer vs a bottom sheet on
  * touch) — the JS mirror of the `fine-pointer:` CSS variant.
  * @module shared/lib/dom
- * @architecture Enterprise SaaS 2026
  */
 
 import { useEffect, useState } from "react";

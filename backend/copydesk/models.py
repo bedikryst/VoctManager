@@ -7,7 +7,6 @@
              written into the repo and passing through a `git diff`;
              `CopyScopeVisit` is one reader's watermark on one page, and the
              only thing the contents list's two halves are computed from.
-@architecture Enterprise SaaS 2026
 @module copydesk/models
 """
 from django.conf import settings

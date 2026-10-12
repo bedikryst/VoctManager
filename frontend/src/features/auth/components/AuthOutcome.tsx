@@ -12,7 +12,6 @@
  * almost always an account that already exists — and crimson is the panel's
  * alarm, spent on the one thing that is genuinely wrong. A genuine failure with
  * no field to blame is `AuthAlert`, which is a banner, not an outcome.
- * @architecture Enterprise SaaS 2026
  * @module features/auth/components/AuthOutcome
  */
 

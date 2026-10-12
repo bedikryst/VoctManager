@@ -4,7 +4,6 @@
  *  small panels into its own shadow root, so it builds them with plain DOM calls instead of
  *  bringing a framework into the chunk. Text always goes in as text nodes, never as markup: field
  *  values and labels come from the desk and are shown, not interpreted.
- * @architecture Astro islands 2026
  * @module comment-mode/dom
  */
 

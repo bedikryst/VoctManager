@@ -1,7 +1,6 @@
 /**
  * @file useCrewForm.ts
  * @description Manages form state, dirty tracking, and persistence for the Crew editor.
- * @architecture Enterprise SaaS 2026
  */
 
 import { useEffect, useMemo, useState } from "react";

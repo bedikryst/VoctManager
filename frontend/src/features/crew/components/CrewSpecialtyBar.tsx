@@ -8,7 +8,6 @@
  *
  * The head-count belongs to the "Wszyscy" tile alone — the header stated it a
  * second time, forty pixels away from the same number.
- * @architecture Enterprise SaaS 2026
  * @module features/crew/components/CrewSpecialtyBar
  */
 

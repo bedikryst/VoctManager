@@ -25,7 +25,6 @@
  *  is what the card's register asks for: the list addresses its readers as "Ty", the invitation
  *  addresses its guests as "Państwo", so the sentence, the errors and the receipt's first two lines
  *  are set in the invitation's voice.
- * @architecture Astro islands 2026
  * @module i18n/content/zaproszenie
  */
 

@@ -11,7 +11,6 @@
     host, so the serve tests patch ``roster.views.stamp_pdf`` and the one real
     stamp test patches the overlay renderer — the merge/placement contract is
     still exercised on pure pypdf.
-@architecture Enterprise SaaS 2026
 @module roster/test_score_protection
 """
 

@@ -8,7 +8,6 @@
  *  THE ANSWER CARRIES NO DETAIL ON PURPOSE. 201 means the reply is on the list, whether or not
  *  that name had written before; the endpoint will not say which, so a public form cannot be
  *  asked who is coming. 410 is the one refusal with a sentence of its own: the concert has begun.
- * @architecture Astro islands 2026
  * @module islands/landing/api/reservations
  */
 

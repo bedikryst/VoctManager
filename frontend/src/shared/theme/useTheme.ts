@@ -8,7 +8,6 @@
  * React: the settings control, any third-party surface that paints its own skin
  * (the toast portal), and rasters that cannot take a CSS colour (the desktop
  * sidebar's house mark).
- * @architecture Enterprise SaaS 2026
  * @module shared/theme/useTheme
  */
 import { useSyncExternalStore } from "react";

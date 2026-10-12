@@ -11,7 +11,6 @@
  * since the newest message it already has, and every answer is folded in (see
  * lib/conversationWindow). That is why these query functions read the cache
  * before they fetch.
- * @architecture Enterprise SaaS 2026
  * @module features/messages/api
  */
 

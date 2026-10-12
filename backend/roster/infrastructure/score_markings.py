@@ -22,7 +22,6 @@
     And because colour does not survive a laser printer with no toner colours,
     the conductor's ink prints HEAVIER than a reader's own pencil: the two layers
     stay distinguishable in grey.
-@architecture Enterprise SaaS 2026
 @module roster/infrastructure/score_markings
 """
 

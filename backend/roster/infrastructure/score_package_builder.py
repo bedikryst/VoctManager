@@ -15,7 +15,6 @@
     source page was placed into, so a position on an edition can still be found
     in the finished book (see score_page_map). All deterministic WeasyPrint +
     pypdf — no AI, and nothing drawn over the engraving but a publisher's folio.
-@architecture Enterprise SaaS 2026
 @module roster/infrastructure/score_package_builder
 """
 

@@ -3,7 +3,6 @@
  * @description Shared a-vista (sight-reading) rating display used by both the
  * roster card and the dense list row. Unrated singers read as an explicit
  * "not verified" caption rather than five empty stars.
- * @architecture Enterprise SaaS 2026
  * @module features/artists/components/SightReadingStars
  */
 

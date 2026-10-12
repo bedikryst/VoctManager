@@ -3,7 +3,6 @@
  * @description Toggles a class on `document.body` while the host component is mounted.
  * Multiple consumers can share the same class without races (a refcount keeps it
  * applied until every mount unwinds).
- * @architecture Enterprise SaaS 2026
  * @module features/landing/hooks/useBodyClass
  */
 

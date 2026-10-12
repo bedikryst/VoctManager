@@ -12,7 +12,6 @@
  * The editor is a plain textarea with a save button rather than an inline
  * field: a debrief is a paragraph typed on a tablet after the choir has left,
  * not a line corrected in passing, and it wants a visible commit.
- * @architecture Enterprise SaaS 2026
  * @module features/rehearsals/components/RehearsalDebrief
  */
 

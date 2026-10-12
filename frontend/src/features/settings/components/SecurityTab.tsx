@@ -5,7 +5,6 @@
  * the e-mail change flow (re-auth with current password) that the backend
  * always supported but the UI never exposed. Field-level errors mirror the
  * backend error codes (invalid_current_password, email_in_use).
- * @architecture Enterprise SaaS 2026
  * @module features/settings/components/SecurityTab
  */
 

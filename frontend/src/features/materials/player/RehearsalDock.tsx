@@ -11,7 +11,6 @@
  * closing the score. Tonic from `musical_key` is the fallback when no pitches
  * are configured yet.
  * @module features/materials/player
- * @architecture Enterprise SaaS 2026
  */
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";

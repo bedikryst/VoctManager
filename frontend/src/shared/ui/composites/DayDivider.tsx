@@ -7,7 +7,6 @@
  * a `natural` `Badge` rather than the machine-label overline — and rather than
  * the private `rounded-full` chip it used to draw, which was the shape `Badge`
  * exists to prevent.
- * @architecture Enterprise SaaS 2026
  * @module shared/ui/composites/DayDivider
  */
 

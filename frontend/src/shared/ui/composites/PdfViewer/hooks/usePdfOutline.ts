@@ -7,7 +7,6 @@
  * never publishes a stale outline. Documents without an outline yield an empty
  * list and cost one rejected promise at most.
  * @module shared/ui/composites/PdfViewer
- * @architecture Enterprise SaaS 2026
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";

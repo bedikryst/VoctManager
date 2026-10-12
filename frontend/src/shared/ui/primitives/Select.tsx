@@ -6,7 +6,6 @@
  * the one place the design language stopped at the component boundary.
  * The content skin is deliberately identical to `DropdownMenu` so the two
  * popovers read as one material.
- * @architecture Enterprise SaaS 2026
  * @module shared/ui/primitives/Select
  */
 

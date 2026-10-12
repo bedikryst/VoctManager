@@ -6,7 +6,6 @@
  * costs the server then refuses as a whole. Also pins the Honoraria ledger's
  * tally of the sources carrying it, and the signed differences a source's
  * remainder and the plan's gap print.
- * @architecture Enterprise SaaS 2026
  * @module features/finance/lib/funding.test
  */
 

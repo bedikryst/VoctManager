@@ -4,7 +4,6 @@
  * hand-outs, anything without a PDF). Uses the shared [PieceFormBody]
  * component + [usePieceFormState] hook — same form structure as the edit
  * page, different submit handler.
- * @architecture Enterprise SaaS 2026
  * @module features/archive/ArchiveNewPiecePage
  */
 

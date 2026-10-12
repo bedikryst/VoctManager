@@ -10,7 +10,6 @@
              Nothing here touches the database, so the ledger service, the
              warnings and the roster data copy all ask the same questions of
              the same code.
-@architecture Enterprise SaaS 2026
 @module finance/rules
 """
 from collections.abc import Iterable

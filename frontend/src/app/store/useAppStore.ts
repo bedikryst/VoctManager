@@ -2,7 +2,6 @@
  * @file useAppStore.ts
  * @description Global panel-shell UI state managed by Zustand: sidebar
  * expansion and the one-time background intro gate.
- * @architecture Enterprise 2026 Standards
  * @module store/useAppStore
  */
 

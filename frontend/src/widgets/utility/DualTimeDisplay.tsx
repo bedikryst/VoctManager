@@ -3,7 +3,6 @@
  * @description Enterprise UI Component for dual-timezone time presentation.
  * Automatically handles the display of event timezone vs local user timezone.
  * Refined for Ethereal UI: Strict baseline alignments and sub-pixel typography.
- * @architecture Enterprise SaaS 2026
  * @module widgets/utility/DualTimeDisplay
  */
 

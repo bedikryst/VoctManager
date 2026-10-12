@@ -3,7 +3,6 @@
  * @description React Query state + mutations for the concert score-book generator.
  * Polls while the async build is queued/running, persists per-item cockpit
  * overrides with optimistic UI, and surfaces the result for download.
- * @architecture Enterprise SaaS 2026
  * @module features/projects/api
  */
 

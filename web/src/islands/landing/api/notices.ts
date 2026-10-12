@@ -13,7 +13,6 @@
  *  Cookie-less and unauthenticated, exactly like the donation and patronage clients: there is no
  *  session here, and sending credentials would only invite CSRF machinery this endpoint does not
  *  need.
- * @architecture Astro islands 2026
  * @module islands/landing/api/notices
  */
 

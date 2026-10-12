@@ -8,7 +8,6 @@
  * the scrim and panel are direct `AnimatePresence` children (motion elements),
  * not wrapped in a static div, so closing animates instead of snapping.
  * @module features/notifications/components
- * @architecture Enterprise SaaS 2026
  */
 
 import React, {

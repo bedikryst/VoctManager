@@ -4,7 +4,6 @@
  *  world (kontakt / o-nas / landing). Dark surfaces (koncerty stations) override locally.
  *  Lifted from the per-page CSS that the React port had duplicated under `body.page-*`;
  *  here they live once on :root.
- * @architecture Astro islands 2026
  * @module styles/tokens
  */
 

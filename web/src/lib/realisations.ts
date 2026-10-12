@@ -12,7 +12,6 @@
  *  THE TENSE IS BUILD-TIME. A realisation is `ahead` until its concert's slot closes at the moment
  *  of the build — `lib/calendar`'s `isEveningAhead`, the rule `lib/cycle.upcomingStation` applies —
  *  so a deploy after the evening is what turns both pages to the past tense.
- * @architecture Astro islands 2026
  * @module lib/realisations
  */
 import type { ImageMetadata } from "astro";

@@ -4,7 +4,6 @@
  * Replaces the 4-dropdown panel that always took a full row. Most of the
  * time the conductor just types — composer / epoch / voicing filters hide
  * behind a small "Filtry" toggle with a count badge.
- * @architecture Enterprise SaaS 2026
  * @module features/archive/components/ArchiveSearchBar
  */
 

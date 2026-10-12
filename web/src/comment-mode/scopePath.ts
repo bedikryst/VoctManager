@@ -16,7 +16,6 @@
  *
  *  Plain erasable TypeScript importing only `.ts` siblings: `web/copydesk/*.mjs` imports this
  *  module with bare `node`, which strips the types and resolves nothing a bundler would.
- * @architecture Astro islands 2026
  * @module comment-mode/scopePath
  */
 

@@ -13,7 +13,6 @@
  * carries the address a route can be built from. Leaving it unset is the normal
  * case and means the event's own venue. The day works the same way: unset is
  * concert day, and only a trip's points name another.
- * @architecture Enterprise SaaS 2026
  * @module features/projects/editors/tabs/components/RunSheetRow
  */
 

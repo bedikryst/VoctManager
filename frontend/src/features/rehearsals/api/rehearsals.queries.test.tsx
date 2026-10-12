@@ -7,7 +7,6 @@
  * but never reaches the server, and a bulk "the rest are here" that files a
  * second row beside somebody's existing one. Both are asserted here against the
  * requests actually sent.
- * @architecture Enterprise SaaS 2026
  * @module features/rehearsals/api
  */
 

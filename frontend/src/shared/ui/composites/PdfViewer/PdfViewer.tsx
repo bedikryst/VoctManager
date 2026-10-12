@@ -7,7 +7,6 @@
  * immersive performance mode (fullscreen, chrome hidden, page filling the
  * screen edge to edge). Annotation features mount through the toolbarSlot /
  * renderPageOverlay / overlaySlot seams.
- * @architecture Enterprise SaaS 2026
  * @module shared/ui/composites/PdfViewer
  */
 

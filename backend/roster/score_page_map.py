@@ -11,7 +11,6 @@
     survives in the finished PDF, so a spot the choir marked on screen — stored
     normalized against the EDITION's page — has no way back to a position in the
     book unless the build records it. This is that record.
-@architecture Enterprise SaaS 2026
 @module roster/score_page_map
 """
 

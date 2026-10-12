@@ -21,7 +21,6 @@
  *  `astro:assets` and anything else only a bundler can resolve.
  *
  *  Chrome carries no typography either — `lib/typo.ts` gives each locale its own at build.
- * @architecture Astro islands 2026
  * @module i18n/content/obrazy
  */
 

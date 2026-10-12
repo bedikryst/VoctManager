@@ -8,7 +8,6 @@
  * The date used to be a chip sitting in a line of four other chips of identical
  * weight; nothing in the row could be scanned. The stamp is the only element
  * allowed to shout here.
- * @architecture Enterprise SaaS 2026
  * @module features/projects/editors/tabs/components/RehearsalTimelineRow
  */
 

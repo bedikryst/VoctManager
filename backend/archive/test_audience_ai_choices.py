@@ -5,7 +5,6 @@
              upload's guide is written in, the language and tone of a
              programme note, and an on-demand prose translation into one more
              audience language.
-@architecture Enterprise SaaS 2026
 @module archive/test_audience_ai_choices
 """
 from decimal import Decimal

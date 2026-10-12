@@ -6,7 +6,6 @@
  *
  * Purely controlled — the parent owns the selected id, the "adding" toggle and
  * the draft, and resolves the draft into a real Composer on submit.
- * @architecture Enterprise SaaS 2026
  * @module features/archive/components/ComposerPicker
  */
 

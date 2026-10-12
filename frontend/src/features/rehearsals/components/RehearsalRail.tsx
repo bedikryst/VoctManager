@@ -13,7 +13,6 @@
  * the card, a step to either neighbour, the full list on demand — so the
  * card sits right under it instead of below the whole list. A pick from the
  * unfolded list folds it back and brings the picker to the top.
- * @architecture Enterprise SaaS 2026
  * @module features/rehearsals/components/RehearsalRail
  */
 

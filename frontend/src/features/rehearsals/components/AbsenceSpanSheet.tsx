@@ -10,7 +10,6 @@
  * is written. And it can overwrite a roll call already taken, which is a
  * manager's right and nobody else's — so a row that already carries a status
  * says what that status is.
- * @architecture Enterprise SaaS 2026
  * @module features/rehearsals/components/AbsenceSpanSheet
  */
 

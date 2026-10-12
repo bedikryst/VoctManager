@@ -7,7 +7,6 @@
  *   3. Open — click the row body → project hub (`/panel/projects/:id`).
  * Lifecycle status toggle + delete live as inline actions; deep editing and
  * exports live in the hub.
- * @architecture Enterprise SaaS 2026
  * @module features/projects/components/ProjectRow
  */
 

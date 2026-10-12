@@ -4,7 +4,6 @@
  * and where it sits in the plan. The resting state says little — a document
  * number, a line number — and the exceptions speak: a cost outside the plan
  * once there is a plan, a due date that has passed, a payment (in sage).
- * @architecture Enterprise SaaS 2026
  * @module features/finance/budget/components/ExpenseRow
  */
 

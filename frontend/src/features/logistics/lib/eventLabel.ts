@@ -4,7 +4,6 @@
  * separates a project from a rehearsal and nothing more — it is a discriminator,
  * not a name — so a project row is named for what the ensemble is actually singing
  * at, from the same table the run sheet and the printed day card read.
- * @architecture Enterprise SaaS 2026
  * @module features/logistics/lib/eventLabel
  */
 

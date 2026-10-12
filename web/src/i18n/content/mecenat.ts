@@ -7,7 +7,6 @@
  *
  *  THIS FILE IS IMPORTED BY NODE, not only by Vite: the desk's extractor reads the contract below
  *  straight from here. Keep it free of `?raw`, `astro:assets` and anything only a bundler resolves.
- * @architecture Astro islands 2026
  * @module i18n/content/mecenat
  */
 

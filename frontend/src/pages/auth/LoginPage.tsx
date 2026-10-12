@@ -5,7 +5,6 @@
  * for members already inside the ensemble. Built entirely on Ethereal
  * primitives (no raw inputs) and the shared AuthShell so it reads as one
  * vestibule with the activation screen.
- * @architecture Enterprise SaaS 2026
  * @module pages/auth/LoginPage
  */
 

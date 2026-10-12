@@ -25,7 +25,6 @@
  *
  *  THE PACK IS NOT IN GIT (`web/.gitignore`): tens of megabytes of photographs, built where the
  *  originals are and uploaded to the build host by hand.
- * @architecture Astro islands 2026
  * @module lib/pressPack
  */
 import { existsSync, readFileSync } from "node:fs";

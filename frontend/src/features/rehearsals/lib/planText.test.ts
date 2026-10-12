@@ -3,7 +3,6 @@
  * @description The typed-plan reader against the lines conductors actually
  * wrote into the topic field on production, and the variants a numbered list
  * comes in.
- * @architecture Enterprise SaaS 2026
  * @module features/rehearsals/lib/planText.test
  */
 

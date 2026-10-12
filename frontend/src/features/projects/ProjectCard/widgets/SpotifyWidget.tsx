@@ -5,7 +5,6 @@
  * explicitly consents; a link-out to open the playlist in Spotify is always
  * available without loading anything. Consent is remembered (localStorage) so
  * the choice is asked once. Wrapped in the shared WidgetCard.
- * @architecture Enterprise SaaS 2026
  * @module features/projects/ProjectCard/widgets/SpotifyWidget
  */
 

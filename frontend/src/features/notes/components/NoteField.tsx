@@ -24,7 +24,6 @@
  * field and a standalone PWA never zooms back out (see `FIELD_TEXT_SCALE`), so
  * the compact step returns only behind `fine-pointer`.
  * @module features/notes/components
- * @architecture Enterprise SaaS 2026
  */
 
 import React, { forwardRef } from "react";

@@ -9,7 +9,6 @@
  *    each field with a link to its own page, where it is that page's field and opens directly.
  *
  *  It follows its line while the page scrolls and closes once the line has left the viewport.
- * @architecture Astro islands 2026
  * @module comment-mode/popover
  */
 

@@ -14,7 +14,6 @@
     stand polls it through a whole rehearsal, so it has to answer "did MY view
     change" — never leaking the existence of another singer's private marks.
 
-@architecture Enterprise SaaS 2026
 @module archive/test_annotation_offline
 """
 

@@ -6,7 +6,6 @@
  * map is never covered by a modal again. Surfaces what a conductor needs at a
  * glance: live local time, booked events, the internal "gate code" whisper, and
  * one-tap Maps / directions deep-links. Edit is one tap deeper.
- * @architecture Enterprise SaaS 2026
  * @module features/logistics/components/LocationDetail
  */
 

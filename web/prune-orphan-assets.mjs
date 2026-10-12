@@ -26,7 +26,6 @@
  *  Scope is limited to raster images directly under `_astro/`. Scripts, styles and video are
  *  referenced directly and would be kept anyway, so including them would add risk and reclaim
  *  nothing.
- * @architecture Astro islands 2026
  * @module build/prune-orphan-assets
  */
 

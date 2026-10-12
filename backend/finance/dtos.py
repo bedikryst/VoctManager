@@ -5,7 +5,6 @@
              per row. Every money rule (0 ⇔ volunteer, the paid and contract
              locks, what a row may change) is the ledger service's, so a second
              write path cannot skip it by skipping a DTO.
-@architecture Enterprise SaaS 2026
 @module finance/dtos
 """
 from datetime import date

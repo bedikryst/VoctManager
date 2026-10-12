@@ -5,7 +5,6 @@
  * row names its `id` so its debrief verdict survives), what the three plan
  * endpoints answer, and the editor's read of the project through one evening
  * (`plan/editor/`).
- * @architecture Enterprise SaaS 2026
  * @module features/rehearsals/types/rehearsalPlan.dto
  */
 

@@ -9,7 +9,6 @@
  *  synchronously inside the originating click handler, preserving the user gesture WebAudio
  *  needs). For a returning "voice" visitor it arms auto-resume on the first gesture.
  *  Renders nothing.
- * @architecture Astro islands 2026
  * @module islands/landing/AudioController
  */
 

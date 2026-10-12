@@ -4,7 +4,6 @@
  * response's `Content-Disposition`. Django sends a name with Polish letters
  * as RFC 5987 (`filename*=utf-8''%C5%81ukasz…`) — nearly every finance file
  * carries a person's or a concert's name — so that form is decoded first.
- * @architecture Enterprise SaaS 2026
  * @module features/finance/lib/contentDisposition
  */
 

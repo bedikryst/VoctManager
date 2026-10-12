@@ -37,7 +37,6 @@
  *  geometry is left untouched.
  *
  *  Usage (from web/):  npm run photos:proxy  [-- --dry-run]
- * @architecture Astro islands 2026
  * @module build/downscale-photos
  */
 

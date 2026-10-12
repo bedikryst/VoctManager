@@ -8,7 +8,6 @@
  * version" — with a reload that releases the waiting worker first, since a bare
  * `location.reload()` is answered from the precache that just failed.
  * @module app/router/RouteErrorBoundary
- * @architecture Enterprise SaaS 2026
  */
 
 import React, { useEffect } from "react";

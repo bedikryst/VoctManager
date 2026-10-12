@@ -16,7 +16,6 @@
  *
  *  `segments` is exactly the shape `SegmentUpsertDTO` accepts — that DTO forbids extra fields, so
  *  the paths the apply script needs travel beside it in `paths` rather than inside the rows.
- * @architecture Astro islands 2026
  * @module copydesk/index
  */
 

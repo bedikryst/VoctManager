@@ -36,7 +36,6 @@
  *
  *  Types only, plus the two event names. Nothing here may import `astro:assets` or any other
  *  virtual module — `image-triggers.ts` is a browser script and pulls whatever this file pulls.
- * @architecture Astro islands 2026
  * @module lib/imageFrame
  */
 

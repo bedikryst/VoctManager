@@ -18,7 +18,6 @@
  *
  *  Runs as an Astro integration on `astro:build:done`, and standalone (`npm run audit:registers`)
  *  against whatever `dist/` is already there.
- * @architecture Astro islands 2026
  * @module audit/index
  */
 

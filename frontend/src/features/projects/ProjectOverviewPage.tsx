@@ -5,7 +5,6 @@
  * tool" layout: a KPI hero strip, a primary work column (what needs attention → rehearsals
  * → program → run sheet) and a narrower context rail (facts, people, materials). On tablet
  * portrait and phones the two columns collapse to a single touch-friendly scroll.
- * @architecture Enterprise SaaS 2026
  * @module features/projects/ProjectOverviewPage
  */
 

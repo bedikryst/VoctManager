@@ -1,7 +1,6 @@
 /**
  * @file SectionHeader.tsx
  * @description Domain-agnostic header for BENTO Grid modules.
- * @architecture Enterprise SaaS 2026
  */
 
 import React from "react";

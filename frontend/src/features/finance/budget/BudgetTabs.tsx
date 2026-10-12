@@ -3,7 +3,6 @@
  * @description The routed sub-navigation of the project's Budżet tab, on the
  * shared `RouteTabs` track: Przegląd, Kosztorys, Honoraria, Wydatki,
  * Finansowanie.
- * @architecture Enterprise SaaS 2026
  * @module features/finance/budget/BudgetTabs
  */
 

@@ -10,7 +10,6 @@
  * lines side by side in two columns (a third wraps under them), an undivided
  * family in the left cell alone — so Tenor never shares a row with Bas I.
  * Two columns on a phone as well: side by side is the point.
- * @architecture Enterprise SaaS 2026
  * @module features/materials/components/PieceDivisiRoster
  */
 

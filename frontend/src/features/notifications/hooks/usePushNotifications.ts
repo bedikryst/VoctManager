@@ -4,7 +4,6 @@
  * permission state machine, subscription registration, and rotation handling.
  * Surfaces a discriminated `availability` so the UI can render distinct states for:
  * unsupported browsers, missing VAPID config, insecure context, and iOS-not-standalone.
- * @architecture Enterprise SaaS 2026
  * @module notifications/hooks/usePushNotifications
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";

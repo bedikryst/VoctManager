@@ -2,7 +2,6 @@
  * @file formatMoney.ts
  * @description An amount as this site prints it: the number in the reader's own convention, then
  *  the currency's mark in the reader's language ("zł" in Polish, "PLN" in English and French).
- * @architecture Astro islands 2026
  * @module islands/landing/lib/formatMoney
  */
 

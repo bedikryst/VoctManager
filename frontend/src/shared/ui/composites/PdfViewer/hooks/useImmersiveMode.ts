@@ -7,7 +7,6 @@
  * element fullscreen is unavailable (iPhone Safari) the mode degrades to
  * chrome-hiding only, which is still the useful half.
  * @module shared/ui/composites/PdfViewer
- * @architecture Enterprise SaaS 2026
  */
 
 import { useCallback, useEffect, useState, type RefObject } from "react";

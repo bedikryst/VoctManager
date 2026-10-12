@@ -6,7 +6,6 @@
  * put seventy borders down a page whose content is prose, and the reading order
  * — which is the whole reason the desk is a column and not a table — only
  * survives if the chrome between two paragraphs is thinner than the paragraphs.
- * @architecture Enterprise SaaS 2026
  * @module features/copydesk/components/SegmentRow
  */
 

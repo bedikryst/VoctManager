@@ -4,7 +4,6 @@
  * [DivisiEditor] expects. Owned by whichever surface edits a divisi before
  * saving it as one act: the manual-create form ([usePieceFormState]) and the
  * bulk layout sheet ([BulkDivisiSheet]).
- * @architecture Enterprise SaaS 2026
  * @module features/archive/hooks/useDivisiDraft
  */
 

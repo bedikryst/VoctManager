@@ -19,7 +19,6 @@
  * stays a rendering of one `useForm` instance rather than a second owner of it.
  * The IPA guide arrives as a rendered slot for the same reason: it reads the
  * saved piece as well as the form, which this component never sees.
- * @architecture Enterprise SaaS 2026
  * @module features/archive/components/PieceMetadataForm
  */
 

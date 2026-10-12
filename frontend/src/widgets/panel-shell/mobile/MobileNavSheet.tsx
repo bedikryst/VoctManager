@@ -13,7 +13,6 @@
  *   - `contain: paint` isolates the sheet from the dashboard outlet.
  *   - Height is content-fit, capped at 88dvh (no vast empty sheet when sparse).
  *
- * @architecture Enterprise SaaS 2026
  * @module widgets/panel-shell/mobile
  */
 

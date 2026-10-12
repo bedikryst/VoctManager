@@ -12,7 +12,6 @@
  * The casting board, the plan editor and every read-only cast list share this
  * one table; the seat → section rules that only the project's own screens
  * read stay in `features/projects/lib/voiceFamilies`.
- * @architecture Enterprise SaaS 2026
  * @module shared/lib/voiceFamilies
  */
 

@@ -1,7 +1,6 @@
 /**
  * @file SiteCursor.tsx
  * @description Renders the custom cursor element and wires the cursor-follow hook.
- * @architecture Enterprise SaaS 2026
  * @module widgets/landing/SiteCursor
  */
 

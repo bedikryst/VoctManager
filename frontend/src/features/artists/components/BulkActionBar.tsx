@@ -3,7 +3,6 @@
  * @description Floating command bar shown while the roster is in selection mode.
  * Surfaces the selection count and context-aware bulk lifecycle actions
  * (archive the selected active singers / restore the selected archived ones).
- * @architecture Enterprise SaaS 2026
  * @module features/artists/components/BulkActionBar
  */
 

@@ -7,7 +7,6 @@
  * the server keeps the split inside the amount and refuses anything else.
  * A settled source's share is shown but cannot be changed: its report already
  * counts it.
- * @architecture Enterprise SaaS 2026
  * @module features/finance/components/AllocationSheet
  */
 

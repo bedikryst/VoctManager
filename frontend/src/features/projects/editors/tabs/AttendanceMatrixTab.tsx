@@ -11,7 +11,6 @@
  *
  * Marks are a local draft until Save; see `useAttendanceMatrix` for why that is
  * an overlay rather than a copy.
- * @architecture Enterprise SaaS 2026
  * @module features/projects/editors/tabs/AttendanceMatrixTab
  */
 

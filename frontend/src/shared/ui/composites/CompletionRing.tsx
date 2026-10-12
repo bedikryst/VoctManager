@@ -2,7 +2,6 @@
  * @file CompletionRing.tsx
  * @description Compact radial progress dial. Pure SVG, no motion infrastructure —
  * cheap enough to render in dense lists (roll-call rows, schedule readiness).
- * @architecture Enterprise SaaS 2026
  * @module shared/ui/composites/CompletionRing
  */
 

@@ -7,7 +7,6 @@
  * match the viewer's utility pill — so the document gets the whole screen. The
  * "Open full view" link to the deep-linkable DocumentViewerPage rides alongside
  * close when callers provide a typed docType + docId.
- * @architecture Enterprise SaaS 2026
  * @module shared/ui/composites/PdfViewerModal
  */
 

@@ -4,7 +4,6 @@
              write goes through a DTO into a service, so nothing here validates
              input. Amounts leave as decimal strings ("1250.00") — a float
              would lose the grosz before the client ever sees it.
-@architecture Enterprise SaaS 2026
 @module finance/serializers
 """
 from typing import Any

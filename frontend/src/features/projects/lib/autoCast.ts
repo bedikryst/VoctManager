@@ -28,7 +28,6 @@
  *
  * The fill only ever adds: a seat already on the board is never moved, so an
  * automatic pass can extend the conductor's work but never overwrite it.
- * @architecture Enterprise SaaS 2026
  * @module features/projects/lib/autoCast
  */
 

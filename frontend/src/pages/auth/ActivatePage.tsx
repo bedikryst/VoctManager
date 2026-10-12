@@ -12,7 +12,6 @@
  * login screen they are about to meet — because a rail listing what waits inside
  * has nothing to say beside a door that is closed, or one already walked
  * through. Business logic stays fully in `useAccountActivation`.
- * @architecture Enterprise SaaS 2026
  * @module pages/auth/ActivatePage
  */
 

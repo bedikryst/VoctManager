@@ -10,7 +10,6 @@
  *  declares the ensemble's MusicGroup node, and /press — the same URL typed on six surfaces was
  *  six places for a renamed channel to go stale. Pure by contract, like `foundation.ts`, so a
  *  React island and a Node script can import it too.
- * @architecture Astro islands 2026
  * @module data/social
  */
 

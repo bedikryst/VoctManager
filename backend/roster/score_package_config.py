@@ -6,7 +6,6 @@
     programme note is chosen, and what the performers line says. Pure domain logic — no PDF/AI deps — so it can be
     imported by the builder, the readiness engine, the service and the views
     without dragging in WeasyPrint/pypdf.
-@architecture Enterprise SaaS 2026
 @module roster/score_package_config
 """
 

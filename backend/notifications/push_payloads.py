@@ -5,7 +5,6 @@
              truth for push + email); this module keeps the historical
              PushPayload / PushPayloadBuilder surface so the push transport
              (push_service) is untouched, and adds the synthetic test payload.
-@architecture Enterprise SaaS 2026
 @module notifications/push_payloads
 """
 from __future__ import annotations

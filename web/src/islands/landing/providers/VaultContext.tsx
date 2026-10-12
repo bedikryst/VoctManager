@@ -4,7 +4,6 @@
  * Lets any descendant trigger `open()`/`close()` and `openRegulamin()`/`closeRegulamin()`,
  * and lets the give-form publish its `preselect()` API back upward so opening links can
  * pass an amount (data-amount="100" etc.).
- * @architecture Enterprise SaaS 2026
  * @module features/landing/providers/VaultContext
  */
 

@@ -6,7 +6,6 @@
  * The role is edited in place. It is the only thing an assignment adds beyond
  * "this person is on this job", and a whole form column for one text field is
  * what made this tab a third composition for a job two other tabs already do.
- * @architecture Enterprise SaaS 2026
  * @module features/projects/editors/tabs/components/CrewRow
  */
 

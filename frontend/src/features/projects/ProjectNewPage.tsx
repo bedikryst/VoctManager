@@ -3,7 +3,6 @@
  * @description Dedicated route for creating a project. Reuses the existing
  * DetailsTab in create mode (project = null); on success the form hands back the
  * persisted project and we land on its hub. Mirrors the archive new-piece route.
- * @architecture Enterprise SaaS 2026
  * @module features/projects/ProjectNewPage
  */
 

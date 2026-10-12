@@ -15,7 +15,6 @@
  *  The book table is a lexical fact rather than editorial copy, so it ships complete in all three
  *  locales; the abbreviations are the short forms a concert programme uses (Polish: the Millennium
  *  Bible's; French: the Bible de Jérusalem's), not the scholarly SBL set.
- * @architecture Astro islands 2026
  * @module lib/scriptureRef
  */
 import { pickLocale, type Locale, type LocalizedText } from "../i18n/config";

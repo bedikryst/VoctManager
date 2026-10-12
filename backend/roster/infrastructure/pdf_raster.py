@@ -8,7 +8,6 @@
     be swapped without touching domain logic, and so its native dependency loads
     lazily — a host without PDFium degrades to manual page-number entry rather than
     breaking the cockpit.
-@architecture Enterprise SaaS 2026
 @module roster/infrastructure/pdf_raster
 """
 

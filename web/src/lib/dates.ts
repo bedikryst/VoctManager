@@ -15,7 +15,6 @@
  *  "20 January" rather than the American "January 20" — matching `LOCALE_META.en.ogLocale`. What
  *  it must not be handed is a bare `new Date(iso)`, which parses an ISO date as UTC midnight and
  *  in a positive-offset build zone prints the day before; the `T00:00:00` suffix makes it local.
- * @architecture Astro islands 2026
  * @module lib/dates
  */
 // Explicit extension: the press-pack generator reaches this module under bare Node (via

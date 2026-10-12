@@ -5,7 +5,6 @@
  * `done_at` is server-stamped and read-only, and `id` is writable only on
  * create (the offline-replay affordance; see `notes.queries.ts`).
  * @module features/notes/types
- * @architecture Enterprise SaaS 2026
  */
 
 export interface Note {

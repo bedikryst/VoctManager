@@ -15,7 +15,6 @@
              Runs synchronously, one billed call per piece; `--dry-run` lists
              the work and calls nothing.
 
-@architecture Enterprise SaaS 2026
 @module archive/management/commands/recompute_ipa
 """
 from __future__ import annotations

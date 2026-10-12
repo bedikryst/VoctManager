@@ -7,7 +7,6 @@
  * main.tsx holds first paint on it so the opening render already has its strings
  * (no missing-key flash). Language switches load the target bundle before
  * switching, so the UI never flashes either.
- * @architecture Enterprise SaaS 2026
  * @module shared/config/i18n
  */
 

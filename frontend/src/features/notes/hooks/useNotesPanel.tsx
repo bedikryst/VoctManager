@@ -6,7 +6,6 @@
  * which wraps `NotesPanelStateProvider` from here; the feature itself never
  * imports the shell.
  * @module features/notes/hooks
- * @architecture Enterprise SaaS 2026
  */
 
 import React, {

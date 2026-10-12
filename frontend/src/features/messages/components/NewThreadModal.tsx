@@ -10,7 +10,6 @@
  * happen by accident (ESC, a tap on the scrim, a swipe down, the close button)
  * only put the composer away, and the draft is there on the next opening. Cancel
  * discards it, and so does a successful send.
- * @architecture Enterprise SaaS 2026
  * @module features/messages/components
  */
 

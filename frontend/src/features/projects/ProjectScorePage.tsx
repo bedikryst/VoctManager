@@ -5,7 +5,6 @@
  * generator assembles it, and the hand-upload alternative rides the cockpit's
  * own footer, because both write the same field and the cockpit's status hero
  * already describes whichever book exists.
- * @architecture Enterprise SaaS 2026
  * @module features/projects/ProjectScorePage
  */
 

@@ -14,7 +14,6 @@
  * trusting: the `same` and `removed` parts concatenate back to the original,
  * the `same` and `added` parts back to the proposal. `wordDiff.test.ts` asserts
  * both, which is the same proof `apply-copy` makes each of its transforms carry.
- * @architecture Enterprise SaaS 2026
  * @module features/copydesk/lib/wordDiff
  */
 

@@ -4,7 +4,6 @@
  * (Google's render intent, `webcal://` for Apple and Outlook) and the raw https
  * address with a copy button. Shared by the personal feed and the manager's
  * whole-season feed, which differ here in the address and nothing else.
- * @architecture Enterprise SaaS 2026
  * @module features/settings/components/CalendarSubscribeLinks
  */
 

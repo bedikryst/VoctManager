@@ -11,7 +11,6 @@
  * The width follows the locale switch. One language wants a measure a person
  * can read; three want the room, and a page that stayed 3xl wide would print
  * the French of a several-hundred-word `note` in a ribbon.
- * @architecture Enterprise SaaS 2026
  * @module pages/copydesk/CopyDeskScopePage
  */
 

@@ -8,7 +8,6 @@
  * Why a dedicated page: AI creates composers automatically with
  * potentially incomplete or duplicated data. Without a top-level surface
  * the conductor can't fix or consolidate them outside Django admin.
- * @architecture Enterprise SaaS 2026
  * @module features/archive/ArchiveComposersPage
  */
 

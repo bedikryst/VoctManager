@@ -5,7 +5,6 @@
  * schedule's spotlight. The window itself is the server's — derived from the
  * plan against the reader's seat — and this only decides how to read it aloud,
  * so the three surfaces can never word the same evening differently.
- * @architecture Enterprise SaaS 2026
  * @module features/rehearsals/lib/planWindow
  */
 

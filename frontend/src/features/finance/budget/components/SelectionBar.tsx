@@ -13,7 +13,6 @@
  * form was just saved are still ticked for the contracts that follow.
  * The finance workspace's Do zapłaty opens the same bar with the payment alone,
  * worded for fees and expenses together and with the selection's sum.
- * @architecture Enterprise SaaS 2026
  * @module features/finance/budget/components/SelectionBar
  */
 

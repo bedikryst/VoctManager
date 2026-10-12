@@ -4,7 +4,6 @@
  * stamps every rehearsal read carries — so the rail can say it for each
  * evening without the plan's own read, and agree with the band's caption
  * (`usePlanPublication`) about what "changed since the send" means.
- * @architecture Enterprise SaaS 2026
  * @module features/rehearsals/lib/planPublication
  */
 

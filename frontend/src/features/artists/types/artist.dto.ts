@@ -1,7 +1,6 @@
 /**
  * @file artist.dto.ts
  * @description Data Transfer Objects and Zod schemas for Artist mutations.
- * @architecture Enterprise SaaS 2026
  */
 
 import { z } from "zod";

@@ -16,7 +16,6 @@
  * singer's own proposal marked as theirs, or only "zgodna z propozycją" when
  * the two hold the same four notes. Until the conductor writes a range, the
  * proposal takes the first line and the mark the second.
- * @architecture Enterprise SaaS 2026
  * @module features/artists/components/ArtistCard
  */
 

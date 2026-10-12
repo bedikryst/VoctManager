@@ -11,7 +11,6 @@
  * `isOpen` it released the moment the flag flipped, forcing a full-document
  * relayout while the sheet was still ~220ms into its exit. It belongs to the
  * sheet, whose AnimatePresence lifetime already spans that exit exactly.
- * @architecture Enterprise SaaS 2026
  * @module widgets/panel-shell/mobile
  */
 

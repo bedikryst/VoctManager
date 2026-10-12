@@ -3,7 +3,6 @@
  * @description Where a finance surface sends the reader to work on a cost:
  * its own row in the project's hub budget — Honoraria for a fee, Wydatki for
  * an expense — focused by `?focus=`, which scrolls to and marks the row.
- * @architecture Enterprise SaaS 2026
  * @module features/finance/lib/links
  */
 

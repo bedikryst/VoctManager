@@ -8,7 +8,6 @@
  *  nowhere else, the param is consumed on the spot, and the visitor's session survives the trip to
  *  the gateway — so the goal keeps the source the donor came from, which the backend's own record
  *  of the payment never has.
- * @architecture Astro islands 2026
  * @module islands/landing/vault/GratitudeModal
  */
 

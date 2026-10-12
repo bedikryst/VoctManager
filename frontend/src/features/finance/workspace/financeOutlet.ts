@@ -3,7 +3,6 @@
  * @description What the finance workspace's shell hands every section: the
  * foundation's overview, already loaded and gated. The shell owns the one
  * request; a section reads this instead of asking again.
- * @architecture Enterprise SaaS 2026
  * @module features/finance/workspace/financeOutlet
  */
 

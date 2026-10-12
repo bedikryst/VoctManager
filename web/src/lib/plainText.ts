@@ -16,7 +16,6 @@
  *
  *  NOT A SANITIZER. It renders trusted, hand-authored copy as text; it is not a defence against
  *  hostile markup and must never be used as one.
- * @architecture Astro islands 2026
  * @module lib/plainText
  */
 

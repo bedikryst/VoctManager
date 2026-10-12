@@ -2,7 +2,6 @@
  * @file Typography.tsx
  * @description Core CVA engine for Ethereal UI typography.
  * Internal primitive. Do not use directly in domain components.
- * @architecture Enterprise SaaS 2026
  */
 
 import React from "react";

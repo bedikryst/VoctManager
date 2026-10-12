@@ -31,7 +31,6 @@
  * list marks its columns `sortable` and sends the same key to its server
  * instead. Deliberately absent: row virtualisation, column resizing, a column
  * picker.
- * @architecture Enterprise SaaS 2026
  * @module shared/ui/composites/DataTable
  */
 

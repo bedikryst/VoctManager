@@ -6,7 +6,6 @@
              "I have finished" control is the same digest raised early by hand
              (`CopyDeskNotifyView`). Both go through `dispatch_digest_for_author`,
              so an editor who never finds the control loses nothing but time.
-@architecture Enterprise SaaS 2026
 @module copydesk/tasks
 """
 from __future__ import annotations

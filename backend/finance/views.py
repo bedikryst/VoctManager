@@ -12,7 +12,6 @@
              from their row, an expense's attachments, the reports, the
              kosztorys and the office's exports — are streamed to a manager,
              never left at a public media URL.
-@architecture Enterprise SaaS 2026
 @module finance/views
 """
 import io

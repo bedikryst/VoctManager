@@ -10,7 +10,6 @@
  * whole app spinning with no answer and no exit. The back band renders first,
  * from the same markup the loaded header uses, so the chrome does not jump when
  * the data lands.
- * @architecture Enterprise SaaS 2026
  * @module features/messages/components
  */
 

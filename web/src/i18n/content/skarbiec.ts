@@ -19,7 +19,6 @@
  *  straight from here (type-stripping, no build step), so that the key a translation is stored
  *  under and the key the island looks up are the same expression. Keep it free of `?raw`,
  *  `astro:assets` and anything else only a bundler can resolve.
- * @architecture Astro islands 2026
  * @module i18n/content/skarbiec
  */
 

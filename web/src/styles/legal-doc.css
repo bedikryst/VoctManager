@@ -9,7 +9,6 @@
  *  arrives through `set:html` from the copy desk, and injected DOM carries no `data-astro-cid-…`
  *  attribute, so Astro's scoping would miss it; the body class reaches injected DOM and keeps a
  *  bare `a`/`p`/`em` rule out of every other page that shares an emitted bundle.
- * @architecture Astro islands 2026
  * @module styles/legal-doc
  */
 

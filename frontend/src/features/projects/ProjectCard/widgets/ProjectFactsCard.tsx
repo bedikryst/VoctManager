@@ -7,7 +7,6 @@
  * Decimal and printed in Polish format whatever the interface language; the card adds
  * nothing up. The whole card deep-links to the Details work area, which is where the rest
  * of these facts are typed.
- * @architecture Enterprise SaaS 2026
  * @module features/projects/ProjectCard/widgets/ProjectFactsCard
  */
 

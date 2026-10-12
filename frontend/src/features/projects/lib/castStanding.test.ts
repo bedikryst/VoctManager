@@ -2,7 +2,6 @@
  * @file castStanding.test.ts
  * @description The cast tab's filter, section headers and balance rail all
  * count seats through `castStanding`; these cases pin the rule they share.
- * @architecture Enterprise SaaS 2026
  * @module features/projects/lib/castStanding.test
  */
 

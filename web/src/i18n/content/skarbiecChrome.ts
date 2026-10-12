@@ -20,7 +20,6 @@
  *  A COUNTED NOUN IS CHROME (§6x): `donors(n)` is a closed table walked by an arithmetic result.
  *  Polish needs THREE forms and the vault printed two, so "2 darczyńców" was ungrammatical on the
  *  live site until this existed.
- * @architecture Astro islands 2026
  * @module i18n/content/skarbiecChrome
  */
 

@@ -12,7 +12,6 @@
  * soprano does not make the altos a section of the evening. Read-only, off
  * the flat attendance register the roll call writes, so an absence reported
  * while the sheet is open moves the figure on the next refetch.
- * @architecture Enterprise SaaS 2026
  * @module features/rehearsals/components/plan/PlanAttendanceStrip
  */
 

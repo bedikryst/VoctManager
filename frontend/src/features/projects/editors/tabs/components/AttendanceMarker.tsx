@@ -9,7 +9,6 @@
  * than the thirty-eight people who simply turned up. So presence — the expected
  * outcome — is a quiet tick with no surface, an unmarked seat is barely a dot,
  * and crimson is spent on the one thing that is genuinely a problem.
- * @architecture Enterprise SaaS 2026
  * @module features/projects/editors/tabs/components/AttendanceMarker
  */
 

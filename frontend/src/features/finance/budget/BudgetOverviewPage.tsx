@@ -8,7 +8,6 @@
  * a patron; what a grantor's settlement is typed and written from; what the
  * office takes away; and the history of every act. Every figure here is the
  * server's; the page sums nothing.
- * @architecture Enterprise SaaS 2026
  * @module features/finance/budget/BudgetOverviewPage
  */
 

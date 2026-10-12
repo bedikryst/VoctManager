@@ -9,7 +9,6 @@
  * is a full-document relayout; tied to the flag, it lands in the first frame of
  * the exit animation instead of after it.
  * @module shared/lib/dom
- * @architecture Enterprise SaaS 2026
  */
 
 import { useLayoutEffect } from "react";

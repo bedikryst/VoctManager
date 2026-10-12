@@ -10,7 +10,6 @@
              sent to the concert notice list, whose subscribers have no user row at
              all — for them the answer is not a suppression flag but the end of the
              consent, since on that list the mailbox IS the relationship.
-@architecture Enterprise SaaS 2026
 @module notifications/signals
 """
 import logging

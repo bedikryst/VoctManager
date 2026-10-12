@@ -4,7 +4,6 @@
  * name, account e-mail and role/voice chips. Clicking the avatar opens the
  * picture editor. Keeps account context visible while the user edits any
  * section — and surfaces the login e-mail, which the old settings never showed.
- * @architecture Enterprise SaaS 2026
  * @module features/settings/components/SettingsIdentityCard
  */
 

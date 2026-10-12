@@ -5,7 +5,6 @@
              notes prints for every document, and what a bill prints on its
              "Źródło finansowania" line for its own cost. Polish only, like the
              documents it is written on.
-@architecture Enterprise SaaS 2026
 @module finance/infrastructure/document_notes
 """
 from decimal import Decimal

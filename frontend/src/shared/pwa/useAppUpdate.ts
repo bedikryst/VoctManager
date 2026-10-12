@@ -11,7 +11,6 @@
  * new version is only ever "not now", and the offer is worth re-making on the
  * next launch — by which point the waiting worker will usually have taken over
  * on its own anyway.
- * @architecture Enterprise SaaS 2026
  * @module shared/pwa/useAppUpdate
  */
 import { useCallback, useState, useSyncExternalStore } from "react";

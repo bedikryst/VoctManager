@@ -17,7 +17,6 @@
  *  which React answers by discarding the server DOM. The page's own `lang` as the initial value
  *  makes both renders agree; the subscription still owns every value after the first, which is
  *  what a `transition:persist` island needs and what a prop alone could never give it.
- * @architecture Astro islands 2026
  * @module islands/global/hooks/useDocumentLocale
  */
 

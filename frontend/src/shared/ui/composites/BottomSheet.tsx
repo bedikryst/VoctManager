@@ -11,7 +11,6 @@
  * handled. A sheet opens over panels that listen for ESC on the window (the
  * artist editor, for one), and those registered first, so a window listener
  * here would run after theirs and the one keypress would close both.
- * @architecture Enterprise SaaS 2026
  * @module shared/ui/composites/BottomSheet
  */
 

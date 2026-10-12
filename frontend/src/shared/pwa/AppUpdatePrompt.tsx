@@ -9,7 +9,6 @@
  * Quiet on purpose. Since `sw.ts` stopped letting a new build seize open tabs,
  * running the previous one is merely stale rather than broken, so this is an
  * invitation and never an alarm.
- * @architecture Enterprise SaaS 2026
  * @module shared/pwa/AppUpdatePrompt
  */
 import React from "react";

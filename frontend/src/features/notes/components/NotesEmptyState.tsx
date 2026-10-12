@@ -3,7 +3,6 @@
  * @description Empty scratchpad. `inline` variant — the rail/sheet already
  * provides the surface, so this must not draw a second one.
  * @module features/notes/components
- * @architecture Enterprise SaaS 2026
  */
 
 import React from "react";

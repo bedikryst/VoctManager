@@ -9,7 +9,6 @@
  * disagreeing about what "logged in as a manager" means, and the flows under
  * test here are the ones where that disagreement costs an email to forty
  * people. Extend this file; do not fork it.
- * @architecture Enterprise SaaS 2026
  * @module test/harness
  */
 

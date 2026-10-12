@@ -16,7 +16,6 @@
  *
  * Attached at import time (like {@link module:shared/pwa/installController}) and
  * exposed through a `useSyncExternalStore`-compatible snapshot.
- * @architecture Enterprise SaaS 2026
  * @module shared/pwa/appUpdateController
  */
 

@@ -8,7 +8,6 @@
  * contracts ZIP, an expense's attachments, the reports and document notes) are
  * fetched as blobs through the authenticated client and saved from memory:
  * none of them has a public URL.
- * @architecture Enterprise SaaS 2026
  * @module features/finance/api/finance.service
  */
 

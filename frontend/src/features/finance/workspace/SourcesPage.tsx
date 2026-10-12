@@ -7,7 +7,6 @@
  * by the server. A rule the figures break reads in crimson under the name; a
  * report due within two weeks, in gold. A row opens the source's own page,
  * which lives under this section. Sort is `?ordering=`, in memory.
- * @architecture Enterprise SaaS 2026
  * @module features/finance/workspace/SourcesPage
  */
 

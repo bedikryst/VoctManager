@@ -9,7 +9,6 @@
  *
  *  The language buttons offer only the locales the page exists in (`TRANSLATED_ROUTES`): the
  *  public switcher is off, so this is the editor's one way between languages.
- * @architecture Astro islands 2026
  * @module comment-mode/bar
  */
 

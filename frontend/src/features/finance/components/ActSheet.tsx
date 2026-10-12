@@ -5,7 +5,6 @@
  * never queued, so while the device is offline the confirm is disabled and the
  * sheet says why, instead of letting the click fail. Everything else stays
  * live: the form validates on submit and puts each message on its field.
- * @architecture Enterprise SaaS 2026
  * @module features/finance/components/ActSheet
  */
 

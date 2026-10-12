@@ -2,7 +2,6 @@
  * @file project.dto.ts
  * @description Data Transfer Objects for Project domain mutations.
  * Strictly mirrors backend payload contracts to protect the network boundary.
- * @architecture Enterprise SaaS 2026
  */
 
 import type {

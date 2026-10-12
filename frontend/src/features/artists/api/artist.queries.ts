@@ -3,7 +3,6 @@
  * @description React Query hooks for Server State management.
  * Handles caching, background fetching, and optimistic updates.
  * Synchronized with the global Query Key Factory.
- * @architecture Enterprise SaaS 2026
  */
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";

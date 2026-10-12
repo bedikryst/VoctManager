@@ -19,7 +19,6 @@
  *   - `<astro-island>` subtrees — see the hydration note in typo.ts;
  *   - anything under `data-typo="off"`, the escape hatch for copy whose spacing is layout
  *     (a `white-space: pre-line` block, an ASCII figure).
- * @architecture Astro islands 2026
  * @module lib/typoHtml
  */
 

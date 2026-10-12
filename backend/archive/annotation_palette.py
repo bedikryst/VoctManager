@@ -19,7 +19,6 @@
     ``frontend/src/features/annotations/lib/palette.ts``. A parity test asserts
     the two lists match, because a swatch the editor offers and the server
     refuses is a mark a chorister cannot make and is never told why.
-@architecture Enterprise SaaS 2026
 @module archive/annotation_palette
 """
 

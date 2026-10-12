@@ -20,7 +20,6 @@
     them, since the composed download is cached and a new pencil mark has to
     invalidate that copy. The page map is what says which editions those are —
     a hand-uploaded book has none, and then no mark can be placed at all.
-@architecture Enterprise SaaS 2026
 @module roster/score_package_markings
 """
 

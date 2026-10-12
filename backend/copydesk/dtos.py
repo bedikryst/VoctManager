@@ -4,7 +4,6 @@
              renders — a segment together with the two derived states §4 names,
              stale and new-since-last-visit. The write side is validated before
              anything reaches the database.
-@architecture Enterprise SaaS 2026 (Pydantic V2)
 @module copydesk/dtos
 """
 from __future__ import annotations

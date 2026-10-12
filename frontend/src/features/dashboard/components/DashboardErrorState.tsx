@@ -3,7 +3,6 @@
  * @description Shared on-brand error state for the dashboard home views.
  * Surfaced when the workspace queries fail, so Mission Control never silently
  * renders zeros in place of unreachable data. Offers a one-tap re-sync.
- * @architecture Enterprise SaaS 2026
  * @module features/dashboard/components/DashboardErrorState
  */
 

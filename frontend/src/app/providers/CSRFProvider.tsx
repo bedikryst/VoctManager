@@ -4,7 +4,6 @@
  * design: rendering is never blocked on the token fetch. Auth mutations are
  * gated behind user interaction that takes longer than the bootstrap round-trip,
  * so the cookie is available without delaying the panel shell.
- * @architecture Enterprise SaaS 2026
  * @module app/providers/CSRFProvider
  */
 

@@ -7,7 +7,6 @@
              batches, which push carries its e-mail in reserve, and
              `plan_delivery` — the one decision of what each outbound channel
              does with an event.
-@architecture Enterprise SaaS 2026
 @module notifications/delivery
 """
 from __future__ import annotations

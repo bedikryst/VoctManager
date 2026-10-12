@@ -4,7 +4,6 @@
  * runway, narrowed to fit a column, plus the one action a roll call actually
  * needs. The stamp is repeated from the schedule on purpose — the same
  * rehearsal should look like the same object on both screens.
- * @architecture Enterprise SaaS 2026
  * @module features/projects/editors/tabs/components/AttendanceSessionHeader
  */
 

@@ -19,7 +19,6 @@
  * propozycją" when the two hold the same notes. Until the conductor writes a
  * range, the proposal stands in on the first line and the mark takes the
  * second.
- * @architecture Enterprise SaaS 2026
  * @module features/artists/components/ArtistRow
  */
 

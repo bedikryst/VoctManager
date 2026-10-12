@@ -5,7 +5,6 @@
  * replaces the heavy always-on Spotify <iframe> on the Overview (the embed lives on instead
  * in the schedule timeline, where it earns its weight); here the reference is a light link.
  * The score row reuses the hub's shared PDF viewer via context rather than mounting its own.
- * @architecture Enterprise SaaS 2026
  * @module features/projects/ProjectCard/widgets/ProjectMaterialsCard
  */
 

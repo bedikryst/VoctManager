@@ -16,7 +16,6 @@
              - the kosztorys, planned or actual, per line and split between the
                four columns of a public-benefit kosztorys;
              - the documents charged to a source, which get a note on the back.
-@architecture Enterprise SaaS 2026
 @module finance/services/reports
 """
 from collections.abc import Sequence

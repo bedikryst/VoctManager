@@ -8,7 +8,6 @@
  * the first concert, invite the singers, build the repertoire — each
  * deep-linking to the real (already-premium) flow rather than forking it. Step completion is derived from live data ({@link useSeasonSetup}),
  * so the panel fills in as the season takes shape and celebrates when it is founded.
- * @architecture Enterprise SaaS 2026
  * @module features/dashboard/components/SeasonSetupConcierge
  */
 

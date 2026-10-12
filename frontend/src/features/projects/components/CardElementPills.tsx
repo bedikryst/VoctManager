@@ -8,7 +8,6 @@
  * paint each pill's data-confidence dot; the global default omits it (readiness
  * is a per-piece signal). `CardElementLegend` decodes those dots and belongs
  * beside the pills — it explains nothing anywhere else.
- * @architecture Enterprise SaaS 2026
  * @module features/projects/components/CardElementPills
  */
 

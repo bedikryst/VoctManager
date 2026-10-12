@@ -1,7 +1,6 @@
 /**
  * @file text.ts
  * @description Domain-free string helpers for search and comparison.
- * @architecture Enterprise SaaS 2026
  * @module shared/lib/text
  */
 

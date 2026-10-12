@@ -19,7 +19,6 @@
  *  unsatisfied puts a critical error on this page and suppresses the ONE concert whose event
  *  result is still ahead. The festival reaches search the way it always did: as a visible,
  *  followed link in the page's own markup, with the festival's name as its context.
- * @architecture Astro islands 2026
  * @module lib/eventSchema
  */
 

@@ -18,7 +18,6 @@
  * because a producer who moves the sound check on top of a run-sheet point can
  * only see the collision on one axis — and the printed sheet already merges
  * them (`roster/infrastructure/document_generator._structured_day_points`).
- * @architecture Enterprise SaaS 2026
  * @module features/projects/lib/dayTimeline
  */
 

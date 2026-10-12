@@ -19,7 +19,6 @@
  *  THE SPLIT IS BY LANGUAGE, NOT BY FIELD, which is the answer to §5's rule against two shapes for
  *  one thing: every field behaves identically here, and the file is flat — no nesting mirrors the
  *  corpus, because the desk's key already carries the whole address.
- * @architecture Astro islands 2026
  * @module copydesk/overlay
  */
 

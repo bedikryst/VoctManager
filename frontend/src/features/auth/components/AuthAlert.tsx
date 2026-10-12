@@ -7,7 +7,6 @@
  * Field-level problems do NOT come here: a message that belongs to one field
  * goes to that field's `error` prop, which tints it and prints the sentence
  * beneath it.
- * @architecture Enterprise SaaS 2026
  * @module features/auth/components/AuthAlert
  */
 

@@ -7,7 +7,6 @@
  * without being opened.
  * The row language is the Overview setlist's, deliberately: the same fact
  * (gaps on a piece) is stated the same way on both surfaces.
- * @architecture Enterprise SaaS 2026
  * @module features/projects/editors/tabs/components/ProgramCastingRail
  */
 

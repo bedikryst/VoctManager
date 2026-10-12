@@ -2,7 +2,6 @@
  * @file artist.service.ts
  * @description Pure HTTP service for the Artist domain.
  * Completely decoupled from React state or UI logic.
- * @architecture Enterprise SaaS 2026
  */
 
 import api from "@/shared/api/api";

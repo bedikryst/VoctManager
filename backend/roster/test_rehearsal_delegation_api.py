@@ -11,7 +11,6 @@
     different person — that would leave the audit line describing the wrong
     hand-over.
 
-@architecture Enterprise SaaS 2026
 @module roster/test_rehearsal_delegation_api
 """
 

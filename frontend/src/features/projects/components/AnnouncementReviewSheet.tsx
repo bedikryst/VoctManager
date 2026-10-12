@@ -15,7 +15,6 @@
  * What that close destroys is the announcement, never the data: the saved edits
  * stand either way. Its words and its colour say so, because a conductor fixing a
  * typo has to be able to reach for it without fearing their correction is at stake.
- * @architecture Enterprise SaaS 2026
  * @module features/projects/components/AnnouncementReviewSheet
  */
 

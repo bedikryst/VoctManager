@@ -2,7 +2,6 @@
  * @file types.ts
  * @description Shared domain types for the editors feature slice.
  * Centralizes DTOs and enriched aggregates consumed by hooks and tabs.
- * @architecture Enterprise SaaS 2026
  * @module features/projects/editors/types
  */
 

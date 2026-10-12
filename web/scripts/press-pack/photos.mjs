@@ -16,7 +16,6 @@
  *  EXIF strings are ASCII and libvips folds them ("Grudzinska", "(C)"), while XMP is UTF-8 and
  *  carries the name as it is spelled — which is the field Adobe tools show first. Everything else
  *  (GPS, camera serials, IPTC, the photographer's editing history) is dropped.
- * @architecture Astro islands 2026
  * @module scripts/press-pack/photos
  */
 import sharp from "sharp";

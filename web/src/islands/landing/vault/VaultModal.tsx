@@ -10,7 +10,6 @@
  *  `/fundacja#wsparcie`, and the sheet ends on a link to it.
  *  Manages browser-history integration (back closes), Lenis stop/start while open, the
  *  campaign line, and the `body.vault-open` flag for chrome theming. Web/Astro port.
- * @architecture Astro islands 2026
  * @module islands/landing/vault/VaultModal
  */
 

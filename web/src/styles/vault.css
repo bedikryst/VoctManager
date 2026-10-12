@@ -10,7 +10,6 @@
  *  (the partial's own lock is scoped to body.theme-marketing, which the subpages don't carry).
  *  All other tokens (--candle, --paper, --serif, --mono, --ease*, --ink*, --line-strong…) come
  *  from the globally-imported tokens.css.
- * @architecture Astro islands 2026
  * @module styles/vault
  */
 @import "./landing/08-vault.css";

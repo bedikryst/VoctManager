@@ -4,7 +4,6 @@
  * mobile dock, mobile sheet). The server counts 1:1 threads AND project channels into
  * one figure, so this matches the inbox rather than a subset of it. Self-gating:
  * renders nothing at zero. Must be placed inside a `relative` positioned slot.
- * @architecture Enterprise SaaS 2026
  * @module features/messages/components
  */
 

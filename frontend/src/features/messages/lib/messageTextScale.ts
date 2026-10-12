@@ -15,7 +15,6 @@
  * It lives in an external store rather than in a hook's state because the
  * composer has to re-measure its own height whenever the size moves, and must
  * not be handed a prop whose only job is to say "re-measure".
- * @architecture Enterprise SaaS 2026
  * @module features/messages/lib/messageTextScale
  */
 

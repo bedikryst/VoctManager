@@ -6,7 +6,6 @@
  * which sections show up, how attendance trends rehearsal-over-rehearsal, and
  * which singers are chronically late or absent. All derived client-side from
  * data already in cache (see useRehearsalAnalytics).
- * @architecture Enterprise SaaS 2026
  * @module features/rehearsals/components/ReliabilityBoard
  */
 

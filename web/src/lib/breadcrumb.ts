@@ -20,7 +20,6 @@
  *  LABEL is translated all the same (`UI[lang].footer.home`), the same split the footer's own
  *  index already makes for /obrazy: a reader is told where the link goes in their language,
  *  even when what waits there is Polish.
- * @architecture Astro islands 2026
  * @module lib/breadcrumb
  */
 

@@ -5,7 +5,6 @@
  *  Replaces the SPA's `useLenis()` from `lenis/react` (there is no <ReactLenis> provider in the
  *  Astro islands; Lenis is mounted once, framework-agnostically, in the layout). No-op when
  *  Lenis isn't running (coarse pointer / reduced motion); always restarts on cleanup.
- * @architecture Astro islands 2026
  * @module islands/landing/hooks/useLenisLock
  */
 
