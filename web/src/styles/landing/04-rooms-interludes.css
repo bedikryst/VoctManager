@@ -2067,15 +2067,14 @@
   }
 
   /* The unit in the transfer rows' own label voice (`.bank-row .currency`), so the ledger names
-     its currency one way from the first tier to the last IBAN. Its case is the copy's, not the
-     label's: "zł" is a word and stays lowercase, "PLN" is a code and is written in capitals. It
-     takes the figure's colour at the label's strength rather than a fixed one, so the hover's
-     candle reaches it too. */
+     its currency one way from the first tier to the last IBAN. It takes the figure's colour at
+     the label's strength rather than a fixed one, so the hover's candle reaches it too. */
   .donation-unit {
     color: color-mix(in srgb, currentColor 62%, transparent);
     font-family: var(--mono);
     font-size: 10px;
     letter-spacing: 0.16em;
+    text-transform: uppercase;
   }
 
   /* What the money DOES is the argument; the amount is only its label. Set close enough to the
