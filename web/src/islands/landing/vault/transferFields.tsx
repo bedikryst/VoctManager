@@ -68,7 +68,9 @@ export function TransferFieldButton({ field }: { readonly field: TransferField }
   // plain ASCII spacing.
   return (
     <Typo locale={lang}>
-      <div className="transfer-field">
+      {/* Chrome label, registry value, chrome action: no desk field, so the comment mode skips
+          it rather than read "Account number" as the foundation page's label (comment-mode/match.ts). */}
+      <div className="transfer-field" data-desk="none">
         <span className="transfer-field-label">{field.label}</span>
         <button
           type="button"

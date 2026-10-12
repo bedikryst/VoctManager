@@ -298,6 +298,36 @@ test("values under three literal characters are never matched", () => {
   assert.equal(corpus.skipped.length, 2);
 });
 
+test("a word or two of another scope inside a longer text node is not that field", () => {
+  const rows = [row("page.press.head.nav.contact", "kontakt"), row("page.o-nas.letter.stanzas.II.label", "in silence")];
+  const address = `<p><a href="mailto:kontakt@voctensemble.com">kontakt@voctensemble.com</a></p>`;
+  const sentence = `<p>The evening ends in silence and in light.</p>`;
+  assert.deepEqual(match(address + sentence, rows, "page.landing").found, []);
+  // Printed whole, up to punctuation, it is the field.
+  assert.deepEqual(match(`<a>kontakt ↗</a>`, rows, "page.landing").found, [
+    { text: "kontakt", keys: ["page.press.head.nav.contact"] },
+  ]);
+  // On its own page the field is found wherever it stands.
+  assert.deepEqual(match(sentence, rows, "page.o-nas").found, [
+    { text: "in silence", keys: ["page.o-nas.letter.stanzas.II.label"] },
+  ]);
+});
+
+test("chrome marked data-desk=none is never read as a field", () => {
+  const rows = [row("page.landing.support.writeCta", "Write to us")];
+  const body =
+    `<p><a href="/kontakt">Write to us</a></p>` +
+    `<footer data-desk="none"><div><a href="/kontakt">write to us</a></div><div>x</div></footer><p>after</p>`;
+  const { found, nodes } = match(body, rows, "page.landing");
+  assert.deepEqual(found, [{ text: "Write to us", keys: ["page.landing.support.writeCta"] }]);
+  assert.deepEqual(
+    nodes.map((n) => [n.text, n.breakBefore]),
+    [["Write to us", true], ["after", true]],
+  );
+  const doc = readHtmlText(`<html><body>${body}</body></html>`);
+  assert.ok(doc.outside.some((text) => text.includes("write to us")));
+});
+
 test("the text reader keeps to the body's prose and sets the rest apart", () => {
   const html =
     `<!doctype html><html lang="fr" class="x"><head><title>Titre</title>` +

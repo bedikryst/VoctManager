@@ -79,7 +79,10 @@ export function SiteFooter({ lang, chrome }: SiteFooterProps): React.JSX.Element
 
   return (
     <Typo locale={lang}>
-      <footer className="site-footer" aria-label={chrome.footerAria}>
+      {/* Every word here is chrome or data (`LANDING_CHROME`, `UI`, the clock), none a desk field:
+          `data-desk="none"` stops the comment mode reading a label that spells a desk value
+          ("write to us") as that field (comment-mode/match.ts). */}
+      <footer className="site-footer" aria-label={chrome.footerAria} data-desk="none">
         <div className="site-footer-inner">
           {/* The footer had no entrance at all while every block above it was written into
               being — and it is not chrome: it numbers itself IV, continuing the interludes'

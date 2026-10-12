@@ -116,12 +116,14 @@ export function VaultModal(): React.JSX.Element {
               <div className="vault-progress-meta">
                 {/* Donors lead when known — the count is the social proof; an early-stage
                     bar percentage alone reads as emptiness, not momentum. */}
+                {/* Each desk value in a span of its own: the comment mode reads a short value
+                    composed into one text node with others as a stray word (comment-mode/match.ts). */}
                 <span>
-                  {`${vault.progress.open} · ${
-                    progress && progress.donors > 0
-                      ? t.donors(progress.donors)
-                      : vault.progress.awaiting
-                  }`}
+                  <span>{vault.progress.open}</span>
+                  {" · "}
+                  <span>
+                    {progress && progress.donors > 0 ? t.donors(progress.donors) : vault.progress.awaiting}
+                  </span>
                 </span>
                 <span>
                   <strong>
@@ -171,8 +173,10 @@ export function VaultModal(): React.JSX.Element {
           <footer className="vault-foot">
             {/* The foundation's register: numbers and an address, the same in every language. The
                 closing sentence is the chrome's own — /kontakt already owns that fact, and a
-                sentence printed twice is read twice, never written twice. */}
-            <p className="vault-trust">
+                sentence printed twice is read twice, never written twice. Chrome and registry
+                data, no desk field: `data-desk="none"` here and on the privacy link below keeps the
+                comment mode from reading their words as a desk field (comment-mode/match.ts). */}
+            <p className="vault-trust" data-desk="none">
               <strong>{VAULT_CONFIG.recipient.name}</strong>
               <br />
               KRS 0001237252 · NIP 6762718992 · REGON 544621525
@@ -191,6 +195,7 @@ export function VaultModal(): React.JSX.Element {
               </button>
               <a
                 className="vault-foot-link"
+                data-desk="none"
                 href={localizePath("/polityka-prywatnosci", lang)}
                 target="_blank"
                 rel="noopener"

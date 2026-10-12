@@ -304,8 +304,13 @@ export function StickyHeader({
             shared-element morph, which only produced artifacts across the differing header states.
             It still persists ABOVE the open "Antyfona" card (z-index 61, tinted ink — see
             01-foundation.css), so tapping it while the card is open must also close the card
-            (href="#top" is an in-page jump; no navigation swap does it for us). */}
+            (href="#top" is an in-page jump; no navigation swap does it for us).
+            `data-desk="none"` here and below marks the bar's own words (`UI`, the hour, the
+            Latin): the comment mode would read a label that spells a desk value — "Support us" is
+            also the support band's button — as that field (comment-mode/match.ts). The concert
+            rows print desk fields and stay unmarked. */}
         <a
+          data-desk="none"
           className="brand"
           href="#top"
           aria-label={t.nav.brandAria}
@@ -322,12 +327,13 @@ export function StickyHeader({
           <button
             type="button"
             className={`audio-toggle${audioOn ? " is-on" : ""}`}
+            data-desk="none"
             aria-pressed={audioOn}
             onClick={toggleAudio}
           >
             {audioOn ? chrome.audioOn : chrome.audioOff}
           </button>
-          <a className="support-link" href={hrefAbout}>
+          <a className="support-link" data-desk="none" href={hrefAbout}>
             {t.nav.about}
           </a>
           {/* "Registrum" — mute breviary register silks + ink index under KONCERTY
@@ -342,7 +348,7 @@ export function StickyHeader({
               (document.activeElement as HTMLElement | null)?.blur();
             }}
           >
-            <a className="support-link" href={hrefConcerts}>
+            <a className="support-link" data-desk="none" href={hrefConcerts}>
               {t.nav.concerts}
             </a>
             {ribbons.length > 0 && (
@@ -381,7 +387,7 @@ export function StickyHeader({
                         sixth ribbon (registrum.css): no numeral, no silk, no leader. It takes
                         no pull beat either — the beat exists to let a bookmark be YANKED, and
                         this line has no silk to yank. */}
-                    <a className="registrum-all" href={hrefImages}>
+                    <a className="registrum-all" href={hrefImages} data-desk="none">
                       <span className="registrum-all-word">{t.nav.archive}</span>
                       <span className="registrum-all-gloss">{t.nav.archiveGloss}</span>
                     </a>
@@ -390,16 +396,16 @@ export function StickyHeader({
               </>
             )}
           </div>
-          <a className="support-link" href={hrefContact}>
+          <a className="support-link" data-desk="none" href={hrefContact}>
             {t.nav.contact}
           </a>
           {FOUNDATION_PAGE_LINKED && (
-            <a className="support-link" href={hrefFoundation}>
+            <a className="support-link" data-desk="none" href={hrefFoundation}>
               {t.nav.foundation}
             </a>
           )}
           <a
-            className="support-link"
+            className="support-link" data-desk="none"
             href="#wesprzyj"
             data-no-lenis
             onClick={(e) => {
@@ -432,7 +438,7 @@ export function StickyHeader({
           <div className="nave-veil" />
 
           <div className="nave-inner">
-            <div className="nave-top">
+            <div className="nave-top" data-desk="none">
               <button
                 className="nave-close"
                 id="menuClose"
@@ -459,7 +465,7 @@ export function StickyHeader({
               {/* The antiphon names its hour — the page's first ruled line, name left and poem
                   right across the measure, the card's one living element (see `hora`: computed
                   only while open, so the SSG snapshot ships the neutral placeholder). */}
-              <span className="nave-antiphon">
+              <span className="nave-antiphon" data-desk="none">
                 <span>{hora?.name ?? "Hora"}</span>
                 <em>{hora ? hora.poem[lang] : "canonica"}</em>
               </span>
@@ -468,7 +474,7 @@ export function StickyHeader({
                   (#top) — no page swap, so it closes the card. The three cross-page voices
                   leave it open and let the fade-through-dark carry it. */}
               <a
-                className="voice"
+                className="voice" data-desk="none"
                 href="#top"
                 aria-current="page"
                 style={{ "--i": 0, "--vb": 1.5, "--vr": 0 } as React.CSSProperties}
@@ -479,7 +485,7 @@ export function StickyHeader({
                 <span className="voice-lat">Introitus</span>
               </a>
               <a
-                className="voice"
+                className="voice" data-desk="none"
                 href={hrefAbout}
                 style={{ "--i": 1, "--vb": 2.5, "--vr": 0 } as React.CSSProperties}
                 onClick={commitVoice}
@@ -489,7 +495,7 @@ export function StickyHeader({
                 <span className="voice-lat">De nobis</span>
               </a>
               <a
-                className="voice"
+                className="voice" data-desk="none"
                 href={hrefConcerts}
                 style={{ "--i": 2, "--vb": 3.5, "--vr": 0 } as React.CSSProperties}
                 onClick={commitVoice}
@@ -499,7 +505,7 @@ export function StickyHeader({
                 <span className="voice-lat">Via</span>
               </a>
               <a
-                className="voice"
+                className="voice" data-desk="none"
                 href={hrefContact}
                 style={{ "--i": 3, "--vb": 4.5, "--vr": 0 } as React.CSSProperties}
                 onClick={commitVoice}
@@ -519,7 +525,7 @@ export function StickyHeader({
                   drift out of step with the first. */}
               {ribbons.length > 0 && (
                 <div className="via">
-                  <span className="via-label">Via</span>
+                  <span className="via-label" data-desk="none">Via</span>
                   {ribbons.map((r, i) => (
                     <a
                       key={r.id}
@@ -539,6 +545,7 @@ export function StickyHeader({
                       the `--vb`/`--vr` off the element, so the ribbon runs to it too. */}
                   <a
                     className="via-row via-all"
+                    data-desk="none"
                     href={hrefImages}
                     style={{ "--vb": 5, "--vr": ribbons.length + 1.5 } as React.CSSProperties}
                     onClick={commitVoice}
@@ -551,7 +558,7 @@ export function StickyHeader({
               )}
             </div>
 
-            <div className="nave-foot">
+            <div className="nave-foot" data-desk="none">
               {/* The closing line of the page — the same entry grammar as the voices above, one
                   step smaller, under the foot's gold rule. Not a button: see nave-menu.css. */}
               <a

@@ -193,7 +193,10 @@ export function GiveForm(): React.JSX.Element {
         aria-busy={loading}
       >
         <div className="give-field">
-          <div className="give-label-row">
+          {/* The label, the amounts and the currency switch are chrome and figures, no desk field:
+              `data-desk="none"` stops the comment mode reading "100 PLN" as the landing's tier
+              amount (comment-mode/match.ts). */}
+          <div className="give-label-row" data-desk="none">
             <span className="give-label micro">{t.amountLabel}</span>
             <span className="give-amount-current" aria-live="polite">
               {amountLabel}
@@ -201,6 +204,7 @@ export function GiveForm(): React.JSX.Element {
           </div>
           <div
             className="give-currency"
+            data-desk="none"
             data-currency={state.currency}
             role="radiogroup"
             aria-label={t.currencyAria}
@@ -225,7 +229,7 @@ export function GiveForm(): React.JSX.Element {
             </button>
             <div className="give-currency-thumb" aria-hidden="true" />
           </div>
-          <div className="give-tiers" role="radiogroup" aria-label={t.tiersAria}>
+          <div className="give-tiers" role="radiogroup" aria-label={t.tiersAria} data-desk="none">
             {GIVE_TIERS[state.currency].map((value, index) => (
               <button
                 key={index}

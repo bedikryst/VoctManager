@@ -81,8 +81,11 @@ const tempus = tempusForDate(new Date());
 const tempusGloss = tempus.gloss[lang];
 ---
 
+{/* Every word here is chrome or data (`UI`, `NUNTIUS`, the season), none a desk field:
+    `data-desk="none"` stops the comment mode reading a label that spells a desk value as that
+    field (comment-mode/match.ts). */}
 {variant === "invitation" ? (
-  <footer class="site-foot invitation-foot">
+  <footer class="site-foot invitation-foot" data-desk="none">
     <div class="invitation-foot-inner">
       <p class="invitation-foot-sender">VoctEnsemble · VoctFoundation</p>
       <nav class="invitation-foot-links" aria-label={t.contactMedia}>
@@ -99,7 +102,7 @@ const tempusGloss = tempus.gloss[lang];
     </div>
   </footer>
 ) : (
-<footer class="site-foot">
+<footer class="site-foot" data-desk="none">
   {/* Four stanzas of one rank, all hanging from one line across the measure, written left to
       right: `data-d` sets the offset for a whole SUBTREE, so the stanza carries the cadence and
       its head, mark and list all take it. The ink is on the stanzas rather than on the grid

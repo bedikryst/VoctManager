@@ -3,10 +3,10 @@
  * @description The live page as the matcher reads it, and the way back from a tap to a field.
  *
  *  The walk is the one `copydesk/htmlText.mjs` makes over the built HTML, over the DOM instead:
- *  `<body>`'s text nodes in document order, without the tool's own host and without the elements
- *  `skipsText` names, each flagged when crossing an element `breaksText` names — entering it or
- *  leaving it — lies between it and the text node before. Both walks share those two predicates
- *  from `match.ts`, so the live page and `copy:coverage` agree on what a field is.
+ *  `<body>`'s text nodes in document order, without the tool's own host, the elements `skipsText`
+ *  names and chrome marked `data-desk="none"`, each flagged when crossing an element `breaksText`
+ *  names — entering it or leaving it — lies between it and the text node before. Both walks share
+ *  those rules from `match.ts`, so the live page and `copy:coverage` agree on what a field is.
  *
  *  A tap is resolved through the caret under the point (`caretPositionFromPoint`, or WebKit's
  *  `caretRangeFromPoint`) and then confirmed against the occurrence's own line boxes, because a
@@ -26,6 +26,7 @@ import type { IndexRow } from "./api";
 import {
   breaksText,
   findOccurrences,
+  OUTSIDE_DESK_SELECTOR,
   readPage,
   skipsText,
   type Corpus,
@@ -66,7 +67,7 @@ export function scanPage(corpus: Corpus<IndexRow>, ownScope: string | null, { ho
   const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT, {
     acceptNode(node) {
       if (node === host) return NodeFilter.FILTER_REJECT;
-      if (node instanceof Element && pinned.has(node)) {
+      if (node instanceof Element && (pinned.has(node) || node.matches(OUTSIDE_DESK_SELECTOR))) {
         pendingBreak = true;
         return NodeFilter.FILTER_REJECT;
       }
@@ -193,12 +194,13 @@ function controlAt(target: EventTarget | null, caret: Node | null): HTMLElement 
 
 /**
  * True when the walk passes over `node` on purpose: text in a shadow tree (a form control's own,
- * the tool's host) or inside an element `skipsText` names, such as a textarea.
+ * the tool's host), inside an element `skipsText` names, such as a textarea, or inside chrome
+ * marked `data-desk="none"`.
  */
 function skippedByWalk(node: Node): boolean {
   if (node.getRootNode() !== document) return true;
   for (let element = node.parentElement; element; element = element.parentElement) {
-    if (skipsText(element.localName.toLowerCase())) return true;
+    if (skipsText(element.localName.toLowerCase()) || element.matches(OUTSIDE_DESK_SELECTOR)) return true;
   }
   return false;
 }

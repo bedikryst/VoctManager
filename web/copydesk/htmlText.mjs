@@ -4,8 +4,8 @@
  * @description The text nodes a browser would build from one page of `dist/`, for the comment
  *  mode's matcher to read without a DOM. Only what `copy:coverage` needs: the text of `<body>` in
  *  document order with a flag for every line break crossed, and, set apart, the text a visitor
- *  never reads as page prose — attributes, the head, JSON-LD, `<noscript>` — and the props and
- *  JSON data islands render from on the client.
+ *  never reads as page prose — attributes, the head, JSON-LD, `<noscript>` — the props and JSON
+ *  data islands render from on the client, and the chrome marked `data-desk="none"`.
  *
  *  A tokenizer, not a parser: the build's own output is well formed, and text order is all the
  *  matcher needs. Implied end tags change nothing in that order. Which elements hide their text
@@ -15,7 +15,14 @@
  * @module copydesk/htmlText
  */
 
-import { breaksText, decodeEntities, htmlText, skipsText } from "../src/comment-mode/match.ts";
+import {
+  breaksText,
+  decodeEntities,
+  htmlText,
+  OUTSIDE_DESK_ATTRIBUTE,
+  OUTSIDE_DESK_VALUE,
+  skipsText,
+} from "../src/comment-mode/match.ts";
 
 /** One attribute after the tag name: name, then a double-, single- or un-quoted value. */
 const ATTRIBUTE = /\s*([^\s"'>/=]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+)))?/y;
@@ -30,6 +37,8 @@ const TAG_NAME = /<(\/?)([A-Za-z][A-Za-z0-9-]*)/y;
  * @property {string[]} hidden Attribute values, the head's text, JSON-LD strings, `<noscript>`.
  * @property {string[]} scripted Strings in island props and JSON data blocks: copy that only
  *  reaches the page when client code renders it.
+ * @property {string[]} outside The text of subtrees marked `data-desk="none"`: chrome the walk
+ *  skips, kept so a desk field printed there anyway can be named.
  */
 
 /**
@@ -70,12 +79,32 @@ function decodeMailto(href) {
 }
 
 /**
+ * Where the element opened just before `from` closes: the index of its end tag's `<`, or -1.
+ * Elements of the same name nested inside it are counted, so a `<div>` closes on its own `</div>`.
+ *
+ * @param {string} html
+ * @param {string} name lowercase
+ * @param {number} from
+ */
+function matchingClose(html, name, from) {
+  const tag = new RegExp(`<(/?)${name}(?=[\\s/>])[^>]*?(/?)>`, "giu");
+  tag.lastIndex = from;
+  let depth = 1;
+  for (let match = tag.exec(html); match; match = tag.exec(html)) {
+    if (match[1] === "/") depth -= 1;
+    else if (match[2] !== "/") depth += 1;
+    if (depth === 0) return match.index;
+  }
+  return -1;
+}
+
+/**
  * @param {string} html
  * @returns {HtmlText}
  */
 export function readHtmlText(html) {
   /** @type {HtmlText} */
-  const result = { lang: "", htmlClass: "", bodyClass: "", nodes: [], hidden: [], scripted: [] };
+  const result = { lang: "", htmlClass: "", bodyClass: "", nodes: [], hidden: [], scripted: [], outside: [] };
   let inBody = false;
   let templateDepth = 0;
   let pendingBreak = true;
@@ -168,6 +197,15 @@ export function readHtmlText(html) {
       else result.hidden.push(value);
     }
     if (breaksText(name)) pendingBreak = true;
+
+    if (inBody && !selfClosing && attributes[OUTSIDE_DESK_ATTRIBUTE] === OUTSIDE_DESK_VALUE) {
+      const close = matchingClose(html, name, i);
+      result.outside.push(htmlText(html.slice(i, close < 0 ? html.length : close)));
+      const end = close < 0 ? html.length : html.indexOf(">", close);
+      i = end < 0 ? html.length : end + 1;
+      pendingBreak = true;
+      continue;
+    }
 
     if (skipsText(name) && name !== "template") {
       const endTag = new RegExp(`</${name}`, "giu");

@@ -9,8 +9,8 @@
  *    that adds or removes a letter counts. The landing ticks every second (the liturgical clock's
  *    seconds, a video's time readout, the notice form's resend countdown), and none of that is
  *    copy: a rewritten text node counts when its letters differ from before, an added or removed
- *    node when it carries any. Text the walk never reads (`skipsText`: scripts, styles) and
- *    comments do not count.
+ *    node when it carries any. Text the walk never reads (`skipsText`: scripts, styles; chrome
+ *    marked `data-desk="none"`, where the clock lives) and comments do not count.
  *  - `hidden`, `aria-hidden`, `inert`, `open` (a `<details>`) and `class` mean only what is shown
  *    changed: the text is the same, only the lists that ask what is visible refresh. Inline
  *    `style` is not watched: animations write it every frame.
@@ -29,7 +29,7 @@
  * @module comment-mode/watch
  */
 
-import { skipsText } from "./match";
+import { OUTSIDE_DESK_SELECTOR, skipsText } from "./match";
 
 export interface WatchEvents {
   /** Text was added, removed or rewritten: read the page again. */
@@ -60,7 +60,14 @@ function letters(text: string | null): string {
 function carriesLetters(node: Node): boolean {
   if (node instanceof Text) return LETTER.test(node.data);
   if (!(node instanceof Element) || skipsText(node.localName.toLowerCase())) return false;
+  if (node.matches(OUTSIDE_DESK_SELECTOR)) return false;
   return LETTER.test(node.textContent ?? "");
+}
+
+/** A change inside chrome marked `data-desk="none"`, which the walk never reads. */
+function outsideDesk(target: Node): boolean {
+  const element = target instanceof Element ? target : target.parentElement;
+  return element?.closest(OUTSIDE_DESK_SELECTOR) != null;
 }
 
 export class PageWatcher {
@@ -130,6 +137,7 @@ export class PageWatcher {
   private take(records: readonly MutationRecord[]): void {
     for (const record of records) {
       if (record.target === this.host || this.host.contains(record.target)) continue;
+      if (outsideDesk(record.target)) continue;
       if (record.type === "attributes") {
         this.shownChanged = true;
       } else if (this.textChanged) {

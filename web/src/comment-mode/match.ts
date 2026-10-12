@@ -117,6 +117,19 @@ export function skipsText(tag: string): boolean {
   return SKIPPED_ELEMENTS.has(tag);
 }
 
+/**
+ * `data-desk="none"` on an element says its whole subtree is chrome or data and prints no desk
+ * field. Fields are found by their text, so a chrome label that spells a desk value would open
+ * that field, and an edit there would change the other text while this one stays: the landing
+ * footer's "write to us" is also the support band's call to action, and the hours' "the shadow
+ * lengthens" holds a concert movement's gloss "Shadow". Only the page can tell two equal strings
+ * apart, so a component that prints chrome marks its root. Both walks skip such a subtree and
+ * break the line on both sides, and `copy:coverage` reports an own field printed only inside one.
+ */
+export const OUTSIDE_DESK_ATTRIBUTE = "data-desk";
+export const OUTSIDE_DESK_VALUE = "none";
+export const OUTSIDE_DESK_SELECTOR = `[${OUTSIDE_DESK_ATTRIBUTE}="${OUTSIDE_DESK_VALUE}"]`;
+
 /** True when crossing `tag` (lowercase) — entering or leaving it — breaks the line. */
 export function breaksText(tag: string): boolean {
   return !INLINE_ELEMENTS.has(tag) && !TRANSPARENT_ELEMENTS.has(tag);
@@ -124,6 +137,9 @@ export function breaksText(tag: string): boolean {
 
 /** Below this many normalized characters a value is punctuation (`·`, `→`), not a field. */
 const MIN_LITERAL = 3;
+
+/** A span of another scope this many words long or shorter is a stray inside a longer text node. */
+const STRAY_WORDS = 2;
 
 /** The longest text one inner `{placeholder}` stands for, in normalized UTF-16 units. */
 const MAX_PLACEHOLDER = 60;
@@ -405,6 +421,13 @@ export function isOnPage(page: PageText, field: MatchField): boolean {
  * page's own scope, whose every character the own fields already account for, is a coincidence
  * of neighbours — /koncerty's heading "Spiritual" + "Concerts." is not the landing's link
  * "Spiritual Concerts".
+ *
+ * A word or two of another scope that sits inside a longer text node is a STRAY and is dropped:
+ * that text node is somebody else's sentence, an address, a dating ("kontakt" in
+ * kontakt@voctensemble.com, "in silence" in a line of the chrome). A component that prints a
+ * foreign field prints it whole, so it fills its node up to punctuation. The cost is a field a
+ * template composes into a line ("Florent de Bazelaire, conductor" on /fundacja): it is tapped on
+ * its own page instead. One word several fields share is kept, for the tap to explain.
  */
 export function findOccurrences<F extends MatchField>(
   corpus: Corpus<F>,
@@ -432,8 +455,14 @@ export function findOccurrences<F extends MatchField>(
     return true;
   };
 
+  const stray = (span: { from: number; to: number; fields: F[] }) => {
+    const words = wordsIn(page, span.from, span.to);
+    if (words > STRAY_WORDS || fillsItsNodes(page, span.from, span.to)) return false;
+    return !(words === 1 && span.fields.length > 1);
+  };
+
   const spans = [...bySpan.values()]
-    .filter((span) => span.fields.some(isOwn) || !coveredByOwn(span.from, span.to))
+    .filter((span) => span.fields.some(isOwn) || (!coveredByOwn(span.from, span.to) && !stray(span)))
     .sort((a, b) => a.from - b.from || b.to - a.to);
   const occurrences: Occurrence<F>[] = [];
   let reach = -1;
@@ -457,6 +486,22 @@ export function findOccurrences<F extends MatchField>(
 
 /** No word gap inside `[from, to)`. */
 function isOneWord(page: PageText, from: number, to: number): boolean {
-  for (let i = from + 1; i < to; i++) if (page.flags[i] & GAP) return false;
+  return wordsIn(page, from, to) === 1;
+}
+
+function wordsIn(page: PageText, from: number, to: number): number {
+  let words = 1;
+  for (let i = from + 1; i < to; i++) if (page.flags[i] & GAP) words += 1;
+  return words;
+}
+
+/** Only non-word characters lie between `[from, to)` and the edges of the text nodes it starts and ends in. */
+function fillsItsNodes(page: PageText, from: number, to: number): boolean {
+  for (let i = from - 1; i >= 0 && page.node[i] === page.node[from]; i--) {
+    if (isWordUnit(page.text, i)) return false;
+  }
+  for (let i = to; i < page.text.length && page.node[i] === page.node[to - 1]; i++) {
+    if (isWordUnit(page.text, i)) return false;
+  }
   return true;
 }

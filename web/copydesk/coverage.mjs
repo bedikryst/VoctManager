@@ -12,7 +12,10 @@
  *  corpus is extracted fresh on every run, the same way `copy:sync` does it.
  *
  *  Flags: `--summary` prints the table only; `--loose` adds each page's text no field accounts for
- *  (mostly concert data and chrome dictionaries, so long); `--locale <pl|en|fr>` and
+ *  (mostly concert data and chrome dictionaries, so long); `--suspects` adds, per locale, every
+ *  tap that opens one field of another scope and every own field more than one span opens — where
+ *  chrome that spells a desk value shows up, to be marked `data-desk="none"` (`match.ts`);
+ *  `--locale <pl|en|fr>` and
  *  `--page <path>` narrow the details (the table always lists every page). From Git Bash, run
  *  `--page` under `MSYS_NO_PATHCONV=1`, which otherwise rewrites `/fr/…` into a Windows path.
  * @architecture Astro islands 2026
@@ -65,14 +68,16 @@ const NUL = String.fromCharCode(0);
 /**
  * Why one of the page's own fields cannot be tapped there.
  *  - `inside`: its text is on the page, but only within a longer field's span.
+ *  - `outside`: only inside chrome marked `data-desk="none"`, which says the desk prints nothing
+ *    there: either the marker covers a field and must move, or the chrome spells the field's value.
  *  - `hidden`: only in attributes, the head, JSON-LD or `<noscript>` (meta, `alt`).
  *  - `scripted`: only in island props or a JSON data block; it appears when client code renders it.
  *  - `short`: under three characters, never matched by design.
  *  - `missing`: nowhere in the HTML.
  *
- * @typedef {"inside" | "hidden" | "scripted" | "short" | "missing"} Absence
+ * @typedef {"inside" | "outside" | "hidden" | "scripted" | "short" | "missing"} Absence
  */
-const ABSENCES = /** @type {const} */ (["inside", "hidden", "scripted", "short", "missing"]);
+const ABSENCES = /** @type {const} */ (["inside", "outside", "hidden", "scripted", "short", "missing"]);
 
 /**
  * @param {string[]} argv
@@ -85,6 +90,7 @@ function parseArgs(argv) {
   return {
     summary: argv.includes("--summary"),
     loose: argv.includes("--loose"),
+    suspects: argv.includes("--suspects"),
     locale: value("--locale"),
     page: value("--page"),
   };
@@ -186,6 +192,15 @@ function analysePage(urlPath, html, corpora, fields) {
   /** One-word spans no own field holds and several fields share: a tap explains, offers nothing. */
   /** @type {Groups} */
   const unclaimed = new Map();
+  /**
+   * Taps that open one field of another scope with no choice: the notice block, the vault, a
+   * concert title in the menu, or chrome that spells a desk value and wants `data-desk="none"`.
+   * @type {Groups}
+   */
+  const foreign = new Map();
+  /** Per own field, the spans that open it alone: more than one is a field printed twice, or chrome spelling it. */
+  /** @type {Groups} */
+  const repeated = new Map();
   /** Choosers among the page's own fields, which no ranking by page can settle. */
   let ownTies = 0;
   let unclaimedCount = 0;
@@ -212,6 +227,18 @@ function analysePage(urlPath, html, corpora, fields) {
       continue;
     }
     const unique = occurrence.candidates.length === 1;
+    if (unique) {
+      const [field] = occurrence.candidates;
+      if (field.scope !== ownScope) group(foreign, occurrence, [field]);
+      else {
+        const repeat = repeated.get(field.key);
+        if (repeat) repeat.count += 1;
+        else {
+          const snippet = clip(originalText(doc.nodes, page, occurrence.from, occurrence.to));
+          repeated.set(field.key, { snippet, keys: [field.key], count: 1 });
+        }
+      }
+    }
     for (const field of occurrence.candidates) {
       if (unique) tappable.set(field.key, "matched");
       else if (!tappable.has(field.key)) tappable.set(field.key, "ambiguous");
@@ -222,10 +249,11 @@ function analysePage(urlPath, html, corpora, fields) {
     }
   }
 
+  const outsideDesk = doc.outside.map(normalizeText).join(NUL);
   const hidden = doc.hidden.map(normalizeText).join(NUL);
   const scripted = doc.scripted.map(normalizeText).join(NUL);
   /** @type {Record<Absence, CoverageField[]>} */
-  const absent = { inside: [], hidden: [], scripted: [], short: [], missing: [] };
+  const absent = { inside: [], outside: [], hidden: [], scripted: [], short: [], missing: [] };
   let ownMatched = 0;
   let ownAmbiguous = 0;
   const own = ownScope ? (fields.get(locale) ?? []).filter((field) => field.scope === ownScope) : [];
@@ -238,6 +266,7 @@ function analysePage(urlPath, html, corpora, fields) {
       const inText = (/** @type {string} */ text) => pattern?.pieces.every((piece) => text.includes(piece));
       if (!pattern) absent.short.push(field);
       else if (isOnPage(page, field)) absent.inside.push(field);
+      else if (inText(outsideDesk)) absent.outside.push(field);
       else if (inText(hidden)) absent.hidden.push(field);
       else if (inText(scripted)) absent.scripted.push(field);
       else absent.missing.push(field);
@@ -277,6 +306,8 @@ function analysePage(urlPath, html, corpora, fields) {
     absent,
     uncovered,
     tappedKeys: [...tappable.keys()],
+    foreign: [...foreign.values()],
+    repeated: [...repeated.values()].filter((entry) => entry.count > 1),
   };
 }
 
@@ -327,7 +358,7 @@ async function main() {
   out.push(
     "text% = share of the page's body text inside a matched field · occ/amb/one = occurrences, of " +
       "which open a chooser / are one shared word a tap only explains · own = the page's own scope: " +
-      "tappable / chooser / inside / hidden / scripted / short / missing · loose = uncovered stretches",
+      "tappable / chooser / inside / outside / hidden / scripted / short / missing · loose = uncovered stretches",
   );
   out.push("");
   out.push(
@@ -393,7 +424,7 @@ async function main() {
         lines.push(`  one shared word, explained (${page.unclaimedCount}):`);
         for (const entry of page.unclaimed) lines.push(groupLine(entry));
       }
-      for (const absence of ["missing", "inside", "scripted"]) {
+      for (const absence of ["missing", "inside", "outside", "scripted"]) {
         const list = page.absent[/** @type {Absence} */ (absence)];
         if (list.length === 0) continue;
         lines.push(`  own, ${absence} (${list.length}):`);
@@ -411,6 +442,31 @@ async function main() {
       if (runs.size === 0) continue;
       out.push("", `== chrome (${locale}): loose text on most pages`);
       for (const entry of runs.values()) out.push(`    «${entry.snippet}» (${entry.pages} pages)`);
+    }
+  }
+
+  if (options.suspects) {
+    /** @param {string[]} paths */
+    const where = (paths) => (paths.length > 3 ? `${paths.slice(0, 3).join(", ")} +${paths.length - 3}` : paths.join(", "));
+    for (const locale of SITE_LOCALES) {
+      if (options.locale && options.locale !== locale) continue;
+      const ofLocale = pages.filter((page) => page.locale === locale && (!options.page || page.urlPath === options.page));
+      /** @type {Map<string, { snippet: string, paths: string[] }>} */
+      const foreign = new Map();
+      for (const page of ofLocale) {
+        for (const entry of page.foreign) {
+          const seen = foreign.get(entry.keys[0]);
+          if (seen) seen.paths.push(page.urlPath);
+          else foreign.set(entry.keys[0], { snippet: entry.snippet, paths: [page.urlPath] });
+        }
+      }
+      const repeated = ofLocale.flatMap((page) => page.repeated.map((entry) => ({ ...entry, path: page.urlPath })));
+      out.push("", `== suspects (${locale}): one field of another scope, no choice (${foreign.size})`);
+      for (const [key, entry] of [...foreign].sort((a, b) => b[1].paths.length - a[1].paths.length)) {
+        out.push(`    «${entry.snippet}» → ${key} (${entry.paths.length}: ${where(entry.paths)})`);
+      }
+      out.push("", `== suspects (${locale}): an own field more than one span opens (${repeated.length})`);
+      for (const entry of repeated) out.push(`    ${entry.path}: «${entry.snippet}» ×${entry.count} → ${entry.keys[0]}`);
     }
   }
 

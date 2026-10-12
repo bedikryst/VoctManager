@@ -131,14 +131,18 @@ const langOptions = showLang
   {/* The brand is part of the page root snapshot — it fades through the dark threshold with
       everything else (transitions.css) rather than morphing as a shared element. A shared
       element only ever showed artifacts here (position slip vs. is-solid padding, ink↔candle
-      colour flip, and a different glyph anatomy on the landing), so it was removed. */}
-  <a class="chrome-brand" href={hrefHome} aria-label={t.nav.brandAria}>
+      colour flip, and a different glyph anatomy on the landing), so it was removed.
+      `data-desk="none"` here and below marks the bar's own words (`UI`, the hour, the Latin):
+      the comment mode would read a label that spells a desk value — "About" is also /o-nas's
+      eyebrow — as that field (comment-mode/match.ts). The concert rows and the contents list
+      print desk fields and stay unmarked. */}
+  <a class="chrome-brand" href={hrefHome} aria-label={t.nav.brandAria} data-desk="none">
     <span class="brand-mark" aria-hidden="true"></span>
     <span>VoctEnsemble</span>
   </a>
 
   <nav class="chrome-nav" aria-label={t.nav.ariaPrimary}>
-    <a href={hrefAbout} aria-current={current === "/o-nas" ? "page" : undefined}>{t.nav.about}</a>
+    <a href={hrefAbout} aria-current={current === "/o-nas" ? "page" : undefined} data-desk="none">{t.nav.about}</a>
     {/* "Registrum" — hover/focus on KONCERTY lets mute breviary register silks slip from
         under the bar beside an ink index; each row's hairline leader runs to its silk's
         tip (registrum.css). Pure CSS state — the link itself stays a plain navigation to
@@ -147,7 +151,8 @@ const langOptions = showLang
       <a
         href={hrefConcerts}
         aria-current={current === "/koncerty" ? "page" : undefined}
-        data-section={onKoncerty ? "" : undefined}>{t.nav.concerts}</a>
+        data-section={onKoncerty ? "" : undefined}
+        data-desk="none">{t.nav.concerts}</a>
       {/* The hush: full-viewport fixed layer quieting the whole page while the register
           hangs open — a SIBLING of the drop (the drop's transform would hijack its fixed
           containing block, see registrum.css traps). */}
@@ -185,6 +190,7 @@ const langOptions = showLang
             class="registrum-all"
             href={hrefImages}
             aria-current={current === "/obrazy" ? "page" : undefined}
+            data-desk="none"
           >
             <span class="registrum-all-word">{t.nav.archive}</span>
             <span class="registrum-all-gloss">{t.nav.archiveGloss}</span>
@@ -192,14 +198,14 @@ const langOptions = showLang
         </div>
       </div>
     </div>
-    <a href={hrefContact} aria-current={current === "/kontakt" ? "page" : undefined}>{t.nav.contact}</a>
+    <a href={hrefContact} aria-current={current === "/kontakt" ? "page" : undefined} data-desk="none">{t.nav.contact}</a>
     {FOUNDATION_PAGE_LINKED && (
-      <a href={hrefFoundation} aria-current={current === "/fundacja" ? "page" : undefined}>{t.nav.foundation}</a>
+      <a href={hrefFoundation} aria-current={current === "/fundacja" ? "page" : undefined} data-desk="none">{t.nav.foundation}</a>
     )}
-    <a class="nav-support" href="/?donate" data-vault-open="100">{t.nav.support}</a>
+    <a class="nav-support" href="/?donate" data-vault-open="100" data-desk="none">{t.nav.support}</a>
     {
       showLang && (
-        <span class="chrome-lang" role="group" aria-label={t.nav.langAria}>
+        <span class="chrome-lang" role="group" aria-label={t.nav.langAria} data-desk="none">
           {langOptions.map((o, i) => (
             <Fragment>
               {i > 0 && (
@@ -295,7 +301,7 @@ const langOptions = showLang
     <div class="nave-veil"></div>
 
     <div class="nave-inner">
-      <div class="nave-top">
+      <div class="nave-top" data-desk="none">
         <button class="nave-close" id="menuClose" type="button" aria-label={t.nav.closeAria}>{t.nav.close}</button>
       </div>
 
@@ -311,7 +317,7 @@ const langOptions = showLang
         {/* The antiphon names its hour — the page's first ruled line, name left and poem right
             across the measure, the card's one living element; filled with the live canonical
             hour on open (script below). */}
-        <span class="nave-antiphon">
+        <span class="nave-antiphon" data-desk="none">
           <span id="naveHoraName">Hora</span>
           <em id="naveHoraPoem">canonica</em>
         </span>
@@ -320,6 +326,7 @@ const langOptions = showLang
             reading order is the same as the reading order on the page. */}
         <a
           class="voice"
+          data-desk="none"
           href={hrefHome}
           style="--i: 0; --vb: 1.5; --vr: 0"
           aria-current={current === "/" ? "page" : undefined}
@@ -330,6 +337,7 @@ const langOptions = showLang
         </a>
         <a
           class="voice"
+          data-desk="none"
           href={hrefAbout}
           style="--i: 1; --vb: 2.5; --vr: 0"
           aria-current={current === "/o-nas" ? "page" : undefined}
@@ -340,6 +348,7 @@ const langOptions = showLang
         </a>
         <a
           class="voice"
+          data-desk="none"
           href={hrefConcerts}
           style="--i: 2; --vb: 3.5; --vr: 0"
           aria-current={current === "/koncerty" ? "page" : undefined}
@@ -350,6 +359,7 @@ const langOptions = showLang
         </a>
         <a
           class="voice"
+          data-desk="none"
           href={hrefContact}
           style="--i: 3; --vb: 4.5; --vr: 0"
           aria-current={current === "/kontakt" ? "page" : undefined}
@@ -372,7 +382,7 @@ const langOptions = showLang
             (nave-menu.css). No separate `--i` in here for that reason — a second index could
             drift out of step with the first. */}
         <div class="via">
-          <span class="via-label">Via</span>
+          <span class="via-label" data-desk="none">Via</span>
           {
             ribbons.map((r, i) => (
               <a
@@ -393,6 +403,7 @@ const langOptions = showLang
               `.via-row`, so the ribbon runs to it and the swap is held the same beat. */}
           <a
             class="via-row via-all"
+            data-desk="none"
             href={hrefImages}
             style={`--vb: 5; --vr: ${ribbons.length + 1.5}`}
             aria-current={current === "/obrazy" ? "page" : undefined}
@@ -406,7 +417,7 @@ const langOptions = showLang
 
       {/* Translated pages close with the language imprint under the Wesprzyj line (has-lang
           widens the foot's breathing room); untranslated feet end at the closing line. */}
-      <div class:list={["nave-foot", { "has-lang": showLang }]}>
+      <div class:list={["nave-foot", { "has-lang": showLang }]} data-desk="none">
         {/* The closing line of the page — the same entry grammar as the voices above, one step
             smaller, under the foot's gold rule. Not a button: see nave-menu.css. */}
         <a class="nave-cta" href="/?donate" data-vault-open="100">
