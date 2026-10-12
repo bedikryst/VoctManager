@@ -16,6 +16,8 @@
  * @module copydesk/segment
  */
 
+import { scopePath } from "../src/comment-mode/scopePath.ts";
+
 /** Mirrors `SiteLocale` on the backend and `LOCALES` in `src/i18n/config.ts`. */
 export const SITE_LOCALES = /** @type {const} */ (["pl", "en", "fr"]);
 
@@ -33,6 +35,18 @@ const KEY_PATTERN = /^[a-z][a-z0-9]*(?:\.[A-Za-z0-9_-]+)+$/u;
 const MAX_VALUE_LENGTH = 20_000;
 const MAX_LABEL_LENGTH = 200;
 
+/** Mirror `SCOPE_PATH_PATTERN` and `MAX_SCOPE_PATH_LENGTH` in `backend/copydesk/dtos.py`. */
+const SCOPE_PATH_PATTERN = /^(?:\/|\/[^/\\\s?#][^\\\s?#]*)?$/u;
+const MAX_SCOPE_PATH_LENGTH = 200;
+
+/**
+ * The page a key belongs to — the first two parts, exactly as `scope_from_key` reads it on the
+ * backend.
+ *
+ * @param {string} key
+ */
+export const scopeOf = (key) => key.split(".").slice(0, 2).join(".");
+
 /**
  * @typedef {object} Segment
  * @property {string} key
@@ -40,6 +54,8 @@ const MAX_LABEL_LENGTH = 200;
  * @property {string} kind
  * @property {string} value
  * @property {string} scope_label
+ * @property {string} scope_path The Polish page the comment mode opens this scope on, `""` when
+ *  none. Set by `localeRows` from `src/comment-mode/scopePath.ts`, the site's one map of it.
  * @property {string} label
  * @property {number} order
  */
@@ -60,17 +76,21 @@ const MAX_LABEL_LENGTH = 200;
  * @param {string} args.plValue
  * @param {Overlays} args.overlays
  * @param {string} args.scopeLabel
+ * @param {boolean} [args.hasPage] A concert's `hasPage`; a static page's route is the site's to
+ *  know, so its extractor passes nothing.
  * @param {string} args.label
  * @param {number} args.order
  * @returns {Segment[]}
  */
-export function localeRows({ key, kind, plValue, overlays, scopeLabel, label, order }) {
+export function localeRows({ key, kind, plValue, overlays, scopeLabel, hasPage = false, label, order }) {
+  const path = scopePath(scopeOf(key), { hasPage });
   return SITE_LOCALES.map((locale) => ({
     key,
     locale,
     kind,
     value: locale === "pl" ? plValue : (overlays[locale]?.get(key) ?? ""),
     scope_label: scopeLabel,
+    scope_path: path,
     label,
     order,
   }));
@@ -95,6 +115,9 @@ export function guardSegments(segments) {
     }
     if (segment.label.length > MAX_LABEL_LENGTH || segment.scope_label.length > MAX_LABEL_LENGTH) {
       throw new Error(`[copydesk] ${segment.key}: label over ${MAX_LABEL_LENGTH} characters.`);
+    }
+    if (!SCOPE_PATH_PATTERN.test(segment.scope_path) || segment.scope_path.length > MAX_SCOPE_PATH_LENGTH) {
+      throw new Error(`[copydesk] ${segment.key}: scope path rejected: ${segment.scope_path}`);
     }
   }
 }

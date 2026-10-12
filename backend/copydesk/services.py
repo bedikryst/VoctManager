@@ -16,7 +16,7 @@ from uuid import UUID
 
 from django.contrib.auth.models import User
 from django.db import IntegrityError, transaction
-from django.db.models import QuerySet
+from django.db.models import Q, QuerySet
 from django.utils import timezone
 
 from .dtos import (
@@ -30,6 +30,8 @@ from .dtos import (
     SegmentDTO,
     SegmentIngestResultDTO,
     SegmentUpsertDTO,
+    SiteIndexProposalDTO,
+    SiteIndexRowDTO,
     SkippedProposalDTO,
 )
 from .hashing import source_hash
@@ -69,6 +71,7 @@ class _ScopeCounts:
     """Running totals for one line of the contents list, before it becomes a DTO."""
 
     label: str = ""
+    path: str = ""
     segments: int = 0
     touched: int = 0
     accepted: int = 0
@@ -169,6 +172,13 @@ class CopyDeskService:
         after any sync at all. `updated` therefore counts real changes, which is
         also what makes the run's own report readable: a no-op sync says zero.
 
+        `scope_path` is kept out of that comparison and written past `auto_now`.
+        It says where a page lives, not what it says, and it moves for every row
+        of a scope at once — the first sync after the column existed, a concert
+        whose page goes up. Stamping those rows would put every reviewed page
+        back in the queue with not a word changed, and `updated` would report a
+        corpus-wide edit that never happened.
+
         `source_hash` is deliberately absent from `defaults` and must stay so.
         That column is the provenance `mark_applied` records — the Polish a
         PUBLISHED translation renders — and the extractor knows nothing about it.
@@ -198,7 +208,9 @@ class CopyDeskService:
                     "order": row.order,
                 }
                 segment, was_created = CopySegment.objects.get_or_create(
-                    key=row.key, locale=row.locale, defaults=fields
+                    key=row.key,
+                    locale=row.locale,
+                    defaults={**fields, "scope_path": row.scope_path},
                 )
                 if was_created:
                     created += 1
@@ -213,6 +225,10 @@ class CopyDeskService:
                             setattr(segment, name, fields[name])
                         segment.save(update_fields=[*changed, "updated_at"])
                         updated += 1
+                    if segment.scope_path != row.scope_path:
+                        CopySegment.objects.filter(pk=segment.pk).update(
+                            scope_path=row.scope_path
+                        )
                 seen.add((row.key, row.locale))
                 scopes.add(scope_from_key(row.key))
 
@@ -319,8 +335,8 @@ class CopyDeskService:
 
     # -- derived state ------------------------------------------------------- #
 
-    @staticmethod
-    def effective_source_hashes(keys: Iterable[str]) -> dict[str, str]:
+    @classmethod
+    def effective_source_hashes(cls, keys: Iterable[str]) -> dict[str, str]:
         """The hash of the Polish each key currently means, keyed by key.
 
         "Currently means" is not the same as "currently ships". A Polish edit
@@ -336,29 +352,42 @@ class CopyDeskService:
         key_list = list(keys)
         if not key_list:
             return {}
+        _values, hashes = cls._polish_sources(key_list)
+        return hashes
 
-        polish = CopySegment.objects.filter(key__in=key_list, locale=SiteLocale.POLISH)
-        hashes = {segment.key: source_hash(segment.value) for segment in polish}
+    @staticmethod
+    def _polish_sources(
+        keys: Sequence[str] | None,
+    ) -> tuple[dict[str, str], dict[str, str]]:
+        """The Polish of `keys` as it ships, and the hash of what it currently means.
 
-        pending = (
-            CopyProposal.objects.filter(
-                segment__key__in=key_list,
-                segment__locale=SiteLocale.POLISH,
-                status__in=[*OPEN_STATUSES, ProposalStatus.ACCEPTED],
-                applied_at__isnull=True,
-            )
-            .select_related("segment")
-            .order_by("updated_at")
+        One read of the Polish serves both, since every caller that needs the
+        hashes also shows the Polish. `None` reads the whole locale, which is
+        what the site index wants: a filter naming every key would match every
+        row anyway.
+        """
+        polish = CopySegment.objects.filter(locale=SiteLocale.POLISH)
+        pending = CopyProposal.objects.filter(
+            segment__locale=SiteLocale.POLISH,
+            status__in=[*OPEN_STATUSES, ProposalStatus.ACCEPTED],
+            applied_at__isnull=True,
         )
+        if keys is not None:
+            polish = polish.filter(key__in=keys)
+            pending = pending.filter(segment__key__in=keys)
+
+        values = dict(polish.values_list("key", "value"))
+        hashes = {key: source_hash(value) for key, value in values.items()}
         # Ranked in Python, not by `order_by("status")`: the statuses sort
         # alphabetically (ACCEPTED before DRAFT before PROPOSED), which is the
         # reverse of the precedence wanted here and would have quietly let a
         # stale draft outrank the decision that superseded it.
         for proposal in sorted(
-            pending, key=lambda p: p.status == ProposalStatus.ACCEPTED
+            pending.select_related("segment").order_by("updated_at"),
+            key=lambda p: p.status == ProposalStatus.ACCEPTED,
         ):
             hashes[proposal.segment.key] = source_hash(proposal.value)
-        return hashes
+        return values, hashes
 
     @staticmethod
     def _staleness(locale: str, stored_hash: str, current_hash: str) -> tuple[bool, bool]:
@@ -399,14 +428,9 @@ class CopyDeskService:
         if not segments:
             return ()
 
-        keys = {segment.key for segment in segments}
-        current_hashes = cls.effective_source_hashes(keys)
-        polish_values = {
-            segment.key: segment.value
-            for segment in CopySegment.objects.filter(
-                key__in=keys, locale=SiteLocale.POLISH
-            )
-        }
+        polish_values, current_hashes = cls._polish_sources(
+            sorted({segment.key for segment in segments})
+        )
         watermarks = cls.watermarks(user=user, scopes={s.scope for s in segments})
 
         proposals_by_segment: dict[UUID, list[CopyProposal]] = {}
@@ -546,6 +570,93 @@ class CopyDeskService:
         )
         return cls._project(segments, user)
 
+    @classmethod
+    def site_index(cls, *, locale: str, user: User) -> tuple[SiteIndexRowDTO, ...]:
+        """Every field of the site in one locale, for the comment mode.
+
+        The whole locale rather than one scope, because a page prints far more
+        than its own scope: the notice block, the vault and every concert title
+        in the chrome reach most routes. The mode finds fields by their text, so
+        it needs all of them.
+
+        `mine` is the reader's open proposal or, failing that, their accepted
+        one that is not yet applied: the preview would otherwise vanish the
+        moment a reviewer accepts the edit and stay gone until the deploy. An
+        accepted proposal counts only while it is the decision `copy:apply`
+        writes last into the field — the latest accepted, the order
+        `mark_applied` follows — since a later acceptance of somebody else's
+        wording means the reader's will never be published. Rejected and applied
+        proposals drop out; the page then shows what it publishes.
+        """
+        segments = list(
+            CopySegment.objects.filter(locale=locale).order_by("scope", "order", "key")
+        )
+        if not segments:
+            return ()
+
+        is_source = locale == SiteLocale.POLISH
+        polish_values: dict[str, str] = {}
+        current_hashes: dict[str, str] = {}
+        if not is_source:
+            polish_values, current_hashes = cls._polish_sources(None)
+
+        viewer_id = getattr(user, "id", None)
+        own_open: dict[UUID, CopyProposal] = {}
+        shipping: dict[UUID, CopyProposal] = {}
+        others_open: dict[UUID, int] = {}
+        # Oldest decision first, so the last accepted proposal per segment is
+        # the one left standing. One open proposal per author per segment, so
+        # the reader's open one needs no ordering.
+        for proposal in (
+            CopyProposal.objects.filter(segment__locale=locale)
+            .filter(
+                Q(status__in=OPEN_STATUSES)
+                | Q(status=ProposalStatus.ACCEPTED, applied_at__isnull=True)
+            )
+            .order_by("reviewed_at", "created_at")
+        ):
+            if proposal.status == ProposalStatus.ACCEPTED:
+                shipping[proposal.segment_id] = proposal
+            elif proposal.author_id == viewer_id:
+                own_open[proposal.segment_id] = proposal
+            else:
+                others_open[proposal.segment_id] = others_open.get(proposal.segment_id, 0) + 1
+
+        rows: list[SiteIndexRowDTO] = []
+        for segment in segments:
+            own = own_open.get(segment.id)
+            if own is None:
+                decided = shipping.get(segment.id)
+                if decided is not None and decided.author_id == viewer_id:
+                    own = decided
+            is_stale, _known = cls._staleness(
+                segment.locale, segment.source_hash, current_hashes.get(segment.key, "")
+            )
+            rows.append(
+                SiteIndexRowDTO(
+                    id=segment.id,
+                    key=segment.key,
+                    scope=segment.scope,
+                    scope_label=segment.scope_label,
+                    label=segment.label,
+                    kind=segment.kind,
+                    value=segment.value,
+                    fallback_value=(
+                        polish_values.get(segment.key, "") if not segment.value else ""
+                    ),
+                    is_stale=is_stale,
+                    mine=(
+                        SiteIndexProposalDTO(
+                            id=own.id, status=own.status, value=own.value, comment=own.comment
+                        )
+                        if own is not None
+                        else None
+                    ),
+                    others_open=others_open.get(segment.id, 0),
+                )
+            )
+        return tuple(rows)
+
     @staticmethod
     def patch_summary() -> PatchSummaryDTO:
         """What is accepted and still only a decision.
@@ -631,6 +742,8 @@ class CopyDeskService:
             bucket = summaries.setdefault(segment.scope, _ScopeCounts())
             if not bucket.label and segment.scope_label:
                 bucket.label = segment.scope_label
+            if not bucket.path and segment.scope_path:
+                bucket.path = segment.scope_path
             bucket.seen_at = watermarks.get(segment.scope)
             bucket.segments += 1
             bucket.touched += int(segment.id in touched_ids)
@@ -652,6 +765,7 @@ class CopyDeskService:
             ScopeSummaryDTO(
                 scope=scope,
                 label=counts.label,
+                path=counts.path,
                 segments=counts.segments,
                 touched=counts.touched,
                 accepted=counts.accepted,

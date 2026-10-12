@@ -21,7 +21,7 @@ from rest_framework.response import Response
 from core.request_utils import request_user
 
 from .dtos import ProposalReviewDTO, ProposalWriteDTO, SegmentUpsertDTO
-from .models import CopyProposal, ProposalStatus
+from .models import CopyProposal, ProposalStatus, SiteLocale
 from .permissions import (
     CanEditSiteCopy,
     IsCopyReviewer,
@@ -35,6 +35,7 @@ from .serializers import (
     ScopeSeenSerializer,
     SegmentIngestSerializer,
     SegmentQuerySerializer,
+    SiteIndexQuerySerializer,
 )
 from .services import (
     CopyDeskService,
@@ -94,8 +95,44 @@ class CopyDeskSegmentsView(views.APIView):
         })
 
 
+class CopyDeskSiteIndexView(views.APIView):
+    """GET — every field of the site in one locale, for the comment mode.
+
+    The mode runs on the public site and finds fields by their text, so it reads
+    the whole locale once per page load. This request is also the mode's auth
+    probe: a 401 means "sign in", a 403 "this account cannot edit". It is never
+    `/api/users/me/`, which the panel's service worker answers from its cache on
+    site pages too.
+
+    `language` is the reader's own, because the mode's chrome speaks it whatever
+    language the page is in: the bar switches the page between locales, and
+    buttons that followed it would change language under the editor's thumb.
+    """
+
+    permission_classes = [CanEditSiteCopy]
+
+    def get(self, request: Request) -> Response:
+        serializer = SiteIndexQuerySerializer(data=request.query_params)
+        serializer.is_valid(raise_exception=True)
+        locale = serializer.validated_data["locale"]
+        user = request_user(request)
+
+        rows = CopyDeskService.site_index(locale=locale, user=user)
+        profile = getattr(user, "profile", None)
+        return Response({
+            "locale": locale,
+            "language": profile.language if profile is not None else SiteLocale.POLISH,
+            "segments": [row.model_dump(mode="json") for row in rows],
+        })
+
+
 class CopyDeskProposalsView(views.APIView):
-    """POST — write (or revise) the caller's own open proposal for a segment."""
+    """POST — write (or revise) the caller's own open proposal for a segment.
+
+    The response carries the value as STORED, after the sanitizer: the comment
+    mode previews exactly that, never what was typed, and says so when the two
+    differ.
+    """
 
     permission_classes = [CanEditSiteCopy]
 
@@ -117,7 +154,12 @@ class CopyDeskProposalsView(views.APIView):
                 {"detail": "Segment not found."}, status=status.HTTP_404_NOT_FOUND
             )
 
-        return Response({"id": str(proposal.id), "status": proposal.status})
+        return Response({
+            "id": str(proposal.id),
+            "status": proposal.status,
+            "value": proposal.value,
+            "comment": proposal.comment,
+        })
 
 
 class CopyDeskProposalDetailView(views.APIView):

@@ -102,6 +102,12 @@ class ScopeSeenSerializer(serializers.Serializer):
     scope = serializers.CharField(max_length=120)
 
 
+class SiteIndexQuerySerializer(serializers.Serializer):
+    """The comment mode reads one locale: the one the page it runs on is in."""
+
+    locale = serializers.ChoiceField(choices=SiteLocale.choices)
+
+
 class SegmentQuerySerializer(serializers.Serializer):
     """The desk reads one page at a time, in one or more locale columns."""
 

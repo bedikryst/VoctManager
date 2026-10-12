@@ -36,6 +36,7 @@ import { extractAll } from "./extract.mjs";
 import { extractAllPages } from "./extractPages.mjs";
 import { readConcerts } from "./index.mjs";
 import { OVERLAY_LOCALES, parseOverlay, readOverlay } from "./overlay.mjs";
+import { scopeOf } from "./segment.mjs";
 
 const WEB_ROOT = fileURLToPath(new URL("..", import.meta.url));
 const DRAFT_DIR = "copydesk/drafts";
@@ -114,9 +115,6 @@ async function readCorpus(locale) {
   }
   return { concerts, polish, existing };
 }
-
-/** The page a key belongs to — the first two parts, exactly as `scope_from_key` reads it. */
-const scopeOf = (/** @type {string} */ key) => key.split(".").slice(0, 2).join(".");
 
 /**
  * A draft value of exactly this stands for "the gloss IS the sung text": the original is already

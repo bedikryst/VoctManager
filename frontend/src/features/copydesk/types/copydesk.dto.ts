@@ -30,10 +30,15 @@
  *
  * `stale` deliberately takes no part in that division: it does not clear by
  * being read, so a page carrying it could never leave.
+ *
+ * `path` is the site page the comment mode opens this scope on, computed by the
+ * site at `copy:sync`; empty for a scope with no such page (404, the vault, the
+ * legal pages, a concert without a page) and until the first sync that sends it.
  */
 export interface CopyDeskScopeSummary {
   readonly scope: string;
   readonly label: string;
+  readonly path: string;
   readonly segments: number;
   readonly touched: number;
   readonly accepted: number;
@@ -137,9 +142,12 @@ export interface CopyDeskProposalWrite {
   readonly comment: string;
 }
 
+/** The proposal as stored: `value` is what the sanitizer kept, not what was sent. */
 export interface CopyDeskProposalWritten {
   readonly id: string;
   readonly status: CopyProposalStatus;
+  readonly value: string;
+  readonly comment: string;
 }
 
 /**

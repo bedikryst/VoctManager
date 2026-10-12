@@ -20,11 +20,14 @@ from .views import (
     CopyDeskQueueView,
     CopyDeskReviewView,
     CopyDeskSegmentsView,
+    CopyDeskSiteIndexView,
 )
 
 urlpatterns = [
     path("contents/", CopyDeskContentsView.as_view(), name="copydesk-contents"),
     path("segments/", CopyDeskSegmentsView.as_view(), name="copydesk-segments"),
+    # The comment mode on the live site: one locale's every field, in one read.
+    path("site-index/", CopyDeskSiteIndexView.as_view(), name="copydesk-site-index"),
     # The extractor's door. Staff only, and the one write into the git mirror.
     path("segments/ingest/", CopyDeskIngestView.as_view(), name="copydesk-ingest"),
     path("proposals/", CopyDeskProposalsView.as_view(), name="copydesk-proposals"),

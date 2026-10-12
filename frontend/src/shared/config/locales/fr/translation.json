@@ -6845,6 +6845,7 @@
       "marks_note": "Les mentions à côté d'un champ : « Accepté » et « Refusé » sont le verdict de l'éditeur, « Le polonais a changé » signifie que la traduction a été écrite sur une version antérieure du polonais, « Nouveau » que le champ est apparu depuis que vous avez marqué cette page comme relue, et « Modifié » qu'il était déjà là et que son texte a bougé depuis.",
       "markup_note": "Certains champs laissent voir le balisage de la page : « <em> » met un mot en valeur, « <a …> » crée un lien. Modifiez le texte entre les balises et laissez-les en place — une balise supprimée emporte avec elle la mise en valeur ou le lien.",
       "autosave_note": "Tout s'enregistre seul. L'éditeur reçoit un récapitulatif une demi-heure après votre dernière frappe — ou tout de suite, si vous cliquez « J'ai fini » en haut.",
+      "comment_mode": "Ouvrir cette page en mode commentaire",
       "missing_title": "Cette page n'est pas dans la rédaction",
       "missing_description": "Le corpus arrive ici directement depuis le dépôt, par une étape à part (copy:sync). Revenez au sommaire et choisissez une page."
     },
@@ -6894,6 +6895,7 @@
       "pending_empty_title": "Vous avez tout relu",
       "pending_empty_description": "Aucune page n'a bougé depuis votre lecture. Elles reviennent ici d'elles-mêmes dès que le texte du site change.",
       "segment_note": "Un segment, c'est un champ d'une page dans une seule langue.",
+      "comment_mode": "Ouvrir le site en mode commentaire",
       "empty_title": "Le sommaire est vide",
       "empty_description": "Les textes du site ne sont pas encore arrivés à la rédaction. Le corpus y entre par une étape à part, directement depuis le dépôt (copy:sync)."
     },

@@ -149,6 +149,15 @@ class CopySegment(EnterpriseBaseModel):
         blank=True,
         help_text=_("Human name of the page, for the contents list (e.g. 'Kontemplacja Wcielenia')."),
     )
+    scope_path = models.CharField(
+        max_length=200,
+        blank=True,
+        help_text=_(
+            "The Polish site path the comment mode opens this page on (e.g. "
+            "'/koncerty/wcielenie'). Blank when the page has no route the mode "
+            "runs on: 404, the vault, the legal pages, a concert without a page."
+        ),
+    )
     label = models.CharField(
         max_length=200,
         blank=True,

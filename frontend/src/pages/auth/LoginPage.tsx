@@ -28,6 +28,31 @@ import { AuthBrand } from "@features/auth/components/AuthBrand";
 import { AuthAlert } from "@features/auth/components/AuthAlert";
 import { LegalModal } from "@features/auth/components/LegalModals";
 
+/**
+ * Where `?next=` asks to go after signing in, or null when it is absent or not
+ * safely ours. This is how the comment mode on the public site sends a
+ * logged-out editor here and back to the page they were reading.
+ *
+ * The raw value must start with exactly one `/` and carry no `\` (browsers read
+ * `/\host` as `//host`); then the parsed URL must still be on this origin, which
+ * also catches the tab and newline characters the URL parser strips. Anything
+ * else is ignored rather than refused: a stale or hand-edited link still signs
+ * the person in.
+ */
+function readReturnPath(search: string): string | null {
+  const next = new URLSearchParams(search).get("next");
+  if (!next || !next.startsWith("/") || next.startsWith("//") || next.includes("\\")) {
+    return null;
+  }
+  try {
+    const target = new URL(next, window.location.origin);
+    if (target.origin !== window.location.origin) return null;
+    return `${target.pathname}${target.search}${target.hash}`;
+  } catch {
+    return null;
+  }
+}
+
 export default function LoginPage(): React.JSX.Element {
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
@@ -48,6 +73,8 @@ export default function LoginPage(): React.JSX.Element {
 
   const requestedPath = (location.state as { from?: { pathname: string } } | null)?.from?.pathname;
   const from = requestedPath ?? (readLastWorkspace() === "finance" ? "/panel/finance" : "/panel");
+  // Wins over `from`: it names a page outside the panel that sent the person here.
+  const returnPath = readReturnPath(location.search);
 
   const supportEmail = t("auth.login.support_email");
 
@@ -72,6 +99,12 @@ export default function LoginPage(): React.JSX.Element {
     const result = await login(email, password);
 
     if (result.success) {
+      if (returnPath !== null) {
+        // A full load, not `navigate()`: a site path inside the SPA falls to
+        // its catch-all route and on to /panel.
+        window.location.assign(returnPath);
+        return;
+      }
       navigate(from, { replace: true });
       return;
     }

@@ -19,7 +19,7 @@ import React, { useCallback, useMemo } from "react";
 import { Link, useOutletContext, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { FileQuestion } from "lucide-react";
+import { ExternalLink, FileQuestion } from "lucide-react";
 
 import { ScopeReviewMark } from "@/features/copydesk/components/ScopeReviewMark";
 import { SegmentRow } from "@/features/copydesk/components/SegmentRow";
@@ -28,6 +28,7 @@ import {
   useSaveProposal,
   useWithdrawProposal,
 } from "@/features/copydesk/api/copydesk.queries";
+import { commentModeHref } from "@/features/copydesk/lib/commentMode";
 import { buildFields } from "@/features/copydesk/lib/fields";
 import { formatCount, seenOnDate } from "@/features/copydesk/lib/scopeGroups";
 import {
@@ -241,6 +242,21 @@ export default function CopyDeskScopePage(): React.JSX.Element {
                   defaultValue: "Przejrzane {{date}}",
                 })}
               </Caption>
+            )}
+            {/* Absent where the page has no route the mode runs on: the 404,
+                the vault, the legal pages, a concert without a page. */}
+            {summary?.path && (
+              <Button
+                variant="secondary"
+                size="sm"
+                asChild
+                className="mt-2 self-start"
+                rightIcon={<ExternalLink size={14} aria-hidden="true" />}
+              >
+                <a href={commentModeHref(summary.path)} target="_blank" rel="noopener">
+                  {t("copy_desk.editor.comment_mode", "Otwórz tę stronę w trybie uwag")}
+                </a>
+              </Button>
             )}
           </div>
           <SegmentedTabs

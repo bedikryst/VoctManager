@@ -32,6 +32,13 @@ MAX_COMMENT_LENGTH = 1_000
 #: needs a shape that chunks, which is not something to discover as a 500.
 MAX_INGEST_ROWS = 6_000
 
+#: Empty, or a root-relative path that is not protocol-relative: the panel puts
+#: this value straight into a link, so `//host`, a backslash or a scheme must
+#: never get through. No query or hash — the link appends its own.
+SCOPE_PATH_PATTERN = r"^(?:/|/[^/\\\s?#][^\\\s?#]*)?$"
+#: `CopySegment.scope_path`'s column width; `web/copydesk/segment.mjs` mirrors it.
+MAX_SCOPE_PATH_LENGTH = 200
+
 
 class CopyDeskBaseDTO(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid", validate_by_name=True, validate_by_alias=True)
@@ -98,6 +105,11 @@ class SegmentUpsertDTO(CopyDeskBaseDTO):
     kind: str = SegmentKind.TEXT
     value: str = Field(default="", max_length=MAX_VALUE_LENGTH)
     scope_label: str = Field(default="", max_length=200)
+    #: Computed by the site (`web/src/comment-mode/scopePath.ts`), which alone
+    #: knows which concerts have a page and which routes are zero-JS.
+    scope_path: str = Field(
+        default="", max_length=MAX_SCOPE_PATH_LENGTH, pattern=SCOPE_PATH_PATTERN
+    )
     label: str = Field(default="", max_length=200)
     order: int = Field(default=0, ge=0)
 
@@ -169,6 +181,46 @@ class SegmentDTO(BaseModel):
     #: Never true at the same time as `is_new`; the two partition the page.
     is_changed: bool = False
     proposals: tuple[ProposalDTO, ...] = ()
+
+
+class SiteIndexProposalDTO(BaseModel):
+    """The reader's own proposal on a field, as the live page previews it."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    id: UUID
+    status: str
+    value: str
+    comment: str
+
+
+class SiteIndexRowDTO(BaseModel):
+    """One field of the site in one locale, as the comment mode finds it on the page.
+
+    Slimmer than `SegmentDTO` on purpose: the mode fetches every field of a
+    locale at once, so a row carries what matching and previewing need and the
+    edit sheet reads the full history from `segments/` when it opens.
+    """
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    id: UUID
+    key: str
+    scope: str
+    scope_label: str
+    label: str
+    kind: str
+    #: What the repository holds for this locale; empty where no translation exists.
+    value: str
+    #: The Polish the page prints in place of an empty translation, and empty
+    #: otherwise. A row with this set opens as untranslated.
+    fallback_value: str = ""
+    is_stale: bool = False
+    #: The reader's newest proposal that still means something on the page: an
+    #: open one, or an accepted one `copy:apply` has not written yet.
+    mine: SiteIndexProposalDTO | None = None
+    #: Open proposals other editors hold on this field.
+    others_open: int = 0
 
 
 class SegmentIngestResultDTO(BaseModel):
@@ -269,12 +321,15 @@ class ScopeSummaryDTO(BaseModel):
     which is how a page leaves the "to review" half without anybody ticking it.
     `stale` is deliberately not part of that division: it does not clear by being
     read, so a page carrying it could never leave.
+
+    `path` is where the comment mode opens this page, and empty when it cannot.
     """
 
     model_config = ConfigDict(frozen=True, extra="forbid")
 
     scope: str
     label: str
+    path: str = ""
     segments: int = 0
     touched: int = 0
     accepted: int = 0

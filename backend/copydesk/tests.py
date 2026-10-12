@@ -19,7 +19,9 @@ from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
+from pydantic import ValidationError
 from rest_framework.test import APIClient
+from rest_framework_simplejwt.tokens import AccessToken
 
 from core.models import UserProfile
 from notifications.delivery import (
@@ -640,6 +642,46 @@ class MirrorTests(TestCase):
             ),
         ])
         self.assertEqual(CopySegment.objects.get().scope, "concert.wcielenie")
+
+    def test_the_scope_path_the_site_sends_is_stored_and_reaches_the_contents_list(self):
+        row = SegmentUpsertDTO(
+            key="concert.wcielenie.essence",
+            locale=SiteLocale.POLISH,
+            value="Treść",
+            scope_label="Kontemplacja Wcielenia",
+            scope_path="/koncerty/wcielenie",
+        )
+        CopyDeskService.upsert_segments([row])
+        self.assertEqual(CopySegment.objects.get().scope_path, "/koncerty/wcielenie")
+
+        reader = make_user("reader@example.com", editor=True)
+        (summary,) = CopyDeskService.scope_summaries(user=reader)
+        self.assertEqual(summary.path, "/koncerty/wcielenie")
+
+        # The next sync writes a path that changed, but not as a change to the
+        # text: a page that moved must not reappear in a reviewer's queue.
+        updated_at = CopySegment.objects.get().updated_at
+        moved = CopyDeskService.upsert_segments([row.model_copy(update={"scope_path": ""})])
+        self.assertEqual(moved.updated, 0)
+        self.assertEqual(CopySegment.objects.get().scope_path, "")
+        self.assertEqual(CopySegment.objects.get().updated_at, updated_at)
+
+    def test_a_scope_path_the_panel_could_not_safely_link_is_refused(self):
+        # The panel puts this value straight into an href.
+        for unsafe in ("//evil.example", "/\\evil.example", "https://evil.example", "koncerty", "/a?b", "/a b"):
+            with self.subTest(path=unsafe), self.assertRaises(ValidationError):
+                SegmentUpsertDTO(
+                    key="concert.wcielenie.essence",
+                    locale=SiteLocale.POLISH,
+                    scope_path=unsafe,
+                )
+        for safe in ("", "/", "/koncerty/wcielenie", "/o-nas"):
+            with self.subTest(path=safe):
+                SegmentUpsertDTO(
+                    key="concert.wcielenie.essence",
+                    locale=SiteLocale.POLISH,
+                    scope_path=safe,
+                )
 
 
 class RetirementTests(TestCase):
@@ -1362,6 +1404,242 @@ class ApiTests(TestCase):
         self.api.force_authenticate(user=self.editor)
         response = self.api.post(reverse("copydesk-mark-seen"), {}, format="json")
         self.assertEqual(response.status_code, 400)
+
+    def test_a_saved_proposal_answers_with_the_value_as_stored(self):
+        # The comment mode previews the stored value, never the textarea, so the
+        # response has to carry what the sanitizer kept — and the comment, which
+        # a revision overwrites with whatever was sent.
+        markup = make_segment(
+            "page.kontakt.hero.bodyHtml", SiteLocale.POLISH, "Zapraszamy", kind=SegmentKind.HTML,
+        )
+        self.api.force_authenticate(user=self.editor)
+        response = self.api.post(
+            reverse("copydesk-proposals"),
+            {
+                "segment_id": str(markup.id),
+                "value": '<span class="x">Zapraszamy</span> <em>serdecznie</em>',
+                "comment": "Szyk",
+            },
+            format="json",
+        )
+        self.assertEqual(response.status_code, 200)
+        stored = CopyProposal.objects.get(id=response.data["id"])
+        self.assertEqual(response.data["value"], stored.value)
+        self.assertNotIn("<span", response.data["value"])
+        self.assertIn("<em>serdecznie</em>", response.data["value"])
+        self.assertEqual(response.data["comment"], "Szyk")
+        self.assertEqual(response.data["status"], ProposalStatus.PROPOSED)
+
+
+class SiteIndexTests(TestCase):
+    """`GET site-index/` — one locale's every field, for the comment mode."""
+
+    def setUp(self):
+        self.editor = make_user("florent@example.com", editor=True)
+        self.other = make_user("ola@example.com", editor=True)
+        self.reviewer = make_user("dev@example.com", staff=True)
+        self.lede_pl = make_segment("page.kontakt.hero.lede", SiteLocale.POLISH, "Zapraszamy")
+        self.lede_en = make_segment("page.kontakt.hero.lede", SiteLocale.ENGLISH, "")
+        self.body_pl = make_segment("page.kontakt.hero.body", SiteLocale.POLISH, "Druga", order=1)
+        self.body_en = make_segment("page.kontakt.hero.body", SiteLocale.ENGLISH, "Second", order=1)
+        self.api = APIClient()
+
+    def read(self, locale: str = SiteLocale.ENGLISH, user=None):
+        self.api.force_authenticate(user=user or self.editor)
+        return self.api.get(reverse("copydesk-site-index"), {"locale": locale})
+
+    def rows(self, response) -> dict[str, dict]:
+        return {row["key"]: row for row in response.data["segments"]}
+
+    def test_an_anonymous_reader_is_told_to_sign_in_and_a_singer_is_refused(self):
+        # The mode reads these two apart: 401 offers "Zaloguj się", 403 says the
+        # account has no access.
+        anonymous = self.api.get(reverse("copydesk-site-index"), {"locale": "en"})
+        self.assertEqual(anonymous.status_code, 401)
+
+        singer = make_user("singer@example.com")
+        self.assertEqual(self.read(user=singer).status_code, 403)
+
+    def test_an_unknown_locale_is_a_400(self):
+        self.assertEqual(self.read(locale="de").status_code, 400)
+
+    def test_rows_are_one_locale_with_the_polish_behind_an_empty_translation(self):
+        response = self.read()
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["locale"], "en")
+        rows = self.rows(response)
+        self.assertEqual(set(rows), {"page.kontakt.hero.lede", "page.kontakt.hero.body"})
+
+        untranslated = rows["page.kontakt.hero.lede"]
+        self.assertEqual(untranslated["id"], str(self.lede_en.id))
+        self.assertEqual(untranslated["value"], "")
+        self.assertEqual(untranslated["fallback_value"], "Zapraszamy")
+
+        translated = rows["page.kontakt.hero.body"]
+        self.assertEqual(translated["value"], "Second")
+        self.assertEqual(translated["fallback_value"], "")
+
+    def test_the_polish_index_has_no_fallback_and_nothing_stale(self):
+        rows = self.rows(self.read(locale=SiteLocale.POLISH))
+        self.assertEqual(rows["page.kontakt.hero.lede"]["value"], "Zapraszamy")
+        self.assertEqual(rows["page.kontakt.hero.lede"]["fallback_value"], "")
+        self.assertFalse(rows["page.kontakt.hero.lede"]["is_stale"])
+
+    def test_a_translation_written_against_an_older_polish_is_stale(self):
+        self.body_en.source_hash = source_hash("Starsza")
+        self.body_en.save(update_fields=["source_hash", "updated_at"])
+        rows = self.rows(self.read())
+        self.assertTrue(rows["page.kontakt.hero.body"]["is_stale"])
+
+    def test_the_readers_own_open_proposal_wins_over_their_accepted_one(self):
+        accepted = CopyDeskService.save_proposal(
+            dto=ProposalWriteDTO(segment_id=self.body_en.id, value="Second, accepted"),
+            author=self.editor,
+        )
+        CopyDeskService.review_proposal(
+            proposal_id=accepted.id,
+            dto=ProposalReviewDTO(status=ProposalStatus.ACCEPTED),
+            reviewer=self.reviewer,
+        )
+        newer = CopyDeskService.save_proposal(
+            dto=ProposalWriteDTO(
+                segment_id=self.body_en.id, value="Second, again", comment="Rhythm",
+            ),
+            author=self.editor,
+        )
+
+        mine = self.rows(self.read())["page.kontakt.hero.body"]["mine"]
+        self.assertEqual(
+            mine,
+            {
+                "id": str(newer.id),
+                "status": ProposalStatus.PROPOSED,
+                "value": "Second, again",
+                "comment": "Rhythm",
+            },
+        )
+
+    def test_an_accepted_proposal_keeps_its_preview_until_it_is_applied(self):
+        proposal = CopyDeskService.save_proposal(
+            dto=ProposalWriteDTO(segment_id=self.body_en.id, value="Second, accepted"),
+            author=self.editor,
+        )
+        CopyDeskService.review_proposal(
+            proposal_id=proposal.id,
+            dto=ProposalReviewDTO(status=ProposalStatus.ACCEPTED),
+            reviewer=self.reviewer,
+        )
+        mine = self.rows(self.read())["page.kontakt.hero.body"]["mine"]
+        self.assertEqual(mine["status"], ProposalStatus.ACCEPTED)
+
+        CopyDeskService.mark_applied(proposal_ids=[proposal.id], reviewer=self.reviewer)
+        self.assertIsNone(self.rows(self.read())["page.kontakt.hero.body"]["mine"])
+
+    def test_an_accepted_proposal_overtaken_by_a_later_decision_is_not_previewed(self):
+        # `copy:apply` writes the later acceptance last, so only that one ships.
+        earlier = CopyDeskService.save_proposal(
+            dto=ProposalWriteDTO(segment_id=self.body_en.id, value="Mine"),
+            author=self.editor,
+        )
+        later = CopyDeskService.save_proposal(
+            dto=ProposalWriteDTO(segment_id=self.body_en.id, value="Theirs"),
+            author=self.other,
+        )
+        decided_at = timezone.now()
+        for proposal, offset in ((earlier, 0), (later, 1)):
+            CopyDeskService.review_proposal(
+                proposal_id=proposal.id,
+                dto=ProposalReviewDTO(status=ProposalStatus.ACCEPTED),
+                reviewer=self.reviewer,
+            )
+            CopyProposal.objects.filter(pk=proposal.id).update(
+                reviewed_at=decided_at + timedelta(minutes=offset)
+            )
+
+        self.assertIsNone(self.rows(self.read())["page.kontakt.hero.body"]["mine"])
+        theirs = self.rows(self.read(user=self.other))["page.kontakt.hero.body"]["mine"]
+        self.assertEqual(theirs["value"], "Theirs")
+
+    def test_a_rejected_proposal_drops_out(self):
+        proposal = CopyDeskService.save_proposal(
+            dto=ProposalWriteDTO(segment_id=self.body_en.id, value="No"),
+            author=self.editor,
+        )
+        CopyDeskService.review_proposal(
+            proposal_id=proposal.id,
+            dto=ProposalReviewDTO(status=ProposalStatus.REJECTED),
+            reviewer=self.reviewer,
+        )
+        self.assertIsNone(self.rows(self.read())["page.kontakt.hero.body"]["mine"])
+
+    def test_other_editors_open_proposals_are_counted_not_shown(self):
+        CopyDeskService.save_proposal(
+            dto=ProposalWriteDTO(segment_id=self.body_en.id, value="Theirs"),
+            author=self.other,
+        )
+        row = self.rows(self.read())["page.kontakt.hero.body"]
+        self.assertIsNone(row["mine"])
+        self.assertEqual(row["others_open"], 1)
+
+        # And the other editor sees it as theirs, with nobody else's counted.
+        theirs = self.rows(self.read(user=self.other))["page.kontakt.hero.body"]
+        self.assertEqual(theirs["mine"]["value"], "Theirs")
+        self.assertEqual(theirs["others_open"], 0)
+
+    def test_a_proposal_in_another_locale_stays_out_of_this_one(self):
+        CopyDeskService.save_proposal(
+            dto=ProposalWriteDTO(segment_id=self.body_pl.id, value="Druga, nowa"),
+            author=self.editor,
+        )
+        self.assertIsNone(self.rows(self.read())["page.kontakt.hero.body"]["mine"])
+
+    def test_the_chrome_language_is_the_readers_own(self):
+        profile = self.editor.profile
+        profile.language = "fr"
+        profile.save(update_fields=["language", "updated_at"])
+        self.assertEqual(self.read(locale=SiteLocale.ENGLISH).data["language"], "fr")
+
+
+class CookieAuthCsrfTests(TestCase):
+    """The comment mode writes from site pages with the panel's cookie, so CSRF
+    is enforced on every write; without the header the refusal reads like a
+    missing permission."""
+
+    def setUp(self):
+        self.editor = make_user("florent@example.com", editor=True)
+        self.segment = make_segment("page.kontakt.hero.lede", SiteLocale.POLISH, "Zapraszamy")
+        self.api = APIClient(enforce_csrf_checks=True)
+        self.api.cookies[str(settings.SIMPLE_JWT["AUTH_COOKIE"])] = str(
+            AccessToken.for_user(self.editor)
+        )
+
+    def propose(self, **headers):
+        return self.api.post(
+            reverse("copydesk-proposals"),
+            {"segment_id": str(self.segment.id), "value": "Zapraszamy serdecznie"},
+            format="json",
+            **headers,
+        )
+
+    def test_a_read_needs_no_csrf_token(self):
+        response = self.api.get(reverse("copydesk-site-index"), {"locale": "pl"})
+        self.assertEqual(response.status_code, 200)
+
+    def test_a_write_without_the_csrf_header_is_a_403(self):
+        self.api.get(reverse("csrf-cookie"))
+        response = self.propose()
+        self.assertEqual(response.status_code, 403)
+        # The envelope's own `detail` is generic for every 403; only the inner
+        # `errors.detail` tells a CSRF refusal from a missing permission.
+        self.assertIn("CSRF Failed", str(response.data["errors"]["detail"]))
+        self.assertFalse(CopyProposal.objects.exists())
+
+    def test_a_write_with_the_cookie_echoed_in_the_header_goes_through(self):
+        self.api.get(reverse("csrf-cookie"))
+        token = self.api.cookies["csrftoken"].value
+        response = self.propose(HTTP_X_CSRFTOKEN=token)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["value"], "Zapraszamy serdecznie")
 
 
 class DigestTests(TestCase):

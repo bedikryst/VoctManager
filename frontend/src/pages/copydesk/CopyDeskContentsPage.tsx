@@ -16,10 +16,11 @@
 import React, { useMemo } from "react";
 import { Link, useOutletContext } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Inbox } from "lucide-react";
+import { ExternalLink, Inbox } from "lucide-react";
 
 import { CopyDeskPrimer } from "@/features/copydesk/components/CopyDeskPrimer";
 import { ScopeContentsList } from "@/features/copydesk/components/ScopeContentsList";
+import { commentModeHref } from "@/features/copydesk/lib/commentMode";
 import { formatCount } from "@/features/copydesk/lib/scopeGroups";
 import type { CopyDeskOutletContext } from "@/widgets/copy-desk-shell/CopyDeskShell";
 import { PageHeader } from "@/shared/ui/composites/PageHeader";
@@ -77,18 +78,31 @@ export default function CopyDeskContentsPage(): React.JSX.Element {
           title={t("copy_desk.contents.title", "Teksty")}
           titleHighlight={t("copy_desk.contents.title_highlight", "serwisu")}
           rightContent={
-            contents.is_reviewer ? (
-              <Button variant="secondary" size="sm" asChild>
-                <Link to="/redakcja/przeglad">
-                  {waiting > 0
-                    ? t("copy_desk.review.link_count", {
-                        count: waiting,
-                        defaultValue: "Przegląd zmian ({{count}})",
-                      })
-                    : t("copy_desk.review.link", "Przegląd zmian")}
-                </Link>
+            <div className="flex flex-wrap items-center justify-end gap-2">
+              {/* A new tab, so the desk stays where the editor left it. */}
+              <Button
+                variant="secondary"
+                size="sm"
+                asChild
+                rightIcon={<ExternalLink size={14} aria-hidden="true" />}
+              >
+                <a href={commentModeHref()} target="_blank" rel="noopener">
+                  {t("copy_desk.contents.comment_mode", "Otwórz serwis w trybie uwag")}
+                </a>
               </Button>
-            ) : undefined
+              {contents.is_reviewer && (
+                <Button variant="secondary" size="sm" asChild>
+                  <Link to="/redakcja/przeglad">
+                    {waiting > 0
+                      ? t("copy_desk.review.link_count", {
+                          count: waiting,
+                          defaultValue: "Przegląd zmian ({{count}})",
+                        })
+                      : t("copy_desk.review.link", "Przegląd zmian")}
+                  </Link>
+                </Button>
+              )}
+            </div>
           }
         />
 

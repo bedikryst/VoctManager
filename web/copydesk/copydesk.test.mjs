@@ -26,13 +26,14 @@ import { fileURLToPath } from "node:url";
 
 import YAML from "yaml";
 
+import { pathScope, scopePath } from "../src/comment-mode/scopePath.ts";
 import { collapse, plan } from "./apply.mjs";
 import { CONCERT_CONTRACT, NOT_COPY } from "./contract.mjs";
 import { extractAll } from "./extract.mjs";
 import { extractAllPages, extractPage, PAGE_SPECS, pageSource, readPage } from "./extractPages.mjs";
 import { normalizeForHash, sourceHash } from "./normalize.mjs";
 import { OVERLAY_LOCALES, parseOverlay, renderOverlay } from "./overlay.mjs";
-import { SITE_LOCALES } from "./segment.mjs";
+import { SITE_LOCALES, scopeOf } from "./segment.mjs";
 import { collectScalars, commentLines, detectEol, replaceScalars } from "./yamlEdit.mjs";
 
 const HERE = fileURLToPath(new URL(".", import.meta.url));
@@ -116,7 +117,7 @@ test("every key is legal, unique, and scoped to its own concert", async () => {
   // The scope is the first two parts and nothing else derives it — `scope_from_key` on the
   // backend has to agree with this without either side being told.
   for (const segment of segments) {
-    const scope = segment.key.split(".").slice(0, 2).join(".");
+    const scope = scopeOf(segment.key);
     assert.ok(ids.has(scope.split(".")[1]), `${segment.key}: scope ${scope} is not a concert`);
   }
 });
@@ -428,7 +429,7 @@ test("a page's keys are scoped to the page, carry the three locales, and take th
   const byKey = new Map();
 
   for (const segment of segments) {
-    const scope = segment.key.split(".").slice(0, 2).join(".");
+    const scope = scopeOf(segment.key);
     assert.ok(labels.has(scope), `${segment.key}: scope ${scope} is not a registered page`);
     assert.equal(segment.scope_label, labels.get(scope), `${segment.key}: scope label`);
     // The whole markup contract in one line: the `…Html` suffix IS the kind, so a field cannot
@@ -459,6 +460,46 @@ test("the two corpora share a key space and no key", async () => {
   const pages = await extractAllPages();
   const shared = Object.keys(pages.paths).filter((key) => key in concerts.paths);
   assert.deepEqual(shared, [], "a key both corpora claim would be one fact with two homes");
+});
+
+test("every scope carries the page the comment mode opens it on, and that page maps back", async () => {
+  const corpus = await readCorpus();
+  const concerts = extractAll(corpus);
+  const pages = await extractAllPages();
+  /** @type {Map<string, string>} */
+  const paths = new Map();
+  for (const segment of [...concerts.segments, ...pages.segments]) {
+    const scope = scopeOf(segment.key);
+    const known = paths.get(scope);
+    if (known !== undefined) assert.equal(segment.scope_path, known, `${segment.key}: one scope, one path`);
+    paths.set(scope, segment.scope_path);
+  }
+
+  // A concert opens on its page only when it has one; Bobola has none.
+  for (const concert of corpus) {
+    const expected = concert.hasPage === true ? `/koncerty/${concert.id}` : "";
+    assert.equal(paths.get(`concert.${concert.id}`), expected, `concert.${concert.id}`);
+  }
+  assert.equal(paths.get("concert.bobola"), "");
+  assert.equal(paths.get("page.landing"), "/");
+  assert.equal(paths.get("page.kontakt"), "/kontakt");
+  // No route the mode runs on: zero-JS legal pages, an overlay, a page served at any URL.
+  for (const scope of ["page.regulamin-darowizn", "page.polityka-prywatnosci", "page.skarbiec", "page.404"]) {
+    assert.equal(paths.get(scope), "", scope);
+  }
+
+  // The other direction, as the mode reads it off the URL it is on, in every locale and spelling.
+  for (const [scope, path] of paths) {
+    if (!path) continue;
+    const foreign = path === "/" ? "" : path;
+    for (const served of [path, `${foreign}/`, `${path === "/" ? "/index" : path}.html`, `/en${foreign}`, `/fr${foreign}/`]) {
+      assert.equal(pathScope(served), scope, `${served} should belong to ${scope}`);
+    }
+  }
+  assert.equal(pathScope("/koncerty/bobola", { notFound: true }), "page.404");
+  assert.equal(pathScope("/newsletter"), null);
+  assert.equal(pathScope("/regulamin-darowizn"), null);
+  assert.equal(scopePath("page.kontakt.hero"), "", "a key is not a scope");
 });
 
 // --------------------------------------------------------------------------------------------- //

@@ -126,6 +126,7 @@ export function extractConcert(concert, overlays = {}) {
     throw new Error("[copydesk] a concert without an `id` cannot be keyed.");
   }
   const scopeLabel = typeof concert.title === "string" ? concert.title : id;
+  const hasPage = concert.hasPage === true;
 
   /** @type {Segment[]} */
   const segments = [];
@@ -149,7 +150,9 @@ export function extractConcert(concert, overlays = {}) {
     // Every value in this corpus is plain text — `grep` finds no `<em>`, `<strong>` or `<a>`
     // anywhere in `concerts.yaml`. Inline markup enters the desk through the static pages, whose
     // extractor takes the kind from the field's name instead.
-    segments.push(...localeRows({ key, kind: TEXT, plValue, overlays, scopeLabel, label, order }));
+    segments.push(
+      ...localeRows({ key, kind: TEXT, plValue, overlays, scopeLabel, hasPage, label, order }),
+    );
     paths[key] = { pl: hit.at, shape: entry.shape ?? "plain" };
     order += 1;
   };

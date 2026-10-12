@@ -6833,6 +6833,7 @@
       "marks_note": "The marks beside a field: “Accepted” and “Rejected” are the publisher's verdict, “The Polish has moved” means the translation was written against an older Polish, “New” means the field has appeared since you marked this page as read, and “Changed” means it was already here then and its text has moved since.",
       "markup_note": "Some fields show the page's own markup: “<em>” emphasises a word, “<a …>” makes a link. Edit the text between them and leave them where they are — a tag you delete takes the emphasis or the link off the site with it.",
       "autosave_note": "It saves itself. The publisher gets one digest half an hour after you stop typing — or straight away, if you press “I'm finished” at the top.",
+      "comment_mode": "Open this page in comment mode",
       "missing_title": "This page is not on the desk",
       "missing_description": "The corpus arrives here straight from the repository, in a step of its own (copy:sync). Go back to the contents list and pick a page."
     },
@@ -6882,6 +6883,7 @@
       "pending_empty_title": "You have read everything",
       "pending_empty_description": "No page has moved since you last read it. They come back here on their own when the site's text changes.",
       "segment_note": "A segment is one field of one page, in one language.",
+      "comment_mode": "Open the site in comment mode",
       "empty_title": "The contents list is empty",
       "empty_description": "The site's text has not reached the desk yet. The corpus arrives in a step of its own, straight from the repository (copy:sync)."
     },
