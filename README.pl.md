@@ -48,7 +48,9 @@ Koncert z końca sierpnia poprowadził przez aplikację już sam, a chórzyści 
 
 | Na pulpicie | Ćwiczenie w domu |
 |:---:|:---:|
-| <img src="docs/assets/annotations.gif" width="340" alt="Na pulpicie dyrygent stawia crescendo, otwiera znak i przenosi go z warstwy chóru na warstwę prowadzącego próbę"> | <picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/materials-singer-dark.png"><img src="docs/assets/materials-singer-light.png" width="240" alt="Konsola ćwiczeń tenora na telefonie: gra sam jego głos, pozostałe są wyciszone, niżej tempo i pętla"></picture> |
+| <img src="docs/assets/annotations-en.gif" width="340" alt="Na pulpicie dyrygent stawia crescendo, otwiera znak i przenosi go z warstwy chóru na warstwę prowadzącego próbę"> | <picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/materials-singer-dark.png"><img src="docs/assets/materials-singer-light.png" width="240" alt="Konsola ćwiczeń tenora na telefonie: gra sam jego głos, pozostałe są wyciszone, niżej tempo i pętla"></picture> |
+
+<sub>Animacje są nagrane w angielskiej wersji interfejsu, zrzuty ekranu w polskiej.</sub>
 
 ## Pipeline nut
 
@@ -79,9 +81,9 @@ Ponawianie zależy od tego, czy nieudane wywołanie zostało policzone do rachun
 
 Jeden ingest kosztuje $0.04–0.20. Partytura w całości po polsku jest na dole widełek, bo nie potrzebuje IPA ani tłumaczenia. Są trzy limity wydatków: na jeden przebieg, na wydanie przez cały jego czas życia i dzienny dla całej organizacji, który działa jak bezpiecznik. PDF, który już raz przeszedł przez pipeline, jest rozpoznawany po sumie SHA-256 i model w ogóle nie jest wywoływany. Prompt systemowy jest w cache, PDF celowo nie. Każdy PDF jest czytany raz, więc zapis do cache dodawałby 25% do największego kosztu wejścia i prawie nigdy nie zostałby odczytany.
 
-<img src="docs/assets/score-ingestion.gif" width="720" alt="Wgranie PDF-a, postęp pipeline'u na żywo i ekran weryfikacji skatalogowanego utworu">
+<img src="docs/assets/score-ingestion-en.gif" width="720" alt="Wgranie PDF-a, postęp pipeline'u na żywo i ekran weryfikacji skatalogowanego utworu">
 
-<sub>Nagranie prawdziwego przebiegu; 51 sekund pipeline'u skrócone do trzech. Nuty: Giovanni Priuli, <i>Ave dulcissima Maria</i>, skład nutowy <a href="https://www.mutopiaproject.org/">Mutopia Project</a> (CC BY-SA 3.0). Na pulpicie wyżej <i>Ave verum corpus</i> Mozarta w opracowaniu Carla Reineckego, również z Mutopii (CC BY 4.0).</sub>
+<sub>Nagranie prawdziwego przebiegu; 41 sekund pipeline'u skrócone do trzech. Nuty: Giovanni Priuli, <i>Ave dulcissima Maria</i>, skład nutowy <a href="https://www.mutopiaproject.org/">Mutopia Project</a> (CC BY-SA 3.0). Na pulpicie wyżej <i>Ave verum corpus</i> Mozarta w opracowaniu Carla Reineckego, również z Mutopii (CC BY 4.0).</sub>
 
 Szczegóły: [`docs/archive-ai-ingestion-pipeline.md`](docs/archive-ai-ingestion-pipeline.md).
 
@@ -93,7 +95,7 @@ Plan trafia do chóru dopiero wtedy, gdy dyrygent go wyśle, a nie przy każdej 
 
 | Edycja planu | Co widzi tenor |
 |:---:|:---:|
-| <img src="docs/assets/rehearsal-plan.gif" width="560" alt="Dyrygent przesuwa utwór wyżej w planie próby i wydłuża inny, a potem otwiera tydzień z perspektywy tenora"> | <picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/rehearsal-singer-dark.png"><img src="docs/assets/rehearsal-singer-light.png" width="240" alt="Strona próby tenora na telefonie: jego część trwa 19:00–21:00, pierwszy utwór jest oznaczony jako bez jego głosu"></picture> |
+| <img src="docs/assets/rehearsal-plan-en.gif" width="560" alt="Dyrygent przesuwa utwór wyżej w planie próby i wydłuża inny, a potem otwiera tydzień z perspektywy tenora"> | <picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/rehearsal-singer-dark.png"><img src="docs/assets/rehearsal-singer-light.png" width="240" alt="Strona próby tenora na telefonie: jego część trwa 19:00–21:00, pierwszy utwór jest oznaczony jako bez jego głosu"></picture> |
 
 ## Finanse
 

@@ -6,7 +6,8 @@
  *   docker exec voctmanager-web-1 python manage.py seed_db --clear --seed 2026
  * then `node gifs.mjs plan annotations` (and `ingest` on its own, see below).
  * `--lang en` records the same takes in the English interface, into
- * <take>-en.gif; README.md embeds those, README.pl.md the Polish ones.
+ * <take>-en.gif. Both READMEs embed the English takes; one set to keep current
+ * is half the paid ingest runs.
  *
  * `ingest` runs the real AI pipeline: it needs ANTHROPIC_API_KEY in the dev
  * stack and costs $0.04–0.20 a run, with a different result each time. Record
