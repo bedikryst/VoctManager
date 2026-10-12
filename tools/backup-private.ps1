@@ -34,6 +34,7 @@ $folders = @(
     'docs\legal',
     'docs\about',
     'docs\umowy',
+    'docs\plausible-stats',
     '.agent',
     '.ai',
     '.claude',
