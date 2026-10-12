@@ -10,8 +10,9 @@
  *  save.
  *
  *  WHAT WAS STORED IS WHAT IS SHOWN. The server sanitizes (inline `em, strong, a, code` survive)
- *  and tidies whitespace. When the stored value differs from what was typed beyond that tidying,
- *  the sheet stays open with the stored value and says markup was removed.
+ *  and tidies whitespace. When the stored value differs from what was typed beyond that tidying
+ *  (and, for an `HTML` field, beyond the escaping its text comes back with), the sheet stays open
+ *  with the stored value and says markup was removed.
  *
  *  NOTHING TYPED IS LOST. A failed save keeps the sheet and the text. Closing with unsaved text
  *  keeps a draft per field in `sessionStorage` until the tab closes, which also carries it across
@@ -101,6 +102,21 @@ function tidy(value: string): string {
     .replace(/[ \t]+\n/gu, "\n")
     .replace(/\n{3,}/gu, "\n\n")
     .trim();
+}
+
+/**
+ * `value` as the browser's parser writes it back. The server re-emits an `HTML` field's text
+ * escaped (`&` as `&amp;`), so two values compare as markup, not as strings.
+ */
+function asMarkup(value: string): string {
+  const template = document.createElement("template");
+  template.innerHTML = value;
+  return template.innerHTML;
+}
+
+/** True when the server changed `typed` beyond its tidying: markup was removed. */
+function sanitizedAway(kind: string, typed: string, stored: string): boolean {
+  return kind === "HTML" ? asMarkup(stored) !== asMarkup(tidy(typed)) : stored !== tidy(typed);
 }
 
 /** The reader's proposal while it is still open, or `null` (none, or accepted and awaiting publication). */
@@ -306,7 +322,9 @@ export class Sheet {
     else value.focus({ preventScroll: true });
   }
 
+  /** The field tapped again: the textarea takes focus, except where that raises a touch keyboard. */
   focusText(): void {
+    if (window.matchMedia("(pointer: coarse)").matches) return;
     this.current?.value.focus({ preventScroll: true });
   }
 
@@ -418,7 +436,7 @@ export class Sheet {
       clearDraft(session.row.id);
       this.events.saved(session.row);
       if (this.current !== session) return;
-      if (stored.value !== tidy(typed)) {
+      if (sanitizedAway(session.row.kind, typed, stored.value)) {
         session.baseline = { value: stored.value, comment: stored.comment };
         session.value.value = stored.value;
         session.comment.value = stored.comment;

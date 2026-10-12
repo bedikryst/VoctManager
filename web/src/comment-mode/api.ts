@@ -38,8 +38,8 @@ export interface IndexRow extends MatchField {
   readonly key: string;
   readonly scope: string;
   readonly scope_label: string;
-  /** The Polish path of the scope's page; empty when it has none (or before the deploy adds it). */
-  readonly scope_path?: string;
+  /** The Polish path of the scope's page; empty when it has none. */
+  readonly scope_path: string;
   readonly label: string;
   readonly kind: string;
   /** This locale's value, `""` when untranslated. */

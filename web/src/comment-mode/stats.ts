@@ -4,7 +4,8 @@
  *  mode runs. Plausible's script reads `localStorage.plausible_ignore` on every event it would
  *  send, pageviews and goals alike, and drops the event when it is "true".
  *
- *  The value it had before comes back on "Zakończ": somebody who already excluded their browser
+ *  The value it had before comes back on "Zakończ", and when the server turns the reader away
+ *  (signed out, or an account that may not edit): somebody who already excluded their browser
  *  (the developer, a board member) stays excluded. The earlier value is stored once, beside the
  *  flag, so a second start on the next page load does not overwrite it with the mode's own "true".
  *

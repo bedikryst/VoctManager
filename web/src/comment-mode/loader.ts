@@ -7,7 +7,8 @@
  *  `?uwagi` sets the flag in `localStorage` and leaves the address at once, through
  *  `history.replaceState(history.state, …)` because the client router keeps its own state in that
  *  slot. A link copied from the address bar therefore never switches the mode on for anybody else.
- *  The flag stays until the editor presses "Zakończ".
+ *  The flag stays until the editor presses "Zakończ", or until the server turns the reader away
+ *  (`mode.ts`): a `?uwagi` link forwarded to someone who cannot edit arms that one visit only.
  *
  *  NOTHING HERE MAY TOUCH THE PAGE WHEN IT FAILS. Storage that throws (a private window, blocked
  *  site data) reads as "off" and a parameter in the address still starts the mode for that load;
@@ -52,7 +53,13 @@ function adoptParam(): void {
   window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`);
 }
 
-/** What "Zakończ" calls: the next page load is an ordinary visitor's again. */
+/** What the mode calls once the server has let the editor in: the flag stays. */
+function arm(): void {
+  armed = true;
+  storeFlag(true);
+}
+
+/** What "Zakończ" and a refusal call: the next page load is an ordinary visitor's again. */
 function disarm(): void {
   armed = false;
   storeFlag(false);
@@ -63,7 +70,7 @@ function check(): void {
     adoptParam();
     if (!armed && !flagStored()) return;
     import("./mode")
-      .then((mode) => mode.start({ disarm }))
+      .then((mode) => mode.start({ arm, disarm, param: PARAM }))
       .catch((error: unknown) => console.warn("[comment mode] did not start", error));
   } catch (error) {
     console.warn("[comment mode] did not start", error);

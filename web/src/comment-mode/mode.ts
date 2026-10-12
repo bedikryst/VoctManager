@@ -18,8 +18,15 @@
  *  document-level capture handlers, Plausible's tagged links and the client router: iOS has long
  *  not delivered a delegated `click` for a tap on plain text. Short and still is a tap; a long
  *  press stays native selection, and modified and middle clicks always pass through. A tap on a
- *  field calls `preventDefault` and `stopPropagation`, and swallows the click that follows it. A tap
- *  on nothing passes through untouched. A mouse pointer gets the field under it highlighted.
+ *  field calls `preventDefault` and `stopPropagation`, and swallows the mouse events that follow it
+ *  wherever they land, the tool's own sheet included: Android and iOS hit-test them after the tap
+ *  has opened the sheet under the finger. A tap on nothing passes through untouched. A mouse
+ *  pointer gets the field under it highlighted.
+ *
+ *  ONLY AN EDITOR THE SERVER LETS IN KEEPS THE FLAG. A reader it turns away (signed out, or an
+ *  account that may not edit) keeps the bar for this visit and is disarmed and counted in the
+ *  statistics again, so a forwarded `?uwagi` link arms nobody for good. The sign-in link carries
+ *  `?uwagi` back, and a session that comes back arms the flag again.
  *
  *  ON THE SITE: one host element (`host.ts`), re-attached in `astro:after-swap` before the new
  *  page's snapshot so the bar does not blink; the previews put back in `astro:before-swap`, so an
@@ -33,6 +40,7 @@
 
 import { navigate } from "astro:transitions/client";
 import { DEFAULT_LOCALE, LOCALES, isTranslated, localizePath, type Locale } from "../i18n/config";
+import { documentLocale } from "../i18n/documentLocale";
 import { ApiError, fetchSiteIndex, notifyReviewers, type IndexRow, type SiteIndex } from "./api";
 import { Bar, type BarState, type BarView } from "./bar";
 import { button, el } from "./dom";
@@ -49,8 +57,12 @@ import { restoreStats, silenceStats } from "./stats";
 import { STRINGS, type Strings } from "./strings";
 
 export interface StartOptions {
+  /** Sets the loader's flag: the next page load starts the mode again. */
+  arm(): void;
   /** Clears the loader's flag: the next page load is an ordinary visitor's. */
   disarm(): void;
+  /** The address parameter that arms the mode; the way back from a sign-in carries it. */
+  readonly param: string;
 }
 
 let running: CommentMode | null = null;
@@ -82,17 +94,15 @@ interface LenisWindow {
   __lenis?: { scrollTo(target: number, options?: { duration?: number }): void };
 }
 
-function pageLocale(): Locale {
-  const lang = document.documentElement.lang.slice(0, 2).toLowerCase();
-  return LOCALES.find((locale) => locale === lang) ?? DEFAULT_LOCALE;
-}
-
 function ownScope(): string | null {
   return pathScope(window.location.pathname, { notFound: document.body.classList.contains("page-404") });
 }
 
-function signInUrl(): string {
-  const next = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+/** The panel's sign-in, coming back to this page with `param`: a signed-out reader is disarmed. */
+function signInUrl(param: string): string {
+  const back = new URL(window.location.href);
+  back.searchParams.set(param, "");
+  const next = `${back.pathname}${back.search}${back.hash}`;
   const origin = import.meta.env.DEV ? DEV_PANEL_ORIGIN : "";
   return `${origin}/login?next=${encodeURIComponent(next)}`;
 }
@@ -146,7 +156,7 @@ class CommentMode {
       {
         signIn: () => {
           this.sheet.close();
-          window.location.assign(signInUrl());
+          window.location.assign(signInUrl(this.options.param));
         },
         retry: () => void this.readPage(),
         toggleEditing: () => this.toggleEditing(),
@@ -160,17 +170,24 @@ class CommentMode {
       this.strings(),
     );
     this.popover = new Popover(this.host.root);
+    // A save or a withdrawal in flight answers after "Zakończ" too: the page is the visitor's by then.
     this.sheet = new Sheet(this.host.root, {
       saved: (row) => {
+        if (running !== this) return;
         this.bar.announce(this.strings().saved(row.label || row.key));
         this.afterChange(row);
       },
       withdrawn: (row) => {
+        if (running !== this) return;
         this.bar.announce(this.strings().withdrawn(row.label || row.key));
         this.afterChange(row);
       },
-      signedOut: () => this.setState({ kind: "signed-out" }),
-      refused: () => this.setState({ kind: "refused" }),
+      signedOut: () => {
+        if (running === this) this.setState({ kind: "signed-out" });
+      },
+      refused: () => {
+        if (running === this) this.setState({ kind: "refused" });
+      },
       closed: () => {
         this.target = null;
         this.bar.setUnderSheet(false);
@@ -222,13 +239,13 @@ class CommentMode {
   }
 
   private strings(): Strings {
-    return STRINGS[this.language ?? pageLocale()];
+    return STRINGS[this.language ?? documentLocale()];
   }
 
   private barView(): BarView {
     return {
       state: this.state,
-      locale: pageLocale(),
+      locale: documentLocale(),
       locales: isTranslated(basePath(window.location.pathname)) ? LOCALES : [DEFAULT_LOCALE],
       fields: this.highlights.supported ? this.showFields : null,
       previews: this.previews.shown,
@@ -241,10 +258,22 @@ class CommentMode {
   }
 
   private setState(state: BarState): void {
+    if (state.kind !== this.state.kind) this.settleFlag(state);
     this.state = state;
     if (state.kind !== "ready") this.popover.hide();
     this.renderBar();
     this.paint();
+  }
+
+  /** The server's answer decides the flag and the statistics; loading and network failures leave both. */
+  private settleFlag(state: BarState): void {
+    if (state.kind === "ready") {
+      this.options.arm();
+      silenceStats();
+    } else if (state.kind === "signed-out" || state.kind === "refused") {
+      this.options.disarm();
+      restoreStats();
+    }
   }
 
   private tapsLive(): boolean {
@@ -272,7 +301,7 @@ class CommentMode {
   private switchLocale(locale: Locale): void {
     this.bar.closeMenu();
     const base = basePath(window.location.pathname);
-    if (locale === pageLocale() || (locale !== DEFAULT_LOCALE && !isTranslated(base))) return;
+    if (locale === documentLocale() || (locale !== DEFAULT_LOCALE && !isTranslated(base))) return;
     this.sheet.close();
     void navigate(localizePath(base, locale));
   }
@@ -317,7 +346,7 @@ class CommentMode {
     this.host.attach();
     this.popover.hide();
     this.scan = null;
-    const locale = pageLocale();
+    const locale = documentLocale();
     if (this.state.kind !== "ready" || this.loaded?.index.locale !== locale) this.setState({ kind: "loading" });
 
     let loaded: LoadedIndex;
@@ -345,9 +374,11 @@ class CommentMode {
    */
   private readText(): void {
     const loaded = this.loaded;
-    if (!loaded) return;
+    // Between a language switch and its index the page is in another language than the corpus;
+    // the read that index ends in does this.
+    if (!loaded || loaded.index.locale !== documentLocale()) return;
     this.scan = this.scanNow(loaded);
-    if (this.previews.sync(this.scan, pageLocale())) {
+    if (this.previews.sync(this.scan, documentLocale())) {
       this.pins = this.previews.pinned();
       this.scan = this.scanNow(loaded);
     }
@@ -357,7 +388,7 @@ class CommentMode {
   /** After a save or a withdrawal: the proposal shows where the sheet was opened from, then everywhere it can. */
   private afterChange(row: IndexRow): void {
     const target = this.target;
-    if (target?.row === row && target.range) this.previews.place(target.range, row, pageLocale());
+    if (target?.row === row && target.range) this.previews.place(target.range, row, documentLocale());
     this.pins = this.previews.pinned();
     this.readText();
   }
@@ -442,11 +473,14 @@ class CommentMode {
 
   /**
    * The mouse events that follow a handled tap. Its click must not reach the page (a link, the
-   * vault's trigger, a lightbox). On touch the compatibility `mousedown` arrives after `pointerup`,
-   * and its default would take focus away from the sheet that tap just opened.
+   * vault's trigger, a lightbox). On touch the compatibility `mousedown` and `click` arrive after
+   * `pointerup` and are hit-tested then, so they land on the sheet or the popover that tap just
+   * opened under the finger: there the `mousedown` would focus the textarea and raise the keyboard,
+   * and the click would press whichever button is under it. The tool's own controls are reached
+   * by a press of their own, and every press closes this window in `onPointerDown`.
    */
   private swallow(event: Event, isClick: boolean): void {
-    if (this.forwarding || performance.now() > this.swallowUntil || this.host.holds(event)) return;
+    if (this.forwarding || performance.now() > this.swallowUntil) return;
     event.preventDefault();
     if (!isClick) return;
     this.swallowUntil = 0;
@@ -466,6 +500,12 @@ class CommentMode {
   private hitAt(x: number, y: number, target: EventTarget | null): Hit | null {
     const loaded = this.loaded;
     if (!loaded) return null;
+    // A page script that wrote over a preview owns that element again: read it as the page prints it.
+    if (this.previews.prune()) {
+      this.pins = this.previews.pinned();
+      this.scan = this.scanNow(loaded);
+      this.paint();
+    }
     this.scan ??= this.scanNow(loaded);
     let result = hitAt(this.scan, this.pins, x, y, target);
     if (result.kind === "unseen") {
@@ -486,7 +526,7 @@ class CommentMode {
 
     if (candidates.length === 0) {
       this.popover.show(anchor, s.sharedTitle, [
-        ...sharedWordContent(hit.fields, pageLocale(), s),
+        ...sharedWordContent(hit.fields, documentLocale(), s),
         el("div", "popover-actions", follow, close),
       ]);
       return;

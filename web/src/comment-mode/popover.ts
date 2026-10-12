@@ -102,7 +102,7 @@ export function sharedWordContent(fields: readonly IndexRow[], locale: Locale, s
     "ul",
     "fields",
     ...fields.map((row) => {
-      const path = row.scope_path ?? "";
+      const path = row.scope_path;
       const link = path ? el("a", "", s.openOnItsPage) : null;
       if (link) link.href = localizePath(path, locale);
       return el(

@@ -62,6 +62,14 @@ function toggle(label: string, on: boolean, onPress: () => void): HTMLButtonElem
 export class Bar {
   readonly element: HTMLElement;
   private readonly actions: BarActions;
+  private readonly name: HTMLElement;
+  /**
+   * One live region for the bar's whole life, only its text rewritten: a screen reader announces
+   * a change inside a region it knows, not the text of a region inserted already holding it.
+   */
+  private readonly status: HTMLElement;
+  private readonly commands: HTMLElement;
+  private menu: HTMLElement | null = null;
   private view: BarView;
   private strings: Strings;
   private notice = "";
@@ -74,6 +82,11 @@ export class Bar {
     this.strings = strings;
     this.element = el("div", "panel bar");
     this.element.setAttribute("role", "region");
+    this.name = el("span", "bar-name");
+    this.status = el("span", "bar-status");
+    this.status.setAttribute("aria-live", "polite");
+    this.commands = el("span", "bar-actions");
+    this.element.append(el("div", "bar-row", this.name, this.status, this.commands));
     root.append(this.element);
     this.render();
   }
@@ -165,19 +178,17 @@ export class Bar {
     const before = [...this.element.querySelectorAll("button")];
     const focusIndex = before.findIndex((b) => b === focused);
 
-    const statusElement = el("span", this.notice ? "bar-status is-notice" : "bar-status", this.notice || status);
-    statusElement.setAttribute("aria-live", "polite");
-    const row = el(
-      "div",
-      "bar-row",
-      el("span", "bar-name", s.modeName),
-      statusElement,
-      el("span", "bar-actions", ...commands),
-    );
+    this.name.textContent = s.modeName;
+    const text = this.notice || status;
+    this.status.className = this.notice ? "bar-status is-notice" : "bar-status";
+    if (this.status.textContent !== text) this.status.textContent = text;
+    this.commands.replaceChildren(...commands);
     // The menu follows the pill in the DOM, so Tab goes from "Menu" into it; CSS stacks it above.
     const menu = this.menuOpen && state.kind === "ready" ? this.renderMenu(state.editing) : null;
     this.element.classList.toggle("is-open", menu !== null);
-    this.element.replaceChildren(row, ...(menu ? [menu] : []));
+    this.menu?.remove();
+    this.menu = menu;
+    if (menu) this.element.append(menu);
 
     if (focusIndex >= 0) {
       const after = [...this.element.querySelectorAll("button")];

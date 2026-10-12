@@ -158,7 +158,10 @@ export interface Hit {
   readonly range: Range;
   /** The line box the tap landed in: the popover hangs from it. */
   readonly line: number;
-  /** The link or button the copy sits in, if any. */
+  /**
+   * The link or button under the tap, if any: what the tap would have followed. Read from the
+   * tapped point, not from the span, because a link may sit inside the field or begin it.
+   */
   readonly control: HTMLElement | null;
 }
 
@@ -168,14 +171,36 @@ export type HitResult =
   /** The caret is in text the scan has never seen (an island re-rendered): scan again. */
   | { readonly kind: "unseen" };
 
-function confirm(scan: PageScan, occurrence: FieldOccurrence, x: number, y: number): Hit | null {
+function confirm(
+  scan: PageScan,
+  occurrence: FieldOccurrence,
+  x: number,
+  y: number,
+  control: HTMLElement | null,
+): Hit | null {
   const range = rangeOf(scan, occurrence);
   if (!range) return null;
   const line = lineAt(range, x, y);
   if (line < 0) return null;
-  const startNode = scan.nodes[occurrence.start.node];
-  const control = startNode.parentElement?.closest<HTMLElement>(INTERACTIVE) ?? null;
   return { candidates: occurrence.candidates, fields: occurrence.fields, range, line, control };
+}
+
+/** The link or button a tap on `target` would have followed: the hit element, else the caret's. */
+function controlAt(target: EventTarget | null, caret: Node | null): HTMLElement | null {
+  const element = target instanceof Element ? target : caret instanceof Element ? caret : (caret?.parentElement ?? null);
+  return element?.closest<HTMLElement>(INTERACTIVE) ?? null;
+}
+
+/**
+ * True when the walk passes over `node` on purpose: text in a shadow tree (a form control's own,
+ * the tool's host) or inside an element `skipsText` names, such as a textarea.
+ */
+function skippedByWalk(node: Node): boolean {
+  if (node.getRootNode() !== document) return true;
+  for (let element = node.parentElement; element; element = element.parentElement) {
+    if (skipsText(element.localName.toLowerCase())) return true;
+  }
+  return false;
 }
 
 /** The pinned element `node` lies in, if any. */
@@ -186,23 +211,23 @@ function pinnedAround(node: Node | null, pinned: Pinned): Element | null {
   return null;
 }
 
-function confirmPinned(element: Element, row: IndexRow, x: number, y: number): Hit | null {
+function confirmPinned(element: Element, row: IndexRow, x: number, y: number, control: HTMLElement | null): Hit | null {
   const range = document.createRange();
   range.selectNodeContents(element);
   const line = lineAt(range, x, y);
   if (line < 0) return null;
-  const control = element.closest<HTMLElement>(INTERACTIVE);
   return { candidates: [row], fields: [row], range, line, control };
 }
 
 /** The field under a tap at viewport point `(x, y)` on `target`. */
 export function hitAt(scan: PageScan, pinned: Pinned, x: number, y: number, target: EventTarget | null): HitResult {
   const caret = caretAt(x, y);
+  const control = controlAt(target, caret?.node ?? null);
   const caretPin = pinnedAround(caret?.node ?? null, pinned);
   const element = caretPin ?? pinnedAround(target instanceof Node ? target : null, pinned);
   const row = element ? pinned.get(element) : undefined;
   if (element && row) {
-    const hit = confirmPinned(element, row, x, y);
+    const hit = confirmPinned(element, row, x, y, control);
     if (hit) return { kind: "hit", hit };
   }
   // The scan never reads a pinned element's text, so a caret in one is not "unseen".
@@ -210,7 +235,9 @@ export function hitAt(scan: PageScan, pinned: Pinned, x: number, y: number, targ
 
   if (caret && caret.node instanceof Text) {
     const index = scan.position.get(caret.node);
-    if (index === undefined) return caret.node.isConnected ? { kind: "unseen" } : { kind: "miss" };
+    if (index === undefined) {
+      return caret.node.isConnected && !skippedByWalk(caret.node) ? { kind: "unseen" } : { kind: "miss" };
+    }
     const point: TextPoint = { node: index, offset: caret.offset };
     // A caret at an occurrence's very end is a tap on the right half of its last letter; one
     // that is strictly inside wins over that when two occurrences meet at the point.
@@ -218,7 +245,7 @@ export function hitAt(scan: PageScan, pinned: Pinned, x: number, y: number, targ
       .filter((o) => compare(o.start, point) <= 0 && compare(point, o.end) <= 0)
       .sort((a, b) => Number(compare(point, a.end) === 0) - Number(compare(point, b.end) === 0));
     for (const occurrence of covering) {
-      const hit = confirm(scan, occurrence, x, y);
+      const hit = confirm(scan, occurrence, x, y, control);
       if (hit) return { kind: "hit", hit };
     }
     return { kind: "miss" };
@@ -227,7 +254,7 @@ export function hitAt(scan: PageScan, pinned: Pinned, x: number, y: number, targ
   if (!(target instanceof Element)) return { kind: "miss" };
   for (const occurrence of scan.occurrences) {
     if (!target.contains(scan.nodes[occurrence.start.node])) continue;
-    const hit = confirm(scan, occurrence, x, y);
+    const hit = confirm(scan, occurrence, x, y, control);
     if (hit) return { kind: "hit", hit };
   }
   return { kind: "miss" };
