@@ -119,11 +119,15 @@ export const FeedbackSheet = (): React.JSX.Element => {
       }
     >
       <div className="flex flex-col gap-5 pt-1">
+        {/* Two by two on a phone: wrapping lets three kinds share a row and
+            squeezes a two-word label onto two lines, leaving the fourth alone
+            beneath them. */}
         <SegmentedTabs
           items={kinds}
           value={kind}
           onChange={setKind}
           wrap
+          className="grid grid-cols-2 sm:flex"
           ariaLabel={t("feedback.kind.aria", "Rodzaj zgłoszenia")}
         />
 

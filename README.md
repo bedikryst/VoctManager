@@ -26,6 +26,10 @@ The first concert in the system (St. Andrew Bobola, May 2026) was mostly data I 
 
 He ran the end-of-August concert through the app himself, and the singers used it during the concert. The next programme is in rehearsal now, and both he and the choir are working in it. He sends me feedback as he goes; the rehearsal planner described below came from two of his reports. Since 20 September he has opened the app every day. Between then and 1 October he sent 59 reports through the in-app feedback button, and I closed 53 of them the same day.
 
+<picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/feedback-sheet-en-dark.png"><img src="docs/assets/feedback-sheet-en-light.png" width="240" alt="The feedback sheet open on a phone: the report type set to Idea and a typed note asking the practice player to remember the speed for each piece"></picture>
+
+<sub>The feedback sheet, with a sample note.</sub>
+
 ## What's in it
 
 - **Casting.** Drag and drop, grouped by section, with section leaders and seat order. Instrumentalists get accounts and parts the same way singers do.
@@ -44,9 +48,9 @@ He ran the end-of-August concert through the app himself, and the singers used i
 
 | On the music stand | Practising at home |
 |:---:|:---:|
-| <img src="docs/assets/annotations.gif" width="340" alt="On the music stand the conductor stamps a crescendo, opens the mark and moves it from the choir's layer to the rehearsal leader's"> | <picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/materials-singer-en-dark.png"><img src="docs/assets/materials-singer-en-light.png" width="240" alt="A tenor's practice console on a phone: his own line playing alone, the other voices muted, speed and loop controls below"></picture> |
+| <img src="docs/assets/annotations-en.gif" width="340" alt="On the music stand the conductor stamps a crescendo, opens the mark and moves it from the choir's layer to the rehearsal leader's"> | <picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/materials-singer-en-dark.png"><img src="docs/assets/materials-singer-en-light.png" width="240" alt="A tenor's practice console on a phone: his own line playing alone, the other voices muted, speed and loop controls below"></picture> |
 
-<sub>The stills show the English interface over the ensemble's own data, which is in Polish. The animations were recorded in the Polish interface.</sub>
+<sub>The images show the English interface over the ensemble's own data, which is in Polish.</sub>
 
 ## Score pipeline
 
@@ -77,9 +81,9 @@ Retries depend on whether the failed call was billed ([`ai_client.py`](backend/a
 
 An ingest costs $0.04–0.20. A score sung entirely in Polish is at the low end, since it needs no IPA or translation. There are three spend caps: per run, per edition over its lifetime, and a daily budget for the whole organisation that trips a circuit breaker. A PDF that has already been processed is recognised by its SHA-256 and never reaches the model. The system prompt is cached; the PDF deliberately isn't. Each PDF is read once, so a cache write would add 25% to the largest input cost and almost never be read back.
 
-<img src="docs/assets/score-ingestion.gif" width="720" alt="A PDF is uploaded, the pipeline reports its progress live, and the review screen opens on the catalogued piece">
+<img src="docs/assets/score-ingestion-en.gif" width="720" alt="A PDF is uploaded, the pipeline reports its progress live, and the review screen opens on the catalogued piece">
 
-<sub>Recorded from a real run; the pipeline's 51 seconds are shown in three. Score: Giovanni Priuli, <i>Ave dulcissima Maria</i>, engraved by the <a href="https://www.mutopiaproject.org/">Mutopia Project</a> (CC BY-SA 3.0). The music stand above shows Mozart's <i>Ave verum corpus</i> in Carl Reinecke's arrangement, also from Mutopia (CC BY 4.0).</sub>
+<sub>Recorded from a real run; the pipeline's 41 seconds are shown in three. Score: Giovanni Priuli, <i>Ave dulcissima Maria</i>, engraved by the <a href="https://www.mutopiaproject.org/">Mutopia Project</a> (CC BY-SA 3.0). The music stand above shows Mozart's <i>Ave verum corpus</i> in Carl Reinecke's arrangement, also from Mutopia (CC BY 4.0).</sub>
 
 Details: [`docs/archive-ai-ingestion-pipeline.md`](docs/archive-ai-ingestion-pipeline.md).
 
@@ -91,7 +95,7 @@ The plan reaches the choir only when he sends it, not on every edit. After the r
 
 | Editing the plan | What a tenor sees |
 |:---:|:---:|
-| <img src="docs/assets/rehearsal-plan.gif" width="560" alt="The conductor drags a piece up the rehearsal plan and lengthens another, then opens a tenor's view of the week"> | <picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/rehearsal-singer-en-dark.png"><img src="docs/assets/rehearsal-singer-en-light.png" width="240" alt="A tenor's rehearsal page on a phone: his part runs 19:00–21:00, the first piece is marked as not needing his voice"></picture> |
+| <img src="docs/assets/rehearsal-plan-en.gif" width="560" alt="The conductor drags a piece up the rehearsal plan and lengthens another, then opens a tenor's view of the week"> | <picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/rehearsal-singer-en-dark.png"><img src="docs/assets/rehearsal-singer-en-light.png" width="240" alt="A tenor's rehearsal page on a phone: his part runs 19:00–21:00, the first piece is marked as not needing his voice"></picture> |
 
 ## Finance
 

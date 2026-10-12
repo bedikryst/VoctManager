@@ -2854,11 +2854,11 @@
       "inv_open_details_aria": "Ouvrir la liste détaillée des invitations",
       "inv_pending": "En attente",
       "inv_pending_short": "en attente",
-      "kpi_active_projects": "Directives actives",
+      "kpi_active_projects": "Projets actifs",
+      "kpi_ensemble": "L'ensemble",
       "kpi_invitations": "Statut des Invitations",
-      "kpi_pieces": "Répertoire sacré",
-      "kpi_readiness": "Cohérence harmonique",
-      "kpi_telemetry": "Télémétrie de la base",
+      "kpi_pieces": "Pièces en archive",
+      "kpi_voice_balance": "Équilibre des voix",
       "modules": {
         "archive_title": "Archive des partitions",
         "artists_title": "Base artistes",
@@ -6722,7 +6722,7 @@
     },
     "sheet": {
       "title": "Dites-moi ce qui s'est passé",
-      "subtitle": "Vous écrivez directement à l'auteur de l'application"
+      "subtitle": "Directement à l'auteur de l'app"
     },
     "kind": {
       "aria": "Type de signalement",

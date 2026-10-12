@@ -41,6 +41,23 @@ export const VIEWPORTS = {
 };
 
 /**
+ * The command line shared by shots.mjs and gifs.mjs: `--lang <code>` and the
+ * take names around it. `say(pl, en)` picks a text wait in that language, and
+ * `suffix` tags the output files of every language but Polish.
+ */
+export function cliArgs(argv = process.argv.slice(2)) {
+  const at = argv.indexOf("--lang");
+  const lang = at === -1 ? "pl" : argv[at + 1];
+  const names = at === -1 ? argv : argv.filter((_, index) => index !== at && index !== at + 1);
+  return {
+    lang,
+    names,
+    say: (pl, en) => (lang === "en" ? en : pl),
+    suffix: lang === "pl" ? "" : `-${lang}`,
+  };
+}
+
+/**
  * Stage the seeded database and return the ids the takes navigate to. `lang`
  * is the interface language the signed-in accounts get (see prepare.py).
  */
@@ -124,8 +141,8 @@ function panelStorage(theme, lang, extra) {
   };
 }
 
-// The feedback button floats over every panel screen; it is a line to the
-// developer, not a feature, so the takes leave it out.
+// The feedback button floats over every panel screen and would sit in the
+// corner of every take, so it is hidden everywhere but in its own shot.
 const HIDE_CSS = [
   '[aria-label="Zgłoś problem lub pomysł"]',
   '[aria-label="Report a problem or an idea"]',
@@ -133,7 +150,7 @@ const HIDE_CSS = [
 
 /** A context for one theme at one size, sharing the logged-in cookie jar. */
 export async function themedContext(browser, {
-  state, size, theme, lang = "pl", storage = {}, video, viewport,
+  state, size, theme, lang = "pl", storage = {}, video, viewport, showFeedback = false,
 }) {
   const frame = viewport ?? VIEWPORTS[size].viewport;
   const context = await browser.newContext({
@@ -160,7 +177,7 @@ export async function themedContext(browser, {
     };
     if (document.head) style();
     else document.addEventListener("DOMContentLoaded", style);
-  }, [panelStorage(theme, lang, storage), HIDE_CSS]);
+  }, [panelStorage(theme, lang, storage), showFeedback ? "" : HIDE_CSS]);
   return context;
 }
 

@@ -2845,11 +2845,11 @@
       "inv_open_details_aria": "Open detailed invitation list",
       "inv_pending": "Pending",
       "inv_pending_short": "waiting",
-      "kpi_active_projects": "Active Directives",
+      "kpi_active_projects": "Active projects",
+      "kpi_ensemble": "Ensemble",
       "kpi_invitations": "Invitation Status",
-      "kpi_pieces": "Sacral Repertoire",
-      "kpi_readiness": "Harmonic Cohesion",
-      "kpi_telemetry": "Database Telemetry",
+      "kpi_pieces": "Pieces in archive",
+      "kpi_voice_balance": "Voice balance",
       "modules": {
         "archive_title": "Music Archive",
         "artists_title": "Artist Database",
@@ -6710,7 +6710,7 @@
     },
     "sheet": {
       "title": "Tell me what happened",
-      "subtitle": "You are writing straight to the app's author"
+      "subtitle": "Straight to the app's author"
     },
     "kind": {
       "aria": "Type of report",

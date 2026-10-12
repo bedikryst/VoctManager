@@ -26,6 +26,10 @@ Pierwszy koncert w systemie (u św. Andrzeja Boboli, maj 2026) to były główni
 
 Koncert z końca sierpnia poprowadził przez aplikację już sam, a chórzyści korzystali z niej w trakcie koncertu. Teraz trwają próby do kolejnego programu i pracują w niej i dyrygent, i chór. Na bieżąco przysyła mi uwagi, a opisany niżej plan próby powstał z dwóch jego zgłoszeń. Od 20 września otwiera aplikację codziennie. Od tego dnia do 1 października wysłał przyciskiem w aplikacji 59 zgłoszeń, a 53 z nich zamknąłem tego samego dnia.
 
+<picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/feedback-sheet-dark.png"><img src="docs/assets/feedback-sheet-light.png" width="240" alt="Okno zgłoszenia otwarte na telefonie: wybrany rodzaj Pomysł i wpisana notatka z prośbą, żeby odtwarzacz pamiętał tempo dla każdego utworu"></picture>
+
+<sub>Okno zgłoszenia z przykładową notatką.</sub>
+
 ## Co w nim jest
 
 - **Obsada.** Przeciąganiem, z podziałem na sekcje, prowadzącymi sekcji i kolejnością miejsc. Instrumentaliści mają konta i partie tak samo jak śpiewacy.

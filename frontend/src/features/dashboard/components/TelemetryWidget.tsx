@@ -85,13 +85,13 @@ export function TelemetryWidget({
       {/* UPPER STRATUM: Resonance Metrics */}
       <section className="relative z-10 flex flex-col">
         <SectionHeader
-          title={t("dashboard.admin.kpi_telemetry", "Telemetria Bazy")}
+          title={t("dashboard.admin.kpi_ensemble", "Zespół")}
           icon={<AudioLines size={16} strokeWidth={1.5} />}
         />
 
         <div className="grid grid-cols-2 gap-2 xl:gap-8 relative">
           <MetricBlock
-            label={t("dashboard.admin.kpi_pieces", "Repertuar Sakralny")}
+            label={t("dashboard.admin.kpi_pieces", "Utwory w archiwum")}
             value={stats.totalPieces ?? "—"}
           />
 
@@ -104,7 +104,7 @@ export function TelemetryWidget({
             <MetricBlock
               label={t(
                 "dashboard.admin.kpi_active_projects",
-                "Aktywne Dyrektywy",
+                "Aktywne projekty",
               )}
               value={stats.activeProjects}
               accentColor="gold"
@@ -113,7 +113,7 @@ export function TelemetryWidget({
         </div>
       </section>
 
-      {/* LOWER STRATUM: SATB Harmonic Cohesion */}
+      {/* LOWER STRATUM: SATB voice balance */}
       <section className="relative z-10 mt-8 flex flex-col">
         <header className="mb-10 flex items-baseline justify-between pt-4 relative">
           <Divider
@@ -124,7 +124,7 @@ export function TelemetryWidget({
 
           <div className="flex flex-col gap-1">
             <Eyebrow color="muted">
-              {t("dashboard.admin.kpi_readiness", "Spójność Harmoniczna")}
+              {t("dashboard.admin.kpi_voice_balance", "Proporcje głosów")}
             </Eyebrow>
             <Caption color="muted">
               {t(

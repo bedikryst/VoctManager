@@ -11,7 +11,7 @@
 
 import { mkdirSync } from "node:fs";
 import { join } from "node:path";
-import { BASE, OUT, launch, login, settle, stage, themedContext } from "./lib.mjs";
+import { BASE, OUT, cliArgs, launch, login, settle, stage, themedContext } from "./lib.mjs";
 
 const DIR = join(OUT, "shots");
 
@@ -175,16 +175,35 @@ const SHOTS = [
       await page.getByText("Obsada projektu").waitFor();
     },
   },
+  {
+    // The line to the developer, open over the tenor's rehearsal page with a
+    // sample idea typed in. The only shot that keeps the button. The note is
+    // invented, so it asks for nothing the README tells as a real request.
+    name: "feedback-sheet",
+    size: "phone",
+    as: "tenor",
+    langs: ["pl", "en"],
+    showFeedback: true,
+    go: async (page, ids, say) => {
+      await page.goto(`${BASE}/panel/schedule/rehearsal/${ids.planned_rehearsal}`);
+      await page.getByText(say("Twoja część", "Your part")).first().waitFor();
+      await settle(page);
+      await page.getByRole("button", { name: say("Zgłoś problem lub pomysł", "Report a problem or an idea") })
+        .click();
+      await page.getByRole("tab", { name: say("Pomysł", "Idea") }).click();
+      await page.getByLabel(say("Co się wydarzyło?", "What happened?")).fill(say(
+        "Czy odtwarzacz mógłby pamiętać tempo dla każdego utworu? Mozarta zawsze ćwiczę na trzech czwartych i co wieczór ustawiam je od nowa.",
+        "Could the player remember the speed for each piece? I always practise the Mozart at three-quarters and set it again every evening.",
+      ));
+    },
+  },
 ];
 
 // `--lang en` takes the shots that have English waits, into <name>-en-<theme>.png.
-const args = process.argv.slice(2);
-const lang = args.includes("--lang") ? args[args.indexOf("--lang") + 1] : "pl";
-const only = new Set(args.filter((arg, index) => arg !== "--lang" && args[index - 1] !== "--lang"));
+const { lang, names, say, suffix } = cliArgs();
+const only = new Set(names);
 const wanted = SHOTS.filter((shot) => (only.size ? only.has(shot.name) : true)
   && (lang === "pl" || shot.langs?.includes(lang)));
-const say = (pl, en) => (lang === "en" ? en : pl);
-const suffix = lang === "pl" ? "" : `-${lang}`;
 
 mkdirSync(DIR, { recursive: true });
 const ids = await stage({ lang });
@@ -201,7 +220,7 @@ try {
     }
     for (const theme of ["light", "dark"]) {
       const context = await themedContext(browser, {
-        state: sessions[shot.as ?? "admin"], size: shot.size, theme, lang,
+        state: sessions[shot.as ?? "admin"], size: shot.size, theme, lang, showFeedback: shot.showFeedback,
       });
       const page = await context.newPage();
       await shot.go(page, ids, say);
