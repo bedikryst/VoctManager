@@ -1,7 +1,6 @@
 # outreach/admin.py
 # ==========================================
 # Outreach — Django Admin
-# Standard: Enterprise SaaS 2026
 # ==========================================
 from typing import Any
 

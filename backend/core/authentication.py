@@ -33,7 +33,7 @@ class CSRFCheck(CsrfViewMiddleware):
 
 class EmailAuthBackend(ModelBackend):
     """
-    Enterprise Identity: Enables authentication via Email instead of the default UUID username.
+    Lets users sign in with their email address instead of the UUID username.
     Performs secure, case-insensitive email matching and handles legacy ghost-account duplicates.
     Includes constant-time fallback to mitigate timing attacks.
     """
@@ -70,7 +70,7 @@ class EmailAuthBackend(ModelBackend):
 
 class CookieJWTAuthentication(JWTAuthentication):
     """
-    Enterprise JWT Authentication.
+    JWT authentication.
     Prioritizes httpOnly cookies to mitigate XSS attacks, while maintaining
     an Authorization header fallback for machine-to-machine (M2M) and Swagger integrations.
     """

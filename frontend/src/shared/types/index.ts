@@ -559,7 +559,7 @@ export interface Composer extends BaseModel {
   is_orphan?: boolean;
 }
 
-// Backend PieceVoiceRequirement model extends EnterpriseBaseModel but the
+// Backend PieceVoiceRequirement model extends SoftDeleteModel but the
 // serializer only exposes the fields below.
 export interface VoiceRequirement {
   id?: string;
@@ -583,7 +583,7 @@ export interface VoiceRequirement {
  */
 export type TrackKind = "PRACTICE" | "TEMPO_GIUSTO";
 
-// Backend Track model extends EnterpriseBaseModel but TrackSerializer only
+// Backend Track model extends SoftDeleteModel but TrackSerializer only
 // exposes the fields below.
 export interface Track {
   id: string;
@@ -606,7 +606,7 @@ export interface Track {
 // ---- Score Compiler nested entities ----------------------------------------
 
 // Backend Movement / Translation / Recording / ProgramNote models extend
-// EnterpriseBaseModel, but their respective read serializers only expose the
+// SoftDeleteModel, but their respective read serializers only expose the
 // explicit fields listed below (no created_at / updated_at / is_deleted in
 // the API response).
 

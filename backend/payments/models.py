@@ -1,14 +1,14 @@
 # payments/models.py
 # ==========================================
 # Payments & Donations Domain Models
-# Axepta BNP Paribas Integration — Standard: Enterprise SaaS 2026
+# Axepta BNP Paribas Integration
 # ==========================================
 from decimal import Decimal
 
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
-from core.models import EnterpriseBaseModel
+from core.models import SoftDeleteModel
 
 
 class DonationStatus(models.TextChoices):
@@ -33,12 +33,12 @@ CURRENCY_MINOR_UNIT_EXPONENT: dict[str, int] = {
 }
 
 
-class Donation(EnterpriseBaseModel):
+class Donation(SoftDeleteModel):
     """
     A monetary donation processed through the Axepta BNP Paribas gateway.
 
     Inherits the UUID primary key, `created_at`, `updated_at` and soft-delete
-    semantics from `EnterpriseBaseModel`. That UUID is intentionally reused as
+    semantics from `SoftDeleteModel`. That UUID is intentionally reused as
     the Axepta `orderId`, so the status webhook can resolve a donation directly
     from the gateway callback without an extra correlation table.
     """
@@ -78,7 +78,7 @@ class Donation(EnterpriseBaseModel):
         verbose_name_plural = _('Donations')
         indexes = [
             # Declared explicitly because this model overrides Meta and so does
-            # not inherit EnterpriseBaseModel.Meta's equivalent composite index.
+            # not inherit SoftDeleteModel.Meta's equivalent composite index.
             models.Index(fields=['is_deleted', '-created_at'], name='payments_don_isdel_creat_idx'),
             # Backs the reconciliation sweep (status=PENDING, ordered by age).
             models.Index(fields=['status', '-created_at'], name='payments_don_status_creat_idx'),
@@ -108,7 +108,7 @@ class PatronLeadStatus(models.TextChoices):
     ARCHIVED = 'ARCHIVED', _('Archived')
 
 
-class PatronLead(EnterpriseBaseModel):
+class PatronLead(SoftDeleteModel):
     """
     A visitor's expression of interest in becoming a recurring patron (mecenat),
     captured from the public donation vault.
@@ -137,7 +137,7 @@ class PatronLead(EnterpriseBaseModel):
         verbose_name_plural = _('Patron Leads')
         indexes = [
             # Declared explicitly because this model overrides Meta and so does
-            # not inherit EnterpriseBaseModel.Meta's equivalent composite index.
+            # not inherit SoftDeleteModel.Meta's equivalent composite index.
             models.Index(fields=['is_deleted', '-created_at'], name='payments_patron_isdel_idx'),
         ]
 

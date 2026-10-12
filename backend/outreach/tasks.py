@@ -1,7 +1,6 @@
 # outreach/tasks.py
 # ==========================================
 # Outreach — retention sweeps for the notice list and guests' reservations
-# Standard: Enterprise SaaS 2026
 # ==========================================
 import logging
 

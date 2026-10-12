@@ -2,7 +2,7 @@
 # ==========================================
 # Django Core Settings
 # ==========================================
-Enterprise configuration for VoctManager.
+Django settings for VoctManager.
 Strictly typed environment variables via django-environ.
 """
 
@@ -189,7 +189,7 @@ MEDIA_ROOT = BASE_DIR / 'media'
 
 # --- DJANGO REST FRAMEWORK CONFIGURATION ---
 REST_FRAMEWORK = {
-    'EXCEPTION_HANDLER': 'core.exceptions.enterprise_exception_handler',
+    'EXCEPTION_HANDLER': 'core.exceptions.api_exception_handler',
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'core.authentication.CookieJWTAuthentication',
         'rest_framework.authentication.SessionAuthentication',
@@ -262,7 +262,7 @@ REST_FRAMEWORK = {
 # --- SWAGGER / OPENAPI SETTINGS ---
 SPECTACULAR_SETTINGS = {
     'TITLE': 'VoctManager API',
-    'DESCRIPTION': 'Enterprise API for VoctEnsemble a cappella octet.',
+    'DESCRIPTION': 'VoctManager API for the VoctEnsemble vocal ensemble.',
     'VERSION': '1.0.0',
     'SERVE_INCLUDE_SCHEMA': False,
     'SECURITY': [{'jwtAuth': []}],

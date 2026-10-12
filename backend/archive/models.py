@@ -5,7 +5,7 @@ Archive Database Models (Entities)
 Domain: Archive
 Description:
     Data persistence layer for musical repertoire. Uses Django ORM with
-    EnterpriseBaseModel for consistent audit trailing and soft-deletion.
+    SoftDeleteModel for consistent audit trailing and soft-deletion.
     Adheres to Cloud-Native principles by externalizing limits to configurations.
 
 Standards: SaaS 2026, Cloud-Native Storage Ready, Soft-Delete Compliant.
@@ -20,7 +20,7 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 
 from core.constants import VoiceLine
-from core.models import EnterpriseBaseModel
+from core.models import SoftDeleteModel
 
 
 def validate_file_size(value) -> None:
@@ -118,7 +118,7 @@ class ProvenanceSource(models.TextChoices):
     IMSLP       = 'IMS', _('IMSLP')
 
 
-class Composer(EnterpriseBaseModel):
+class Composer(SoftDeleteModel):
     """
     Dictionary entity representing a musical composer or arranger.
     Enriched on demand from canonical external sources (MusicBrainz, Wikidata).
@@ -152,7 +152,7 @@ class Composer(EnterpriseBaseModel):
         return f"{self.first_name} {self.last_name}".strip()
 
 
-class Piece(EnterpriseBaseModel):
+class Piece(SoftDeleteModel):
     """
     Aggregate Root for the musical repertoire.
 
@@ -240,7 +240,7 @@ class Piece(EnterpriseBaseModel):
         return f"{composer_str}{self.title}{year_str}{suffix}"
 
 
-class PieceVoiceRequirement(EnterpriseBaseModel):
+class PieceVoiceRequirement(SoftDeleteModel):
     """
     Defines the specific vocal divisi requirements for a piece.
     Strictly managed as a sub-entity of the Piece Aggregate Root.
@@ -276,7 +276,7 @@ class PieceVoiceRequirement(EnterpriseBaseModel):
             # Two constraints, not one: SQL treats NULLs as distinct, so a single
             # (piece, edition, voice_line) index would let the piece-wide layer
             # hold "T1" twice. Each layer therefore guards itself.
-            # Both stay aware of the EnterpriseBaseModel soft-deletion mechanism.
+            # Both stay aware of the SoftDeleteModel soft-deletion mechanism.
             models.UniqueConstraint(
                 fields=['piece', 'voice_line'],
                 condition=models.Q(is_deleted=False, edition__isnull=True),
@@ -306,7 +306,7 @@ class TrackKind(models.TextChoices):
     TEMPO_GIUSTO = 'TEMPO_GIUSTO', 'Tempo giusto'
 
 
-class Track(EnterpriseBaseModel):
+class Track(SoftDeleteModel):
     """
     Audio rehearsal materials (MIDI/MP3) associated with a piece.
 
@@ -400,7 +400,7 @@ class Track(EnterpriseBaseModel):
 # ==========================================================================
 
 
-class Movement(EnterpriseBaseModel):
+class Movement(SoftDeleteModel):
     """
     One movement of a multi-movement Piece (e.g., the 12 movements of Bach's Magnificat).
     Single-movement works use a single Movement with order_index=0.
@@ -449,7 +449,7 @@ class ScoreLicenseType(models.TextChoices):
     UNKNOWN           = 'UNK', _('Unclassified (treated as protected)')
 
 
-class ScoreEdition(EnterpriseBaseModel):
+class ScoreEdition(SoftDeleteModel):
     """
     A specific published PDF of a Piece (Bärenreiter vs. IMSLP scan vs. custom arrangement).
     One Piece can have many editions; conductors pick one per Concert.
@@ -570,7 +570,7 @@ class ScoreEdition(EnterpriseBaseModel):
         return self.license_type != ScoreLicenseType.PUBLIC_DOMAIN
 
 
-class Translation(EnterpriseBaseModel):
+class Translation(SoftDeleteModel):
     """
     A translation of a Piece (or a single Movement) into a target language.
     Multiple translations per piece are common (English, French, Polish singers in one ensemble).
@@ -620,7 +620,7 @@ class RecordingSource(models.TextChoices):
     OTHER   = 'OTH', _('Other')
 
 
-class Recording(EnterpriseBaseModel):
+class Recording(SoftDeleteModel):
     """
     A specific recording of a Piece on Spotify / YouTube / etc.
     Replaces the single-URL fields on Piece (which remain for legacy compatibility).
@@ -679,7 +679,7 @@ LEADER_ANNOTATION_LAYER = 'leader'
 PERSONAL_ANNOTATION_LAYER = 'personal'
 
 
-class Annotation(EnterpriseBaseModel):
+class Annotation(SoftDeleteModel):
     """
     A markup layer rendered on top of a ScoreEdition's PDF.
     Stored as data — never mutates the source PDF — and flattened into the
@@ -730,7 +730,7 @@ class Annotation(EnterpriseBaseModel):
         return f"{self.get_annotation_type_display()} on {self.edition} p.{self.page_number}"
 
 
-class ProgramNote(EnterpriseBaseModel):
+class ProgramNote(SoftDeleteModel):
     """
     Audience-facing program note for a Piece. May be canonical (no project)
     or concert-specific (tied to a roster.Project).
@@ -767,7 +767,7 @@ class ProgramNote(EnterpriseBaseModel):
         return f"{scope}{self.piece.title} ({self.language})"
 
 
-class ProvenanceRecord(EnterpriseBaseModel):
+class ProvenanceRecord(SoftDeleteModel):
     """
     Records WHERE a specific field's value came from. Powers the
     "AI-suggested vs. verified" UI, one-click regenerate, and audit reporting.
@@ -806,7 +806,7 @@ class ProvenanceRecord(EnterpriseBaseModel):
         return f"{self.field_name} ← {self.get_source_display()} @ {self.retrieved_at:%Y-%m-%d}"
 
 
-class ScoreAccessLog(EnterpriseBaseModel):
+class ScoreAccessLog(SoftDeleteModel):
     """
     Append-only record of every served access to a protected score — the single
     edition download AND the concert score-book binder. This is the due-diligence

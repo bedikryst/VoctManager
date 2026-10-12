@@ -1,7 +1,6 @@
 # roster/invitations.py
 # ==========================================
 # Publication invitation payload composition
-# Standard: Enterprise SaaS 2026
 # ==========================================
 """
 Builds the metadata behind a PROJECT_INVITATION.

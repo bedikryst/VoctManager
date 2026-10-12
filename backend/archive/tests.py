@@ -747,7 +747,7 @@ class ProgramNoteEndpointTests(APITestCase):
         resp = self.client.delete(self.url)
         self.assertEqual(resp.status_code, 204)
         self.note.refresh_from_db()
-        self.assertTrue(self.note.is_deleted)  # EnterpriseBaseModel soft-delete
+        self.assertTrue(self.note.is_deleted)  # SoftDeleteModel soft-delete
 
     def test_list_filters_by_piece(self) -> None:
         other = Piece.objects.create(title="Other")

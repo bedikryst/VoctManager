@@ -1,7 +1,6 @@
 # outreach/views.py
 # ==========================================
 # Outreach — public API views (thin HTTP layer)
-# Standard: Enterprise SaaS 2026
 # ==========================================
 from django.http import HttpResponseRedirect
 from rest_framework import status

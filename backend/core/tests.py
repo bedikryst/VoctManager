@@ -780,15 +780,15 @@ class PitchNotationPreferenceTests(APITestCase):
         self.assertEqual(self.profile.pitch_notation, "international")
 
 
-class EnterpriseExceptionHandlerTests(SimpleTestCase):
+class ApiExceptionHandlerTests(SimpleTestCase):
     """The API error envelope is the contract the frontend parses. Every branch
     must carry a stable, machine-readable `error_code` (so the client maps it to
     curated, localized copy) and a non-empty `detail`."""
 
     def setUp(self):
-        from .exceptions import enterprise_exception_handler
+        from .exceptions import api_exception_handler
 
-        self.handle = enterprise_exception_handler
+        self.handle = api_exception_handler
         self.context = {"request": RequestFactory().get("/api/test/")}
 
     def _envelope(self, exc):
@@ -919,7 +919,7 @@ class MakeErrorResponseEnvelopeTests(SimpleTestCase):
 class AccountErasureTests(TestCase):
     """
     Cover for GDPR erasure actually removing the profile. `delete()` on an
-    EnterpriseBaseModel is a soft delete, which would leave every preference row
+    SoftDeleteModel is a soft delete, which would leave every preference row
     (phone number, height, sizes) intact and still reachable through
     `user.profile`, since the reverse relation resolves via the unfiltered base
     manager. Erasure has to remove the data, not flag it.

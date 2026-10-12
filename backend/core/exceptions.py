@@ -120,7 +120,7 @@ def make_error_response(
 ) -> Response:
     """Build the canonical error envelope for hand-written view responses, so an
     endpoint that catches its own exception speaks the exact same shape as
-    `enterprise_exception_handler`. Centralizing it here is what lets the auth
+    `api_exception_handler`. Centralizing it here is what lets the auth
     views stop hand-rolling ad-hoc `{error_code, message}` payloads.
 
     `message` is kept as a transitional alias of `detail` so older clients that
@@ -154,7 +154,7 @@ def format_pydantic_validation_errors(exc: ValidationError) -> list[dict[str, st
     return errors
 
 
-def enterprise_exception_handler(exc, context) -> Response | None:
+def api_exception_handler(exc, context) -> Response | None:
     request_path = context['request'].path
 
     if isinstance(exc, ValidationError):

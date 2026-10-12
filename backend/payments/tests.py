@@ -1,7 +1,6 @@
 # payments/tests.py
 # ==========================================
 # Payments & Donations — endpoint tests
-# Standard: Enterprise SaaS 2026
 # ==========================================
 import hashlib
 import json

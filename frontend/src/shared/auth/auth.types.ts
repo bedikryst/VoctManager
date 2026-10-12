@@ -1,7 +1,7 @@
 /**
  * @file auth.types.ts
  * @description Shared authentication and RBAC contracts consumed across the frontend.
- * Mirrors the enterprise identity payload returned by the backend.
+ * Mirrors the identity payload returned by the backend.
  * @module shared/auth/types
  */
 

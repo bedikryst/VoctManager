@@ -1,7 +1,6 @@
 # payments/views.py
 # ==========================================
 # Payments & Donations API Views — thin HTTP layer
-# Standard: Enterprise SaaS 2026
 # ==========================================
 import logging
 from decimal import ROUND_DOWN, Decimal

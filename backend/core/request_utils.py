@@ -1,7 +1,6 @@
 # core/request_utils.py
 # ==========================================
 # Typed helpers for DRF request objects
-# Standard: Enterprise SaaS 2026
 # ==========================================
 from collections.abc import Collection, Mapping
 from typing import TYPE_CHECKING, Any, cast

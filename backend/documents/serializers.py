@@ -1,7 +1,6 @@
 # documents/serializers.py
 # ==========================================
 # Chorister Hub DRF Serializers
-# Standard: Enterprise SaaS 2026
 # ==========================================
 from typing import Any, cast
 

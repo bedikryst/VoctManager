@@ -1,6 +1,6 @@
 /**
  * @file useGeneralSettings.ts
- * @description Enterprise-grade custom hook for managing the general settings form state.
+ * @description Custom hook for managing the general settings form state.
  * Handles data synchronization, deep equality checks for 'dirty' state, and mutation flow.
  * Ensures strict TypeScript compliance with the expanded UpdatePreferencesPayload.
  * @module features/settings/hooks

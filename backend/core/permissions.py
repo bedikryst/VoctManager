@@ -1,7 +1,6 @@
 # core/permissions.py
 # ==========================================
-# Enterprise RBAC Permissions
-# Standard: Enterprise SaaS 2026
+# Role-based permissions
 # ==========================================
 from django.conf import settings
 from django.db.models import Q
@@ -73,7 +72,7 @@ def vocal_range_prompt_enabled_for(user: object) -> bool:
     return str(getattr(user, 'id', None)) in allowed_ids
 
 
-class BaseEnterprisePermission(permissions.BasePermission):
+class BaseRolePermission(permissions.BasePermission):
     """
     Abstract base permission class providing resilient user profile resolution.
     Prevents AttributeError when handling unauthenticated requests or broken relations.
@@ -91,7 +90,7 @@ class BaseEnterprisePermission(permissions.BasePermission):
 
 # --- Role-Based Permissions ---
 
-class IsManager(BaseEnterprisePermission):
+class IsManager(BaseRolePermission):
     """
     Grants access exclusively to users with the MANAGER role or Django staff flag.
     """
@@ -99,7 +98,7 @@ class IsManager(BaseEnterprisePermission):
         return self._is_manager(request)
 
 
-class IsBoard(BaseEnterprisePermission):
+class IsBoard(BaseRolePermission):
     """
     Grants access exclusively to board members (Django staff). See `user_is_board`.
     """
@@ -107,7 +106,7 @@ class IsBoard(BaseEnterprisePermission):
         return user_is_board(getattr(request, 'user', None))
 
 
-class IsArtist(BaseEnterprisePermission):
+class IsArtist(BaseRolePermission):
     """
     Grants access exclusively to users with the ARTIST role.
     """
@@ -116,7 +115,7 @@ class IsArtist(BaseEnterprisePermission):
         return bool(profile and profile.is_artist)
 
 
-class IsCrew(BaseEnterprisePermission):
+class IsCrew(BaseRolePermission):
     """
     Grants access exclusively to users with the CREW role.
     """
@@ -127,7 +126,7 @@ class IsCrew(BaseEnterprisePermission):
 
 # --- Hybrid Role & Action Permissions ---
 
-class IsManagerOrReadOnly(BaseEnterprisePermission):
+class IsManagerOrReadOnly(BaseRolePermission):
     """
     Grants read-only access (GET, HEAD, OPTIONS) to any authenticated user.
     Restricts write operations (POST, PUT, PATCH, DELETE) to Managers and staff.
@@ -138,7 +137,7 @@ class IsManagerOrReadOnly(BaseEnterprisePermission):
         return self._is_manager(request)
 
 
-class IsManagerOrCrew(BaseEnterprisePermission):
+class IsManagerOrCrew(BaseRolePermission):
     """
     Grants access to both Managers and Crew members.
     Typically used for logistical endpoints (e.g., viewing technical riders).
@@ -150,7 +149,7 @@ class IsManagerOrCrew(BaseEnterprisePermission):
 
 # --- Object-Level Permissions (OLP) ---
 
-class IsOwnerOrManager(BaseEnterprisePermission):
+class IsOwnerOrManager(BaseRolePermission):
     """
     Grants full object access to the object's owner or any Manager.
     Requires the view's model to have a 'user' or 'profile' reference.
@@ -173,7 +172,7 @@ class IsOwnerOrManager(BaseEnterprisePermission):
         return False
 
 
-class IsOwnerOrReadOnly(BaseEnterprisePermission):
+class IsOwnerOrReadOnly(BaseRolePermission):
     """
     Grants read-only access to all authenticated users.
     Write operations are restricted exclusively to the object's owner.

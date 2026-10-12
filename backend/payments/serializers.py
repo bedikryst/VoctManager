@@ -1,7 +1,6 @@
 # payments/serializers.py
 # ==========================================
 # Payments & Donations API Serializers
-# Standard: Enterprise SaaS 2026
 # ==========================================
 from decimal import Decimal
 

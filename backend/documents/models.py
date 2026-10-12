@@ -1,13 +1,12 @@
 # documents/models.py
 # ==========================================
 # Knowledge Base & Chorister Hub Domain Models
-# Standard: Enterprise SaaS 2026
 # ==========================================
 from django.conf import settings
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
-from core.models import EnterpriseBaseModel
+from core.models import SoftDeleteModel
 
 
 class DocumentIconKey(models.TextChoices):
@@ -27,7 +26,7 @@ class DocumentIconKey(models.TextChoices):
     MIC_2 = 'Mic2', _('Microphone / Performance')
 
 
-class DocumentCategory(EnterpriseBaseModel):
+class DocumentCategory(SoftDeleteModel):
     """
     Logical grouping for Knowledge Base documents.
     Role visibility is controlled via the `allowed_roles` JSON array.
@@ -57,7 +56,7 @@ class DocumentCategory(EnterpriseBaseModel):
         return self.name
 
 
-class Document(EnterpriseBaseModel):
+class Document(SoftDeleteModel):
     """
     A single file entry within a DocumentCategory.
     Supports per-document role overrides; falls back to category roles when empty.

@@ -1,6 +1,6 @@
 /**
  * @file intl.ts
- * @description Enterprise-grade internationalization utilities with explicit timezone support.
+ * @description Internationalization utilities with explicit timezone support.
  */
 import i18n from "@/shared/config/i18n";
 

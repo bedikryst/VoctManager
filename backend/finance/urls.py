@@ -1,7 +1,6 @@
 # finance/urls.py
 # ==========================================
 # Finance — URL routing (mounted at /api/finance/)
-# Standard: Enterprise SaaS 2026
 # ==========================================
 from django.urls import path
 

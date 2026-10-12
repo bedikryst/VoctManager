@@ -1,6 +1,6 @@
 /**
  * @file timezone.ts
- * @description Enterprise native timezone utilities.
+ * @description Native timezone utilities.
  */
 
 export const getAvailableTimezones = (): string[] => {

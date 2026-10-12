@@ -15,7 +15,7 @@ from uuid import UUID
 
 from pydantic import BeforeValidator, Field, field_validator, model_validator
 
-from roster.dtos import EnterpriseBaseDTO
+from roster.dtos import StrictDTO
 
 from .models import (
     DOCUMENT_NOTE_PLACEHOLDERS,
@@ -96,7 +96,7 @@ def _not_in_future(value: date | None, field_name: str) -> date | None:
     return value
 
 
-class FeeRefDTO(EnterpriseBaseDTO):
+class FeeRefDTO(StrictDTO):
     """Which ledger row an edit is about: a cast seat, a crew assignment, or an
     existing item (the only handle a one-off payee has)."""
 
@@ -118,7 +118,7 @@ class FeeRefDTO(EnterpriseBaseDTO):
         return key
 
 
-class FeeItemDTO(EnterpriseBaseDTO):
+class FeeItemDTO(StrictDTO):
     """One row of a pricing batch. `contract_amount` must be sent (null clears
     the price); `form` may be omitted to keep the row's form. The optional money
     fields are only touched when present, so a client can send what it edited."""
@@ -136,12 +136,12 @@ class FeeItemDTO(EnterpriseBaseDTO):
         return None if value is None else _require_choice(value, FEE_FORM_VALUES, "form")
 
 
-class StandardRateDTO(EnterpriseBaseDTO):
+class StandardRateDTO(StrictDTO):
     cast: MoneyAmount | None = None
     crew: MoneyAmount | None = None
 
 
-class FeeBatchDTO(EnterpriseBaseDTO):
+class FeeBatchDTO(StrictDTO):
     """The whole pricing edit, applied in one transaction: the standard rate
     first, then the rows. One refused row rolls back everything."""
 
@@ -158,7 +158,7 @@ class FeeBatchDTO(EnterpriseBaseDTO):
         return self
 
 
-class OneOffFeeDTO(EnterpriseBaseDTO):
+class OneOffFeeDTO(StrictDTO):
     """A payee from outside the panel — one concert, no roster record. They
     state which side they are on, and the form is chosen here: there is no
     roster record to derive a default from."""
@@ -188,7 +188,7 @@ class OneOffFeeDTO(EnterpriseBaseDTO):
         return _require_choice(value, FEE_FORM_VALUES, "form")
 
 
-class CostItemDetailsDTO(EnterpriseBaseDTO):
+class CostItemDetailsDTO(StrictDTO):
     """Bookkeeping details of one fee. Only the fields sent are changed. The
     payee and side of a one-off are here too; the service refuses them on a
     roster row (the roster is their source) and on a paid or contracted one.
@@ -216,7 +216,7 @@ class CostItemDetailsDTO(EnterpriseBaseDTO):
         return None if value is None else _require_choice(value, FEE_CATEGORY_VALUES, "category")
 
 
-class PayFeesDTO(EnterpriseBaseDTO):
+class PayFeesDTO(StrictDTO):
     """Marks items paid on the date the office reports. All or nothing."""
 
     ids: tuple[UUID, ...] = Field(..., min_length=1)
@@ -236,13 +236,13 @@ class PayFeesDTO(EnterpriseBaseDTO):
         return value
 
 
-class ReasonDTO(EnterpriseBaseDTO):
+class ReasonDTO(StrictDTO):
     """Every act that undoes a settled fact states why; the reason is logged."""
 
     reason: Text = Field(..., min_length=1, max_length=1000)
 
 
-class SignContractDTO(EnterpriseBaseDTO):
+class SignContractDTO(StrictDTO):
     signed_on: date
     signed_copy_location: Text = Field(default="", max_length=300)
 
@@ -267,11 +267,11 @@ class SignContractsDTO(SignContractDTO):
         return value
 
 
-class ContractHoursDTO(EnterpriseBaseDTO):
+class ContractHoursDTO(StrictDTO):
     hours_confirmed: Hours
 
 
-class BudgetLineDTO(EnterpriseBaseDTO):
+class BudgetLineDTO(StrictDTO):
     """A new plan line. Its planned amount is quantity times unit cost, computed by
     the server; its kosztorys number comes from its category and position."""
 
@@ -293,7 +293,7 @@ class BudgetLineDTO(EnterpriseBaseDTO):
         return _require_choice(value, PLAN_UNIT_VALUES, "unit")
 
 
-class BudgetLineUpdateDTO(EnterpriseBaseDTO):
+class BudgetLineUpdateDTO(StrictDTO):
     """A plan line's edit; only the fields sent change, and none may be null."""
 
     category: str | None = None
@@ -321,7 +321,7 @@ class BudgetLineUpdateDTO(EnterpriseBaseDTO):
         return self
 
 
-class LineOrderDTO(EnterpriseBaseDTO):
+class LineOrderDTO(StrictDTO):
     """Every live line of the budget, in its new order."""
 
     ids: tuple[UUID, ...] = Field(..., min_length=1)
@@ -334,7 +334,7 @@ class LineOrderDTO(EnterpriseBaseDTO):
         return value
 
 
-class ExpenseDTO(EnterpriseBaseDTO):
+class ExpenseDTO(StrictDTO):
     """A cost that is not a person's fee: the vendor, their document and its
     gross, which is the foundation's cost. The date it is incurred on is not
     sent: it is the document's date, or the concert day until there is one."""
@@ -363,7 +363,7 @@ class ExpenseDTO(EnterpriseBaseDTO):
         return _require_choice(value, DOCUMENT_TYPE_VALUES, "document_type")
 
 
-class ExpenseUpdateDTO(EnterpriseBaseDTO):
+class ExpenseUpdateDTO(StrictDTO):
     """An expense's edit; only the fields sent change. The dates, the line, the
     NIP and the text fields may be cleared; the rest may not."""
 
@@ -399,7 +399,7 @@ class ExpenseUpdateDTO(EnterpriseBaseDTO):
         return self
 
 
-class FundingSourceDTO(EnterpriseBaseDTO):
+class FundingSourceDTO(StrictDTO):
     """A new funding source. Every grant rule is optional; the document note
     falls back to the default formula when none is sent."""
 
@@ -430,7 +430,7 @@ class FundingSourceDTO(EnterpriseBaseDTO):
         return _require_choice(value, FUNDING_STATUS_VALUES, "status")
 
 
-class FundingSourceUpdateDTO(EnterpriseBaseDTO):
+class FundingSourceUpdateDTO(StrictDTO):
     """A source's edit; only the fields sent change. Kind, name, status and the
     note template stay set; everything else may be cleared."""
 
@@ -469,7 +469,7 @@ class FundingSourceUpdateDTO(EnterpriseBaseDTO):
         return self
 
 
-class ProjectFundingDTO(EnterpriseBaseDTO):
+class ProjectFundingDTO(StrictDTO):
     """A source put on a project: what the project expects of it and what has
     arrived so far."""
 
@@ -478,7 +478,7 @@ class ProjectFundingDTO(EnterpriseBaseDTO):
     received_amount: MoneyAmount = Decimal("0")
 
 
-class ProjectFundingUpdateDTO(EnterpriseBaseDTO):
+class ProjectFundingUpdateDTO(StrictDTO):
     planned_amount: MoneyAmount | None = None
     received_amount: MoneyAmount | None = None
 
@@ -490,12 +490,12 @@ class ProjectFundingUpdateDTO(EnterpriseBaseDTO):
         return self
 
 
-class AllocationDTO(EnterpriseBaseDTO):
+class AllocationDTO(StrictDTO):
     funding: UUID
     amount: PositiveAmount
 
 
-class AllocationSetDTO(EnterpriseBaseDTO):
+class AllocationSetDTO(StrictDTO):
     """Every source a plan line or a cost is split between, replacing the set
     it had. An empty set leaves the whole amount to the foundation's own funds."""
 
@@ -509,7 +509,7 @@ class AllocationSetDTO(EnterpriseBaseDTO):
         return self
 
 
-class ChargeCostsDTO(EnterpriseBaseDTO):
+class ChargeCostsDTO(StrictDTO):
     """Costs whose uncovered remainder goes to one funding. All or nothing."""
 
     ids: tuple[UUID, ...] = Field(..., min_length=1)
@@ -522,7 +522,7 @@ class ChargeCostsDTO(EnterpriseBaseDTO):
         return value
 
 
-class HistoryPageDTO(EnterpriseBaseDTO):
+class HistoryPageDTO(StrictDTO):
     """A page of the budget's history (`?limit=&offset=`)."""
 
     limit: int = Field(default=30, ge=1, le=100)
@@ -535,7 +535,7 @@ PAYABLES_MAX_LIMIT = 200
 PAYABLE_ORDERINGS = frozenset({"due_on", "amount", "payee", "project", "paid_on"})
 
 
-class PayablesQueryDTO(EnterpriseBaseDTO):
+class PayablesQueryDTO(StrictDTO):
     """`GET payables/` — what is owed (`status=unpaid`) or what was paid
     (`status=paid`), filtered, ordered and a page at a time. The paid-date
     range and the paid-date ordering only mean something for paid costs.
@@ -565,7 +565,7 @@ class PayablesQueryDTO(EnterpriseBaseDTO):
         return self
 
 
-class LedgerRangeDTO(EnterpriseBaseDTO):
+class LedgerRangeDTO(StrictDTO):
     """The office's export window, both ends inclusive (`?from=&to=`)."""
 
     date_from: date = Field(..., alias="from")
@@ -578,13 +578,13 @@ class LedgerRangeDTO(EnterpriseBaseDTO):
         return self
 
 
-class PatronSummaryDTO(EnterpriseBaseDTO):
+class PatronSummaryDTO(StrictDTO):
     """`PATCH projects/{id}/budget/` — the patron report's opening sentences."""
 
     patron_summary: Text = Field(..., max_length=1500)
 
 
-class SourceQueryDTO(EnterpriseBaseDTO):
+class SourceQueryDTO(StrictDTO):
     """An export's optional source (`?source=`): the grant a kosztorys's "z
     dotacji" column reads, or the one source whose document notes are wanted."""
 

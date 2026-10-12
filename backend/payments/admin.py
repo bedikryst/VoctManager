@@ -1,7 +1,6 @@
 # payments/admin.py
 # ==========================================
 # Payments & Donations — Django Admin
-# Standard: Enterprise SaaS 2026
 # ==========================================
 from django.contrib import admin
 

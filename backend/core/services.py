@@ -1,7 +1,6 @@
 # core/services.py
 # ==========================================
 # Core Domain Services
-# Standard: Enterprise SaaS 2026
 # ==========================================
 import logging
 import uuid
@@ -19,7 +18,7 @@ from django.utils.translation import override
 
 from notifications.email_service import EmailType
 
-# Enterprise Imports for Notifications
+# Notifications
 from notifications.email_tasks import send_transactional_email_task
 
 from .dtos import (
@@ -50,7 +49,7 @@ else:
 
 
 class UserIdentityService:
-    """Enterprise service managing core authentication identity and account life-cycles."""
+    """Manages authentication identities and the account life cycle."""
 
     @staticmethod
     def generate_activation_token_payload(user: User) -> dict[str, str]:
@@ -61,7 +60,7 @@ class UserIdentityService:
     @staticmethod
     def provision_user_account(email: str, first_name: str, last_name: str, language: str = 'pl', first_name_vocative: str = '', salutation: str = 'N') -> User:
         """
-        Enterprise IAM: Provisions a new core identity and profile.
+        Provisions a new identity and its profile.
         Generates a collision-free UUID username, handles activation tokens,
         and explicitly dispatches the secure onboarding email.
 
@@ -483,7 +482,7 @@ class UserIdentityService:
             user.save(update_fields=['email', 'username', 'first_name', 'last_name', 'is_active'])
             
             # 2. Erase Core Preferences for real. `delete()` on an
-            #    EnterpriseBaseModel is a soft delete, which would leave the whole
+            #    SoftDeleteModel is a soft delete, which would leave the whole
             #    profile row (phone number, height, clothing/shoe size) intact and
             #    still reachable through `user.profile` — the reverse relation
             #    resolves via the unfiltered base manager. Erasure has to remove the
@@ -615,7 +614,7 @@ class UserPreferencesService:
         """
         data = {
             "generated_at": timezone.now().isoformat(),
-            "app_name": "VoctManager Enterprise 2026",
+            "app_name": "VoctManager",
             "account": {
                 "id": str(user.id),
                 "email": user.email,

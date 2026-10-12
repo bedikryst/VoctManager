@@ -1,6 +1,6 @@
 # roster/management/commands/seed_db.py
 # ==========================================
-# Database Seeder (Enterprise SaaS 2026)
+# Database Seeder
 # ==========================================
 """
 Generates a rich, realistic, Polish-flavoured dataset for local development,

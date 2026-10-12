@@ -1,7 +1,6 @@
 # core/dtos.py
 # ==========================================
 # Core Data Transfer Objects (DTOs)
-# Standard: Enterprise SaaS 2026 (Pydantic V2)
 # ==========================================
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
@@ -48,7 +47,7 @@ def _blank_to_empty(value: object) -> object:
     return value.strip()
 
 
-class EnterpriseBaseDTO(BaseModel):
+class StrictDTO(BaseModel):
     """
     Base DTO enforcing immutability and rejecting undefined fields.
     Prevents API payload pollution (Mass Assignment Vulnerabilities).
@@ -56,7 +55,7 @@ class EnterpriseBaseDTO(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid", validate_by_name=True, validate_by_alias=True)
 
 
-class UserPreferencesUpdateDTO(EnterpriseBaseDTO):
+class UserPreferencesUpdateDTO(StrictDTO):
     first_name: str = Field(..., min_length=1, max_length=150)
     last_name: str = Field(..., min_length=1, max_length=150)
     phone_number: str | None = Field(None, max_length=32)
@@ -131,13 +130,13 @@ class UserPreferencesUpdateDTO(EnterpriseBaseDTO):
         return _require_choice(value, CLOTHING_SIZE_VALUES, "clothing_size")
 
 
-class UserPasswordChangeDTO(EnterpriseBaseDTO):
+class UserPasswordChangeDTO(StrictDTO):
     old_password: str = Field(..., min_length=1)
-    # Enterprise standard: passwords must be at least 8 characters
+    # Passwords must be at least 8 characters.
     new_password: str = Field(..., min_length=8) 
 
 
-class UserAccountActivationDTO(EnterpriseBaseDTO):
+class UserAccountActivationDTO(StrictDTO):
     uidb64: str = Field(..., min_length=1)
     token: str = Field(..., min_length=1)
     new_password: str = Field(..., min_length=8)
@@ -147,31 +146,31 @@ class UserAccountActivationDTO(EnterpriseBaseDTO):
     terms_version: str = Field(..., min_length=1, max_length=20)
 
 
-class UserPasswordResetRequestDTO(EnterpriseBaseDTO):
+class UserPasswordResetRequestDTO(StrictDTO):
     """Public, enumeration-safe reset request — only an e-mail is accepted."""
     # EmailStr automatically validates regex and domain structures
     email: EmailStr
 
 
-class UserPasswordResetConfirmDTO(EnterpriseBaseDTO):
+class UserPasswordResetConfirmDTO(StrictDTO):
     """Finalizes a reset from a signed link. Mirrors activation's contract."""
     uidb64: str = Field(..., min_length=1)
     token: str = Field(..., min_length=1)
     new_password: str = Field(..., min_length=8)
 
 
-class UserEmailChangeDTO(EnterpriseBaseDTO):
+class UserEmailChangeDTO(StrictDTO):
     # EmailStr automatically validates regex and domain structures
     new_email: EmailStr
     current_password: str = Field(..., min_length=1)
 
 
-class UserAccountDeletionDTO(EnterpriseBaseDTO):
+class UserAccountDeletionDTO(StrictDTO):
     """Data contract enforcing re-authentication before account erasure."""
     current_password: str = Field(..., min_length=1)
 
 
-class SeasonCalendarToggleDTO(EnterpriseBaseDTO):
+class SeasonCalendarToggleDTO(StrictDTO):
     """Turns a manager's season feed on or off. Strict: the panel's switch
     sends a JSON boolean, and anything else is a malformed request rather than
     a spelling of yes or no to be guessed at."""

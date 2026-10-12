@@ -64,7 +64,7 @@ def _plan_moment_line(project: Project, moment: PlanMoment) -> str:
 
 class ICalGeneratorService:
     """
-    Enterprise service for generating secure, RFC-5545 compliant iCalendar feeds.
+    Generates RFC 5545 iCalendar feeds.
     """
 
     @staticmethod
@@ -338,7 +338,7 @@ class ICalGeneratorService:
         lines = [
             "BEGIN:VCALENDAR",
             "VERSION:2.0",
-            "PRODID:-//VoctManager Enterprise//EN",
+            "PRODID:-//VoctManager//EN",
             "CALSCALE:GREGORIAN",
             "METHOD:PUBLISH",
         ]
@@ -444,7 +444,7 @@ class ICalGeneratorService:
         return [
             "BEGIN:VCALENDAR",
             "VERSION:2.0",
-            "PRODID:-//VoctManager Enterprise//EN",
+            "PRODID:-//VoctManager//EN",
             "CALSCALE:GREGORIAN",
             "METHOD:PUBLISH",
             f"NAME:{name}",

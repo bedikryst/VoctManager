@@ -1,7 +1,6 @@
 # core/preview.py
 # ==========================================
 # Manager-side preview of a member's own view
-# Standard: Enterprise SaaS 2026
 # ==========================================
 import logging
 from typing import TYPE_CHECKING, NamedTuple

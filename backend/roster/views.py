@@ -1,7 +1,6 @@
 # roster/views.py
 # ==========================================
 # Roster API ViewSets (Thin Controllers)
-# Standard: Enterprise SaaS 2026
 # ==========================================
 """
 REST API Controllers for the Roster application.

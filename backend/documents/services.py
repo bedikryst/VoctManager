@@ -1,7 +1,6 @@
 # documents/services.py
 # ==========================================
 # Chorister Hub Service Layer
-# Standard: Enterprise SaaS 2026
 # ==========================================
 import logging
 from typing import TYPE_CHECKING, Any, ClassVar

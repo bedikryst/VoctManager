@@ -1,7 +1,6 @@
 # outreach/copy.py
 # ==========================================
 # What the confirmation mail says, in the three languages the public site speaks
-# Standard: Enterprise SaaS 2026
 # ==========================================
 """
 The one mail this app sends, as text rather than as a gettext catalogue.

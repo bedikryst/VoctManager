@@ -14,7 +14,7 @@ from django.core.validators import RegexValidator
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
-from core.models import EnterpriseBaseModel
+from core.models import SoftDeleteModel
 
 #: A dotted, namespaced id: `concert.wcielenie.program.3.note`,
 #: `page.kontakt.hero.lede`. At least two parts, because the first two ARE the
@@ -108,7 +108,7 @@ def self_accepted_filter() -> models.Q:
     )
 
 
-class CopySegment(EnterpriseBaseModel):
+class CopySegment(SoftDeleteModel):
     """One editable field of one page or concert, in one locale.
 
     **Git is the source of truth and this table is a mirror of it.** Rows are
@@ -207,7 +207,7 @@ class CopySegment(EnterpriseBaseModel):
             ),
         ]
         indexes = [
-            # Declared explicitly: overriding Meta drops EnterpriseBaseModel's own.
+            # Declared explicitly: overriding Meta drops SoftDeleteModel's own.
             models.Index(fields=["is_deleted", "-created_at"], name="copydesk_seg_isdel_idx"),
             # The desk is always read one page at a time, in reading order.
             models.Index(fields=["scope", "locale", "order"], name="copydesk_seg_scope_idx"),
@@ -222,7 +222,7 @@ class CopySegment(EnterpriseBaseModel):
         return self.locale == SiteLocale.POLISH
 
 
-class CopyProposal(EnterpriseBaseModel):
+class CopyProposal(SoftDeleteModel):
     """One editor's proposed value for one segment.
 
     Attribution is not bookkeeping. §2's two-iteration rule turns on knowing who
@@ -362,7 +362,7 @@ class CopyProposal(EnterpriseBaseModel):
         )
 
 
-class CopyScopeVisit(EnterpriseBaseModel):
+class CopyScopeVisit(SoftDeleteModel):
     """One reader's watermark on one page of the corpus.
 
     **A row means "I have read this page", and only an explicit act writes one.**
@@ -425,7 +425,7 @@ class CopyScopeVisit(EnterpriseBaseModel):
             ),
         ]
         indexes = [
-            # Declared explicitly: overriding Meta drops EnterpriseBaseModel's own.
+            # Declared explicitly: overriding Meta drops SoftDeleteModel's own.
             models.Index(fields=["is_deleted", "-created_at"], name="copydesk_visit_isdel_idx"),
             # The contents list reads every one of a reader's watermarks at once.
             models.Index(fields=["user", "scope"], name="copydesk_visit_user_idx"),

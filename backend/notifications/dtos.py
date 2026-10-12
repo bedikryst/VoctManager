@@ -1,7 +1,6 @@
 # notifications/dtos.py
 # ==========================================
 # Notifications Data Transfer Objects (DTOs)
-# Standard: Enterprise SaaS 2026 (Pydantic V2)
 # ==========================================
 from typing import Any
 from uuid import UUID
@@ -20,7 +19,7 @@ def _require_choice(value: str, allowed_values: frozenset[str], field_name: str)
         raise ValueError(f"{field_name} must be one of: {allowed}.")
     return value
 
-class EnterpriseBaseDTO(BaseModel):
+class StrictDTO(BaseModel):
     """Base payload model ensuring immutability for Celery serialization."""
     model_config = ConfigDict(frozen=True, extra="forbid", validate_by_name=True, validate_by_alias=True)
 
@@ -35,7 +34,7 @@ class EnterpriseBaseDTO(BaseModel):
 # language). Human-readable copy is composed at render time, per surface, per
 # language — see notifications/message_content.py and the frontend NotificationItem.
 
-class FieldChangeMetadata(EnterpriseBaseDTO):
+class FieldChangeMetadata(StrictDTO):
     """One audited field change. `field` is a stable key (e.g. 'location',
     'date_time'); its human label is localized at render time. `old`/`new` are
     pre-formatted, language-neutral display values (or None when unset)."""
@@ -44,7 +43,7 @@ class FieldChangeMetadata(EnterpriseBaseDTO):
     new: str | None = None
 
 
-class EventMomentMetadata(EnterpriseBaseDTO):
+class EventMomentMetadata(StrictDTO):
     """Canonical event moment. `starts_at` is ISO-8601; display text is fallback-only.
 
     The closing moment is present only where one was entered — an unset end is
@@ -59,7 +58,7 @@ class EventMomentMetadata(EnterpriseBaseDTO):
 
 
 # --- Project Management ---
-class InvitationRehearsalMetadata(EnterpriseBaseDTO):
+class InvitationRehearsalMetadata(StrictDTO):
     """One rehearsal inside the invitation's schedule block. Carries the canonical
     moment rather than a rendered date, so every recipient reads it in their own
     language — the same contract as any other event moment in this module."""
@@ -80,7 +79,7 @@ class InvitationRehearsalMetadata(EnterpriseBaseDTO):
     sections: tuple[str, ...] = ()
 
 
-class ProjectInvitationMetadata(EnterpriseBaseDTO):
+class ProjectInvitationMetadata(StrictDTO):
     """The whole decision, in one message.
 
     An invitation is the only thing a singer gets before answering, so it has to
@@ -133,7 +132,7 @@ class ProjectInvitationMetadata(EnterpriseBaseDTO):
     voice_scope: tuple[str, ...] = ()
     message: str | None = None
 
-class BriefingItemMetadata(EnterpriseBaseDTO):
+class BriefingItemMetadata(StrictDTO):
     """One thing that changed, carried inside a composite briefing.
 
     The nested `metadata` is the payload the emitting service built, untouched —
@@ -150,7 +149,7 @@ class BriefingItemMetadata(EnterpriseBaseDTO):
     metadata: dict[str, Any] = Field(default_factory=dict)
 
 
-class ProjectBriefingMetadata(EnterpriseBaseDTO):
+class ProjectBriefingMetadata(StrictDTO):
     """Everything one artist has not been told about one project.
 
     Assembled at publication from the collapsed queue: the changes the whole cast
@@ -175,7 +174,7 @@ class ProjectBriefingMetadata(EnterpriseBaseDTO):
     message: str | None = None
 
 
-class AnnouncementPendingMetadata(EnterpriseBaseDTO):
+class AnnouncementPendingMetadata(StrictDTO):
     """A live project whose queue has been sitting unpublished — addressed to the
     managers, not the cast.
 
@@ -199,7 +198,7 @@ class AnnouncementPendingMetadata(EnterpriseBaseDTO):
     message: str | None = None
 
 
-class CopyScopeMetadata(EnterpriseBaseDTO):
+class CopyScopeMetadata(StrictDTO):
     """One page an editor touched, and how much of it.
 
     `label` is the page's own name as the site prints it ("Kontemplacja
@@ -212,7 +211,7 @@ class CopyScopeMetadata(EnterpriseBaseDTO):
     count: int = 0
 
 
-class SiteCopyProposedMetadata(EnterpriseBaseDTO):
+class SiteCopyProposedMetadata(StrictDTO):
     """An editor's sitting at the copy desk, gathered once they have stopped.
 
     `locales` carries bare codes, not language names: whether "en" reads as
@@ -246,7 +245,7 @@ class ProjectCancelledMetadata(EventMomentMetadata):
     message: str | None = None
 
 
-class ProjectUpdatedMetadata(EnterpriseBaseDTO):
+class ProjectUpdatedMetadata(StrictDTO):
     project_id: UUID | None = None
     project_name: str
     # The Project.EventKind CODE, after the save — a change of the kind itself
@@ -299,7 +298,7 @@ class DelegatedRehearsalMetadata(EventMomentMetadata):
     focus: str = ""
 
 
-class RehearsalDelegationMetadata(EnterpriseBaseDTO):
+class RehearsalDelegationMetadata(StrictDTO):
     """Somebody has been asked to stand in front of the choir.
 
     The scope flags travel because they ARE the message: a delegation is not one
@@ -326,7 +325,7 @@ class RehearsalDelegationMetadata(EnterpriseBaseDTO):
     next_rehearsal: DelegatedRehearsalMetadata | None = None
 
 
-class RehearsalDelegationEndedMetadata(EnterpriseBaseDTO):
+class RehearsalDelegationEndedMetadata(StrictDTO):
     """The delegation has been taken back. Nothing to explain, only to withdraw."""
     project_id: UUID
     project_name: str
@@ -377,7 +376,7 @@ class RehearsalDebriefPostedMetadata(EventMomentMetadata):
 SOLO_CHANGE_FIELD = "solo_assignments"
 
 
-class SoloDutyMetadata(EnterpriseBaseDTO):
+class SoloDutyMetadata(StrictDTO):
     """One named solo as a message names it: the conductor's label for the
     passage and its place in the score. A name, never a code to localize."""
     id: UUID
@@ -416,13 +415,13 @@ class PieceCastingMetadata(EventMomentMetadata):
     choir_voice_line: str | None = None
 
 # --- HR & Logistics ---
-class CrewAssignedMetadata(EnterpriseBaseDTO):
+class CrewAssignedMetadata(StrictDTO):
     project_id: UUID
     project_name: str
     role: str
     message: str | None = None
 
-class AbsenceStatusMetadata(EnterpriseBaseDTO):
+class AbsenceStatusMetadata(StrictDTO):
     rehearsal_id: UUID
     project_name: str
     # Canonical event moment; `rehearsal_date` stays as the legacy display fallback.
@@ -438,7 +437,7 @@ class AbsenceStatusMetadata(EnterpriseBaseDTO):
     rehearsal_count: int | None = None
 
 
-class ManagerActionMetadata(EnterpriseBaseDTO):
+class ManagerActionMetadata(StrictDTO):
     """Manager-facing roster signal (attendance update, RSVP, absence request).
     Structured codes only — the prose is composed per surface/language at render."""
     project_name: str
@@ -472,7 +471,7 @@ class ManagerActionMetadata(EnterpriseBaseDTO):
     attendance_ids: list[str] | None = None
 
 
-class CustomAdminMessageMetadata(EnterpriseBaseDTO):
+class CustomAdminMessageMetadata(StrictDTO):
     """Payload for direct manager-to-artist messages. Carries sender context for read receipts."""
     title: str = Field(..., max_length=120)
     message: str = Field(..., max_length=2000)
@@ -488,7 +487,7 @@ class CustomAdminMessageMetadata(EnterpriseBaseDTO):
         return _require_choice(value, NOTIFICATION_LEVEL_VALUES, "level")
 
 
-class NotificationReadReceiptMetadata(EnterpriseBaseDTO):
+class NotificationReadReceiptMetadata(StrictDTO):
     """Payload sent back to the manager when the artist reads a CUSTOM_ADMIN_MESSAGE."""
     artist_name: str
     artist_id: str | UUID
@@ -518,7 +517,7 @@ class RehearsalReminderMetadata(EventMomentMetadata):
     message: str | None = None
 
 
-class MaterialUploadedMetadata(EnterpriseBaseDTO):
+class MaterialUploadedMetadata(StrictDTO):
     piece_id: UUID | None = None
     material_id: UUID | None = None
     piece_title: str | None = None
@@ -529,7 +528,7 @@ class MaterialUploadedMetadata(EnterpriseBaseDTO):
     message: str | None = None
 
 
-class ContractIssuedMetadata(EnterpriseBaseDTO):
+class ContractIssuedMetadata(StrictDTO):
     contract_id: UUID | None = None
     project_id: UUID | None = None
     project_name: str
@@ -538,7 +537,7 @@ class ContractIssuedMetadata(EnterpriseBaseDTO):
     message: str | None = None
 
 
-class SystemAlertMetadata(EnterpriseBaseDTO):
+class SystemAlertMetadata(StrictDTO):
     title: str | None = Field(None, max_length=120)
     message: str | None = Field(None, max_length=2000)
     cta_url: str | None = Field(None, max_length=500)
@@ -571,7 +570,7 @@ NotificationMetadataPayload = (
 # CORE DATA TRANSFER OBJECT
 # ==========================================
 
-class NotificationCreateDTO(EnterpriseBaseDTO):
+class NotificationCreateDTO(StrictDTO):
     """
     Data Transfer Object strictly typing the payload for notification creation.
     Guarantees structural integrity before passing to Celery and Service layers.

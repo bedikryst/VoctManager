@@ -531,7 +531,7 @@ class MovementViewSet(viewsets.ModelViewSet):
         )
 
     def perform_destroy(self, instance) -> None:
-        instance.delete()  # EnterpriseBaseModel soft-delete
+        instance.delete()  # SoftDeleteModel soft-delete
 
 
 class TranslationViewSet(viewsets.ModelViewSet):
@@ -550,7 +550,7 @@ class TranslationViewSet(viewsets.ModelViewSet):
         )
 
     def perform_destroy(self, instance) -> None:
-        instance.delete()  # EnterpriseBaseModel soft-delete
+        instance.delete()  # SoftDeleteModel soft-delete
 
 
 class RecordingViewSet(viewsets.ModelViewSet):
@@ -563,7 +563,7 @@ class RecordingViewSet(viewsets.ModelViewSet):
     filterset_fields = ['piece', 'source']
 
     def perform_destroy(self, instance) -> None:
-        instance.delete()  # EnterpriseBaseModel soft-delete
+        instance.delete()  # SoftDeleteModel soft-delete
 
 
 class ProgramNoteViewSet(viewsets.ModelViewSet):
@@ -582,7 +582,7 @@ class ProgramNoteViewSet(viewsets.ModelViewSet):
     filterset_fields = ['piece', 'project', 'language']
 
     def perform_destroy(self, instance) -> None:
-        instance.delete()  # EnterpriseBaseModel soft-delete
+        instance.delete()  # SoftDeleteModel soft-delete
 
 
 # ===========================================================================
@@ -732,7 +732,7 @@ class ScoreEditionViewSet(viewsets.ModelViewSet):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def perform_destroy(self, instance: ScoreEdition) -> None:
-        # Inherit EnterpriseBaseModel soft-delete (sets is_deleted=True).
+        # Inherit SoftDeleteModel soft-delete (sets is_deleted=True).
         instance.delete()
 
     @action(detail=True, methods=['post'])
@@ -1064,7 +1064,7 @@ class AnnotationViewSet(viewsets.ModelViewSet):
             edition=instance.edition,
             instance=instance,
         )
-        # Inherit EnterpriseBaseModel soft-delete (sets is_deleted=True).
+        # Inherit SoftDeleteModel soft-delete (sets is_deleted=True).
         instance.delete()
 
     @action(detail=False, methods=['get'], url_path='fingerprint')

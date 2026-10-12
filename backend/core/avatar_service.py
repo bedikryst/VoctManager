@@ -1,7 +1,6 @@
 # core/avatar_service.py
 # ==========================================
 # Avatar Image Processing Service
-# Standard: Enterprise SaaS 2026
 # ==========================================
 """
 Security-first avatar pipeline. The browser sends an already-cropped square

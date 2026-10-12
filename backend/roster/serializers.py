@@ -1,7 +1,6 @@
 # roster/serializers.py
 # ==========================================
 # Roster API Serializers
-# Standard: Enterprise SaaS 2026
 # ==========================================
 """
 REST API Serializers for the Roster application.
@@ -81,7 +80,7 @@ class ArtistBasicSerializer(serializers.ModelSerializer):
     Publicly safe Artist entity. 
     Strips all sensitive contact, HR, and financial data.
     """
-    # Enterprise RBAC: Expose business role, not DB admin status
+    # Expose the business role, not the database admin flag.
     is_manager = serializers.BooleanField(source='user.profile.is_manager', read_only=True)
     voice_type_display = serializers.CharField(source='get_voice_type_display', read_only=True)
     username = serializers.CharField(source='user.username', read_only=True)
@@ -605,7 +604,7 @@ class RehearsalPlanItemSerializer(serializers.ModelSerializer):
 class RehearsalSerializer(serializers.ModelSerializer):
     """
     Serializes Rehearsal schedules.
-    ENTERPRISE NOTE: 'absent_count' is now expected to be pre-annotated by the DB
+    'absent_count' is expected to be pre-annotated by the DB
     via the QuerySet to prevent N+1 serialization bottlenecks.
     """
     absent_count = serializers.IntegerField(read_only=True, default=0)

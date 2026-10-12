@@ -1,7 +1,6 @@
 # payments/services.py
 # ==========================================
 # Axepta BNP Paribas Payment Integration — Service Layer
-# Standard: Enterprise SaaS 2026
 # ==========================================
 #
 # SECURITY NOTE — webhook signature scheme:

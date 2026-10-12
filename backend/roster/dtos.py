@@ -1,7 +1,6 @@
 # roster/dtos.py
 # ==========================================
 # Roster Data Transfer Objects (DTOs)
-# Standard: Enterprise SaaS 2026 (Pydantic V2)
 # ==========================================
 from datetime import datetime, time, timedelta
 from typing import Annotated, Any, Self
@@ -165,11 +164,11 @@ def _check_run_sheet_rows(
     return rows
 
 
-class EnterpriseBaseDTO(BaseModel):
+class StrictDTO(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid", validate_by_name=True, validate_by_alias=True)
 
 
-class ArtistCreateDTO(EnterpriseBaseDTO):
+class ArtistCreateDTO(StrictDTO):
     # Widths track `AbstractUser` (150), which is where these values are actually
     # persisted — a narrower limit here would reject a name the account accepts.
     first_name: str = Field(..., min_length=1, max_length=150)
@@ -256,7 +255,7 @@ class ArtistCreateDTO(EnterpriseBaseDTO):
         return _require_choice((value or "N").upper(), SALUTATION_VALUES, "salutation")
 
 
-class AttendanceRecordDTO(EnterpriseBaseDTO):
+class AttendanceRecordDTO(StrictDTO):
     """One attendance row, written by either of its two authors.
 
     Two flags, because the roll call and the verdict are two different powers and
@@ -294,7 +293,7 @@ class AttendanceRecordDTO(EnterpriseBaseDTO):
         return _blankable_string(value)
 
 
-class AttendanceRangeWindowDTO(EnterpriseBaseDTO):
+class AttendanceRangeWindowDTO(StrictDTO):
     """One artist, one span of days — the question both the preview and the write
     ask, so neither can resolve a different set of rehearsals than the other.
 
@@ -349,7 +348,7 @@ class AttendanceRangeDTO(AttendanceRangeWindowDTO):
         return _blankable_string(value)
 
 
-class ParticipationStatusUpdateDTO(EnterpriseBaseDTO):
+class ParticipationStatusUpdateDTO(StrictDTO):
     """Data contract for artist or manager participation status changes."""
 
     status: str = Field(..., max_length=3)
@@ -360,14 +359,14 @@ class ParticipationStatusUpdateDTO(EnterpriseBaseDTO):
         return _require_choice(value, PARTICIPATION_STATUS_VALUES, "status")
 
 
-class CastOrderRowDTO(EnterpriseBaseDTO):
+class CastOrderRowDTO(StrictDTO):
     """One singer's place in the section the conductor just arranged."""
 
     participation: UUID
     section_rank: int = Field(..., ge=0)
 
 
-class CastOrderDTO(EnterpriseBaseDTO):
+class CastOrderDTO(StrictDTO):
     """A rearranged voice section, sent whole.
 
     Reordering is not a per-singer edit: moving one name moves every name under
@@ -402,7 +401,7 @@ class CastOrderDTO(EnterpriseBaseDTO):
         return self
 
 
-class PieceReadinessUpdateDTO(EnterpriseBaseDTO):
+class PieceReadinessUpdateDTO(StrictDTO):
     """Data contract for an artist's practice-readiness self report on one piece."""
 
     piece: UUID
@@ -414,7 +413,7 @@ class PieceReadinessUpdateDTO(EnterpriseBaseDTO):
         return _require_choice(value, PIECE_READINESS_STATUS_VALUES, "status")
 
 
-class VocalRangeProposalDTO(EnterpriseBaseDTO):
+class VocalRangeProposalDTO(StrictDTO):
     """A singer's own tessitura, written by touching sounding keys, never typed
     note names — see docs/specs/vocal-range-self-report-2026-09.md ("Thesis").
     All values are MIDI numbers; notation is presentation only.
@@ -445,7 +444,7 @@ class VocalRangeProposalDTO(EnterpriseBaseDTO):
         return self
 
 
-class PieceCastingRowDTO(EnterpriseBaseDTO):
+class PieceCastingRowDTO(StrictDTO):
     """One seat on the divisi board: this participant, on this voice line."""
 
     participation: UUID
@@ -464,7 +463,7 @@ class PieceCastingRowDTO(EnterpriseBaseDTO):
         return _blankable_string(value)
 
 
-class PieceBoardDTO(EnterpriseBaseDTO):
+class PieceBoardDTO(StrictDTO):
     """The complete divisi board for one piece.
 
     Declarative rather than incremental: whatever the conductor sees on screen is
@@ -504,7 +503,7 @@ class PieceCastingBoardDTO(PieceBoardDTO):
     project: UUID
 
 
-class PieceCastingBoardsDTO(EnterpriseBaseDTO):
+class PieceCastingBoardsDTO(StrictDTO):
     """Several boards of one project, saved as one act.
 
     What the line-up fill sends: the programme is cast in a single stroke, so it
@@ -542,7 +541,7 @@ class PieceCastingBoardsDTO(EnterpriseBaseDTO):
 SCORE_REFERENCE_MAX_LENGTH = 500
 
 
-class SoloAssignmentRowDTO(EnterpriseBaseDTO):
+class SoloAssignmentRowDTO(StrictDTO):
     """One ordered named solo position; an empty performer leaves it open."""
 
     id: UUID | None = None
@@ -567,7 +566,7 @@ class SoloAssignmentRowDTO(EnterpriseBaseDTO):
         return _blankable_string(value)
 
 
-class PieceSoloAssignmentsDTO(EnterpriseBaseDTO):
+class PieceSoloAssignmentsDTO(StrictDTO):
     project: UUID
     piece: UUID
     solo_assignments: tuple[SoloAssignmentRowDTO, ...]
@@ -581,7 +580,7 @@ class PieceSoloAssignmentsDTO(EnterpriseBaseDTO):
         return self
 
 
-class ConvertLegacySoloDTO(EnterpriseBaseDTO):
+class ConvertLegacySoloDTO(StrictDTO):
     casting: UUID
     label: str = Field(..., min_length=1, max_length=200)
     score_reference: str = Field(default='', max_length=SCORE_REFERENCE_MAX_LENGTH)
@@ -601,7 +600,7 @@ class ConvertLegacySoloDTO(EnterpriseBaseDTO):
         return _blankable_string(value)
 
 
-class ProjectCreateDTO(EnterpriseBaseDTO):
+class ProjectCreateDTO(StrictDTO):
     """Data contract for creating a new project."""
     title: str = Field(..., min_length=1, max_length=200)
     date_time: datetime
@@ -684,7 +683,7 @@ class ProjectCreateDTO(EnterpriseBaseDTO):
         return self
 
 
-class ProjectUpdateDTO(EnterpriseBaseDTO):
+class ProjectUpdateDTO(StrictDTO):
     """Data contract for partial or full updates of a project."""
     title: str | None = Field(None, min_length=1, max_length=200)
     date_time: datetime | None = None
@@ -792,7 +791,7 @@ class ProjectUpdateDTO(EnterpriseBaseDTO):
         return self
 
 
-class RehearsalCreateDTO(EnterpriseBaseDTO):
+class RehearsalCreateDTO(StrictDTO):
     """Data contract for scheduling a new rehearsal."""
     project_id: UUID
     date_time: datetime
@@ -830,7 +829,7 @@ class RehearsalCreateDTO(EnterpriseBaseDTO):
         return _validate_called_sections(value)
 
 
-class RehearsalUpdateDTO(EnterpriseBaseDTO):
+class RehearsalUpdateDTO(StrictDTO):
     """Data contract for updating an existing rehearsal."""
     date_time: datetime | None = None
     # Null is a real value here, unlike on the required fields below: clearing
@@ -872,7 +871,7 @@ class RehearsalUpdateDTO(EnterpriseBaseDTO):
         return self
 
 
-class LeadSheetUpdateDTO(EnterpriseBaseDTO):
+class LeadSheetUpdateDTO(StrictDTO):
     """What the person running one evening may change about it: the work plan
     before, the debrief after.
 
@@ -906,7 +905,7 @@ class LeadSheetUpdateDTO(EnterpriseBaseDTO):
         return RehearsalUpdateDTO(**self.model_dump(include={"focus"}, exclude_unset=True))
 
 
-class RehearsalPlanRowDTO(EnterpriseBaseDTO):
+class RehearsalPlanRowDTO(StrictDTO):
     """One row of the plan as the editor sends it. Position is the index in
     the list — the client never numbers rows. `id` names an existing row so
     its debrief verdict survives a re-save; a row without one is new.
@@ -966,7 +965,7 @@ class RehearsalPlanRowDTO(EnterpriseBaseDTO):
         return self
 
 
-class RehearsalPlanDTO(EnterpriseBaseDTO):
+class RehearsalPlanDTO(StrictDTO):
     """The whole plan of one rehearsal, saved as one act — declarative like a
     divisi board: what is on screen is what is sent, and the server
     reconciles. An empty list clears the plan.
@@ -1008,7 +1007,7 @@ class RehearsalPlanDTO(EnterpriseBaseDTO):
         return self
 
 
-class RehearsalPlanItemDoneDTO(EnterpriseBaseDTO):
+class RehearsalPlanItemDoneDTO(StrictDTO):
     """The one thing the debrief writes per row."""
 
     done: bool

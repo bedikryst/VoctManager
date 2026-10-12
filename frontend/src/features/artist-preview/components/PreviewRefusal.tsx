@@ -4,7 +4,7 @@
  *
  * The reason travels as a SENTENCE, not a code. `core/preview.py` raises DRF
  * exceptions whose `default_code` the shared error envelope
- * (`core/exceptions.py::enterprise_exception_handler`) throws away, deriving
+ * (`core/exceptions.py::api_exception_handler`) throws away, deriving
  * `error_code` from the HTTP status instead and nesting the original message
  * under `errors.detail`. So `parseApiError().code` here is only ever
  * `conflict` / `not_found` / `forbidden` — three statuses covering, between

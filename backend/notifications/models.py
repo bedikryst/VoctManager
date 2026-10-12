@@ -3,7 +3,7 @@ from django.conf import settings
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
-from core.models import EnterpriseBaseModel
+from core.models import SoftDeleteModel
 
 
 class NotificationLevel(models.TextChoices):
@@ -119,7 +119,7 @@ class AnnouncementKind(models.TextChoices):
     REMOVED = 'REMOVED', _('Removed')
 
 
-class PendingAnnouncement(EnterpriseBaseModel):
+class PendingAnnouncement(SoftDeleteModel):
     """One change to a live project, held back until the conductor publishes it.
 
     On an ACTIVE project persistence and announcement are separate acts: the write
@@ -224,9 +224,9 @@ class PendingAnnouncement(EnterpriseBaseModel):
         return f"[{self.kind}] {self.notification_type} on {self.subject_type} {self.subject_id}"
 
 
-class Notification(EnterpriseBaseModel):
+class Notification(SoftDeleteModel):
     """
-    Enterprise notification model for user-specific alerts.
+    A user-specific notification.
     """
     recipient = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -294,9 +294,9 @@ class DeviceType(models.TextChoices):
     WEB = 'WEB', _('Web Browser')
 
 
-class PushDevice(EnterpriseBaseModel):
+class PushDevice(SoftDeleteModel):
     """
-    Enterprise registry of user devices authorized to receive Push notifications.
+    Registry of user devices authorized to receive push notifications.
     """
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -353,7 +353,7 @@ class PushDevice(EnterpriseBaseModel):
         return f"Device [{self.device_type}] for {self.user.email}"
 
 
-class NotificationPreference(EnterpriseBaseModel):
+class NotificationPreference(SoftDeleteModel):
     """
     Granular user preferences mapping business events to delivery channels.
     """

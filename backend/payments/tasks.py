@@ -1,7 +1,6 @@
 # payments/tasks.py
 # ==========================================
 # Payments & Donations — Asynchronous Reconciliation
-# Standard: Enterprise SaaS 2026
 # ==========================================
 import logging
 from datetime import timedelta

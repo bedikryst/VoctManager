@@ -1,7 +1,7 @@
 /**
  * @file useNavbarKinematics.ts
  * @description Encapsulates viewport tracking and strictly typed scroll-based kinematics
- * for the global navigation. Adheres to Enterprise 2026 Standards.
+ * for the global navigation.
  * @module shared/widgets/hooks/useNavbarKinematics
  */
 

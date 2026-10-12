@@ -108,7 +108,7 @@ class _DispatchTarget:
 
 class PushDispatcherService:
     """
-    Enterprise push dispatcher.
+    Push dispatcher.
 
     Public surface:
       • dispatch_to_user — production dispatch from Celery workers.

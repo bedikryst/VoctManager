@@ -1,7 +1,6 @@
 # outreach/services.py
 # ==========================================
 # Outreach — the concert notice list's state machine
-# Standard: Enterprise SaaS 2026
 # ==========================================
 import logging
 from enum import Enum

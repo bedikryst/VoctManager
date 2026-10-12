@@ -6,7 +6,7 @@ from .models import Notification, NotificationType
 
 class NotificationSerializer(serializers.ModelSerializer):
     """
-    Enterprise serializer for system notifications.
+    Serializer for system notifications.
     Read-only design from the client perspective to prevent payload tampering.
     """
     class Meta:

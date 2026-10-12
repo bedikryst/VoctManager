@@ -1,6 +1,6 @@
 /**
  * @file DualTimeDisplay.tsx
- * @description Enterprise UI Component for dual-timezone time presentation.
+ * @description UI component for dual-timezone time presentation.
  * Automatically handles the display of event timezone vs local user timezone.
  * Refined for Ethereal UI: Strict baseline alignments and sub-pixel typography.
  * @module widgets/utility/DualTimeDisplay

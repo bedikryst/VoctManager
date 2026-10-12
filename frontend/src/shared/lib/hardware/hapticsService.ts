@@ -1,6 +1,6 @@
 /**
  * @file hapticsService.ts
- * @description Enterprise haptics engine wrapper. Provides safe degradation across devices.
+ * @description Haptics engine wrapper. Provides safe degradation across devices.
  * Compliant with 2026 Web APIs, ensuring no runtime crashes on restricted iOS Safari contexts.
  */
 

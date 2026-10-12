@@ -1,7 +1,6 @@
 # documents/dtos.py
 # ==========================================
 # Chorister Hub Data Transfer Objects (DTOs)
-# Standard: Enterprise SaaS 2026 (Pydantic V2)
 # ==========================================
 from uuid import UUID
 

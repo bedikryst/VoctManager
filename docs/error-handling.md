@@ -149,7 +149,7 @@ Intentionally **left bespoke** (not API errors, or special):
   (`USE_I18N`, `LANGUAGES`, `LOCALE_PATHS` were already set), and the axios
   client now sends the active UI language — so DRF/domain messages come back in
   the user's locale, matching the UI rather than the browser default.
-- **Tests**: `EnterpriseExceptionHandlerTests` covers every envelope branch
+- **Tests**: `ApiExceptionHandlerTests` covers every envelope branch
   (verified in isolation here; runs in CI with the project's Python/DB).
 
 **Auth views unified.** ✅ The hand-rolled `{error_code, message}` payloads in

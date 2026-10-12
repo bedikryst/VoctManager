@@ -1,7 +1,6 @@
 # archive/dtos.py
 # ==========================================
 # Archive Data Transfer Objects (DTOs)
-# Standard: Enterprise SaaS 2026 (Pydantic V2)
 # ==========================================
 from decimal import Decimal
 from typing import Any, Literal
@@ -28,12 +27,12 @@ def _require_choice(value: str, allowed_values: frozenset[str], field_name: str)
         raise ValueError(f"{field_name} must be one of: {allowed}.")
     return value
 
-class EnterpriseBaseDTO(BaseModel):
+class StrictDTO(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid", validate_by_name=True, validate_by_alias=True)
 
-class VoiceRequirementDTO(EnterpriseBaseDTO):
+class VoiceRequirementDTO(StrictDTO):
     voice_line: str = Field(..., min_length=1, max_length=12)
-    # Enterprise constraint: you cannot require 0 or negative singers
+    # A line cannot require zero or a negative number of singers.
     quantity: int = Field(..., ge=1)
     # Which arrangement asks for this line. None = the whole piece; see
     # [archive.services.voice_scope] for how the two layers resolve.
@@ -47,7 +46,7 @@ class VoiceRequirementDTO(EnterpriseBaseDTO):
         return _require_choice(value, VOICE_LINE_VALUES, "voice_line")
 
 
-class PieceVoiceLayoutBulkDTO(EnterpriseBaseDTO):
+class PieceVoiceLayoutBulkDTO(StrictDTO):
     """One piece-wide divisi, written onto several pieces as a single act.
 
     Only the piece-wide layer is addressed: an arrangement's own override is a
@@ -70,7 +69,7 @@ class PieceVoiceLayoutBulkDTO(EnterpriseBaseDTO):
         return self
 
 
-class PieceWriteDTO(EnterpriseBaseDTO):
+class PieceWriteDTO(StrictDTO):
     """Immutable data transfer object for creating or updating a musical piece.
 
     PDFs live on [ScoreEdition], reference recordings on [Recording],
@@ -138,7 +137,7 @@ class PieceWriteDTO(EnterpriseBaseDTO):
 
 # --- Internal value objects (Celery payloads) -------------------------------
 
-class CallCost(EnterpriseBaseDTO):
+class CallCost(StrictDTO):
     """Cost of a single Claude API call, including cache attribution."""
     model: str
     input_tokens: int = Field(default=0, ge=0)
@@ -149,7 +148,7 @@ class CallCost(EnterpriseBaseDTO):
     total_cents: int = Field(..., ge=0)
 
 
-class ProvenanceClaim(EnterpriseBaseDTO):
+class ProvenanceClaim(StrictDTO):
     """
     Describes where a single field's value came from. Persisted as a
     ProvenanceRecord row downstream - kept as a DTO until the Celery task
@@ -444,7 +443,7 @@ class ScoreAnalysisResult(BaseModel):
 
 # --- External-source lookups (consumed by Phase 1 clients) -----------------
 
-class ComposerLookupResult(EnterpriseBaseDTO):
+class ComposerLookupResult(StrictDTO):
     """Canonical composer metadata fetched from MusicBrainz / Wikidata."""
     mbid: UUID | None = None
     wikidata_qid: str = ""
@@ -461,7 +460,7 @@ class ComposerLookupResult(EnterpriseBaseDTO):
     source: Literal['musicbrainz', 'wikidata', 'mixed', 'none'] = 'none'
 
 
-class WorkLookupResult(EnterpriseBaseDTO):
+class WorkLookupResult(StrictDTO):
     """
     Canonical work metadata from MusicBrainz. Used by the resolver to
     deduplicate Pieces and pull in composer mbid + canonical title.
@@ -477,7 +476,7 @@ class WorkLookupResult(EnterpriseBaseDTO):
     score: int = Field(default=0, ge=0, le=100)  # MB's search score 0-100 (higher = better match)
 
 
-class RecordingLookupResult(EnterpriseBaseDTO):
+class RecordingLookupResult(StrictDTO):
     """One Spotify track or YouTube video matched to a piece."""
     source: Literal['spotify', 'youtube']
     external_id: str              # Spotify track ID or YouTube video ID
@@ -489,7 +488,7 @@ class RecordingLookupResult(EnterpriseBaseDTO):
     relevance_rank: int = Field(default=0, ge=0)  # 0 = top hit, 1 = next result
 
 
-class RecordingSearchResult(EnterpriseBaseDTO):
+class RecordingSearchResult(StrictDTO):
     """A ranked list of candidate recordings for one work."""
     query: str
     results: tuple[RecordingLookupResult, ...] = ()

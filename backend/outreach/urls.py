@@ -1,7 +1,6 @@
 # outreach/urls.py
 # ==========================================
 # Outreach — URL routing
-# Standard: Enterprise SaaS 2026
 # ==========================================
 from django.urls import path
 

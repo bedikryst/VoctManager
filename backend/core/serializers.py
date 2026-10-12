@@ -1,7 +1,6 @@
 # core/serializers.py
 # ==========================================
 # Core Serializers & Field-Level Security
-# Standard: Enterprise SaaS 2026
 # ==========================================
 import zoneinfo
 from typing import Any
@@ -21,7 +20,7 @@ User = get_user_model()
 
 class UserProfileSerializer(serializers.ModelSerializer):
     """
-    Serializer for nested user preferences and enterprise RBAC parameters.
+    Serializer for nested user preferences and role-based access fields.
     Implements Field-Level Security (FLS) to prevent privilege escalation via PATCH/PUT.
     """
     # Computed RBAC flags for frontend routing and UI rendering
@@ -161,7 +160,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
 
 class UserMeSerializer(serializers.ModelSerializer):
     """
-    Enterprise Aggregated Serializer.
+    Aggregated serializer.
     Combines core Auth Identity, Profile preferences, and Artist domain data into a single DTO.
 
     Names are read from the account and nowhere else. The roster row carries a
@@ -389,7 +388,7 @@ class NoteSerializer(serializers.ModelSerializer):
 
 class EmailTokenObtainPairSerializer(TokenObtainPairSerializer):
     """
-    Enterprise Identity Serializer.
+    Identity serializer.
     Explicitly defines email as the primary identification field for JWT generation.
     """
     email = serializers.EmailField()

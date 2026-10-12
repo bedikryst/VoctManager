@@ -1,7 +1,6 @@
 # outreach/tests.py
 # ==========================================
 # Outreach — concert notice list, endpoint + state-machine tests
-# Standard: Enterprise SaaS 2026
 # ==========================================
 from datetime import UTC, datetime, timedelta
 from unittest.mock import patch

@@ -1,7 +1,6 @@
 # roster/signals.py
 # ==========================================
 # Roster Domain Event Listeners (Signals)
-# Standard: Enterprise SaaS 2026
 # ==========================================
 """
 Domain-driven event handlers ensuring eventual consistency between the 

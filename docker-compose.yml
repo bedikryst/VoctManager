@@ -1,7 +1,6 @@
 # docker-compose.yml
 # ==========================================
 # VoctManager Infrastructure Configuration
-# Standard: Enterprise SaaS 2026
 # ==========================================
 # Local dev:  docker compose -f docker-compose.yml -f docker-compose.dev.yml up  (= make up)
 # Production: docker compose -f docker-compose.yml -f docker-compose.prod.yml up (= make prod)

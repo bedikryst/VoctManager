@@ -1,7 +1,7 @@
 # core/signals.py
 from django.dispatch import Signal
 
-# Enterprise Event: Emitted when a user account is soft-deleted (GDPR erasure or manual admin action)
+# Emitted when a user account is soft-deleted (GDPR erasure or manual admin action)
 account_soft_deleted = Signal()
 
 user_pii_updated = Signal()

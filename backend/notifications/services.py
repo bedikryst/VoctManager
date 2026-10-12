@@ -1,7 +1,7 @@
 # notifications/services.py
 """
 ===============================================================================
-Enterprise Notification Service
+Notification service
 ===============================================================================
 Domain: Notifications
 Description: 

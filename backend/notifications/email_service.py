@@ -1,6 +1,6 @@
 """
 ===============================================================================
-Enterprise Email Dispatcher Service
+Email dispatcher service
 ===============================================================================
 Domain: Notifications
 Description:
@@ -122,7 +122,7 @@ def notification_email_block(user: Any, email_type: str = EmailType.OPERATIONAL)
 
 class EmailDispatcherService:
     """
-    Enterprise service orchestrating localized email delivery.
+    Orchestrates localized email delivery.
     Guarantees absolute state integrity by hydrating data at execution time.
     """
 

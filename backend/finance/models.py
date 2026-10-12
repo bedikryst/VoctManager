@@ -19,7 +19,7 @@ from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
-from core.models import EnterpriseBaseModel
+from core.models import SoftDeleteModel
 
 # Every amount the ledger stores. Ten digits leave room for a grant-sized total
 # without letting a typo of a zero too many pass as a plausible number. The
@@ -190,7 +190,7 @@ DEFAULT_DOCUMENT_NOTE_TEMPLATE = (
 )
 
 
-class ProjectBudget(EnterpriseBaseModel):
+class ProjectBudget(SoftDeleteModel):
     """One per project, created lazily by `BudgetService.get_or_create`.
 
     A cancelled project keeps its budget: cancellation has costs of its own
@@ -225,7 +225,7 @@ class ProjectBudget(EnterpriseBaseModel):
         return f"{self.project} ({self.status})"
 
 
-class BudgetLine(EnterpriseBaseModel):
+class BudgetLine(SoftDeleteModel):
     """One line of the plan — the kosztorys: "Honoraria chórzystów", 8 persons
     at 400 zł.
 
@@ -263,7 +263,7 @@ class BudgetLine(EnterpriseBaseModel):
         return self.name
 
 
-class CostItem(EnterpriseBaseModel):
+class CostItem(SoftDeleteModel):
     """One actual cost. Fees and expenses share the table so every total is one
     aggregate.
 
@@ -500,7 +500,7 @@ def attachment_upload_to(instance: 'FinanceAttachment', filename: str) -> str:
     return f"finance/{timezone.now():%Y}/{uuid.uuid4().hex}{suffix}"
 
 
-class FinanceAttachment(EnterpriseBaseModel):
+class FinanceAttachment(SoftDeleteModel):
     """A file kept with an expense — the vendor's invoice, a receipt.
 
     Expenses only: a signed contract or a bill carries a handwritten PESEL, and
@@ -530,7 +530,7 @@ class FinanceAttachment(EnterpriseBaseModel):
         return self.original_name
 
 
-class Contract(EnterpriseBaseModel):
+class Contract(SoftDeleteModel):
     """A document the foundation issues for a FEE item.
 
     Amount and payee are snapshots taken at issuance: the paper says what it says,
@@ -593,7 +593,7 @@ class Contract(EnterpriseBaseModel):
         return self.status != ContractStatus.ANNULLED
 
 
-class ContractSnapshot(EnterpriseBaseModel):
+class ContractSnapshot(SoftDeleteModel):
     """The contract's document as it stood when its signature was first recorded.
 
     The annexes read the concert live — the cast, the solos, the rehearsal
@@ -624,7 +624,7 @@ class ContractSequence(models.Model):
     """The last number spent per (year, form), read with `select_for_update()`
     inside the issuing transaction.
 
-    A plain model, not an `EnterpriseBaseModel`: a soft-deleted counter row would
+    A plain model, not an `SoftDeleteModel`: a soft-deleted counter row would
     be invisible to the next issue, which would restart the year at 1 and collide
     with numbers already on paper.
     """
@@ -648,7 +648,7 @@ class ContractSequence(models.Model):
 PCT_DIGITS = 5
 
 
-class FundingSource(EnterpriseBaseModel):
+class FundingSource(SoftDeleteModel):
     """Where money comes from — a grant, a sponsor, the ticket office.
 
     Organisation-level, not per project: one grant may fund a whole season, and
@@ -732,7 +732,7 @@ class FundingSource(EnterpriseBaseModel):
         return self.kind not in NON_CASH_FUNDING_KINDS
 
 
-class ProjectFunding(EnterpriseBaseModel):
+class ProjectFunding(SoftDeleteModel):
     """A source on one project: what the project expects of it and what has
     actually arrived (a tranche, the ticket takings, donations collected).
 
@@ -774,7 +774,7 @@ class ProjectFunding(EnterpriseBaseModel):
         return f"{self.source} → {self.budget}"
 
 
-class LineAllocation(EnterpriseBaseModel):
+class LineAllocation(SoftDeleteModel):
     """The plan's split: how much of a kosztorys line a source is to cover. The
     part of a line no source covers is the foundation's own — reported, never
     assigned to anyone silently."""
@@ -803,7 +803,7 @@ class LineAllocation(EnterpriseBaseModel):
         return f"{self.budget_line} ← {self.amount}"
 
 
-class CostAllocation(EnterpriseBaseModel):
+class CostAllocation(SoftDeleteModel):
     """The actual split: how much of a cost is charged to a source — the figure
     a grant settlement reports and a document note prints. For volunteer work
     it is the work's valuation, charged to a volunteer-work source."""

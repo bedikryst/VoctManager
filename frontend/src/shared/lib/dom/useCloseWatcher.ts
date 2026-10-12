@@ -1,6 +1,6 @@
 /**
  * @file useCloseWatcher.ts
- * @description Enterprise-grade hook for managing the UI close stack.
+ * @description Hook for managing the UI close stack.
  * Seamlessly integrates the modern CloseWatcher API (for Android Back Button & ESC)
  * with a graceful fallback for legacy browsers.
  *  * * @param isOpen - A flag indicating whether a given component (modal/menu/form) is open

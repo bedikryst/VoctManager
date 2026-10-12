@@ -1,7 +1,6 @@
 # core/views.py
 # ==========================================
 # Core Account & Identity Views
-# Standard: Enterprise SaaS 2026
 # ==========================================
 import logging
 
@@ -349,7 +348,7 @@ class ChangePasswordView(views.APIView):
 class ChangeEmailRequestView(views.APIView):
     """
     POST /api/v1/users/me/change-email/
-    Initiates the enterprise email change workflow.
+    Starts the email change workflow.
     """
     permission_classes = (IsAuthenticated,)
 

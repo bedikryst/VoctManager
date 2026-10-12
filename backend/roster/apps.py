@@ -1,7 +1,6 @@
 # roster/apps.py
 # ==========================================
 # Roster Application Configuration
-# Standard: Enterprise SaaS 2026
 # ==========================================
 """
 Application configuration for the Roster domain.

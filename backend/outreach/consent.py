@@ -1,7 +1,6 @@
 # outreach/consent.py
 # ==========================================
 # The information clause a subscriber agrees to, and its version
-# Standard: Enterprise SaaS 2026
 # ==========================================
 """
 The consent record's one moving part: WHICH clause a subscriber saw.

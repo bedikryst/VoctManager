@@ -1,6 +1,6 @@
 /**
  * @file useLocationResolver.ts
- * @description Enterprise pattern for resolving polymorphic location references (ID vs Object).
+ * @description Resolves polymorphic location references (an ID or an object).
  * Leverages React Query cache for zero-latency lookups across the app.
  * @module features/logistics/hooks
  */

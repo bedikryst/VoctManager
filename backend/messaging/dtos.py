@@ -20,12 +20,12 @@ def _require_choice(value: str, allowed_values: frozenset[str], field_name: str)
     return value
 
 
-class EnterpriseBaseDTO(BaseModel):
+class StrictDTO(BaseModel):
     """Immutable, strict base payload model."""
     model_config = ConfigDict(frozen=True, extra="forbid", validate_by_name=True, validate_by_alias=True)
 
 
-class ThreadCreateDTO(EnterpriseBaseDTO):
+class ThreadCreateDTO(StrictDTO):
     """Payload for opening a new conversation (initiated by an artist or a manager)."""
     artist_id: UUID
     sender_id: int
@@ -41,7 +41,7 @@ class ThreadCreateDTO(EnterpriseBaseDTO):
         return _require_choice(value, CONTEXT_TYPE_VALUES, "context_type")
 
 
-class MessageCreateDTO(EnterpriseBaseDTO):
+class MessageCreateDTO(StrictDTO):
     """Payload for posting a reply into an existing thread."""
     thread_id: UUID
     sender_id: int

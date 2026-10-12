@@ -1,7 +1,6 @@
 # payments/urls.py
 # ==========================================
 # Payments & Donations URL routing
-# Standard: Enterprise SaaS 2026
 # ==========================================
 from django.urls import path
 

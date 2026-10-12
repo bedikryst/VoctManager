@@ -1,6 +1,6 @@
 /**
  * @file Button.tsx
- * @description Enterprise-grade button primitive for VoctEnsemble.
+ * @description Button primitive for VoctEnsemble.
  * Employs strict Ethereal UI tokens. Exports variants for polymorphic usage.
  * @module shared/ui/primitives/Button
  */

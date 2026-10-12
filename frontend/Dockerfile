@@ -1,7 +1,6 @@
 # syntax=docker/dockerfile:1.7
 # ==========================================
 # VoctManager Frontend — Production Build
-# Standard: Enterprise SaaS 2026
 # ==========================================
 # Build context is the REPO ROOT (`context: .` in docker-compose.yml) so this
 # single Dockerfile can produce both frontends in one nginx image:

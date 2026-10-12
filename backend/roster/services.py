@@ -1,7 +1,6 @@
 # roster/services.py
 # ==========================================
 # Roster Business Logic (Domain Services)
-# Standard: Enterprise SaaS 2026
 # ==========================================
 """
 Domain-driven service layer for the Roster application.
@@ -1197,7 +1196,7 @@ class ProjectManagementService:
     @staticmethod
     def create_or_restore_participation(validated_data: dict[str, Any]) -> Participation:
         """
-        Enterprise Upsert Pattern: Checks for an archived (soft-deleted) participation first.
+        Upsert: checks for an archived (soft-deleted) participation first.
         If found, restores it to preserve history and avoid constraint collisions. 
         If not, creates a fresh participation.
         """

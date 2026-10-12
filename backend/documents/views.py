@@ -1,7 +1,6 @@
 # documents/views.py
 # ==========================================
 # Chorister Hub API Views
-# Standard: Enterprise SaaS 2026
 # ==========================================
 import logging
 import os

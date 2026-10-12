@@ -1,7 +1,6 @@
 # outreach/models.py
 # ==========================================
 # Outreach — people who are NOT members: the notice list, and guests' reservations
-# Standard: Enterprise SaaS 2026
 # ==========================================
 import secrets
 import uuid
@@ -12,7 +11,7 @@ from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
-from core.models import EnterpriseBaseModel
+from core.models import SoftDeleteModel
 
 # How long a confirmation link stays usable. Long enough to survive a weekend and a
 # holiday; short enough that an address abandoned in a spam folder does not turn into
@@ -53,7 +52,7 @@ class NoticeStatus(models.TextChoices):
     UNSUBSCRIBED = 'UNSUBSCRIBED', _('Unsubscribed')
 
 
-class ConcertNoticeSubscription(EnterpriseBaseModel):
+class ConcertNoticeSubscription(SoftDeleteModel):
     """
     One address on the concert notice list: a person who asked to be written to when
     an evening gets a date. Concerts and nothing else — the promise made at the form
@@ -171,7 +170,7 @@ class ConcertNoticeSubscription(EnterpriseBaseModel):
         verbose_name_plural = _('Concert notice subscriptions')
         indexes = [
             # Declared explicitly because this model overrides Meta and so does not
-            # inherit EnterpriseBaseModel.Meta's equivalent composite index.
+            # inherit SoftDeleteModel.Meta's equivalent composite index.
             models.Index(fields=['is_deleted', '-created_at'], name='outreach_notice_isdel_idx'),
             # Backs the only bulk read there is: everyone a concert mail may go to.
             models.Index(fields=['status', 'locale'], name='outreach_notice_status_loc_idx'),
@@ -212,7 +211,7 @@ class NoticeConsentEvent(models.Model):
     the record of the consent under which we had already sent mail would be overwritten by
     the record of a newer one. The accountability duty is about the mails already sent.
 
-    NOT an `EnterpriseBaseModel`, deliberately, and the two departures are the same point:
+    NOT an `SoftDeleteModel`, deliberately, and the two departures are the same point:
     there is no soft delete (a soft-deleted proof is a proof that disappears with nothing
     saying so, and the default manager would stop returning it) and nothing here is
     editable — a row is written once, at the moment it describes.
@@ -291,7 +290,7 @@ class ConcertReservation(models.Model):
 
     No address and no phone, on purpose. The invitation is named and the office sent it, so it
     already knows how to reach every guest; the reservation needs nothing it would then have to
-    guard. A plain model rather than `EnterpriseBaseModel` for the reason the consent log above
+    guard. A plain model rather than `SoftDeleteModel` for the reason the consent log above
     gives: a soft-deleted guest list is a guest list still held, and the retention sweep has to
     actually remove it.
     """

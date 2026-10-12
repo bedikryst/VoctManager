@@ -1,7 +1,6 @@
 # outreach/reservations.py
 # ==========================================
 # Outreach — seat reservations for invited guests (the /rsvp page)
-# Standard: Enterprise SaaS 2026
 # ==========================================
 import enum
 from dataclasses import dataclass

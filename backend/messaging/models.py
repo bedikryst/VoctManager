@@ -12,7 +12,7 @@ from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
-from core.models import EnterpriseBaseModel
+from core.models import SoftDeleteModel
 
 
 class ThreadContextType(models.TextChoices):
@@ -28,7 +28,7 @@ class ThreadStatus(models.TextChoices):
     ARCHIVED = 'ARCHIVED', _('Archived')
 
 
-class Thread(EnterpriseBaseModel):
+class Thread(SoftDeleteModel):
     """
     A private conversation between one artist and one manager.
 
@@ -94,7 +94,7 @@ class Thread(EnterpriseBaseModel):
         return f"Thread[{self.status}] {self.subject} — {self.artist_id}"
 
 
-class Message(EnterpriseBaseModel):
+class Message(SoftDeleteModel):
     """A single utterance within a thread."""
     thread = models.ForeignKey(
         Thread,
@@ -127,7 +127,7 @@ class Message(EnterpriseBaseModel):
         return f"Message in {self.thread_id} by {self.sender_id}"
 
 
-class ThreadReadState(EnterpriseBaseModel):
+class ThreadReadState(SoftDeleteModel):
     """
     Per-(thread, user) read pointer. A thread is unread for a user when
     ``thread.last_message_at > last_read_at`` (or no row exists at all).
@@ -181,7 +181,7 @@ class ChannelRole(models.TextChoices):
     LEADER = 'LEADER', _('Assistant Conductor')
 
 
-class ProjectChannel(EnterpriseBaseModel):
+class ProjectChannel(SoftDeleteModel):
     """
     One group channel per project. Membership is auto-synced from confirmed
     Participation; management has implicit access. Unlike Thread (1:1, directed),
@@ -211,7 +211,7 @@ class ProjectChannel(EnterpriseBaseModel):
         return f"Channel for project {self.project_id}"
 
 
-class ChannelMembership(EnterpriseBaseModel):
+class ChannelMembership(SoftDeleteModel):
     """
     A user's membership in a project channel. MEMBER rows are synced from
     confirmed Participation; MANAGER rows are created lazily on first access
@@ -271,7 +271,7 @@ class ChannelMembership(EnterpriseBaseModel):
         return f"Membership {self.channel_id} / {self.user_id} [{self.role}]"
 
 
-class ChannelMessage(EnterpriseBaseModel):
+class ChannelMessage(SoftDeleteModel):
     """A single message within a project channel."""
     channel = models.ForeignKey(
         ProjectChannel,

@@ -1,7 +1,6 @@
 # roster/migrations/0020_project_score_pdf.py
 # ==========================================
 # Migration: Add score_pdf field to Project
-# Standard: Enterprise SaaS 2026
 # ==========================================
 
 import django.core.validators

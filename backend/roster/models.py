@@ -1,7 +1,6 @@
 # roster/models.py
 # ==========================================
 # Roster & Logistics Database Models
-# Standard: Enterprise SaaS 2026
 # ==========================================
 """
 Database models for HR and Logistics entities.
@@ -25,7 +24,7 @@ from django.utils.translation import gettext_lazy as _
 from django.utils.translation import pgettext_lazy
 
 from core.constants import VoiceLine
-from core.models import EnterpriseBaseModel
+from core.models import SoftDeleteModel
 from core.voice_labels import (
     SECTION_LETTERS,
     canonical_section_letters,
@@ -135,7 +134,7 @@ def is_instrumentalist_account(user: Any) -> bool:
     return artist is not None and artist.voice_type == VoiceType.INSTRUMENTALIST
 
 
-class Artist(EnterpriseBaseModel):
+class Artist(SoftDeleteModel):
     user = models.OneToOneField(
         settings.AUTH_USER_MODEL, 
         on_delete=models.SET_NULL, 
@@ -272,7 +271,7 @@ class Artist(EnterpriseBaseModel):
         return getattr(getattr(user, "profile", None), "first_name_vocative", "") or ""
 
 
-class Project(EnterpriseBaseModel):
+class Project(SoftDeleteModel):
     class Status(models.TextChoices):
         DRAFT = 'DRAFT', _('Draft / Planned')
         ACTIVE = 'ACTIVE', _('Active / In Prep')
@@ -613,7 +612,7 @@ def default_card_elements() -> list[str]:
     return ["eyebrow", "meta", "text", "translation", "note"]
 
 
-class ScorePackage(EnterpriseBaseModel):
+class ScorePackage(SoftDeleteModel):
     """
     Configuration + build state for a Project's auto-assembled concert score book.
 
@@ -776,7 +775,7 @@ class ScorePackage(EnterpriseBaseModel):
         return f"Score package · {self.project.title} [{self.get_status_display()}]"
 
 
-class Participation(EnterpriseBaseModel):
+class Participation(SoftDeleteModel):
     class Status(models.TextChoices):
         INVITED = 'INV', _('Invited')
         CONFIRMED = 'CON', _('Confirmed')
@@ -1052,7 +1051,7 @@ class PieceReadiness(models.Model):
         return f"{self.participation} / {self.piece_id}: {self.status}"
 
 
-class Rehearsal(EnterpriseBaseModel):
+class Rehearsal(SoftDeleteModel):
     project = models.ForeignKey(Project, on_delete=models.RESTRICT, related_name='rehearsals', verbose_name=_("Project"))
     date_time = models.DateTimeField(verbose_name=_("Date & Time"))
     timezone = models.CharField(
@@ -1327,7 +1326,7 @@ class RehearsalPlanItem(models.Model):
     promises the worst case. A break calls nobody — no piece, no exclusions —
     so the men's evening can end at the break before a ladies-only closer.
 
-    A plain model, not `EnterpriseBaseModel`: the plan is saved whole and a
+    A plain model, not `SoftDeleteModel`: the plan is saved whole and a
     dropped row is gone, while a soft-deleted row would keep its
     `(rehearsal, position)` slot and collide with the next save. Its siblings
     on the roster (`ProgramItem`, `ProjectPieceCasting`) are shaped the same
@@ -1423,7 +1422,7 @@ class RehearsalPlanItem(models.Model):
         return f"Plan {self.rehearsal_id} #{self.position}: {self.title}"
 
 
-class RehearsalDelegate(EnterpriseBaseModel):
+class RehearsalDelegate(SoftDeleteModel):
     """The assistant conductor on one project: the person who may run its
     rehearsals in the conductor's place. Read by people as "Asystent dyrygenta".
 
@@ -1585,7 +1584,7 @@ class Attendance(models.Model):
         ]
 
 
-class Collaborator(EnterpriseBaseModel):
+class Collaborator(SoftDeleteModel):
     class Specialty(models.TextChoices):
         SOUND = 'SOUND', _('Sound Engineering')
         LIGHT = 'LIGHT', _('Lighting Design')

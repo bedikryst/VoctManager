@@ -1,7 +1,6 @@
 # payments/apps.py
 # ==========================================
 # Payments & Donations — App Configuration
-# Standard: Enterprise SaaS 2026
 # ==========================================
 from django.apps import AppConfig
 

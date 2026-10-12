@@ -1,7 +1,6 @@
 # outreach/serializers.py
 # ==========================================
 # Outreach — public API payloads
-# Standard: Enterprise SaaS 2026
 # ==========================================
 from rest_framework import serializers
 

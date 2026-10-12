@@ -1,6 +1,6 @@
 """
 ===============================================================================
-Enterprise Notification Background Workers
+Notification background workers
 ===============================================================================
 Domain: Notifications
 Description: 

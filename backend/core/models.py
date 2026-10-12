@@ -1,7 +1,6 @@
 # core/models.py
 # ==========================================
 # Core Database Models & Managers
-# Standard: Enterprise SaaS 2026
 # ==========================================
 import uuid
 
@@ -25,7 +24,7 @@ def avatar_upload_path(instance: "UserProfile", filename: str) -> str:
 
 class SoftDeleteQuerySet(models.QuerySet):
     """
-    Enterprise safeguard preventing accidental bulk hard-deletions.
+    Guards against accidental bulk hard deletes.
     Intercepts standard .delete() calls on querysets and routes them to soft-delete.
     """
     def delete(self):
@@ -47,7 +46,7 @@ class ActiveManager(models.Manager):
         return SoftDeleteQuerySet(self.model, using=self._db).filter(is_deleted=False)
 
 
-class EnterpriseBaseModel(models.Model):
+class SoftDeleteModel(models.Model):
     """
     Abstract base model providing UUID primary keys, timestamp tracking, 
     and soft-delete functionality for all operational models.
@@ -76,7 +75,6 @@ class EnterpriseBaseModel(models.Model):
 
     class Meta:
         abstract = True
-        # Critical Enterprise optimization: 
         # Composite index speeds up default lookups filtering by is_deleted and ordering by creation
         indexes = [
             models.Index(fields=['is_deleted', '-created_at']),
@@ -99,9 +97,9 @@ class EnterpriseBaseModel(models.Model):
         self.save(update_fields=['is_deleted', 'updated_at'])
 
 
-class UserProfile(EnterpriseBaseModel):
+class UserProfile(SoftDeleteModel):
     """
-    Enterprise user profile and preferences.
+    User profile and preferences.
     Separates domain-specific user configurations from the core authentication model.
     """
     class LanguageChoices(models.TextChoices):
@@ -298,7 +296,7 @@ class UserProfile(EnterpriseBaseModel):
                     "legal documents the user accepted at activation.")
     )
 
-    # === ENTERPRISE RBAC ===
+    # === ROLE-BASED ACCESS ===
     role = models.CharField(
         max_length=20,
         choices=AppRole.choices,
@@ -353,7 +351,7 @@ class UserProfile(EnterpriseBaseModel):
         verbose_name = _('User Profile')
         verbose_name_plural = _('User Profiles')
         constraints = [
-            # Enterprise constraint: Ensures tokens are only unique among ACTIVE profiles.
+            # Tokens are unique only among active profiles.
             # Prevents IntegrityErrors if a deleted profile has the same token by sheer luck (though rare for UUIDs)
             models.UniqueConstraint(
                 fields=['calendar_token'],
@@ -388,7 +386,7 @@ class FeedbackStatus(models.TextChoices):
     DISMISSED = 'DISMISSED', _('Dismissed')
 
 
-class FeedbackReport(EnterpriseBaseModel):
+class FeedbackReport(SoftDeleteModel):
     """
     An in-app report from a signed-in member: a fault, a confusion, an idea.
 
@@ -449,7 +447,7 @@ class FeedbackReport(EnterpriseBaseModel):
         verbose_name_plural = _('Feedback Reports')
         indexes = [
             # Declared explicitly because this model overrides Meta and so does
-            # not inherit EnterpriseBaseModel.Meta's equivalent composite index.
+            # not inherit SoftDeleteModel.Meta's equivalent composite index.
             models.Index(fields=['is_deleted', '-created_at'], name='core_feedback_isdel_idx'),
             models.Index(fields=['status', '-created_at'], name='core_feedback_status_idx'),
         ]
@@ -458,7 +456,7 @@ class FeedbackReport(EnterpriseBaseModel):
         return f"FeedbackReport[{self.status}] {self.kind} — {self.body[:48]}"
 
 
-class Note(EnterpriseBaseModel):
+class Note(SoftDeleteModel):
     """
     A private scratchpad entry — one flat to-do list per user, never shared.
 
@@ -500,7 +498,7 @@ class Note(EnterpriseBaseModel):
         verbose_name_plural = _('Notes')
         indexes = [
             # Declared explicitly because this model overrides Meta and so does
-            # not inherit EnterpriseBaseModel.Meta's equivalent composite index.
+            # not inherit SoftDeleteModel.Meta's equivalent composite index.
             models.Index(fields=['is_deleted', '-created_at'], name='core_note_isdel_idx'),
             models.Index(fields=['owner', 'is_done', '-created_at'], name='core_note_owner_idx'),
         ]
