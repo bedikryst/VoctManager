@@ -15,7 +15,8 @@
  *    field's holds the inline markup the server keeps (`em, strong, a, code`) and nothing more;
  *  - the value has no blank line (the page builds paragraphs itself) and no braces (a `{slot}`
  *    the build fills, or a link marker the template turns into a link).
- *  Everything else keeps the published text and the gold highlight.
+ *  Everything else keeps the published text and the gold highlight; `proposalNodes` lays such a
+ *  proposal out for the tool's own panels instead (the popover after a save, the editor's list).
  *
  *  THE BUILD'S OWN TYPOGRAPHY: `typoFor(locale)` for `TEXT`, `typographyHtml` for `HTML`, so the
  *  lines break as they will on the deployed page. `HTML` is the STORED value, which the server has
@@ -67,11 +68,16 @@ interface Entry {
   preview: readonly Node[];
 }
 
-/** The proposal to show for `row`, or `null` when there is none or it cannot stand in place. */
-function wanted(row: IndexRow): string | null {
+/** The editor's proposal on `row` where it changes what the page prints, else `null`. */
+export function proposalValue(row: IndexRow): string | null {
   const value = row.mine?.value ?? "";
-  if (value.trim() === "" || BLANK_LINE.test(value) || BRACES.test(value)) return null;
-  return value === printedValue(row) ? null : value;
+  return value.trim() === "" || value === printedValue(row) ? null : value;
+}
+
+/** The proposal to show for `row` in place, or `null` when there is none or it cannot stand there. */
+function wanted(row: IndexRow): string | null {
+  const value = proposalValue(row);
+  return value === null || BLANK_LINE.test(value) || BRACES.test(value) ? null : value;
 }
 
 /** The element whose whole text `range` is, when a `kind` field can be shown in place there. */
@@ -128,23 +134,82 @@ function keepWhitelist(parent: ParentNode): void {
   }
 }
 
+/** `value` as the build prints it in `locale`: typography applied, `HTML` held to the whitelist. */
+function printed(row: IndexRow, value: string, locale: Locale): Node[] {
+  if (row.kind !== "HTML") return [document.createTextNode(typoFor(locale)(value))];
+  const template = document.createElement("template");
+  template.innerHTML = typographyHtml(value, locale);
+  keepWhitelist(template.content);
+  return [...template.content.childNodes];
+}
+
+/** `match.ts`'s placeholder, whole: anything else in braces is a link marker. */
+const SLOT = /^\{[A-Za-z][A-Za-z0-9_]*\}$/u;
+const IN_BRACES = /\{([^{}]*)\}/gu;
+
+/**
+ * A slot the build fills (`{function}`) as a marked token, and a link marker the template turns
+ * into a link (`{napisz do nas}`) as its words, underlined.
+ */
+function markBraces(parent: ParentNode): void {
+  for (const node of [...parent.childNodes]) {
+    if (!(node instanceof Text)) {
+      if (node instanceof Element) markBraces(node);
+      continue;
+    }
+    const text = node.data;
+    if (!text.includes("{")) continue;
+    const parts: Node[] = [];
+    let last = 0;
+    for (const match of text.matchAll(IN_BRACES)) {
+      const at = match.index;
+      if (at > last) parts.push(document.createTextNode(text.slice(last, at)));
+      const isSlot = SLOT.test(match[0]);
+      const token = document.createElement("span");
+      token.className = isSlot ? "slot" : "as-link";
+      token.textContent = isSlot ? match[0] : (match[1] ?? "");
+      parts.push(token);
+      last = at + match[0].length;
+    }
+    if (last === 0) continue;
+    if (last < text.length) parts.push(document.createTextNode(text.slice(last)));
+    node.replaceWith(...parts);
+  }
+}
+
+/**
+ * The proposal laid out for the tool's own panels (the popover over a field it cannot replace in
+ * place, the list of the editor's proposals): one paragraph per blank-line block, the build's
+ * typography, links as underlined text that goes nowhere, slots marked.
+ */
+export function proposalNodes(row: IndexRow, value: string, locale: Locale): HTMLElement {
+  const box = document.createElement("div");
+  box.className = "proposal";
+  box.lang = locale;
+  for (const block of value.split(BLANK_LINE)) {
+    if (block.trim() === "") continue;
+    const paragraph = document.createElement("p");
+    paragraph.append(...printed(row, block.trim(), locale));
+    for (const link of [...paragraph.querySelectorAll("a")]) {
+      const span = document.createElement("span");
+      span.className = "as-link";
+      span.append(...link.childNodes);
+      link.replaceWith(span);
+    }
+    markBraces(paragraph);
+    box.append(paragraph);
+  }
+  return box;
+}
+
 /** The nodes that print `value` in `element`, keeping the whitespace its own text starts and ends with. */
 function render(row: IndexRow, value: string, locale: Locale, element: Element): Node[] {
   const text = element.textContent ?? "";
   const lead = /^\s*/u.exec(text)?.[0] ?? "";
   const trail = text.trim() === "" ? "" : (/\s*$/u.exec(text)?.[0] ?? "");
-  let body: Node[];
-  if (row.kind === "HTML") {
-    const template = document.createElement("template");
-    template.innerHTML = typographyHtml(value, locale);
-    keepWhitelist(template.content);
-    body = [...template.content.childNodes];
-  } else {
-    body = [document.createTextNode(typoFor(locale)(value))];
-  }
   return [
     ...(lead ? [document.createTextNode(lead)] : []),
-    ...body,
+    ...printed(row, value, locale),
     ...(trail ? [document.createTextNode(trail)] : []),
   ];
 }
@@ -166,6 +231,12 @@ export class Previews {
 
   get size(): number {
     return this.entries.size;
+  }
+
+  /** True when `node` lies in an element that shows a proposal in place. */
+  covers(node: Node): boolean {
+    for (const element of this.entries.keys()) if (element.contains(node)) return true;
+    return false;
   }
 
   /** The previewed elements and their fields: what the page walk skips and taps go straight to. */

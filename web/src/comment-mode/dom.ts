@@ -18,11 +18,15 @@ export function el<K extends keyof HTMLElementTagNameMap>(
 ): HTMLElementTagNameMap[K] {
   const element = document.createElement(tag);
   if (className) element.className = className;
-  for (const child of children) {
-    if (child === null || child === undefined || child === false) continue;
-    element.append(child);
-  }
+  fill(element, ...children);
   return element;
+}
+
+/** Replace `parent`'s children; falsy children are skipped. */
+export function fill(parent: ParentNode, ...children: Child[]): void {
+  parent.replaceChildren(
+    ...children.filter((child): child is Node | string => child !== null && child !== undefined && child !== false),
+  );
 }
 
 /** A `type="button"` button that runs `onPress`. */

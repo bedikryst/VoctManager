@@ -33,8 +33,21 @@ export interface Strings {
   readonly end: string;
   readonly saved: (label: string) => string;
   readonly withdrawn: (label: string) => string;
+  /** A proposal in another language than the page's, `language` from `localeAdverbs`. */
+  readonly savedIn: (label: string, language: string) => string;
+  readonly withdrawnIn: (label: string, language: string) => string;
 
   readonly menu: string;
+  readonly myProposals: string;
+  readonly restTexts: string;
+  readonly restIntro: string;
+  readonly mineEmpty: string;
+  readonly notInDesk: string;
+  readonly noOwnFields: string;
+  readonly allVisible: string;
+  readonly backToList: string;
+  readonly statusOpen: string;
+  readonly statusAccepted: string;
   readonly pageLanguage: string;
   readonly polishOnly: string;
   readonly showFields: string;
@@ -56,6 +69,9 @@ export interface Strings {
   readonly sharedFields: string;
   readonly openOnItsPage: string;
   readonly close: string;
+  readonly previewTitle: string;
+  readonly previewWhy: string;
+  readonly slotNote: string;
 
   readonly sheetLabel: string;
   readonly untranslated: string;
@@ -67,8 +83,10 @@ export interface Strings {
   readonly commentHint: string;
   readonly save: string;
   readonly saving: string;
+  readonly savedHere: string;
   readonly withdraw: string;
   readonly withdrawing: string;
+  readonly withdrawnHere: string;
   readonly empty: string;
   readonly nothingToSave: string;
   readonly saveFailed: string;
@@ -79,6 +97,8 @@ export interface Strings {
   readonly draftRestored: string;
   readonly discardDraft: string;
   readonly otherLanguages: string;
+  readonly editOther: string;
+  readonly polishNow: string;
   readonly notTranslated: string;
   readonly othersProposals: string;
   readonly detailsLoading: string;
@@ -86,6 +106,8 @@ export interface Strings {
   readonly markupNote: string;
   readonly frenchMissingSpace: (fragments: string) => string;
   readonly localeNames: Readonly<Record<Locale, string>>;
+  /** "in English": the form a sentence takes the language in. */
+  readonly localeAdverbs: Readonly<Record<Locale, string>>;
 }
 
 /** The desk's French spacing note, French in every chrome. */
@@ -107,8 +129,21 @@ const PL: Strings = {
   end: "Zakończ",
   saved: (label) => `Zapisano propozycję: ${label}`,
   withdrawn: (label) => `Cofnięto propozycję: ${label}`,
+  savedIn: (label, language) => `Zapisano propozycję ${language}: ${label}`,
+  withdrawnIn: (label, language) => `Cofnięto propozycję ${language}: ${label}`,
 
   menu: "Menu",
+  myProposals: "Moje propozycje na tej stronie",
+  restTexts: "Pozostałe teksty",
+  restIntro:
+    "Teksty tej strony, których na niej nie widać: tytuł i opis dla wyszukiwarek, opisy zdjęć, treść zamkniętych okien. Poprawka trafi do redakcji, ale na stronie jej nie zobaczysz.",
+  mineEmpty: "Nie masz jeszcze propozycji na tej stronie.",
+  notInDesk: "Ta strona nie jest w redakcji.",
+  noOwnFields: "Ta strona nie ma w redakcji własnych tekstów. To, co na niej widać, poprawisz prosto na stronie.",
+  allVisible: "Wszystkie teksty tej strony są na widoku: poprawisz je prosto na stronie.",
+  backToList: "← Wróć do listy",
+  statusOpen: "Propozycja czeka na decyzję redakcji",
+  statusAccepted: "Propozycja przyjęta, czeka na publikację",
   pageLanguage: "Język strony",
   polishOnly: "Ta strona jest tylko po polsku.",
   showFields: "Podświetlaj teksty do poprawy",
@@ -131,6 +166,9 @@ const PL: Strings = {
   sharedFields: "Pola z tym tekstem:",
   openOnItsPage: "Otwórz na jego stronie",
   close: "Zamknij",
+  previewTitle: "Twoja propozycja",
+  previewWhy: "Tego tekstu nie da się podmienić na stronie, więc pokazuję propozycję tutaj.",
+  slotNote: "Słowa w klamrach strona zastępuje własnymi danymi.",
 
   sheetLabel: "Poprawka tekstu",
   untranslated: "Nie ma jeszcze tłumaczenia: strona pokazuje tu polski tekst.",
@@ -143,8 +181,10 @@ const PL: Strings = {
   commentHint: "Dla redakcji, nieobowiązkowo: dlaczego tak.",
   save: "Zapisz",
   saving: "Zapisuję…",
+  savedHere: "Zapisano.",
   withdraw: "Cofnij moją propozycję",
   withdrawing: "Cofam…",
+  withdrawnHere: "Cofnięto propozycję.",
   empty: "Pole nie może być puste: tekst zniknąłby ze strony.",
   nothingToSave: "Zmień tekst albo dopisz uwagę.",
   saveFailed: "Nie udało się zapisać. Tekst został w polu, spróbuj jeszcze raz.",
@@ -156,6 +196,8 @@ const PL: Strings = {
   draftRestored: "Przywrócono niezapisany szkic.",
   discardDraft: "Odrzuć szkic",
   otherLanguages: "Inne języki",
+  editOther: "Popraw",
+  polishNow: "Polski tekst teraz:",
   notTranslated: "brak tłumaczenia",
   othersProposals: "Propozycje innych osób",
   detailsLoading: "Wczytuję…",
@@ -164,6 +206,7 @@ const PL: Strings = {
     "W niektórych polach widać znaczniki strony: „<em>” wyróżnia słowo, „<a …>” robi odnośnik. Poprawiaj tekst między nimi i zostaw je na miejscu — skasowany znacznik zabiera ze strony wyróżnienie albo odnośnik.",
   frenchMissingSpace: (fragments) => `Brak spacji przed znakiem: ${fragments}`,
   localeNames: { pl: "polski", en: "angielski", fr: "francuski" },
+  localeAdverbs: { pl: "po polsku", en: "po angielsku", fr: "po francusku" },
 };
 
 const EN: Strings = {
@@ -182,8 +225,21 @@ const EN: Strings = {
   end: "Exit",
   saved: (label) => `Proposal saved: ${label}`,
   withdrawn: (label) => `Proposal withdrawn: ${label}`,
+  savedIn: (label, language) => `Proposal saved ${language}: ${label}`,
+  withdrawnIn: (label, language) => `Proposal withdrawn ${language}: ${label}`,
 
   menu: "Menu",
+  myProposals: "My proposals on this page",
+  restTexts: "Other texts",
+  restIntro:
+    "Texts of this page that you can’t see on it: the title and description for search engines, image descriptions, the contents of closed windows. A correction goes to the reviewers, but it won’t show on the page.",
+  mineEmpty: "You have no proposals on this page yet.",
+  notInDesk: "This page is not in the copy desk.",
+  noOwnFields: "This page has no texts of its own in the copy desk. Correct what you see on it right on the page.",
+  allVisible: "Every text of this page is on view: correct it right on the page.",
+  backToList: "← Back to the list",
+  statusOpen: "Proposal waiting for review",
+  statusAccepted: "Proposal accepted, waiting to be published",
   pageLanguage: "Page language",
   polishOnly: "This page exists in Polish only.",
   showFields: "Highlight editable texts",
@@ -206,6 +262,9 @@ const EN: Strings = {
   sharedFields: "Fields with this text:",
   openOnItsPage: "Open it on its own page",
   close: "Close",
+  previewTitle: "Your proposal",
+  previewWhy: "This text can’t be swapped on the page, so the proposal is shown here.",
+  slotNote: "The page replaces the words in braces with its own data.",
 
   sheetLabel: "Text correction",
   untranslated: "Not translated yet: the page shows the Polish text here.",
@@ -218,8 +277,10 @@ const EN: Strings = {
   commentHint: "For the reviewers, optional: why.",
   save: "Save",
   saving: "Saving…",
+  savedHere: "Saved.",
   withdraw: "Withdraw my proposal",
   withdrawing: "Withdrawing…",
+  withdrawnHere: "Proposal withdrawn.",
   empty: "The field can’t be empty: the text would disappear from the page.",
   nothingToSave: "Change the text or add a note.",
   saveFailed: "Saving failed. Your text is still here; try again.",
@@ -231,6 +292,8 @@ const EN: Strings = {
   draftRestored: "Unsaved draft restored.",
   discardDraft: "Discard draft",
   otherLanguages: "Other languages",
+  editOther: "Edit",
+  polishNow: "The Polish now:",
   notTranslated: "not translated",
   othersProposals: "Other people’s proposals",
   detailsLoading: "Loading…",
@@ -239,6 +302,7 @@ const EN: Strings = {
     "Some fields show the page's own markup: “<em>” emphasises a word, “<a …>” makes a link. Edit the text between them and leave them where they are — a tag you delete takes the emphasis or the link off the site with it.",
   frenchMissingSpace: (fragments) => `No space before: ${fragments}`,
   localeNames: { pl: "Polish", en: "English", fr: "French" },
+  localeAdverbs: { pl: "in Polish", en: "in English", fr: "in French" },
 };
 
 const FR: Strings = {
@@ -257,8 +321,22 @@ const FR: Strings = {
   end: "Quitter",
   saved: (label) => `Proposition enregistrée : ${label}`,
   withdrawn: (label) => `Proposition retirée : ${label}`,
+  savedIn: (label, language) => `Proposition enregistrée ${language} : ${label}`,
+  withdrawnIn: (label, language) => `Proposition retirée ${language} : ${label}`,
 
   menu: "Menu",
+  myProposals: "Mes propositions sur cette page",
+  restTexts: "Autres textes",
+  restIntro:
+    "Les textes de cette page qu’on n’y voit pas : le titre et la description pour les moteurs de recherche, les descriptions d’images, le contenu des fenêtres fermées. La correction part à la relecture, mais elle n’apparaîtra pas sur la page.",
+  mineEmpty: "Vous n’avez encore aucune proposition sur cette page.",
+  notInDesk: "Cette page n’est pas dans la rédaction.",
+  noOwnFields:
+    "Cette page n’a pas de textes propres dans la rédaction. Corrigez ce que vous y voyez directement sur la page.",
+  allVisible: "Tous les textes de cette page sont visibles : corrigez-les directement sur la page.",
+  backToList: "← Retour à la liste",
+  statusOpen: "Proposition en attente de relecture",
+  statusAccepted: "Proposition acceptée, en attente de publication",
   pageLanguage: "Langue de la page",
   polishOnly: "Cette page n’existe qu’en polonais.",
   showFields: "Surligner les textes modifiables",
@@ -281,6 +359,9 @@ const FR: Strings = {
   sharedFields: "Champs contenant ce texte :",
   openOnItsPage: "Ouvrir sur sa page",
   close: "Fermer",
+  previewTitle: "Votre proposition",
+  previewWhy: "Ce texte ne peut pas être remplacé sur la page : la proposition s’affiche ici.",
+  slotNote: "La page remplace les mots entre accolades par ses propres données.",
 
   sheetLabel: "Correction du texte",
   untranslated: "Pas encore traduit : la page affiche ici le texte polonais.",
@@ -293,8 +374,10 @@ const FR: Strings = {
   commentHint: "Pour la relecture, facultatif : pourquoi.",
   save: "Enregistrer",
   saving: "Enregistrement…",
+  savedHere: "Enregistré.",
   withdraw: "Retirer ma proposition",
   withdrawing: "Retrait…",
+  withdrawnHere: "Proposition retirée.",
   empty: "Le champ ne peut pas être vide : le texte disparaîtrait de la page.",
   nothingToSave: "Modifiez le texte ou ajoutez une remarque.",
   saveFailed: "L’enregistrement a échoué. Votre texte est toujours là ; réessayez.",
@@ -307,6 +390,8 @@ const FR: Strings = {
   draftRestored: "Brouillon non enregistré restauré.",
   discardDraft: "Abandonner le brouillon",
   otherLanguages: "Autres langues",
+  editOther: "Modifier",
+  polishNow: "Le polonais actuel :",
   notTranslated: "pas de traduction",
   othersProposals: "Propositions d’autres personnes",
   detailsLoading: "Chargement…",
@@ -315,6 +400,7 @@ const FR: Strings = {
     "Certains champs laissent voir le balisage de la page : « <em> » met un mot en valeur, « <a …> » crée un lien. Modifiez le texte entre les balises et laissez-les en place — une balise supprimée emporte avec elle la mise en valeur ou le lien.",
   frenchMissingSpace: (fragments) => `Espace manquante avant : ${fragments}`,
   localeNames: { pl: "polonais", en: "anglais", fr: "français" },
+  localeAdverbs: { pl: "en polonais", en: "en anglais", fr: "en français" },
 };
 
 export const STRINGS: Readonly<Record<Locale, Strings>> = { pl: PL, en: EN, fr: FR };

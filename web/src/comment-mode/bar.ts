@@ -2,9 +2,10 @@
  * @file bar.ts
  * @description The comment mode's bar: a compact pill at the bottom left that says what state the
  *  mode is in. "Zakończ" is in every state, signed-out and refused included, so an editor can
- *  always leave. Once the mode is ready, the pill's menu opens above it: the page's language,
- *  the highlights, the editor's proposals or the published text, editing on or off, "Gotowe",
- *  "Zakończ".
+ *  always leave. Once the mode is ready, the pill's menu opens above it: the editor's proposals
+ *  on this page, the page's language, the highlights, the editor's proposals or the published
+ *  text, editing on or off, "Pozostałe teksty", "Gotowe", "Zakończ". The two lists show how many
+ *  fields they hold, counted when the menu opens.
  *
  *  The language buttons offer only the locales the page exists in (`TRANSLATED_ROUTES`): the
  *  public switcher is off, so this is the editor's one way between languages.
@@ -35,11 +36,20 @@ export interface BarView {
   readonly previews: boolean;
   /** "Gotowe" is on its way. */
   readonly sending: boolean;
+  /** How many fields each list holds; measures the page, so it is asked only by an open menu. */
+  readonly counts: () => ListCounts;
+}
+
+export interface ListCounts {
+  readonly mine: number;
+  readonly rest: number;
 }
 
 export interface BarActions {
   signIn(): void;
   retry(): void;
+  showMine(): void;
+  showRest(): void;
   toggleEditing(): void;
   switchLocale(locale: Locale): void;
   toggleFields(): void;
@@ -56,6 +66,13 @@ function toggle(label: string, on: boolean, onPress: () => void): HTMLButtonElem
   const control = button("", onPress, "btn menu-item");
   control.setAttribute("aria-pressed", String(on));
   control.replaceChildren(el("span", "", label), el("span", "switch"));
+  return control;
+}
+
+/** A menu row that opens a list, with how many fields it holds. */
+function listItem(label: string, count: number, onPress: () => void): HTMLButtonElement {
+  const control = button("", onPress, "btn menu-item");
+  control.replaceChildren(el("span", "", label), el("span", "count", String(count)));
   return control;
 }
 
@@ -217,15 +234,18 @@ export class Bar {
 
     const done = button(view.sending ? s.sending : s.done, () => actions.done(), "btn menu-item");
     done.disabled = view.sending;
+    const counts = view.counts();
 
     return el(
       "div",
       "menu",
+      listItem(s.myProposals, counts.mine, () => actions.showMine()),
       languages,
       polishOnly,
       view.fields === null ? null : toggle(s.showFields, view.fields, () => actions.toggleFields()),
       toggle(s.showPreviews, view.previews, () => actions.togglePreviews()),
       button(editing ? s.pause : s.resume, () => actions.toggleEditing(), "btn menu-item"),
+      listItem(s.restTexts, counts.rest, () => actions.showRest()),
       done,
       el("p", "menu-note", s.doneHint),
       button(s.end, () => actions.end(), "btn menu-item"),

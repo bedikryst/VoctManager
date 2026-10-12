@@ -113,6 +113,7 @@ a { color: var(--cm-gold); text-underline-offset: 3px; }
 }
 .menu-item:hover { border-color: var(--cm-line); }
 .menu-label { flex: 1 1 auto; color: var(--cm-muted); }
+.count { flex: none; min-width: 24px; color: var(--cm-muted); font-variant-numeric: tabular-nums; text-align: right; }
 .menu-note { padding: 0 14px 6px; font-size: 12.5px; color: var(--cm-muted); }
 .langs { display: flex; align-items: center; gap: 6px; padding: 4px 6px 6px 14px; }
 .lang { min-width: 44px; padding-inline: 10px; }
@@ -166,6 +167,36 @@ a { color: var(--cm-gold); text-underline-offset: 3px; }
 .fields li { padding: 7px 0; border-top: 1px solid var(--cm-line); display: grid; gap: 2px; }
 .popover-actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
 
+/* A proposal laid out by the tool (preview.ts proposalNodes): one paragraph per block, links as
+   underlined text that goes nowhere, the build's slots as marked tokens. */
+.proposal {
+  display: grid;
+  gap: 8px;
+  max-height: min(40vh, 320px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  margin-bottom: 10px;
+  padding: 10px 12px;
+  font-size: 15px;
+  background: var(--cm-raised);
+  border-left: 2px solid var(--cm-gold);
+  border-radius: 4px;
+  overflow-wrap: anywhere;
+}
+.proposal em { font-style: italic; }
+.proposal strong { font-weight: 600; }
+.proposal code { font-family: ui-monospace, monospace; font-size: 0.92em; }
+.as-link { text-decoration: underline; text-underline-offset: 3px; }
+.slot {
+  padding: 0 4px;
+  font-family: ui-monospace, monospace;
+  font-size: 0.88em;
+  color: var(--cm-gold);
+  border: 1px solid var(--cm-line);
+  border-radius: 4px;
+}
+.popover .note { margin-bottom: 10px; }
+
 /* The sheet: a side panel on desktop. --cm-keyboard is what an on-screen keyboard covers of the
    layout viewport and --cm-visible the visual viewport's height (sheet.ts): iOS keeps fixed
    elements on the layout viewport, under the keyboard, unless they are lifted. */
@@ -187,6 +218,7 @@ a { color: var(--cm-gold); text-underline-offset: 3px; }
   border-bottom: 1px solid var(--cm-line);
 }
 .sheet-heading { flex: 1 1 auto; min-width: 0; }
+.back { min-height: 28px; margin: -4px 0 6px -8px; text-decoration: none; }
 .sheet-title { font-size: 16px; font-weight: 600; overflow-wrap: anywhere; }
 .sheet-scope { margin-top: 2px; font-size: 13px; color: var(--cm-muted); }
 .sheet-body {
@@ -232,6 +264,35 @@ summary { cursor: pointer; font-size: 13px; font-weight: 600; }
 .reference-head { font-size: 12px; color: var(--cm-muted); }
 .reference-text { white-space: pre-wrap; overflow-wrap: anywhere; }
 .reference-empty { font-style: italic; color: var(--cm-muted); }
+
+/* Another language in the sheet: its text and "Popraw", or an editor of its own. */
+.side { display: grid; gap: 8px; padding-top: 10px; border-top: 1px solid var(--cm-line); }
+.side:first-child { padding-top: 0; border-top: 0; }
+.side-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+
+/* The lists in the sheet: one card per field, the whole card the button. */
+.list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.list-item {
+  width: 100%;
+  display: grid;
+  justify-items: start;
+  gap: 3px;
+  padding: 10px 12px;
+  text-align: left;
+  border-radius: 10px;
+}
+.list-label { font-weight: 600; overflow-wrap: anywhere; }
+.list-scope { font-size: 12.5px; color: var(--cm-muted); }
+.list-state { font-size: 12.5px; color: var(--cm-gold); }
+.list-text {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+  color: var(--cm-muted);
+}
 
 /* On a phone a bottom sheet that sits on the keyboard and never grows past what is visible. */
 @media (max-width: 720px) {

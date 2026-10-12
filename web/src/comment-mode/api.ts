@@ -58,7 +58,7 @@ export interface SiteIndex {
   readonly segments: IndexRow[];
 }
 
-/** A proposal as the desk lists it (`GET segments/`). */
+/** A proposal as the desk lists it (`GET segments/`). Times are ISO 8601. */
 export interface DeskProposal {
   readonly id: string;
   readonly value: string;
@@ -66,6 +66,9 @@ export interface DeskProposal {
   readonly comment: string;
   readonly author_name: string;
   readonly is_mine: boolean;
+  readonly updated_at: string;
+  readonly reviewed_at: string | null;
+  readonly applied_at: string | null;
 }
 
 /** One field in one locale with its proposal history (`GET segments/?scope=`). */
@@ -75,6 +78,7 @@ export interface DeskSegment {
   readonly locale: Locale;
   readonly kind: string;
   readonly value: string;
+  /** The current Polish; equal to `value` on a Polish row. */
   readonly source_value: string;
   readonly is_stale: boolean;
   readonly proposals: readonly DeskProposal[];

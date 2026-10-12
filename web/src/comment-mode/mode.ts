@@ -12,7 +12,17 @@
  *
  *  A PAGE READ walks the text, re-applies the editor's proposals in place (`preview.ts`), walks
  *  again if that changed the text, and paints the highlights (`highlights.ts`). It runs on every
- *  `astro:page-load` and after every save or withdrawal.
+ *  `astro:page-load`, after every save or withdrawal, and whenever the page's text changes under
+ *  the mode (`watch.ts`: islands rendering, the rite unmounting, an overlay opening). A proposal
+ *  that cannot stand in place is shown in the popover, hung from the text it was saved from, once
+ *  the sheet has closed over it.
+ *
+ *  THE LISTS ("Moje propozycje na tej stronie", "Pozostałe teksty", `lists.ts`) open in the sheet
+ *  from the bar's menu, follow the page while they are open, and a field picked from one offers
+ *  the way back to it.
+ *
+ *  A SAVE IN ANOTHER LANGUAGE (the sheet's other languages) patches that locale's index, if it was
+ *  loaded, so switching the page to it shows the proposal at once.
  *
  *  TAPS are read from pointer events on `window` in the capture phase, ahead of the site's own
  *  document-level capture handlers, Plausible's tagged links and the client router: iOS has long
@@ -42,19 +52,21 @@ import { navigate } from "astro:transitions/client";
 import { DEFAULT_LOCALE, LOCALES, isTranslated, localizePath, type Locale } from "../i18n/config";
 import { documentLocale } from "../i18n/documentLocale";
 import { ApiError, fetchSiteIndex, notifyReviewers, type IndexRow, type SiteIndex } from "./api";
-import { Bar, type BarState, type BarView } from "./bar";
+import { Bar, type BarState, type BarView, type ListCounts } from "./bar";
 import { button, el } from "./dom";
 import { Highlights } from "./highlights";
 import { Host } from "./host";
+import { listSignature, mineList, pageFields, restList, type ListKind, type PageFields } from "./lists";
 import { compileCorpus, type Corpus } from "./match";
 import { hitAt, rangeOf, scanPage, type Hit, type PageScan, type Pinned } from "./pageText";
 import { Popover, fieldChoices, sharedWordContent, type Anchor } from "./popover";
 import { setCommentModeActive } from "./presence";
-import { Previews } from "./preview";
+import { Previews, proposalNodes, proposalValue } from "./preview";
 import { basePath, pathScope } from "./scopePath";
 import { Sheet } from "./sheet";
 import { restoreStats, silenceStats } from "./stats";
 import { STRINGS, type Strings } from "./strings";
+import { PageWatcher } from "./watch";
 
 export interface StartOptions {
   /** Sets the loader's flag: the next page load starts the mode again. */
@@ -84,6 +96,8 @@ const TAP_MS = 500;
 const CLICK_WINDOW_MS = 800;
 /** Where an edited text is brought to, from the viewport's top: clear of the fixed header. */
 const REVEAL_TOP = 96;
+/** `match.ts`'s placeholder: a proposal holding one gets a word on what the braces mean. */
+const SLOT = /\{[A-Za-z][A-Za-z0-9_]*\}/u;
 /**
  * `astro dev` has no panel: the dev proxy sends `/api` to the nginx stack, so signing in happens
  * there. Cookies do not isolate ports, so that login also serves the dev server.
@@ -121,7 +135,10 @@ class CommentMode {
   private readonly bar: Bar;
   private readonly popover: Popover;
   private readonly sheet: Sheet;
+  private readonly watcher: PageWatcher;
   private readonly indexes = new Map<Locale, Promise<LoadedIndex>>();
+  /** The indexes that have arrived: a save in another language patches its row here. */
+  private readonly resolved = new Map<Locale, LoadedIndex>();
   private readonly undo: Array<() => void> = [];
   private loaded: LoadedIndex | null = null;
   private scan: PageScan | null = null;
@@ -145,6 +162,9 @@ class CommentMode {
   private target: { readonly row: IndexRow; readonly range: Range | null } | null = null;
   private pointer: { readonly x: number; readonly y: number; readonly target: EventTarget | null } | null = null;
   private hoverFrame = 0;
+  /** The list the sheet shows, and what it showed last: an unchanged list is not re-rendered. */
+  private list: ListKind | null = null;
+  private listShape = "";
 
   constructor(options: StartOptions) {
     this.options = options;
@@ -159,6 +179,8 @@ class CommentMode {
           window.location.assign(signInUrl(this.options.param));
         },
         retry: () => void this.readPage(),
+        showMine: () => this.showList("mine"),
+        showRest: () => this.showList("rest"),
         toggleEditing: () => this.toggleEditing(),
         switchLocale: (locale) => this.switchLocale(locale),
         toggleFields: () => this.toggleFields(),
@@ -172,15 +194,29 @@ class CommentMode {
     this.popover = new Popover(this.host.root);
     // A save or a withdrawal in flight answers after "Zakończ" too: the page is the visitor's by then.
     this.sheet = new Sheet(this.host.root, {
-      saved: (row) => {
+      saved: (row, locale) => {
         if (running !== this) return;
-        this.bar.announce(this.strings().saved(row.label || row.key));
-        this.afterChange(row);
+        const s = this.strings();
+        const label = row.label || row.key;
+        if (locale === this.loaded?.index.locale) {
+          this.bar.announce(s.saved(label));
+          this.afterChange(row);
+        } else {
+          this.bar.announce(s.savedIn(label, s.localeAdverbs[locale]));
+          this.patchIndex(row, locale);
+        }
       },
-      withdrawn: (row) => {
+      withdrawn: (row, locale) => {
         if (running !== this) return;
-        this.bar.announce(this.strings().withdrawn(row.label || row.key));
-        this.afterChange(row);
+        const s = this.strings();
+        const label = row.label || row.key;
+        if (locale === this.loaded?.index.locale) {
+          this.bar.announce(s.withdrawn(label));
+          this.afterChange(row);
+        } else {
+          this.bar.announce(s.withdrawnIn(label, s.localeAdverbs[locale]));
+          this.patchIndex(row, locale);
+        }
       },
       signedOut: () => {
         if (running === this) this.setState({ kind: "signed-out" });
@@ -190,9 +226,20 @@ class CommentMode {
       },
       closed: () => {
         this.target = null;
+        this.list = null;
         this.bar.setUnderSheet(false);
+        this.watcher.resume();
       },
     });
+    this.watcher = new PageWatcher(this.host.element, {
+      text: () => {
+        if (running === this && this.state.kind === "ready") this.readText();
+      },
+      shown: () => {
+        if (running === this) this.refreshList();
+      },
+    });
+    this.watcher.watch();
 
     this.on(window, "pointerdown", (event) => {
       if (event instanceof PointerEvent) this.onPointerDown(event);
@@ -223,11 +270,15 @@ class CommentMode {
       this.bar.closeMenu();
     });
     this.on(document, "astro:before-swap", () => {
+      this.watcher.stop();
       this.previews.restoreAll();
       this.pins = new Map();
       this.highlights.clear();
     });
-    this.on(document, "astro:after-swap", () => this.host.attach());
+    this.on(document, "astro:after-swap", () => {
+      this.host.attach();
+      this.watcher.watch();
+    });
     this.on(document, "astro:page-load", () => void this.readPage());
 
     void this.readPage();
@@ -250,6 +301,7 @@ class CommentMode {
       fields: this.highlights.supported ? this.showFields : null,
       previews: this.previews.shown,
       sending: this.sending,
+      counts: () => this.counts(),
     };
   }
 
@@ -293,7 +345,9 @@ class CommentMode {
   }
 
   private togglePreviews(): void {
-    if (this.previews.setShown(!this.previews.shown)) this.readText();
+    const shown = !this.previews.shown;
+    if (this.watcher.quietly(() => this.previews.setShown(shown))) this.readText();
+    this.popover.hide();
     this.renderBar();
   }
 
@@ -331,7 +385,11 @@ class CommentMode {
   private indexFor(locale: Locale): Promise<LoadedIndex> {
     const known = this.indexes.get(locale);
     if (known) return known;
-    const loading = fetchSiteIndex(locale).then((index) => ({ index, corpus: compileCorpus(index.segments) }));
+    const loading = fetchSiteIndex(locale).then((index) => {
+      const loaded = { index, corpus: compileCorpus(index.segments) };
+      this.resolved.set(locale, loaded);
+      return loaded;
+    });
     this.indexes.set(locale, loading);
     // A refusal is not remembered: after a sign-in, or once the network is back, ask again.
     loading.catch(() => {
@@ -377,20 +435,112 @@ class CommentMode {
     // Between a language switch and its index the page is in another language than the corpus;
     // the read that index ends in does this.
     if (!loaded || loaded.index.locale !== documentLocale()) return;
-    this.scan = this.scanNow(loaded);
-    if (this.previews.sync(this.scan, documentLocale())) {
+    const scan = this.scanNow(loaded);
+    this.scan = scan;
+    const locale = documentLocale();
+    if (this.watcher.quietly(() => this.previews.sync(scan, locale))) {
       this.pins = this.previews.pinned();
       this.scan = this.scanNow(loaded);
     }
     this.paint();
+    this.refreshList();
   }
 
-  /** After a save or a withdrawal: the proposal shows where the sheet was opened from, then everywhere it can. */
+  /**
+   * After a save or a withdrawal: the proposal shows where the sheet was opened from, then
+   * everywhere it can. Where it cannot stand in place, the popover shows it, once the sheet has
+   * closed: a sheet that stays open (another language still unsaved, markup removed) shows the
+   * stored text itself, and the popover would only take its focus.
+   */
   private afterChange(row: IndexRow): void {
     const target = this.target;
-    if (target?.row === row && target.range) this.previews.place(target.range, row, documentLocale());
+    const range = target?.row === row ? target.range : null;
+    const locale = documentLocale();
+    if (range) this.watcher.quietly(() => this.previews.place(range, row, locale));
     this.pins = this.previews.pinned();
     this.readText();
+    if (!range || !this.previews.shown || proposalValue(row) === null || this.previews.covers(range.startContainer)) {
+      return;
+    }
+    // The sheet decides whether to close after this event returns.
+    queueMicrotask(() => {
+      if (running === this && !this.sheet.isOpen && this.tapsLive()) this.showProposal(row, range);
+    });
+  }
+
+  /** The editor's proposal in the popover, hung from the text it replaces. */
+  private showProposal(row: IndexRow, range: Range): void {
+    const value = proposalValue(row);
+    if (value === null) return;
+    const s = this.strings();
+    this.popover.show(
+      () => (range.startContainer.isConnected && !range.collapsed ? range.getBoundingClientRect() : null),
+      s.previewTitle,
+      [
+        el("p", "popover-title", s.previewTitle),
+        el("p", "popover-text", s.previewWhy),
+        proposalNodes(row, value, documentLocale()),
+        SLOT.test(value) ? el("p", "note", s.slotNote) : null,
+        el(
+          "div",
+          "popover-actions",
+          button(s.editText, () => this.edit(row, range), "btn"),
+          button(s.close, () => this.popover.hide(), "btn btn-quiet"),
+        ),
+      ].filter((node): node is HTMLElement => node !== null),
+    );
+  }
+
+  /** A save or a withdrawal in another language: that locale's index, if loaded, learns of it. */
+  private patchIndex(row: IndexRow, locale: Locale): void {
+    const cached = this.resolved.get(locale)?.index.segments.find((candidate) => candidate.id === row.id);
+    if (cached) cached.mine = row.mine;
+  }
+
+  /** The page's fields sorted for the lists, from the last read or a fresh one. */
+  private fields(): PageFields | null {
+    const loaded = this.loaded;
+    if (!loaded || loaded.index.locale !== documentLocale()) return null;
+    this.scan ??= this.scanNow(loaded);
+    return pageFields(loaded.index.segments, this.scan, this.pins, ownScope());
+  }
+
+  private counts(): ListCounts {
+    const fields = this.fields();
+    return { mine: fields?.mine.length ?? 0, rest: fields?.rest.length ?? 0 };
+  }
+
+  private listContent(kind: ListKind, fields: PageFields): Node[] {
+    const s = this.strings();
+    const back = (): void => this.showList(kind);
+    return kind === "mine"
+      ? mineList(fields, ownScope(), s, (entry) => this.edit(entry.row, entry.range, back))
+      : restList(fields, s, (row) => this.edit(row, null, back));
+  }
+
+  private showList(kind: ListKind): void {
+    const fields = this.fields();
+    if (!fields) return;
+    const s = this.strings();
+    this.bar.closeMenu();
+    this.popover.hide();
+    this.sheet.showList(s, kind === "mine" ? s.myProposals : s.restTexts, this.listContent(kind, fields));
+    // After `showList`: closing what the sheet held before reports `closed`, which clears the list.
+    this.list = kind;
+    this.listShape = listSignature(kind, fields);
+    this.bar.setUnderSheet(true);
+  }
+
+  /** The open list follows the page: re-rendered only when what it lists has changed. */
+  private refreshList(): void {
+    const kind = this.list;
+    if (!kind || !this.sheet.showsList) return;
+    const fields = this.fields();
+    if (!fields) return;
+    const shape = listSignature(kind, fields);
+    if (shape === this.listShape) return;
+    this.listShape = shape;
+    this.sheet.updateList(this.listContent(kind, fields));
   }
 
   /** The highlights: off unless taps are live; gold for the editor's fields, the wash when asked for. */
@@ -581,15 +731,18 @@ class CommentMode {
     }
   }
 
-  private edit(row: IndexRow, range: Range | null): void {
+  /** Open `row` in the sheet; `back` returns to the list it was picked from. */
+  private edit(row: IndexRow, range: Range | null, back?: () => void): void {
     this.popover.hide();
     const loaded = this.loaded;
     if (!loaded) return;
     if (this.sheet.row === row) {
       this.sheet.focusText();
     } else {
-      this.sheet.open(row, loaded.index.locale, this.strings());
+      this.sheet.open(row, loaded.index.locale, this.strings(), { back });
       this.bar.setUnderSheet(true);
+      // After `open`: closing what the sheet held before resumes the watcher.
+      this.watcher.pause();
     }
     this.target = { row, range };
     if (range) this.reveal(range);
@@ -614,6 +767,7 @@ class CommentMode {
   private end(): void {
     this.generation += 1;
     this.sheet.close();
+    this.watcher.stop();
     this.popover.hide();
     this.previews.restoreAll();
     this.highlights.dispose();

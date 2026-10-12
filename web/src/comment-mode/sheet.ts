@@ -1,31 +1,21 @@
 /**
  * @file sheet.ts
- * @description The edit sheet: one field, rewritten whole, saved as the editor's proposal.
+ * @description The edit sheet: a side panel on desktop, a bottom sheet on a phone. It holds either
+ *  one field to rewrite or a list of the page's fields to pick one from ("Pozostałe teksty", the
+ *  editor's proposals on the page; `lists.ts` builds them).
  *
- *  SAVE IS EXPLICIT. Over a public page an explicit act is what closes the sheet. Every save sends
- *  `value`, `comment` and `status: "PROPOSED"` (`api.saveProposal`), and the button is disabled
- *  while one is in flight, because two first saves at once end in a server error. An empty value is
- *  refused here with the reason: the server would accept it and only `copy:apply` refuses it. An
- *  unchanged value with a note is a real proposal; an unchanged value without one has nothing to
- *  save.
+ *  THE FIELD is edited by a `FieldEditor` (`editor.ts`). A clean save or a withdrawal closes the
+ *  sheet, unless another language in it still holds unsaved text; a save the server changed keeps
+ *  it open with the stored value.
  *
- *  WHAT WAS STORED IS WHAT IS SHOWN. The server sanitizes (inline `em, strong, a, code` survive)
- *  and tidies whitespace. When the stored value differs from what was typed beyond that tidying
- *  (and, for an `HTML` field, beyond the escaping its text comes back with), the sheet stays open
- *  with the stored value and says markup was removed.
- *
- *  NOTHING TYPED IS LOST. A failed save keeps the sheet and the text. Closing with unsaved text
- *  keeps a draft per field in `sessionStorage` until the tab closes, which also carries it across
- *  a sign-in.
- *
- *  THE TEXTAREA STARTS FROM WHAT THE PAGE SHOWS THE EDITOR: their open proposal, else their
- *  accepted one not yet published (the preview prints it), else the published value. Starting an
- *  accepted field from the published text would make a second edit undo the first: the new
- *  proposal, once accepted, is the last decision `copy:apply` writes. The note starts empty
- *  there, since the old one explained a change the reviewers have settled.
- *
- *  Beside the textarea, read when the sheet opens (`GET segments/?scope=`): the field in the other
- *  languages, Polish first, for reference; and other editors' open proposals on it.
+ *  BESIDE IT, read when the sheet opens (`GET segments/?scope=`, every locale with its history):
+ *  - the other languages, Polish first, collapsed. Each reads as text with "Popraw", which turns it
+ *    into an editor of its own: one sentence fixed in all three without finding it again, each
+ *    language its own proposal. A language holding the editor's draft or open proposal opens as an
+ *    editor at once. The editor's own proposal there is read from the history by the site index's
+ *    rule: the open one, else the accepted, unapplied one that is the field's latest acceptance;
+ *  - the current Polish, beneath the warning, when the translation is stale;
+ *  - other editors' open proposals on the field.
  *
  *  ON A PHONE the sheet sits on the keyboard: what the keyboard covers is read from
  *  `visualViewport` on `resize` and `scroll` (the formula of the panel's `useKeyboardInset`), and
@@ -35,159 +25,96 @@
  * @module comment-mode/sheet
  */
 
-import {
-  ApiError,
-  fetchScopeSegments,
-  saveProposal,
-  withdrawProposal,
-  type DeskSegment,
-  type IndexRow,
-  type OwnProposal,
-} from "./api";
+import { fetchScopeSegments, type DeskProposal, type DeskSegment, type IndexRow, type OwnProposal } from "./api";
 import { LOCALES, type Locale } from "../i18n/config";
-import { button, el } from "./dom";
-import { htmlText } from "./match";
+import { button, el, fill } from "./dom";
+import { FieldEditor, hasDraft, openProposal, type EditorEvents } from "./editor";
 import { FRENCH_SPACING_NOTE, type Strings } from "./strings";
 
 export interface SheetEvents {
-  saved(row: IndexRow): void;
-  withdrawn(row: IndexRow): void;
+  saved(row: IndexRow, locale: Locale): void;
+  withdrawn(row: IndexRow, locale: Locale): void;
   /** The session ended under the sheet: the bar offers a sign-in. */
   signedOut(): void;
   /** This account may not edit: the bar says so. */
   refused(): void;
+  /** The sheet left the screen, a field or a list. */
   closed(): void;
 }
 
-interface Draft {
-  readonly value: string;
-  readonly comment: string;
-}
-
-const DRAFT_PREFIX = "voct:comment-draft:";
-
-function readDraft(id: string): Draft | null {
-  try {
-    const raw = window.sessionStorage.getItem(DRAFT_PREFIX + id);
-    if (!raw) return null;
-    const draft = JSON.parse(raw) as Partial<Draft>;
-    return typeof draft.value === "string" && typeof draft.comment === "string"
-      ? { value: draft.value, comment: draft.comment }
-      : null;
-  } catch {
-    return null;
-  }
-}
-
-function writeDraft(id: string, draft: Draft): void {
-  try {
-    window.sessionStorage.setItem(DRAFT_PREFIX + id, JSON.stringify(draft));
-  } catch {
-    // Storage refused: the text lives as long as the sheet does.
-  }
-}
-
-function clearDraft(id: string): void {
-  try {
-    window.sessionStorage.removeItem(DRAFT_PREFIX + id);
-  } catch {
-    // Nothing stored, nothing to clear.
-  }
-}
-
-/** The server's tidying (`copydesk/sanitizers.py` `_tidy`): LF, no trailing spaces, one blank line. */
-function tidy(value: string): string {
-  return value
-    .replace(/\r\n?/gu, "\n")
-    .replace(/[ \t]+\n/gu, "\n")
-    .replace(/\n{3,}/gu, "\n\n")
-    .trim();
-}
-
-/**
- * `value` as the browser's parser writes it back. The server re-emits an `HTML` field's text
- * escaped (`&` as `&amp;`), so two values compare as markup, not as strings.
- */
-function asMarkup(value: string): string {
-  const template = document.createElement("template");
-  template.innerHTML = value;
-  return template.innerHTML;
-}
-
-/** True when the server changed `typed` beyond its tidying: markup was removed. */
-function sanitizedAway(kind: string, typed: string, stored: string): boolean {
-  return kind === "HTML" ? asMarkup(stored) !== asMarkup(tidy(typed)) : stored !== tidy(typed);
-}
-
-/** The reader's proposal while it is still open, or `null` (none, or accepted and awaiting publication). */
-function openProposal(proposal: OwnProposal | null): OwnProposal | null {
-  return proposal !== null && (proposal.status === "PROPOSED" || proposal.status === "DRAFT") ? proposal : null;
-}
-
-/** The reader's proposal once accepted and still awaiting publication, or `null`. */
-function acceptedProposal(proposal: OwnProposal | null): OwnProposal | null {
-  return proposal?.status === "ACCEPTED" ? proposal : null;
+export interface OpenOptions {
+  /** The list the field was picked from: the sheet offers the way back to it. */
+  readonly back?: () => void;
 }
 
 /** Below this many covered pixels the viewport only lost a toolbar, not to a keyboard. */
 const KEYBOARD_MIN = 80;
 
-const SPACE = /[\s   ]/u;
-const FRENCH_MARKS = "?!:;";
-
-/**
- * Where French text puts `? ! : ;` straight after a word. `typo.ts` makes an existing space
- * before them unbreakable and never inserts one, so a missing space stays missing on the page.
- * A colon between digits (a time) and before `//` (an address) is not punctuation.
- */
-function missingFrenchSpaces(value: string, kind: string): string[] {
-  const text = kind === "HTML" ? htmlText(value) : value;
-  const found: string[] = [];
-  for (let i = 1; i < text.length && found.length < 3; i++) {
-    const mark = text[i];
-    if (!FRENCH_MARKS.includes(mark)) continue;
-    const before = text[i - 1];
-    if (SPACE.test(before) || FRENCH_MARKS.includes(before)) continue;
-    if (mark === ":" && ((/\d/u.test(before) && /\d/u.test(text[i + 1] ?? "")) || text.startsWith("//", i + 1))) {
-      continue;
-    }
-    let start = i;
-    while (start > 0 && i - start < 14 && !SPACE.test(text[start - 1])) start--;
-    found.push(text.slice(start, i + 1));
-  }
-  return found;
-}
-
-function textareaRows(value: string): number {
-  return Math.min(14, Math.max(3, Math.ceil(value.length / 46) + value.split("\n").length - 1));
-}
-
-/** What the open sheet holds. */
+/** What the open sheet holds while it edits a field. */
 interface Session {
   readonly row: IndexRow;
   readonly locale: Locale;
   readonly strings: Strings;
-  /** The editor's accepted proposal when the sheet opened: it stands again if a newer one is withdrawn. */
-  readonly accepted: OwnProposal | null;
-  /** What the textarea and the note held when the sheet opened, or after the last save. */
-  baseline: Draft;
-  saving: boolean;
-  /** The editor has typed: from then on a disabled Save says why. */
-  touched: boolean;
-  readonly value: HTMLTextAreaElement;
-  readonly comment: HTMLTextAreaElement;
-  readonly hint: HTMLElement;
-  readonly status: HTMLElement;
-  readonly message: HTMLElement;
-  readonly save: HTMLButtonElement;
-  readonly withdraw: HTMLButtonElement;
+  readonly main: FieldEditor;
+  /** The other languages the editor has opened, each its own proposal. */
+  readonly others: Map<Locale, FieldEditor>;
+  /** Where the current Polish goes when the translation is stale. */
+  readonly polish: HTMLElement;
   readonly details: HTMLElement;
+}
+
+function ownOf(proposal: DeskProposal): OwnProposal {
+  return { id: proposal.id, status: proposal.status, value: proposal.value, comment: proposal.comment };
+}
+
+function decidedAt(proposal: DeskProposal): number {
+  return Date.parse(proposal.reviewed_at ?? "") || 0;
+}
+
+/**
+ * The reader's proposal on a field, by the site index's rule (`CopyDeskService.site_index`): the
+ * open one, else the accepted one not yet applied, but only while it is the field's latest
+ * acceptance, the decision `copy:apply` writes last.
+ */
+function ownProposalOf(proposals: readonly DeskProposal[]): OwnProposal | null {
+  const open = proposals.find((p) => p.is_mine && (p.status === "PROPOSED" || p.status === "DRAFT"));
+  if (open) return ownOf(open);
+  let shipping: DeskProposal | null = null;
+  for (const proposal of proposals) {
+    if (proposal.status !== "ACCEPTED" || proposal.applied_at) continue;
+    const later =
+      !shipping ||
+      decidedAt(proposal) > decidedAt(shipping) ||
+      (decidedAt(proposal) === decidedAt(shipping) && Date.parse(proposal.updated_at) > Date.parse(shipping.updated_at));
+    if (later) shipping = proposal;
+  }
+  return shipping?.is_mine ? ownOf(shipping) : null;
+}
+
+/** Another language of `main` as an index row, so it is edited exactly as the tapped one is. */
+function sideRow(main: IndexRow, segment: DeskSegment): IndexRow {
+  return {
+    id: segment.id,
+    key: segment.key,
+    scope: main.scope,
+    scope_label: main.scope_label,
+    scope_path: main.scope_path,
+    label: main.label,
+    kind: segment.kind,
+    value: segment.value,
+    fallback_value: segment.value ? "" : segment.source_value,
+    is_stale: segment.is_stale,
+    mine: ownProposalOf(segment.proposals),
+    others_open: segment.proposals.filter((p) => !p.is_mine && (p.status === "PROPOSED" || p.status === "DRAFT"))
+      .length,
+  };
 }
 
 export class Sheet {
   readonly element: HTMLElement;
   private readonly events: SheetEvents;
   private current: Session | null = null;
+  private listShown = false;
   private readonly fitKeyboard = (): void => {
     const viewport = window.visualViewport;
     const covered = viewport ? Math.max(0, Math.round(window.innerHeight - (viewport.height + viewport.offsetTop))) : 0;
@@ -207,7 +134,7 @@ export class Sheet {
   }
 
   get isOpen(): boolean {
-    return this.current !== null;
+    return this.current !== null || this.listShown;
   }
 
   /** The field being edited, if any. */
@@ -215,134 +142,106 @@ export class Sheet {
     return this.current?.row ?? null;
   }
 
-  open(row: IndexRow, locale: Locale, strings: Strings): void {
+  /** True while the sheet shows a list rather than a field. */
+  get showsList(): boolean {
+    return this.listShown;
+  }
+
+  open(row: IndexRow, locale: Locale, strings: Strings, options: OpenOptions = {}): void {
     this.close();
     const s = strings;
-    const printed = row.value || row.fallback_value;
-    const own = openProposal(row.mine);
-    const accepted = acceptedProposal(row.mine);
-    const baseline: Draft = own
-      ? { value: own.value, comment: own.comment }
-      : { value: accepted?.value ?? printed, comment: "" };
-    const draft = readDraft(row.id);
-    const start = draft ?? baseline;
-
-    const value = el("textarea", "");
-    value.value = start.value;
-    value.rows = textareaRows(start.value);
-    value.spellcheck = true;
-    value.lang = locale;
-    value.id = "comment-mode-value";
-
-    const comment = el("textarea", "");
-    comment.value = start.comment;
-    comment.rows = 2;
-    comment.id = "comment-mode-comment";
-
-    const valueLabel = el("label", "field-label", s.textLabel);
-    valueLabel.htmlFor = value.id;
-    const commentLabel = el("label", "field-label", s.commentLabel);
-    commentLabel.htmlFor = comment.id;
-
+    const others = new Map<Locale, FieldEditor>();
+    const main = new FieldEditor({ row, locale, strings, startFromFallback: true, events: this.editorEvents() });
     const session: Session = {
       row,
       locale,
-      strings: s,
-      accepted,
-      baseline,
-      saving: false,
-      touched: false,
-      value,
-      comment,
-      hint: el("p", "note"),
-      status: el("div", "notes"),
-      message: el("p", "note"),
-      save: button(s.save, () => void this.submit(), "btn btn-primary"),
-      withdraw: button(s.withdraw, () => void this.retract(), "btn"),
+      strings,
+      main,
+      others,
+      polish: el("div", "notes"),
       details: el("div", "notes", el("p", "note", s.detailsLoading)),
     };
-    session.message.setAttribute("aria-live", "polite");
+    session.polish.hidden = true;
     this.current = session;
-
-    const draftNote = draft
-      ? el(
-          "div",
-          "draft note note-warn",
-          s.draftRestored,
-          button(s.discardDraft, () => this.discardDraft(), "btn btn-quiet"),
-        )
-      : null;
 
     const notes: Node[] = [];
     if (locale === "fr") notes.push(el("p", "note", FRENCH_SPACING_NOTE));
     if (row.kind === "HTML") notes.push(el("p", "note", s.markupNote));
 
+    const back = options.back;
     this.element.setAttribute("aria-label", s.sheetLabel);
     this.element.replaceChildren(
-      el(
-        "div",
-        "sheet-head",
-        el(
-          "div",
-          "sheet-heading",
-          el("p", "sheet-title", row.label || row.key),
-          el("p", "sheet-scope", row.scope_label),
-        ),
-        button(s.close, () => this.close(), "btn"),
+      this.head(
+        s,
+        back
+          ? button(
+              s.backToList,
+              () => {
+                this.close();
+                back();
+              },
+              "btn btn-quiet back",
+            )
+          : null,
+        el("p", "sheet-title", row.label || row.key),
+        el("p", "sheet-scope", row.scope_label),
       ),
       el(
         "div",
         "sheet-body",
-        session.status,
-        draftNote,
-        el("div", "field", valueLabel, value, session.hint),
+        main.status,
+        session.polish,
+        main.draftNote,
+        main.valueField,
         notes.length > 0 ? el("div", "notes", ...notes) : null,
-        el("div", "field", commentLabel, el("p", "note", s.commentHint), comment),
-        session.message,
+        main.commentField,
+        main.message,
         session.details,
       ),
-      el("div", "sheet-foot", session.save, session.withdraw, el("span", "grow")),
+      el("div", "sheet-foot", main.save, main.withdraw, el("span", "grow")),
     );
-    this.element.hidden = false;
-
-    const typed = (): void => {
-      session.touched = true;
-      this.refresh();
-    };
-    value.addEventListener("input", typed);
-    comment.addEventListener("input", typed);
-    this.renderStatus();
-    this.refresh();
+    this.show();
     void this.loadDetails(session);
 
-    this.fitKeyboard();
-    window.visualViewport?.addEventListener("resize", this.fitKeyboard);
-    window.visualViewport?.addEventListener("scroll", this.fitKeyboard);
     if (window.matchMedia("(pointer: coarse)").matches) this.element.focus({ preventScroll: true });
-    else value.focus({ preventScroll: true });
+    else main.value.focus({ preventScroll: true });
+  }
+
+  /** A list of fields in place of a field; picking one opens it through `open`. */
+  showList(strings: Strings, title: string, content: readonly Node[]): void {
+    this.close();
+    this.listShown = true;
+    this.element.setAttribute("aria-label", title);
+    this.element.replaceChildren(
+      this.head(strings, null, el("p", "sheet-title", title)),
+      el("div", "sheet-body", ...content),
+    );
+    this.show();
+    this.element.focus({ preventScroll: true });
+  }
+
+  /** New contents for the list on show, keeping its scroll. */
+  updateList(content: readonly Node[]): void {
+    if (!this.listShown) return;
+    this.element.querySelector(".sheet-body")?.replaceChildren(...content);
   }
 
   /** The field tapped again: the textarea takes focus, except where that raises a touch keyboard. */
   focusText(): void {
     if (window.matchMedia("(pointer: coarse)").matches) return;
-    this.current?.value.focus({ preventScroll: true });
+    this.current?.main.value.focus({ preventScroll: true });
   }
 
-  /** Close, keeping unsaved text as a draft for this tab. */
+  /** Close, keeping unsaved text as a draft for this tab in every language that holds some. */
   close(): void {
     const session = this.current;
-    if (!session) return;
-    const draft: Draft = { value: session.value.value, comment: session.comment.value };
-    if (draft.value !== session.baseline.value || draft.comment !== session.baseline.comment) {
-      writeDraft(session.row.id, draft);
-    } else {
-      clearDraft(session.row.id);
+    if (!session && !this.listShown) return;
+    if (session) {
+      session.main.release();
+      for (const editor of session.others.values()) editor.release();
     }
-    this.dismiss();
-  }
-
-  private dismiss(): void {
     this.current = null;
+    this.listShown = false;
     window.visualViewport?.removeEventListener("resize", this.fitKeyboard);
     window.visualViewport?.removeEventListener("scroll", this.fitKeyboard);
     this.element.hidden = true;
@@ -350,157 +249,41 @@ export class Sheet {
     this.events.closed();
   }
 
-  private discardDraft(): void {
-    const session = this.current;
-    if (!session) return;
-    clearDraft(session.row.id);
-    session.value.value = session.baseline.value;
-    session.comment.value = session.baseline.comment;
-    session.value.rows = textareaRows(session.baseline.value);
-    this.element.querySelector(".draft")?.remove();
-    this.refresh();
+  private head(s: Strings, back: HTMLElement | null, ...titles: Node[]): HTMLElement {
+    return el(
+      "div",
+      "sheet-head",
+      el("div", "sheet-heading", back, ...titles),
+      button(s.close, () => this.close(), "btn"),
+    );
   }
 
-  /** Why Save is off, or `null` when it may go. */
-  private blocker(session: Session): string | null {
-    const s = session.strings;
-    const value = session.value.value;
-    const comment = session.comment.value.trim();
-    if (value.trim() === "") return s.empty;
-    const printed = session.row.value || session.row.fallback_value;
-    const accepted = acceptedProposal(session.row.mine);
-    // Over an accepted proposal the published text is a real proposal: it takes the change back.
-    if (!accepted && tidy(value) === tidy(printed) && comment === "") return s.nothingToSave;
-    if (accepted && tidy(value) === tidy(accepted.value) && comment === "") return s.nothingToSave;
-    const own = openProposal(session.row.mine);
-    if (own && tidy(value) === tidy(own.value) && comment === own.comment.trim()) return s.nothingToSave;
-    return null;
+  private show(): void {
+    this.element.hidden = false;
+    this.fitKeyboard();
+    window.visualViewport?.addEventListener("resize", this.fitKeyboard);
+    window.visualViewport?.addEventListener("scroll", this.fitKeyboard);
   }
 
-  private refresh(): void {
-    const session = this.current;
-    if (!session) return;
-    const blocker = this.blocker(session);
-    session.save.disabled = session.saving || blocker !== null;
-    session.save.textContent = session.saving ? session.strings.saving : session.strings.save;
-
-    const s = session.strings;
-    const french = session.locale === "fr" ? missingFrenchSpaces(session.value.value, session.row.kind) : [];
-    let hint = "";
-    let warn = false;
-    if (blocker === s.empty) {
-      hint = blocker;
-      warn = true;
-    } else if (french.length > 0) {
-      hint = s.frenchMissingSpace(french.join(", "));
-      warn = true;
-    } else if (blocker && session.touched) {
-      hint = blocker;
-    }
-    session.hint.textContent = hint;
-    session.hint.className = warn ? "note note-warn" : "note";
-    session.hint.hidden = hint === "";
+  private editorEvents(): EditorEvents {
+    return {
+      saved: (editor, clean) => {
+        this.events.saved(editor.row, editor.locale);
+        const session = this.current;
+        if (session && editor === session.main && clean && !this.othersDirty(session)) this.close();
+      },
+      withdrawn: (editor) => {
+        this.events.withdrawn(editor.row, editor.locale);
+        const session = this.current;
+        if (session && editor === session.main && !this.othersDirty(session)) this.close();
+      },
+      signedOut: () => this.events.signedOut(),
+      refused: () => this.events.refused(),
+    };
   }
 
-  private renderStatus(): void {
-    const session = this.current;
-    if (!session) return;
-    const { row, strings: s } = session;
-    const lines: string[] = [];
-    if (row.fallback_value) lines.push(s.untranslated);
-    if (row.is_stale) lines.push(s.stale);
-    if (openProposal(row.mine)) lines.push(s.mineOpen);
-    else if (row.mine?.status === "ACCEPTED") lines.push(s.mineAccepted);
-    session.status.replaceChildren(...lines.map((line) => el("p", "note note-warn", line)));
-    session.status.hidden = lines.length === 0;
-    session.withdraw.hidden = !openProposal(row.mine);
-  }
-
-  private say(session: Session, text: string, tone: "plain" | "warn" | "error"): void {
-    session.message.textContent = text;
-    session.message.className = tone === "plain" ? "note" : `note note-${tone}`;
-  }
-
-  private async submit(): Promise<void> {
-    const session = this.current;
-    if (!session || session.saving || this.blocker(session) !== null) return;
-    const s = session.strings;
-    const typed = session.value.value;
-    const comment = session.comment.value;
-    session.saving = true;
-    this.say(session, "", "plain");
-    this.refresh();
-    try {
-      const stored = await saveProposal(session.row.id, typed, comment);
-      session.row.mine = { id: stored.id, status: stored.status, value: stored.value, comment: stored.comment };
-      clearDraft(session.row.id);
-      this.events.saved(session.row);
-      if (this.current !== session) return;
-      if (sanitizedAway(session.row.kind, typed, stored.value)) {
-        session.baseline = { value: stored.value, comment: stored.comment };
-        session.value.value = stored.value;
-        session.comment.value = stored.comment;
-        this.say(session, s.sanitized, "warn");
-        this.renderStatus();
-        return;
-      }
-      this.dismiss();
-    } catch (error) {
-      if (this.current === session) this.failed(session, error, s.saveFailed);
-      else writeDraft(session.row.id, { value: typed, comment });
-    } finally {
-      session.saving = false;
-      if (this.current === session) this.refresh();
-    }
-  }
-
-  private async retract(): Promise<void> {
-    const session = this.current;
-    const own = session ? openProposal(session.row.mine) : null;
-    if (!session || !own || session.saving) return;
-    const s = session.strings;
-    session.saving = true;
-    session.withdraw.disabled = true;
-    session.withdraw.textContent = s.withdrawing;
-    this.refresh();
-    try {
-      await withdrawProposal(own.id);
-      this.forget(session);
-    } catch (error) {
-      if (error instanceof ApiError && error.status === 404) {
-        // Already gone: what the editor asked for is the state of things.
-        this.forget(session);
-      } else if (this.current === session) {
-        if (error instanceof ApiError && error.status === 409) this.say(session, s.settled, "error");
-        else this.failed(session, error, s.withdrawFailed);
-      }
-    } finally {
-      session.saving = false;
-      session.withdraw.disabled = false;
-      session.withdraw.textContent = s.withdraw;
-      if (this.current === session) this.refresh();
-    }
-  }
-
-  private forget(session: Session): void {
-    session.row.mine = session.accepted;
-    clearDraft(session.row.id);
-    this.events.withdrawn(session.row);
-    if (this.current === session) this.dismiss();
-  }
-
-  private failed(session: Session, error: unknown, fallback: string): void {
-    const s = session.strings;
-    if (error instanceof ApiError && error.status === 401) {
-      writeDraft(session.row.id, { value: session.value.value, comment: session.comment.value });
-      this.say(session, s.sessionEnded, "error");
-      this.events.signedOut();
-    } else if (error instanceof ApiError && error.status === 403 && !error.csrf) {
-      this.say(session, s.refused, "error");
-      this.events.refused();
-    } else {
-      this.say(session, fallback, "error");
-    }
+  private othersDirty(session: Session): boolean {
+    return [...session.others.values()].some((editor) => editor.dirty || editor.busy);
   }
 
   private async loadDetails(session: Session): Promise<void> {
@@ -514,29 +297,24 @@ export class Sheet {
     }
     if (this.current !== session) return;
 
-    const others = LOCALES.filter((locale) => locale !== session.locale)
+    const own = rows.find((segment) => segment.locale === session.locale);
+    const polish = own?.source_value || rows.find((segment) => segment.locale === "pl")?.value || "";
+    if (session.row.is_stale && polish) {
+      const text = el("p", "reference-text", polish);
+      text.lang = "pl";
+      session.polish.replaceChildren(el("p", "reference-head", s.polishNow), text);
+      session.polish.hidden = false;
+    }
+
+    // Polish first: it is what every translation is read against.
+    const sides = LOCALES.filter((locale) => locale !== session.locale)
       .map((locale) => rows.find((segment) => segment.locale === locale))
       .filter((segment): segment is DeskSegment => segment !== undefined);
     const languages = el("details", "");
-    languages.append(
-      el("summary", "", s.otherLanguages),
-      el(
-        "ul",
-        "reference",
-        ...others.map((segment) =>
-          el(
-            "li",
-            "",
-            el("p", "reference-head", s.localeNames[segment.locale]),
-            segment.value
-              ? el("p", "reference-text", segment.value)
-              : el("p", "reference-empty", s.notTranslated),
-          ),
-        ),
-      ),
-    );
+    const blocks = sides.map((segment) => this.sideBlock(session, sideRow(session.row, segment), segment.locale));
+    languages.append(el("summary", "", s.otherLanguages), el("ul", "reference", ...blocks));
+    languages.open = session.others.size > 0;
 
-    const own = rows.find((segment) => segment.locale === session.locale);
     const pending = (own?.proposals ?? []).filter(
       (proposal) => !proposal.is_mine && (proposal.status === "PROPOSED" || proposal.status === "DRAFT"),
     );
@@ -563,6 +341,45 @@ export class Sheet {
         : null;
     if (proposals) proposals.open = true;
 
-    session.details.replaceChildren(...(others.length > 0 ? [languages] : []), ...(proposals ? [proposals] : []));
+    session.details.replaceChildren(...(sides.length > 0 ? [languages] : []), ...(proposals ? [proposals] : []));
+  }
+
+  /**
+   * One other language: its text and "Popraw", or its editor straight away when it holds the
+   * editor's draft or open proposal.
+   */
+  private sideBlock(session: Session, row: IndexRow, locale: Locale): HTMLElement {
+    const s = session.strings;
+    const block = el("li", "side");
+    const expand = (focus: boolean): void => {
+      if (session.others.has(locale)) return;
+      const editor = new FieldEditor({ row, locale, strings: s, startFromFallback: false, events: this.editorEvents() });
+      session.others.set(locale, editor);
+      fill(
+        block,
+        el("p", "reference-head", s.localeNames[locale]),
+        editor.status,
+        editor.draftNote,
+        editor.valueField,
+        locale === "fr" ? el("p", "note", FRENCH_SPACING_NOTE) : null,
+        editor.commentField,
+        editor.message,
+        el("div", "side-actions", editor.save, editor.withdraw),
+      );
+      if (focus && !window.matchMedia("(pointer: coarse)").matches) editor.value.focus({ preventScroll: true });
+    };
+
+    const text = row.value ? el("p", "reference-text", row.value) : el("p", "reference-empty", s.notTranslated);
+    if (row.value) text.lang = locale;
+    const state = row.mine?.status === "ACCEPTED" ? s.statusAccepted : row.is_stale ? s.stale : "";
+    fill(
+      block,
+      el("p", "reference-head", s.localeNames[locale]),
+      state ? el("p", "note note-warn", state) : null,
+      text,
+      el("div", "side-actions", button(s.editOther, () => expand(true), "btn")),
+    );
+    if (hasDraft(row.id) || openProposal(row.mine)) expand(false);
+    return block;
   }
 }
