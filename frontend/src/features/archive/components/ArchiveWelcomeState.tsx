@@ -48,7 +48,7 @@ export const ArchiveWelcomeState = ({
           <Text color="graphite" className="max-w-xl">
             {t(
               "archive.welcome.body",
-              "Przeciągnij PDF partytury poniżej — AI rozpozna utwór w MusicBrainz, doda kompozytora, ekstrahuje IPA i tłumaczenia, zaproponuje notkę programową. Cały pipeline trwa pół minuty.",
+              "Przeciągnij PDF partytury poniżej — AI rozpozna utwór, dopasuje kompozytora w MusicBrainz i przygotuje IPA oraz tłumaczenia. Trwa to zwykle około minuty. Notka programowa powstaje dopiero po sprawdzeniu utworu.",
             )}
           </Text>
         </div>

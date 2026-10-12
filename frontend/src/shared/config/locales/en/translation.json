@@ -935,12 +935,12 @@
     },
     "upload_drawer": {
       "aria": "Upload a score PDF",
-      "cost_hint": "Cost per PDF: about 2–5 ¢ (limit $2 per edition).",
-      "subtitle": "AI will recognise the piece, add the composer, extract IPA and translations. The pipeline takes half a minute.",
+      "cost_hint": "Cost per PDF: usually 4–20 ¢, at most $1.50 a run.",
+      "subtitle": "AI will recognise the piece, add the composer, extract IPA and translations. It usually takes about a minute.",
       "title": "Upload a score"
     },
     "welcome": {
-      "body": "Drag a score PDF below — AI will recognise the piece in MusicBrainz, add the composer, extract IPA and translations, and suggest a programme note. The whole pipeline takes half a minute.",
+      "body": "Drag a score PDF below — AI will recognise the piece, match the composer in MusicBrainz, and prepare IPA and translations. It usually takes about a minute. The programme note comes only after the piece has been checked.",
       "manual_btn": "Add a piece manually (no PDF)",
       "manual_hint": "Use this for folk pieces, hand-outs, or when the PDF comes later.",
       "or": "Or",

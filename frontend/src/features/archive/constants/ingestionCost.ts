@@ -1,11 +1,10 @@
 /**
  * @file ingestionCost.ts
  * @description One voice for what an ingestion cost. The pipeline bills in USD
- * cents (Anthropic + lookup APIs), and the archive used to print that three
- * ways on three surfaces — `$0.00` on the live panel, `7¢` on the editions list,
- * `2-5 ¢` in the drawer's copy — which read as three different meters.
+ * cents (Anthropic + lookup APIs), and the live panel, the editions list and the
+ * upload drawer's copy all print it in cents, so they read as one meter.
  *
- * Sub-dollar runs stay in cents (a real ingestion is ~2-8¢; `$0.04` buries the
+ * Sub-dollar runs stay in cents (a real ingestion is ~4-20¢; `$0.07` buries the
  * only digit that varies), and a zero returns null so callers omit the figure
  * entirely: a cost line that says nothing but "$0.00" for the first seconds of
  * every upload is noise on the one row the conductor is watching.

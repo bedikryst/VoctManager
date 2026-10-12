@@ -77,13 +77,13 @@ export const EditionUploadDrawer = ({
                 <Text size="sm" color="graphite" className="mt-1">
                   {t(
                     "archive.upload_drawer.subtitle",
-                    "AI rozpozna utwór, doda kompozytora, wyciągnie IPA i tłumaczenia. Pipeline trwa pół minuty.",
+                    "AI rozpozna utwór, doda kompozytora, wyciągnie IPA i tłumaczenia. Trwa to zwykle około minuty.",
                   )}
                 </Text>
                 <Caption color="muted" className="mt-2 block">
                   {t(
                     "archive.upload_drawer.cost_hint",
-                    "Koszt jednego PDF-a: ok. 2-5 ¢ (limit $2 per wydanie).",
+                    "Koszt jednego PDF-a: zwykle 4–20 ¢, najwyżej 1,50 USD za jedno przetworzenie.",
                   )}
                 </Caption>
               </div>

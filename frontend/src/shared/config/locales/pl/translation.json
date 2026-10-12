@@ -963,12 +963,12 @@
     },
     "upload_drawer": {
       "aria": "Wgraj partyturę PDF",
-      "cost_hint": "Koszt jednego PDF-a: ok. 2-5 ¢ (limit $2 per wydanie).",
-      "subtitle": "AI rozpozna utwór, doda kompozytora, wyciągnie IPA i tłumaczenia. Pipeline trwa pół minuty.",
+      "cost_hint": "Koszt jednego PDF-a: zwykle 4–20 ¢, najwyżej 1,50 USD za jedno przetworzenie.",
+      "subtitle": "AI rozpozna utwór, doda kompozytora, wyciągnie IPA i tłumaczenia. Trwa to zwykle około minuty.",
       "title": "Wgraj partyturę"
     },
     "welcome": {
-      "body": "Przeciągnij PDF partytury poniżej — AI rozpozna utwór w MusicBrainz, doda kompozytora, ekstrahuje IPA i tłumaczenia, zaproponuje notkę programową. Cały pipeline trwa pół minuty.",
+      "body": "Przeciągnij PDF partytury poniżej — AI rozpozna utwór, dopasuje kompozytora w MusicBrainz i przygotuje IPA oraz tłumaczenia. Trwa to zwykle około minuty. Notka programowa powstaje dopiero po sprawdzeniu utworu.",
       "manual_btn": "Dodaj utwór ręcznie (bez PDF-u)",
       "manual_hint": "Użyj dla utworów ludowych, hand-outów albo gdy PDF-a dostaniesz później.",
       "or": "Albo",

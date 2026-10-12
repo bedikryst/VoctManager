@@ -944,12 +944,12 @@
     },
     "upload_drawer": {
       "aria": "Importer un PDF de partition",
-      "cost_hint": "Coût par PDF : environ 2–5 ¢ (limite de 2 $ par édition).",
-      "subtitle": "L'IA reconnaîtra la pièce, ajoutera le compositeur, extraira l'IPA et les traductions. Le pipeline prend une demi-minute.",
+      "cost_hint": "Coût par PDF : en général 4–20 ¢, au plus 1,50 $ par traitement.",
+      "subtitle": "L'IA reconnaîtra la pièce, ajoutera le compositeur, extraira l'IPA et les traductions. Cela prend en général environ une minute.",
       "title": "Importer une partition"
     },
     "welcome": {
-      "body": "Glissez un PDF de partition ci-dessous — l'IA reconnaîtra la pièce dans MusicBrainz, ajoutera le compositeur, extraira l'IPA et les traductions, et proposera une note de programme. Tout le pipeline prend une demi-minute.",
+      "body": "Glissez un PDF de partition ci-dessous — l'IA reconnaîtra la pièce, trouvera le compositeur dans MusicBrainz et préparera l'IPA et les traductions. Cela prend en général environ une minute. La note de programme ne vient qu'après la vérification de la pièce.",
       "manual_btn": "Ajouter une pièce manuellement (sans PDF)",
       "manual_hint": "À utiliser pour les pièces traditionnelles, les feuillets, ou quand le PDF arrivera plus tard.",
       "or": "Ou",
