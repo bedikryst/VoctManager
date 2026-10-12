@@ -1,8 +1,9 @@
 /**
  * @file ZrzutkaPanel.tsx
- * @description Companion payment method in the vault: opens the foundation's Zrzutka.pl page in
- *  a new tab (BLIK, card, Apple/Google Pay, recurring). The service's name is a brand and stays
- *  itself in every locale, so it is written here rather than on the desk.
+ * @description One of the vault's two other ways of giving, under the online form: opens the
+ *  foundation's Zrzutka.pl page in a new tab (BLIK, card, Apple/Google Pay, recurring). The
+ *  service's name is a brand and stays itself in every locale, so it is written here rather than
+ *  on the desk.
  * @architecture Astro islands 2026
  * @module islands/landing/vault/ZrzutkaPanel
  */
@@ -23,9 +24,6 @@ export function ZrzutkaPanel(): React.JSX.Element {
             <span className="method-tag-dot" aria-hidden="true" />
             <span className="micro">{vault.zrzutka.tag}</span>
           </div>
-          <span className="method-status" data-status="ready">
-            {t.statusReady}
-          </span>
         </div>
         <h3 className="method-title">Zrzutka.pl</h3>
         <p className="method-note">{vault.zrzutka.note}</p>

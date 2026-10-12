@@ -49,6 +49,13 @@ head:
   kicker: "Skarbiec muzyki · cykl MMXXVI"
   # The sheet's h2 and its accessible name. Two words, imperative, addressed to one person.
   title: "Wesprzyj cykl"
+  # The first sentence under the head, and the only one in the sheet that says what a gift pays
+  # for. Most readers open the vault from the nav on a page that never made the case, so the case
+  # is made here in the plainest words. "Przy wolnym wstępie" claims what donations make possible,
+  # not that every concert is free: some of the cycle's concerts were ticketed.
+  lede: >-
+    Darowizny idą na honoraria śpiewaków, partytury, dźwięk i dojazdy. Dzięki nim możemy śpiewać
+    przy wolnym wstępie.
 
 progress:
   # Left half of the line under the campaign rail. The right half is the goal, formatted from
@@ -60,8 +67,9 @@ progress:
   awaiting: "cykl Concerts Spirituels"
 
 methods:
-  # Above the three cards. It names a choice between roads, not a list of options.
-  label: "Wybierz drogę"
+  # Under the online form, above Zrzutka and the bank transfer. The form is the sheet's one road;
+  # these two are for a reader who already knows they would rather pay another way.
+  label: "Inne sposoby wpłaty"
 
 online:
   # The tag on the card, read as one breath: two promises separated by a middle dot.
@@ -93,8 +101,11 @@ qr:
   # The one method that costs the foundation nothing at all.
   tag: "zero prowizji"
   title: "Przelew z aplikacji bankowej"
+  # Printed only on a computer, beside the code. A phone cannot scan the code it is showing, so
+  # there the code is hidden and `noteTouch` is printed instead.
   note: >-
     Zeskanuj kod aparatem w aplikacji bankowej — wszystkie pola wypełnią się automatycznie.
+  noteTouch: "Skopiuj numer konta i tytuł przelewu do aplikacji swojego banku."
   # The quoted phrase is the label Polish banking apps print on that function; a translation names
   # whatever the reader's own bank calls it rather than translating the Polish words.
   hintHtml: >-
@@ -105,10 +116,10 @@ qr:
   # `recurringLink`) is the one road to /fundacja#wsparcie, right under this card. The offer —
   # amounts, what patronage means, how to tell us — has one home there and this note must not grow
   # back into a second copy of it.
-  # "Zlecenie stałe" is the banking term — use the reader's own.
+  # "Zlecenie stałe" is the banking term — use the reader's own. The sentence must not point at the
+  # QR code: on a phone the code is not there.
   recurringNoteHtml: >-
-    Te same dane ustawisz w swojej bankowości jako <strong>zlecenie stałe</strong> — kod QR
-    powyżej tworzy przelew jednorazowy.
+    Te same dane możesz też zapisać w banku jako <strong>zlecenie stałe</strong>.
 
 result:
   # Above both result overlays — the thank-you and the apology — because it is the same imprint

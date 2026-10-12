@@ -31,11 +31,12 @@
 
 page.skarbiec.head.kicker: "Treasury of music · MMXXVI cycle"
 page.skarbiec.head.title: "Support the cycle"
+page.skarbiec.head.lede: "Donations pay the singers' fees, the scores, the sound and the travel. They are what lets us sing with free admission."
 
 page.skarbiec.progress.open: "Collection open"
 page.skarbiec.progress.awaiting: "the Spiritual Concerts cycle"
 
-page.skarbiec.methods.label: "Choose your way"
+page.skarbiec.methods.label: "Other ways to give"
 
 page.skarbiec.online.tag: "instant · secure"
 page.skarbiec.online.title: "Give online"
@@ -50,9 +51,10 @@ page.skarbiec.zrzutka.note: "BLIK, card, Apple Pay, Google Pay. Regular giving a
 page.skarbiec.qr.tag: "no commission"
 page.skarbiec.qr.title: "Transfer from your banking app"
 page.skarbiec.qr.note: "Scan the code with the camera in your banking app — every field fills itself in."
+page.skarbiec.qr.noteTouch: "Copy the account number and the transfer title into your bank's app."
 page.skarbiec.qr.hintHtml: "Open your bank's app, choose <strong>“QR transfer”</strong> and scan. You enter the amount in the app."
 page.skarbiec.qr.recurringLabel: "Monthly support · standing order"
-page.skarbiec.qr.recurringNoteHtml: "The same details can be set up in your own banking as a <strong>standing order</strong> — the QR code above makes a one-off transfer."
+page.skarbiec.qr.recurringNoteHtml: "You can also save the same details in your bank as a <strong>standing order</strong>."
 
 
 page.skarbiec.result.kicker: "VoctEnsemble · MMXXVI cycle"

@@ -37,9 +37,8 @@ export interface VaultChrome {
    * two, so "2 darczyńców" was ungrammatical on the live site until this existed.
    */
   readonly donors: (count: number) => string;
-  /** The three cards and the badge each of them wears. */
+  /** The landmark around the online form and the two other ways of giving. */
   readonly methodsAria: string;
-  readonly statusReady: string;
   /** The give form. */
   readonly amountLabel: string;
   readonly currencyAria: string;
@@ -66,8 +65,6 @@ export interface VaultChrome {
   readonly qrAlt: string;
   readonly qrPending1: string;
   readonly qrPending2: string;
-  readonly qrDebugSummary: string;
-  readonly qrDebugCopy: string;
   /** The copy-to-clipboard fields, and the two states of their button. */
   readonly copy: string;
   readonly copied: string;
@@ -111,7 +108,6 @@ export const VAULT_CHROME: Record<Locale, VaultChrome> = {
     goalLabel: "cel",
     donors: plDonors,
     methodsAria: "Wybierz drogę wsparcia",
-    statusReady: "dostępne",
     amountLabel: "Kwota darowizny",
     currencyAria: "Waluta darowizny",
     tiersAria: "Sugerowana kwota darowizny",
@@ -134,8 +130,6 @@ export const VAULT_CHROME: Record<Locale, VaultChrome> = {
     qrAlt: "Kod QR przelewu — Fundacja VoctFoundation",
     qrPending1: "QR",
     qrPending2: "w przygotowaniu",
-    qrDebugSummary: "pokaż dane QR",
-    qrDebugCopy: "Kopiuj dane QR",
     copy: "Kopiuj",
     copied: "Skopiowano",
     fieldAccount: "Numer konta · PLN",
@@ -157,7 +151,6 @@ export const VAULT_CHROME: Record<Locale, VaultChrome> = {
     goalLabel: "goal",
     donors: (count) => `${count} ${count === 1 ? "donor" : "donors"}`,
     methodsAria: "Choose how to give",
-    statusReady: "available",
     amountLabel: "Amount",
     currencyAria: "Donation currency",
     tiersAria: "Suggested amount",
@@ -180,8 +173,6 @@ export const VAULT_CHROME: Record<Locale, VaultChrome> = {
     qrAlt: "Bank transfer QR code — Fundacja VoctFoundation",
     qrPending1: "QR",
     qrPending2: "in preparation",
-    qrDebugSummary: "show QR data",
-    qrDebugCopy: "Copy QR data",
     copy: "Copy",
     copied: "Copied",
     fieldAccount: "Account number · PLN",
@@ -203,7 +194,6 @@ export const VAULT_CHROME: Record<Locale, VaultChrome> = {
     goalLabel: "objectif",
     donors: (count) => `${count} ${count === 1 ? "donateur" : "donateurs"}`,
     methodsAria: "Choisir une forme de soutien",
-    statusReady: "disponible",
     amountLabel: "Montant du don",
     currencyAria: "Devise du don",
     tiersAria: "Montant suggéré",
@@ -226,8 +216,6 @@ export const VAULT_CHROME: Record<Locale, VaultChrome> = {
     qrAlt: "QR code de virement — Fundacja VoctFoundation",
     qrPending1: "QR",
     qrPending2: "en préparation",
-    qrDebugSummary: "afficher les données du QR",
-    qrDebugCopy: "Copier les données du QR",
     copy: "Copier",
     copied: "Copié",
     fieldAccount: "Numéro de compte · PLN",

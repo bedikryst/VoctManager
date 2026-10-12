@@ -1,9 +1,12 @@
 /**
  * @file VaultModal.tsx
- * @description The donation "skarbiec" sliding sheet: one-off giving only (Axepta form,
- *  Zrzutka, bank QR, under the campaign line — donor count and goal, with a fill rail that
- *  `VAULT_CONFIG.progress.showRail` switches). Recurring support is not a second intent here —
- *  every other way of giving (a standing order, patronage, a partnership) has one home,
+ * @description The donation "skarbiec" sliding sheet: one-off giving only. Under the head, one
+ *  sentence on what a gift pays for, then the campaign line (donor count and goal, with a fill
+ *  rail that `VAULT_CONFIG.progress.showRail` switches). The Axepta form is the one road and
+ *  stands alone; Zrzutka and the bank transfer sit under it as the other ways, for a reader who
+ *  already knows they would rather pay elsewhere. Three equal cards would ask a visitor to pick a
+ *  payment rail before deciding to give at all. Recurring support is not a second intent here — every
+ *  other way of giving (a standing order, patronage, a partnership) has one home,
  *  `/fundacja#wsparcie`, and the sheet ends on a link to it.
  *  Manages browser-history integration (back closes), Lenis stop/start while open, the
  *  campaign line, and the `body.vault-open` flag for chrome theming. Web/Astro port.
@@ -98,6 +101,8 @@ export function VaultModal(): React.JSX.Element {
           </header>
 
           <div className="vault-body">
+            <p className="vault-lede">{vault.head.lede}</p>
+
             <section className="vault-progress" aria-label={t.progressAria}>
               {VAULT_CONFIG.progress.showRail && (
                 <div className="vault-progress-rail">
@@ -131,23 +136,20 @@ export function VaultModal(): React.JSX.Element {
             </section>
 
             <section className="methods" aria-label={t.methodsAria}>
-              <div className="methods-label micro">{vault.methods.label}</div>
-              <div className="methods-grid">
-                <article className="method" data-method="axepta" data-elevated="true">
-                  <div className="method-head">
-                    <div className="method-tag">
-                      <span className="method-tag-dot" aria-hidden="true" />
-                      <span className="micro">{vault.online.tag}</span>
-                    </div>
-                    <span className="method-status" data-status="ready">
-                      {t.statusReady}
-                    </span>
+              <article className="method" data-method="axepta" data-elevated="true">
+                <div className="method-head">
+                  <div className="method-tag">
+                    <span className="method-tag-dot" aria-hidden="true" />
+                    <span className="micro">{vault.online.tag}</span>
                   </div>
-                  <h3 className="method-title">{vault.online.title}</h3>
-                  <p className="method-note">{vault.online.note}</p>
-                  <GiveForm />
-                </article>
+                </div>
+                <h3 className="method-title">{vault.online.title}</h3>
+                <p className="method-note">{vault.online.note}</p>
+                <GiveForm />
+              </article>
 
+              <div className="methods-alt">
+                <div className="methods-label micro">{vault.methods.label}</div>
                 <ZrzutkaPanel />
                 <QRPanel />
               </div>

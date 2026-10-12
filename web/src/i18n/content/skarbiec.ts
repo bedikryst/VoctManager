@@ -33,7 +33,7 @@ import type { CopyEntry, PageCopySpec } from "./copySpec";
     being dropped in silence. Translations belong in the overlay. */
 const vaultCopySchema = z
   .object({
-    head: z.object({ kicker: z.string(), title: z.string() }).strict(),
+    head: z.object({ kicker: z.string(), title: z.string(), lede: z.string() }).strict(),
     progress: z.object({ open: z.string(), awaiting: z.string() }).strict(),
     methods: z.object({ label: z.string() }).strict(),
     online: z
@@ -52,6 +52,7 @@ const vaultCopySchema = z
         tag: z.string(),
         title: z.string(),
         note: z.string(),
+        noteTouch: z.string(),
         hintHtml: z.string(),
         recurringLabel: z.string(),
         recurringNoteHtml: z.string(),
@@ -68,8 +69,8 @@ export type VaultCopy = z.infer<typeof vaultCopySchema>;
 // ── The desk contract ─────────────────────────────────────────────────────────────────────────
 
 /** DECLARATION ORDER IS READING ORDER — `order` is a counter over this list, laid out in the
-    sequence the sheet prints: head, rail, the three roads, the two overlays a donor meets on the
-    way back from the gateway. */
+    sequence the sheet prints: head and its reason, rail, the online form, the two other ways of
+    giving, the two overlays a donor meets on the way back from the gateway. */
 const VAULT_CONTRACT: readonly CopyEntry[] = [
   {
     kind: "field",
@@ -82,6 +83,12 @@ const VAULT_CONTRACT: readonly CopyEntry[] = [
     path: "head.title",
     label: "Głowa · tytuł",
     note: "The sheet's heading and its accessible name. Two words, imperative, addressed to one person — never a plural appeal to an audience.",
+  },
+  {
+    kind: "field",
+    path: "head.lede",
+    label: "Głowa · po co",
+    note: "The one place in the sheet that says what a gift pays for; most readers open it from a page that never made the case. Plain words, two short sentences. It says donations make free admission possible, not that every concert is free: some were ticketed.",
   },
   {
     kind: "field",
@@ -98,8 +105,8 @@ const VAULT_CONTRACT: readonly CopyEntry[] = [
   {
     kind: "field",
     path: "methods.label",
-    label: "Drogi · nagłówek",
-    note: "Above the three cards. It names a choice between roads, not a list of payment options.",
+    label: "Inne sposoby · nagłówek",
+    note: "Under the online form, above Zrzutka and the bank transfer. The form is the sheet's main road; this labels the two alternatives for a reader who would rather pay another way.",
   },
   {
     kind: "field",
@@ -146,7 +153,18 @@ const VAULT_CONTRACT: readonly CopyEntry[] = [
     note: "The one method that costs the foundation nothing at all, which is what the tag says.",
   },
   { kind: "field", path: "qr.title", label: "Przelew · tytuł" },
-  { kind: "field", path: "qr.note", label: "Przelew · opis" },
+  {
+    kind: "field",
+    path: "qr.note",
+    label: "Przelew · opis przy kodzie (komputer)",
+    note: "Printed only on a computer, where the code beside it can be scanned with a phone.",
+  },
+  {
+    kind: "field",
+    path: "qr.noteTouch",
+    label: "Przelew · opis bez kodu (telefon)",
+    note: "Printed instead of the note above on a phone or tablet, which cannot scan the code it shows, so the code is hidden there. The account number and the transfer title follow it as copy buttons.",
+  },
   {
     kind: "field",
     path: "qr.hintHtml",
