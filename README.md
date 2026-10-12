@@ -14,9 +14,9 @@ I co-founded the foundation behind the ensemble and I'm the only developer on th
 
 **Public site:** [voctensemble.com](https://voctensemble.com) · **Status:** in production, used by the ensemble since August ([details](#status))
 
-| Conductor dashboard | AI score review |
-|:---:|:---:|
-| <picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/admin-dashboard-en-dark.png"><img src="docs/assets/admin-dashboard-en-light.png" width="420" alt="Conductor dashboard with the next rehearsal, the upcoming concert and the voice balance of the cast"></picture> | <picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/score-compiler-review-en-dark.png"><img src="docs/assets/score-compiler-review-en-light.png" width="420" alt="Review screen with the source PDF next to the extracted fields, each marked with its provenance"></picture> |
+<picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/hero-en-dark.png"><img src="docs/assets/hero-en-light.png" width="860" alt="A tenor's rehearsal page on a phone, his part 19:00–21:00, in front of the review screen where the conductor checks what the model read from a PDF score"></picture>
+
+<sub>A tenor's rehearsal page, in front of the screen where the conductor checks what the model read from a score.</sub>
 
 ---
 

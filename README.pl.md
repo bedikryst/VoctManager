@@ -14,9 +14,9 @@ Współzałożyłem fundację, która prowadzi zespół, i jestem jedynym progra
 
 **Strona publiczna:** [voctensemble.com](https://voctensemble.com) · **Status:** działa na produkcji, zespół korzysta z niego od sierpnia ([szczegóły](#status))
 
-| Pulpit dyrygenta | Weryfikacja wyników AI |
-|:---:|:---:|
-| <picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/admin-dashboard-dark.png"><img src="docs/assets/admin-dashboard-light.png" width="420" alt="Pulpit dyrygenta z najbliższą próbą, nadchodzącym koncertem i rozkładem głosów w obsadzie"></picture> | <picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/score-compiler-review-dark.png"><img src="docs/assets/score-compiler-review-light.png" width="420" alt="Ekran weryfikacji: źródłowy PDF obok odczytanych pól, każde z oznaczeniem pochodzenia"></picture> |
+<picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/hero-dark.png"><img src="docs/assets/hero-light.png" width="860" alt="Strona próby tenora na telefonie, jego partia 19:00–21:00, na tle ekranu, na którym dyrygent sprawdza, co model odczytał z partytury PDF"></picture>
+
+<sub>Strona próby tenora na tle ekranu, na którym dyrygent sprawdza, co model odczytał z partytury.</sub>
 
 ---
 
