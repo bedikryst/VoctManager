@@ -28,18 +28,33 @@
  *  AN OPEN PROPOSAL CAN HIDE AN ACCEPTED ONE. The index carries only the open one; the sheet reads
  *  the accepted one beneath it from the desk history (`shipsBeneath`), so withdrawing the open one
  *  leaves the field showing what will still be published.
+ *
+ *  A TRUSTED LANGUAGE (every one but Polish, for a trusted translator) accepts a save at once.
+ *  The change it made stays the editor's until it is published: the next save revises it and
+ *  "Cofnij" withdraws it, like an open proposal. A save the server held back (`{ }` or links that
+ *  differ from the Polish) keeps the sheet open and says why; the acceptance beneath still ships.
  * @architecture Astro islands 2026
  * @module comment-mode/editor
  */
 
-import { ApiError, saveProposal, withdrawProposal, type IndexRow, type OwnProposal } from "./api";
+import {
+  ApiError,
+  saveProposal,
+  withdrawProposal,
+  type IndexRow,
+  type OwnProposal,
+  type StoredProposal,
+} from "./api";
 import type { Locale } from "../i18n/config";
 import { button, el } from "./dom";
 import { htmlText } from "./match";
 import type { Strings } from "./strings";
 
 export interface EditorEvents {
-  /** Stored and patched into `row.mine`. `clean`: stored as typed, so the editor has nothing left to say. */
+  /**
+   * Stored and patched into `row.mine`. `clean`: stored as typed and not held back, so the editor
+   * has nothing left to say.
+   */
   saved(editor: FieldEditor, clean: boolean): void;
   withdrawn(editor: FieldEditor): void;
   /** The session ended under the editor: the bar offers a sign-in. */
@@ -54,6 +69,8 @@ export interface EditorOptions {
   readonly strings: Strings;
   /** Start an untranslated field from the Polish the page prints in its place. */
   readonly startFromFallback: boolean;
+  /** The reader's saves in this language are accepted without a review. */
+  readonly trusted: boolean;
   readonly events: EditorEvents;
 }
 
@@ -132,6 +149,14 @@ export function acceptedProposal(proposal: OwnProposal | null): OwnProposal | nu
   return proposal?.status === "ACCEPTED" ? proposal : null;
 }
 
+/**
+ * The reader's proposal a save revises and "Cofnij" withdraws: the open one, or in a trusted
+ * language the change their own save accepted. `null` otherwise.
+ */
+export function revisableProposal(proposal: OwnProposal | null, trusted: boolean): OwnProposal | null {
+  return openProposal(proposal) ?? (trusted && proposal?.self_accepted ? proposal : null);
+}
+
 const SPACE = /[\s   ]/u;
 const FRENCH_MARKS = "?!:;";
 
@@ -180,8 +205,12 @@ export class FieldEditor {
   readonly withdraw: HTMLButtonElement;
   private readonly strings: Strings;
   private readonly events: EditorEvents;
+  private readonly trusted: boolean;
   private readonly hint: HTMLElement;
-  /** The editor's accepted proposal awaiting publication: it stands again when a newer one is withdrawn. */
+  /**
+   * The editor's accepted proposal awaiting publication beneath the one they may still revise, or
+   * the one the page shows when there is nothing to revise: it stands again after a withdrawal.
+   */
   private accepted: OwnProposal | null;
   /**
    * What the textarea starts from when the editor has no proposal on the field, and what a value
@@ -196,14 +225,16 @@ export class FieldEditor {
   /** The sheet let go of this editor; answers still arriving only patch the row. */
   private released = false;
 
-  constructor({ row, locale, strings, startFromFallback, events }: EditorOptions) {
+  constructor({ row, locale, strings, startFromFallback, trusted, events }: EditorOptions) {
     this.row = row;
     this.locale = locale;
     this.strings = strings;
     this.events = events;
+    this.trusted = trusted;
     const s = strings;
-    const own = openProposal(row.mine);
-    this.accepted = acceptedProposal(row.mine);
+    const own = revisableProposal(row.mine, trusted);
+    // Beneath a revisable proposal the accepted one is unknown until the history arrives.
+    this.accepted = own ? null : acceptedProposal(row.mine);
     this.published = startFromFallback ? row.value || row.fallback_value : row.value;
     this.baseline = own
       ? { value: own.value, comment: own.comment }
@@ -259,9 +290,14 @@ export class FieldEditor {
     return this.saving;
   }
 
-  /** The editor's accepted proposal that the open one stands over, read from the desk history. */
+  /** The editor's accepted proposal that the revisable one stands over, read from the desk history. */
   shipsBeneath(accepted: OwnProposal | null): void {
-    if (openProposal(this.row.mine)) this.accepted = accepted;
+    if (this.own()) this.accepted = accepted;
+  }
+
+  /** The proposal a save revises and "Cofnij" withdraws (`revisableProposal`). */
+  private own(): OwnProposal | null {
+    return revisableProposal(this.row.mine, this.trusted);
   }
 
   /** Keep unsaved text as this tab's draft, or drop a draft the text has caught up with. */
@@ -292,10 +328,12 @@ export class FieldEditor {
     const comment = this.comment.value.trim();
     if (value.trim() === "") return s.empty;
     const accepted = acceptedProposal(this.row.mine);
+    const own = this.own();
     // Over an accepted proposal the published text is a real proposal: it takes the change back.
     if (!accepted && tidy(value) === tidy(this.published) && comment === "") return s.nothingToSave;
-    if (accepted && tidy(value) === tidy(accepted.value) && comment === "") return s.nothingToSave;
-    const own = openProposal(this.row.mine);
+    if (accepted && accepted !== own && tidy(value) === tidy(accepted.value) && comment === "") {
+      return s.nothingToSave;
+    }
     if (own && tidy(value) === tidy(own.value) && comment === own.comment.trim()) return s.nothingToSave;
     return null;
   }
@@ -329,10 +367,25 @@ export class FieldEditor {
     if (!row.value) lines.push(s.untranslated);
     if (row.is_stale) lines.push(s.stale);
     if (openProposal(row.mine)) lines.push(s.mineOpen);
-    else if (row.mine?.status === "ACCEPTED") lines.push(s.mineAccepted);
+    else if (row.mine?.status === "ACCEPTED") lines.push(this.trusted ? s.mineAcceptedTrusted : s.mineAccepted);
     this.status.replaceChildren(...lines.map((line) => el("p", "note note-warn", line)));
     this.status.hidden = lines.length === 0;
-    this.withdraw.hidden = !openProposal(row.mine);
+    this.withdraw.hidden = !this.own();
+    this.withdraw.textContent = this.withdrawLabel();
+  }
+
+  private withdrawLabel(): string {
+    return this.own()?.status === "ACCEPTED" ? this.strings.withdrawChange : this.strings.withdraw;
+  }
+
+  /** What a save says when it is through: held back, changed by the sanitizer, accepted, or saved. */
+  private outcome(stored: StoredProposal, clean: boolean): { readonly text: string; readonly warn: boolean } {
+    const s = this.strings;
+    if (stored.held === "slots") return { text: s.heldSlots, warn: true };
+    if (stored.held === "links") return { text: s.heldLinks, warn: true };
+    if (stored.held === "empty") return { text: s.empty, warn: true };
+    if (!clean) return { text: s.sanitized, warn: true };
+    return { text: stored.status === "ACCEPTED" ? s.savedAccepted : s.savedHere, warn: false };
   }
 
   say(text: string, tone: "plain" | "warn" | "error"): void {
@@ -349,8 +402,17 @@ export class FieldEditor {
     this.say("", "plain");
     this.refresh();
     try {
+      const previous = this.row.mine;
       const stored = await saveProposal(this.row.id, typed, comment);
-      this.row.mine = { id: stored.id, status: stored.status, value: stored.value, comment: stored.comment };
+      // Held back beside the editor's acceptance, the new proposal leaves that acceptance to ship.
+      if (stored.status !== "ACCEPTED" && previous?.status === "ACCEPTED") this.accepted = previous;
+      this.row.mine = {
+        id: stored.id,
+        status: stored.status,
+        value: stored.value,
+        comment: stored.comment,
+        self_accepted: stored.self_accepted,
+      };
       clearDraft(this.row.id);
       const clean = !sanitizedAway(this.row.kind, typed, stored.value);
       this.baseline = clean ? { value: typed, comment } : { value: stored.value, comment: stored.comment };
@@ -359,11 +421,12 @@ export class FieldEditor {
           this.value.value = stored.value;
           this.comment.value = stored.comment;
         }
-        this.say(clean ? s.savedHere : s.sanitized, clean ? "plain" : "warn");
+        const said = this.outcome(stored, clean);
+        this.say(said.text, said.warn ? "warn" : "plain");
         this.touched = false;
         this.renderStatus();
       }
-      this.events.saved(this, clean);
+      this.events.saved(this, clean && stored.held === null);
     } catch (error) {
       if (this.released) writeDraft(this.row.id, { value: typed, comment });
       else this.failed(error, s.saveFailed);
@@ -374,7 +437,7 @@ export class FieldEditor {
   }
 
   private async retract(): Promise<void> {
-    const own = openProposal(this.row.mine);
+    const own = this.own();
     if (!own || this.saving) return;
     const s = this.strings;
     this.saving = true;
@@ -395,7 +458,7 @@ export class FieldEditor {
     } finally {
       this.saving = false;
       this.withdraw.disabled = false;
-      this.withdraw.textContent = s.withdraw;
+      this.withdraw.textContent = this.withdrawLabel();
       if (!this.released) this.refresh();
     }
   }

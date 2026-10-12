@@ -17,14 +17,14 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 
 from celery import shared_task
-from django.db.models import Max
+from django.db.models import Max, Q
 from django.utils import timezone
 
 from notifications.dtos import CopyScopeMetadata, SiteCopyProposedMetadata
 from notifications.models import NotificationLevel, NotificationType
 from notifications.tasks import send_bulk_notifications_task
 
-from .models import CopyProposal, ProposalStatus
+from .models import CopyProposal, ProposalStatus, self_accepted_filter
 from .permissions import copy_desk_reviewers
 
 logger = logging.getLogger(__name__)
@@ -54,6 +54,13 @@ class DigestOutcome:
     delivered: bool = False
 
 
+def _announced_work() -> Q:
+    """What a digest carries: proposals waiting for a verdict, and changes a
+    trusted translator's save accepted. The second reach no review queue, so
+    without the digest nobody would learn that they wait for `copy:apply`."""
+    return Q(status=ProposalStatus.PROPOSED) | self_accepted_filter()
+
+
 def dispatch_digest_for_author(
     *, author_id: int, reviewer_ids: Sequence[str], now: datetime
 ) -> DigestOutcome:
@@ -67,8 +74,8 @@ def dispatch_digest_for_author(
     """
     pending = list(
         CopyProposal.objects.filter(
+            _announced_work(),
             author_id=author_id,
-            status=ProposalStatus.PROPOSED,
             notified_at__isnull=True,
         ).select_related("segment", "author")
     )
@@ -127,7 +134,7 @@ def dispatch_copy_proposal_digests() -> dict:
     # reported out from under them.
     settled = (
         CopyProposal.objects.filter(
-            status=ProposalStatus.PROPOSED,
+            _announced_work(),
             notified_at__isnull=True,
             author__isnull=False,
         )
@@ -156,11 +163,15 @@ def _digest_metadata(pending: list[CopyProposal]) -> SiteCopyProposedMetadata:
     Page labels travel because they are names, not copy to translate — the same
     exception `project_name` already takes. Locales travel as bare codes and are
     rendered into language names by the composer, in the reader's language.
+
+    The pages and languages cover both counts; `proposal_count` is what waits
+    for a verdict and `accepted_count` what its author's save accepted.
     """
     author = pending[0].author
     counts: dict[str, int] = {}
     labels: dict[str, str] = {}
     locales: list[str] = []
+    accepted = sum(1 for proposal in pending if proposal.status == ProposalStatus.ACCEPTED)
 
     for proposal in pending:
         segment = proposal.segment
@@ -177,7 +188,8 @@ def _digest_metadata(pending: list[CopyProposal]) -> SiteCopyProposedMetadata:
     return SiteCopyProposedMetadata(
         author_id=getattr(author, "id", None),
         author_name=author_name,
-        proposal_count=len(pending),
+        proposal_count=len(pending) - accepted,
+        accepted_count=accepted,
         scopes=tuple(
             CopyScopeMetadata(scope=scope, label=labels.get(scope, ""), count=count)
             for scope, count in sorted(counts.items(), key=lambda item: -item[1])

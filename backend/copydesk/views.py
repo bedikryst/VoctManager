@@ -26,6 +26,7 @@ from .permissions import (
     CanEditSiteCopy,
     IsCopyReviewer,
     copy_desk_reviewers,
+    trusted_locales,
     user_is_copy_reviewer,
 )
 from .serializers import (
@@ -107,6 +108,9 @@ class CopyDeskSiteIndexView(views.APIView):
     `language` is the reader's own, because the mode's chrome speaks it whatever
     language the page is in: the bar switches the page between locales, and
     buttons that followed it would change language under the editor's thumb.
+
+    `trusted_locales` are the reader's, not this page's: the edit sheet opens
+    every language of a field, whichever locale the page is in.
     """
 
     permission_classes = [CanEditSiteCopy]
@@ -122,6 +126,7 @@ class CopyDeskSiteIndexView(views.APIView):
         return Response({
             "locale": locale,
             "language": profile.language if profile is not None else SiteLocale.POLISH,
+            "trusted_locales": list(trusted_locales(user)),
             "segments": [row.model_dump(mode="json") for row in rows],
         })
 
@@ -131,7 +136,8 @@ class CopyDeskProposalsView(views.APIView):
 
     The response carries the value as STORED, after the sanitizer: the comment
     mode previews exactly that, never what was typed, and says so when the two
-    differ.
+    differ. For a trusted translator it also says why a proposal outside Polish
+    was not accepted on save (`held`), so the sheet can tell them.
     """
 
     permission_classes = [CanEditSiteCopy]
@@ -145,25 +151,34 @@ class CopyDeskProposalsView(views.APIView):
         except ValidationError as exc:
             return _validation_response(exc)
 
+        author = request_user(request)
         try:
-            proposal = CopyDeskService.save_proposal(
-                dto=dto, author=request_user(request)
-            )
+            proposal = CopyDeskService.save_proposal(dto=dto, author=author)
         except SegmentNotFoundError:
             return Response(
                 {"detail": "Segment not found."}, status=status.HTTP_404_NOT_FOUND
             )
 
+        held = (
+            None
+            if proposal.status == ProposalStatus.ACCEPTED
+            else CopyDeskService.held_back(
+                segment=proposal.segment, value=proposal.value, author=author
+            )
+        )
         return Response({
             "id": str(proposal.id),
             "status": proposal.status,
             "value": proposal.value,
             "comment": proposal.comment,
+            "self_accepted": proposal.is_self_accepted,
+            "held": held,
         })
 
 
 class CopyDeskProposalDetailView(views.APIView):
-    """DELETE — an editor withdraws their own open proposal."""
+    """DELETE — an editor withdraws their own open proposal, or their own
+    acceptance nobody else made (`CopyDeskService.withdraw_proposal`)."""
 
     permission_classes = [CanEditSiteCopy]
 

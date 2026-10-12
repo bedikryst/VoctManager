@@ -11,9 +11,10 @@
  *  BESIDE IT, read when the sheet opens (`GET segments/?scope=`, every locale with its history):
  *  - the other languages, Polish first, collapsed. Each reads as text with "Popraw", which turns it
  *    into an editor of its own: one sentence fixed in all three without finding it again, each
- *    language its own proposal. A language holding the editor's draft or open proposal opens as an
- *    editor at once. The editor's own proposal there is read from the history by the site index's
- *    rule: the open one, else the accepted, unapplied one that is the field's latest acceptance;
+ *    language its own proposal. A language holding the editor's draft, open proposal or (where
+ *    their saves are trusted) own acceptance opens as an editor at once. The editor's own proposal
+ *    there is read from the history by the site index's rule: the open one, else the accepted,
+ *    unapplied one that is the field's latest acceptance;
  *  - the current Polish, beneath the warning, when the translation is stale;
  *  - other editors' open proposals on the field.
  *
@@ -28,7 +29,7 @@
 import { fetchScopeSegments, type DeskProposal, type DeskSegment, type IndexRow, type OwnProposal } from "./api";
 import { LOCALES, type Locale } from "../i18n/config";
 import { button, el, fill } from "./dom";
-import { FieldEditor, hasDraft, openProposal, type EditorEvents } from "./editor";
+import { FieldEditor, hasDraft, revisableProposal, type EditorEvents } from "./editor";
 import { FRENCH_SPACING_NOTE, type Strings } from "./strings";
 
 export interface SheetEvents {
@@ -55,6 +56,8 @@ interface Session {
   readonly row: IndexRow;
   readonly locale: Locale;
   readonly strings: Strings;
+  /** The languages in which the reader's saves are accepted without a review. */
+  readonly trusted: readonly Locale[];
   readonly main: FieldEditor;
   /** The other languages the editor has opened, each its own proposal. */
   readonly others: Map<Locale, FieldEditor>;
@@ -64,7 +67,13 @@ interface Session {
 }
 
 function ownOf(proposal: DeskProposal): OwnProposal {
-  return { id: proposal.id, status: proposal.status, value: proposal.value, comment: proposal.comment };
+  return {
+    id: proposal.id,
+    status: proposal.status,
+    value: proposal.value,
+    comment: proposal.comment,
+    self_accepted: proposal.self_accepted,
+  };
 }
 
 /** When a proposal was decided; an undecided one counts as the latest, as Postgres sorts NULLs last. */
@@ -76,12 +85,13 @@ function decidedAt(proposal: DeskProposal): number {
  * The reader's accepted proposal not yet applied, while it is the field's latest acceptance: the
  * decision `copy:apply` writes last. The site index's rule (`CopyDeskService.site_index`): latest
  * `reviewed_at`, then latest `created_at`. `segments/` lists the newest first, so on a tie the
- * first one met stands.
+ * first one met stands. `except` leaves out the proposal the editor may still withdraw, to find
+ * what ships once it is gone.
  */
-function ownShipping(proposals: readonly DeskProposal[]): OwnProposal | null {
+function ownShipping(proposals: readonly DeskProposal[], except?: string): OwnProposal | null {
   let shipping: DeskProposal | null = null;
   for (const proposal of proposals) {
-    if (proposal.status !== "ACCEPTED" || proposal.applied_at) continue;
+    if (proposal.status !== "ACCEPTED" || proposal.applied_at || proposal.id === except) continue;
     if (!shipping || decidedAt(proposal) > decidedAt(shipping)) shipping = proposal;
   }
   return shipping?.is_mine ? ownOf(shipping) : null;
@@ -149,15 +159,29 @@ export class Sheet {
     return this.listShown;
   }
 
-  open(row: IndexRow, locale: Locale, strings: Strings, options: OpenOptions = {}): void {
+  open(
+    row: IndexRow,
+    locale: Locale,
+    strings: Strings,
+    trusted: readonly Locale[],
+    options: OpenOptions = {},
+  ): void {
     this.close();
     const s = strings;
     const others = new Map<Locale, FieldEditor>();
-    const main = new FieldEditor({ row, locale, strings, startFromFallback: true, events: this.editorEvents() });
+    const main = new FieldEditor({
+      row,
+      locale,
+      strings,
+      startFromFallback: true,
+      trusted: trusted.includes(locale),
+      events: this.editorEvents(),
+    });
     const session: Session = {
       row,
       locale,
       strings,
+      trusted,
       main,
       others,
       polish: el("div", "notes"),
@@ -307,7 +331,7 @@ export class Sheet {
     if (this.current !== session) return;
 
     const own = rows.find((segment) => segment.locale === session.locale);
-    if (own) session.main.shipsBeneath(ownShipping(own.proposals));
+    if (own) session.main.shipsBeneath(ownShipping(own.proposals, session.row.mine?.id));
     const polish = own?.source_value || rows.find((segment) => segment.locale === "pl")?.value || "";
     if (session.row.is_stale && polish) {
       const text = el("p", "reference-text", polish);
@@ -363,10 +387,18 @@ export class Sheet {
     const { locale } = segment;
     const row = sideRow(session.row, segment);
     const block = el("li", "side");
+    const trusted = session.trusted.includes(locale);
     const expand = (focus: boolean): void => {
       if (session.others.has(locale)) return;
-      const editor = new FieldEditor({ row, locale, strings: s, startFromFallback: false, events: this.editorEvents() });
-      editor.shipsBeneath(ownShipping(segment.proposals));
+      const editor = new FieldEditor({
+        row,
+        locale,
+        strings: s,
+        startFromFallback: false,
+        trusted,
+        events: this.editorEvents(),
+      });
+      editor.shipsBeneath(ownShipping(segment.proposals, row.mine?.id));
       session.others.set(locale, editor);
       fill(
         block,
@@ -392,7 +424,7 @@ export class Sheet {
       text,
       el("div", "side-actions", button(s.editOther, () => expand(true), "btn")),
     );
-    if (hasDraft(row.id) || openProposal(row.mine)) expand(false);
+    if (hasDraft(row.id) || revisableProposal(row.mine, trusted)) expand(false);
     return block;
   }
 }

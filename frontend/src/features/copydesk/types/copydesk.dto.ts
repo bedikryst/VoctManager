@@ -84,6 +84,11 @@ export interface CopyDeskProposal {
   readonly author_id: number | null;
   readonly author_name: string;
   readonly is_mine: boolean;
+  /**
+   * Accepted by its own author when saved (a trusted translator, outside
+   * Polish) and not yet applied: still theirs to revise and withdraw.
+   */
+  readonly self_accepted: boolean;
   /** A translation whose Polish has moved since this proposal was written. */
   readonly is_stale: boolean;
   readonly source_known: boolean;
@@ -142,12 +147,20 @@ export interface CopyDeskProposalWrite {
   readonly comment: string;
 }
 
+/**
+ * Why a trusted translator's save was not accepted on save: an empty value, or
+ * `{slots}` or link targets that differ from the Polish.
+ */
+export type CopyDeskHoldReason = "empty" | "slots" | "links";
+
 /** The proposal as stored: `value` is what the sanitizer kept, not what was sent. */
 export interface CopyDeskProposalWritten {
   readonly id: string;
   readonly status: CopyProposalStatus;
   readonly value: string;
   readonly comment: string;
+  readonly self_accepted: boolean;
+  readonly held: CopyDeskHoldReason | null;
 }
 
 /**

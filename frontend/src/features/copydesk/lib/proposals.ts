@@ -17,6 +17,16 @@ export const isOpen = (proposal: CopyDeskProposal): boolean =>
   proposal.status === "DRAFT" || proposal.status === "PROPOSED";
 
 /**
+ * The caller's own words that their next save revises: an open proposal, or a
+ * trusted translator's change accepted on save and not yet applied. The server
+ * revises that row in place, so the cell has to keep treating it as the
+ * editor's, or the first autosave would put the published text back under
+ * their cursor.
+ */
+export const isOwnRevisable = (proposal: CopyDeskProposal): boolean =>
+  proposal.is_mine && (isOpen(proposal) || proposal.self_accepted);
+
+/**
  * One field of one page in one language, with everything standing on it.
  *
  * The split between `mine` and `others` is the shape §6b chose on purpose: two
@@ -26,7 +36,7 @@ export const isOpen = (proposal: CopyDeskProposal): boolean =>
  */
 export interface CopyDeskCell {
   readonly segment: CopyDeskSegment;
-  /** The caller's own open proposal, which the autosave revises in place. */
+  /** The caller's own proposal the autosave revises in place (`isOwnRevisable`). */
   readonly mine: CopyDeskProposal | null;
   /** Somebody else's open proposal on the same field. */
   readonly others: readonly CopyDeskProposal[];
@@ -97,9 +107,14 @@ export const readCell = (segment: CopyDeskSegment): CopyDeskCell => {
   // `isStandingVerdict` rejects would fall through to an older decision and
   // report a rejection the editor has already had accepted since.
   for (const proposal of segment.proposals) {
+    // An own acceptance beneath a newer open proposal is a decision still
+    // waiting for the repository, so it falls through to `awaiting`.
+    if (mine === null && isOwnRevisable(proposal)) {
+      mine = proposal;
+      continue;
+    }
     if (isOpen(proposal)) {
-      if (proposal.is_mine) mine ??= proposal;
-      else others.push(proposal);
+      if (!proposal.is_mine) others.push(proposal);
       continue;
     }
     if (settled === null && proposal.is_mine) settled = proposal;

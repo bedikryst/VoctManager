@@ -219,7 +219,10 @@ export interface CopyScopeMetadata {
 export interface SiteCopyProposedMetadata {
   author_id?: number | null;
   author_name: string;
+  /** Waiting for a verdict. */
   proposal_count?: number;
+  /** Accepted when their author, a trusted translator, saved them; waiting only for publication. */
+  accepted_count?: number;
   scopes?: CopyScopeMetadata[];
   locales?: string[];
 }

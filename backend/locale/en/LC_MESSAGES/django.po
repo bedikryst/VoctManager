@@ -4307,6 +4307,40 @@ msgstr ""
 msgid "A translation is already being written."
 msgstr ""
 
+#: notifications/message_content.py:0
+msgid "Accepted on save"
+msgstr ""
+
+#: notifications/message_content.py:0
+#, python-format
+msgid "%(editor)s made %(changes)s"
+msgstr ""
+
+#: notifications/message_content.py:0
+#, python-format
+msgid "Copy desk: %(changes)s to publish from %(editor)s"
+msgstr ""
+
+#: notifications/message_content.py:0
+#, python-format
+msgid ""
+"%(editor)s is trusted with translations, so these changes were accepted when"
+" saved and need no review: %(changes)s. Nothing has reached the site: they "
+"wait for copy:apply, and arrive as an ordinary diff for you to read before "
+"it is committed."
+msgstr ""
+
+#: notifications/message_content.py:0
+#, python-format
+msgid ""
+"Accepted when saved, as translations by a trusted translator, and waiting "
+"only for copy:apply: %(changes)s."
+msgstr ""
+
+#: notifications/message_content.py:0
+msgid "See what waits for publication"
+msgstr ""
+
 #~ msgid ""
 #~ "%(artist)s is asking to be excused from a run of rehearsals. The dates are "
 #~ "below — approve or decline them in the panel."

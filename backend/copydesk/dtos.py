@@ -142,6 +142,9 @@ class ProposalDTO(BaseModel):
     author_id: int | None
     author_name: str
     is_mine: bool
+    #: Accepted by its own author on save (a trusted translator) and not yet
+    #: applied: still theirs to revise or withdraw.
+    self_accepted: bool = False
     #: A translation whose Polish has moved since it was written. Always False on
     #: a Polish proposal — a source renders nothing, so it goes stale against
     #: nothing — and False when the provenance is unknown, which `source_known`
@@ -192,6 +195,8 @@ class SiteIndexProposalDTO(BaseModel):
     status: str
     value: str
     comment: str
+    #: Accepted on save by its author, a trusted translator: still theirs.
+    self_accepted: bool = False
 
 
 class SiteIndexRowDTO(BaseModel):

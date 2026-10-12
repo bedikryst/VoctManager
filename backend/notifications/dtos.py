@@ -222,10 +222,14 @@ class SiteCopyProposedMetadata(EnterpriseBaseDTO):
     `scopes` is what makes the digest answerable without opening it — the
     developer needs to know which pages moved before deciding whether this is a
     ten-minute review or an evening's.
+
+    `proposal_count` waits for a verdict; `accepted_count` was accepted by its
+    author's own save (a trusted translator) and waits only for `copy:apply`.
     """
     author_id: int | None = None
     author_name: str
     proposal_count: int = 0
+    accepted_count: int = 0
     scopes: tuple[CopyScopeMetadata, ...] = ()
     locales: tuple[str, ...] = ()
 

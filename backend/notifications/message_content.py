@@ -2439,16 +2439,24 @@ def _compose_site_copy_proposed(ctx: MessageContext) -> MessageContent:
     judgement they are reading, and how much of it; which page comes second and
     only when there is one, because a sitting that crossed three pages is
     honestly described by the count, not by whichever page happened to be first.
+
+    A trusted translator's changes are accepted when saved (`accepted_count`)
+    and wait for nothing but `copy:apply`. They get their own line, and a
+    sitting made only of them is not described as proposals to review.
     """
     m = ctx.metadata
     author = m.get("author_name") or _("an editor")
     count = int(m.get("proposal_count") or 0)
+    accepted = int(m.get("accepted_count") or 0)
     raw_scopes = [s for s in (m.get("scopes") or ()) if isinstance(s, dict)]
     locales = [str(code) for code in (m.get("locales") or ())]
 
     changes_phrase = ngettext(
         "%(count)d change", "%(count)d changes", count
     ) % {"count": count}
+    accepted_phrase = ngettext(
+        "%(count)d change", "%(count)d changes", accepted
+    ) % {"count": accepted}
 
     scope_labels = [str(s.get("label") or s.get("scope") or "") for s in raw_scopes]
     scope_labels = [label for label in scope_labels if label]
@@ -2459,10 +2467,11 @@ def _compose_site_copy_proposed(ctx: MessageContext) -> MessageContent:
             "%(count)d page", "%(count)d pages", len(scope_labels)
         ) % {"count": len(scope_labels)}
 
-    details: list[DetailRow] = [
-        _row(_("Editor"), author),
-        _row(_("Proposed"), changes_phrase),
-    ]
+    details: list[DetailRow] = [_row(_("Editor"), author)]
+    if count or not accepted:
+        details.append(_row(_("Proposed"), changes_phrase))
+    if accepted:
+        details.append(_row(_("Accepted on save"), accepted_phrase))
     if scope_labels:
         details.append(_row(
             ngettext("Page", "Pages", len(scope_labels)),
@@ -2477,30 +2486,56 @@ def _compose_site_copy_proposed(ctx: MessageContext) -> MessageContent:
     if locales:
         details.append(_row(_("Languages"), _locale_names(locales)))
 
+    accepted_only = accepted > 0 and count == 0
+    if accepted_only:
+        title = _("%(editor)s made %(changes)s") % {
+            "editor": author, "changes": accepted_phrase,
+        }
+        subject = _("Copy desk: %(changes)s to publish from %(editor)s") % {
+            "changes": accepted_phrase, "editor": author,
+        }
+        email_lead = _(
+            "%(editor)s is trusted with translations, so these changes were"
+            " accepted when saved and need no review: %(changes)s. Nothing has"
+            " reached the site: they wait for copy:apply, and arrive as an"
+            " ordinary diff for you to read before it is committed."
+        ) % {"editor": author, "changes": accepted_phrase}
+        cta_label = _("See what waits for publication")
+    else:
+        title = _("%(editor)s proposed %(changes)s") % {
+            "editor": author, "changes": changes_phrase,
+        }
+        subject = _("Copy desk: %(changes)s from %(editor)s") % {
+            "changes": changes_phrase, "editor": author,
+        }
+        email_lead = _(
+            "%(editor)s has been through the copy desk and left %(changes)s"
+            " waiting. Nothing has reached the site: proposals stay in the panel"
+            " until you accept them, and an accepted one still arrives as an"
+            " ordinary diff for you to read before it is committed."
+        ) % {"editor": author, "changes": changes_phrase}
+        if accepted:
+            email_lead = f"{email_lead} " + _(
+                "Accepted when saved, as translations by a trusted translator,"
+                " and waiting only for copy:apply: %(changes)s."
+            ) % {"changes": accepted_phrase}
+        cta_label = _("Review the proposals")
+
     return MessageContent(
         notification_type=ctx.notification_type,
         level=ctx.level,
-        title=_("%(editor)s proposed %(changes)s") % {
-            "editor": author, "changes": changes_phrase,
-        },
+        title=title,
         body=where,
         url_path=_COPY_DESK_REVIEW_URL,
         # Per editor, so a second sitting replaces the first nudge on the lock
         # screen rather than stacking beside it — there is one queue to review.
         tag=f"site-copy:{m.get('author_id') or author}",
         actions=(_open_action(_COPY_DESK_REVIEW_URL),),
-        subject=_("Copy desk: %(changes)s from %(editor)s") % {
-            "changes": changes_phrase, "editor": author,
-        },
+        subject=subject,
         eyebrow=_("Copy desk"),
-        email_lead=_(
-            "%(editor)s has been through the copy desk and left %(changes)s"
-            " waiting. Nothing has reached the site: proposals stay in the panel"
-            " until you accept them, and an accepted one still arrives as an"
-            " ordinary diff for you to read before it is committed."
-        ) % {"editor": author, "changes": changes_phrase},
+        email_lead=email_lead,
         details=tuple(details),
-        cta_label=_("Review the proposals"),
+        cta_label=cta_label,
     )
 
 

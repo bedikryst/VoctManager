@@ -18,7 +18,7 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
-from django.utils import timezone
+from django.utils import timezone, translation
 from pydantic import ValidationError
 from rest_framework.test import APIClient
 from rest_framework_simplejwt.tokens import AccessToken
@@ -1523,6 +1523,7 @@ class SiteIndexTests(TestCase):
                 "status": ProposalStatus.PROPOSED,
                 "value": "Second, again",
                 "comment": "Rhythm",
+                "self_accepted": False,
             },
         )
 
@@ -1911,3 +1912,300 @@ class NotificationWiringTests(TestCase):
         client.force_authenticate(user=make_user("dev@example.com", staff=True))
         response = client.get(reverse("notification-preferences"))
         self.assertIn("site_copy", [group["id"] for group in response.data["groups"]])
+
+
+def make_translator(email: str):
+    """An account whose English and French are accepted on save."""
+    user = make_user(email)
+    user.profile.site_copy_trusted_translator = True
+    user.profile.save(update_fields=["site_copy_trusted_translator", "updated_at"])
+    return user
+
+
+class TrustedTranslatorTests(TestCase):
+    """A trusted translator's English and French are accepted on save; Polish
+    is still reviewed, and so is anything whose slots or links differ from the
+    Polish it ships beside."""
+
+    def setUp(self):
+        self.translator = make_translator("florent@example.com")
+        self.reviewer = make_user("dev@example.com", staff=True)
+        self.lede_pl = make_segment("page.kontakt.hero.lede", SiteLocale.POLISH, "Zapraszamy")
+        self.lede_en = make_segment("page.kontakt.hero.lede", SiteLocale.ENGLISH, "Welcome")
+        self.lede_fr = make_segment("page.kontakt.hero.lede", SiteLocale.FRENCH, "")
+        self.api = APIClient()
+
+    def _save(self, segment, value, comment="", author=None):
+        return CopyDeskService.save_proposal(
+            dto=ProposalWriteDTO(segment_id=segment.id, value=value, comment=comment),
+            author=author or self.translator,
+        )
+
+    def test_the_flag_opens_the_desk(self):
+        self.assertTrue(user_can_edit_site_copy(self.translator))
+
+    def test_english_and_french_are_accepted_on_save(self):
+        for segment, value in ((self.lede_en, "You are welcome"), (self.lede_fr, "Bienvenue")):
+            proposal = self._save(segment, value)
+            self.assertEqual(proposal.status, ProposalStatus.ACCEPTED)
+            self.assertEqual(proposal.reviewed_by, self.translator)
+            self.assertIsNotNone(proposal.reviewed_at)
+            self.assertIsNone(proposal.applied_at)
+            self.assertTrue(proposal.is_self_accepted)
+
+    def test_polish_is_still_reviewed(self):
+        proposal = self._save(self.lede_pl, "Witamy")
+        self.assertEqual(proposal.status, ProposalStatus.PROPOSED)
+        self.assertIsNone(proposal.reviewed_by)
+
+    def test_an_editor_without_the_flag_is_still_reviewed(self):
+        editor = make_user("ola@example.com", editor=True)
+        proposal = self._save(self.lede_en, "You are welcome", author=editor)
+        self.assertEqual(proposal.status, ProposalStatus.PROPOSED)
+
+    def test_a_dropped_slot_is_held_for_the_reviewers(self):
+        make_segment("page.mecenat.lede", SiteLocale.POLISH, "Wspieraj {name} już dziś")
+        en = make_segment("page.mecenat.lede", SiteLocale.ENGLISH, "Support {name} today")
+        proposal = self._save(en, "Support us today")
+        self.assertEqual(proposal.status, ProposalStatus.PROPOSED)
+        self.assertEqual(
+            CopyDeskService.held_back(segment=en, value=proposal.value, author=self.translator),
+            "slots",
+        )
+
+    def test_a_slot_used_once_where_the_polish_uses_it_twice_is_accepted(self):
+        make_segment("page.mecenat.lede", SiteLocale.POLISH, "{name}: wspieraj {name}")
+        en = make_segment("page.mecenat.lede", SiteLocale.ENGLISH, "")
+        self.assertEqual(self._save(en, "Support {name}").status, ProposalStatus.ACCEPTED)
+
+    def test_a_link_marker_keeps_its_braces_but_not_its_words(self):
+        # `page.press.contact.list`: the braces mark the link, the words are copy.
+        make_segment(
+            "page.press.contact.list", SiteLocale.POLISH, "{Zostaw kontakt}, a napiszemy.",
+        )
+        en = make_segment("page.press.contact.list", SiteLocale.ENGLISH, "")
+        self.assertEqual(
+            self._save(en, "{Leave your details} and we will write.").status,
+            ProposalStatus.ACCEPTED,
+        )
+        self.assertEqual(
+            self._save(en, "Leave your details and we will write.").status,
+            ProposalStatus.PROPOSED,
+        )
+
+    def test_a_dropped_or_moved_link_is_held(self):
+        make_segment(
+            "page.kontakt.press", SiteLocale.POLISH,
+            'W <a href="/press">materiałach prasowych →</a>', kind=SegmentKind.HTML,
+        )
+        en = make_segment("page.kontakt.press", SiteLocale.ENGLISH, "", kind=SegmentKind.HTML)
+        dropped = self._save(en, "In the press materials →")
+        self.assertEqual(dropped.status, ProposalStatus.PROPOSED)
+        self.assertEqual(
+            CopyDeskService.held_back(segment=en, value=dropped.value, author=self.translator),
+            "links",
+        )
+        moved = self._save(en, 'In the <a href="/kontakt">press materials →</a>')
+        self.assertEqual(moved.status, ProposalStatus.PROPOSED)
+        kept = self._save(en, 'In the <a href="/press">press kit →</a>')
+        self.assertEqual(kept.status, ProposalStatus.ACCEPTED)
+
+    def test_the_guard_reads_the_polish_that_will_ship_beside_it(self):
+        pl = make_segment(
+            "page.kontakt.press", SiteLocale.POLISH,
+            'W <a href="/press">materiałach</a>', kind=SegmentKind.HTML,
+        )
+        en = make_segment("page.kontakt.press", SiteLocale.ENGLISH, "", kind=SegmentKind.HTML)
+        CopyProposal.objects.create(
+            segment=pl, author=self.reviewer, value='W <a href="/prasa">materiałach</a>',
+            status=ProposalStatus.ACCEPTED, reviewed_by=self.reviewer,
+            reviewed_at=timezone.now(),
+        )
+        self.assertEqual(
+            self._save(en, 'In the <a href="/press">materials</a>').status,
+            ProposalStatus.PROPOSED,
+        )
+        self.assertEqual(
+            self._save(en, 'In the <a href="/prasa">materials</a>').status,
+            ProposalStatus.ACCEPTED,
+        )
+
+    def test_a_second_save_revises_the_self_accepted_row(self):
+        first = self._save(self.lede_en, "You are welcome")
+        CopyProposal.objects.filter(id=first.id).update(
+            notified_at=timezone.now(), reviewed_at=timezone.now() - timedelta(hours=1),
+        )
+        before = CopyProposal.objects.get(id=first.id).reviewed_at
+
+        second = self._save(self.lede_en, "Do come in", comment="warmer")
+        self.assertEqual(second.id, first.id)
+        self.assertEqual(
+            CopyProposal.objects.filter(segment=self.lede_en, author=self.translator).count(), 1,
+        )
+        second.refresh_from_db()
+        self.assertEqual(second.status, ProposalStatus.ACCEPTED)
+        self.assertEqual(second.value, "Do come in")
+        self.assertEqual(second.comment, "warmer")
+        self.assertGreater(second.reviewed_at, before)
+        # New wording is news again for the digest.
+        self.assertIsNone(second.notified_at)
+
+    def test_an_open_proposal_is_accepted_in_place_once_it_passes(self):
+        held = self._save(self.lede_en, "")
+        self.assertEqual(held.status, ProposalStatus.PROPOSED)
+        CopyProposal.objects.filter(id=held.id).update(notified_at=timezone.now())
+
+        accepted = self._save(self.lede_en, "You are welcome")
+        self.assertEqual(accepted.id, held.id)
+        accepted.refresh_from_db()
+        self.assertEqual(accepted.status, ProposalStatus.ACCEPTED)
+        self.assertIsNone(accepted.notified_at)
+
+    def test_an_acceptance_by_another_reviewer_gets_a_new_row_beside_it(self):
+        decided = CopyProposal.objects.create(
+            segment=self.lede_en, author=self.translator, value="Hello",
+            status=ProposalStatus.ACCEPTED, reviewed_by=self.reviewer,
+            reviewed_at=timezone.now(),
+        )
+        newer = self._save(self.lede_en, "You are welcome")
+        self.assertNotEqual(newer.id, decided.id)
+        self.assertEqual(newer.status, ProposalStatus.ACCEPTED)
+        decided.refresh_from_db()
+        self.assertEqual(decided.value, "Hello")
+        self.assertEqual(decided.reviewed_by, self.reviewer)
+
+    def test_a_held_save_leaves_the_own_acceptance_standing(self):
+        make_segment("page.mecenat.lede", SiteLocale.POLISH, "Wspieraj {name}")
+        en = make_segment("page.mecenat.lede", SiteLocale.ENGLISH, "")
+        accepted = self._save(en, "Support {name}")
+        held = self._save(en, "Support us")
+        self.assertNotEqual(held.id, accepted.id)
+        self.assertEqual(held.status, ProposalStatus.PROPOSED)
+        accepted.refresh_from_db()
+        self.assertEqual(accepted.value, "Support {name}")
+        self.assertEqual(accepted.status, ProposalStatus.ACCEPTED)
+
+    def test_a_note_without_a_change_waits_for_the_reviewers(self):
+        proposal = self._save(self.lede_en, "Welcome", comment="Is this too cold?")
+        self.assertEqual(proposal.status, ProposalStatus.PROPOSED)
+
+    def test_the_published_text_takes_back_an_own_acceptance(self):
+        accepted = self._save(self.lede_en, "You are welcome")
+        back = self._save(self.lede_en, "Welcome")
+        self.assertEqual(back.id, accepted.id)
+        back.refresh_from_db()
+        self.assertEqual(back.status, ProposalStatus.ACCEPTED)
+        self.assertEqual(back.value, "Welcome")
+
+    def test_a_self_accepted_change_can_be_withdrawn(self):
+        accepted = self._save(self.lede_en, "You are welcome")
+        self.api.force_authenticate(user=self.translator)
+        response = self.api.delete(reverse("copydesk-proposal-detail", args=[accepted.id]))
+        self.assertEqual(response.status_code, 204)
+        self.assertFalse(CopyProposal.objects.filter(id=accepted.id).exists())
+
+    def test_an_acceptance_by_another_reviewer_cannot_be_withdrawn(self):
+        decided = CopyProposal.objects.create(
+            segment=self.lede_en, author=self.translator, value="Hello",
+            status=ProposalStatus.ACCEPTED, reviewed_by=self.reviewer,
+            reviewed_at=timezone.now(),
+        )
+        self.api.force_authenticate(user=self.translator)
+        response = self.api.delete(reverse("copydesk-proposal-detail", args=[decided.id]))
+        self.assertEqual(response.status_code, 409)
+
+    def test_an_applied_own_acceptance_cannot_be_withdrawn(self):
+        accepted = self._save(self.lede_en, "You are welcome")
+        CopyProposal.objects.filter(id=accepted.id).update(applied_at=timezone.now())
+        with self.assertRaises(ProposalClosedError):
+            CopyDeskService.withdraw_proposal(proposal_id=accepted.id, author=self.translator)
+
+    def test_the_save_answer_carries_the_verdict(self):
+        make_segment("page.mecenat.lede", SiteLocale.POLISH, "Wspieraj {name}")
+        en = make_segment("page.mecenat.lede", SiteLocale.ENGLISH, "")
+        self.api.force_authenticate(user=self.translator)
+        url = reverse("copydesk-proposals")
+
+        held = self.api.post(
+            url, {"segment_id": str(en.id), "value": "Support us", "comment": ""}, format="json",
+        )
+        self.assertEqual(held.status_code, 200)
+        self.assertEqual(held.data["status"], ProposalStatus.PROPOSED)
+        self.assertEqual(held.data["held"], "slots")
+        self.assertFalse(held.data["self_accepted"])
+
+        passed = self.api.post(
+            url, {"segment_id": str(en.id), "value": "Support {name}", "comment": ""},
+            format="json",
+        )
+        self.assertEqual(passed.data["status"], ProposalStatus.ACCEPTED)
+        self.assertIsNone(passed.data["held"])
+        self.assertTrue(passed.data["self_accepted"])
+
+    def test_the_index_names_the_trusted_locales_and_the_own_acceptance(self):
+        self._save(self.lede_en, "You are welcome")
+        self.api.force_authenticate(user=self.translator)
+        response = self.api.get(reverse("copydesk-site-index"), {"locale": "pl"})
+        self.assertEqual(response.data["trusted_locales"], ["en", "fr"])
+
+        response = self.api.get(reverse("copydesk-site-index"), {"locale": "en"})
+        mine = response.data["segments"][0]["mine"]
+        self.assertEqual(mine["status"], ProposalStatus.ACCEPTED)
+        self.assertTrue(mine["self_accepted"])
+
+        editor = make_user("ola@example.com", editor=True)
+        self.api.force_authenticate(user=editor)
+        response = self.api.get(reverse("copydesk-site-index"), {"locale": "en"})
+        self.assertEqual(response.data["trusted_locales"], [])
+
+    def test_the_desk_history_marks_the_own_acceptance(self):
+        self._save(self.lede_en, "You are welcome")
+        segments = CopyDeskService.segments_for_scope(
+            scope="page.kontakt", user=self.translator, locales=[SiteLocale.ENGLISH],
+        )
+        self.assertTrue(segments[0].proposals[0].self_accepted)
+
+    @patch("copydesk.tasks.send_bulk_notifications_task.delay")
+    def test_the_digest_counts_accepted_changes_on_their_own_line(self, delay):
+        self._save(self.lede_en, "You are welcome")
+        self._save(self.lede_pl, "Witamy")
+        CopyProposal.objects.all().update(
+            updated_at=timezone.now() - QUIET_PERIOD - timedelta(minutes=1)
+        )
+
+        self.assertEqual(dispatch_copy_proposal_digests(), {"digests": 1})
+        metadata = delay.call_args.kwargs["metadata"]
+        self.assertEqual(metadata["proposal_count"], 1)
+        self.assertEqual(metadata["accepted_count"], 1)
+        self.assertEqual(sorted(metadata["locales"]), ["en", "pl"])
+
+        delay.reset_mock()
+        self.assertEqual(dispatch_copy_proposal_digests(), {"digests": 0})
+
+    @patch("copydesk.tasks.send_bulk_notifications_task.delay")
+    def test_a_sitting_of_accepted_changes_alone_is_announced(self, delay):
+        self._save(self.lede_en, "You are welcome")
+        self.api.force_authenticate(user=self.translator)
+        response = self.api.post(reverse("copydesk-notify"))
+        self.assertEqual(response.data, {"proposals": 1, "delivered": True})
+        metadata = delay.call_args.kwargs["metadata"]
+        self.assertEqual(metadata["proposal_count"], 0)
+        self.assertEqual(metadata["accepted_count"], 1)
+
+    def test_a_digest_of_accepted_changes_does_not_ask_for_a_review(self):
+        with translation.override("en"):
+            content = MessageContentBuilder.build(
+                NotificationType.SITE_COPY_PROPOSED,
+                NotificationLevel.INFO,
+                {
+                    "author_name": "Florent",
+                    "proposal_count": 0,
+                    "accepted_count": 7,
+                    "scopes": [{"scope": "page.kontakt", "label": "Kontakt", "count": 7}],
+                    "locales": ["en", "fr"],
+                },
+                is_manager=True,
+            )
+        self.assertIn("7", content.title)
+        self.assertNotIn("proposed", content.title)
+        self.assertEqual(content.cta_label, "See what waits for publication")

@@ -44,8 +44,11 @@ from .models import (
     SegmentKind,
     SiteLocale,
     scope_from_key,
+    self_accepted_filter,
 )
+from .permissions import user_is_trusted_translator
 from .sanitizers import sanitize_html, sanitize_text
+from .trust import HoldReason, hold_reason
 
 logger = logging.getLogger(__name__)
 
@@ -527,6 +530,7 @@ class CopyDeskService:
             author_id=proposal.author_id,
             author_name=_display_name(proposal.author),
             is_mine=proposal.author_id == getattr(user, "id", None),
+            self_accepted=proposal.is_self_accepted,
             is_stale=is_stale,
             source_known=source_known,
             updated_at=proposal.updated_at.isoformat(),
@@ -648,7 +652,11 @@ class CopyDeskService:
                     is_stale=is_stale,
                     mine=(
                         SiteIndexProposalDTO(
-                            id=own.id, status=own.status, value=own.value, comment=own.comment
+                            id=own.id,
+                            status=own.status,
+                            value=own.value,
+                            comment=own.comment,
+                            self_accepted=own.is_self_accepted,
                         )
                         if own is not None
                         else None
@@ -780,6 +788,51 @@ class CopyDeskService:
 
     # -- writes -------------------------------------------------------------- #
 
+    @staticmethod
+    def _decided_polish(key: str) -> str:
+        """The Polish a translation of `key` will be published beside.
+
+        The latest accepted Polish proposal `copy:apply` has not written yet,
+        else what the repository holds. An open Polish proposal is not counted:
+        it may never ship, and a translation checked against it could end up
+        published beside the Polish it replaced.
+        """
+        decided = (
+            CopyProposal.objects.filter(
+                segment__key=key,
+                segment__locale=SiteLocale.POLISH,
+                status=ProposalStatus.ACCEPTED,
+                applied_at__isnull=True,
+            )
+            .order_by("-reviewed_at", "-created_at")
+            .values_list("value", flat=True)
+            .first()
+        )
+        if decided is not None:
+            return decided
+        published = (
+            CopySegment.objects.filter(key=key, locale=SiteLocale.POLISH)
+            .values_list("value", flat=True)
+            .first()
+        )
+        return published or ""
+
+    @classmethod
+    def held_back(
+        cls, *, segment: CopySegment, value: str, author: User
+    ) -> HoldReason | None:
+        """Why a trusted translator's save of `value` waits for a review.
+
+        None wherever trust does not apply (a Polish segment, any other author):
+        such a proposal is not held back, it goes the usual way. `value` is the
+        stored one, after the sanitizer.
+        """
+        if segment.locale == SiteLocale.POLISH or not user_is_trusted_translator(author):
+            return None
+        return hold_reason(
+            value=value, polish=cls._decided_polish(segment.key), kind=segment.kind
+        )
+
     @classmethod
     def save_proposal(
         cls, *, dto: ProposalWriteDTO, author: User
@@ -791,6 +844,14 @@ class CopyDeskService:
         second editor's open proposal on the same segment is left alone — the
         reviewer sees both and decides, rather than one person's words silently
         replacing another's.
+
+        A trusted translator's proposal outside Polish is accepted on save once
+        it passes `held_back`, reviewed by its author. Their next save revises
+        that row while it is unapplied (`self_accepted_filter`), instead of
+        adding one per save; a row somebody else accepted is a decision and
+        stays as it is. An unchanged value is a note, not a change, so it waits
+        for the reviewers like any other proposal, unless it takes back the
+        author's own accepted change.
         """
         try:
             segment = CopySegment.objects.get(id=dto.segment_id)
@@ -806,6 +867,12 @@ class CopyDeskService:
             if segment.locale == SiteLocale.POLISH
             else cls.effective_source_hashes([segment.key]).get(segment.key, "")
         )
+        accept_on_save = (
+            dto.status == ProposalStatus.PROPOSED
+            and segment.locale != SiteLocale.POLISH
+            and user_is_trusted_translator(author)
+            and cls.held_back(segment=segment, value=value, author=author) is None
+        )
 
         def open_proposal() -> CopyProposal | None:
             return (
@@ -813,6 +880,45 @@ class CopyDeskService:
                 .filter(segment=segment, author=author, status__in=OPEN_STATUSES)
                 .first()
             )
+
+        def own_acceptance() -> CopyProposal | None:
+            return (
+                CopyProposal.objects.select_for_update()
+                .filter(self_accepted_filter(), segment=segment, author=author)
+                .order_by("-reviewed_at", "-created_at")
+                .first()
+            )
+
+        def accept(existing: CopyProposal | None) -> CopyProposal:
+            now = timezone.now()
+            if existing is None:
+                return CopyProposal.objects.create(
+                    segment=segment,
+                    author=author,
+                    value=value,
+                    comment=dto.comment,
+                    status=ProposalStatus.ACCEPTED,
+                    source_hash=stamped_hash,
+                    reviewed_by=author,
+                    reviewed_at=now,
+                )
+            # An open proposal the digest announced as waiting is news again
+            # once it is accepted, and so is a new value.
+            is_news = existing.value != value or existing.status != ProposalStatus.ACCEPTED
+            existing.value = value
+            existing.comment = dto.comment
+            existing.status = ProposalStatus.ACCEPTED
+            existing.source_hash = stamped_hash
+            existing.reviewed_by = author
+            # The latest decision is the one `copy:apply` writes last.
+            existing.reviewed_at = now
+            if is_news:
+                existing.notified_at = None
+            existing.save(update_fields=[
+                "value", "comment", "status", "source_hash", "reviewed_by",
+                "reviewed_at", "notified_at", "updated_at",
+            ])
+            return existing
 
         def revise(existing: CopyProposal) -> CopyProposal:
             value_changed = existing.value != value
@@ -831,7 +937,15 @@ class CopyDeskService:
 
         with transaction.atomic():
             proposal = open_proposal()
-            if proposal is not None:
+            target = (proposal or own_acceptance()) if accept_on_save else None
+            if (
+                value == segment.value
+                and not (target is not None and target.is_self_accepted)
+            ):
+                accept_on_save = False
+            if accept_on_save:
+                proposal = accept(target)
+            elif proposal is not None:
                 proposal = revise(proposal)
             else:
                 try:
@@ -864,13 +978,16 @@ class CopyDeskService:
     def withdraw_proposal(cls, *, proposal_id: UUID, author: User) -> None:
         """An editor takes back their own open proposal.
 
+        Or their own accepted one while nobody but they reviewed it and
+        `copy:apply` has not written it: the acceptance was only theirs.
+
         Soft-deleted rather than erased, so a sitting's record survives even the
         parts of it the editor thought better of.
         """
         proposal = CopyProposal.objects.filter(id=proposal_id, author=author).first()
         if proposal is None:
             raise ProposalNotFoundError(str(proposal_id))
-        if not proposal.is_open:
+        if not (proposal.is_open or proposal.is_self_accepted):
             raise ProposalClosedError(str(proposal_id))
         proposal.delete()
 

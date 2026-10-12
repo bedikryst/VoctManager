@@ -210,12 +210,15 @@ class CommentMode {
         if (running !== this) return;
         const s = this.strings();
         const label = row.label || row.key;
+        // A trusted translator's save is accepted at once, and the bar says so.
+        const accepted = row.mine?.status === "ACCEPTED";
         this.patchIndex(row, locale);
         if (locale === this.loaded?.index.locale) {
-          this.bar.announce(s.saved(label));
+          this.bar.announce(accepted ? s.accepted(label) : s.saved(label));
           this.afterChange(row);
         } else {
-          this.bar.announce(s.savedIn(label, s.localeAdverbs[locale]));
+          const language = s.localeAdverbs[locale];
+          this.bar.announce(accepted ? s.acceptedIn(label, language) : s.savedIn(label, language));
         }
       },
       withdrawn: (row, locale) => {
@@ -314,6 +317,7 @@ class CommentMode {
       fields: this.highlights.supported ? this.showFields : null,
       previews: this.previews.shown,
       sending: this.sending,
+      trusted: (this.loaded?.index.trusted_locales.length ?? 0) > 0,
       counts: () => this.counts(),
     };
   }
@@ -785,7 +789,7 @@ class CommentMode {
     if (this.sheet.row === row) {
       this.sheet.focusText();
     } else {
-      this.sheet.open(row, loaded.index.locale, this.strings(), { back });
+      this.sheet.open(row, loaded.index.locale, this.strings(), loaded.index.trusted_locales, { back });
       this.bar.setUnderSheet(true);
       // After `open`: closing what the sheet held before resumes the watcher.
       this.watcher.pause();

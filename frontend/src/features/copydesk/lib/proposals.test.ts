@@ -27,6 +27,7 @@ const proposal = (
   author_id: 1,
   author_name: "Krzysztof",
   is_mine: true,
+  self_accepted: false,
   is_stale: false,
   source_known: true,
   updated_at: "2026-09-03T10:00:00Z",
@@ -151,5 +152,39 @@ describe("readCell", () => {
     );
 
     expect(cell.settled).toBeNull();
+  });
+
+  it("keeps a change accepted on save in the editor's hands", () => {
+    // A trusted translator's autosave revises this row in place, so the field
+    // must keep showing it rather than the text the repository still holds.
+    const cell = readCell(
+      segment([
+        proposal("p1", "ACCEPTED", {
+          value: "Zdanie przyjęte przy zapisie.",
+          self_accepted: true,
+          reviewed_at: "2026-09-03T11:00:00Z",
+        }),
+      ]),
+    );
+
+    expect(cell.mine?.id).toBe("p1");
+    expect(cell.awaiting).toBeNull();
+    expect(cell.settled).toBeNull();
+  });
+
+  it("shows an own acceptance beneath a newer open proposal as awaiting", () => {
+    const cell = readCell(
+      segment([
+        proposal("p2", "PROPOSED", { value: "Wstrzymane: brak slotu." }),
+        proposal("p1", "ACCEPTED", {
+          value: "Zdanie przyjęte przy zapisie.",
+          self_accepted: true,
+          reviewed_at: "2026-09-03T11:00:00Z",
+        }),
+      ]),
+    );
+
+    expect(cell.mine?.id).toBe("p2");
+    expect(cell.awaiting?.id).toBe("p1");
   });
 });

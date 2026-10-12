@@ -318,6 +318,16 @@ class UserProfile(EnterpriseBaseModel):
         help_text=_("Grants access to the copy desk (/redakcja) to propose changes "
                     "to the public site's text. Set from the admin; independent of role.")
     )
+    # Trust in a person's judgement in every language but Polish, which nobody
+    # else in the foundation could review anyway. Their translations are accepted
+    # when they save them, unless `copydesk.trust.hold_reason` finds a slot
+    # or a link that differs from the Polish; their Polish is still reviewed.
+    site_copy_trusted_translator = models.BooleanField(
+        default=False,
+        help_text=_("Accepts this person's English and French proposals on the copy desk "
+                    "when they save them, without a review. Polish is still reviewed. "
+                    "Implies access to the copy desk.")
+    )
     # The copy desk's visit stamp is NOT here. One profile-wide timestamp answered
     # "when were you last on the desk", which is not the question the surface asks
     # — opening any one page cleared the new-since-last-visit state for the whole

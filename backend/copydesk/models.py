@@ -78,6 +78,10 @@ class ProposalStatus(models.TextChoices):
     are never edited: a further change to a settled segment is a new proposal,
     so the record of what was decided, by whom, and against which Polish
     survives the next edit.
+
+    One exception: a trusted translator's proposal accepted on save
+    (`self_accepted_filter`) records no decision but its author's own, so until
+    `copy:apply` writes it, the author's next save revises it in place.
     """
 
     DRAFT = "DRAFT", _("Draft")
@@ -86,8 +90,23 @@ class ProposalStatus(models.TextChoices):
     REJECTED = "REJECTED", _("Rejected")
 
 
-#: The states an editor may still write to, and the states the digest counts.
+#: The states an editor may still write to.
 OPEN_STATUSES: frozenset[str] = frozenset({ProposalStatus.DRAFT, ProposalStatus.PROPOSED})
+
+
+def self_accepted_filter() -> models.Q:
+    """Accepted by its own author and not yet written into the repository.
+
+    What a trusted translator's save produces. Nobody else reviewed it, so it is
+    still the author's to revise or withdraw, and the digest announces it: it
+    reaches no review queue, and without the digest nobody would learn that it
+    waits for `copy:apply`.
+    """
+    return models.Q(
+        status=ProposalStatus.ACCEPTED,
+        applied_at__isnull=True,
+        reviewed_by=models.F("author"),
+    )
 
 
 class CopySegment(EnterpriseBaseModel):
@@ -313,6 +332,16 @@ class CopyProposal(EnterpriseBaseModel):
     @property
     def is_open(self) -> bool:
         return self.status in OPEN_STATUSES
+
+    @property
+    def is_self_accepted(self) -> bool:
+        """The Python side of `self_accepted_filter`."""
+        return (
+            self.status == ProposalStatus.ACCEPTED
+            and self.applied_at is None
+            and self.author_id is not None
+            and self.reviewed_by_id == self.author_id
+        )
 
 
 class CopyScopeVisit(EnterpriseBaseModel):

@@ -173,7 +173,10 @@ export const SegmentCell = ({
           </Caption>
         )}
 
-        {(settled || segment.is_stale || others.length > 0) && (
+        {(settled ||
+          segment.is_stale ||
+          others.length > 0 ||
+          mine?.self_accepted) && (
           <div className="flex flex-wrap items-center gap-1.5 px-1.5">
             {segment.is_stale && (
               // Gold: a translation whose source has moved is work waiting, not
@@ -182,7 +185,10 @@ export const SegmentCell = ({
                 {t("copy_desk.editor.stale", "Polski się zmienił")}
               </Badge>
             )}
-            {settled?.status === "ACCEPTED" && (
+            {/* A trusted translator's own change, accepted on save and still
+                theirs to revise: the field shows their words, the chip says
+                they need no verdict. */}
+            {(settled?.status === "ACCEPTED" || mine?.self_accepted) && (
               <Badge variant="success">
                 {t("copy_desk.editor.accepted", "Przyjęte")}
               </Badge>

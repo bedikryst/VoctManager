@@ -789,18 +789,29 @@ const describe = (
       const named = scopes
         .map((entry) => entry.label || entry.scope)
         .filter(Boolean);
+      const proposed = notification.metadata.proposal_count ?? 0;
+      // A trusted translator's changes, accepted on save: nothing to review,
+      // only to publish, so a sitting of them alone is not called proposals.
+      const accepted = notification.metadata.accepted_count ?? 0;
+      const details = [
+        ...(proposed > 0 && accepted > 0
+          ? [t("notifications.row.site_copy_accepted_also", { count: accepted })]
+          : []),
+        // Beyond the first two the list stops being scannable, and the count
+        // above already says how many there are.
+        ...(named.length > 1 ? [named.slice(0, 2).join(" · ")] : []),
+      ];
       return {
         actor: notification.metadata.author_name,
-        sentence: t("notifications.row.site_copy_proposed", {
-          count: notification.metadata.proposal_count ?? 0,
-        }),
+        sentence:
+          proposed === 0 && accepted > 0
+            ? t("notifications.row.site_copy_accepted", { count: accepted })
+            : t("notifications.row.site_copy_proposed", { count: proposed }),
         context:
           named.length === 1
             ? named[0]
             : t("notifications.inapp.site_copy_pages", { count: named.length }),
-        // Beyond the first two the list stops being scannable, and the count
-        // above already says how many there are.
-        detail: named.length > 1 ? named.slice(0, 2).join(" · ") : undefined,
+        detail: details.length > 0 ? details.join(" · ") : undefined,
       };
     }
     case "MESSAGE_RECEIVED": {

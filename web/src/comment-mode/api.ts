@@ -24,12 +24,20 @@ import type { MatchField } from "./match";
 
 export type ProposalStatus = "DRAFT" | "PROPOSED" | "ACCEPTED" | "REJECTED";
 
+/**
+ * Why a trusted translator's save waits for the reviewers after all: an empty value, or `{slots}`
+ * or link targets that differ from the Polish (`copydesk/trust.py`).
+ */
+export type HoldReason = "empty" | "slots" | "links";
+
 /** The reader's own proposal on a field, as the site index carries it. */
 export interface OwnProposal {
   readonly id: string;
   readonly status: ProposalStatus;
   readonly value: string;
   readonly comment: string;
+  /** Accepted by the reader's own save (a trusted translator), not yet published: still theirs. */
+  readonly self_accepted: boolean;
 }
 
 /** One field of the site in one locale (`GET site-index/`). `mine` is patched after a save. */
@@ -55,6 +63,8 @@ export interface SiteIndex {
   readonly locale: Locale;
   /** The reader's `Profile.language`: the language the mode's chrome speaks. */
   readonly language: Locale;
+  /** Where the reader's saves are accepted without a review: every locale but Polish, or none. */
+  readonly trusted_locales: readonly Locale[];
   readonly segments: IndexRow[];
 }
 
@@ -66,6 +76,7 @@ export interface DeskProposal {
   readonly comment: string;
   readonly author_name: string;
   readonly is_mine: boolean;
+  readonly self_accepted: boolean;
   readonly updated_at: string;
   readonly reviewed_at: string | null;
   readonly applied_at: string | null;
@@ -84,12 +95,17 @@ export interface DeskSegment {
   readonly proposals: readonly DeskProposal[];
 }
 
-/** What `POST proposals/` stored: the value after the server's sanitizer. */
+/**
+ * What `POST proposals/` stored: the value after the server's sanitizer. `ACCEPTED` is a trusted
+ * translator's save; `held` says why one of theirs went to the reviewers instead.
+ */
 export interface StoredProposal {
   readonly id: string;
   readonly status: ProposalStatus;
   readonly value: string;
   readonly comment: string;
+  readonly self_accepted: boolean;
+  readonly held: HoldReason | null;
 }
 
 /**
@@ -242,7 +258,10 @@ export function saveProposal(segmentId: string, value: string, comment: string):
   );
 }
 
-/** Withdraw the reader's open proposal. A 409 means it was settled meanwhile. */
+/**
+ * Withdraw the reader's open proposal, or the acceptance their own save made. A 409 means a
+ * reviewer settled it, or `copy:apply` wrote it, meanwhile.
+ */
 export async function withdrawProposal(proposalId: string): Promise<void> {
   await request<null>("DELETE", `/api/copydesk/proposals/${encodeURIComponent(proposalId)}/`);
 }

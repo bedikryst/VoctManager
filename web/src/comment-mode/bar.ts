@@ -36,6 +36,8 @@ export interface BarView {
   readonly previews: boolean;
   /** "Gotowe" is on its way. */
   readonly sending: boolean;
+  /** The reader's translations are accepted on save, so "Gotowe" announces changes, not proposals. */
+  readonly trusted: boolean;
   /** How many fields each list holds; measures the page, so it is asked only by an open menu. */
   readonly counts: () => ListCounts;
 }
@@ -250,7 +252,7 @@ export class Bar {
       button(editing ? s.pause : s.resume, () => actions.toggleEditing(), "btn menu-item"),
       listItem(s.restTexts, counts.rest, () => actions.showRest()),
       done,
-      el("p", "menu-note", s.doneHint),
+      el("p", "menu-note", view.trusted ? s.doneHintTrusted : s.doneHint),
       button(s.end, () => actions.end(), "btn menu-item"),
     );
   }

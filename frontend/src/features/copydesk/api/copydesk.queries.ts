@@ -27,7 +27,7 @@ import type {
   CopyDeskSegment,
   CopyDeskSegments,
 } from "../types/copydesk.dto";
-import { isOpen } from "../lib/proposals";
+import { isOpen, isOwnRevisable } from "../lib/proposals";
 
 export const copyDeskKeys = {
   root: ["copydesk"] as const,
@@ -150,13 +150,15 @@ const writtenProposal = (
   author_id: previous?.author_id ?? null,
   author_name: previous?.author_name ?? "",
   is_mine: true,
+  self_accepted: written.self_accepted,
   // Not a guess: the server stamps a proposal against the Polish as it stands at
   // the moment of the write, so a value saved a millisecond ago renders the
   // current source by construction.
   is_stale: false,
   source_known: true,
   updated_at: new Date().toISOString(),
-  reviewed_at: null,
+  // A trusted translator's save is its own decision, made at this moment.
+  reviewed_at: written.self_accepted ? new Date().toISOString() : null,
   applied_at: null,
 });
 
@@ -196,17 +198,25 @@ export const useSaveProposal = (
           return {
             segments: current.segments.map((segment) => {
               if (segment.id !== payload.segment_id) return segment;
-              const previous =
+              // The row this save revised: the open one, else (a trusted
+              // translator) the own acceptance the server revises in place. A
+              // save the guard held back is a new row beside that acceptance.
+              const open =
                 segment.proposals.find(
                   (proposal) => proposal.is_mine && isOpen(proposal),
                 ) ?? null;
+              const previous =
+                open ??
+                (written.self_accepted
+                  ? (segment.proposals.find(isOwnRevisable) ?? null)
+                  : null);
               isFirstOnThisSegment = previous === null;
               return {
                 ...segment,
                 proposals: [
                   writtenProposal(written, payload, previous),
                   ...segment.proposals.filter(
-                    (proposal) => !(proposal.is_mine && isOpen(proposal)),
+                    (proposal) => proposal.id !== previous?.id,
                   ),
                 ],
               } satisfies CopyDeskSegment;

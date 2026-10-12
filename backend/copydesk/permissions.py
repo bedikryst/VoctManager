@@ -15,6 +15,8 @@ from rest_framework import permissions
 from rest_framework.request import Request
 from rest_framework.views import APIView
 
+from .models import SiteLocale
+
 User = get_user_model()
 
 # Single source of truth for "who may edit the site's copy", in both directions —
@@ -22,17 +24,47 @@ User = get_user_model()
 # question. Staff is included for the same reason `user_is_manager` includes it:
 # a staff account reaches the admin, where it can set this very flag on itself,
 # so denying it here would protect nothing and produce a dead end.
-EDITOR_QUERY_FILTER = Q(profile__can_edit_site_copy=True) | Q(is_staff=True)
+EDITOR_QUERY_FILTER = (
+    Q(profile__can_edit_site_copy=True)
+    | Q(profile__site_copy_trusted_translator=True)
+    | Q(is_staff=True)
+)
 
 
 def user_can_edit_site_copy(user: object) -> bool:
-    """True for an account granted the copy-desk capability, and for staff."""
+    """True for an account granted the copy-desk capability, and for staff.
+
+    A trusted translator counts as granted: trust in someone's translations
+    with no way to the desk would be a setting that does nothing.
+    """
     if user is None or not getattr(user, "is_authenticated", False):
         return False
     if getattr(user, "is_staff", False):
         return True
     profile = getattr(user, "profile", None)
-    return bool(profile is not None and profile.can_edit_site_copy)
+    return bool(
+        profile is not None
+        and (profile.can_edit_site_copy or profile.site_copy_trusted_translator)
+    )
+
+
+def user_is_trusted_translator(user: object) -> bool:
+    """True for the account whose non-Polish proposals are accepted on save.
+
+    The flag alone, never staff: a reviewer's own proposals still wait for a
+    verdict, which the reviewer gives in the queue knowing it is their own.
+    """
+    if user is None or not getattr(user, "is_authenticated", False):
+        return False
+    profile = getattr(user, "profile", None)
+    return bool(profile is not None and profile.site_copy_trusted_translator)
+
+
+def trusted_locales(user: object) -> tuple[str, ...]:
+    """The locales in which this account's proposals are accepted on save."""
+    if not user_is_trusted_translator(user):
+        return ()
+    return tuple(locale for locale in SiteLocale.values if locale != SiteLocale.POLISH)
 
 
 def user_is_copy_reviewer(user: object) -> bool:

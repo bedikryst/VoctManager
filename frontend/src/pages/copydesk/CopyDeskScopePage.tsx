@@ -36,7 +36,7 @@ import {
   LOCALE_VIEW_ORDER,
   type LocaleViewId,
 } from "@/features/copydesk/lib/localeView";
-import { isOpen } from "@/features/copydesk/lib/proposals";
+import { isOwnRevisable } from "@/features/copydesk/lib/proposals";
 import { useCopyDeskSitting } from "@/features/copydesk/model/sittingStore";
 import type { CopyDeskProposalWrite } from "@/features/copydesk/types/copydesk.dto";
 import type { CopyDeskOutletContext } from "@/widgets/copy-desk-shell/CopyDeskShell";
@@ -143,11 +143,8 @@ export default function CopyDeskScopePage(): React.JSX.Element {
   // two figures beside each other have to answer for the same set of rows.
   const touched = useMemo(
     () =>
-      segments.filter((segment) =>
-        segment.proposals.some(
-          (proposal) => proposal.is_mine && isOpen(proposal),
-        ),
-      ).length,
+      segments.filter((segment) => segment.proposals.some(isOwnRevisable))
+        .length,
     [segments],
   );
 

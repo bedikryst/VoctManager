@@ -36,6 +36,9 @@ export interface Strings {
   /** A proposal in another language than the page's, `language` from `localeAdverbs`. */
   readonly savedIn: (label: string, language: string) => string;
   readonly withdrawnIn: (label: string, language: string) => string;
+  /** A trusted translator's save, accepted without a review. */
+  readonly accepted: (label: string) => string;
+  readonly acceptedIn: (label: string, language: string) => string;
 
   readonly menu: string;
   readonly myProposals: string;
@@ -55,6 +58,7 @@ export interface Strings {
   readonly showingPublished: string;
   readonly done: string;
   readonly doneHint: string;
+  readonly doneHintTrusted: string;
   readonly sending: string;
   readonly doneSent: string;
   readonly doneNothing: string;
@@ -78,13 +82,22 @@ export interface Strings {
   readonly stale: string;
   readonly mineOpen: string;
   readonly mineAccepted: string;
+  /** Accepted, in a language where the reader's saves need no review. */
+  readonly mineAcceptedTrusted: string;
   readonly textLabel: string;
   readonly commentLabel: string;
   readonly commentHint: string;
   readonly save: string;
   readonly saving: string;
   readonly savedHere: string;
+  readonly savedAccepted: string;
+  /** Why a trusted translator's save went to the reviewers: the `{ }` differ from the Polish. */
+  readonly heldSlots: string;
+  /** Why a trusted translator's save went to the reviewers: the link targets differ. */
+  readonly heldLinks: string;
   readonly withdraw: string;
+  /** "Cofnij" over the reader's own change accepted on save. */
+  readonly withdrawChange: string;
   readonly withdrawing: string;
   readonly withdrawnHere: string;
   readonly empty: string;
@@ -131,6 +144,8 @@ const PL: Strings = {
   withdrawn: (label) => `Cofnięto propozycję: ${label}`,
   savedIn: (label, language) => `Zapisano propozycję ${language}: ${label}`,
   withdrawnIn: (label, language) => `Cofnięto propozycję ${language}: ${label}`,
+  accepted: (label) => `Zmiana przyjęta: ${label}`,
+  acceptedIn: (label, language) => `Zmiana ${language} przyjęta: ${label}`,
 
   menu: "Menu",
   myProposals: "Moje propozycje na tej stronie",
@@ -151,10 +166,12 @@ const PL: Strings = {
   showingPublished: "Widzisz opublikowany tekst, bez swoich propozycji.",
   done: "Gotowe: powiadom redakcję",
   doneHint: "Bez tego redakcja i tak dostanie zestawienie po pół godzinie ciszy.",
+  doneHintTrusted:
+    "Twoje tłumaczenia są przyjmowane od razu. Ten przycisk powie redakcji, że czekają na publikację; bez niego dowie się po pół godzinie ciszy.",
   sending: "Wysyłam…",
-  doneSent: "Redakcja dostała wiadomość o Twoich nowych propozycjach.",
-  doneNothing: "Redakcja wie już o wszystkich Twoich propozycjach.",
-  doneNobody: "Nie ma komu wysłać wiadomości. Propozycje czekają w kolejce redakcji.",
+  doneSent: "Redakcja dostała wiadomość o Twoich nowych zmianach.",
+  doneNothing: "Redakcja wie już o wszystkich Twoich zmianach.",
+  doneNobody: "Nie ma komu wysłać wiadomości. Twoje zmiany są zapisane.",
   doneFailed: "Nie udało się powiadomić redakcji. Spróbuj jeszcze raz.",
 
   editText: "Edytuj tekst",
@@ -176,13 +193,20 @@ const PL: Strings = {
   mineOpen: "Twoja propozycja czeka na decyzję redakcji.",
   mineAccepted:
     "Twoja propozycja jest przyjęta i czeka na publikację. Zmiana tego tekstu trafi do redakcji jako nowa propozycja.",
+  mineAcceptedTrusted: "Twoja zmiana jest przyjęta i czeka na publikację. Możesz ją jeszcze poprawić.",
   textLabel: "Tekst",
   commentLabel: "Uwaga",
   commentHint: "Dla redakcji, nieobowiązkowo: dlaczego tak.",
   save: "Zapisz",
   saving: "Zapisuję…",
   savedHere: "Zapisano.",
+  savedAccepted: "Zapisano i przyjęto: zmiana czeka na publikację.",
+  heldSlots:
+    "Ta zmiana trafi do redakcji: klamry { } muszą zostać takie jak w polskim tekście, bo strona wstawia w nie własne dane albo robi z nich odnośnik.",
+  heldLinks:
+    "Ta zmiana trafi do redakcji: odnośniki muszą prowadzić tam, gdzie w polskim tekście. Redakcja sprawdzi link.",
   withdraw: "Cofnij moją propozycję",
+  withdrawChange: "Cofnij moją zmianę",
   withdrawing: "Cofam…",
   withdrawnHere: "Cofnięto propozycję.",
   empty: "Pole nie może być puste: tekst zniknąłby ze strony.",
@@ -227,6 +251,8 @@ const EN: Strings = {
   withdrawn: (label) => `Proposal withdrawn: ${label}`,
   savedIn: (label, language) => `Proposal saved ${language}: ${label}`,
   withdrawnIn: (label, language) => `Proposal withdrawn ${language}: ${label}`,
+  accepted: (label) => `Change accepted: ${label}`,
+  acceptedIn: (label, language) => `Change ${language} accepted: ${label}`,
 
   menu: "Menu",
   myProposals: "My proposals on this page",
@@ -247,10 +273,12 @@ const EN: Strings = {
   showingPublished: "You are seeing the published text, without your proposals.",
   done: "Done: notify the reviewers",
   doneHint: "Otherwise the reviewers get a summary after half an hour of quiet.",
+  doneHintTrusted:
+    "Your translations are accepted as you save them. This tells the reviewers they are waiting to be published; otherwise they learn of it after half an hour of quiet.",
   sending: "Sending…",
-  doneSent: "The reviewers have been told about your new proposals.",
-  doneNothing: "The reviewers already know about all your proposals.",
-  doneNobody: "There is nobody to notify. Your proposals are waiting in the review queue.",
+  doneSent: "The reviewers have been told about your new changes.",
+  doneNothing: "The reviewers already know about all your changes.",
+  doneNobody: "There is nobody to notify. Your changes are saved.",
   doneFailed: "The reviewers could not be notified. Try again.",
 
   editText: "Edit the text",
@@ -272,13 +300,20 @@ const EN: Strings = {
   mineOpen: "Your proposal is waiting for review.",
   mineAccepted:
     "Your proposal is accepted and waiting to be published. A change to this text goes to the reviewers as a new proposal.",
+  mineAcceptedTrusted: "Your change is accepted and waiting to be published. You can still revise it.",
   textLabel: "Text",
   commentLabel: "Note",
   commentHint: "For the reviewers, optional: why.",
   save: "Save",
   saving: "Saving…",
   savedHere: "Saved.",
+  savedAccepted: "Saved and accepted: the change is waiting to be published.",
+  heldSlots:
+    "This change goes to the reviewers: the braces { } must stay as they are in the Polish text, because the page fills them with its own data or turns them into a link.",
+  heldLinks:
+    "This change goes to the reviewers: its links must lead where the Polish text’s links do. The reviewers will check them.",
   withdraw: "Withdraw my proposal",
+  withdrawChange: "Withdraw my change",
   withdrawing: "Withdrawing…",
   withdrawnHere: "Proposal withdrawn.",
   empty: "The field can’t be empty: the text would disappear from the page.",
@@ -323,6 +358,8 @@ const FR: Strings = {
   withdrawn: (label) => `Proposition retirée : ${label}`,
   savedIn: (label, language) => `Proposition enregistrée ${language} : ${label}`,
   withdrawnIn: (label, language) => `Proposition retirée ${language} : ${label}`,
+  accepted: (label) => `Modification acceptée : ${label}`,
+  acceptedIn: (label, language) => `Modification ${language} acceptée : ${label}`,
 
   menu: "Menu",
   myProposals: "Mes propositions sur cette page",
@@ -344,10 +381,12 @@ const FR: Strings = {
   showingPublished: "Vous voyez le texte publié, sans vos propositions.",
   done: "Terminé : prévenir la relecture",
   doneHint: "Sinon, la relecture reçoit un récapitulatif après une demi-heure sans activité.",
+  doneHintTrusted:
+    "Vos traductions sont acceptées dès l’enregistrement. Ce bouton prévient la relecture qu’elles attendent la publication ; sinon, elle l’apprend après une demi-heure sans activité.",
   sending: "Envoi…",
-  doneSent: "La relecture a été prévenue de vos nouvelles propositions.",
-  doneNothing: "La relecture connaît déjà toutes vos propositions.",
-  doneNobody: "Personne à prévenir. Vos propositions attendent dans la file de relecture.",
+  doneSent: "La relecture a été prévenue de vos nouvelles modifications.",
+  doneNothing: "La relecture connaît déjà toutes vos modifications.",
+  doneNobody: "Personne à prévenir. Vos modifications sont enregistrées.",
   doneFailed: "Impossible de prévenir la relecture. Réessayez.",
 
   editText: "Modifier le texte",
@@ -369,13 +408,21 @@ const FR: Strings = {
   mineOpen: "Votre proposition attend la relecture.",
   mineAccepted:
     "Votre proposition est acceptée et attend la publication. Toute modification de ce texte part à la relecture comme une nouvelle proposition.",
+  mineAcceptedTrusted:
+    "Votre modification est acceptée et attend la publication. Vous pouvez encore la retoucher.",
   textLabel: "Texte",
   commentLabel: "Remarque",
   commentHint: "Pour la relecture, facultatif : pourquoi.",
   save: "Enregistrer",
   saving: "Enregistrement…",
   savedHere: "Enregistré.",
+  savedAccepted: "Enregistré et accepté : la modification attend la publication.",
+  heldSlots:
+    "Cette modification part à la relecture : les accolades { } doivent rester comme dans le texte polonais, car la page y insère ses propres données ou en fait un lien.",
+  heldLinks:
+    "Cette modification part à la relecture : ses liens doivent mener là où mènent ceux du texte polonais. La relecture les vérifiera.",
   withdraw: "Retirer ma proposition",
+  withdrawChange: "Retirer ma modification",
   withdrawing: "Retrait…",
   withdrawnHere: "Proposition retirée.",
   empty: "Le champ ne peut pas être vide : le texte disparaîtrait de la page.",
