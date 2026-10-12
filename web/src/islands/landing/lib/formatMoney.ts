@@ -1,13 +1,13 @@
 /**
  * @file formatMoney.ts
  * @description An amount as this site prints it: the number in the reader's own convention, then
- *  the currency's sign.
+ *  the currency's mark in the reader's language ("zł" in Polish, "PLN" in English and French).
  * @architecture Astro islands 2026
  * @module islands/landing/lib/formatMoney
  */
 
 import { DEFAULT_LOCALE, type Locale } from "../../../i18n/config";
-import { CURRENCY_SUFFIX, type GiveCurrency } from "../constants/giveTiers";
+import { CURRENCY_MARK, type GiveCurrency } from "../constants/giveTiers";
 
 /* The number, not the currency. `Intl`'s currency style would also decide the SIGN and its side —
    "PLN 100" in English, "€100" before the digits — and the vault's whole typographic shape is an
@@ -30,6 +30,6 @@ export function formatMoney(
   currency: GiveCurrency = "PLN",
   locale: Locale = DEFAULT_LOCALE,
 ): string {
-  const suffix = CURRENCY_SUFFIX[currency] ?? CURRENCY_SUFFIX.PLN;
-  return `${NUMBER[locale].format(Math.round(amount))} ${suffix}`;
+  const mark = (CURRENCY_MARK[currency] ?? CURRENCY_MARK.PLN)[locale];
+  return `${NUMBER[locale].format(Math.round(amount))} ${mark}`;
 }

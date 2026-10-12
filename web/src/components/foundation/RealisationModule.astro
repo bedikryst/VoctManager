@@ -133,7 +133,7 @@ const titleId = `realizacja-${view.id}`;
         {view.account.rows.map((row) => (
           <div class={row.key === "total" ? "rm-account-row rm-account-total" : "rm-account-row"}>
             <dt>{accountLabel[row.key]}</dt>
-            <dd>{row.amount} zł</dd>
+            <dd>{row.amount}</dd>
           </div>
         ))}
       </dl>

@@ -17,7 +17,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { initiateDonation, DonationInitiateError } from "../api/donations";
 import {
-  CURRENCY_SUFFIX,
+  CURRENCY_MARK,
   GIVE_DEFAULT_TIER,
   GIVE_MAX,
   GIVE_MIN,
@@ -272,7 +272,7 @@ export function GiveForm(): React.JSX.Element {
                   onFocus={(event) => event.currentTarget.select()}
                 />
                 <span className="give-custom-suffix" aria-hidden="true">
-                  {CURRENCY_SUFFIX[state.currency]}
+                  {CURRENCY_MARK[state.currency][lang]}
                 </span>
               </div>
             </div>

@@ -25,6 +25,7 @@ import { isEveningAhead } from "./calendar";
 import { concertKey, overlayValue } from "./copyOverlay";
 import { cycleStations } from "./cycle";
 import { INTL_LOCALE, longDate } from "./dates";
+import { CURRENCY_MARK } from "../islands/landing/constants/giveTiers";
 import { programmeSurnames } from "./litany";
 import { bleedPair } from "./photos";
 
@@ -67,6 +68,7 @@ export interface RealisationView {
   };
   readonly account?: {
     readonly asOf: string;
+    /** `amount` carries its currency mark, as the vault prints one ("28 000 zł", "28,000 PLN"). */
     readonly rows: readonly { readonly key: AccountRowKey; readonly amount: string }[];
   };
   readonly visual?: { readonly desktop: ImageMetadata; readonly mobile: ImageMetadata };
@@ -152,7 +154,7 @@ function viewOf(
                 ["grants", account.grantsPln],
                 ["own", account.ownContributionPln],
               ] as const
-            ).map(([key, pln]) => ({ key, amount: formatPln(pln, lang) })),
+            ).map(([key, pln]) => ({ key, amount: `${formatPln(pln, lang)} ${CURRENCY_MARK.PLN[lang]}` })),
           },
         }
       : {}),
