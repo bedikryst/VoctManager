@@ -33,6 +33,8 @@
  *  The change it made stays the editor's until it is published: the next save revises it and
  *  "Cofnij" withdraws it, like an open proposal. A save the server held back (`{ }` or links that
  *  differ from the Polish) keeps the sheet open and says why; the acceptance beneath still ships.
+ *  A save with a note is addressed to the reviewers, so it waits for them, and the server takes
+ *  the editor's own acceptance on the field along with it (`CopyDeskService.save_proposal`).
  * @architecture Astro islands 2026
  * @module comment-mode/editor
  */
@@ -261,7 +263,8 @@ export class FieldEditor {
 
     this.hint = el("p", "note");
     this.valueField = el("div", "field", valueLabel, this.value, this.hint);
-    this.commentField = el("div", "field", commentLabel, el("p", "note", s.commentHint), this.comment);
+    const commentHint = trusted ? s.commentHintTrusted : s.commentHint;
+    this.commentField = el("div", "field", commentLabel, el("p", "note", commentHint), this.comment);
     this.status = el("div", "notes");
     this.message = el("p", "note");
     this.message.setAttribute("aria-live", "polite");
@@ -403,9 +406,17 @@ export class FieldEditor {
     this.refresh();
     try {
       const previous = this.row.mine;
+      const noted = this.trusted && comment.trim() !== "";
       const stored = await saveProposal(this.row.id, typed, comment);
-      // Held back beside the editor's acceptance, the new proposal leaves that acceptance to ship.
-      if (stored.status !== "ACCEPTED" && previous?.status === "ACCEPTED") this.accepted = previous;
+      if (stored.status !== "ACCEPTED") {
+        // A note took the editor's own acceptance to the reviewers: it became this proposal, or the
+        // server withdrew it beside this one. Nothing of theirs ships there until the verdict.
+        if (noted) {
+          if (this.accepted?.self_accepted) this.accepted = null;
+        }
+        // Held back beside the editor's acceptance, the new proposal leaves that acceptance to ship.
+        else if (previous?.status === "ACCEPTED") this.accepted = previous;
+      }
       // Accepted, it replaces the editor's own acceptance it stood beside: the server withdrew that one.
       else if (stored.self_accepted && this.accepted?.self_accepted) this.accepted = null;
       this.row.mine = {

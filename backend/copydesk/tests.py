@@ -2052,7 +2052,7 @@ class TrustedTranslatorTests(TestCase):
         )
         before = CopyProposal.objects.get(id=first.id).reviewed_at
 
-        second = self._save(self.lede_en, "Do come in", comment="warmer")
+        second = self._save(self.lede_en, "Do come in")
         self.assertEqual(second.id, first.id)
         self.assertEqual(
             CopyProposal.objects.filter(segment=self.lede_en, author=self.translator).count(), 1,
@@ -2060,7 +2060,6 @@ class TrustedTranslatorTests(TestCase):
         second.refresh_from_db()
         self.assertEqual(second.status, ProposalStatus.ACCEPTED)
         self.assertEqual(second.value, "Do come in")
-        self.assertEqual(second.comment, "warmer")
         self.assertGreater(second.reviewed_at, before)
         # New wording is news again for the digest.
         self.assertIsNone(second.notified_at)
@@ -2183,6 +2182,59 @@ class TrustedTranslatorTests(TestCase):
     def test_a_note_without_a_change_waits_for_the_reviewers(self):
         proposal = self._save(self.lede_en, "Welcome", comment="Is this too cold?")
         self.assertEqual(proposal.status, ProposalStatus.PROPOSED)
+
+    def test_a_change_with_a_note_waits_for_the_reviewers(self):
+        proposal = self._save(self.lede_en, "You are welcome", comment="Or 'Come in'?")
+        self.assertEqual(proposal.status, ProposalStatus.PROPOSED)
+        self.assertFalse(proposal.accepted_on_save)
+        self.assertIsNone(proposal.reviewed_by)
+
+    def test_a_note_takes_the_own_acceptance_to_the_reviewers(self):
+        accepted = self._save(self.lede_en, "You are welcome")
+        CopyProposal.objects.filter(id=accepted.id).update(notified_at=timezone.now())
+
+        noted = self._save(self.lede_en, "You are welcome", comment="Too formal?")
+        self.assertEqual(noted.id, accepted.id)
+        noted.refresh_from_db()
+        self.assertEqual(noted.status, ProposalStatus.PROPOSED)
+        self.assertFalse(noted.accepted_on_save)
+        self.assertIsNone(noted.reviewed_by)
+        self.assertIsNone(noted.reviewed_at)
+        self.assertIsNone(noted.notified_at)
+        self.assertEqual(noted.comment, "Too formal?")
+
+        # Rejected, nothing of the translator's ships on the field.
+        CopyDeskService.review_proposal(
+            proposal_id=noted.id,
+            dto=ProposalReviewDTO(status=ProposalStatus.REJECTED),
+            reviewer=self.reviewer,
+        )
+        self.assertFalse(
+            CopyProposal.objects.filter(segment=self.lede_en, status=ProposalStatus.ACCEPTED).exists()
+        )
+
+    def test_a_note_beside_a_held_proposal_withdraws_the_acceptance(self):
+        make_segment("page.mecenat.lede", SiteLocale.POLISH, "Wspieraj {name}")
+        en = make_segment("page.mecenat.lede", SiteLocale.ENGLISH, "")
+        accepted = self._save(en, "Support {name}")
+        held = self._save(en, "Support us")
+
+        noted = self._save(en, "Back {name}", comment="Is 'back' clear?")
+        self.assertEqual(noted.id, held.id)
+        self.assertEqual(noted.status, ProposalStatus.PROPOSED)
+        self.assertFalse(CopyProposal.objects.filter(id=accepted.id).exists())
+
+    def test_a_note_leaves_another_reviewer_s_acceptance_standing(self):
+        decided = CopyProposal.objects.create(
+            segment=self.lede_en, author=self.translator, value="Hello",
+            status=ProposalStatus.ACCEPTED, reviewed_by=self.reviewer,
+            reviewed_at=timezone.now(),
+        )
+        noted = self._save(self.lede_en, "You are welcome", comment="Warmer?")
+        self.assertNotEqual(noted.id, decided.id)
+        self.assertEqual(noted.status, ProposalStatus.PROPOSED)
+        decided.refresh_from_db()
+        self.assertEqual(decided.status, ProposalStatus.ACCEPTED)
 
     def test_the_published_text_takes_back_an_own_acceptance(self):
         accepted = self._save(self.lede_en, "You are welcome")

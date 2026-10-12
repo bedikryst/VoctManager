@@ -16,7 +16,8 @@
  *    there is read from the history by the site index's rule: the open one, else the accepted,
  *    unapplied one that is the field's latest acceptance;
  *  - the current Polish, beneath the warning, when the translation is stale;
- *  - other editors' open proposals on the field.
+ *  - other editors' proposals on the field with their notes: the open ones, and the accepted one
+ *    waiting for publication when it is someone else's.
  *
  *  ON A PHONE the sheet sits on the keyboard: what the keyboard covers is read from
  *  `visualViewport` on `resize` and `scroll` (the formula of the panel's `useKeyboardInset`), and
@@ -82,19 +83,24 @@ function decidedAt(proposal: DeskProposal): number {
 }
 
 /**
- * The reader's accepted proposal not yet applied, while it is the field's latest acceptance: the
- * decision `copy:apply` writes last. The site index's rule (`CopyDeskService.site_index`): latest
- * `reviewed_at`, then latest `created_at`. `segments/` lists the newest first, so on a tie the
- * first one met stands. `except` leaves out the proposal the editor may still withdraw, to find
- * what ships once it is gone.
+ * The field's latest acceptance not yet applied: the decision `copy:apply` writes last. The site
+ * index's rule (`CopyDeskService.site_index`): latest `reviewed_at`, then latest `created_at`.
+ * `segments/` lists the newest first, so on a tie the first one met stands. `except` leaves out
+ * the proposal the editor may still withdraw, to find what ships once it is gone.
  */
-function ownShipping(proposals: readonly DeskProposal[], except?: string): OwnProposal | null {
-  let shipping: DeskProposal | null = null;
+function shipping(proposals: readonly DeskProposal[], except?: string): DeskProposal | null {
+  let latest: DeskProposal | null = null;
   for (const proposal of proposals) {
     if (proposal.status !== "ACCEPTED" || proposal.applied_at || proposal.id === except) continue;
-    if (!shipping || decidedAt(proposal) > decidedAt(shipping)) shipping = proposal;
+    if (!latest || decidedAt(proposal) > decidedAt(latest)) latest = proposal;
   }
-  return shipping?.is_mine ? ownOf(shipping) : null;
+  return latest;
+}
+
+/** The reader's accepted proposal not yet applied, while it is what ships (`shipping`). */
+function ownShipping(proposals: readonly DeskProposal[], except?: string): OwnProposal | null {
+  const latest = shipping(proposals, except);
+  return latest?.is_mine ? ownOf(latest) : null;
 }
 
 /** The reader's proposal on a field, by the site index's rule: the open one, else the one that ships. */
@@ -349,9 +355,16 @@ export class Sheet {
     languages.append(el("summary", "", s.otherLanguages), el("ul", "reference", ...blocks));
     languages.open = session.others.size > 0;
 
-    const pending = (own?.proposals ?? []).filter(
-      (proposal) => !proposal.is_mine && (proposal.status === "PROPOSED" || proposal.status === "DRAFT"),
-    );
+    // Another editor's change on its way to the site comes first, with its note: it is what this
+    // field will say, whatever the reader proposes beside it.
+    const history = own?.proposals ?? [];
+    const decided = shipping(history);
+    const pending = [
+      ...(decided && !decided.is_mine && decided.value !== own?.value ? [decided] : []),
+      ...history.filter(
+        (proposal) => !proposal.is_mine && (proposal.status === "PROPOSED" || proposal.status === "DRAFT"),
+      ),
+    ];
     const proposals =
       pending.length > 0
         ? el(
@@ -366,6 +379,7 @@ export class Sheet {
                   "li",
                   "",
                   el("p", "reference-head", proposal.author_name),
+                  proposal === decided ? el("p", "note note-warn", s.statusAccepted) : null,
                   el("p", "reference-text", proposal.value),
                   proposal.comment ? el("p", "note", proposal.comment) : null,
                 ),

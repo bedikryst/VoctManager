@@ -846,14 +846,16 @@ class CopyDeskService:
         replacing another's.
 
         A trusted translator's proposal outside Polish is accepted on save once
-        it passes `held_back`, reviewed by its author. Their next save revises
-        that row while it is unapplied (`self_accepted_filter`), instead of
-        adding one per save; a row somebody else accepted is a decision and
-        stays as it is. A held save is an open proposal beside the acceptance,
-        and the next save that passes accepts it in place of the acceptance. An
-        unchanged value is a note, not a change, so it waits for the reviewers
-        like any other proposal, unless it takes back the author's own accepted
-        change.
+        it passes `held_back` and carries no note, reviewed by its author. Their
+        next save revises that row while it is unapplied (`self_accepted_filter`),
+        instead of adding one per save; a row somebody else accepted is a
+        decision and stays as it is. A held save is an open proposal beside the
+        acceptance, and the next save that passes accepts it in place of the
+        acceptance. A note is addressed to the reviewers, so a save that carries
+        one waits for them, and it takes the author's own acceptance on the
+        field along: nothing of theirs ships there before the reviewers answer
+        the note. The published value is no change, so it waits too, unless it
+        takes back the author's own accepted change.
         """
         try:
             segment = CopySegment.objects.get(id=dto.segment_id)
@@ -869,10 +871,15 @@ class CopyDeskService:
             if segment.locale == SiteLocale.POLISH
             else cls.effective_source_hashes([segment.key]).get(segment.key, "")
         )
-        accept_on_save = (
+        trusted = (
             dto.status == ProposalStatus.PROPOSED
             and segment.locale != SiteLocale.POLISH
             and user_is_trusted_translator(author)
+        )
+        noted = trusted and dto.comment.strip() != ""
+        accept_on_save = (
+            trusted
+            and not noted
             and cls.held_back(segment=segment, value=value, author=author) is None
         )
 
@@ -951,9 +958,26 @@ class CopyDeskService:
             ])
             return existing
 
+        def reopen(acceptance: CopyProposal) -> CopyProposal:
+            acceptance.value = value
+            acceptance.comment = dto.comment
+            acceptance.status = ProposalStatus.PROPOSED
+            acceptance.accepted_on_save = False
+            acceptance.source_hash = stamped_hash
+            acceptance.reviewed_by = None
+            acceptance.reviewed_at = None
+            # The digest announced it as waiting for publication; it now waits
+            # for a verdict, which is news whether or not the value moved.
+            acceptance.notified_at = None
+            acceptance.save(update_fields=[
+                "value", "comment", "status", "accepted_on_save", "source_hash",
+                "reviewed_by", "reviewed_at", "notified_at", "updated_at",
+            ])
+            return acceptance
+
         with transaction.atomic():
             proposal = open_proposal()
-            acceptance = own_acceptance() if accept_on_save else None
+            acceptance = own_acceptance() if accept_on_save or noted else None
             if value == segment.value and acceptance is None:
                 accept_on_save = False
             if accept_on_save:
@@ -964,6 +988,14 @@ class CopyDeskService:
                     # when the author withdraws this one.
                     acceptance.delete()
                 proposal = accept(proposal or acceptance)
+            elif noted and acceptance is not None:
+                # A rejection must stop what the note asks about, so the
+                # acceptance cannot keep shipping beside the open proposal.
+                if proposal is not None:
+                    acceptance.delete()
+                    proposal = revise(proposal)
+                else:
+                    proposal = reopen(acceptance)
             elif proposal is not None:
                 proposal = revise(proposal)
             else:

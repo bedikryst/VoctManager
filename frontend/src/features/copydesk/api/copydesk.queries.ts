@@ -190,6 +190,10 @@ export const useSaveProposal = (
     mutationFn: CopyDeskService.saveProposal,
     onSuccess: (written, payload) => {
       let isFirstOnThisSegment = false;
+      // Whether the editor's own acceptance outlived a save that was not
+      // accepted is the server's rule (a note takes it to the reviewers, a held
+      // save leaves it to ship), so the segment is read back rather than guessed.
+      let isOwnAcceptanceInDoubt = false;
 
       queryClient.setQueryData<CopyDeskSegments>(
         copyDeskKeys.segments(scope),
@@ -199,19 +203,24 @@ export const useSaveProposal = (
             segments: current.segments.map((segment) => {
               if (segment.id !== payload.segment_id) return segment;
               // The row this save revised: the open one, else (a trusted
-              // translator) the own acceptance the server revises in place. A
-              // save the guard held back is a new row beside that acceptance,
-              // and an accepted save replaces it: the server withdraws it.
+              // translator) the own acceptance the server revised in place,
+              // accepted again or reopened by a note. An accepted save
+              // replaces an acceptance it stood beside: the server withdraws it.
               const open =
                 segment.proposals.find(
                   (proposal) => proposal.is_mine && isOpen(proposal),
                 ) ?? null;
               const previous =
                 open ??
-                (written.self_accepted
-                  ? (segment.proposals.find(isOwnRevisable) ?? null)
-                  : null);
+                segment.proposals.find((proposal) => proposal.id === written.id) ??
+                null;
               isFirstOnThisSegment = previous === null;
+              isOwnAcceptanceInDoubt =
+                !written.self_accepted &&
+                segment.proposals.some(
+                  (proposal) =>
+                    proposal.id !== written.id && proposal.is_mine && proposal.self_accepted,
+                );
               return {
                 ...segment,
                 proposals: [
@@ -235,6 +244,11 @@ export const useSaveProposal = (
       if (isFirstOnThisSegment) {
         void queryClient.invalidateQueries({
           queryKey: copyDeskKeys.contents(),
+        });
+      }
+      if (isOwnAcceptanceInDoubt) {
+        void queryClient.invalidateQueries({
+          queryKey: copyDeskKeys.segments(scope),
         });
       }
     },

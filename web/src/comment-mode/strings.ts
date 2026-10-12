@@ -87,6 +87,8 @@ export interface Strings {
   readonly textLabel: string;
   readonly commentLabel: string;
   readonly commentHint: string;
+  /** The note's hint in a trusted language, where a note is what sends a change to the reviewers. */
+  readonly commentHintTrusted: string;
   readonly save: string;
   readonly saving: string;
   readonly savedHere: string;
@@ -197,6 +199,8 @@ const PL: Strings = {
   textLabel: "Tekst",
   commentLabel: "Uwaga",
   commentHint: "Dla redakcji, nieobowiązkowo: dlaczego tak.",
+  commentHintTrusted:
+    "Dla redakcji, nieobowiązkowo. Zmiana z uwagą czeka na decyzję redakcji, a bez uwagi jest przyjmowana od razu.",
   save: "Zapisz",
   saving: "Zapisuję…",
   savedHere: "Zapisano.",
@@ -304,6 +308,8 @@ const EN: Strings = {
   textLabel: "Text",
   commentLabel: "Note",
   commentHint: "For the reviewers, optional: why.",
+  commentHintTrusted:
+    "For the reviewers, optional. A change with a note waits for their decision; without one it is accepted at once.",
   save: "Save",
   saving: "Saving…",
   savedHere: "Saved.",
@@ -413,6 +419,8 @@ const FR: Strings = {
   textLabel: "Texte",
   commentLabel: "Remarque",
   commentHint: "Pour la relecture, facultatif : pourquoi.",
+  commentHintTrusted:
+    "Pour la relecture, facultatif. Une modification accompagnée d’une remarque attend sa décision ; sans remarque, elle est acceptée aussitôt.",
   save: "Enregistrer",
   saving: "Enregistrement…",
   savedHere: "Enregistré.",
