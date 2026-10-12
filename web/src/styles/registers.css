@@ -314,6 +314,15 @@ html.voct-motion :is(.is-settled.ink-press, .is-settled .ink-press) {
   transition: none;
 }
 
+/* A press that would change the heading's line count waits at the rest weight instead. The axis
+   moves advance widths, so a heading set close to its measure would wait one line taller than it
+   ends and drop that line when the press lands; scripts/pressGuard.ts measures both layouts and
+   sets this class on exactly those headings. The ink entrance is untouched — only the weight
+   gesture is given up, and only where it would have moved the page. */
+html.voct-motion .ink-press.ink-press-flat {
+  --wght: var(--wght-rest);
+}
+
 /* Navigation composure, the press's half of it. base.css strips the transition of every
    above-the-fold `.reveal` during a ClientRouter swap so the incoming page is snapshotted
    already written, but that rule reaches the register NODE only — a press living inside one

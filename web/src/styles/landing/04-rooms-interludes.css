@@ -303,12 +303,17 @@
   /* `.ink-press` heading: this weight is the press's landing point, so it must stay equal to
      --wght-rest (styles/tokens.css). Motion visitors never see it — the axis is driven —
      which is exactly why a change here goes unnoticed until motion is off. */
+  /* The leading clears the face, not the current copy. In Cormorant at 300 a descender drops 0.28em
+     and an ascender rises 0.725em, so any line-height under ~1.005 lets the tail of one line meet a
+     stem of the next wherever the two happen to stand over each other ("began" / "longing" put the
+     g of one squarely on the l of the other). 1.04 leaves a hairline of air for any wording the
+     copy desk sets here. */
   .ensemble-copy h2 {
     margin: 22px 0 32px;
     font-family: var(--serif);
     font-size: clamp(46px, 6vw, 96px);
     font-weight: 300;
-    line-height: 0.96;
+    line-height: 1.04;
   }
 
   .ensemble-copy p {
@@ -532,15 +537,20 @@
     transition: opacity var(--ink-in) var(--ease-ink), var(--title-hover-transition);
   }
 
-  /* Illumination on intent: the entry lights to candle gold, gains a touch of weight and
-     opens its tracking — the title "breathes in" as you rest on it. Deltas are kept small
-     so a long title never re-wraps mid-transition (the variable-font "jumping text" trap).
+  /* Illumination on intent: the entry lights to candle gold and gains a touch of weight.
      :active carries the same beat to touch (best-effort — some engines gate :active on
-     non-interactive rows). */
+     non-interactive rows).
+
+     THE HOVER MUST NOT CHANGE THE LINE'S WIDTH, because these titles run close to their
+     measure and a hover that widens one by a fraction of a percent re-wraps it under the
+     pointer ("Aeternam — Epitaph for Gaza" did, onto two lines). Opening the tracking is what
+     costs width — +0.022em a glyph is ~5.5% of the line — so the tracking does not open. The
+     weight stays: 300 → 384 widens Cormorant by 0.0005–0.001em a glyph, and the tracking
+     closes by 0.001em to hand that back. If the hover weight moves, re-measure that delta. */
   .path-entry:hover .path-entry-title,
   .path-entry:active .path-entry-title {
     color: var(--candle);
-    letter-spacing: 0.012em;
+    letter-spacing: -0.011em;
     font-variation-settings: "wght" 384;
   }
 
@@ -709,8 +719,8 @@
      IT HOVERS EXACTLY AS THE SIX ROWS ABOVE IT DO, and that is not a preference — one list where
      one row lights differently from its peers reads as a bug, which is what it was. So the trigger
      is the ROW (`.path-entry:hover` is what the entries answer, not their link), the warm is the
-     display `--candle` and not the ink gold, and the weight axis and tracking open by the same
-     deltas. The raw candle measures ~2.1 : 1 on this parchment and is accepted here for the same
+     display `--candle` and not the ink gold, and the weight and the width-neutral tracking move by
+     the same deltas. The raw candle measures ~2.1 : 1 on this parchment and is accepted here for the same
      reason the entries accept it: hover is transient, it carries no information the resting state
      does not, and the resting `--ink` is where this row's legibility actually lives.
 
@@ -743,7 +753,7 @@
   .path-ahead:hover .path-ahead-name,
   .path-ahead:active .path-ahead-name {
     color: var(--candle);
-    letter-spacing: 0.012em;
+    letter-spacing: -0.011em;
     font-variation-settings: "wght" 384;
   }
 
@@ -1897,12 +1907,13 @@
     --coda-rule: rgba(244, 241, 233, 0.28);
     --coda-hair: rgba(244, 241, 233, 0.18);
     /* The ledger's one spine, shared by the tiers and the transfer rows so the IBAN starts where
-       a tier's sentence starts. Both ends are measured, not chosen: the floor clears what
-       "2 500 zł" needs at its own size (79px in Cormorant, with the rest as slack for a fallback
-       face that sets wider), and the ceiling is the width at which the widest IBAN — 278px at
+       a tier's sentence starts. Both ends are measured, not chosen: the floor clears the widest
+       amount in any locale — "2,500" in Cormorant (55px) plus its unit as a label (`.donation-unit`,
+       "PLN" ≈ 23px), ~84px — and the ceiling is the width at which the widest IBAN — 278px at
        12px/0.08em, plus the 47px copy control — still fits on one line beside it. Fixed at 105px
        the spine ate that line between roughly 980 and 1220px, where the right column is narrowest
-       while still being a column. */
+       while still being a column. The floor and the ceiling are why the unit is a label: set at the
+       figure's size, "2,500 PLN" is 108px and fits under neither. */
     --coda-spine: clamp(88px, 5.5vw, 105px);
     --coda-spine-gap: clamp(16px, 1.25vw, 24px);
   }
@@ -2034,16 +2045,18 @@
     outline-offset: 4px;
   }
 
-  /* Right-aligned so the three "zł" stand in one column — the amounts are a ledger, and a
+  /* Right-aligned so the three units stand in one column — the amounts are a ledger, and a
      ledger aligns on its unit. `lnum` because the numeral is a figure to be read, not text:
      Cormorant's default set would drop the 5 below the baseline next to a lining 1. Never
-     `tnum` — these are three different widths on purpose. */
+     `tnum` — these are three different widths on purpose. One line always: an amount broken
+     between its figure and its unit is not an amount. */
   .donation-row strong {
     font-family: var(--serif);
     font-size: 26px;
     font-weight: 300;
     line-height: 1;
     text-align: right;
+    white-space: nowrap;
     font-feature-settings: "kern" 1, "liga" 1, "lnum" 1;
     transition: color 0.45s var(--ease);
   }
@@ -2053,10 +2066,21 @@
     color: var(--candle);
   }
 
+  /* The unit in the transfer rows' own label voice (`.bank-row .currency`), so the ledger names
+     its currency one way from the first tier to the last IBAN. It takes the figure's colour at
+     the label's strength rather than a fixed one, so the hover's candle reaches it too. */
+  .donation-unit {
+    color: color-mix(in srgb, currentColor 62%, transparent);
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+  }
+
   /* What the money DOES is the argument; the amount is only its label. Set close enough to the
      lede's own measure that the sentence carries, and one step under it in colour so the two
      paragraphs of this section stay in order. */
-  .donation-row span {
+  .donation-row > span {
     color: rgba(244, 241, 233, 0.82);
     font-size: clamp(16px, 1.15vw, 18px);
     line-height: 1.5;

@@ -235,9 +235,13 @@
     display: block;
   }
 
+  /* The display gold, not a pale cream: the plate under this word is near-black, which is the ground
+     `--candle` was drawn for (8.46:1), and the chrome's own Voice pill is ruled in the same candle,
+     so the page's first gold and the header's agree. The word opens at weight 620 (the hero breath,
+     scripts/landing.ts), heavy enough that the hue reads in the stroke rather than only at its edge. */
   .hero-title em {
     font-style: normal;
-    color: #e6d8b4;
+    color: var(--candle);
   }
 
   /* The air under the h1 is measured against its DESCENDERS, not its baseline. `.hero-title` is set

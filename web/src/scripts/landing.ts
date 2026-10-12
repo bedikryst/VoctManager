@@ -265,8 +265,9 @@ function setupManifestLight(root: HTMLElement, reduce: boolean): void {
   const MAX_BACKLOG_MS = 450;
   /** `--sweep-in` (03-manifest-rite.css) plus a margin: the guarantee behind `transitionend`
    *  for a group whose sweep is cancelled or whose browser never reports the custom property.
-   *  It only ever drops a mask that is already fully opaque, so firing late costs nothing and
-   *  firing early is what must not happen — keep it clear of the sweep's clock. */
+   *  It only ever drops a mask that is already fully opaque (and, on the answer, a gilding that
+   *  is already all gold), so firing late costs nothing and firing early is what must not
+   *  happen — keep it clear of the sweep's clock. */
   const SPEND_FALLBACK_MS = 2600;
 
   let lastOnset = Number.NEGATIVE_INFINITY;

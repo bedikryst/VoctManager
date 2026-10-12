@@ -11,8 +11,13 @@
  *  page's. Before 2026-08 they were two controllers whose geometries had quietly drifted apart
  *  (a ratio threshold on one side, a flat inset on the other), which is the kind of divergence
  *  this file exists to make impossible rather than to police.
+ *
+ *  It also starts the ink press's line guard (scripts/pressGuard.ts) for the same root, so every
+ *  page that has registers has the guard, under the same motion condition.
  * @module scripts/reveal
  */
+
+import { guardInkPress } from "./pressGuard";
 
 /** Every register class, plus the cue. A node may wear ink and lead together and no other pair. */
 const REVEAL_SELECTOR = ".reveal, .reveal-rule, .reveal-rule-v, .reveal-light, .reveal-cue";
@@ -108,6 +113,7 @@ export function setupReveal(root: ParentNode, { reduce, cadence }: RevealOptions
     return () => {};
   }
 
+  const dropPressGuard = guardInkPress(root);
   const order = new Map(items.map((el, i) => [el, i] as const));
   const timers: number[] = [];
   const taken = new Set<HTMLElement>();
@@ -252,5 +258,6 @@ export function setupReveal(root: ParentNode, { reduce, cadence }: RevealOptions
     io.disconnect();
     tail.disconnect();
     timers.forEach((t) => window.clearTimeout(t));
+    dropPressGuard();
   };
 }

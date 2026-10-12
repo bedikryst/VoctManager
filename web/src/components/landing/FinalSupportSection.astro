@@ -40,11 +40,22 @@ const bg = bleedPair("swiatlo-krzyz");
    amounts a reader SEES are copy; these are the numbers the island is handed. */
 const OPENS_AT: Readonly<Record<string, number>> = { t100: 100, t500: 500, t2500: 2500 };
 
+/* The amount is one string on the copy desk ("2 500 zł", "2,500 PLN") and two voices on the page:
+   the figure in the serif, the unit as a label (see `.donation-unit`). The unit is the last word,
+   whatever space the locale separates it with; an amount with no space in it is all figure. */
+const AMOUNT_PARTS = /^(.*\S)\s+(\S+)$/u;
+
 const tiers = copy.tiers.map((tier) => {
   const value = OPENS_AT[tier.id];
   // Loud rather than silent: a tier whose id was renamed would open the vault at nothing.
   if (value === undefined) throw new Error(`[support] no vault amount for the tier "${tier.id}".`);
-  return { ...tier, value };
+  const parts = AMOUNT_PARTS.exec(tier.amount);
+  return {
+    ...tier,
+    value,
+    figure: parts ? parts[1] : tier.amount,
+    unit: parts ? parts[2] : null,
+  };
 });
 ---
 
@@ -111,7 +122,15 @@ const tiers = copy.tiers.map((tier) => {
                 class="donation-row reveal"
                 data-vault-open={tier.value}
               >
-                <strong>{tier.amount}</strong>
+                <strong>
+                  {tier.figure}
+                  {tier.unit && (
+                    <Fragment>
+                      {" "}
+                      <span class="donation-unit">{tier.unit}</span>
+                    </Fragment>
+                  )}
+                </strong>
                 <span>{tier.text}</span>
               </button>
             ))

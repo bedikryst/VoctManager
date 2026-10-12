@@ -7,8 +7,8 @@
        passes once" below, and keep scripts/landing.ts's spend fallback clear of it. */
     --sweep-in: 2s;
     /* The half-light a line waits in, as a mask alpha — site-wide `--half-ink` (tokens.css),
-       named here because it is a MATERIAL constant, not a page one: the answer is gold and has
-       to override it. See `.manifest-answer`. */
+       named here because the mask below reads it. The answer waits in it too: it waits in ink
+       and is gilded by the light rather than dimmed in gold. See `.manifest-answer`. */
     --line-rest: 0.44;
   }
 
@@ -99,22 +99,17 @@
      the response lands on its right, so the hairline is a measure the type reaches at both
      ends. Nothing touched either end before — the type floated inside a frame — and that is
      what made a rigid grid read as adrift. */
+  /* The answer waits in INK, at the same half-light as the theses, and the light turns it gold
+     (the gilding rules under "The light passes once"). Gold cannot carry the reveal by alpha
+     alone: `--candle` is 2.10:1 on parchment where ink is 16:1 (tokens.css spells the ratio out),
+     so a gold word at the theses' 0.44 rests at 1.29:1 — the paper, for all a reader can see,
+     which breaks the rule that nothing on this site enters from nothing — and a gold word raised
+     high enough to be seen waiting has almost nowhere left to go when the light arrives. A change
+     of HUE is what the light can still visibly do here: grey ink at ~2.8:1 while it waits, the
+     candle the moment the edge has passed. One motion still — the colour edge and the alpha edge
+     are the same gradient geometry on the same clock. */
   .manifest-answer {
     margin-top: clamp(28px, 3.6vw, 56px);
-    /* THE HALF-LIGHT FLOOR IS NOT THE INK'S, and this is the one place on the page where the
-       difference is load-bearing. `--candle` is 2.10:1 on parchment where ink is 16:1
-       (tokens.css spells the ratio out), so at the 0.44 the theses wait in, this word rested
-       at 1.29:1 — the paper, for all a reader can see. The law it was quietly breaking is the
-       one its own placement depends on: nothing on this site enters from nothing, and an answer
-       that is absent until the light reaches it leaves the page's single negation standing
-       unanswered while the reader looks straight at it.
-
-       At 0.78 the word waits as a pale gold presence and the sweep WARMS it (≈1.60 → 1.85:1)
-       instead of revealing it. That the gesture is small here is the material's doing and not a
-       miscalibration to tune out: gold on parchment carries about an eighth of ink's range. What
-       actually sets the answer apart is carried without a second motion — the gold, the italic,
-       and its own beat behind the statement (ANSWER_GAP_MS, scripts/landing.ts). */
-    --line-rest: 0.78;
   }
 
   .manifest-emphasis {
@@ -211,5 +206,30 @@
     -webkit-mask-image: none;
     mask-image: none;
     transition: none;
+  }
+
+  /* The answer's gilding. Its text is painted by its own background, clipped to the glyphs: a
+     second gradient on the mask's exact geometry (same angle, same stops, same `--ink-reveal`),
+     gold behind the light's edge and ink ahead of it, so the mask above still sets the half-light
+     and this sets only the hue. `--ink-reveal` does not inherit, which is why this sits on the
+     line and not on its `<em>`; the <em>'s own colour is what shows once the background is gone.
+
+     FAIL-SAFE IN BOTH DIRECTIONS, because the failure mode is an invisible word. The fill goes
+     transparent only where clipping to text is supported, and the `114%` fallback means an engine
+     without @property — where an unregistered `--ink-reveal` has no initial value — paints the
+     word fully gold instead of discarding the background. Spent, none of this applies any more:
+     the <em> paints itself again, identical in colour, and any glyph overhang outside the box —
+     which a background clipped to text cannot reach — is un-clipped with it. */
+  @supports ((-webkit-background-clip: text) or (background-clip: text)) {
+    html.voct-motion .manifest-answer:not(.is-spent) {
+      background-image: linear-gradient(
+        100deg,
+        rgb(var(--candle-rgb) / 0.84) calc(var(--ink-reveal, 114%) - 12%),
+        var(--ink) calc(var(--ink-reveal, 114%) + 16%)
+      );
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
   }
 
