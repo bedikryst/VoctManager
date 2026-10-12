@@ -18,7 +18,7 @@ Working notes for whoever edits this directory. The project overview is in the [
 
 **The root `CLAUDE.md` mandate does not apply in this directory.** No Tailwind, no Ethereal tokens, no typography primitives. Raw `<h1>`, `<p>`, custom CSS and hand-written gradients are all fine and mostly what's here. Four rules do apply:
 
-* **No third parties that set a cookie or leak an IP.** No Google Fonts, no Maps, no Spotify embeds, no reCAPTCHA, no analytics. Fonts are self-hosted under `public/fonts/`, ambient audio under `public/ambient.m4a`. The privacy policy makes this claim, so the code has to keep it.
+* **No third parties that set a cookie or leak an IP.** No Google Fonts, no Maps, no Spotify embeds, no reCAPTCHA. The one third party is Plausible analytics (`src/layouts/BaseLayout.astro`): cookieless, disclosed in `/polityka-prywatnosci` §9. Fonts are self-hosted under `public/fonts/`, ambient audio under `public/ambient.m4a`. The privacy policy makes this claim, so the code has to keep it.
 * **Every animated surface stays on `transform` and `opacity`,** honours `prefers-reduced-motion`, and degrades to something readable with JavaScript off.
 * **Creative direction is *Nawa światła*** — sacred minimalism, A-B-C braid, light parchment palette. The spec in `.ai/07_marketing_public_site.md` governs every subpage.
 * **Keep the dependency list short.** Currently: Astro, React, Lenis. Adding a fifth needs a reason.
@@ -205,7 +205,7 @@ Run from the `web/` directory:
 
 ## Privacy & Browser Storage
 
-The site does not set first-party cookies, ship analytics, or embed third-party trackers. Browser storage is limited to a few strictly-necessary functional entries (documented in `/polityka-prywatnosci` §10 — the prose lives in `src/content/pages/polityka-prywatnosci.yaml`, and each key below is a structural field of that file rather than translatable copy):
+The site does not set first-party cookies or embed third-party trackers; its only analytics is cookieless Plausible (§9). Browser storage is limited to a few strictly-necessary functional entries (documented in `/polityka-prywatnosci` §10 — the prose lives in `src/content/pages/polityka-prywatnosci.yaml`, and each key below is a structural field of that file rather than translatable copy):
 
 | Key | Storage | Purpose | Lifetime |
 |:---|:---|:---|:---|

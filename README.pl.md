@@ -24,7 +24,7 @@ Współzałożyłem fundację, która prowadzi zespół, i jestem jedynym progra
 
 Pierwszy koncert w systemie (u św. Andrzeja Boboli, maj 2026) to były głównie dane, które wpisałem sam, żeby sprawdzić cały proces. Proces zadziałał, ale dyrygent z niego nie korzystał. Swoją pracę robi świetnie i między próbami nie ma czasu na naukę nowych narzędzi, czego nie przewidziałem. Namówienie go, żeby otworzył aplikację w zwykły wtorek, okazało się trudniejsze niż cała strona techniczna.
 
-Koncert z końca sierpnia poprowadził przez aplikację już sam, a chórzyści korzystali z niej w trakcie koncertu. Teraz trwają próby do kolejnego programu i pracują w niej i dyrygent, i chór. Na bieżąco przysyła mi uwagi, a opisany niżej plan próby powstał z dwóch jego zgłoszeń.
+Koncert z końca sierpnia poprowadził przez aplikację już sam, a chórzyści korzystali z niej w trakcie koncertu. Teraz trwają próby do kolejnego programu i pracują w niej i dyrygent, i chór. Na bieżąco przysyła mi uwagi, a opisany niżej plan próby powstał z dwóch jego zgłoszeń. Od 20 września otwiera aplikację codziennie. Od tego dnia do 1 października wysłał przyciskiem w aplikacji 59 zgłoszeń, a 53 z nich zamknąłem tego samego dnia.
 
 ## Co w nim jest
 
@@ -32,12 +32,15 @@ Koncert z końca sierpnia poprowadził przez aplikację już sam, a chórzyści 
 - **Plany prób.** Kolejność utworów na każdą próbę i osobne okno czasowe dla każdego śpiewaka. [Więcej niżej](#plan-próby).
 - **Cyfrowy pulpit.** Czytnik PDF na tablet: kolejne strony wczytane z wyprzedzeniem, pedał Bluetooth, blokada wygaszania ekranu, zoom szczypnięciem. Śpiewacy i dyrygent mogą nanosić na nuty oddechy, dynamikę, widełki, fermaty i odręczne notatki (rysik rysuje, palec przewija). Znaki leżą na czterech warstwach: cały chór, prowadzący próbę, zarząd i prywatna warstwa każdego śpiewaka, której nie widzą nawet managerowie. Pilnuje tego serwer.
 - **Ścieżki do ćwiczenia.** Każda linia głosu ma osobne nagranie, a dyrygent może dodać nagranie tempo giusto, czyli swoje wykonanie całego utworu. Śpiewak słucha całego chóru, samego swojego głosu albo wszystkich poza sobą, w tempie 50, 75 albo 100%, z pętlą A/B i kamertonem do dźwięku początkowego.
-- **Śpiewniki.** Gotowy do druku skoroszyt z repertuaru projektu: strona tytułowa, spis treści, karta tytułowa przed każdym utworem, ciągła numeracja stron, zakładki PDF, opcjonalnie układ do druku dwustronnego.
+- **Śpiewniki.** Gotowy do druku skoroszyt z repertuaru projektu: strona tytułowa, spis treści, karta tytułowa przed każdym utworem, ciągła numeracja stron, zakładki PDF, opcjonalnie układ do druku dwustronnego. Wspólne znaki dyrygenta są drukowane w każdym egzemplarzu, a pobranie przez śpiewaka dokłada jego prywatną warstwę. Zakreślacz drukuje się jako podkreślenie, bo półprzezroczysty pas na czarno-białej drukarce laserowej zamienia się w szarość na nutach.
 - **Nuty licencjonowane.** Każde wydanie ma status prawnoautorski, a niesklasyfikowane traktujemy jak chronione. Chronione nuty zostają w aplikacji i dostają znak wodny generowany na serwerze dla każdego odbiorcy: numer egzemplarza, imię i nazwisko, koncert, data. Znak nie zawiera adresu e-mail, bo te kartki się drukuje i zostawia na pulpitach. Każde pobranie trafia do logu, a przy składaniu śpiewnika system ostrzega, gdy egzemplarzy ma być więcej, niż zespół kupił.
 - **Finanse.** Budżety, honoraria, wydatki i granty projektów. [Więcej niżej](#finanse).
 - **Wiadomości.** Wątki między śpiewakami a zarządem i kanał ogłoszeń w każdym projekcie, dostarczane w aplikacji, mailem (EmailLabs) i przez web push. Celowo bez statusu obecności i wskaźnika pisania.
+- **Przycisk zgłoszeń.** Na każdym ekranie. Wysyła notatkę użytkownika razem ze stroną, urządzeniem i ostatnim błędem z konsoli, bo sam tekst najczęściej brzmiał „nie działa”. Zgłoszenie zostaje po usunięciu konta autora. Tędy dyrygent przysyła większość swoich próśb.
+- **Powiadomienia o koncertach i rezerwacje miejsc** na publicznej stronie: podwójne potwierdzenie zapisu, wersja treści zgody pilnowana przez serwer i bez zapisywania adresu IP ani user agenta.
+- **Redakcja tekstów strony.** Teksty publicznej strony leżą w gicie, po polsku, angielsku i francusku. Redaktorzy, którzy nie są programistami, proponują zmiany na stronie redakcji albo klikając tekst bezpośrednio na działającej stronie. Recenzent przyjmuje albo odrzuca każdą propozycję, a przyjęta zmiana trafia na stronę wyłącznie jako diff w gicie, który czytam przed wdrożeniem. Propozycja staje się nieaktualna, jeśli tekst pod nią zdążył się zmienić. Zapis zaufanego tłumacza omija recenzję tylko wtedy, gdy przechodzą sprawdzenia, które nie wymagają znajomości języka: znaczniki builda i adresy linków zgadzają się z wersją polską.
 - **Darowizny** przez Axepta BNP Paribas, z weryfikacją podpisu MAC i uzgadnianiem płatności w Celery.
-- Kalendarze iCal, jasny i ciemny motyw, cztery role (admin, manager, artysta, ekipa) sprawdzane po stronie API.
+- Polski, angielski i francuski, kalendarze iCal, jasny i ciemny motyw, cztery role (admin, manager, artysta, ekipa) sprawdzane po stronie API.
 
 | Na pulpicie | Ćwiczenie w domu |
 |:---:|:---:|
@@ -110,6 +113,8 @@ Budżety, honoraria, wydatki i granty projektów w jednej księdze, którą zatw
 
 **Adnotacje odświeżają się przez odpytywanie.** Otwarty pulpit co 20 sekund pyta mały endpoint o odcisk stanu i pobiera znaki tylko wtedy, gdy się zmienił. Przy Server-Sent Events przez całą próbę byłoby otwartych około trzydziestu połączeń, żeby zyskać sekundę czy dwie.
 
+**Ogłoszenia czekają na dyrygenta.** W trwającym projekcie każda zmiana zapisuje się od razu, więc aplikacja zawsze pokazuje aktualne dane, ale to, co dostanie chór, czeka w kolejce, aż dyrygent to opublikuje. Pięć zmian w próbach daje jedną wiadomość, literówka poprawiona minutę później nie dociera do nikogo, a kto ma kilka zmian, dostaje jedno zestawienie zamiast maila o każdej. Dwunastu śpiewaków i pięć prób to dwanaście maili, nie sześćdziesiąt.
+
 ## Co zrobiłem źle
 
 **Pierwszy pipeline był łańcuchem małych wywołań modelu** (tożsamość, części, tekst, tłumaczenia). Każde widziało tylko swój fragment, więc przy znanych hymnach model zwracał tekst kanoniczny zamiast tego, co było wydrukowane. Jedno wywołanie na cały dokument to naprawiło i przy okazji wyszło taniej.
@@ -125,6 +130,7 @@ Budżety, honoraria, wydatki i granty projektów w jednej księdze, którą zatw
 - Dwa endpointy zdrowia: `/api/health/` do liveness (niczego nie dotyka) i `/api/health/ready/` do readiness (Postgres i Redis). Redis jest sprawdzany zapisem i odczytem klucza, bo Redis na `maxmemory` z `noeviction` dalej odpowiada na `PING`.
 - Zadanie Celery beat pinguje zewnętrzny monitor heartbeat, a alert przychodzi, gdy pingi ustają.
 - Sentry, monitoring dostępności i ważności certyfikatu TLS.
+- Rejestr czynności przetwarzania, lista podmiotów przetwarzających z umowami powierzenia i zaplanowane usuwanie danych po okresie retencji. Kopie zapasowe trafiają do Google Workspace fundacji, więc nie dochodzi żaden nowy podmiot przetwarzający.
 - Codzienne kopie zapasowe poza serwerem i próba odtworzenia ([`infra/restore-drill.sh`](infra/restore-drill.sh)), która wgrywa je do tymczasowej bazy i sprawdza liczby wierszy, pliki mediów i stan migracji. Instrukcje: [`docs/backups.md`](docs/backups.md), [`docs/monitoring.md`](docs/monitoring.md).
 - CI puszcza ruff, mypy (strict) i testy backendu na PostgreSQL 16 przy każdym pushu.
 - Testy frontendu obejmują zapisy, których nie da się cofnąć (publikacja projektu wysyła mail do całego chóru; RSVP, obecności i aktywacja konta działają w czyimś imieniu), oraz logikę, która musi się zgadzać z serwerem, np. liczenie honorariów. Resztę panelu sprawdzam ręcznie.
@@ -139,7 +145,6 @@ Budżety, honoraria, wydatki i granty projektów w jednej księdze, którą zatw
 ## Otwarte
 
 - [ ] Przypadki w złotym zestawie, które faktycznie różnicują konfiguracje modelu
-- [ ] Drukowanie wspólnej warstwy adnotacji w śpiewniku
 - [ ] Szyfrowanie Fernet w spoczynku dla pól umów i finansów; niezmienność logu finansów wymuszona na poziomie bazy
 - [ ] CI frontendu i testy end-to-end w Playwright
 - [ ] Rate limiting na brzegu (Cloudflare + WAF) obok throttlingu DRF
@@ -232,9 +237,13 @@ cd ~/VoctManager && git pull && make deploy
 
 `make deploy` wykonuje `gc → build → up -d → migrate → migrate --check → gc` i zatrzymuje się na pierwszym błędzie. Migracje nie uruchamiają się same, a `migrate --check` wywala deploy, jeśli jakaś została. `frontend/Dockerfile` buduje panel (Vite) i stronę publiczną (Astro + Sharp) i serwuje oba z jednego obrazu `nginx:1.27`, więc na serwerze nie ma Node'a. Build potrzebuje około 3 GB wolnego RAM-u, a [`infra/docker-gc.sh`](infra/docker-gc.sh) sprząta stare warstwy przed buildem i po nim.
 
-## Zbudowane z Claude Code
+## Jak to powstaje
 
-Codziennie pracuję z Claude Code i wiele commitów ma go jako współautora. Decyzje produktowe, architektura, limity kosztów i to, czego nie budujemy, są moje.
+VoctManagera buduję z agentami AI, głównie z Claude Code. Każdy agent czyta ten sam plik instrukcji, a projekt prowadzi własne notatki między sesjami. Decyzje produktowe, architektura, limity kosztów i to, czego nie budujemy, są moje.
+
+Większość pracy zaczyna się od pisemnej specyfikacji: od sierpnia powstało ich 77, w tym uwagi dyrygenta rozpisane na ponumerowane punkty, projekty funkcji i audyty gotowej pracy. Specyfikacje i pliki agentów są poza repozytorium, bo dotyczą wewnętrznych spraw zespołu. Każda kończy się statusem, który mówi, co sprawdzono, a czego nie, na przykład *„built, audited and committed … neither seen in a browser”*.
+
+Każdy push uruchamia CI: ruff, mypy w trybie strict, kontrolę migracji i testy backendu na PostgreSQL 16. Potem sprawdzam zmianę na telefonach i tabletach, których używa chór, a zgłoszenia dyrygenta z przycisku w aplikacji wyłapują to, co mi umknęło.
 
 ---
 

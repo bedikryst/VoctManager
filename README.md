@@ -24,7 +24,7 @@ I co-founded the foundation behind the ensemble and I'm the only developer on th
 
 The first concert in the system (St. Andrew Bobola, May 2026) was mostly data I entered myself to test the workflow. The workflow held up, but the conductor didn't use it. He's very good at his job and has no time to learn new tools between rehearsals, which I hadn't planned for. Getting him to open the app on an ordinary weekday turned out to be harder than anything on the engineering side.
 
-He ran the end-of-August concert through the app himself, and the singers used it during the concert. The next programme is in rehearsal now, and both he and the choir are working in it. He sends me feedback as he goes; the rehearsal planner described below came from two of his reports.
+He ran the end-of-August concert through the app himself, and the singers used it during the concert. The next programme is in rehearsal now, and both he and the choir are working in it. He sends me feedback as he goes; the rehearsal planner described below came from two of his reports. Since 20 September he has opened the app every day. Between then and 1 October he sent 59 reports through the in-app feedback button, and I closed 53 of them the same day.
 
 ## What's in it
 
@@ -32,12 +32,15 @@ He ran the end-of-August concert through the app himself, and the singers used i
 - **Rehearsal plans.** The running order for each rehearsal, with a personal time window for every singer. [More below](#rehearsal-plans).
 - **Digital music stand.** A PDF reader for tablets: prefetched page turns, Bluetooth pedal support, screen wake lock, pinch zoom. Singers and the conductor can mark up the score with breath marks, dynamics, hairpins, fermatas and freehand ink (a stylus draws, a finger scrolls). Marks live on four layers: the whole choir, the rehearsal leader, the management, and a private layer for each singer that managers can't read either. This is enforced on the server.
 - **Practice tracks.** Every voice line has its own recording, and the conductor can add a tempo giusto take, his own reading of the whole piece. A singer plays the full choir, their line alone, or everyone except themselves, at half, three-quarter or full speed, with an A/B loop and a pitch pipe for the starting note.
-- **Score books.** A print-ready binder built from a project's repertoire: title page, table of contents, a title card for each piece, continuous page numbers, PDF bookmarks, optional duplex layout.
+- **Score books.** A print-ready binder built from a project's repertoire: title page, table of contents, a title card for each piece, continuous page numbers, PDF bookmarks, optional duplex layout. The conductor's shared marks are printed into every copy, and a singer's download adds their own private layer. A highlighter stroke prints as an underline, because a translucent band turns into grey over the notes on a mono laser printer.
 - **Licensed scores.** Every edition has a copyright status, and unclassified ones count as protected. Protected scores stay inside the app and get a per-recipient watermark rendered on the server: copy number, name, concert, date. It leaves out the email address, because these pages get printed and left on music stands. Every download is logged, and the score-book builder warns when a licensed edition would be printed for more singers than the ensemble has copies.
 - **Finance.** Budgets, fees, expenses and grants per project. [More below](#finance).
 - **Messaging.** Threads between singers and management and a broadcast channel per project, delivered in the app, by email (EmailLabs) and by web push. There are no presence or typing indicators, on purpose.
+- **Feedback button.** On every screen. It sends the user's note together with the page, the device and the last console error, because free text alone mostly said "it doesn't work". A report outlives its author's deleted account. This is how the conductor sends most of his requests.
+- **Concert notices and seat reservations** on the public site: double opt-in, the consent wording versioned on the server, and no IP address or user agent stored.
+- **Copy desk.** The public site's text lives in git, in Polish, English and French. Editors who aren't developers propose changes on an editorial page or by clicking the text on the live site. A reviewer accepts or rejects each proposal, and an accepted change reaches the site only as a git diff I read before it's deployed. A proposal goes stale when the text under it has changed since. A trusted translator's save skips review only if the checks that need no knowledge of the language pass: the build's placeholders and the link targets match the Polish.
 - **Donations** through Axepta BNP Paribas, with MAC signature checks and reconciliation in Celery.
-- iCal feeds, light and dark themes, four roles (admin, manager, artist, crew) enforced by the API.
+- Polish, English and French, iCal feeds, light and dark themes, four roles (admin, manager, artist, crew) enforced by the API.
 
 | On the music stand | Practising at home |
 |:---:|:---:|
@@ -112,6 +115,8 @@ Budgets, fees, expenses and grants for each project, in one ledger approved by t
 
 **Annotations refresh by polling.** An open music stand checks a small fingerprint endpoint every 20 seconds and refetches the marks only when it changes. Server-Sent Events would have kept around thirty connections open for a whole rehearsal to save a second or two.
 
+**Announcements wait for the conductor.** On a live project every edit is saved at once, so the app always shows current data, but what the choir is told waits in a queue until he publishes. Five rehearsal edits become one message, a typo fixed a minute later reaches nobody, and someone with several changes gets one briefing instead of one email per change. Twelve singers and five rehearsals make twelve emails, not sixty.
+
 ## What I got wrong
 
 **The first ingestion pipeline was a chain of small model calls** (identity, movements, lyrics, translations). Each call saw only its own part, so for well-known hymns the model returned the standard text instead of what was printed. One call over the whole document fixed that and was cheaper too.
@@ -127,6 +132,7 @@ Budgets, fees, expenses and grants for each project, in one ledger approved by t
 - Two health endpoints: `/api/health/` for liveness (touches nothing) and `/api/health/ready/` for readiness (Postgres and Redis). The Redis check writes and reads a key, because a Redis at `maxmemory` with `noeviction` still answers `PING`.
 - A Celery beat task pings an external heartbeat monitor, and the alert fires when the pings stop.
 - Sentry, uptime checks and TLS expiry checks.
+- A record of processing activities, a list of sub-processors with their DPAs, and scheduled purges of data past its retention period. Off-site backups go to the foundation's own Google Workspace, so they add no new sub-processor.
 - Daily off-site backups and a restore drill ([`infra/restore-drill.sh`](infra/restore-drill.sh)) that restores them into a scratch database and checks row counts, media files and migration state. Runbooks: [`docs/backups.md`](docs/backups.md), [`docs/monitoring.md`](docs/monitoring.md).
 - CI runs ruff, mypy (strict) and the backend tests against PostgreSQL 16 on every push.
 - Frontend tests cover the writes that can't be undone (publishing a project emails the whole choir; RSVP, attendance and account activation act on someone else's behalf) and logic that has to match the server, such as fee calculation. The rest of the panel I check by hand.
@@ -141,7 +147,6 @@ Budgets, fees, expenses and grants for each project, in one ledger approved by t
 ## Open
 
 - [ ] Golden-set cases that actually separate one model configuration from another
-- [ ] Print the shared annotation layer into the score book
 - [ ] Fernet encryption at rest for contract and finance fields; make the finance log immutable at the database level
 - [ ] Frontend CI and Playwright end-to-end tests
 - [ ] Rate limiting at the edge (Cloudflare + WAF) on top of DRF throttling
@@ -234,9 +239,13 @@ cd ~/VoctManager && git pull && make deploy
 
 `make deploy` runs `gc → build → up -d → migrate → migrate --check → gc` and stops at the first failure. Nothing applies migrations automatically, and `migrate --check` fails the deploy if any are left. `frontend/Dockerfile` builds the panel (Vite) and the public site (Astro + Sharp) and serves both from one `nginx:1.27` image, so the host needs no Node. The build needs about 3 GB of free RAM, and [`infra/docker-gc.sh`](infra/docker-gc.sh) clears old build layers before and after.
 
-## Built with Claude Code
+## How it's built
 
-I use Claude Code every day, and many commits are co-authored with it. The product decisions, the architecture, the cost limits and what stays out are mine.
+I build VoctManager with AI coding agents, mostly Claude Code. Every agent reads the same instructions file, and the project keeps its own notes between sessions. The product decisions, the architecture, the cost limits and what stays out are mine.
+
+Most work starts as a written spec: 77 of them since August, including the conductor's feedback triaged into numbered items, feature designs, and audits of finished work. The specs and the agent files stay out of the repo because they carry the ensemble's internal matters. Each spec ends with a status that says what was checked and what wasn't, for example *"built, audited and committed … neither seen in a browser"*.
+
+Every push runs CI: ruff, strict mypy, a migration check and the backend tests on PostgreSQL 16. Then I try the change on the phones and tablets the choir uses, and the conductor's reports through the feedback button catch what I missed.
 
 ---
 
