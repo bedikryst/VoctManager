@@ -76,9 +76,9 @@ export function pathScope(
 
 /**
  * The canonical Polish path behind a served URL: no `.html` (the build emits `build.format:
- * "file"`), no trailing slash, no `/en` or `/fr` prefix.
+ * "file"`), no trailing slash, no `/en` or `/fr` prefix. The bar's language switch localizes it.
  */
-function basePath(pathname: string): string {
+export function basePath(pathname: string): string {
   const path =
     pathname
       .replace(/\.html$/u, "")

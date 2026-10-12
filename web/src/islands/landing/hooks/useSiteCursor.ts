@@ -13,6 +13,7 @@
  *   • Click feedback (`.is-down`) — `mousedown` adds the class, `mouseup` clears it; CSS
  *     contracts the ring + expands the inner dot for tactile pressure.
  *   • Reduced-motion + coarse-pointer + no-hover → opt out entirely (no body class, no DOM).
+ *   • The comment mode switches it off while it runs (`comment-mode/presence.ts`).
  *
  *  CSS hides the native cursor only when `has-custom-cursor` is set, and only inside the
  *  `(pointer: fine) and (hover: hover)` media query, so touch users keep their OS cursor.
@@ -22,6 +23,7 @@
 
 import { useEffect } from "react";
 
+import { commentModeActive, onCommentModeChange } from "../../../comment-mode/presence";
 import { formatTime } from "../video/formatTime";
 
 const INTERACTIVE_SELECTOR =
@@ -103,13 +105,19 @@ export function useSiteCursor(cursorRef: React.RefObject<HTMLElement | null>): v
     // motion, even subtle. Users who opted out should see the native pointer untouched.
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
-    document.body.classList.add("has-custom-cursor");
+    // Off while the comment mode runs (comment-mode/presence.ts): the ring would float over the
+    // tool, and the class hides the native pointer on the tool's own controls. Without the class
+    // the ring is `display: none` and every `cursor: none` rule in cursor.css is out of play.
+    const syncClass = () =>
+      document.body.classList.toggle("has-custom-cursor", !commentModeActive());
+    syncClass();
+    const dropModeWatch = onCommentModeChange(syncClass);
 
     // SiteCursor is persisted across ClientRouter swaps (transition:persist) so its useEffect
     // runs only once — BUT Astro replaces body.className entirely with the new page's
     // bodyClass on swap, wiping our `has-custom-cursor` class. Without this listener the
     // native pointer flashes back on the very first navigation. Re-apply on every swap.
-    const onAfterSwap = () => document.body.classList.add("has-custom-cursor");
+    const onAfterSwap = syncClass;
     document.addEventListener("astro:after-swap", onAfterSwap);
 
     let targetX = -120;
@@ -443,6 +451,8 @@ export function useSiteCursor(cursorRef: React.RefObject<HTMLElement | null>): v
     // Click feedback — adds `.is-down` for the duration of the press. CSS contracts the
     // ring and expands the inner dot, reading as a tactile press without firing animation.
     const down = (event: MouseEvent): void => {
+      // The hidden ring must not take the middle button either: autoscroll with no gauge.
+      if (commentModeActive()) return;
       if (event.button === 1) {
         // Middle button: enter or exit autoscroll. If already engaged, any middle-click
         // exits (matches the native widget's behavior).
@@ -495,6 +505,7 @@ export function useSiteCursor(cursorRef: React.RefObject<HTMLElement | null>): v
       window.removeEventListener("blur", onBlur);
       window.removeEventListener("keydown", onKey);
       document.removeEventListener("astro:after-swap", onAfterSwap);
+      dropModeWatch();
       if (currentVideo) detachVideoListeners(currentVideo);
       if (autoscrollRaf !== null) window.cancelAnimationFrame(autoscrollRaf);
       if (raf !== null) window.cancelAnimationFrame(raf);

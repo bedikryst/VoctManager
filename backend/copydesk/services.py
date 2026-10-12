@@ -638,6 +638,7 @@ class CopyDeskService:
                     key=segment.key,
                     scope=segment.scope,
                     scope_label=segment.scope_label,
+                    scope_path=segment.scope_path,
                     label=segment.label,
                     kind=segment.kind,
                     value=segment.value,

@@ -17,6 +17,7 @@
  *    helpers that keep un-translated links pointing at the Polish original instead of 404-ing
  *    into an empty locale folder.
  *  - Prefetch + ClientRouter (set in BaseLayout)
+ *  - A dev-only `/api` proxy to the nginx stack, for the comment mode.
  * @architecture Astro islands 2026
  * @module build/astro
  */
@@ -43,6 +44,26 @@ export default defineConfig({
   prefetch: {
     prefetchAll: true,
     defaultStrategy: "viewport",
+  },
+  // `astro dev` only: the comment mode calls `/api` on its own origin, as it does in production
+  // where nginx serves site, panel and API together. The dev server hands those calls to the nginx
+  // stack (`make up`, http://localhost) and rewrites `Origin` to it, because the dev trusted
+  // origins do not include :4321. Cookies do not isolate ports, so a login at
+  // http://localhost/login also serves localhost:4321.
+  vite: {
+    server: {
+      proxy: {
+        "/api": {
+          target: "http://localhost",
+          changeOrigin: true,
+          configure: (proxy) => {
+            proxy.on("proxyReq", (request) => {
+              if (request.getHeader("origin")) request.setHeader("origin", "http://localhost");
+            });
+          },
+        },
+      },
+    },
   },
   integrations: [
     react(),

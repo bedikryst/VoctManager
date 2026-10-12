@@ -1479,6 +1479,13 @@ class SiteIndexTests(TestCase):
         self.assertEqual(translated["value"], "Second")
         self.assertEqual(translated["fallback_value"], "")
 
+    def test_a_row_carries_the_path_of_its_scopes_page(self):
+        # A tap on a word several fields share links each field to its own page.
+        CopySegment.objects.filter(pk=self.body_en.pk).update(scope_path="/kontakt")
+        rows = self.rows(self.read())
+        self.assertEqual(rows["page.kontakt.hero.body"]["scope_path"], "/kontakt")
+        self.assertEqual(rows["page.kontakt.hero.lede"]["scope_path"], "")
+
     def test_the_polish_index_has_no_fallback_and_nothing_stale(self):
         rows = self.rows(self.read(locale=SiteLocale.POLISH))
         self.assertEqual(rows["page.kontakt.hero.lede"]["value"], "Zapraszamy")

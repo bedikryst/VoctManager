@@ -588,5 +588,12 @@ const breadcrumbLd = breadcrumb ? breadcrumbList(breadcrumb, lang) : undefined;
       document.addEventListener("astro:after-swap", refreshParallax);
       document.addEventListener("astro:page-load", refreshParallax);
     </script>
+
+    <script>
+      // The comment mode's door. Every visitor loads the loader and nothing more: the mode is a
+      // chunk of its own, imported only for an editor who opened the site with `?uwagi`, and a
+      // failure there is caught inside the loader. See comment-mode/loader.ts.
+      import "../comment-mode/loader";
+    </script>
   </body>
 </html>

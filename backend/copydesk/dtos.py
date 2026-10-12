@@ -208,6 +208,10 @@ class SiteIndexRowDTO(BaseModel):
     key: str
     scope: str
     scope_label: str
+    #: The Polish path of the page that owns this scope, empty when it has none.
+    #: A tap on a word several fields share links each of them to its own page,
+    #: where it is the page's field and opens directly.
+    scope_path: str = ""
     label: str
     kind: str
     #: What the repository holds for this locale; empty where no translation exists.
