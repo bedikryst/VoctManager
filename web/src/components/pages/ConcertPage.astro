@@ -135,8 +135,9 @@ const inscriptioRefText = c.inscriptioRef
 const bg = bleedPair(c.heroImg ?? c.bg);
 // What a PASTED LINK previews with, which is not the same picture as the page's own opening.
 // An evening still ahead declares a `share` frame built from its poster — the one image that
-// carries the day, the hour and the door — and every sung evening keeps its hero, the honest
-// frame for a document. `photoOptional`, so a declared-but-missing file falls back rather than
+// carries the day, the hour and the door — and a sung evening keeps its hero, the honest frame
+// for a document, unless that hero predates the evening (see the field's note in
+// content.config.ts). `photoOptional`, so a declared-but-missing file falls back rather than
 // failing a build on the host the photographs are uploaded to by hand.
 const shareImg = c.share ? photoOptional(c.share) : undefined;
 const ogImage = (await getImage({ src: shareImg ?? bg.desktop, width: 1200, format: "webp" })).src;

@@ -237,7 +237,10 @@ const concerts = defineCollection({
      *  the place and the door. A poster states all four and is a standing A-sheet, so it cannot
      *  BE the hero; mounted on its own ground at 1200x630 it is exactly the preview (web/
      *  poster-art.cjs). Set it on an evening that is still ahead, where a link is an invitation;
-     *  a sung evening is a document and its hero is the honest frame for it. */
+     *  a sung evening is a document and its hero is the honest frame for it. The one exception is
+     *  a sung evening whose desktop hero was photographed before it (an empty room standing in
+     *  for a concert that had not happened): there `share` names a 1.91:1 cut of a frame from the
+     *  evening's gallery, and goes the day the hero itself is cut from the evening. */
     share: z.string().optional(),
     /** Framed poster — photo() base name. Absent for the liturgy plate. */
     poster: z.string().optional(),

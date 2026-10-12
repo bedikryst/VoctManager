@@ -51,6 +51,7 @@ const PLACES: Record<Locale, Readonly<Record<string, string>>> = {
     "Kościół św. Maksymiliana Kolbego, Mistrzejowice":
       "Kościół św. Maksymiliana Kolbego, Mistrzejowice",
     "Kościół św. Bartłomieja, Niedzica": "Kościół św. Bartłomieja, Niedzica",
+    "Kościół Wszystkich Świętych, Warszawa": "Kościół Wszystkich Świętych, Warszawa",
   },
   en: {
     "Bazylika NSPJ, Kraków": "Sacred Heart Basilica, Kraków",
@@ -61,6 +62,7 @@ const PLACES: Record<Locale, Readonly<Record<string, string>>> = {
     "Kościół św. Maksymiliana Kolbego, Mistrzejowice":
       "St Maximilian Kolbe's Church, Mistrzejowice",
     "Kościół św. Bartłomieja, Niedzica": "St Bartholomew's Church, Niedzica",
+    "Kościół Wszystkich Świętych, Warszawa": "All Saints’ Church, Warsaw",
   },
   // French hyphenates a dedication and translates the city: Sainte-Marie, Cracovie — both as the
   // concert overlays already publish them.
@@ -73,6 +75,7 @@ const PLACES: Record<Locale, Readonly<Record<string, string>>> = {
     "Kościół św. Maksymiliana Kolbego, Mistrzejowice":
       "Église Saint-Maximilien-Kolbe, Mistrzejowice",
     "Kościół św. Bartłomieja, Niedzica": "Église Saint-Barthélemy, Niedzica",
+    "Kościół Wszystkich Świętych, Warszawa": "Église de Tous-les-Saints, Varsovie",
   },
 };
 

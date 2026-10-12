@@ -94,7 +94,7 @@ concert.pochwala-stworzenia.prologue: "Un dimanche après-midi, place Grzybowski
 # énonce une coïncidence au lieu d'énoncer le point.
 concert.pochwala-stworzenia.reflectionNote: "L'antienne que met en musique Dubra assemble des mots de l'Apocalypse : « la fumée des parfums monta, avec les prières des saints, devant Dieu ». La dernière phrase de ce chemin est donc chantée dans l'église qui porte exactement ce nom — Tous-les-Saints."
 
-concert.pochwala-stworzenia.programLede: "Dix œuvres et un miroir"
+concert.pochwala-stworzenia.programLede: "Dix œuvres, un miroir et un bis"
 # LA RÉDACTION DU CHEF LUI-MÊME, renvoyée le 14.09.2026 : le polonais est désormais de lui. Deux
 # choses y sont des corrections et non du style, et une version française qui en perdrait une serait
 # fausse : le Pärt revient entre les GROUPES d'œuvres et non entre chaque œuvre (quatre groupes, cinq
@@ -269,7 +269,16 @@ concert.pochwala-stworzenia.program.9.note: "Un compositeur letton dont la musiq
 
 concert.pochwala-stworzenia.textNote: "Le Cantique est donné dans l'original ombrien dans lequel François l'a composé ; traductions françaises les nôtres."
 concert.pochwala-stworzenia.credits.0.role: "Direction"
+concert.pochwala-stworzenia.credits.1.role: "Assistante musicale"
+concert.pochwala-stworzenia.credits.2.role: "Orgue"
 concert.pochwala-stworzenia.forces: "12 voix · violon · orgue"
+concert.pochwala-stworzenia.roster.groups.0.voice: "Sopranos"
+concert.pochwala-stworzenia.roster.groups.1.voice: "Altos"
+concert.pochwala-stworzenia.roster.groups.2.voice: "Ténors"
+concert.pochwala-stworzenia.roster.groups.3.voice: "Basses"
+concert.pochwala-stworzenia.roster.note: "L'effectif de la soirée à Varsovie, le 11 octobre 2026, d'après le programme du concert."
+concert.pochwala-stworzenia.gallery.kd-stworzenie-0.alt: "VoctEnsemble pendant le concert Louange de la Création dans l'église de Tous-les-Saints à Varsovie, vu d'en haut"
+concert.pochwala-stworzenia.gallery.kd-stworzenie-1.alt: "La nef de l'église de Tous-les-Saints à Varsovie pendant le concert Louange de la Création"
 
 # ── Programme · the works (`program.<i>.workHtml`, `ritornello.workHtml`) ─────────────────────
 # An original title stands exactly as written, a Polish original included ("Stoi lód na

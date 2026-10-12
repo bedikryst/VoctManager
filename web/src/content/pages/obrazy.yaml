@@ -26,12 +26,11 @@
 
 meta:
   title: "Obrazy — fotografie Koncertów Duchowych · VoctEnsemble"
-  # "pięciu" is a count of the evenings that have photographs, and it is hand-written where the
-  # page itself counts: it will be a lie the day a sixth gallery lands. Left as it stands because
-  # the words were not this stage's to change — the desk's first editorial decision on this page.
+  # Count-free, like the EN and FR renderings: the page prints its own derived count of evenings
+  # and photographs in the scale line, and a numeral written here goes stale with every gallery.
   description: >-
-    Archiwum fotografii VoctEnsemble. Dokumentalne zdjęcia z pięciu Koncertów Duchowych,
-    w kolejności, w jakiej się odbyły.
+    Archiwum fotografii VoctEnsemble. Dokumentalne zdjęcia z Koncertów Duchowych, w kolejności,
+    w jakiej się odbyły.
   # The name the JSON-LD gives the gallery: the title without the site's own name after it, which
   # a search result prints for itself.
   galleryName: "Obrazy — fotografie Koncertów Duchowych"

@@ -92,7 +92,7 @@ concert.pochwala-stworzenia.prologue: "A Sunday afternoon on plac Grzybowski. Ab
 # coincidence instead of stating the point.
 concert.pochwala-stworzenia.reflectionNote: "The antiphon Dubra sets arranges words from the Book of Revelation: “the smoke of the incense went up with the prayers of the saints before God”. The last sentence of this road is therefore sung in the church that bears exactly that name — All Saints."
 
-concert.pochwala-stworzenia.programLede: "Ten works and one mirror"
+concert.pochwala-stworzenia.programLede: "Ten works, one mirror and an encore"
 # THE CONDUCTOR'S OWN EDIT of this paragraph, returned 14.09.2026, and the Polish is now his. Two
 # things in it are corrections rather than style, and an English version that loses either is wrong:
 # the Pärt returns between GROUPS of works and not between every work (there are four groups and five
@@ -228,7 +228,16 @@ concert.pochwala-stworzenia.program.9.note: "A Latvian composer whose sacred mus
 
 concert.pochwala-stworzenia.textNote: "The Canticle is given in the Umbrian original in which Francis composed it; English translations our own."
 concert.pochwala-stworzenia.credits.0.role: "Conductor"
+concert.pochwala-stworzenia.credits.1.role: "Music assistant"
+concert.pochwala-stworzenia.credits.2.role: "Organ"
 concert.pochwala-stworzenia.forces: "12 voices · violin · organ"
+concert.pochwala-stworzenia.roster.groups.0.voice: "Sopranos"
+concert.pochwala-stworzenia.roster.groups.1.voice: "Altos"
+concert.pochwala-stworzenia.roster.groups.2.voice: "Tenors"
+concert.pochwala-stworzenia.roster.groups.3.voice: "Basses"
+concert.pochwala-stworzenia.roster.note: "The line-up of the evening in Warsaw, 11 October 2026, after the concert programme."
+concert.pochwala-stworzenia.gallery.kd-stworzenie-0.alt: "VoctEnsemble during the concert In Praise of Creation at All Saints’ Church in Warsaw, seen from above"
+concert.pochwala-stworzenia.gallery.kd-stworzenie-1.alt: "The nave of All Saints’ Church in Warsaw during the concert In Praise of Creation"
 
 # ── Programme · the works (`program.<i>.workHtml`, `ritornello.workHtml`) ─────────────────────
 # An original title stands exactly as written, a Polish original included ("Stoi lód na

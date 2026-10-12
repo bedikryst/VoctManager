@@ -126,7 +126,7 @@ page.landing.ensemble.facts.debut.label: "débuts · Contemplation de l'Incarnat
 page.landing.ensemble.facts.evenings.label: "soirées"
 
 page.landing.director.role: "Direction artistique"
-page.landing.director.p1: "Le nom du cycle remonte au Paris de 1725 : le Concert Spirituel chantait les soirs où l'opéra se taisait. Trois cents ans plus tard, Florent de Bazelaire reprend cette tradition dans les basiliques de Cracovie et de Łódź, à Szczawnica et à Niedzica."
+page.landing.director.p1: "Le nom du cycle remonte au Paris de 1725 : le Concert Spirituel chantait les soirs où l'opéra se taisait. Trois cents ans plus tard, Florent de Bazelaire reprend cette tradition dans les basiliques de Cracovie et de Łódź, à Szczawnica, à Niedzica et à Varsovie."
 page.landing.director.p2Html: "Il bâtit chaque programme autour d'une seule intention. <em>Contemplation de l'Incarnation</em> pour les débuts (2024), neuf feuillets du Livre des Psaumes, une prière pour la paix à la basilique Sainte-Marie, une épitaphe pour Gaza."
 # « stałe miejsce » ici et « swoje miejsce » dans `support.title` sont deux formules polonaises
 # différentes, rendues toutes deux par « un lieu qui lui soit propre ». Celle-ci parle de durée —

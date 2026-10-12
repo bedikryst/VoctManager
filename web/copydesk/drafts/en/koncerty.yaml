@@ -25,7 +25,7 @@
 # only door that stamps the provenance hash the stale state is computed from.
 
 page.koncerty.meta.title: "Spiritual Concerts — VoctEnsemble"
-page.koncerty.meta.description: "The programmes of VoctEnsemble's Spiritual Concerts — from the Contemplation of the Incarnation to the liturgy for St Andrew Bobola — and a repertoire of seven centuries of sacred music."
+page.koncerty.meta.description: "The programmes of VoctEnsemble's Spiritual Concerts, from the Contemplation of the Incarnation in 2024 to the present, and a repertoire of seven centuries of sacred music."
 
 page.koncerty.intro.eyebrow: "The path of the concerts"
 page.koncerty.intro.title1: "Spiritual"
@@ -57,7 +57,7 @@ page.koncerty.repertoire.h2: "The repertoire our programmes are built from."
 page.koncerty.repertoire.lede: "Renaissance polyphony, the Baroque and contemporary minimalism stand side by side in one evening. We build the programme out of the tension between them."
 
 page.koncerty.coda.h2: "We have sung in basilicas, in a cathedral and in a village church."
-page.koncerty.coda.lede: "The Sacred Heart and St Mary's basilicas in Kraków, St Anthony's in Rybnik, Łódź Cathedral, the shrine in Warsaw, the spa manor house in Szczawnica, the church in Niedzica. Every time, we composed the programme anew — for that place and that occasion. We will prepare a spiritual concert, the music of a liturgy or of a celebration."
+page.koncerty.coda.lede: "The Sacred Heart and St Mary's basilicas in Kraków, St Anthony's in Rybnik, Łódź Cathedral, the shrine and All Saints' Church in Warsaw, the spa manor house in Szczawnica, the church in Niedzica. Every time, we composed the programme anew — for that place and that occasion. We will prepare a spiritual concert, the music of a liturgy or of a celebration."
 page.koncerty.coda.contactLink: "Write to us"
 page.koncerty.coda.aboutLink: "Meet the ensemble"
 page.koncerty.coda.supportLink: "Support the foundation"

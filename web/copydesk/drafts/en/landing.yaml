@@ -123,7 +123,7 @@ page.landing.ensemble.facts.debut.label: "debut · Contemplation of the Incarnat
 page.landing.ensemble.facts.evenings.label: "evenings"
 
 page.landing.director.role: "Artistic direction"
-page.landing.director.p1: "The cycle takes its name from Paris in 1725: the Concert Spirituel sang on the evenings when the opera fell silent. Three hundred years later Florent de Bazelaire takes up that tradition in the basilicas of Kraków and Łódź, in Szczawnica and Niedzica."
+page.landing.director.p1: "The cycle takes its name from Paris in 1725: the Concert Spirituel sang on the evenings when the opera fell silent. Three hundred years later Florent de Bazelaire takes up that tradition in the basilicas of Kraków and Łódź, in Szczawnica, Niedzica and Warsaw."
 page.landing.director.p2Html: "He builds every programme around a single intention. <em>Contemplation of the Incarnation</em> for the debut (2024), nine leaves from the Book of Psalms, a prayer for peace in St Mary's Basilica, an epitaph for Gaza."
 # "stałe miejsce" here and "swoje miejsce" in `support.title` are two different Polish phrases, and
 # both had become "a place of its own". This one is about permanence — /o-nas renders the same idea

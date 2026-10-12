@@ -29,7 +29,7 @@
 # only door that stamps the provenance hash the stale state is computed from.
 
 page.koncerty.meta.title: "Concerts Spirituels — VoctEnsemble"
-page.koncerty.meta.description: "Les programmes des Concerts Spirituels de VoctEnsemble — de la Contemplation de l'Incarnation à la liturgie de saint André Bobola — et un répertoire de sept siècles de musique sacrée."
+page.koncerty.meta.description: "Les programmes des Concerts Spirituels de VoctEnsemble, de la Contemplation de l'Incarnation en 2024 à aujourd'hui, et un répertoire de sept siècles de musique sacrée."
 
 page.koncerty.intro.eyebrow: "Le chemin des concerts"
 page.koncerty.intro.title1: "Concerts"
@@ -61,7 +61,7 @@ page.koncerty.repertoire.h2: "Le répertoire dont nous faisons nos programmes."
 page.koncerty.repertoire.lede: "La polyphonie de la Renaissance, le baroque et le minimalisme contemporain se tiennent côte à côte dans une même soirée. Nous construisons le programme à partir de la tension entre eux."
 
 page.koncerty.coda.h2: "Nous avons chanté dans des basiliques, dans une cathédrale et dans une église de village."
-page.koncerty.coda.lede: "Les basiliques du Sacré-Cœur et Sainte-Marie à Cracovie, Saint-Antoine à Rybnik, la cathédrale de Łódź, le sanctuaire de Varsovie, le manoir thermal de Szczawnica, l'église de Niedzica. Chaque fois, nous avons recomposé le programme — pour ce lieu et pour cette occasion. Nous préparerons un concert spirituel, la musique d'une liturgie ou d'une célébration."
+page.koncerty.coda.lede: "Les basiliques du Sacré-Cœur et Sainte-Marie à Cracovie, Saint-Antoine à Rybnik, la cathédrale de Łódź, le sanctuaire et l'église de Tous-les-Saints à Varsovie, le manoir thermal de Szczawnica, l'église de Niedzica. Chaque fois, nous avons recomposé le programme — pour ce lieu et pour cette occasion. Nous préparerons un concert spirituel, la musique d'une liturgie ou d'une célébration."
 page.koncerty.coda.contactLink: "Écrivez-nous"
 page.koncerty.coda.aboutLink: "Découvrez l'ensemble"
 page.koncerty.coda.supportLink: "Soutenir la fondation"

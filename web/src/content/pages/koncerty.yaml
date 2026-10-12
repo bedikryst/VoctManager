@@ -24,11 +24,11 @@
 
 meta:
   title: "Koncerty Duchowe — VoctEnsemble"
-  # Count-free on purpose: the old "Sześć programów…" became a lie the moment a seventh concert
-  # lands. The "od … po …" framing stays hand-written so it reads natively in each language.
+  # Count-free and endpoint-free on purpose: a numeral or a named last evening here goes stale with
+  # every concert sung, so the range is anchored on the debut and on the present.
   description: >-
-    Programy cyklu Koncerty Duchowe VoctEnsemble — od Kontemplacji Wcielenia po liturgię
-    św. Andrzeja Boboli — oraz repertuar siedmiu wieków muzyki sakralnej.
+    Programy cyklu Koncerty Duchowe VoctEnsemble, od Kontemplacji Wcielenia w 2024 roku do dziś,
+    oraz repertuar siedmiu wieków muzyki sakralnej.
 
 intro:
   # Vernacular gloss of the Latin rubric `Via`, which stands beside it unchanged in every locale.
@@ -164,7 +164,8 @@ coda:
   # corpus has already published rather than inventing a second name for one church.
   lede: >-
     Bazyliki NSPJ i Mariacka w Krakowie, św. Antoniego w Rybniku, archikatedra w Łodzi,
-    sanktuarium w Warszawie, dworek zdrojowy w Szczawnicy, kościół w Niedzicy. Za każdym
+    sanktuarium i kościół Wszystkich Świętych w Warszawie, dworek zdrojowy w Szczawnicy, kościół
+    w Niedzicy. Za każdym
     razem program układaliśmy od nowa — pod to miejsce i tę okazję. Przygotujemy koncert
     duchowy, oprawę liturgii albo uroczystość.
   contactLink: "Napisz do nas"

@@ -2658,11 +2658,13 @@
   # All three stems say `stworzenie`, not the concert's id — the archive's own naming, which
   # photos.ts keys by file rather than by concert.
   #
-  # The hero is the CHURCH, photographed before anything happened in it: this evening has no
-  # documentary frame of its own and will not have one until 11 October, and a room nobody is in
-  # yet is the honest picture of a concert that has not been sung — the same call Wołanie's empty
-  # auditorium makes above, for the same reason. Desktop stands in the nave; the phone looks up at
-  # the gallery, which is where the organ is and therefore where the Pärt will come from.
+  # The two hero frames come from different days. Desktop is the CHURCH, photographed empty before
+  # the concert: the evening's own frames are both portrait, and neither can fill a desktop window
+  # with the retable and the ensemble together at a usable size. The phone carries the evening
+  # itself — `-mobile` is the same file as `kd-stworzenie-1`, the nave from the back with the
+  # retable, the ensemble and the audience, the 9:16 view Hymn Poległym's phone hero also takes.
+  # Both evening frames are WhatsApp copies (≈1100 × 2000, under a 3× phone's width); the
+  # originals go into `.original-photos/` under the same names, and nothing here changes with them.
   # The wash on /koncerty is blurred from the desktop frame like every other station's; while the
   # evening had only its poster it was washed from that instead (docs/station-backgrounds.md).
   bg: st-stworzenie-bg
@@ -2670,11 +2672,12 @@
   poster: poster-stworzenie
   posterAlt: Plakat koncertu Pochwała Stworzenia
   posterCredit: "Anna Marcisz · VoctEnsemble"
-  # The frame a pasted link previews with, and the one surface where the poster beats the
-  # photograph: a reader who has not decided to come needs the day, the hour and the door, and
-  # the sheet prints all three. Built by web/poster-art.cjs; drop it once the evening is sung and
-  # the hero becomes the honest preview again.
-  share: share-stworzenie
+  # The frame a pasted link previews with: a 1.91:1 cut of `kd-stworzenie-1` (y 470–1048 of the
+  # 1101 × 1956 copy, resized to 1200 × 630) holding the retable, the ensemble and the first pews.
+  # A sung evening normally previews with its desktop hero, and this one cannot yet: that hero is
+  # the church photographed empty before the concert, which is the wrong picture under a link to
+  # its record. Drop the field the day the desktop hero is cut from a frame of the evening.
+  share: share-stworzenie-nawa
   realizacja: "Skrzypce: Radu Ropotan"
   hasPage: true
   # The scene, and nothing the door band states in fields: the day, the hour, the festival and the
@@ -2703,12 +2706,36 @@
     Antyfona, którą opracował Dubra, układa słowa Apokalipsy: „dym kadzideł wzniósł się z modlitwami
     świętych przed Bogiem”. Ostatnie zdanie tej drogi pada więc w kościele, który nosi dokładnie
     to wezwanie — Wszystkich Świętych.
+  # The printed programme's cast page, which the panel's confirmed participations match name for
+  # name. The violinist stays in `realizacja` (the /koncerty listing's line), so the organist and
+  # the conductor's assistant are named here; the colophon prints `realizacja` after these.
   credits:
     - { role: "Dyrygent", name: "Florent de Bazelaire" }
-  # The cast the panel confirms (2026-09-30): twelve singers, violin, organ. Counted, not named —
-  # the organist is not named on the foundation's pages.
+    - { role: "Asystentka muzyczna", name: "Katarzyna Rogal" }
+    - { role: "Organy", name: "Sebastian Kuczyński" }
+  # The evening's forces as the panel confirms them: twelve singers, violin, organ.
   forces: { pl: "12 głosów · skrzypce · organy" }
-  programLede: "Dziesięć utworów i jedno lustro"
+  # Roster consent: names cleared for concert pages ONLY (do not reuse elsewhere).
+  # Four families, as Wcielenie and Wołanie Gór print theirs. The programme splits each into I and
+  # II, which at twelve voices leaves four groups of one name; within a family the names keep the
+  # programme's order, I before II. Its „liderka” beside Karolina Grodecka is not carried: no
+  # roster on this site marks a section leader.
+  roster:
+    groups:
+      - { voice: "Soprany", names: ["Karolina Grodecka", "Paulina Szymańska", "Joanna Trafas", "Joanna Kosiba"] }
+      - { voice: "Alty", names: ["Natalia Czajkowska", "Natalia Lechwar-Bryniarska"] }
+      - { voice: "Tenory", names: ["Piotr Bartoszek", "Mateusz Solarz"] }
+      - { voice: "Basy", names: ["Szymon Maziarz", "Piotr Jewuła", "Łukasz Dziuba", "Franciszek Szmyd"] }
+    note: >-
+      Skład wieczoru w Warszawie, 11 października 2026, za programem koncertu.
+  gallery:
+  # One evening, one run — both frames inherit the concert's own venue and date. The ensemble's
+  # own photographs, so neither carries `credit`. Stored in the order they were sent: the copies
+  # carry no capture time. -0, seen from above through the railing, is also the landing's
+  # Imagines frame (data/landing/paths.ts); -1 is the phone hero and the share frame's source.
+  - { img: kd-stworzenie-0, alt: "VoctEnsemble podczas koncertu Pochwała Stworzenia w kościele Wszystkich Świętych w Warszawie, widok z góry" }
+  - { img: kd-stworzenie-1, alt: "Nawa kościoła Wszystkich Świętych w Warszawie podczas koncertu Pochwała Stworzenia" }
+  programLede: "Dziesięć utworów, jedno lustro i bis"
   # The conductor's own edit of this paragraph, returned 14.09.2026 — so the arc is his reading in
   # his words, which is the one thing the page had been missing since the generated reflection came
   # out of it. Three departures from what he sent, each with a reason:
