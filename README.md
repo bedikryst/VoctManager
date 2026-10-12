@@ -42,7 +42,7 @@ He ran the end-of-August concert through the app himself, and the singers used i
 - **Messaging.** Threads between singers and management and a broadcast channel per project, delivered in the app, by email (EmailLabs) and by web push. There are no presence or typing indicators, on purpose.
 - **Feedback button.** On every screen. It sends the user's note together with the page, the device and the last console error, because free text alone mostly said "it doesn't work". A report outlives its author's deleted account. This is how the conductor sends most of his requests.
 - **Concert notices and seat reservations** on the public site: double opt-in, the consent wording versioned on the server, and no IP address or user agent stored.
-- **Copy desk.** The public site's text lives in git, in Polish, English and French. Editors who aren't developers propose changes on an editorial page or by clicking the text on the live site. A reviewer accepts or rejects each proposal, and an accepted change reaches the site only as a git diff I read before it's deployed. A proposal goes stale when the text under it has changed since. A trusted translator's save skips review only if the checks that need no knowledge of the language pass: the build's placeholders and the link targets match the Polish.
+- **Copy desk.** The public site's text lives in git, in Polish, English and French. Editors who aren't developers propose changes on an editorial page or by clicking the text on the live site, in an editor that shows italics and links the way readers see them. A reviewer accepts or rejects each proposal, and an accepted change reaches the site only as a git diff I read before it's deployed. A proposal goes stale when the text under it has changed since. A trusted translator's save skips review only if the checks that need no knowledge of the language pass: the build's placeholders and the link targets match the Polish.
 - **Donations** through Axepta BNP Paribas, with MAC signature checks and reconciliation in Celery.
 - Polish, English and French, iCal feeds, light and dark themes, four roles (admin, manager, artist, crew) enforced by the API.
 
@@ -51,6 +51,10 @@ He ran the end-of-August concert through the app himself, and the singers used i
 | <img src="docs/assets/annotations-en.gif" width="340" alt="On the music stand the conductor stamps a crescendo, opens the mark and moves it from the choir's layer to the rehearsal leader's"> | <picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/materials-singer-en-dark.png"><img src="docs/assets/materials-singer-en-light.png" width="240" alt="A tenor's practice console on a phone: his own line playing alone, the other voices muted, speed and loop controls below"></picture> |
 
 <sub>The images show the English interface over the ensemble's own data, which is in Polish.</sub>
+
+<img src="docs/assets/comment-mode-en-light.png" width="860" alt="The public site's English landing page in comment mode: the line 'Out of that voice — memory.' is highlighted on the page, and the edit sheet beside it holds a reworded line with its italic kept and a note for the reviewers">
+
+<sub>The public site in comment mode. A click on a line opens it in the edit sheet. The proposal and the note are samples and weren't saved.</sub>
 
 ## Score pipeline
 

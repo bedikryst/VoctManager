@@ -6,7 +6,13 @@
  * then `npm run shots` (or `node shots.mjs <name> ...` for a subset). Raw
  * captures land in out/shots/; copy the chosen ones to docs/assets/.
  * `--lang en` retakes the shots README.md embeds in the English interface.
- * `locations-map` needs the Vite dev origin, see its entry.
+ * `locations-map` needs the Vite dev origin, see its entry. `comment-mode`
+ * needs the Astro dev server (`npm run dev` in web/), because the docker image
+ * serves the site build baked into it; the panel's login cookies carry over,
+ * since cookies do not isolate ports. It also needs the corpus on the dev desk,
+ * which a seed leaves empty (the mode then finds no text to open). `web/.env`
+ * points the desk scripts at production, so override it, in web/:
+ *   COPYDESK_API=http://localhost COPYDESK_EMAIL=admin@admin.admin COPYDESK_PASSWORD=admin123 npm run copy:sync
  */
 
 import { mkdirSync } from "node:fs";
@@ -14,6 +20,7 @@ import { join } from "node:path";
 import { BASE, OUT, cliArgs, launch, login, settle, stage, themedContext } from "./lib.mjs";
 
 const DIR = join(OUT, "shots");
+const SITE = process.env.README_MEDIA_SITE ?? "http://localhost:4321";
 
 const SHOTS = [
   {
@@ -197,6 +204,59 @@ const SHOTS = [
       ));
     },
   },
+  {
+    // The public site in comment mode: the landing page's Imagines line open
+    // in the sheet, a sample proposal typed around its italic (which the
+    // editor keeps as one locked mark) and previewed in place on the page.
+    // The site has no dark theme. The proposal is invented and never saved.
+    name: "comment-mode",
+    size: "desktop",
+    langs: ["pl", "en"],
+    themes: ["light"],
+    go: async (page, ids, say) => {
+      // Past the preloader and the sound gate, as on a visitor's second page:
+      // in comment mode a click on the gate would open its text instead.
+      await page.addInitScript(() => {
+        localStorage.setItem("voct.demo.audio", JSON.stringify({ choice: "silence", timestamp: Date.now() }));
+        sessionStorage.setItem("voct.preloader.seen", "1");
+      });
+      await page.goto(`${SITE}${say("/", "/en/")}?uwagi`);
+      await page.getByText(say("Kliknij tekst, który chcesz poprawić.", "Click the text you want to correct."))
+        .waitFor({ timeout: 30_000 });
+      // The line at this height tucks the film's caption above it under the header.
+      const line = page.getByText(say("Z tego głosu", "Out of that voice")).first();
+      await line.evaluate((node) => {
+        window.scrollTo({ top: node.getBoundingClientRect().top + window.scrollY - 260, behavior: "instant" });
+      });
+      await settle(page);
+      // The spellchecker underlines the French quote, and more besides. Fields
+      // the sheet creates inherit the attribute from the root.
+      await page.evaluate(() => document.documentElement.setAttribute("spellcheck", "false"));
+      const box = await line.boundingBox();
+      await page.mouse.click(box.x + box.width * 0.3, box.y + box.height / 2);
+      const editor = page.locator('[contenteditable="true"]').first();
+      await editor.waitFor();
+      // Replace the words before the italic; a DOM selection is what the editor
+      // reads, and typing over it leaves the locked mark where it is.
+      const [from, to] = say([" — ", " zostaje "], ["Out of", "From"]);
+      await editor.evaluate((root, needle) => {
+        const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+        for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+          const at = node.data.indexOf(needle);
+          if (at === -1) continue;
+          root.focus();
+          window.getSelection().setBaseAndExtent(node, at, node, at + needle.length);
+          return;
+        }
+        throw new Error(`"${needle}" is not in the editor`);
+      }, from);
+      await page.keyboard.type(to);
+      await page.getByLabel(say("Uwaga", "Note")).fill(say(
+        "Pełnym zdaniem, bez myślnika.",
+        "Closer to the French “De cette voix”.",
+      ));
+    },
+  },
 ];
 
 // `--lang en` takes the shots that have English waits, into <name>-en-<theme>.png.
@@ -218,7 +278,7 @@ try {
       console.log("skip", shot.name, `(no ${shot.needs} yet)`);
       continue;
     }
-    for (const theme of ["light", "dark"]) {
+    for (const theme of shot.themes ?? ["light", "dark"]) {
       const context = await themedContext(browser, {
         state: sessions[shot.as ?? "admin"], size: shot.size, theme, lang, showFeedback: shot.showFeedback,
       });

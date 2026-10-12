@@ -42,7 +42,7 @@ Koncert z końca sierpnia poprowadził przez aplikację już sam, a chórzyści 
 - **Wiadomości.** Wątki między śpiewakami a zarządem i kanał ogłoszeń w każdym projekcie, dostarczane w aplikacji, mailem (EmailLabs) i przez web push. Celowo bez statusu obecności i wskaźnika pisania.
 - **Przycisk zgłoszeń.** Na każdym ekranie. Wysyła notatkę użytkownika razem ze stroną, urządzeniem i ostatnim błędem z konsoli, bo sam tekst najczęściej brzmiał „nie działa”. Zgłoszenie zostaje po usunięciu konta autora. Tędy dyrygent przysyła większość swoich próśb.
 - **Powiadomienia o koncertach i rezerwacje miejsc** na publicznej stronie: podwójne potwierdzenie zapisu, wersja treści zgody pilnowana przez serwer i bez zapisywania adresu IP ani user agenta.
-- **Redakcja tekstów strony.** Teksty publicznej strony leżą w gicie, po polsku, angielsku i francusku. Redaktorzy, którzy nie są programistami, proponują zmiany na stronie redakcji albo klikając tekst bezpośrednio na działającej stronie. Recenzent przyjmuje albo odrzuca każdą propozycję, a przyjęta zmiana trafia na stronę wyłącznie jako diff w gicie, który czytam przed wdrożeniem. Propozycja staje się nieaktualna, jeśli tekst pod nią zdążył się zmienić. Zapis zaufanego tłumacza omija recenzję tylko wtedy, gdy przechodzą sprawdzenia, które nie wymagają znajomości języka: znaczniki builda i adresy linków zgadzają się z wersją polską.
+- **Redakcja tekstów strony.** Teksty publicznej strony leżą w gicie, po polsku, angielsku i francusku. Redaktorzy, którzy nie są programistami, proponują zmiany na stronie redakcji albo klikając tekst bezpośrednio na działającej stronie, w edytorze, który pokazuje kursywę i linki tak, jak widzi je czytelnik. Recenzent przyjmuje albo odrzuca każdą propozycję, a przyjęta zmiana trafia na stronę wyłącznie jako diff w gicie, który czytam przed wdrożeniem. Propozycja staje się nieaktualna, jeśli tekst pod nią zdążył się zmienić. Zapis zaufanego tłumacza omija recenzję tylko wtedy, gdy przechodzą sprawdzenia, które nie wymagają znajomości języka: znaczniki builda i adresy linków zgadzają się z wersją polską.
 - **Darowizny** przez Axepta BNP Paribas, z weryfikacją podpisu MAC i uzgadnianiem płatności w Celery.
 - Polski, angielski i francuski, kalendarze iCal, jasny i ciemny motyw, cztery role (admin, manager, artysta, ekipa) sprawdzane po stronie API.
 
@@ -51,6 +51,10 @@ Koncert z końca sierpnia poprowadził przez aplikację już sam, a chórzyści 
 | <img src="docs/assets/annotations-en.gif" width="340" alt="Na pulpicie dyrygent stawia crescendo, otwiera znak i przenosi go z warstwy chóru na warstwę prowadzącego próbę"> | <picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/materials-singer-dark.png"><img src="docs/assets/materials-singer-light.png" width="240" alt="Konsola ćwiczeń tenora na telefonie: gra sam jego głos, pozostałe są wyciszone, niżej tempo i pętla"></picture> |
 
 <sub>Animacje są nagrane w angielskiej wersji interfejsu, zrzuty ekranu w polskiej.</sub>
+
+<img src="docs/assets/comment-mode-light.png" width="860" alt="Strona główna publicznej strony w trybie uwag: wers „Z tego głosu — pamięć.” podświetlony na stronie, obok panel edycji z przeredagowanym wersem, w którym kursywa została na miejscu, i uwagą dla redakcji">
+
+<sub>Publiczna strona w trybie uwag. Kliknięty wers otwiera się w panelu edycji. Propozycja i uwaga są przykładowe i nie zostały zapisane.</sub>
 
 ## Pipeline nut
 
