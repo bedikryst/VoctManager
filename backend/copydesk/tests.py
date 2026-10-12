@@ -16,6 +16,7 @@ from uuid import uuid4
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.db import IntegrityError, transaction
 from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone, translation
@@ -1993,6 +1994,20 @@ class TrustedTranslatorTests(TestCase):
             ProposalStatus.PROPOSED,
         )
 
+    def test_a_link_marker_translated_into_one_word_is_not_a_slot(self):
+        make_segment(
+            "page.press.contact.list", SiteLocale.POLISH, "{Zostaw kontakt}, a napiszemy.",
+        )
+        en = make_segment("page.press.contact.list", SiteLocale.ENGLISH, "")
+        self.assertEqual(
+            self._save(en, "{Subscribe} to receive press releases.").status,
+            ProposalStatus.ACCEPTED,
+        )
+        # A slot the Polish does not fill is still extra braces.
+        self.assertEqual(
+            self._save(en, "{Subscribe} to {name}.").status, ProposalStatus.PROPOSED,
+        )
+
     def test_a_dropped_or_moved_link_is_held(self):
         make_segment(
             "page.kontakt.press", SiteLocale.POLISH,
@@ -2085,6 +2100,86 @@ class TrustedTranslatorTests(TestCase):
         self.assertEqual(accepted.value, "Support {name}")
         self.assertEqual(accepted.status, ProposalStatus.ACCEPTED)
 
+    def test_a_save_that_passes_after_a_held_one_replaces_the_acceptance(self):
+        make_segment("page.mecenat.lede", SiteLocale.POLISH, "Wspieraj {name}")
+        en = make_segment("page.mecenat.lede", SiteLocale.ENGLISH, "")
+        accepted = self._save(en, "Support {name}")
+        held = self._save(en, "Support us")
+        passed = self._save(en, "Back {name}")
+        self.assertEqual(passed.id, held.id)
+        self.assertTrue(passed.is_self_accepted)
+        self.assertFalse(CopyProposal.objects.filter(id=accepted.id).exists())
+
+        # Withdrawing the change leaves nothing of the replaced one to ship.
+        CopyDeskService.withdraw_proposal(proposal_id=passed.id, author=self.translator)
+        self.assertFalse(
+            CopyProposal.objects.filter(segment=en, status=ProposalStatus.ACCEPTED).exists()
+        )
+
+    def test_one_own_acceptance_per_field(self):
+        accepted = self._save(self.lede_en, "You are welcome")
+        with self.assertRaises(IntegrityError), transaction.atomic():
+            CopyProposal.objects.create(
+                segment=self.lede_en, author=self.translator, value="Hello",
+                status=ProposalStatus.ACCEPTED, accepted_on_save=True,
+                reviewed_by=self.translator, reviewed_at=timezone.now(),
+            )
+        # Applied, it leaves room for the next one.
+        CopyProposal.objects.filter(id=accepted.id).update(applied_at=timezone.now())
+        self.assertNotEqual(self._save(self.lede_en, "Hello").id, accepted.id)
+
+    def test_a_reviewer_accepting_their_own_proposal_decides(self):
+        proposal = self._save(self.lede_pl, "Witamy", author=self.reviewer)
+        CopyDeskService.review_proposal(
+            proposal_id=proposal.id,
+            dto=ProposalReviewDTO(status=ProposalStatus.ACCEPTED),
+            reviewer=self.reviewer,
+        )
+        proposal.refresh_from_db()
+        self.assertFalse(proposal.is_self_accepted)
+        with self.assertRaises(ProposalClosedError):
+            CopyDeskService.withdraw_proposal(proposal_id=proposal.id, author=self.reviewer)
+
+    def _decide_polish(self, segment, value):
+        proposal = self._save(segment, value, author=self.reviewer)
+        CopyDeskService.review_proposal(
+            proposal_id=proposal.id,
+            dto=ProposalReviewDTO(status=ProposalStatus.ACCEPTED),
+            reviewer=self.reviewer,
+        )
+
+    def test_a_polish_decision_sends_a_translation_it_no_longer_fits_to_the_queue(self):
+        accepted = self._save(self.lede_en, "You are welcome")
+        kept = self._save(self.lede_fr, "Bienvenue")
+        CopyProposal.objects.all().update(notified_at=timezone.now())
+
+        self._decide_polish(self.lede_pl, "Zapraszamy na {name}")
+        accepted.refresh_from_db()
+        self.assertEqual(accepted.status, ProposalStatus.PROPOSED)
+        self.assertFalse(accepted.accepted_on_save)
+        self.assertIsNone(accepted.reviewed_by)
+        self.assertIsNone(accepted.notified_at)
+        # The French no longer fits either; a translation that fits stays.
+        kept.refresh_from_db()
+        self.assertEqual(kept.status, ProposalStatus.PROPOSED)
+
+        fitting = self._save(self.lede_fr, "Bienvenue à {name}")
+        self.assertEqual(fitting.status, ProposalStatus.ACCEPTED)
+        self._decide_polish(self.lede_pl, "Serdecznie zapraszamy na {name}")
+        fitting.refresh_from_db()
+        self.assertEqual(fitting.status, ProposalStatus.ACCEPTED)
+
+    def test_a_polish_decision_withdraws_an_acceptance_beside_an_open_proposal(self):
+        pl = make_segment("page.mecenat.lede", SiteLocale.POLISH, "Wspieraj {name}")
+        en = make_segment("page.mecenat.lede", SiteLocale.ENGLISH, "")
+        accepted = self._save(en, "Support {name}")
+        held = self._save(en, "Support us")
+
+        self._decide_polish(pl, "Wspieraj nas")
+        self.assertFalse(CopyProposal.objects.filter(id=accepted.id).exists())
+        held.refresh_from_db()
+        self.assertEqual(held.status, ProposalStatus.PROPOSED)
+
     def test_a_note_without_a_change_waits_for_the_reviewers(self):
         proposal = self._save(self.lede_en, "Welcome", comment="Is this too cold?")
         self.assertEqual(proposal.status, ProposalStatus.PROPOSED)
@@ -2096,6 +2191,8 @@ class TrustedTranslatorTests(TestCase):
         back.refresh_from_db()
         self.assertEqual(back.status, ProposalStatus.ACCEPTED)
         self.assertEqual(back.value, "Welcome")
+        # Nothing waits for publication, so the digest has nothing to announce.
+        self.assertIsNotNone(back.notified_at)
 
     def test_a_self_accepted_change_can_be_withdrawn(self):
         accepted = self._save(self.lede_en, "You are welcome")

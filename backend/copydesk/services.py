@@ -849,9 +849,11 @@ class CopyDeskService:
         it passes `held_back`, reviewed by its author. Their next save revises
         that row while it is unapplied (`self_accepted_filter`), instead of
         adding one per save; a row somebody else accepted is a decision and
-        stays as it is. An unchanged value is a note, not a change, so it waits
-        for the reviewers like any other proposal, unless it takes back the
-        author's own accepted change.
+        stays as it is. A held save is an open proposal beside the acceptance,
+        and the next save that passes accepts it in place of the acceptance. An
+        unchanged value is a note, not a change, so it waits for the reviewers
+        like any other proposal, unless it takes back the author's own accepted
+        change.
         """
         try:
             segment = CopySegment.objects.get(id=dto.segment_id)
@@ -892,31 +894,45 @@ class CopyDeskService:
         def accept(existing: CopyProposal | None) -> CopyProposal:
             now = timezone.now()
             if existing is None:
-                return CopyProposal.objects.create(
-                    segment=segment,
-                    author=author,
-                    value=value,
-                    comment=dto.comment,
-                    status=ProposalStatus.ACCEPTED,
-                    source_hash=stamped_hash,
-                    reviewed_by=author,
-                    reviewed_at=now,
-                )
+                try:
+                    # Two tabs saving an untranslated field at once both find
+                    # nothing to revise; the loser's insert fails on
+                    # `unique_own_acceptance_per_author` and revises the winner.
+                    with transaction.atomic():
+                        return CopyProposal.objects.create(
+                            segment=segment,
+                            author=author,
+                            value=value,
+                            comment=dto.comment,
+                            status=ProposalStatus.ACCEPTED,
+                            accepted_on_save=True,
+                            source_hash=stamped_hash,
+                            reviewed_by=author,
+                            reviewed_at=now,
+                        )
+                except IntegrityError:
+                    existing = own_acceptance()
+                    if existing is None:
+                        raise
             # An open proposal the digest announced as waiting is news again
-            # once it is accepted, and so is a new value.
+            # once it is accepted, and so is a new value. The published value
+            # is not: nothing waits for publication, so nothing is announced.
             is_news = existing.value != value or existing.status != ProposalStatus.ACCEPTED
             existing.value = value
             existing.comment = dto.comment
             existing.status = ProposalStatus.ACCEPTED
+            existing.accepted_on_save = True
             existing.source_hash = stamped_hash
             existing.reviewed_by = author
             # The latest decision is the one `copy:apply` writes last.
             existing.reviewed_at = now
-            if is_news:
+            if value == segment.value:
+                existing.notified_at = existing.notified_at or now
+            elif is_news:
                 existing.notified_at = None
             existing.save(update_fields=[
-                "value", "comment", "status", "source_hash", "reviewed_by",
-                "reviewed_at", "notified_at", "updated_at",
+                "value", "comment", "status", "accepted_on_save", "source_hash",
+                "reviewed_by", "reviewed_at", "notified_at", "updated_at",
             ])
             return existing
 
@@ -937,14 +953,17 @@ class CopyDeskService:
 
         with transaction.atomic():
             proposal = open_proposal()
-            target = (proposal or own_acceptance()) if accept_on_save else None
-            if (
-                value == segment.value
-                and not (target is not None and target.is_self_accepted)
-            ):
+            acceptance = own_acceptance() if accept_on_save else None
+            if value == segment.value and acceptance is None:
                 accept_on_save = False
             if accept_on_save:
-                proposal = accept(target)
+                if proposal is not None and acceptance is not None:
+                    # A save the guard held back left this open proposal
+                    # beside the acceptance. Accepted, it replaces both: the
+                    # acceptance it supersedes must not ship, nor come back
+                    # when the author withdraws this one.
+                    acceptance.delete()
+                proposal = accept(proposal or acceptance)
             elif proposal is not None:
                 proposal = revise(proposal)
             else:
@@ -991,6 +1010,53 @@ class CopyDeskService:
             raise ProposalClosedError(str(proposal_id))
         proposal.delete()
 
+    @staticmethod
+    def _recheck_own_acceptances(*, key: str, polish: str) -> None:
+        """Send the translations of `key` accepted on save back to the queue
+        when they no longer fit the Polish just decided.
+
+        The guard read them against the Polish decided when they were saved. A
+        later Polish decision that changes a slot or a link would ship beside a
+        translation nobody has read against it, and `copy:apply` checks neither.
+        Where the author already has an open proposal on the field, that one
+        holds their later words and waits for the review, so the acceptance is
+        withdrawn instead (one open proposal per author per segment).
+        """
+        stale = (
+            CopyProposal.objects.select_for_update()
+            .filter(self_accepted_filter(), segment__key=key)
+            .exclude(segment__locale=SiteLocale.POLISH)
+            .select_related("segment")
+        )
+        for proposal in stale:
+            if hold_reason(
+                value=proposal.value, polish=polish, kind=proposal.segment.kind
+            ) is None:
+                continue
+            has_open = CopyProposal.objects.filter(
+                segment_id=proposal.segment_id,
+                author_id=proposal.author_id,
+                status__in=OPEN_STATUSES,
+            ).exists()
+            if has_open:
+                proposal.delete()
+            else:
+                proposal.status = ProposalStatus.PROPOSED
+                proposal.accepted_on_save = False
+                proposal.reviewed_by = None
+                proposal.reviewed_at = None
+                # Announced again, now as a proposal waiting for a verdict.
+                proposal.notified_at = None
+                proposal.save(update_fields=[
+                    "status", "accepted_on_save", "reviewed_by", "reviewed_at",
+                    "notified_at", "updated_at",
+                ])
+            logger.info(
+                "[CopyDesk] Own acceptance %s on %s [%s] %s: the Polish changed its slots or links.",
+                proposal.id, key, proposal.segment.locale,
+                "withdrawn" if has_open else "sent back to the queue",
+            )
+
     @classmethod
     def review_proposal(
         cls, *, proposal_id: UUID, dto: ProposalReviewDTO, reviewer: User
@@ -1000,7 +1066,9 @@ class CopyDeskService:
         Accepting does NOT touch the site and does not touch competing proposals
         on the same segment. It marks a value as one the reviewer intends to
         commit; `apply-copy` writes it into the repository and stamps
-        `applied_at`, and only a `git diff` puts it in front of a reader.
+        `applied_at`, and only a `git diff` puts it in front of a reader. The
+        one exception is a translation accepted on save that the accepted
+        Polish no longer fits (`_recheck_own_acceptances`).
         """
         proposal = (
             CopyProposal.objects.select_related("segment").filter(id=proposal_id).first()
@@ -1029,7 +1097,13 @@ class CopyDeskService:
         proposal.status = dto.status
         proposal.reviewed_by = reviewer
         proposal.reviewed_at = timezone.now()
-        proposal.save(update_fields=fields)
+        with transaction.atomic():
+            proposal.save(update_fields=fields)
+            if (
+                proposal.status == ProposalStatus.ACCEPTED
+                and proposal.segment.locale == SiteLocale.POLISH
+            ):
+                cls._recheck_own_acceptances(key=proposal.segment.key, polish=value)
 
         logger.info(
             "[CopyDesk] %s %s [%s] by UID:%s",

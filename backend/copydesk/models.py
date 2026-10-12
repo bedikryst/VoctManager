@@ -95,17 +95,17 @@ OPEN_STATUSES: frozenset[str] = frozenset({ProposalStatus.DRAFT, ProposalStatus.
 
 
 def self_accepted_filter() -> models.Q:
-    """Accepted by its own author and not yet written into the repository.
+    """Accepted by a trusted translator's save and not yet written into the repository.
 
-    What a trusted translator's save produces. Nobody else reviewed it, so it is
-    still the author's to revise or withdraw, and the digest announces it: it
-    reaches no review queue, and without the digest nobody would learn that it
-    waits for `copy:apply`.
+    Nobody else reviewed it, so it is still the author's to revise or withdraw,
+    and the digest announces it: it reaches no review queue, and without the
+    digest nobody would learn that it waits for `copy:apply`. A reviewer who
+    accepts their own proposal in the queue made a decision, not this.
     """
     return models.Q(
         status=ProposalStatus.ACCEPTED,
         applied_at__isnull=True,
-        reviewed_by=models.F("author"),
+        accepted_on_save=True,
     )
 
 
@@ -303,6 +303,13 @@ class CopyProposal(EnterpriseBaseModel):
             "Accepted-and-unapplied is the patch waiting to be committed."
         ),
     )
+    accepted_on_save = models.BooleanField(
+        default=False,
+        help_text=_(
+            "Accepted when a trusted translator saved it, with no review. Their "
+            "own until applied: their next save revises it and they may withdraw it."
+        ),
+    )
 
     class Meta:
         db_table = "copydesk_proposal"
@@ -318,6 +325,19 @@ class CopyProposal(EnterpriseBaseModel):
                 fields=["segment", "author"],
                 condition=models.Q(is_deleted=False, status__in=["DRAFT", "PROPOSED"]),
                 name="unique_open_proposal_per_author",
+            ),
+            # One unapplied acceptance by a translator's own save, for the same
+            # reason: their saves revise it, and a second one would keep
+            # shipping after they withdrew the first.
+            models.UniqueConstraint(
+                fields=["segment", "author"],
+                condition=models.Q(
+                    is_deleted=False,
+                    status="ACCEPTED",
+                    applied_at__isnull=True,
+                    accepted_on_save=True,
+                ),
+                name="unique_own_acceptance_per_author",
             ),
         ]
         indexes = [
@@ -339,8 +359,7 @@ class CopyProposal(EnterpriseBaseModel):
         return (
             self.status == ProposalStatus.ACCEPTED
             and self.applied_at is None
-            and self.author_id is not None
-            and self.reviewed_by_id == self.author_id
+            and self.accepted_on_save
         )
 
 

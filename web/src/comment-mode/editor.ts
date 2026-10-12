@@ -406,6 +406,8 @@ export class FieldEditor {
       const stored = await saveProposal(this.row.id, typed, comment);
       // Held back beside the editor's acceptance, the new proposal leaves that acceptance to ship.
       if (stored.status !== "ACCEPTED" && previous?.status === "ACCEPTED") this.accepted = previous;
+      // Accepted, it replaces the editor's own acceptance it stood beside: the server withdrew that one.
+      else if (stored.self_accepted && this.accepted?.self_accepted) this.accepted = null;
       this.row.mine = {
         id: stored.id,
         status: stored.status,

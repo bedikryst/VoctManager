@@ -200,7 +200,8 @@ export const useSaveProposal = (
               if (segment.id !== payload.segment_id) return segment;
               // The row this save revised: the open one, else (a trusted
               // translator) the own acceptance the server revises in place. A
-              // save the guard held back is a new row beside that acceptance.
+              // save the guard held back is a new row beside that acceptance,
+              // and an accepted save replaces it: the server withdraws it.
               const open =
                 segment.proposals.find(
                   (proposal) => proposal.is_mine && isOpen(proposal),
@@ -216,7 +217,9 @@ export const useSaveProposal = (
                 proposals: [
                   writtenProposal(written, payload, previous),
                   ...segment.proposals.filter(
-                    (proposal) => proposal.id !== previous?.id,
+                    (proposal) =>
+                      proposal.id !== previous?.id &&
+                      !(written.self_accepted && isOwnRevisable(proposal)),
                   ),
                 ],
               } satisfies CopyDeskSegment;

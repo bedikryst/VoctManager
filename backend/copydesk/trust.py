@@ -47,15 +47,20 @@ class _LinkCollector(HTMLParser):
                 self.hrefs.add(value.strip())
 
 
-def _braces(value: str) -> tuple[frozenset[str], int]:
-    """The slots a value uses, and how many link markers it carries.
+def _braces(value: str, slots: frozenset[str]) -> tuple[frozenset[str], int]:
+    """Which of the Polish `slots` a value uses, and how many other braces it carries.
 
-    A set for the slots: the build replaces every occurrence, so a translation
-    may use a name once where the Polish uses it twice.
+    A pair of braces is a slot only where the Polish uses it as one: a link
+    marker translated into a single word (`{Subscribe}` for `{Zostaw
+    kontakt}`) looks like a slot and is a marker. A set for the slots: the
+    build replaces every occurrence, so a translation may use a name once where
+    the Polish uses it twice.
     """
     groups = _BRACES.findall(value)
-    slots = frozenset(group for group in groups if _SLOT.fullmatch(group))
-    return slots, sum(1 for group in groups if not _SLOT.fullmatch(group))
+    return (
+        frozenset(group for group in groups if group in slots),
+        sum(1 for group in groups if group not in slots),
+    )
 
 
 def _links(value: str) -> frozenset[str]:
@@ -73,7 +78,8 @@ def hold_reason(*, value: str, polish: str, kind: str) -> HoldReason | None:
     """
     if not value.strip():
         return "empty"
-    if _braces(value) != _braces(polish):
+    slots = frozenset(group for group in _BRACES.findall(polish) if _SLOT.fullmatch(group))
+    if _braces(value, slots) != _braces(polish, slots):
         return "slots"
     if kind == SegmentKind.HTML and _links(value) != _links(polish):
         return "links"
