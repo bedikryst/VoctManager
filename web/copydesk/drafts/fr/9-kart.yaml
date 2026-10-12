@@ -215,3 +215,22 @@ concert.9-kart.posterAlt: "Affiche du concert Neuf feuillets du Livre des Psaume
 
 concert.9-kart.about.place: "Rybnik · Łódź · Cracovie"
 concert.9-kart.about.blurb: "Un programme bâti sur les psaumes : de la pénitence et de l'action de grâce à la joie de la louange, avec des pièces d'Allegri, Bach, Rossi, Bruckner et Stanford."
+
+# ── Programme · the works (`program.<i>.workHtml`, `ritornello.workHtml`) ─────────────────────
+# An original title stands exactly as written, a Polish original included ("Stoi lód na
+# Prośnie", "Gdy śliczna Panna" are titles, not prose), and so do catalogue numbers. Only the
+# house's Polish around a title is translated: "z opery" → "de l'opéra", "oprac." → "arr.",
+# "op. 38 nr 3" → "op. 38 nº 3", and a Polish rendering of a foreign title ("Fantazja i fuga
+# g-moll") → the French concert-programme form. Composer, dates and scoring are not here:
+# lib/programmeTerms prints them.
+concert.9-kart.ritornello.workHtml: "Miserere mei, Deus"
+concert.9-kart.program.0.workHtml: "Miserere mei, Deus"
+concert.9-kart.program.1.workHtml: "Laudate Dominum omnes gentes"
+concert.9-kart.program.2.workHtml: "Os justi, WAB 30"
+concert.9-kart.program.3.workHtml: "Beati quorum via, op. 38 nº 3"
+concert.9-kart.program.4.workHtml: "Singet dem Herrn ein neues Lied, BWV 225"
+concert.9-kart.program.5.workHtml: "O clap your hands"
+concert.9-kart.program.6.workHtml: "Barukh habba beshem Adonai"
+concert.9-kart.program.7.workHtml: "Jauchzet dem Herrn, alle Welt, SWV 36"
+concert.9-kart.program.8.workHtml: "Cantate Domino"
+concert.9-kart.program.9.workHtml: "Drop, drop, slow tears"

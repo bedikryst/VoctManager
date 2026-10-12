@@ -190,6 +190,13 @@ export const CONCERT_CONTRACT = [
   { kind: "field", path: "programLede", label: "Program · nazwa wieczoru" },
   { kind: "field", path: "programArc", label: "Program · lede" },
   {
+    kind: "field",
+    path: "ritornello.work",
+    key: "ritornello.workHtml",
+    label: "Program · utwór powracający",
+    note: "Read the note on `program.<i>.workHtml`: the same rules, for the piece the evening returns to.",
+  },
+  {
     kind: "list",
     path: "movements",
     keyBy: "id",
@@ -212,6 +219,19 @@ export const CONCERT_CONTRACT = [
     keyBy: null,
     label: "Program",
     fields: [
+      {
+        path: "work",
+        key: "workHtml",
+        label: "utwór",
+        note:
+          "The work as the programme prints it. An original title stays exactly as written in " +
+          "every locale (Latin, German, English and Polish originals alike), and so do catalogue " +
+          "numbers (BWV, WAB, SWV). Translate only what the house wrote around it: a description " +
+          "(\"z opery\", \"z cyklu\", \"hymn z Finlandii\"), a Polish rendering of a foreign title " +
+          "(\"Fantazja i fuga g-moll\"), \"oprac.\" (arr.) and \"op. 38 nr 3\" (Op. 38 No. 3, " +
+          "op. 38 nº 3). Keep `<em>` around a title standing inside such a phrase. The composer, " +
+          "the dates and the scoring beside it are not on the desk: lib/programmeTerms prints them.",
+      },
       { path: "inscriptioGloss.pl", key: "inscriptioGloss", label: "incipit · przekład", shape: "map" },
       { path: "inscriptioRef.source.pl", key: "inscriptioRef.source", label: "incipit · źródło", shape: "map" },
       {
@@ -363,10 +383,9 @@ export const NOT_COPY = {
   "festival.name": "a proper name — the festival is somebody else's entity and keeps its own name",
   "festival.url": "URL",
   "festival.role": "enum — the evening's confirmed place in the festival; its wording is /fundacja's copy",
-  "ritornello.composer": "a person's name",
-  "ritornello.work": "the work's title — content, printed unchanged in every locale",
-  "ritornello.years": "life dates",
-  "ritornello.year": "year of composition",
+  "ritornello.composer": "a person's name — the attributions and exonyms in it are lib/programmeTerms'",
+  "ritornello.years": "life dates — \"ur.\" and \"ok.\" are rendered per locale by lib/programmeTerms",
+  "ritornello.year": "a dating — rendered per locale by lib/programmeTerms, never copy",
   "ritornello.times": "a count — how many times the piece sounds across the evening",
   "ritornello.numbered": "flag — is the returning piece one of the numbered works",
   spotify: "URL",
@@ -419,12 +438,13 @@ export const NOT_COPY = {
   "movements[].interlude.ref.scripture[].chapter": "structural citation",
   "movements[].interlude.ref.scripture[].chapterAlt": "structural citation",
   "movements[].interlude.ref.scripture[].verses[]": "structural citation",
-  "program[].composer": "a person's name",
-  "program[].years": "life dates",
-  "program[].work": "the work's title — content, printed unchanged in every locale",
-  "program[].year": "year of composition",
+  "program[].composer": "a person's name — the attributions and exonyms in it are lib/programmeTerms'",
+  "program[].years": "life dates — \"ur.\" and \"ok.\" are rendered per locale by lib/programmeTerms",
+  "program[].year": "a dating — rendered per locale by lib/programmeTerms, never copy",
   "program[].movement": "the act id this work belongs to",
-  "program[].voicing": "scoring as printed in the score (\"a 8\", \"SAATBB\")",
+  "program[].voicing":
+    "scoring as printed in the score (\"a 8\", \"SAATBB\"); its instruments are words that " +
+    "lib/programmeTerms renders per locale",
   "program[].duration": "duration as printed",
   "program[].bis": "flag",
   "program[].text": "foreign original — sung text, verbatim (§5)",

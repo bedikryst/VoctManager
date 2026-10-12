@@ -21,13 +21,6 @@ import { scopePath } from "../src/comment-mode/scopePath.ts";
 /** Mirrors `SiteLocale` on the backend and `LOCALES` in `src/i18n/config.ts`. */
 export const SITE_LOCALES = /** @type {const} */ (["pl", "en", "fr"]);
 
-/**
- * Plain text, edited as text and with no markup path at all. It is what the whole concert corpus
- * is; the static pages are where `HTML` appears, derived from a field's `…Html` name by
- * `i18n/content/copySpec.ts` so that the kind and the authoring convention cannot disagree.
- */
-export const TEXT = "TEXT";
-
 /** Mirrors `KEY_PATTERN` in `backend/copydesk/models.py`, which is the source of truth. */
 const KEY_PATTERN = /^[a-z][a-z0-9]*(?:\.[A-Za-z0-9_-]+)+$/u;
 

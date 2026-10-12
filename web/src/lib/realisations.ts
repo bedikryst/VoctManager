@@ -127,7 +127,7 @@ function viewOf(
     where: c.venue ?? pickLocale(c.metaPlace, lang),
     performers: performersOf(entry, lang),
     ...(c.forces ? { forces: overlayValue(concertKey(entry.id, "forces"), lang) ?? c.forces.pl } : {}),
-    programme: programmeSurnames(composers, eras)
+    programme: programmeSurnames(composers, eras, lang)
       .map((surname) => surname.replace(/ /g, " "))
       .join(" · "),
     ...(c.festival

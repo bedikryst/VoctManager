@@ -10,10 +10,12 @@
 # waiting for review, and one fact may have only one home. Adding an era below without naming it
 # there fails the build, which is the only place that can say so.
 #
-# STILL POLISH IN EVERY LOCALE, named rather than buried: twelve `year` values carry a Polish
-# qualifier ("ok. 1727", "pocz. XVI w.", "aranż. współczesna", "trad. Oksytania"). A dating is
-# never copy on this site, so the fix is structural — the treatment `inscriptioRef` got in stage A
-# — and not a translation. See docs/specs/web-copy-desk-2026-09.md.
+# THE POLISH QUALIFIERS ARE A CLOSED VOCABULARY. A `year` or `years` may carry "ok. 1727",
+# "pocz. XVI w.", "ur. 1964", "aranż. współczesna", "trad. Oksytania", and a composer an
+# attribution ("Anonim / tradycyjne") or a Polish spelling ("Rachmaninow, Siergiej").
+# `src/lib/programmeTerms.ts` prints them in English and French; a dating is never copy on this
+# site (docs/specs/web-copy-desk-2026-09.md), so they are not on the desk. A qualifier that module
+# does not know fails the build, so add it there in both languages when you write a new one.
 #
 # SEVEN IS THE COUNT OF THE `span`s in that module, XV to XXI inclusive, and every "siedem wieków"
 # on the site (/koncerty, /press, /o-nas, the landing plate) is that number. It is not the age of the oldest

@@ -239,3 +239,24 @@ concert.wolanie-gor.realizacja: "Violon : Radu Ropotan"
 
 concert.wolanie-gor.about.place: "Dworek Gościnny · Szczawnica"
 concert.wolanie-gor.about.blurb: "Un concert pour douze voix et violon avec Radu Ropotan : musique sacrée, nature et chants enracinés dans le paysage des Pieniny."
+
+# ── Programme · the works (`program.<i>.workHtml`, `ritornello.workHtml`) ─────────────────────
+# An original title stands exactly as written, a Polish original included ("Stoi lód na
+# Prośnie", "Gdy śliczna Panna" are titles, not prose), and so do catalogue numbers. Only the
+# house's Polish around a title is translated: "z opery" → "de l'opéra", "oprac." → "arr.",
+# "op. 38 nr 3" → "op. 38 nº 3", and a Polish rendering of a foreign title ("Fantazja i fuga
+# g-moll") → the French concert-programme form. Composer, dates and scoring are not here:
+# lib/programmeTerms prints them.
+concert.wolanie-gor.program.0.workHtml: "Le cri des bergers"
+concert.wolanie-gor.program.1.workHtml: "Salve Regina"
+concert.wolanie-gor.program.2.workHtml: "Ave Maria"
+concert.wolanie-gor.program.3.workHtml: "Tantum ergo sacramentum"
+concert.wolanie-gor.program.4.workHtml: "O salutaris hostia"
+concert.wolanie-gor.program.5.workHtml: "Sanctus, Sanctus, Sanctus"
+concert.wolanie-gor.program.6.workHtml: "Stars"
+concert.wolanie-gor.program.7.workHtml: "Ménétrier"
+concert.wolanie-gor.program.8.workHtml: "Quel augellin che canta"
+concert.wolanie-gor.program.9.workHtml: "Prélude de la Partita en mi majeur, BWV 1006"
+concert.wolanie-gor.program.10.workHtml: "The Lark Ascending · arr. P. Drayton"
+concert.wolanie-gor.program.11.workHtml: "Stoi lód na Prośnie"
+concert.wolanie-gor.program.12.workHtml: "Dawn and Dusk"

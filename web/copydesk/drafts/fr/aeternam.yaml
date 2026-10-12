@@ -175,3 +175,21 @@ concert.aeternam.links.1.label: "Onet / KAI ↗"
 
 concert.aeternam.about.place: "Mistrzejowice · Niedzica"
 concert.aeternam.about.blurb: "Un programme de mémoire et de compassion face à la souffrance des civils : Vivancos, Zieleński, Pärt, Havrylets, Gjeilo, Lotti et Tavener menant de la lamentation vers la prière."
+
+# ── Programme · the works (`program.<i>.workHtml`, `ritornello.workHtml`) ─────────────────────
+# An original title stands exactly as written, a Polish original included ("Stoi lód na
+# Prośnie", "Gdy śliczna Panna" are titles, not prose), and so do catalogue numbers. Only the
+# house's Polish around a title is translated: "z opery" → "de l'opéra", "oprac." → "arr.",
+# "op. 38 nr 3" → "op. 38 nº 3", and a Polish rendering of a foreign title ("Fantazja i fuga
+# g-moll") → the French concert-programme form. Composer, dates and scoring are not here:
+# lib/programmeTerms prints them.
+concert.aeternam.program.0.workHtml: "Aeternam"
+concert.aeternam.program.1.workHtml: "Vox in Rama"
+concert.aeternam.program.2.workHtml: "Da pacem Domine"
+concert.aeternam.program.3.workHtml: "Serenity"
+concert.aeternam.program.4.workHtml: "Prayer · Молитва до Пресвятої Богородиці"
+concert.aeternam.program.5.workHtml: "Crucifixus"
+concert.aeternam.program.6.workHtml: "and the swallow"
+concert.aeternam.program.7.workHtml: "Mother of God, here I stand"
+concert.aeternam.program.8.workHtml: "A Hymn to the Mother of God"
+concert.aeternam.program.9.workHtml: "O crux, ave"

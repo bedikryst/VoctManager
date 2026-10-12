@@ -270,3 +270,23 @@ concert.pochwala-stworzenia.program.9.note: "Un compositeur letton dont la musiq
 concert.pochwala-stworzenia.textNote: "Le Cantique est donné dans l'original ombrien dans lequel François l'a composé ; traductions françaises les nôtres."
 concert.pochwala-stworzenia.credits.0.role: "Direction"
 concert.pochwala-stworzenia.forces: "12 voix · violon · orgue"
+
+# ── Programme · the works (`program.<i>.workHtml`, `ritornello.workHtml`) ─────────────────────
+# An original title stands exactly as written, a Polish original included ("Stoi lód na
+# Prośnie", "Gdy śliczna Panna" are titles, not prose), and so do catalogue numbers. Only the
+# house's Polish around a title is translated: "z opery" → "de l'opéra", "oprac." → "arr.",
+# "op. 38 nr 3" → "op. 38 nº 3", and a Polish rendering of a foreign title ("Fantazja i fuga
+# g-moll") → the French concert-programme form. Composer, dates and scoring are not here:
+# lib/programmeTerms prints them.
+concert.pochwala-stworzenia.ritornello.workHtml: "Spiegel im Spiegel"
+concert.pochwala-stworzenia.program.0.workHtml: "Gloria II"
+concert.pochwala-stworzenia.program.1.workHtml: "Lumen"
+concert.pochwala-stworzenia.program.2.workHtml: "Laudes creaturarum"
+concert.pochwala-stworzenia.program.3.workHtml: "Méditation de l'opéra <em>Thaïs</em>"
+concert.pochwala-stworzenia.program.4.workHtml: "Stars"
+concert.pochwala-stworzenia.program.5.workHtml: "The Lark Ascending"
+concert.pochwala-stworzenia.program.6.workHtml: "Stoi lód na Prośnie"
+concert.pochwala-stworzenia.program.7.workHtml: "Ménétrier, extrait des <em>Impressions d'enfance</em>, op. 28"
+concert.pochwala-stworzenia.program.8.workHtml: "Dona eis requiem I"
+concert.pochwala-stworzenia.program.9.workHtml: "Stetit Angelus"
+concert.pochwala-stworzenia.program.10.workHtml: "What a Wonderful World"

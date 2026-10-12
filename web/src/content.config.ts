@@ -499,22 +499,28 @@ const concerts = defineCollection({
     program: z
       .array(
         z.object({
+          /** As printed. An attribution in words ("Anonim / aranż. Brian Kay") or a name Polish
+              spells its own way is rendered per locale by lib/programmeTerms. */
           composer: z.string(),
-          /** Composer life-dates as a single string, e.g. "1942–2019". */
+          /** Composer life-dates as a single string, e.g. "1942–2019" or "ur. 1973"; the
+              qualifiers are lib/programmeTerms' closed vocabulary, and an unknown one fails the
+              build. */
           years: z.string().optional(),
-          /** The work as it is printed. Plain text with ONE allowance: `<em>` around a foreign
-              title standing inside a vernacular phrase ("Ménétrier z cyklu <em>Impressions
-              d'enfance</em> op. 28"), which is the only emphasis a work line has ever needed.
-              Every surface renders this field as markup and the press pack flattens it
-              (lib/plainText), so nothing else may be written here — this is hand-authored copy,
-              not sanitized input. */
+          /** The work as it is printed, and copy (`program.<i>.workHtml` on the desk). Plain text
+              with ONE allowance: `<em>` around a foreign title standing inside a vernacular
+              phrase ("Ménétrier z cyklu <em>Impressions d'enfance</em> op. 28"), which is the
+              only emphasis a work line has ever needed. Every surface renders this field as
+              markup and the press pack flattens it (lib/plainText), so nothing else may be
+              written here. */
           work: z.string(),
-          /** Year of composition. */
+          /** Year of composition, with the qualifiers lib/programmeTerms renders per locale
+              ("ok. 1638", "XVI w.", "oprac. Paul Drayton 2019"). */
           year: z.string().optional(),
           /** Movement `id` this work belongs to (see concert-level `movements`). Consecutive
               items sharing an id sit under one act header. */
           movement: z.string().optional(),
-          /** Vocal scoring as printed in the score, e.g. "a 8", "a12: SAATBB + SAATBB". */
+          /** Vocal scoring as printed in the score, e.g. "a 8", "a 12 · SAATBB + SAATBB"; the
+              instruments ("skrzypce i organy") are words lib/programmeTerms renders per locale. */
           voicing: z.string().optional(),
           /** Duration as printed, e.g. "10′". */
           duration: z.string().optional(),

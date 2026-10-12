@@ -23,6 +23,12 @@
 # `dateLabel`. `verbum.speaker` is the name alone, for the same reason. `inscriptioRef` is
 # structural (book id + chapter + verses, lib/scriptureRef) because "Iz 11, 1" is "Is 11:1" in
 # English: the abbreviation and both separators are language choices.
+#
+# A PROGRAMME LINE OPENS TWO DOORS. `work` is copy, on the desk as `program.<i>.workHtml`. The
+# composer, `years`, `year` and `voicing` are names and conventions, written the way the editors
+# write them ("ur. 1973", "ok. 1638", "skrzypce i organy", "Anonim / aranż. …") and printed per
+# locale by lib/programmeTerms. Its vocabulary is closed: a qualifier it does not know fails the
+# build, so a new one is added there in English and French.
 
 - id: wcielenie
   order: 1

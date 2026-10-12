@@ -12,9 +12,9 @@
  *  THREE SOURCES MEET IN ONE ROW, and the split is the point. `data/landing/paths` carries the
  *  structure (the numbering, the year, the video files); `landing.yaml` carries this register's
  *  own editorial layer (tag, place line, lead, credit) through the copy desk; and the TITLE and
- *  the programme come from `concerts.yaml` through the concert overlay, because an evening names
- *  itself once and every surface reads that name. The section's accessible name is the heading it
- *  already prints.
+ *  the programme come from `concerts.yaml` through the concert overlay (the programme by way of
+ *  `lib/programmeLine`), because an evening names itself once and every surface reads that name.
+ *  The section's accessible name is the heading it already prints.
  *
  *  THE NOTICE LIST IS THE REGISTER'S LINIATURA — the ruled lines under the announced evening, the
  *  first of them written by the reader (`.path-liniatura`). It is the landing's one FIELD for the
@@ -29,6 +29,7 @@ import { PATHS, ROMAN } from "../../data/landing/paths";
 import { upcomingStation } from "../../lib/cycle";
 import { longMoment } from "../../lib/dates";
 import { concertKey, overlayValue } from "../../lib/copyOverlay";
+import { programmeLine } from "../../lib/programmeLine";
 import { localizePath, type Locale } from "../../i18n/config";
 import type { LandingChrome, LandingCopy } from "../../i18n/content/landing";
 import { NUNTIUS } from "../../i18n/content/nuntius";
@@ -73,7 +74,10 @@ const entries = PATHS.map((path, i) => {
       overlayValue(concertKey(path.concertId, "title"), lang) ??
       byId.get(path.concertId)?.title ??
       "",
-    program: byId.get(path.concertId)?.program ?? [],
+    program: (byId.get(path.concertId)?.program ?? []).map((p, i) => ({
+      ...programmeLine(path.concertId, i, p, lang),
+      bis: p.bis,
+    })),
   };
 });
 
@@ -114,7 +118,9 @@ const ahead = upcoming
           printing one in advance either spoils it or promises it. The filter also keeps the
           numbering honest — the entries above mark a bis with an em-dash instead of a number, and
           with none present every line here simply counts. */
-      program: (upcoming.data.program ?? []).filter((p) => !p.bis),
+      program: (upcoming.data.program ?? [])
+        .map((p, i) => ({ ...programmeLine(upcoming.id, i, p, lang), bis: p.bis }))
+        .filter((p) => !p.bis),
     }
   : undefined;
 ---

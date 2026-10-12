@@ -181,3 +181,25 @@ concert.hymn-poleglym.realizacja: "Orgue : Michał Piechnik · Krzysztof Michał
 
 concert.hymn-poleglym.about.place: "Basilique Sainte-Marie · Cracovie"
 concert.hymn-poleglym.about.blurb: "Un concert spirituel en hommage à ceux qui ont donné leur vie pour la liberté, et une prière pour la paix — pour l'Ukraine et pour les générations à venir."
+
+# ── Programme · the works (`program.<i>.workHtml`, `ritornello.workHtml`) ─────────────────────
+# An original title stands exactly as written, a Polish original included ("Stoi lód na
+# Prośnie", "Gdy śliczna Panna" are titles, not prose), and so do catalogue numbers. Only the
+# house's Polish around a title is translated: "z opery" → "de l'opéra", "oprac." → "arr.",
+# "op. 38 nr 3" → "op. 38 nº 3", and a Polish rendering of a foreign title ("Fantazja i fuga
+# g-moll") → the French concert-programme form. Composer, dates and scoring are not here:
+# lib/programmeTerms prints them.
+concert.hymn-poleglym.program.0.workHtml: "Fantaisie et fugue en sol mineur, BWV 542"
+concert.hymn-poleglym.program.1.workHtml: "A Ukrainian Prayer"
+concert.hymn-poleglym.program.2.workHtml: "Litanie de paix, op. 31 nº 1"
+concert.hymn-poleglym.program.3.workHtml: "Super flumina Babylonis"
+concert.hymn-poleglym.program.4.workHtml: "Ach Herr, mich armen Sünder, BuxWV 178"
+concert.hymn-poleglym.program.5.workHtml: "The Deer's Cry"
+concert.hymn-poleglym.program.6.workHtml: "O salutaris hostia"
+concert.hymn-poleglym.program.7.workHtml: "Song for Athene"
+concert.hymn-poleglym.program.8.workHtml: "Hymn to the Fallen"
+concert.hymn-poleglym.program.9.workHtml: "Be Still My Soul · hymne de Finlandia, op. 26"
+concert.hymn-poleglym.program.10.workHtml: "Pie Jesu · extrait du Requiem, op. 48"
+concert.hymn-poleglym.program.11.workHtml: "Lux aeterna (Nimrod) · arr. J. Cameron"
+concert.hymn-poleglym.program.12.workHtml: "Impression pour orgue sur « Chtche ne vmerla Oukraïny »"
+concert.hymn-poleglym.program.13.workHtml: "I sat down under his shadow"

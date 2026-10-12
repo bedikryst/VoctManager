@@ -210,3 +210,22 @@ concert.wcielenie.realizacja: "Production: Ars Sonora Studio"
 
 concert.wcielenie.about.place: "Sacred Heart Basilica · Kraków"
 concert.wcielenie.about.blurb: "The debut of the Spiritual Concerts cycle: Renaissance, Baroque and the present day arranged around the mystery of the Nativity and the Incarnation."
+
+# ── Programme · the works (`program.<i>.workHtml`, `ritornello.workHtml`) ─────────────────────
+# An original title stands exactly as written, a Polish original included ("Stoi lód na
+# Prośnie", "Gdy śliczna Panna" are titles, not prose), and so do catalogue numbers. Only the
+# house's Polish around a title is translated: "z opery" → "from the opera", "oprac." →
+# "arr.", "op. 38 nr 3" → "Op. 38 No. 3", and a Polish rendering of a foreign title ("Fantazja
+# i fuga g-moll") → the English concert-programme form. Composer, dates and scoring are not
+# here: lib/programmeTerms prints them.
+concert.wcielenie.program.0.workHtml: "Es ist ein Ros' entsprungen"
+concert.wcielenie.program.1.workHtml: "Le cri des bergers"
+concert.wcielenie.program.2.workHtml: "Canite tuba"
+concert.wcielenie.program.3.workHtml: "A Child is born"
+concert.wcielenie.program.4.workHtml: "Alma Redemptoris Mater"
+concert.wcielenie.program.5.workHtml: "O gloriosa Virginum"
+concert.wcielenie.program.6.workHtml: "Gdy śliczna Panna"
+concert.wcielenie.program.7.workHtml: "Lully, Lullay"
+concert.wcielenie.program.8.workHtml: "Nunc dimittis"
+concert.wcielenie.program.9.workHtml: "Cantate Domino"
+concert.wcielenie.program.10.workHtml: "Gaudete"

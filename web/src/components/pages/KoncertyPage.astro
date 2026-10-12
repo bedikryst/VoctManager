@@ -53,6 +53,8 @@ import { longDate, romanNumeral, viaMoment } from "../../lib/dates";
 import { cycleNumerals, cycleStations, upcomingStation } from "../../lib/cycle";
 import { formatRef } from "../../lib/scriptureRef";
 import { concertKey, withOverlay } from "../../lib/copyOverlay";
+import { programmeLine, ritornelloLine } from "../../lib/programmeLine";
+import { attribution, dating, lifeDates } from "../../lib/programmeTerms";
 import { pageCopy } from "../../lib/pageCopy";
 import { KONCERTY_CHROME, KONCERTY_PAGE } from "../../i18n/content/koncerty";
 import { CONCERT, fill } from "../../i18n/content/koncert";
@@ -134,20 +136,21 @@ interface ProgramRow {
  * 3. THE NUMBERING COUNTS WORKS, not rows: everything standing outside it (the encore, an
  *    unnumbered ritornello) takes the dash and consumes no number.
  */
-const programRows = (
-  concert: CollectionEntry<"concerts">["data"],
-  ahead: boolean,
-): readonly ProgramRow[] => {
-  const rit = concert.ritornello;
+const programRows = (concert: CollectionEntry<"concerts">, ahead: boolean): readonly ProgramRow[] => {
+  const { id, data } = concert;
+  const rit = data.ritornello;
   let n = 0;
-  const rows = concert.program
-    .filter((p) => !(ahead && p.bis))
-    .map((p): ProgramRow => {
+  // Localized before the encore is filtered: the work's desk key is its place in the corpus list.
+  // The ritornello is matched on the corpus's own Polish, which is what content.config checks.
+  const rows = data.program
+    .map((p, i) => ({ p, line: programmeLine(id, i, p, lang) }))
+    .filter(({ p }) => !(ahead && p.bis))
+    .map(({ p, line }): ProgramRow => {
       if (!p.bis) n += 1;
       return {
         num: p.bis ? "—" : String(n).padStart(2, "0"),
-        composer: p.composer,
-        work: p.work,
+        composer: line.composer,
+        work: line.work,
         bis: p.bis,
         times:
           rit?.numbered && rit.composer === p.composer && rit.work === p.work
@@ -156,9 +159,9 @@ const programRows = (
       };
     });
   // Outside the numbering, and first: the piece the evening opens with and keeps returning to.
-  return rit && !rit.numbered
-    ? [{ num: "—", composer: rit.composer, work: rit.work, bis: false, times: rit.times }, ...rows]
-    : rows;
+  if (!rit || rit.numbered) return rows;
+  const ritLine = ritornelloLine(id, rit, lang);
+  return [{ num: "—", composer: ritLine.composer, work: ritLine.work, bis: false, times: rit.times }, ...rows];
 };
 
 const entries = await Promise.all(
@@ -240,7 +243,7 @@ const entries = await Promise.all(
           Most evenings leave it unset and the frame then prints no line — a poster is drawn, and
           there is no equivalent of "archiwum zespołu" for a hand that is not on record. */
       posterCredit: c.data.posterCredit ? designCredit(c.data.posterCredit, lang) : undefined,
-      progRows: programRows(c.data, c.id === upcoming?.id),
+      progRows: programRows(c, c.id === upcoming?.id),
     };
   }),
 );
@@ -252,9 +255,23 @@ const officia = entries.filter((e) => !e.cycle);
 
 // Era headings are labels rather than prose, so they are a typed triple keyed by the catalogue's
 // own id — the landing's litany plate reads the same one (i18n/content/repertuar.ts).
+// Names and titles print as the catalogue holds them; its datings and attributions go through
+// `lib/programmeTerms`, so "ok. 1727" is "c. 1727" on the English page.
 const eras = (await getCollection("repertoire"))
   .sort((a, b) => a.data.order - b.data.order)
-  .map((era) => ({ ...era.data, id: era.id, ...eraName(era.id, lang) }));
+  .map((era) => ({
+    ...era.data,
+    entries: era.data.entries.map((entry) => ({
+      composer: attribution(entry.composer, lang),
+      years: entry.years === undefined ? undefined : lifeDates(entry.years, entry.composer, lang),
+      works: entry.works.map((w) => ({
+        title: w.title,
+        year: w.year === undefined ? undefined : dating(w.year, lang),
+      })),
+    })),
+    id: era.id,
+    ...eraName(era.id, lang),
+  }));
 
 // The list describes one event per CONCERT, not per tour date — a touring programme's
 // itinerary belongs to its own page, which emits a node per evening. Node shape (calendar-

@@ -24,6 +24,10 @@
  *  for a rare wrong answer. The cost is that a programme misspelling a diacritic simply fails to
  *  match, and the plate then prints the catalogue fallback for that name rather than an evening —
  *  quiet, so check a new programme's spelling against the catalogue rather than against the page.
+ *
+ *  THE JOIN RUNS ON THE CORPUS'S POLISH; only what is printed is localized. A name Polish spells
+ *  its own way ("Rachmaninow") is joined as written and printed as the locale spells it
+ *  (`lib/programmeTerms`), so the two files keep one key while the English plate reads "Rachmaninoff".
  * @architecture Astro islands 2026
  * @module lib/litany
  */
@@ -31,6 +35,7 @@ import type { CollectionEntry } from "astro:content";
 
 import { eraName } from "../i18n/content/repertuar";
 import type { Locale } from "../i18n/config";
+import { attribution } from "./programmeTerms";
 
 /** One name on the plate: what is inscribed, and where the page can say it sounded. */
 export interface LitanyName {
@@ -139,13 +144,13 @@ function sungAt(surnames: readonly string[], evenings: readonly LitanyEvening[])
 export function programmeSurnames(
   composers: readonly string[],
   eras: CollectionEntry<"repertoire">[],
+  locale: Locale,
 ): string[] {
   const catalogue = new Map<string, string>();
   for (const era of eras) {
     for (const entry of era.data.entries) {
       if (ANONYMOUS.test(entry.composer)) continue;
-      const name = surname(entry.composer);
-      catalogue.set(key(name), name);
+      catalogue.set(key(surname(entry.composer)), surname(attribution(entry.composer, locale)));
     }
   }
   const out: string[] = [];
@@ -156,7 +161,8 @@ export function programmeSurnames(
     for (let start = 0; start < tokens.length && !hit; start += 1) {
       hit = catalogue.get(key(tokens.slice(start).join(" ")));
     }
-    const name = hit ?? tokens[tokens.length - 1];
+    const printed = attribution(composer, locale).trim().split(/\s+/);
+    const name = hit ?? printed[printed.length - 1];
     if (name && !out.includes(name)) out.push(name);
   }
   return out;
@@ -186,10 +192,10 @@ export function litanyBands(
       ...eraName(era.id, locale),
       names: era.data.entries
         .filter((entry) => !ANONYMOUS.test(entry.composer))
-        .map((entry) => {
-          const name = surname(entry.composer);
-          return { surname: name, at: sung.get(name) ?? [] };
-        }),
+        .map((entry) => ({
+          surname: surname(attribution(entry.composer, locale)),
+          at: sung.get(surname(entry.composer)) ?? [],
+        })),
     }))
     .filter((band) => band.names.length > 0);
 }

@@ -22,8 +22,9 @@
  * @module copydesk/extract
  */
 
+import { segmentKind } from "../src/i18n/content/copySpec.ts";
 import { CONCERT_CONTRACT } from "./contract.mjs";
-import { guardSegments, localeRows, TEXT } from "./segment.mjs";
+import { guardSegments, localeRows } from "./segment.mjs";
 
 /** The namespace every concert key opens with; the first two parts are the scope. */
 const NAMESPACE = "concert";
@@ -147,12 +148,11 @@ export function extractConcert(concert, overlays = {}) {
     if (plValue === null) return;
 
     if (entry.shape === "map") refuseStrayTranslation(concert, key, hit.at);
-    // Every value in this corpus is plain text — `grep` finds no `<em>`, `<strong>` or `<a>`
-    // anywhere in `concerts.yaml`. Inline markup enters the desk through the static pages, whose
-    // extractor takes the kind from the field's name instead.
-    segments.push(
-      ...localeRows({ key, kind: TEXT, plValue, overlays, scopeLabel, hasPage, label, order }),
-    );
+    // The kind follows the key's name, the rule the static pages keep (`…Html` is markup): a
+    // programme's work title may italicise a foreign title inside a phrase, and nothing else in
+    // this corpus carries markup.
+    const kind = segmentKind(keyTail);
+    segments.push(...localeRows({ key, kind, plValue, overlays, scopeLabel, hasPage, label, order }));
     paths[key] = { pl: hit.at, shape: entry.shape ?? "plain" };
     order += 1;
   };

@@ -27,8 +27,9 @@
  *    missing.
  *  - What the PAGE says (band labels, affordances, aria names, the two default sentences) is
  *    chrome and lives in `i18n/content/koncert.ts`.
- *  - Latin rubrics, work titles, composers, singers, venues and dates are none of the above:
- *    names and structure, printed unchanged or formatted per locale (lib/dates).
+ *  - Latin rubrics, composers, singers, venues and dates are none of the above: names and
+ *    structure, printed unchanged or formatted per locale (lib/dates, lib/programmeTerms). A
+ *    programme line is read through `lib/programmeLine`, where the work's title is copy.
  * @architecture Astro islands 2026
  * @module components/pages/ConcertPage
  */
@@ -48,6 +49,7 @@ import { creditSentence, designCredit, frameCredit } from "../../lib/photoCredit
 import { framedShot } from "../../lib/galleryFrame";
 import { candleFrom, candleInkFrom } from "../../lib/candle";
 import { concertKey, withOverlay } from "../../lib/copyOverlay";
+import { programmeLine, ritornelloLine } from "../../lib/programmeLine";
 import type { TabulaEntry } from "../../lib/tabula";
 import { absolute, musicEvent } from "../../lib/eventSchema";
 import { videoAsset, videoAssetAv1 } from "../../lib/videos";
@@ -322,8 +324,10 @@ const unsung = upcoming?.id === entry.id;
 // The encore is dropped AFTER the mapping, never before it: `i` is the desk key the copy for this
 // work is addressed by, and filtering first would slide every key up by one on the evenings that
 // have an encore.
+const ritornello = c.ritornello ? ritornelloLine(entry.id, c.ritornello, lang) : undefined;
 const program = c.program.map((p, i) => ({
   ...p,
+  ...programmeLine(entry.id, i, p, lang),
   locus: sayIf(`program.${i}.locus`, p.locus),
   note: sayIf(`program.${i}.note`, p.note),
   rubric: sayIf(`program.${i}.rubric`, p.rubric),
@@ -968,11 +972,11 @@ const jsonLd =
 
                 A ritornello that IS one of the numbered works needs no row: it already has one,
                 and the corpus refuses the other combination (content.config's superRefine). */}
-            {c.ritornello && !c.ritornello.numbered && (
+            {c.ritornello && ritornello && !c.ritornello.numbered && (
               <li class="kd-clasp kd-ritornello">
                 <span class="kd-clasp-rule reveal">
                   <span>
-                    {c.ritornello.work} · {c.ritornello.composer} ·{" "}
+                    <Fragment set:html={ritornello.work} /> · {ritornello.composer} ·{" "}
                     {fill(ui.program.ritornelloTimes, { times: String(c.ritornello.times) })}
                   </span>
                 </span>
