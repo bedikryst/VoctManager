@@ -19,10 +19,13 @@
  *
  *  THE LISTS ("Moje propozycje na tej stronie", "Pozostałe teksty", `lists.ts`) open in the sheet
  *  from the bar's menu, follow the page while they are open, and a field picked from one offers
- *  the way back to it.
+ *  the way back to it. A list is not re-rendered under a press on the tool's panels: the press's
+ *  click would land on a button that is gone, or on the one that took its place.
  *
- *  A SAVE IN ANOTHER LANGUAGE (the sheet's other languages) patches that locale's index, if it was
- *  loaded, so switching the page to it shows the proposal at once.
+ *  EVERY SAVE AND WITHDRAWAL PATCHES ITS LOCALE'S INDEX, loaded or on its way (an answer the server
+ *  built before the save would otherwise stand for the session), so switching the page to another
+ *  language shows a proposal saved in the sheet's other languages at once. Their rows are the
+ *  sheet's own objects, not the index's.
  *
  *  TAPS are read from pointer events on `window` in the capture phase, ahead of the site's own
  *  document-level capture handlers, Plausible's tagged links and the client router: iOS has long
@@ -57,7 +60,7 @@ import { button, el } from "./dom";
 import { Highlights } from "./highlights";
 import { Host } from "./host";
 import { listSignature, mineList, pageFields, restList, type ListKind, type PageFields } from "./lists";
-import { compileCorpus, type Corpus } from "./match";
+import { PLACEHOLDER, compileCorpus, type Corpus } from "./match";
 import { hitAt, rangeOf, scanPage, type Hit, type PageScan, type Pinned } from "./pageText";
 import { Popover, fieldChoices, sharedWordContent, type Anchor } from "./popover";
 import { setCommentModeActive } from "./presence";
@@ -96,8 +99,6 @@ const TAP_MS = 500;
 const CLICK_WINDOW_MS = 800;
 /** Where an edited text is brought to, from the viewport's top: clear of the fixed header. */
 const REVEAL_TOP = 96;
-/** `match.ts`'s placeholder: a proposal holding one gets a word on what the braces mean. */
-const SLOT = /\{[A-Za-z][A-Za-z0-9_]*\}/u;
 /**
  * `astro dev` has no panel: the dev proxy sends `/api` to the nginx stack, so signing in happens
  * there. Cookies do not isolate ports, so that login also serves the dev server.
@@ -121,6 +122,12 @@ function signInUrl(param: string): string {
   return `${origin}/login?next=${encodeURIComponent(next)}`;
 }
 
+/** `row`'s proposal into the index's own row for the same field. */
+function patchRow(index: SiteIndex, row: IndexRow): void {
+  const cached = index.segments.find((candidate) => candidate.id === row.id);
+  if (cached) cached.mine = row.mine;
+}
+
 function stateFor(error: unknown): BarState {
   if (error instanceof ApiError && error.status === 401) return { kind: "signed-out" };
   if (error instanceof ApiError && error.status === 403 && !error.csrf) return { kind: "refused" };
@@ -137,8 +144,10 @@ class CommentMode {
   private readonly sheet: Sheet;
   private readonly watcher: PageWatcher;
   private readonly indexes = new Map<Locale, Promise<LoadedIndex>>();
-  /** The indexes that have arrived: a save in another language patches its row here. */
+  /** The indexes that have arrived: a save patches its row here. */
   private readonly resolved = new Map<Locale, LoadedIndex>();
+  /** Rows saved or withdrawn while their locale's index was on its way, patched into it on arrival. */
+  private readonly unpatched = new Map<Locale, IndexRow[]>();
   private readonly undo: Array<() => void> = [];
   private loaded: LoadedIndex | null = null;
   private scan: PageScan | null = null;
@@ -165,6 +174,9 @@ class CommentMode {
   /** The list the sheet shows, and what it showed last: an unchanged list is not re-rendered. */
   private list: ListKind | null = null;
   private listShape = "";
+  /** A press on the tool's panels is under way; `listHeld`: the list changed under it. */
+  private panelPress = false;
+  private listHeld = false;
 
   constructor(options: StartOptions) {
     this.options = options;
@@ -198,24 +210,24 @@ class CommentMode {
         if (running !== this) return;
         const s = this.strings();
         const label = row.label || row.key;
+        this.patchIndex(row, locale);
         if (locale === this.loaded?.index.locale) {
           this.bar.announce(s.saved(label));
           this.afterChange(row);
         } else {
           this.bar.announce(s.savedIn(label, s.localeAdverbs[locale]));
-          this.patchIndex(row, locale);
         }
       },
       withdrawn: (row, locale) => {
         if (running !== this) return;
         const s = this.strings();
         const label = row.label || row.key;
+        this.patchIndex(row, locale);
         if (locale === this.loaded?.index.locale) {
           this.bar.announce(s.withdrawn(label));
           this.afterChange(row);
         } else {
           this.bar.announce(s.withdrawnIn(label, s.localeAdverbs[locale]));
-          this.patchIndex(row, locale);
         }
       },
       signedOut: () => {
@@ -249,6 +261,7 @@ class CommentMode {
     });
     this.on(window, "pointercancel", () => {
       this.press = null;
+      this.releasePanel();
     });
     this.on(window, "pointermove", (event) => {
       if (event instanceof PointerEvent) this.onPointerMove(event);
@@ -386,14 +399,19 @@ class CommentMode {
     const known = this.indexes.get(locale);
     if (known) return known;
     const loading = fetchSiteIndex(locale).then((index) => {
+      for (const row of this.unpatched.get(locale) ?? []) patchRow(index, row);
+      this.unpatched.delete(locale);
       const loaded = { index, corpus: compileCorpus(index.segments) };
       this.resolved.set(locale, loaded);
       return loaded;
     });
     this.indexes.set(locale, loading);
-    // A refusal is not remembered: after a sign-in, or once the network is back, ask again.
+    // A refusal is not remembered: after a sign-in, or once the network is back, ask again. That
+    // request starts after every save so far, so nothing waits to be patched into it.
     loading.catch(() => {
-      if (this.indexes.get(locale) === loading) this.indexes.delete(locale);
+      if (this.indexes.get(locale) !== loading) return;
+      this.indexes.delete(locale);
+      this.unpatched.delete(locale);
     });
     return loading;
   }
@@ -435,6 +453,7 @@ class CommentMode {
     // Between a language switch and its index the page is in another language than the corpus;
     // the read that index ends in does this.
     if (!loaded || loaded.index.locale !== documentLocale()) return;
+    this.watcher.caughtUp();
     const scan = this.scanNow(loaded);
     this.scan = scan;
     const locale = documentLocale();
@@ -456,9 +475,13 @@ class CommentMode {
     const target = this.target;
     const range = target?.row === row ? target.range : null;
     const locale = documentLocale();
+    // A preview swapping its element's children collapses a range over them; the popover below
+    // hangs from that element again once the published text is back in it.
+    const pinned = range ? [...this.pins.keys()].find((element) => element.contains(range.startContainer)) : undefined;
     if (range) this.watcher.quietly(() => this.previews.place(range, row, locale));
     this.pins = this.previews.pinned();
     this.readText();
+    if (range?.collapsed && pinned?.isConnected) range.selectNodeContents(pinned);
     if (!range || !this.previews.shown || proposalValue(row) === null || this.previews.covers(range.startContainer)) {
       return;
     }
@@ -480,7 +503,7 @@ class CommentMode {
         el("p", "popover-title", s.previewTitle),
         el("p", "popover-text", s.previewWhy),
         proposalNodes(row, value, documentLocale()),
-        SLOT.test(value) ? el("p", "note", s.slotNote) : null,
+        PLACEHOLDER.test(value) ? el("p", "note", s.slotNote) : null,
         el(
           "div",
           "popover-actions",
@@ -491,10 +514,11 @@ class CommentMode {
     );
   }
 
-  /** A save or a withdrawal in another language: that locale's index, if loaded, learns of it. */
+  /** A save or a withdrawal: its locale's index learns of it now, or on arrival if it is on its way. */
   private patchIndex(row: IndexRow, locale: Locale): void {
-    const cached = this.resolved.get(locale)?.index.segments.find((candidate) => candidate.id === row.id);
-    if (cached) cached.mine = row.mine;
+    const loaded = this.resolved.get(locale);
+    if (loaded) patchRow(loaded.index, row);
+    else if (this.indexes.has(locale)) this.unpatched.set(locale, [...(this.unpatched.get(locale) ?? []), row]);
   }
 
   /** The page's fields sorted for the lists, from the last read or a fresh one. */
@@ -514,8 +538,13 @@ class CommentMode {
     const s = this.strings();
     const back = (): void => this.showList(kind);
     return kind === "mine"
-      ? mineList(fields, ownScope(), s, (entry) => this.edit(entry.row, entry.range, back))
+      ? mineList(fields, ownScope(), s, (row) => this.edit(row, this.shownAt(row), back))
       : restList(fields, s, (row) => this.edit(row, null, back));
+  }
+
+  /** Where `row` is on show as of the last page read, for a list rendered before it. */
+  private shownAt(row: IndexRow): Range | null {
+    return this.fields()?.mine.find((entry) => entry.row === row)?.range ?? null;
   }
 
   private showList(kind: ListKind): void {
@@ -535,6 +564,10 @@ class CommentMode {
   private refreshList(): void {
     const kind = this.list;
     if (!kind || !this.sheet.showsList) return;
+    if (this.panelPress) {
+      this.listHeld = true;
+      return;
+    }
     const fields = this.fields();
     if (!fields) return;
     const shape = listSignature(kind, fields);
@@ -573,14 +606,27 @@ class CommentMode {
     // A new press means the last tap's click is not coming: iOS sends none for plain text, and a
     // window left open would eat this press's click on a link the mode does not handle.
     this.swallowUntil = 0;
-    if (this.host.holds(event)) return;
+    this.panelPress = this.host.holds(event);
+    if (this.panelPress) return;
     this.bar.closeMenu();
     if (!this.tapsLive() || !event.isPrimary || event.button !== 0) return;
     if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
     this.press = { id: event.pointerId, x: event.clientX, y: event.clientY, time: event.timeStamp };
   }
 
+  /** The press on the tool's panels ended: a list held back under it catches up once its click is in. */
+  private releasePanel(): void {
+    if (!this.panelPress) return;
+    this.panelPress = false;
+    if (!this.listHeld) return;
+    this.listHeld = false;
+    window.setTimeout(() => {
+      if (running === this) this.refreshList();
+    }, CLICK_WINDOW_MS);
+  }
+
   private onPointerUp(event: PointerEvent): void {
+    this.releasePanel();
     const press = this.press;
     this.press = null;
     if (!press || event.pointerId !== press.id || !this.tapsLive()) return;

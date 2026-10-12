@@ -135,12 +135,16 @@ function stateOf(row: IndexRow, s: Strings): string {
   return row.mine.status === "ACCEPTED" ? s.statusAccepted : s.statusOpen;
 }
 
-/** "Moje propozycje na tej stronie": each with its state and the proposal's text. */
+/**
+ * "Moje propozycje na tej stronie": each with its state and the proposal's text. `pick` gets the
+ * row alone: the list outlives page reads that leave its look unchanged, so where the field is on
+ * show is asked when it is picked.
+ */
 export function mineList(
   fields: PageFields,
   ownScope: string | null,
   s: Strings,
-  pick: (entry: ListedField) => void,
+  pick: (row: IndexRow) => void,
 ): Node[] {
   if (fields.mine.length === 0) return [el("p", "note", s.mineEmpty)];
   return [
@@ -153,7 +157,7 @@ export function mineList(
           plain(entry.row, entry.row.mine?.value ?? ""),
           stateOf(entry.row, s),
           entry.row.scope === ownScope ? "" : entry.row.scope_label,
-          () => pick(entry),
+          () => pick(entry.row),
         ),
       ),
     ),

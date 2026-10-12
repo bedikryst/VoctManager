@@ -92,6 +92,8 @@ export class Bar {
   private notice = "";
   private noticeTimer = 0;
   private menuOpen = false;
+  /** The lists' counts, measured once per opening of the menu: its re-renders reuse them. */
+  private counts: ListCounts | null = null;
 
   constructor(root: ShadowRoot, actions: BarActions, view: BarView, strings: Strings) {
     this.actions = actions;
@@ -202,6 +204,7 @@ export class Bar {
     this.commands.replaceChildren(...commands);
     // The menu follows the pill in the DOM, so Tab goes from "Menu" into it; CSS stacks it above.
     const menu = this.menuOpen && state.kind === "ready" ? this.renderMenu(state.editing) : null;
+    if (!menu) this.counts = null;
     this.element.classList.toggle("is-open", menu !== null);
     this.menu?.remove();
     this.menu = menu;
@@ -234,7 +237,7 @@ export class Bar {
 
     const done = button(view.sending ? s.sending : s.done, () => actions.done(), "btn menu-item");
     done.disabled = view.sending;
-    const counts = view.counts();
+    const counts = (this.counts ??= view.counts());
 
     return el(
       "div",

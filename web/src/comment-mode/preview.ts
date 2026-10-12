@@ -16,7 +16,7 @@
  *  - the value has no blank line (the page builds paragraphs itself) and no braces (a `{slot}`
  *    the build fills, or a link marker the template turns into a link).
  *  Everything else keeps the published text and the gold highlight; `proposalNodes` lays such a
- *  proposal out for the tool's own panels instead (the popover after a save, the editor's list).
+ *  proposal out for the popover the mode opens over it after a save.
  *
  *  THE BUILD'S OWN TYPOGRAPHY: `typoFor(locale)` for `TEXT`, `typographyHtml` for `HTML`, so the
  *  lines break as they will on the deployed page. `HTML` is the STORED value, which the server has
@@ -40,7 +40,7 @@ import type { Locale } from "../i18n/config";
 import { typoFor } from "../lib/typo";
 import { typographyHtml } from "../lib/typoHtml";
 import type { IndexRow } from "./api";
-import { printedValue } from "./match";
+import { PLACEHOLDER, printedValue } from "./match";
 import { rangeOf, type PageScan, type Pinned } from "./pageText";
 
 /**
@@ -144,7 +144,7 @@ function printed(row: IndexRow, value: string, locale: Locale): Node[] {
 }
 
 /** `match.ts`'s placeholder, whole: anything else in braces is a link marker. */
-const SLOT = /^\{[A-Za-z][A-Za-z0-9_]*\}$/u;
+const SLOT = new RegExp(`^${PLACEHOLDER.source}$`, "u");
 const IN_BRACES = /\{([^{}]*)\}/gu;
 
 /**
@@ -178,9 +178,9 @@ function markBraces(parent: ParentNode): void {
 }
 
 /**
- * The proposal laid out for the tool's own panels (the popover over a field it cannot replace in
- * place, the list of the editor's proposals): one paragraph per blank-line block, the build's
- * typography, links as underlined text that goes nowhere, slots marked.
+ * The proposal laid out for the popover over a field it cannot replace in place: one paragraph per
+ * blank-line block, the build's typography, links as underlined text that goes nowhere, slots
+ * marked.
  */
 export function proposalNodes(row: IndexRow, value: string, locale: Locale): HTMLElement {
   const box = document.createElement("div");

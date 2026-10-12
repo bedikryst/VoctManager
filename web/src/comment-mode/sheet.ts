@@ -67,28 +67,30 @@ function ownOf(proposal: DeskProposal): OwnProposal {
   return { id: proposal.id, status: proposal.status, value: proposal.value, comment: proposal.comment };
 }
 
+/** When a proposal was decided; an undecided one counts as the latest, as Postgres sorts NULLs last. */
 function decidedAt(proposal: DeskProposal): number {
-  return Date.parse(proposal.reviewed_at ?? "") || 0;
+  return proposal.reviewed_at ? Date.parse(proposal.reviewed_at) : Number.POSITIVE_INFINITY;
 }
 
 /**
- * The reader's proposal on a field, by the site index's rule (`CopyDeskService.site_index`): the
- * open one, else the accepted one not yet applied, but only while it is the field's latest
- * acceptance, the decision `copy:apply` writes last.
+ * The reader's accepted proposal not yet applied, while it is the field's latest acceptance: the
+ * decision `copy:apply` writes last. The site index's rule (`CopyDeskService.site_index`): latest
+ * `reviewed_at`, then latest `created_at`. `segments/` lists the newest first, so on a tie the
+ * first one met stands.
  */
-function ownProposalOf(proposals: readonly DeskProposal[]): OwnProposal | null {
-  const open = proposals.find((p) => p.is_mine && (p.status === "PROPOSED" || p.status === "DRAFT"));
-  if (open) return ownOf(open);
+function ownShipping(proposals: readonly DeskProposal[]): OwnProposal | null {
   let shipping: DeskProposal | null = null;
   for (const proposal of proposals) {
     if (proposal.status !== "ACCEPTED" || proposal.applied_at) continue;
-    const later =
-      !shipping ||
-      decidedAt(proposal) > decidedAt(shipping) ||
-      (decidedAt(proposal) === decidedAt(shipping) && Date.parse(proposal.updated_at) > Date.parse(shipping.updated_at));
-    if (later) shipping = proposal;
+    if (!shipping || decidedAt(proposal) > decidedAt(shipping)) shipping = proposal;
   }
   return shipping?.is_mine ? ownOf(shipping) : null;
+}
+
+/** The reader's proposal on a field, by the site index's rule: the open one, else the one that ships. */
+function ownProposalOf(proposals: readonly DeskProposal[]): OwnProposal | null {
+  const open = proposals.find((p) => p.is_mine && (p.status === "PROPOSED" || p.status === "DRAFT"));
+  return open ? ownOf(open) : ownShipping(proposals);
 }
 
 /** Another language of `main` as an index row, so it is edited exactly as the tapped one is. */
@@ -220,10 +222,17 @@ export class Sheet {
     this.element.focus({ preventScroll: true });
   }
 
-  /** New contents for the list on show, keeping its scroll. */
+  /** New contents for the list on show, keeping its scroll and the keyboard's place in it. */
   updateList(content: readonly Node[]): void {
-    if (!this.listShown) return;
-    this.element.querySelector(".sheet-body")?.replaceChildren(...content);
+    const body = this.listShown ? this.element.querySelector(".sheet-body") : null;
+    if (!body) return;
+    const root = this.element.getRootNode();
+    const focused = root instanceof ShadowRoot ? root.activeElement : null;
+    const at = [...body.querySelectorAll("button")].findIndex((control) => control === focused);
+    body.replaceChildren(...content);
+    if (at < 0) return;
+    const after = [...body.querySelectorAll("button")];
+    (after[Math.min(at, after.length - 1)] ?? this.element).focus({ preventScroll: true });
   }
 
   /** The field tapped again: the textarea takes focus, except where that raises a touch keyboard. */
@@ -298,6 +307,7 @@ export class Sheet {
     if (this.current !== session) return;
 
     const own = rows.find((segment) => segment.locale === session.locale);
+    if (own) session.main.shipsBeneath(ownShipping(own.proposals));
     const polish = own?.source_value || rows.find((segment) => segment.locale === "pl")?.value || "";
     if (session.row.is_stale && polish) {
       const text = el("p", "reference-text", polish);
@@ -311,7 +321,7 @@ export class Sheet {
       .map((locale) => rows.find((segment) => segment.locale === locale))
       .filter((segment): segment is DeskSegment => segment !== undefined);
     const languages = el("details", "");
-    const blocks = sides.map((segment) => this.sideBlock(session, sideRow(session.row, segment), segment.locale));
+    const blocks = sides.map((segment) => this.sideBlock(session, segment));
     languages.append(el("summary", "", s.otherLanguages), el("ul", "reference", ...blocks));
     languages.open = session.others.size > 0;
 
@@ -348,12 +358,15 @@ export class Sheet {
    * One other language: its text and "Popraw", or its editor straight away when it holds the
    * editor's draft or open proposal.
    */
-  private sideBlock(session: Session, row: IndexRow, locale: Locale): HTMLElement {
+  private sideBlock(session: Session, segment: DeskSegment): HTMLElement {
     const s = session.strings;
+    const { locale } = segment;
+    const row = sideRow(session.row, segment);
     const block = el("li", "side");
     const expand = (focus: boolean): void => {
       if (session.others.has(locale)) return;
       const editor = new FieldEditor({ row, locale, strings: s, startFromFallback: false, events: this.editorEvents() });
+      editor.shipsBeneath(ownShipping(segment.proposals));
       session.others.set(locale, editor);
       fill(
         block,

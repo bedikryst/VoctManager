@@ -139,7 +139,7 @@ const DELETED = /[\s\p{Cf}]+/gu;
  * Build-time `{name}` slots (`page.fundacja`, `page.mecenat`): an identifier between braces.
  * Any other braces are a link marker (`page.press.contact.list`), whose words the page prints.
  */
-const PLACEHOLDER = /\{[A-Za-z][A-Za-z0-9_]*\}/u;
+export const PLACEHOLDER = /\{[A-Za-z][A-Za-z0-9_]*\}/u;
 const BRACE = /[{}]/gu;
 
 /**

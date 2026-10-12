@@ -22,8 +22,12 @@
  *  accepted field from the published text would make a second edit undo the first: the new
  *  proposal, once accepted, is the last decision `copy:apply` writes. The note starts empty
  *  there, since the old one explained a change the reviewers have settled. An untranslated field
- *  starts from the Polish the page prints in its place only where the editor tapped that Polish;
- *  in another language's editor it starts empty.
+ *  starts from the Polish the page prints in its place in the sheet's own field, tapped or picked
+ *  from a list; in another language's editor it starts empty, and any text is worth saving there.
+ *
+ *  AN OPEN PROPOSAL CAN HIDE AN ACCEPTED ONE. The index carries only the open one; the sheet reads
+ *  the accepted one beneath it from the desk history (`shipsBeneath`), so withdrawing the open one
+ *  leaves the field showing what will still be published.
  * @architecture Astro islands 2026
  * @module comment-mode/editor
  */
@@ -177,9 +181,12 @@ export class FieldEditor {
   private readonly strings: Strings;
   private readonly events: EditorEvents;
   private readonly hint: HTMLElement;
-  /** The editor's accepted proposal when the editor opened: it stands again if a newer one is withdrawn. */
-  private readonly accepted: OwnProposal | null;
-  /** What the textarea starts from when the editor has no proposal on the field. */
+  /** The editor's accepted proposal awaiting publication: it stands again when a newer one is withdrawn. */
+  private accepted: OwnProposal | null;
+  /**
+   * What the textarea starts from when the editor has no proposal on the field, and what a value
+   * without a note must differ from to be worth saving.
+   */
   private readonly published: string;
   /** What the textarea and the note held when the editor opened, or after the last save. */
   private baseline: Draft;
@@ -252,6 +259,11 @@ export class FieldEditor {
     return this.saving;
   }
 
+  /** The editor's accepted proposal that the open one stands over, read from the desk history. */
+  shipsBeneath(accepted: OwnProposal | null): void {
+    if (openProposal(this.row.mine)) this.accepted = accepted;
+  }
+
   /** Keep unsaved text as this tab's draft, or drop a draft the text has caught up with. */
   persist(): void {
     if (this.dirty) writeDraft(this.row.id, { value: this.value.value, comment: this.comment.value });
@@ -279,10 +291,9 @@ export class FieldEditor {
     const value = this.value.value;
     const comment = this.comment.value.trim();
     if (value.trim() === "") return s.empty;
-    const printed = this.row.value || this.row.fallback_value;
     const accepted = acceptedProposal(this.row.mine);
     // Over an accepted proposal the published text is a real proposal: it takes the change back.
-    if (!accepted && tidy(value) === tidy(printed) && comment === "") return s.nothingToSave;
+    if (!accepted && tidy(value) === tidy(this.published) && comment === "") return s.nothingToSave;
     if (accepted && tidy(value) === tidy(accepted.value) && comment === "") return s.nothingToSave;
     const own = openProposal(this.row.mine);
     if (own && tidy(value) === tidy(own.value) && comment === own.comment.trim()) return s.nothingToSave;
