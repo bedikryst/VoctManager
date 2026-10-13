@@ -330,8 +330,9 @@ const concerts = defineCollection({
         the named performers; the names themselves stay in `credits` and `realizacja`, so a
         musician this line counts is not thereby named. */
     forces: localized.optional(),
-    /** The voices of THIS evening — the singers as they stood that night, grouped by voice
-        part. CONSENT SCOPE: names are cleared for concert pages ONLY — never reuse them on
+    /** The performers of THIS evening — the singers as they stood that night, grouped by voice
+        part, followed where the evening had them by its instrumentalists, grouped by instrument
+        (the page appends the conductor from `credits`). CONSENT SCOPE: names are cleared for concert pages ONLY — never reuse them on
         /o-nas, the landing or press materials. Line-ups are per-evening (guests, later
         departures), so never frame the list as the ensemble's fixed roster or "founders".
         `detail` glosses a group (e.g. which works the solo quartet joined); `note` is a
