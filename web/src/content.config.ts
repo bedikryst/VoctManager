@@ -345,9 +345,10 @@ const concerts = defineCollection({
             voice: z.string(),
             names: z.array(z.string()),
             detail: z.string().optional(),
-            /** An instrument rather than a voice part: the group prints on its own line under the
-                voices, so a violin never lands mid-row between the basses and the conductor.
-                Groups keep their index in `groups` either way — it is the overlay key. */
+            /** Instrumentalists rather than a voice part — one instrument or an ensemble such as a
+                string quartet: the group prints on its own line under the voices, so a violin
+                never lands mid-row between the basses and the conductor. Groups keep their index
+                in `groups` either way — it is the overlay key. */
             instrument: z.boolean().optional(),
           }),
         ),

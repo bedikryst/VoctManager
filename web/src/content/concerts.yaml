@@ -567,8 +567,9 @@
       - { voice: "Alty", names: ["Natalia Czajkowska", "Natalia Lechwar"] }
       - { voice: "Tenory", names: ["Paweł Żurawski", "Piotr Szewczyk", "Mateusz Solarz"] }
       - { voice: "Basy", names: ["Michał Jan Barański", "Szymon Maziarz", "Jakub Ciępka"] }
+      - { voice: "Skrzypce", names: ["Radu Ropotan"], instrument: true }
     note: >-
-      Skład wieczoru w Szczawnicy, 1 czerwca 2024; na skrzypcach Radu Ropotan.
+      Skład wieczoru w Szczawnicy, 1 czerwca 2024.
   # The composer's own words on the TITLE work — the evening takes its name from this piece,
   # so the quote is load-bearing here (moved from wcielenie, where its essence stays in the
   # work's program note). Full booklet version, with the resolution the short form dropped.
@@ -2185,18 +2186,20 @@
   # Roster consent: names cleared for concert pages ONLY (do not reuse elsewhere).
   # Documented for the Mistrzejowice evening only — the Niedzica line-up was never sent
   # with these materials, hence the dated note rather than a blanket "skład zespołu".
+  # Four families, as every roster on this site prints them; the press note's I/II/III division
+  # left six groups of one name. Within a family the names keep its order, I before II before III.
+  # The string quartet played that evening (Pärt's Psalom, see `programArc`), so it stands under
+  # the voices. No separate cello group: Joanna Indyk is the quartet's cellist, and her Bach solo
+  # belongs to Niedzica, which this line-up does not document.
   roster:
     groups:
-      - { voice: "Sopran I", names: ["Maria Marczewska", "Karolina Grodecka"] }
-      - { voice: "Sopran II", names: ["Katarzyna Rogal", "Joanna Kosiba"] }
-      - { voice: "Alt I", names: ["Natalia Czajkowska"] }
-      - { voice: "Alt II", names: ["Izabela Bartyzel-Gajówka"] }
-      - { voice: "Alt III", names: ["Anna Marcisz"] }
-      - { voice: "Tenor I", names: ["Bartłomiej Chorąży"] }
-      - { voice: "Tenor II", names: ["Mateusz Solarz"] }
-      - { voice: "Tenor III", names: ["Michał Jan Barański"] }
-      - { voice: "Bas I", names: ["Dawid Janowiak", "Adam Dawiec"] }
-      - { voice: "Bas II", names: ["Szymon Maziarz", "Jakub Ciępka"] }
+      - { voice: "Soprany", names: ["Maria Marczewska", "Karolina Grodecka", "Katarzyna Rogal", "Joanna Kosiba"] }
+      - { voice: "Alty", names: ["Natalia Czajkowska", "Izabela Bartyzel-Gajówka", "Anna Marcisz"] }
+      - { voice: "Tenory", names: ["Bartłomiej Chorąży", "Mateusz Solarz", "Michał Jan Barański"] }
+      - { voice: "Basy", names: ["Dawid Janowiak", "Adam Dawiec", "Szymon Maziarz", "Jakub Ciępka"] }
+      - voice: "Kwartet smyczkowy"
+        names: ["Paulina Niemiec", "Maria Tur", "Magdalena Prześlica", "Joanna Indyk"]
+        instrument: true
     note: >-
       Skład wieczoru w Mistrzejowicach, 14 września 2025, za notą prasową zespołu.
   pullQuote:
@@ -2716,7 +2719,7 @@
   # The evening's forces as the panel confirms them: twelve singers, violin, organ.
   forces: { pl: "12 głosów · skrzypce · organy" }
   # Roster consent: names cleared for concert pages ONLY (do not reuse elsewhere).
-  # Four families, as Wcielenie and Wołanie Gór print theirs. The programme splits each into I and
+  # Four families, as every roster on this site prints them. The programme splits each into I and
   # II, which at twelve voices leaves four groups of one name; within a family the names keep the
   # programme's order, I before II. Its „liderka” beside Karolina Grodecka is not carried: no
   # roster on this site marks a section leader.
