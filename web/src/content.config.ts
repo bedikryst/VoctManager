@@ -331,12 +331,13 @@ const concerts = defineCollection({
         musician this line counts is not thereby named. */
     forces: localized.optional(),
     /** The performers of THIS evening — the singers as they stood that night, grouped by voice
-        part, followed where the evening had them by its instrumentalists, grouped by instrument
-        (the page appends the conductor from `credits`). CONSENT SCOPE: names are cleared for concert pages ONLY — never reuse them on
-        /o-nas, the landing or press materials. Line-ups are per-evening (guests, later
-        departures), so never frame the list as the ensemble's fixed roster or "founders".
-        `detail` glosses a group (e.g. which works the solo quartet joined); `note` is a
-        quiet factual footnote for the whole block (e.g. the debut sung without fees). */
+        part, and the instrumentalists who played beside them, grouped by instrument; the page
+        closes the voices with the conductor from `credits`. CONSENT SCOPE: names are cleared for
+        concert pages ONLY — never reuse them on /o-nas, the landing or press materials. Line-ups
+        are per-evening (guests, later departures), so never frame the list as the ensemble's
+        fixed roster or "founders". `detail` glosses a group (e.g. which works the solo quartet
+        joined); `note` is a quiet factual footnote for the whole block (e.g. the debut sung
+        without fees). */
     roster: z
       .object({
         groups: z.array(
@@ -344,6 +345,10 @@ const concerts = defineCollection({
             voice: z.string(),
             names: z.array(z.string()),
             detail: z.string().optional(),
+            /** An instrument rather than a voice part: the group prints on its own line under the
+                voices, so a violin never lands mid-row between the basses and the conductor.
+                Groups keep their index in `groups` either way — it is the overlay key. */
+            instrument: z.boolean().optional(),
           }),
         ),
         note: z.string().optional(),

@@ -291,6 +291,11 @@ const credits = c.credits.map((cr, i) => ({
 // role, because the corpus is Polish and the translated list is a projection of it.
 const conductorAt = c.credits.findIndex((cr) => /dyrygent/i.test(cr.role));
 const conductorCredit = conductorAt >= 0 ? credits[conductorAt] : undefined;
+// ── Voices and instruments print on separate lines of the Voces band. Each group keeps its
+// index in `roster.groups`, because that index is the overlay key its label is translated under.
+const rosterGroups = (c.roster?.groups ?? []).map((g, key) => ({ ...g, key }));
+const voiceGroups = rosterGroups.filter((g) => !g.instrument);
+const instrumentGroups = rosterGroups.filter((g) => g.instrument);
 // ── THIS EVENING HAS NOT BEEN SUNG YET, and it is one fact with several consequences, so it is
 // named once here. Read off the calendar (`upcoming`, lib/cycle), which means the first deploy
 // after the concert turns this page from an invitation into a record without anyone editing it:
@@ -1199,29 +1204,47 @@ const jsonLd =
               two ENDS of the row, where unison is least legible as unison. If the grid's measure
               or its 180px track ever changes, this number is what has to follow it. */}
           <dl class="kd-voces-grid">
-            {c.roster.groups.map((g, i) => (
+            {voiceGroups.map((g, i) => (
               <div class="kd-voces-group reveal" data-d={String((i % 4) + 1)}>
                 {/* The GROUP is copy — the choral convention, not a literal (Soprany → Sopranos)
                     — and the singers under it are names, which stay themselves everywhere. */}
-                <dt class="kd-voces-voice micro">{say(`roster.groups.${i}.voice`, g.voice)}</dt>
+                <dt class="kd-voces-voice micro">{say(`roster.groups.${g.key}.voice`, g.voice)}</dt>
                 {g.names.map((n) => (
                   <dd class="kd-voces-name">{n}</dd>
                 ))}
                 {g.detail && (
-                  <dd class="kd-voces-detail">{say(`roster.groups.${i}.detail`, g.detail)}</dd>
+                  <dd class="kd-voces-detail">{say(`roster.groups.${g.key}.detail`, g.detail)}</dd>
                 )}
               </div>
             ))}
-            {/* The conductor stands at index `groups.length`, so his step continues the sequence
-                rather than restarting it — otherwise he lights with whichever voice happens to
-                share his remainder. */}
+            {/* The conductor stands at step `voiceGroups.length`, so his step continues the
+                sequence rather than restarting it — otherwise he lights with whichever voice
+                happens to share his remainder. */}
             {conductorCredit && (
-              <div class="kd-voces-group reveal" data-d={String((c.roster.groups.length % 4) + 1)}>
+              <div class="kd-voces-group reveal" data-d={String((voiceGroups.length % 4) + 1)}>
                 <dt class="kd-voces-voice micro">{conductorCredit.role}</dt>
                 <dd class="kd-voces-name">{conductorCredit.name}</dd>
               </div>
             )}
           </dl>
+          {/* The instrumentalists' line, under the voices rather than continuing their row: in one
+              grid a violin would land between the basses and the conductor. Same grid and cell,
+              so its columns fall on the voices' columns; the steps carry on from the conductor's. */}
+          {instrumentGroups.length > 0 && (
+            <dl class="kd-voces-grid kd-voces-instruments">
+              {instrumentGroups.map((g, i) => (
+                <div class="kd-voces-group reveal" data-d={String(((voiceGroups.length + 1 + i) % 4) + 1)}>
+                  <dt class="kd-voces-voice micro">{say(`roster.groups.${g.key}.voice`, g.voice)}</dt>
+                  {g.names.map((n) => (
+                    <dd class="kd-voces-name">{n}</dd>
+                  ))}
+                  {g.detail && (
+                    <dd class="kd-voces-detail">{say(`roster.groups.${g.key}.detail`, g.detail)}</dd>
+                  )}
+                </div>
+              ))}
+            </dl>
+          )}
           {c.roster.note && (
             <p class="kd-voces-note reveal reveal-rule">{say("roster.note", c.roster.note)}</p>
           )}
@@ -2092,6 +2115,10 @@ const jsonLd =
   .kd-voces { padding-top: clamp(72px, 9vw, 120px); padding-bottom: clamp(72px, 9vw, 120px); }
   .kd-voces .kd-section-label { margin-bottom: clamp(36px, 5vw, 56px); }
   .kd-voces-grid { margin: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(180px, 100%), 1fr)); gap: clamp(28px, 4vw, 44px) clamp(24px, 3vw, 40px); }
+  /* One row-gap below the voices, so the line reads as the grid's next row. `auto-fill` keeps
+     the empty tracks that `auto-fit` collapses: two instruments sit on the voices' first two
+     columns instead of stretching across the whole row. */
+  .kd-voces-instruments { margin-top: clamp(28px, 4vw, 44px); grid-template-columns: repeat(auto-fill, minmax(min(180px, 100%), 1fr)); }
   .kd-voces-group { min-width: 0; }
   .kd-voces-voice { margin: 0 0 12px; font-family: var(--capitalis); font-size: 10px; letter-spacing: .22em; text-transform: uppercase; color: var(--candle-ink); }
   .kd-voces-name { margin: 0 0 6px; font-family: var(--serif); font-weight: 300; font-size: clamp(18px, 1.7vw, 22px); line-height: 1.25; color: var(--ink); }

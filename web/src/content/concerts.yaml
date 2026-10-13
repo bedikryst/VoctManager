@@ -2720,18 +2720,18 @@
   # II, which at twelve voices leaves four groups of one name; within a family the names keep the
   # programme's order, I before II. Its „liderka” beside Karolina Grodecka is not carried: no
   # roster on this site marks a section leader.
-  # The two instrumentalists follow the voices because they performed beside them, and the band
+  # The two instrumentalists are in the band because they performed beside the voices, and it
   # names whoever stood there that night (the conductor is appended from `credits` for the same
-  # reason). The music assistant prepared the ensemble but did not perform, so she stays in
-  # `credits` only.
+  # reason); `instrument` puts them on their own line under the voices. The music assistant
+  # prepared the ensemble but did not perform, so she stays in `credits` only.
   roster:
     groups:
       - { voice: "Soprany", names: ["Karolina Grodecka", "Paulina Szymańska", "Joanna Trafas", "Joanna Kosiba"] }
       - { voice: "Alty", names: ["Natalia Czajkowska", "Natalia Lechwar-Bryniarska"] }
       - { voice: "Tenory", names: ["Piotr Bartoszek", "Mateusz Solarz"] }
       - { voice: "Basy", names: ["Szymon Maziarz", "Piotr Jewuła", "Łukasz Dziuba", "Franciszek Szmyd"] }
-      - { voice: "Skrzypce", names: ["Radu Ropotan"] }
-      - { voice: "Organy", names: ["Sebastian Kuczyński"] }
+      - { voice: "Skrzypce", names: ["Radu Ropotan"], instrument: true }
+      - { voice: "Organy", names: ["Sebastian Kuczyński"], instrument: true }
     note: >-
       Skład wieczoru w Warszawie, 11 października 2026, za programem koncertu.
   gallery:
