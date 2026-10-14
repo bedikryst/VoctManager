@@ -492,9 +492,12 @@ const ogImage = (await getImage({ src: shareImg ?? hero.desktop, width: 1200, fo
     )}
 
     {/* ── Stations (from the `concerts` collection) ────────────────────── */}
+    {/* `data-give-kindle` on every station: the first one reached lights the bar's WESPRZYJ
+        (scripts/give-kindle.ts) — the walk is the Via, evenings someone paid for. */}
     {
       stations.map((s) => (
         <section
+          data-give-kindle
           id={s.id}
           class:list={[
             "station",

@@ -16,9 +16,13 @@
     }
 
     .audio-toggle {
-      padding: 6px 11px;
+      padding: 6px 0;
       font-size: 9px;
       letter-spacing: 0.16em;
+    }
+
+    .support-link--give {
+      padding: 6px 11px;
     }
 
     .support-panel,
@@ -149,7 +153,7 @@
     }
 
     .audio-toggle {
-      padding: 5px 9px;
+      padding: 5px 0;
       font-size: 8.5px;
       letter-spacing: 0.14em;
       gap: 6px;
@@ -158,6 +162,12 @@
     .audio-toggle::before {
       width: 5px;
       height: 5px;
+    }
+
+    .support-link--give {
+      padding: 5px 9px;
+      font-size: 9.5px;
+      letter-spacing: 0.12em;
     }
 
     .brand {
@@ -541,6 +551,32 @@
     .bank-row .iban {
       font-size: 11px;
       letter-spacing: 0.06em;
+    }
+  }
+
+  /* WESPRZYJ IN THE PHONE BAR GIVES WAY WHERE THE ROW STOPS FITTING, and the widths are measured,
+     not guessed. The row is fixed: 18px gutters, the brand (17px mark, 12px gap, "VoctEnsemble"
+     at 18px Cormorant 300 = 107.5px), the 14px grid gap, the audio switch at its widest label
+     (11px of dot and gap, "CISZA" 31.5px, "SILENCE" 44px), WESPRZYJ's frame (9px sides, 1px
+     border: 20px), two 12px gaps and the 26px toggle: 299px in Polish, 311.5px in English and
+     French. The label adds Cinzel 500 at 9.5px/.12em: WESPRZYJ 57.2px, SUPPORT US 70.8px, NOUS
+     SOUTENIR 96px. Below each sum the toggle would be pushed off the screen, so the link leaves
+     the bar and stays the menu card's closing line. Re-measure if any of those sizes changes. */
+  @media (max-width: 356.98px) {
+    .chrome-actions .support-link--give {
+      display: none;
+    }
+  }
+
+  @media (max-width: 382.98px) {
+    .chrome-actions .support-link--give:lang(en) {
+      display: none;
+    }
+  }
+
+  @media (max-width: 407.98px) {
+    .chrome-actions .support-link--give:lang(fr) {
+      display: none;
     }
   }
 

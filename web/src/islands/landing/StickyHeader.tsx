@@ -403,8 +403,11 @@ export function StickyHeader({
               {t.nav.foundation}
             </a>
           )}
+          {/* The bar's one action that asks for something: the one framed item, in gold as on the
+              subpages' bar, lit once per page by scripts/give-kindle.ts, and the only link that
+              stays in the bar on a phone (01-foundation.css, 07-responsive.css). */}
           <a
-            className="support-link" data-desk="none"
+            className="support-link support-link--give" data-desk="none"
             href="#wesprzyj"
             data-no-lenis
             onClick={(e) => {

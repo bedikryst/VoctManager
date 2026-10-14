@@ -1252,22 +1252,111 @@
     transform: scaleX(1);
   }
 
+  /* WESPRZYJ is the bar's one action that asks for something, so it is the one item in a frame,
+     in the gold SiteChrome's `.nav-support` gives it on every subpage. Full candle reads 8.08 : 1
+     over the hero's night and 2.10 : 1 over parchment, so wherever the bar stands on a light
+     section it takes the ink gold, the same split SiteChrome makes with `--chrome-candle`.
+     Its horizontal padding and border are part of the measured row (6px 11px and 5px 9px in
+     07-responsive.css): change them and the phone thresholds there must be re-measured. */
+  .support-link--give {
+    color: var(--candle);
+    opacity: 1;
+    padding: 7px 14px;
+    border: 1px solid currentColor;
+    border-radius: 999px;
+    transition: background-color 0.35s var(--ease);
+    /* Its own stacking context, so the kindle layers below can sit under the letters. */
+    isolation: isolate;
+  }
+
+  .chrome:not(.is-on-dark) .support-link--give {
+    color: var(--candle-ink);
+  }
+
+  .support-link--give:hover {
+    background-color: color-mix(in srgb, currentColor 12%, transparent);
+  }
+
+  /* THE CANDLE IS LIT ONCE PER PAGE, when the reader reaches the Via (scripts/give-kindle.ts sets
+     `body.give-kindled`). Two layers, both opacity-only, so nothing repaints while they run:
+     `::after` is the flare — a wide glow and a gold wash inside the frame — that rises, holds and
+     goes out; `::before` is the halo that rises with it and stays at half strength, so the frame
+     ends warmer than it began. Never a loop: motion in this bar means the ensemble is singing (the
+     brand glyph breathes only with the sound on). `::after` is the hover underline on every other
+     link; here the frame is the affordance, so the layer is free and every underline property is
+     reset. SiteChrome.astro carries the same two layers for the subpages' bar — keep them alike. */
+  .support-link--give::before,
+  .support-link--give::after {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    width: auto;
+    height: auto;
+    border-radius: inherit;
+    transform: none;
+    transition: none;
+    opacity: 0;
+    pointer-events: none;
+    z-index: -1;
+  }
+
+  .support-link--give::before {
+    box-shadow: 0 0 16px 1px color-mix(in srgb, currentColor 45%, transparent);
+  }
+
+  .support-link--give::after {
+    background: color-mix(in srgb, currentColor 18%, transparent);
+    box-shadow:
+      0 0 30px 6px color-mix(in srgb, currentColor 55%, transparent),
+      inset 0 0 12px color-mix(in srgb, currentColor 35%, transparent);
+  }
+
+  body.give-kindled .support-link--give::before {
+    animation: giveHalo 4.2s var(--ease-slow) both;
+  }
+
+  body.give-kindled .support-link--give::after {
+    animation: giveFlare 4.2s var(--ease-slow) both;
+  }
+
+  @keyframes giveHalo {
+    0% { opacity: 0; }
+    15%, 50% { opacity: 1; }
+    100% { opacity: 0.55; }
+  }
+
+  @keyframes giveFlare {
+    0% { opacity: 0; }
+    15%, 50% { opacity: 1; }
+    100% { opacity: 0; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    body.give-kindled .support-link--give::before {
+      animation: none;
+      opacity: 0.55;
+    }
+
+    body.give-kindled .support-link--give::after {
+      animation: none;
+    }
+  }
+
   /* The one voice in the bar that stays on the mono: a stateful switch is a mechanism, not an
-     inscription (see the Cinzel policy in styles/base.css), it already wears its own shell —
-     pill plus status dot — and it is the sole action surviving below 760px, where it drops to
-     8.5px (07-responsive.css). Cinzel does not hold at that size. */
+     inscription (see the Cinzel policy in styles/base.css). Its status dot is its whole shell —
+     the bar's one frame belongs to WESPRZYJ — and the vertical padding keeps the tap target the
+     height the pill had. Below 760px it drops to 8.5px (07-responsive.css), where Cinzel does not
+     hold. */
   .audio-toggle {
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    padding: 7px 14px;
+    padding: 7px 0;
     font-family: var(--mono);
     font-size: 10px;
     letter-spacing: 0.2em;
-    border: 1px solid currentColor;
-    border-radius: 999px;
     opacity: 0.82;
-    transition: opacity 0.4s var(--ease), color 0.4s var(--ease), border-color 0.4s var(--ease);
+    transition: opacity 0.4s var(--ease), color 0.4s var(--ease);
   }
 
   .audio-toggle::before {
@@ -1295,23 +1384,19 @@
     box-shadow: 0 0 12px rgba(198, 164, 91, 0.7);
   }
 
-  /* Quieter pill on light surfaces: when the chrome is NOT over a dark section, the
-     border was reading as loud as on the hero. Drop opacity and soften the border so it
-     doesn't shout against parchment, but keep the .is-on gold glow at full intensity —
-     active state is meant to claim attention regardless of surface. */
+  /* Quieter switch on light surfaces: over parchment the ink reads louder than over the hero, so
+     the resting state drops back, but the .is-on gold glow keeps full intensity — the active state
+     is meant to claim attention regardless of surface. */
   .chrome:not(.is-on-dark) .audio-toggle {
     opacity: 0.62;
-    border-color: rgba(22, 21, 20, 0.32);
   }
 
   .chrome:not(.is-on-dark) .audio-toggle:hover {
     opacity: 0.92;
-    border-color: rgba(22, 21, 20, 0.55);
   }
 
   .chrome:not(.is-on-dark) .audio-toggle.is-on {
     opacity: 1;
-    border-color: var(--candle);
   }
 
   /* ─── Mobile: the hamburger. The overlay it opens ("Antyfona") lives in nave-menu.css. ─── */
@@ -1396,7 +1481,9 @@
      dead zone (the old 760/761 pair left ~760.5px viewports matching neither, so the nav
      menu and the hamburger could both resolve wrong at fractional zoom / DPR). */
   @media (max-width: 759.98px) {
-    .chrome-actions .support-link {
+    /* WESPRZYJ stays: on a phone it is otherwise only the last line of the menu card. Its phone
+       size and the widths it gives way at are in 07-responsive.css. */
+    .chrome-actions .support-link:not(.support-link--give) {
       display: none;
     }
     .nav-toggle {

@@ -525,7 +525,28 @@ const langOptions = showLang
      at 10.5px in tracked capitals, i.e. the least forgiving text on the site. Marks are exempt and
      stay on `--candle`: the brand mark carries no contrast minimum and flips to ink on its own. */
   .chrome-nav > a[aria-current="page"], .chrome-nav .registrum > a[data-section] { opacity: 1; color: var(--chrome-candle); }
-  .chrome-nav .nav-support { color: var(--chrome-candle); opacity: 1; }
+  /* WESPRZYJ is the bar's one action that asks for something, so it is the one item in a frame —
+     the same frame the landing bar gives it (01-foundation.css `.support-link--give`). The frame is
+     the affordance, so the underline every other link draws is not drawn inside it. */
+  .chrome-nav .nav-support { color: var(--chrome-candle); opacity: 1; padding: 7px 14px; border: 1px solid currentColor; border-radius: 999px; transition: background-color .35s var(--ease); isolation: isolate; }
+  .chrome-nav .nav-support:hover { background-color: color-mix(in srgb, currentColor 12%, transparent); }
+  /* Lit once per page when the reader reaches the Via (scripts/give-kindle.ts), never looped:
+     motion in the bar is the landing's sign that the ensemble is singing. `::after` (free here, the
+     frame replaces the underline) is the flare that rises, holds and goes out; `::before` is the
+     halo that stays at half strength. Opacity only, under the letters (`isolation` above). The
+     landing's copy of these layers (01-foundation.css `.support-link--give`) explains the rest —
+     keep the two alike. */
+  .chrome-nav .nav-support::before, .chrome-nav .nav-support::after { content: ""; position: absolute; inset: -1px; width: auto; height: auto; border-radius: inherit; transform: none; transition: none; opacity: 0; pointer-events: none; z-index: -1; }
+  .chrome-nav .nav-support::before { box-shadow: 0 0 16px 1px color-mix(in srgb, currentColor 45%, transparent); }
+  .chrome-nav .nav-support::after { background: color-mix(in srgb, currentColor 18%, transparent); box-shadow: 0 0 30px 6px color-mix(in srgb, currentColor 55%, transparent), inset 0 0 12px color-mix(in srgb, currentColor 35%, transparent); }
+  :global(body.give-kindled) .chrome-nav .nav-support::before { animation: giveHalo 4.2s var(--ease-slow) both; }
+  :global(body.give-kindled) .chrome-nav .nav-support::after { animation: giveFlare 4.2s var(--ease-slow) both; }
+  @keyframes giveHalo { 0% { opacity: 0; } 15%, 50% { opacity: 1; } 100% { opacity: .55; } }
+  @keyframes giveFlare { 0% { opacity: 0; } 15%, 50% { opacity: 1; } 100% { opacity: 0; } }
+  @media (prefers-reduced-motion: reduce) {
+    :global(body.give-kindled) .chrome-nav .nav-support::before { animation: none; opacity: .55; }
+    :global(body.give-kindled) .chrome-nav .nav-support::after { animation: none; }
+  }
 
   /* Language switcher — the choice of vernacular, each tongue named in its own word and set in the
      site's serif-italic "voice" register (not the mono rubric of the links beside it), a hairline
@@ -566,10 +587,24 @@ const langOptions = showLang
 
   /* 759.98 / 760 boundary matches nave-menu.css so no fractional viewport falls between
      "hamburger shown" and "overlay available". */
+  /* On a phone the nav folds into the menu card except WESPRZYJ, which stays in the bar beside
+     the toggle (`margin-left: auto` pulls it off the middle of the space-between row) — otherwise
+     the vault is only the card's last line. */
   @media (max-width: 759.98px) {
-    .chrome-nav { display: none; }
+    .chrome { gap: 14px; }
+    .chrome-nav { margin-left: auto; }
+    .chrome-nav > :not(.nav-support) { display: none; }
+    .chrome-nav .nav-support { padding: 5px 9px; font-size: 9.5px; letter-spacing: .12em; }
     .nav-toggle { display: inline-flex; }
   }
+  /* Where the row stops fitting, WESPRZYJ leaves the bar and the toggle keeps its place. Measured,
+     not guessed: 28px gutters, the brand (17px mark, 12px gap, "VoctEnsemble" at 21px Cormorant
+     300 = 125.4px), two 14px gaps, the frame (9px sides, 1px border: 20px) and the 26px toggle make
+     284.4px; the label adds Cinzel 500 at 9.5px/.12em — WESPRZYJ 57.2px, SUPPORT US 70.8px, NOUS
+     SOUTENIR 96px. Re-measure if any of those sizes changes. */
+  @media (max-width: 342.98px) { .chrome-nav .nav-support { display: none; } }
+  @media (max-width: 356.98px) { .chrome-nav .nav-support:lang(en) { display: none; } }
+  @media (max-width: 381.98px) { .chrome-nav .nav-support:lang(fr) { display: none; } }
 
   /* ── Dark-tone pages (koncerty) ─────────────────────────────────────────
      Solid header is night (not paper); when a light section scrolls under it,
@@ -689,6 +724,7 @@ const langOptions = showLang
 <script>
   import { navigate } from "astro:transitions/client";
 
+  import "../scripts/give-kindle";
   import { documentLocale } from "../i18n/documentLocale";
   import { horaForWarsaw } from "../islands/landing/lib/horaeCanonicae";
   import {

@@ -316,7 +316,8 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
     </section>
 
     {/* ── Milestones — rendered from the `concerts` collection ─────────── */}
-    <section class="band band-soft" aria-label={t.milestonesAria}>
+    {/* `data-give-kindle`: reaching the Via lights the bar's WESPRZYJ (scripts/give-kindle.ts). */}
+    <section class="band band-soft" aria-label={t.milestonesAria} data-give-kindle>
       <div class="wrap">
         <div class="section-head reveal measure">
           <span class="eyebrow"><span class="lat">Via</span>  ·  {c.milestones.eyebrow}</span>
