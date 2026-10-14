@@ -1,6 +1,7 @@
 # payments/services.py
 # ==========================================
-# Axepta BNP Paribas Payment Integration — Service Layer
+# Axepta BNP Paribas Payment Integration — Service Layer,
+# plus the collection figure the public vault prints
 # ==========================================
 #
 # SECURITY NOTE — webhook signature scheme:
@@ -16,16 +17,30 @@ import hmac
 import json
 import logging
 import re
+from dataclasses import dataclass
+from datetime import datetime
+from decimal import ROUND_DOWN, Decimal
+from typing import Any
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 import requests
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import transaction
+from django.db.models import Count, Max, Sum
 
 from notifications.email_service import EmailDispatcherService, EmailType
 
-from .models import Donation, DonationStatus, PatronLead
+from .models import (
+    CollectionSettings,
+    Donation,
+    DonationCurrency,
+    DonationStatus,
+    OfflineTally,
+    OfflineTallyRevision,
+    OfflineTallySource,
+    PatronLead,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -425,3 +440,103 @@ class PatronageService:
             fallback_language='pl',
             email_type=EmailType.OPERATIONAL,
         )
+
+
+@dataclass(frozen=True)
+class CollectionTotals:
+    """A sum of money in whole PLN and the donors it came from."""
+    raised: int
+    donors: int
+
+    def __add__(self, other: 'CollectionTotals') -> 'CollectionTotals':
+        return CollectionTotals(self.raised + other.raised, self.donors + other.donors)
+
+
+class CollectionService:
+    """
+    The public collection figure: SETTLED gateway donations, computed, plus one
+    hand-kept running total per offline road (`OfflineTally`).
+
+    Donor counts add across the two halves and across sources, so a person who
+    gave by two roads counts twice, and EUR folds in at a static display rate.
+    Both are presentation choices, not accounting.
+    """
+
+    @staticmethod
+    def gateway_totals() -> CollectionTotals:
+        """Sum and distinct-email donor count of SETTLED, non-deleted donations."""
+        rows = (
+            Donation.objects
+            .filter(status=DonationStatus.SETTLED)
+            .values('currency')
+            .annotate(total=Sum('amount'), donors=Count('email', distinct=True))
+        )
+        eur_rate = Decimal(settings.DONATION_EUR_TO_PLN_RATE)
+        raised = Decimal('0')
+        donors = 0
+        for row in rows:
+            total = row['total'] or Decimal('0')
+            if row['currency'] == DonationCurrency.EUR:
+                total *= eur_rate
+            raised += total
+            donors += row['donors']
+        return CollectionTotals(int(raised.quantize(Decimal('1'), rounding=ROUND_DOWN)), donors)
+
+    @staticmethod
+    def tallies() -> list[OfflineTally]:
+        """Every source in declaration order; one nobody has saved yet is an unsaved zero row."""
+        stored = {tally.source: tally for tally in OfflineTally.objects.select_related('updated_by')}
+        return [stored.get(source) or OfflineTally(source=source) for source in OfflineTallySource.values]
+
+    @staticmethod
+    def offline_totals(tallies: list[OfflineTally]) -> CollectionTotals:
+        return CollectionTotals(
+            sum(tally.amount for tally in tallies),
+            sum(tally.donors for tally in tallies),
+        )
+
+    @staticmethod
+    def last_offline_edit() -> datetime | None:
+        latest: datetime | None = OfflineTally.objects.aggregate(latest=Max('updated_at'))['latest']
+        return latest
+
+    @staticmethod
+    def record_tally(*, source: str, amount: int, donors: int, user: Any) -> bool:
+        """Writes one source's running total and its revision; False when nothing changed.
+
+        A save that repeats the stored figure leaves no revision: the trail
+        records changes to what the site prints, not presses of a button.
+        """
+        with transaction.atomic():
+            tally, _created = OfflineTally.objects.select_for_update().get_or_create(source=source)
+            if tally.amount == amount and tally.donors == donors:
+                return False
+            tally.amount = amount
+            tally.donors = donors
+            tally.updated_by = user
+            tally.save()
+            OfflineTallyRevision.objects.create(
+                source=source, amount=amount, donors=donors, user=user,
+            )
+        logger.info(
+            "Offline tally %s set to %s PLN / %s donors by user %s.",
+            source, amount, donors, getattr(user, 'pk', None),
+        )
+        return True
+
+    @staticmethod
+    def update_settings(*, user: Any, changes: dict[str, Any]) -> bool:
+        """Applies `goal` and/or `show_rail` from `changes`; False when nothing changed."""
+        collection = CollectionSettings.load()
+        dirty = [
+            field for field in ('goal', 'show_rail')
+            if field in changes and getattr(collection, field) != changes[field]
+        ]
+        if not dirty:
+            return False
+        for field in dirty:
+            setattr(collection, field, changes[field])
+        collection.updated_by = user
+        collection.save()
+        logger.info("Collection settings %s changed by user %s.", dirty, getattr(user, 'pk', None))
+        return True

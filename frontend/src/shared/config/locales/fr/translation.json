@@ -6945,6 +6945,62 @@
       "patch_rows_other": "modifications",
       "patch_note": "La première commande montre seulement ce qu'elle écrirait ; la seconde l'écrit. Ensuite git diff, commit et déploiement — c'est cela qui change le site.",
       "patch_since": "La plus ancienne décision attend depuis : {{when}}."
+    },
+    "collection": {
+      "link": "Collecte",
+      "title": "État",
+      "title_highlight": "de la collecte",
+      "refused_title": "La collecte est tenue par les administrateurs",
+      "refused_description": "Cette page modifie le montant que voit chaque visiteur ; seuls les comptes administrateurs y ont donc accès.",
+      "stat_raised": "collectés",
+      "stat_donors_one": "donateur",
+      "stat_donors_many": "donateurs",
+      "stat_donors_other": "donateurs",
+      "stat_goal": "de l'objectif de {{amount}}",
+      "intro": "Voici ce qu'affiche le coffre sur le site. Les paiements faits sur le site se comptent d'eux-mêmes ; Zrzutka, les virements et les espèces se saisissent ici.",
+      "sources_title": "Dons hors du site",
+      "sources_intro": "Pour chaque source, saisissez le total complet affiché dans son tableau de bord ou sur le relevé, pas seulement les nouveaux dons.",
+      "source": {
+        "ZRZUTKA": {
+          "label": "Zrzutka",
+          "hint": "Recopiez le total depuis le tableau de bord de la cagnotte sur Zrzutka."
+        },
+        "BANK_TRANSFER": {
+          "label": "Virements",
+          "hint": "Dons virés directement sur le compte de la fondation."
+        },
+        "OTHER": {
+          "label": "Autres",
+          "hint": "Espèces, et tout ce qui n'est passé ni par Zrzutka ni par le compte."
+        }
+      },
+      "never_saved": "pas encore saisi",
+      "changed_by": "modifié le {{day}} · {{name}}",
+      "changed_on": "modifié le {{day}}",
+      "amount": "Montant",
+      "donors": "Donateurs",
+      "gateway_label": "Paiements sur le site",
+      "donor_count_one": "{{count}} donateur",
+      "donor_count_many": "{{count}} donateurs",
+      "donor_count_other": "{{count}} donateurs",
+      "gateway_hint": "Comptés automatiquement depuis la passerelle de paiement. Ne les saisissez pas dans les champs ci-dessus, sinon ils comptent deux fois.",
+      "settings_title": "Objectif et barre",
+      "goal": "Objectif de la collecte",
+      "goal_hint": "Un champ vide signifie l'objectif de la configuration du serveur : {{amount}}.",
+      "rail_label": "Afficher la barre de progression dans le coffre",
+      "rail_hint": "Conseil : activez-la à partir d'environ {{threshold}} % de l'objectif. Une barre courte à côté d'un concert annoncé ressemble à un doute sur la tenue de la soirée. Actuellement : {{percent}} %.",
+      "live_note": "L'enregistrement part sur le site immédiatement, sans relecture. Chaque changement de montant reste dans l'historique ci-dessous.",
+      "save": "Enregistrer",
+      "saved": "Enregistré. Le site affichera les nouveaux chiffres d'ici une minute.",
+      "save_failed": "Rien n'a été enregistré. Réessayez dans un instant.",
+      "errors": {
+        "whole_number": "Saisissez un nombre entier.",
+        "too_large": "Ce nombre est trop grand.",
+        "goal_positive": "L'objectif doit être supérieur à zéro."
+      },
+      "history_title": "Dernières modifications",
+      "history_empty": "Personne n'a encore rien modifié.",
+      "history_initial": "montant initial"
     }
   },
   "notes": {

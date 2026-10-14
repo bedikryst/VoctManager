@@ -4,9 +4,24 @@
 # ==========================================
 from decimal import Decimal
 
+from django.utils.translation import gettext as _
 from rest_framework import serializers
 
-from .models import Donation, DonationCurrency, PatronLead
+from messaging.selectors import user_display_name
+
+from .models import (
+    Donation,
+    DonationCurrency,
+    OfflineTally,
+    OfflineTallyRevision,
+    OfflineTallySource,
+    PatronLead,
+)
+
+# Bounds on a hand-typed figure. Generous for a choir's collection, tight enough
+# that a slipped key (an extra three zeros) is refused rather than printed.
+_MAX_TALLY_AMOUNT = 10_000_000
+_MAX_TALLY_DONORS = 100_000
 
 
 class InitiateDonationSerializer(serializers.Serializer):
@@ -71,3 +86,58 @@ class PatronInterestSerializer(serializers.Serializer):
             last_name=validated_data['last_name'],
             email=validated_data['email'],
         )
+
+
+class OfflineTallySerializer(serializers.ModelSerializer):
+    """One offline source as the collection desk reads it, with who last set it."""
+    updated_by_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = OfflineTally
+        fields = ['source', 'amount', 'donors', 'updated_at', 'updated_by_name']
+        read_only_fields = fields
+
+    def get_updated_by_name(self, tally: OfflineTally) -> str | None:
+        return user_display_name(tally.updated_by) or None
+
+
+class OfflineTallyRevisionSerializer(serializers.ModelSerializer):
+    """One line of the trail: which source, the figure it was set to, by whom, when."""
+    user_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = OfflineTallyRevision
+        fields = ['id', 'source', 'amount', 'donors', 'user_name', 'created_at']
+        read_only_fields = fields
+
+    def get_user_name(self, revision: OfflineTallyRevision) -> str | None:
+        return user_display_name(revision.user) or None
+
+
+class OfflineTallyWriteSerializer(serializers.Serializer):
+    """A source's whole running total — never a delta to add to the stored one."""
+    # `Field.source` is an attribute of every DRF field, so stubs read this
+    # declaration as reassigning it; the metaclass lifts declared fields off the
+    # class, so at runtime it is only the payload key.
+    source = serializers.ChoiceField(choices=OfflineTallySource.choices)  # type: ignore[assignment]
+    amount = serializers.IntegerField(min_value=0, max_value=_MAX_TALLY_AMOUNT)
+    donors = serializers.IntegerField(min_value=0, max_value=_MAX_TALLY_DONORS)
+
+
+class CollectionWriteSerializer(serializers.Serializer):
+    """
+    A partial write from the collection desk: only the keys present are written,
+    and `tallies` carries only the sources the editor changed, so a form opened
+    before a colleague's save does not put the colleague's source back.
+    """
+    tallies = OfflineTallyWriteSerializer(many=True, required=False)
+    goal = serializers.IntegerField(
+        min_value=1, max_value=_MAX_TALLY_AMOUNT, allow_null=True, required=False,
+    )
+    show_rail = serializers.BooleanField(required=False)
+
+    def validate_tallies(self, value: list[dict]) -> list[dict]:
+        sources = [row['source'] for row in value]
+        if len(sources) != len(set(sources)):
+            raise serializers.ValidationError(_("Each source may appear only once."))
+        return value

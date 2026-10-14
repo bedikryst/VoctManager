@@ -4,7 +4,13 @@
 # ==========================================
 from django.contrib import admin
 
-from .models import Donation, PatronLead
+from .models import (
+    CollectionSettings,
+    Donation,
+    OfflineTally,
+    OfflineTallyRevision,
+    PatronLead,
+)
 
 
 @admin.register(Donation)
@@ -50,3 +56,38 @@ class PatronLeadAdmin(admin.ModelAdmin):
         # Leads originate only from the public Mecenat form (consent captured there);
         # a hand-created row would have no lawful basis recorded.
         return False
+
+
+class _CollectionReadOnlyAdmin(admin.ModelAdmin):
+    """
+    The collection figure is edited only from `/redakcja/zbiorka`. An admin edit
+    would skip the revision a tally save writes, which is the trail that lets a
+    hand-typed public figure go live unreviewed, so the admin only reads.
+    """
+
+    def has_add_permission(self, request) -> bool:
+        return False
+
+    def has_change_permission(self, request, obj=None) -> bool:
+        return False
+
+    def has_delete_permission(self, request, obj=None) -> bool:
+        return False
+
+
+@admin.register(OfflineTally)
+class OfflineTallyAdmin(_CollectionReadOnlyAdmin):
+    list_display = ('source', 'amount', 'donors', 'updated_by', 'updated_at')
+
+
+@admin.register(OfflineTallyRevision)
+class OfflineTallyRevisionAdmin(_CollectionReadOnlyAdmin):
+    list_display = ('created_at', 'source', 'amount', 'donors', 'user')
+    list_filter = ('source', 'created_at')
+    ordering = ('-created_at', '-id')
+    date_hierarchy = 'created_at'
+
+
+@admin.register(CollectionSettings)
+class CollectionSettingsAdmin(_CollectionReadOnlyAdmin):
+    list_display = ('goal', 'show_rail', 'updated_by', 'updated_at')

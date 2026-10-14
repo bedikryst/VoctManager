@@ -34,7 +34,6 @@ web/
 │   ├── fonts/         #   Self-hosted Cormorant Garamond + IBM Plex Sans/Mono (woff2, OFL)
 │   ├── ambient.m4a    #   Sacred ambient track (gated behind the Threshold choice)
 │   ├── docs/          #   Static PDFs (Statut, regulamin)
-│   ├── donation-progress.json  # Tier progress data (read by the Vault island)
 │   ├── robots.txt / sitemap.xml    # SEO; sitemap is hand-curated (5 URLs)
 │   └── logo_icon.png / logo-mark.png / qr-bank.png  # Brand + payment assets
 │
@@ -133,12 +132,11 @@ Each Astro island is a **separate React root** — context providers from one do
 
 ## Backend Surface
 
-Two endpoints are consumed:
+Three endpoints are consumed:
 
 * **`POST /api/payments/donations/initiate/`** — Axepta hosted-link redirect. The Vault initiates the donation, the gateway returns `?donated=success|failure` and the result modal self-triggers.
+* **`GET /api/payments/donations/progress/`** — the Vault's campaign line: SETTLED gateway donations plus the offline tallies (Zrzutka, transfers, other) that editors keep at `/redakcja/zbiorka` in the panel, the goal, and whether the fill rail is drawn. Cached 60 s server-side; the Vault reads it once per page load.
 * **`POST /api/contact/`** (since 2026-05-25) — public contact form (Django `contact` app). Currently surfaced as channels-only on `/kontakt`; form is pending a final RODO review.
-
-`/donation-progress.json` is served as a static asset from `public/`, not from Django — the tier display refreshes on page load only.
 
 ---
 

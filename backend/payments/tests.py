@@ -8,6 +8,7 @@ from datetime import timedelta
 from decimal import Decimal
 from unittest.mock import patch
 
+from django.contrib.auth import get_user_model
 from django.core.cache import cache
 from django.test import TestCase, override_settings
 from django.urls import reverse
@@ -15,10 +16,16 @@ from django.utils import timezone
 from rest_framework import status
 from rest_framework.test import APITestCase
 
+from core.models import UserProfile
+
 from .models import (
+    CollectionSettings,
     Donation,
     DonationCurrency,
     DonationStatus,
+    OfflineTally,
+    OfflineTallyRevision,
+    OfflineTallySource,
     PatronLead,
     PatronLeadStatus,
 )
@@ -32,12 +39,22 @@ from .tasks import (
     purge_failed_donations,
 )
 
+User = get_user_model()
+
+
+def _clear_collection() -> None:
+    """Drops what migration 0005 seeds, so a test starts from an untouched collection."""
+    OfflineTally.objects.all().delete()
+    OfflineTallyRevision.objects.all().delete()
+    CollectionSettings.objects.all().delete()
+
 
 @override_settings(DONATION_GOAL_PLN=20000, DONATION_EUR_TO_PLN_RATE='4.00')
 class DonationProgressViewTests(APITestCase):
     """
     The public progress aggregate must count ONLY settled, non-deleted donations,
-    fold EUR in at the configured display rate, and count donors by distinct email.
+    fold EUR in at the configured display rate, count donors by distinct email,
+    and add the hand-kept offline tallies on top.
     """
 
     url = reverse('payments:donation-progress')
@@ -45,6 +62,7 @@ class DonationProgressViewTests(APITestCase):
     def setUp(self):
         # The view caches its response for 60s — isolate every test.
         cache.clear()
+        _clear_collection()
 
     @staticmethod
     def _donation(amount: str, *, status_: str = DonationStatus.SETTLED,
@@ -65,6 +83,8 @@ class DonationProgressViewTests(APITestCase):
             'donors': 0,
             'goal': 20000,
             'currency': 'PLN',
+            'showRail': False,
+            'updatedAt': None,
         })
 
     def test_only_settled_donations_count(self):
@@ -102,6 +122,175 @@ class DonationProgressViewTests(APITestCase):
         response = self.client.get(self.url)
         self.assertEqual(response.data['raised'], 350)
         self.assertEqual(response.data['donors'], 2)
+
+    def test_offline_tallies_add_to_the_gateway_sum(self):
+        self._donation('100.00', email='a@example.com')
+        OfflineTally.objects.create(source=OfflineTallySource.ZRZUTKA, amount=4000, donors=21)
+        OfflineTally.objects.create(source=OfflineTallySource.BANK_TRANSFER, amount=500, donors=2)
+
+        response = self.client.get(self.url)
+        self.assertEqual(response.data['raised'], 4600)
+        self.assertEqual(response.data['donors'], 24)
+        self.assertIsNotNone(response.data['updatedAt'])
+
+    def test_goal_and_rail_come_from_the_collection_settings(self):
+        CollectionSettings.objects.create(goal=35000, show_rail=True)
+
+        response = self.client.get(self.url)
+        self.assertEqual(response.data['goal'], 35000)
+        self.assertTrue(response.data['showRail'])
+
+    def test_an_unset_goal_falls_back_to_the_deployment_default(self):
+        CollectionSettings.objects.create(goal=None, show_rail=True)
+
+        response = self.client.get(self.url)
+        self.assertEqual(response.data['goal'], 20000)
+
+    def test_the_public_read_never_creates_the_settings_row(self):
+        self.client.get(self.url)
+        self.assertFalse(CollectionSettings.objects.exists())
+
+
+class CollectionSeedTests(TestCase):
+    """Migration 0005 carries the json baseline over, dated when it was typed."""
+
+    def test_the_zrzutka_row_holds_the_json_figure(self):
+        tally = OfflineTally.objects.get(source=OfflineTallySource.ZRZUTKA)
+        self.assertEqual((tally.amount, tally.donors), (4000, 21))
+        self.assertEqual(tally.updated_at.date().isoformat(), '2026-05-11')
+
+    def test_the_seed_leaves_one_revision_without_an_author(self):
+        revision = OfflineTallyRevision.objects.get()
+        self.assertEqual((revision.source, revision.amount, revision.donors), ('ZRZUTKA', 4000, 21))
+        self.assertIsNone(revision.user)
+
+    def test_the_rail_starts_on(self):
+        self.assertTrue(CollectionSettings.load().show_rail)
+
+
+@override_settings(DONATION_GOAL_PLN=28000, DONATION_EUR_TO_PLN_RATE='4.00')
+class CollectionDeskViewTests(APITestCase):
+    """The desk endpoint: staff only, partial writes, and a revision per real change."""
+
+    url = reverse('payments:collection-desk')
+
+    def setUp(self):
+        _clear_collection()
+        self.staff = self._user('staff@example.com', staff=True)
+
+    @staticmethod
+    def _user(email: str, *, staff: bool = False, site_copy_editor: bool = False):
+        user = User.objects.create_user(
+            username=email.split('@')[0], email=email, password='Xk9!vortex2026',
+        )
+        if site_copy_editor:
+            profile, _created = UserProfile.objects.get_or_create(user=user)
+            profile.can_edit_site_copy = True
+            profile.site_copy_trusted_translator = True
+            profile.save()
+        if staff:
+            user.is_staff = True
+            user.save(update_fields=['is_staff'])
+        return user
+
+    def test_anonymous_is_refused(self):
+        response = self.client.get(self.url)
+        self.assertIn(
+            response.status_code,
+            (status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN),
+        )
+
+    def test_a_site_copy_editor_without_staff_is_refused(self):
+        self.client.force_authenticate(self._user('florent@example.com', site_copy_editor=True))
+        response = self.client.patch(self.url, {'show_rail': True}, format='json')
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertFalse(CollectionSettings.objects.exists())
+
+    def test_read_lists_every_source_and_the_gateway_half(self):
+        Donation.objects.create(
+            email='a@example.com', amount=Decimal('150.00'), status=DonationStatus.SETTLED,
+        )
+        OfflineTally.objects.create(source=OfflineTallySource.ZRZUTKA, amount=4000, donors=21)
+        self.client.force_authenticate(self.staff)
+
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(
+            [row['source'] for row in response.data['tallies']],
+            ['ZRZUTKA', 'BANK_TRANSFER', 'OTHER'],
+        )
+        self.assertEqual(response.data['gateway'], {'raised': 150, 'donors': 1})
+        self.assertEqual(response.data['total'], {'raised': 4150, 'donors': 22})
+        self.assertIsNone(response.data['goal'])
+        self.assertEqual(response.data['default_goal'], 28000)
+
+    def test_a_save_writes_the_tally_and_one_revision(self):
+        self.client.force_authenticate(self.staff)
+        response = self.client.patch(
+            self.url,
+            {'tallies': [{'source': 'BANK_TRANSFER', 'amount': 1200, 'donors': 4}]},
+            format='json',
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        tally = OfflineTally.objects.get(source='BANK_TRANSFER')
+        self.assertEqual((tally.amount, tally.donors, tally.updated_by), (1200, 4, self.staff))
+        revision = OfflineTallyRevision.objects.get()
+        self.assertEqual((revision.amount, revision.donors, revision.user), (1200, 4, self.staff))
+        self.assertEqual(response.data['revisions'][0]['source'], 'BANK_TRANSFER')
+
+    def test_saving_the_same_figure_leaves_no_revision(self):
+        OfflineTally.objects.create(source=OfflineTallySource.ZRZUTKA, amount=4000, donors=21)
+        self.client.force_authenticate(self.staff)
+        self.client.patch(
+            self.url,
+            {'tallies': [{'source': 'ZRZUTKA', 'amount': 4000, 'donors': 21}]},
+            format='json',
+        )
+        self.assertFalse(OfflineTallyRevision.objects.exists())
+
+    def test_a_save_leaves_the_sources_it_does_not_name_alone(self):
+        OfflineTally.objects.create(source=OfflineTallySource.ZRZUTKA, amount=4000, donors=21)
+        self.client.force_authenticate(self.staff)
+        self.client.patch(
+            self.url,
+            {'tallies': [{'source': 'OTHER', 'amount': 300, 'donors': 1}]},
+            format='json',
+        )
+        zrzutka = OfflineTally.objects.get(source='ZRZUTKA')
+        self.assertEqual((zrzutka.amount, zrzutka.donors), (4000, 21))
+
+    def test_goal_and_rail_save_and_clear(self):
+        self.client.force_authenticate(self.staff)
+        response = self.client.patch(self.url, {'goal': 30000, 'show_rail': True}, format='json')
+        self.assertEqual(response.data['goal'], 30000)
+        self.assertTrue(response.data['show_rail'])
+
+        response = self.client.patch(self.url, {'goal': None}, format='json')
+        self.assertIsNone(response.data['goal'])
+        self.assertTrue(response.data['show_rail'])
+        self.assertEqual(CollectionSettings.load().updated_by, self.staff)
+
+    def test_a_negative_figure_is_refused(self):
+        self.client.force_authenticate(self.staff)
+        response = self.client.patch(
+            self.url,
+            {'tallies': [{'source': 'ZRZUTKA', 'amount': -5, 'donors': 1}]},
+            format='json',
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertFalse(OfflineTally.objects.exists())
+
+    def test_a_source_named_twice_is_refused(self):
+        self.client.force_authenticate(self.staff)
+        response = self.client.patch(
+            self.url,
+            {'tallies': [
+                {'source': 'ZRZUTKA', 'amount': 1, 'donors': 1},
+                {'source': 'ZRZUTKA', 'amount': 2, 'donors': 1},
+            ]},
+            format='json',
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 
 _TEST_MAC_KEY = 'unit-test-mac-key'

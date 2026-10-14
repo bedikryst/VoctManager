@@ -3,30 +3,34 @@
 # Payments & Donations API Views — thin HTTP layer
 # ==========================================
 import logging
-from decimal import ROUND_DOWN, Decimal
+from typing import Any
 from uuid import UUID
 
 from django.conf import settings
-from django.db.models import Count, Sum
+from django.db import transaction
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
 from rest_framework import status
 from rest_framework.negotiation import BaseContentNegotiation
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAdminUser
 from rest_framework.renderers import JSONRenderer
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 
-from .models import Donation, DonationCurrency, DonationStatus
+from .models import CollectionSettings, Donation, DonationCurrency, OfflineTallyRevision
 from .serializers import (
+    CollectionWriteSerializer,
     DonationStatusSerializer,
     InitiateDonationSerializer,
+    OfflineTallyRevisionSerializer,
+    OfflineTallySerializer,
     PatronInterestSerializer,
 )
 from .services import (
     AxeptaPaymentService,
+    CollectionService,
     DonationNotFoundError,
     InvalidWebhookSignatureError,
     PatronageService,
@@ -147,15 +151,16 @@ class DonationStatusView(APIView):
 
 class DonationProgressView(APIView):
     """
-    Public, PII-free aggregate behind the landing vault's progress rail: the sum
-    and distinct-donor count of SETTLED donations, plus the campaign goal. The
-    frontend merges this with its static offline baseline (zrzutka + manual bank
-    transfers), so each gateway payment moves the rail without any manual edit.
+    Public, PII-free figure behind the landing vault's campaign line: SETTLED
+    gateway donations plus the hand-kept offline tallies (Zrzutka, transfers,
+    other), the goal, whether the sheet draws its fill rail, and when an
+    offline tally was last edited. It is the vault's only source.
 
     EUR donations are folded in at a conservative static display rate
     (`DONATION_EUR_TO_PLN_RATE`) — this endpoint is presentation, not accounting.
-    The response is cached for 60s: the donor who just paid sees the rail move on
-    their next visit, while the aggregate query runs at most once a minute.
+    The response is cached for 60s: the donor who just paid, and the editor who
+    just saved a tally, see the line move within a minute, while the aggregate
+    runs at most once a minute.
     """
     permission_classes = [AllowAny]
     authentication_classes = []
@@ -164,29 +169,76 @@ class DonationProgressView(APIView):
 
     @method_decorator(cache_page(60))
     def get(self, request: Request) -> Response:
-        rows = (
-            Donation.objects
-            .filter(status=DonationStatus.SETTLED)
-            .values('currency')
-            .annotate(total=Sum('amount'), donors=Count('email', distinct=True))
+        total = (
+            CollectionService.gateway_totals()
+            + CollectionService.offline_totals(CollectionService.tallies())
         )
-
-        eur_rate = Decimal(settings.DONATION_EUR_TO_PLN_RATE)
-        raised = Decimal('0')
-        donors = 0
-        for row in rows:
-            total = row['total'] or Decimal('0')
-            if row['currency'] == DonationCurrency.EUR:
-                total *= eur_rate
-            raised += total
-            donors += row['donors']
+        collection = CollectionSettings.load()
+        updated_at = CollectionService.last_offline_edit()
 
         return Response({
-            'raised': int(raised.quantize(Decimal('1'), rounding=ROUND_DOWN)),
-            'donors': donors,
-            'goal': settings.DONATION_GOAL_PLN,
+            'raised': total.raised,
+            'donors': total.donors,
+            'goal': collection.effective_goal,
             'currency': DonationCurrency.PLN.value,
+            'showRail': collection.show_rail,
+            'updatedAt': updated_at.isoformat() if updated_at else None,
         })
+
+
+class CollectionDeskView(APIView):
+    """
+    The collection desk under `/redakcja/zbiorka`: the offline tallies, the
+    gateway half shown read-only beside them, the total the site prints, the goal
+    and rail switch, and the last changes.
+
+    Staff only. A save goes live on the next uncached public read with no review
+    in between — going live without the developer is the point — so the gate is
+    narrow and every tally save leaves an `OfflineTallyRevision`.
+    """
+    permission_classes = [IsAdminUser]
+
+    # How much of the trail the desk shows. The full trail stays in the admin.
+    REVISIONS_SHOWN = 10
+
+    def _payload(self) -> dict[str, Any]:
+        tallies = CollectionService.tallies()
+        gateway = CollectionService.gateway_totals()
+        offline = CollectionService.offline_totals(tallies)
+        total = gateway + offline
+        collection = CollectionSettings.load()
+        revisions = OfflineTallyRevision.objects.select_related('user')[:self.REVISIONS_SHOWN]
+        return {
+            'tallies': OfflineTallySerializer(tallies, many=True).data,
+            'gateway': {'raised': gateway.raised, 'donors': gateway.donors},
+            'total': {'raised': total.raised, 'donors': total.donors},
+            'goal': collection.goal,
+            'default_goal': int(settings.DONATION_GOAL_PLN),
+            'show_rail': collection.show_rail,
+            'revisions': OfflineTallyRevisionSerializer(revisions, many=True).data,
+        }
+
+    def get(self, request: Request) -> Response:
+        return Response(self._payload())
+
+    def patch(self, request: Request) -> Response:
+        serializer = CollectionWriteSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+
+        # One save, one outcome: a form carrying two sources and the rail switch
+        # never lands half-written.
+        with transaction.atomic():
+            for row in data.get('tallies', []):
+                CollectionService.record_tally(
+                    source=row['source'],
+                    amount=row['amount'],
+                    donors=row['donors'],
+                    user=request.user,
+                )
+            CollectionService.update_settings(user=request.user, changes=data)
+
+        return Response(self._payload())
 
 
 class AxeptaWebhookView(APIView):

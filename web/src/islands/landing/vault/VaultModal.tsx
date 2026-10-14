@@ -2,12 +2,12 @@
  * @file VaultModal.tsx
  * @description The donation "skarbiec" sliding sheet: one-off giving only. Under the head, one
  *  sentence on what a gift pays for, then the campaign line (donor count and goal, with a fill
- *  rail that `VAULT_CONFIG.progress.showRail` switches). The Axepta form is the one road and
+ *  rail the progress response's `showRail` switches). The Axepta form is the one road and
  *  stands alone; Zrzutka and the bank transfer sit under it as the other ways, for a reader who
  *  already knows they would rather pay elsewhere. Three equal cards would ask a visitor to pick a
  *  payment rail before deciding to give at all. Recurring support is not a second intent here — every
  *  other way of giving (a standing order, patronage, a partnership) has one home,
- *  `/fundacja#wsparcie`, and the sheet ends on a link to it.
+ *  `/fundacja#wsparcie`, and once FOUNDATION_PAGE_LINKED the sheet ends on a link to it.
  *  Manages browser-history integration (back closes), Lenis stop/start while open, the
  *  campaign line, and the `body.vault-open` flag for chrome theming. Web/Astro port.
  * @module islands/landing/vault/VaultModal
@@ -15,6 +15,7 @@
 
 import { useCallback, useEffect, useRef } from "react";
 
+import { FOUNDATION_PAGE_LINKED } from "../../../data/foundationSupport";
 import { localizePath } from "../../../i18n/config";
 import { UI } from "../../../i18n/ui";
 import { dismissOverlayEntry, isOverlayEntry, pushOverlayEntry } from "../../../lib/overlayHistory";
@@ -103,7 +104,9 @@ export function VaultModal(): React.JSX.Element {
             <p className="vault-lede">{vault.head.lede}</p>
 
             <section className="vault-progress" aria-label={t.progressAria}>
-              {VAULT_CONFIG.progress.showRail && (
+              {/* Switched by the editors at `/redakcja/zbiorka`; off whenever the figure is
+                  unavailable, so a failed request never draws an empty rail. */}
+              {progress?.showRail && (
                 <div className="vault-progress-rail">
                   <div
                     className="vault-progress-fill"
@@ -159,14 +162,17 @@ export function VaultModal(): React.JSX.Element {
             {/* The other ways of giving are not methods here — they are relationships, with one home.
                 A real link (it reads as a page; long-press, middle-click and a modified click
                 still get the URL in a new tab), committed through the vault's own exit
-                (useLeaveVault) so the back button returns to the page the visitor came from. */}
-            <a
-              className="vault-recurring"
-              href={hrefSupport}
-              onClick={(event) => leaveVaultOnInternalLink(event, leaveVault)}
-            >
-              {t.recurringLink}
-            </a>
+                (useLeaveVault) so the back button returns to the page the visitor came from.
+                Drawn only once FOUNDATION_PAGE_LINKED (data/foundationSupport). */}
+            {FOUNDATION_PAGE_LINKED && (
+              <a
+                className="vault-recurring"
+                href={hrefSupport}
+                onClick={(event) => leaveVaultOnInternalLink(event, leaveVault)}
+              >
+                {t.recurringLink}
+              </a>
+            )}
           </div>
 
           <footer className="vault-foot">

@@ -15,7 +15,7 @@
 import React, { useMemo } from "react";
 import { Link, useOutletContext } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { ExternalLink, Inbox } from "lucide-react";
+import { ExternalLink, HandCoins, Inbox } from "lucide-react";
 
 import { CopyDeskPrimer } from "@/features/copydesk/components/CopyDeskPrimer";
 import { ScopeContentsList } from "@/features/copydesk/components/ScopeContentsList";
@@ -98,6 +98,21 @@ export default function CopyDeskContentsPage(): React.JSX.Element {
                           defaultValue: "Przegląd zmian ({{count}})",
                         })
                       : t("copy_desk.review.link", "Przegląd zmian")}
+                  </Link>
+                </Button>
+              )}
+              {/* The collection page is staff only, and `is_reviewer` is the
+                  server's staff answer, so the way in shows for exactly the
+                  accounts the endpoint admits. */}
+              {contents.is_reviewer && (
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  asChild
+                  leftIcon={<HandCoins size={14} aria-hidden="true" />}
+                >
+                  <Link to="/redakcja/zbiorka">
+                    {t("copy_desk.collection.link", "Zbiórka")}
                   </Link>
                 </Button>
               )}

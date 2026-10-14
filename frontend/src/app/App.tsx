@@ -223,6 +223,9 @@ const CopyDeskScopePage = lazyWithPreload(
 const CopyDeskReviewPage = lazyWithPreload(
   () => import("@pages/copydesk/CopyDeskReviewPage"),
 );
+const CopyDeskCollectionPage = lazyWithPreload(
+  () => import("@pages/copydesk/CopyDeskCollectionPage"),
+);
 
 // The finance workspace — the second layout takeover, built for a board member
 // who opens Voct only to do finance. Unlike the copy desk it IS preloaded for
@@ -501,6 +504,8 @@ export const router = createBrowserRouter(
         >
           <Route index element={<CopyDeskContentsPage />} />
           <Route path="przeglad" element={<CopyDeskReviewPage />} />
+          {/* Not copy: the vault's live collection figure, staff only. */}
+          <Route path="zbiorka" element={<CopyDeskCollectionPage />} />
           {/* A scope is a dotted key (`concert.wcielenie`), which is one path
               segment; the static routes above outrank it either way. */}
           <Route path=":scope" element={<CopyDeskScopePage />} />

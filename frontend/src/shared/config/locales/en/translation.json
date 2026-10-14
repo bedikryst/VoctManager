@@ -6933,6 +6933,60 @@
       "patch_rows_other": "changes",
       "patch_note": "The first command only shows what it would write; the second writes it. Then git diff, commit and deploy — that is what changes the site.",
       "patch_since": "The oldest decision has been waiting since: {{when}}."
+    },
+    "collection": {
+      "link": "Collection",
+      "title": "Collection",
+      "title_highlight": "status",
+      "refused_title": "The collection is kept by administrators",
+      "refused_description": "This page changes the amount every visitor sees, so only administrator accounts can open it.",
+      "stat_raised": "raised",
+      "stat_donors_one": "donor",
+      "stat_donors_other": "donors",
+      "stat_goal": "of the {{amount}} goal",
+      "intro": "This is what the vault shows on the site. Payments made through the site count themselves; Zrzutka, transfers and cash are entered here.",
+      "sources_title": "Gifts outside the site",
+      "sources_intro": "For each source, enter the whole total you see in its panel or on the statement, not only the new gifts.",
+      "source": {
+        "ZRZUTKA": {
+          "label": "Zrzutka",
+          "hint": "Copy the total from the campaign panel on Zrzutka."
+        },
+        "BANK_TRANSFER": {
+          "label": "Bank transfers",
+          "hint": "Gifts transferred straight to the foundation's account."
+        },
+        "OTHER": {
+          "label": "Other",
+          "hint": "Cash, and anything that came through neither Zrzutka nor the account."
+        }
+      },
+      "never_saved": "not entered yet",
+      "changed_by": "changed {{day}} · {{name}}",
+      "changed_on": "changed {{day}}",
+      "amount": "Amount",
+      "donors": "Donors",
+      "gateway_label": "Payments on the site",
+      "donor_count_one": "{{count}} donor",
+      "donor_count_other": "{{count}} donors",
+      "gateway_hint": "Counted automatically from the payment gateway. Do not enter them in the fields above, or they count twice.",
+      "settings_title": "Goal and rail",
+      "goal": "Collection goal",
+      "goal_hint": "An empty field means the goal from the server configuration: {{amount}}.",
+      "rail_label": "Show the progress rail in the vault",
+      "rail_hint": "Advice: turn it on from about {{threshold}}% of the goal. A short rail beside an announced concert looks like doubt that the evening will happen. Now: {{percent}}%.",
+      "live_note": "A save goes to the site straight away, without review. Every change of an amount stays in the history below.",
+      "save": "Save",
+      "saved": "Saved. The site will show the new figures within a minute.",
+      "save_failed": "Nothing was saved. Try again in a moment.",
+      "errors": {
+        "whole_number": "Enter a whole number.",
+        "too_large": "This number is too large.",
+        "goal_positive": "The goal must be greater than zero."
+      },
+      "history_title": "Recent changes",
+      "history_empty": "Nobody has changed anything yet.",
+      "history_initial": "initial figure"
     }
   },
   "notes": {

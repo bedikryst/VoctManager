@@ -116,7 +116,8 @@ qr:
     w aplikacji.
   recurringLabel: "Wsparcie co miesiąc · zlecenie stałe"
   # One practical sentence about THESE details, no link: the sheet's closing line (skarbiecChrome
-  # `recurringLink`) is the one road to /fundacja#wsparcie, right under this card. The offer —
+  # `recurringLink`, drawn once FOUNDATION_PAGE_LINKED) is the one road to /fundacja#wsparcie,
+  # right under this card. The offer —
   # amounts, what patronage means, how to tell us — has one home there and this note must not grow
   # back into a second copy of it.
   # "Zlecenie stałe" is the banking term — use the reader's own. The sentence must not point at the

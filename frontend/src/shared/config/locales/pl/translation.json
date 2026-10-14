@@ -7049,6 +7049,64 @@
       "patch_rows_many": "zmian",
       "patch_note": "Pierwsze polecenie tylko pokazuje, co wpisze; drugie wpisuje. Potem git diff, commit i wdrożenie — dopiero to zmienia serwis.",
       "patch_since": "Najstarsza decyzja czeka od: {{when}}."
+    },
+    "collection": {
+      "link": "Zbiórka",
+      "title": "Stan",
+      "title_highlight": "zbiórki",
+      "refused_title": "Zbiórkę prowadzą administratorzy",
+      "refused_description": "Ta strona zmienia kwotę, którą widzi każdy odwiedzający, więc mają do niej dostęp tylko konta administratorów.",
+      "stat_raised": "zebrane",
+      "stat_donors_one": "darczyńca",
+      "stat_donors_few": "darczyńców",
+      "stat_donors_many": "darczyńców",
+      "stat_donors_other": "darczyńców",
+      "stat_goal": "celu {{amount}}",
+      "intro": "Tyle pokazuje skarbiec na stronie. Płatności przez stronę liczą się same; Zrzutkę, przelewy i gotówkę wpisujecie tutaj.",
+      "sources_title": "Wpłaty poza stroną",
+      "sources_intro": "Przy każdym źródle wpisz całą sumę, jaką widzisz w jego panelu lub na wyciągu, a nie tylko nowe wpłaty.",
+      "source": {
+        "ZRZUTKA": {
+          "label": "Zrzutka",
+          "hint": "Przepisz sumę z panelu zbiórki na Zrzutce."
+        },
+        "BANK_TRANSFER": {
+          "label": "Przelewy",
+          "hint": "Darowizny przelane bezpośrednio na konto fundacji."
+        },
+        "OTHER": {
+          "label": "Inne",
+          "hint": "Gotówka i wszystko, co nie przeszło przez Zrzutkę ani konto."
+        }
+      },
+      "never_saved": "jeszcze nie wpisane",
+      "changed_by": "zmienione {{day}} · {{name}}",
+      "changed_on": "zmienione {{day}}",
+      "amount": "Kwota",
+      "donors": "Darczyńcy",
+      "gateway_label": "Płatności na stronie",
+      "donor_count_one": "{{count}} darczyńca",
+      "donor_count_few": "{{count}} darczyńców",
+      "donor_count_many": "{{count}} darczyńców",
+      "donor_count_other": "{{count}} darczyńców",
+      "gateway_hint": "Liczone automatycznie z bramki płatności. Nie wpisuj ich w pola wyżej, bo policzą się dwa razy.",
+      "settings_title": "Cel i pasek",
+      "goal": "Cel zbiórki",
+      "goal_hint": "Puste pole oznacza cel z konfiguracji serwera: {{amount}}.",
+      "rail_label": "Pokazuj pasek postępu w skarbcu",
+      "rail_hint": "Rada: włączaj od około {{threshold}}% celu. Krótki pasek obok zapowiedzianego koncertu wygląda jak wątpliwość, czy wieczór się odbędzie. Teraz: {{percent}}%.",
+      "live_note": "Zapis trafia na stronę od razu, bez przeglądu. Każda zmiana kwoty zostaje w historii poniżej.",
+      "save": "Zapisz",
+      "saved": "Zapisane. Strona pokaże nowe liczby w ciągu minuty.",
+      "save_failed": "Nic nie zostało zapisane. Spróbuj ponownie za chwilę.",
+      "errors": {
+        "whole_number": "Wpisz liczbę całkowitą.",
+        "too_large": "Ta liczba jest za duża.",
+        "goal_positive": "Cel musi być większy od zera."
+      },
+      "history_title": "Ostatnie zmiany",
+      "history_empty": "Nikt jeszcze niczego nie zmienił.",
+      "history_initial": "stan początkowy"
     }
   },
   "notes": {

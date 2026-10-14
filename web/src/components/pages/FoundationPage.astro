@@ -257,7 +257,7 @@ const jsonLd = {
 >
   <Fragment slot="head">
     {/* Deployed but not yet announced: until FOUNDATION_PAGE_LINKED the page is reachable through
-        the footers and the vault, and kept out of the index (and, by hand, out of the sitemap —
+        the footers, and kept out of the index (and, by hand, out of the sitemap —
         astro.config.mjs) so a search result never becomes its first door. */}
     {!FOUNDATION_PAGE_LINKED && <meta name="robots" content="noindex,follow" />}
     <script is:inline type="application/ld+json" set:html={JSON.stringify(jsonLd)} />

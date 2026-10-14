@@ -231,7 +231,7 @@
     white-space: nowrap;
   }
 
-  /* Without the rail (`VAULT_CONFIG.progress.showRail`) the line stands alone in the band. */
+  /* Without the rail (`showRail` off in the progress response) the line stands alone in the band. */
   .vault-progress-meta:first-child {
     margin-top: 0;
   }

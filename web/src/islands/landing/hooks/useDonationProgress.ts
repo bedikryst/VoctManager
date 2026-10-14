@@ -1,6 +1,6 @@
 /**
  * @file useDonationProgress.ts
- * @description Fetches the static donation progress JSON exactly once and computes
+ * @description Fetches the collection figure from the progress endpoint exactly once and computes
  * derived display values (percent, min-visible width with a 3% floor when raised > 0).
  * @module features/landing/hooks/useDonationProgress
  */
@@ -13,6 +13,7 @@ export interface DonationProgressView {
   readonly raised: number;
   readonly goal: number;
   readonly donors: number;
+  readonly showRail: boolean;
   readonly percent: number;
   readonly visibleWidth: number;
   readonly updatedAt: string | null;
