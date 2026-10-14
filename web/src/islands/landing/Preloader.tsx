@@ -50,8 +50,9 @@
  *     `html.rite-brief` before paint, so the pen starts writing on the first frame,
  *     before this island hydrates; here we only schedule the resolution off the already
  *     running animation;
- *   - no valid choice → the FULL rite: hold (min one breath, elastic until `load`,
- *     capped) → cadence → the question, with the rings still breathing behind it;
+ *   - no valid choice → the FULL rite: hold (until both display words have surfaced,
+ *     elastic until `load`, capped) → cadence → the question, with the rings still
+ *     breathing behind it;
  *   - rite already seen this session (e.g. TTL expired mid-session) → the question
  *     immediately, without the ceremony.
  *
@@ -74,14 +75,17 @@ import { useBodyClass } from "./hooks/useBodyClass";
 import { useFocusTrap } from "./hooks/useFocusTrap";
 import { Typo } from "./lib/Typo";
 
-// MIN_HOLD lets the spark finish igniting before the pen takes over; SAFETY_CEILING caps
-// waiting for `load` — past it the cadence begins regardless, because the threshold
-// question is a better place to wait than a curtain: there the visitor has something to
-// do. CADENCE_MS mirrors the CSS timeline (illumination ends ~2900ms on the brief path's
+// MIN_HOLD is the moment the second display word reaches full presence: w2's 1.9s delay plus
+// the 42% peak of its 3.4s `preloaderWord` (01-foundation.css), so it mirrors the CSS and has
+// to move with it — any shorter and the hold parts before that word is legible. SAFETY_CEILING
+// caps waiting for `load` — past it the cadence begins regardless, because the threshold
+// question is a better place to wait than a curtain: there the visitor has something to do.
+// Both count from the hold's first frame (`holdStartTime`), not from this island's mount.
+// CADENCE_MS mirrors the CSS timeline (illumination ends ~2900ms on the brief path's
 // lead-in) and is only the fallback — the primary resolution is the `riteIllum`
 // animation's own `finished`. REST_BEAT lets the completed mark land before it parts.
-const MIN_HOLD = 1600;
-const SAFETY_CEILING = 3000;
+const MIN_HOLD = 3300;
+const SAFETY_CEILING = 4000;
 const CADENCE_MS = 2950;
 const REST_BEAT = 420;
 const HERO_GRACE = 900;
@@ -103,6 +107,18 @@ function markPreloaderSeen(): void {
   } catch {
     /* private mode / disabled storage — non-fatal */
   }
+}
+
+/**
+ * When the hold's CSS clock started, on the `performance.now()` timebase. The hold is
+ * server-rendered and its words begin on the first painted frame, while this island mounts
+ * only after hydration — a floor counted from the mount would shift with hydration time and
+ * part the hold before its words have played. Null when the hold has no animation to read;
+ * the caller then counts from the mount.
+ */
+function holdStartTime(hold: HTMLElement | null): number | null {
+  const start = hold?.getAnimations({ subtree: true })[0]?.startTime;
+  return typeof start === "number" ? start : null;
 }
 
 function prefersReducedMotion(): boolean {
@@ -226,6 +242,7 @@ export function Preloader({ copy, chrome, lang }: PreloaderProps): React.JSX.Ele
   const overlayRef = useRef<HTMLDivElement>(null);
   const choiceRef = useRef<HTMLDivElement>(null);
   const riteRef = useRef<HTMLDivElement>(null);
+  const holdRef = useRef<HTMLDivElement>(null);
   // The trail refs keep `.is-cadence` / `.is-choice` on the overlay through later
   // phases: cadence fill-states must survive into the choice and the dissolve, or the
   // lit mark would snap back to darkness the moment the phase moves on.
@@ -269,9 +286,9 @@ export function Preloader({ copy, chrome, lang }: PreloaderProps): React.JSX.Ele
       return;
     }
 
-    // The full rite: the hold loop breathes until the page is ready AND the spark has
-    // finished igniting, then the pen takes over.
-    const startedAt = performance.now();
+    // The full rite: the hold loop breathes until the page is ready AND both display words
+    // have surfaced, then the pen takes over.
+    const startedAt = holdStartTime(holdRef.current) ?? performance.now();
     let timer: number | undefined;
 
     const beginCadence = () => {
@@ -288,7 +305,10 @@ export function Preloader({ copy, chrome, lang }: PreloaderProps): React.JSX.Ele
     } else {
       window.addEventListener("load", beginCadence, { once: true });
     }
-    const safety = window.setTimeout(beginCadence, SAFETY_CEILING);
+    const safety = window.setTimeout(
+      beginCadence,
+      Math.max(0, SAFETY_CEILING - (performance.now() - startedAt)),
+    );
 
     return () => {
       if (timer) window.clearTimeout(timer);
@@ -408,7 +428,7 @@ export function Preloader({ copy, chrome, lang }: PreloaderProps): React.JSX.Ele
           <span className="preloader-ring r3" />
         </div>
 
-        <div className="preloader-hold" aria-hidden="true">
+        <div className="preloader-hold" ref={holdRef} aria-hidden="true">
           <span className="preloader-spark" />
           <span className="preloader-word w1">{copy.word1}</span>
           <span className="preloader-word w2">{copy.word2}</span>
