@@ -118,13 +118,18 @@
     color: rgba(244, 241, 233, 0.5);
   }
 
+  /* 30px keeps "Wesprzyj Koncerty Duchowe" (340px at 30px) on one line on a laptop, where the
+     column narrows as the 4vw padding grows: 387px at 1536, 356px at 1920. A phone column
+     (210px at 360) cannot hold it at any heading size, so `balance` breaks it before the cycle's
+     name rather than inside it — "Wesprzyj / Koncerty Duchowe", and the same in EN and FR. */
   .vault-title {
     margin: 0;
     font-family: var(--serif);
-    font-size: clamp(26px, 2.6vw, 34px);
+    font-size: clamp(26px, 2.6vw, 30px);
     font-weight: 300;
     line-height: 1;
     letter-spacing: 0;
+    text-wrap: balance;
   }
 
   .vault-close {
@@ -204,17 +209,24 @@
     box-shadow: 0 0 18px rgba(198, 164, 91, 0.78);
   }
 
+  /* Each half stays whole; when the two cannot share a line (a phone: 338px of text in 316), the
+     goal drops below instead of both halves breaking in the middle. */
   .vault-progress-meta {
     display: flex;
+    flex-wrap: wrap;
     justify-content: space-between;
     align-items: baseline;
-    gap: 12px;
+    gap: 6px 12px;
     margin-top: 12px;
     color: rgba(244, 241, 233, 0.58);
     font-family: var(--mono);
     font-size: 10px;
     letter-spacing: 0.14em;
     text-transform: uppercase;
+  }
+
+  .vault-progress-meta > span {
+    white-space: nowrap;
   }
 
   /* Without the rail (`VAULT_CONFIG.progress.showRail`) the line stands alone in the band. */
@@ -568,11 +580,19 @@
     gap: 12px;
   }
 
+  /* `.micro` carries 8px of bottom padding, and centring the dot against a box that includes it
+     drops the dot 4px below the letters. The padding moves to the row: same height, dot on the
+     letters' middle. */
   .method-tag {
     display: inline-flex;
     align-items: center;
     gap: 8px;
+    padding-bottom: 8px;
     color: rgba(244, 241, 233, 0.58);
+  }
+
+  .method-tag .micro {
+    padding-bottom: 0;
   }
 
   .method-tag-dot {

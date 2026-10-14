@@ -75,19 +75,19 @@ const VAULT_CONTRACT: readonly CopyEntry[] = [
     kind: "field",
     path: "head.kicker",
     label: "Głowa · rejestr",
-    note: "The line above the title, in small caps. `MMXXVI` is the cycle's year in Roman numerals and stays itself. \"Skarbiec\" is the site's own word for this sheet — a treasury, not a donation form — so the register is a room, not a transaction.",
+    note: "The line above the title, in small caps. \"Skarbiec\" is the site's own word for this sheet — a treasury, not a donation form — so the register is a room, not a transaction. It must sit on one line in a phone's head column, about 210px at 11px spaced capitals: two short words, no year.",
   },
   {
     kind: "field",
     path: "head.title",
     label: "Głowa · tytuł",
-    note: "The sheet's heading and its accessible name. Two words, imperative, addressed to one person — never a plural appeal to an audience.",
+    note: "The sheet's heading and its accessible name. Imperative, addressed to one person — never a plural appeal to an audience. It names the cycle by the name the site publishes in that language (\"Koncerty Duchowe\", the Spiritual Concerts, les Concerts Spirituels).",
   },
   {
     kind: "field",
     path: "head.lede",
     label: "Głowa · po co",
-    note: "The one place in the sheet that says what a gift pays for; most readers open it from a page that never made the case. Plain words, two short sentences. It says donations make free admission possible, not that every concert is free: some were ticketed.",
+    note: "The one place in the sheet that says what a gift pays for; most readers open it from a page that never made the case. Plain words, two short sentences: what the money pays, then what the audience gets from it. Free admission is stated without a hedge: one concert was ticketed as an exception and no more are planned.",
   },
   {
     kind: "field",
@@ -99,7 +99,7 @@ const VAULT_CONTRACT: readonly CopyEntry[] = [
     kind: "field",
     path: "progress.awaiting",
     label: "Zbiórka · zamiast liczby",
-    note: "Printed in place of the donor count while nobody has given yet. \"Concerts Spirituels\" is the cycle's published name and stays itself in all three locales.",
+    note: "Printed in place of the donor count while nobody has given yet. The cycle's name as the site publishes it in that language.",
   },
   {
     kind: "field",
@@ -111,14 +111,14 @@ const VAULT_CONTRACT: readonly CopyEntry[] = [
     kind: "field",
     path: "online.tag",
     label: "Wpłata online · znacznik",
-    note: "Two promises separated by a middle dot, read as one breath. Keep both halves short enough to sit on one line at 320px.",
+    note: "What the donor can pay with, at a glance; the note under the form gives the full list per currency. BLIK keeps its name. Short enough to sit on one line at 320px.",
   },
   { kind: "field", path: "online.title", label: "Wpłata online · tytuł" },
   {
     kind: "field",
     path: "online.note",
     label: "Wpłata online · opis",
-    note: "\"Axepta BNP Paribas\" is the gateway's brand and stays itself. The two negations at the end are the card's whole argument: nothing stands between the donor and the foundation's account.",
+    note: "\"Axepta BNP Paribas\" is the gateway's brand and stays itself. Who handles the payment, where the money lands, and that no account is needed. A gateway is an intermediary, so the sentence never promises \"no intermediaries\".",
   },
   {
     kind: "field",
@@ -138,12 +138,17 @@ const VAULT_CONTRACT: readonly CopyEntry[] = [
     label: "Wpłata online · metody w EUR",
     note: "Narrower than the PLN note on purpose, and the difference is a fact rather than a hedge: a euro donation cannot use BLIK or a Polish pay-by-link.",
   },
-  { kind: "field", path: "zrzutka.tag", label: "Zrzutka · znacznik" },
+  {
+    kind: "field",
+    path: "zrzutka.tag",
+    label: "Zrzutka · znacznik",
+    note: "What this road adds over the online form above it: the gift can repeat every month.",
+  },
   {
     kind: "field",
     path: "zrzutka.note",
     label: "Zrzutka · opis",
-    note: "Zrzutka.pl is a Polish crowdfunding service; its name is in the markup and is not translated. The last sentence is the card's reason to exist — this road is the one where giving is joining.",
+    note: "Zrzutka.pl is a Polish crowdfunding service; its name is in the markup and is not translated. The payment methods only — the tag above already says what this road adds.",
   },
   {
     kind: "field",
@@ -194,7 +199,7 @@ const VAULT_CONTRACT: readonly CopyEntry[] = [
     kind: "field",
     path: "gratitude.strap",
     label: "Podziękowanie · zdanie",
-    note: "The last thing a donor reads. It thanks and then turns outward to the music — never to the amount, and never to a next step.",
+    note: "The last thing a donor reads. Plain thanks that names what was supported — no pathos, never the amount, and no promise of an e-mail the foundation does not send.",
   },
   {
     kind: "field",

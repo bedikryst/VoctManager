@@ -10,12 +10,9 @@
 # what the foundation's bank statement has to carry); Zrzutka.pl, Axepta BNP Paribas, BLIK, Apple
 # and Google Pay and the six banks under the QR are brands.
 #
-# THE CYCLE'S NAME, AND ONE THING TO PUT TO FLORENT. This page's Polish calls the cycle
-# "Concerts Spirituels" — the FRENCH name — where /koncerty calls it "Koncerty Duchowe". The
-# English follows the name the site publishes in English, "the Spiritual Concerts cycle"
-# (`i18n/content/koncert.ts`), rather than reproducing the Polish page's choice. The divergence is
-# in the SOURCE language, so it is an editorial question for the editor and not a translation
-# defect (spec §6aa found the same shape in /o-nas's `Via`).
+# THE CYCLE'S NAME is the one the site publishes in English, "the Spiritual Concerts"
+# (`i18n/content/koncert.ts`), as the Polish uses "Koncerty Duchowe" — in the title, the reason
+# for nobody having given yet, and the thank-you.
 #
 # THE QR CARD IS FOR A POLISH ACCOUNT, and its banks are named on the card itself. The Polish 2D
 # (KIR) code it prints is only read by Polish banking apps, so "QR transfer" keeps close to the
@@ -29,24 +26,24 @@
 # Not the overlay: `npm run copy:propose --locale en` carries these in as proposals, which is the
 # only door that stamps the provenance hash the stale state is computed from.
 
-page.skarbiec.head.kicker: "Treasury of music · MMXXVI cycle"
-page.skarbiec.head.title: "Support the cycle"
-page.skarbiec.head.lede: "Donations pay the singers' fees, the scores, the sound and the travel. They are what lets us sing with free admission."
+page.skarbiec.head.kicker: "Treasury of music"
+page.skarbiec.head.title: "Support the Spiritual Concerts"
+page.skarbiec.head.lede: "Donations pay the singers' fees, the scores, the sound engineering and the travel. Because of them, our concerts are free to attend."
 
 page.skarbiec.progress.open: "Collection open"
 page.skarbiec.progress.awaiting: "the Spiritual Concerts cycle"
 
 page.skarbiec.methods.label: "Other ways to give"
 
-page.skarbiec.online.tag: "instant · secure"
+page.skarbiec.online.tag: "BLIK · card"
 page.skarbiec.online.title: "Give online"
-page.skarbiec.online.note: "Straight into the Foundation's account — through the Axepta BNP Paribas gateway. No intermediaries, no account to create."
+page.skarbiec.online.note: "The payment is handled by the Axepta BNP Paribas gateway, and the money goes straight to the Foundation. No account to create."
 page.skarbiec.online.consentLead: "I have read and accept the"
 page.skarbiec.online.methodsNotePln: "Payments in PLN are handled by BLIK, payment cards, Apple/Google Pay and instant bank transfers."
 page.skarbiec.online.methodsNoteEur: "Payments in EUR are handled by payment cards and Apple/Google Pay only."
 
-page.skarbiec.zrzutka.tag: "community · instant"
-page.skarbiec.zrzutka.note: "BLIK, card, Apple Pay, Google Pay. Regular giving available. Join the community of listeners."
+page.skarbiec.zrzutka.tag: "monthly too"
+page.skarbiec.zrzutka.note: "BLIK, card, Apple Pay or Google Pay."
 
 page.skarbiec.qr.tag: "no commission"
 page.skarbiec.qr.title: "Transfer from your banking app"
@@ -61,7 +58,7 @@ page.skarbiec.result.kicker: "VoctEnsemble · MMXXVI cycle"
 
 page.skarbiec.gratitude.title1: "Your voice"
 page.skarbiec.gratitude.title2: "has joined the choir."
-page.skarbiec.gratitude.strap: "Thank you. May this music go on sounding — thanks to you as well."
+page.skarbiec.gratitude.strap: "Thank you for supporting the Spiritual Concerts."
 
 page.skarbiec.failure.title1: "The payment"
 page.skarbiec.failure.title2: "did not go through."

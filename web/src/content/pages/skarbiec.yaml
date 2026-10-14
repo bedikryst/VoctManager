@@ -44,18 +44,20 @@
 
 head:
   # The register above the title. "Skarbiec" is the site's own word for this sheet — a treasury,
-  # not a donation form — and MMXXVI is the cycle's year in Roman numerals, the same in every
-  # language.
-  kicker: "Skarbiec muzyki · cykl MMXXVI"
-  # The sheet's h2 and its accessible name. Two words, imperative, addressed to one person.
-  title: "Wesprzyj cykl"
+  # not a donation form. No year and no "cykl": the title names the cycle, and the register has to
+  # sit on one line in a phone's head column (210px at 360).
+  kicker: "Skarbiec muzyki"
+  # The sheet's h2 and its accessible name. Imperative, addressed to one person, and it names the
+  # cycle by the name the rest of the Polish site prints, not the insider's "cykl".
+  title: "Wesprzyj Koncerty Duchowe"
   # The first sentence under the head, and the only one in the sheet that says what a gift pays
   # for. Most readers open the vault from the nav on a page that never made the case, so the case
-  # is made here in the plainest words. "Przy wolnym wstępie" claims what donations make possible,
-  # not that every concert is free: some of the cycle's concerts were ticketed.
+  # is made here in the plainest words. The second sentence is about the audience, not the singers.
+  # Free admission is stated without a hedge: one concert of the cycle was ticketed, as an
+  # exception, and the ensemble plans no more.
   lede: >-
-    Darowizny idą na honoraria śpiewaków, partytury, dźwięk i dojazdy. Dzięki nim możemy śpiewać
-    przy wolnym wstępie.
+    Z darowizn opłacamy honoraria śpiewaków, nuty, realizację dźwięku i dojazdy. Dzięki nim wstęp
+    na nasze koncerty jest wolny.
 
 progress:
   # Left half of the line under the campaign rail. The right half is the goal, formatted from
@@ -63,8 +65,7 @@ progress:
   open: "Zbiórka otwarta"
   # Printed instead of the donor count while the count is zero or unknown. An early-stage bar with
   # "0 darczyńców" beside it reads as emptiness; the cycle's name reads as a beginning.
-  # "Concerts Spirituels" is the cycle's published name and stays itself in all three locales.
-  awaiting: "cykl Concerts Spirituels"
+  awaiting: "cykl Koncertów Duchowych"
 
 methods:
   # Under the online form, above Zrzutka and the bank transfer. The form is the sheet's one road;
@@ -72,12 +73,15 @@ methods:
   label: "Inne sposoby wpłaty"
 
 online:
-  # The tag on the card, read as one breath: two promises separated by a middle dot.
-  tag: "natychmiast · bezpiecznie"
+  # The tag on the card: what the donor can pay with, at a glance. The note under the form gives
+  # the full list per currency. It carries the main road's pulsing dot, so the card keeps a tag.
+  tag: "BLIK · karta"
   title: "Wpłać online"
+  # Who handles the payment and where the money lands. The gateway is named as what it is, so the
+  # sentence cannot also promise "no intermediaries".
   note: >-
-    Bezpośrednio na konto Fundacji — przez bramkę Axepta BNP Paribas. Bez pośredników, bez
-    zakładania konta.
+    Płatność obsługuje bramka Axepta BNP Paribas, a pieniądze trafiają prosto do Fundacji. Nie
+    trzeba zakładać konta.
   # The consent line beside the checkbox, split at the link because the link is a BUTTON that
   # opens the terms overlay — the desk's inline vocabulary is `<em> <strong> <a>` and a `<button>`
   # would be flattened on the way in. The two halves are one sentence: the second is the document's
@@ -92,10 +96,9 @@ online:
     Płatności w EUR obsługiwane są wyłącznie za pomocą kart płatniczych oraz Apple/Google Pay.
 
 zrzutka:
-  tag: "społeczność · instant"
-  note: >-
-    BLIK, karta, Apple Pay, Google Pay. Wpłaty regularne dostępne. Dołącz do społeczności
-    słuchaczy.
+  # What this road adds over the online form above it: a gift that repeats every month.
+  tag: "także co miesiąc"
+  note: "BLIK, karta, Apple Pay lub Google Pay."
 
 qr:
   # The one method that costs the foundation nothing at all.
@@ -131,7 +134,9 @@ gratitude:
   # its own split. Not an h1 — the page under this overlay already has one.
   title1: "Twój głos"
   title2: "dołączył do chóru."
-  strap: "Dziękujemy. Niech ta muzyka wybrzmiewa dalej — także dzięki Tobie."
+  # Plain thanks that names what was supported. No promise of an e-mail: the backend sends the
+  # donor none, it only hands the address to the gateway.
+  strap: "Dziękujemy za wsparcie Koncertów Duchowych."
 
 failure:
   # Same two-line composition as the thank-you, and the same rule about the break. The register is

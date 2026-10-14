@@ -12,11 +12,9 @@
 # c'est la chaîne que le relevé bancaire de la fondation doit porter ; Zrzutka.pl, Axepta BNP
 # Paribas, BLIK, Apple et Google Pay ainsi que les six banques sous le QR sont des marques.
 #
-# LE NOM DU CYCLE, ET UNE QUESTION À POSER À FLORENT. Le polonais de cette page appelle le cycle
-# « Concerts Spirituels » — le nom FRANÇAIS — là où /koncerty l'appelle « Koncerty Duchowe ». Le
-# français reprend le nom que le site publie en français, « le cycle des Concerts Spirituels »
-# (`i18n/content/koncert.ts`) ; la divergence est dans la langue SOURCE, c'est donc une question
-# éditoriale et non un défaut de traduction (§6aa a trouvé la même forme dans le `Via` de /o-nas).
+# LE NOM DU CYCLE est celui que le site publie en français, « les Concerts Spirituels »
+# (`i18n/content/koncert.ts`), là où le polonais dit « Koncerty Duchowe » : dans le titre, dans la
+# ligne qui remplace le nombre de donateurs et dans le remerciement.
 #
 # LA CARTE QR VISE UN COMPTE POLONAIS, et ses banques sont nommées sur la carte elle-même. Le code
 # 2D polonais (KIR) qu'elle imprime n'est lu que par les applications bancaires polonaises ; le
@@ -30,24 +28,24 @@
 # `qr.recurringNoteHtml` ne porte ni lien ni question : la ligne qui ferme le volet, chrome hors
 # pupitre, est la seule route vers /fundacja#mecenat et pose la question elle-même.
 
-page.skarbiec.head.kicker: "Trésor de musique · cycle MMXXVI"
-page.skarbiec.head.title: "Soutenir le cycle"
-page.skarbiec.head.lede: "Les dons financent les cachets des chanteurs, les partitions, le son et les déplacements. Ce sont eux qui nous permettent de chanter en entrée libre."
+page.skarbiec.head.kicker: "Trésor de musique"
+page.skarbiec.head.title: "Soutenir les Concerts Spirituels"
+page.skarbiec.head.lede: "Les dons financent les cachets des chanteurs, les partitions, la technique du son et les déplacements. Grâce à eux, nos concerts sont en entrée libre."
 
 page.skarbiec.progress.open: "Collecte ouverte"
 page.skarbiec.progress.awaiting: "le cycle des Concerts Spirituels"
 
 page.skarbiec.methods.label: "Autres façons de donner"
 
-page.skarbiec.online.tag: "immédiat · sécurisé"
+page.skarbiec.online.tag: "BLIK · carte"
 page.skarbiec.online.title: "Faire un don en ligne"
-page.skarbiec.online.note: "Directement sur le compte de la Fondation — par la passerelle Axepta BNP Paribas. Sans intermédiaire, sans création de compte."
+page.skarbiec.online.note: "Le paiement passe par la passerelle Axepta BNP Paribas, et l'argent va directement à la Fondation. Aucun compte à créer."
 page.skarbiec.online.consentLead: "J'ai lu et j'accepte le"
 page.skarbiec.online.methodsNotePln: "Les paiements en PLN passent par BLIK, les cartes de paiement, Apple/Google Pay et les virements bancaires instantanés."
 page.skarbiec.online.methodsNoteEur: "Les paiements en EUR passent uniquement par les cartes de paiement et Apple/Google Pay."
 
-page.skarbiec.zrzutka.tag: "communauté · instantané"
-page.skarbiec.zrzutka.note: "BLIK, carte, Apple Pay, Google Pay. Dons réguliers possibles. Rejoignez la communauté des auditeurs."
+page.skarbiec.zrzutka.tag: "aussi chaque mois"
+page.skarbiec.zrzutka.note: "BLIK, carte, Apple Pay ou Google Pay."
 
 page.skarbiec.qr.tag: "sans commission"
 page.skarbiec.qr.title: "Virement depuis votre application bancaire"
@@ -62,7 +60,7 @@ page.skarbiec.result.kicker: "VoctEnsemble · cycle MMXXVI"
 
 page.skarbiec.gratitude.title1: "Votre voix"
 page.skarbiec.gratitude.title2: "a rejoint le chœur."
-page.skarbiec.gratitude.strap: "Merci. Que cette musique continue de résonner — grâce à vous aussi."
+page.skarbiec.gratitude.strap: "Merci de soutenir les Concerts Spirituels."
 
 page.skarbiec.failure.title1: "Le paiement"
 page.skarbiec.failure.title2: "n'a pas abouti."
