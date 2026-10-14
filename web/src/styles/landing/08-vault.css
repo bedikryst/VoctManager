@@ -119,9 +119,11 @@
   }
 
   /* 30px keeps "Wesprzyj Koncerty Duchowe" (340px at 30px) on one line on a laptop, where the
-     column narrows as the 4vw padding grows: 387px at 1536, 356px at 1920. A phone column
-     (210px at 360) cannot hold it at any heading size, so `balance` breaks it before the cycle's
-     name rather than inside it — "Wesprzyj / Koncerty Duchowe", and the same in EN and FR. */
+     column narrows as the 4vw padding grows: 387px at 1536, 356px at 1920. The English and French
+     titles (362px, 369px) fit at 1536 and break in two from about 1850 and 1760 wide. A phone
+     column (210px at 360) cannot hold any of them at any heading size, so `balance` breaks each
+     before the cycle's name rather than inside it — "Wesprzyj / Koncerty Duchowe", "Support the /
+     Spiritual Concerts", "Soutenir les / Concerts Spirituels". */
   .vault-title {
     margin: 0;
     font-family: var(--serif);
