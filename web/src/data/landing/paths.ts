@@ -321,16 +321,14 @@ export const PATHS: readonly Path[] = [
     concertId: "pochwala-stworzenia",
     year: "MMXXVI",
     poster: "poster-stworzenie",
-    // The ensemble from above, through a dark stair railing: the only frame of the evening that
-    // is a mid shot, so the line stays one of mid shots. The centre square keeps the whole half
-    // circle with its feet, the railing crossing the top-left and bottom-right corners.
-    frame: "kd-stworzenie-0",
+    // The ensemble from above on the chequered floor before the altar: a mid shot, so the line
+    // stays one of mid shots. No square holds the whole half circle; the centre one keeps the
+    // conductor at the stand, the violinist and most of the singers, and loses the two ends of
+    // the arc. `left` keeps every soprano and pushes the conductor to the edge — the worse trade.
+    frame: "kd-stworzenie-4",
     frameMonth: "2026-10",
-    // Lit mean at the panel's crop and base grade is 0.510 against 0.361–0.445 for the five
-    // graded panels above, the white nave walls being the lit part; 0.9 is 40% of the way to
-    // their geometric mean (0.403) and leaves it at ≈0.46, just above Hymn Poległym's. 60% of
-    // the whole frame is the railing under luma 30, so a flat mean would read it as underexposed.
-    // Mean saturation 0.19 sits inside the line, so no `frameSaturation`.
-    frameLift: 0.9,
+    // NO LIFT AND NO DAMP: at the panel's crop and base grade it measures 0.386 lit-mean against
+    // 0.360–0.443 for the five graded panels above (geometric mean 0.403), so the arithmetic asks
+    // for 1.02, inside the noise. Mean saturation 0.20 sits inside the line as well.
   },
 ];

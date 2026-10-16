@@ -279,8 +279,14 @@ concert.pochwala-stworzenia.roster.groups.3.voice: "Basses"
 concert.pochwala-stworzenia.roster.groups.4.voice: "Violon"
 concert.pochwala-stworzenia.roster.groups.5.voice: "Orgue"
 concert.pochwala-stworzenia.roster.note: "L'effectif de la soirée à Varsovie, le 11 octobre 2026, d'après le programme du concert."
-concert.pochwala-stworzenia.gallery.kd-stworzenie-0.alt: "VoctEnsemble pendant le concert Louange de la Création dans l'église de Tous-les-Saints à Varsovie, vu d'en haut"
-concert.pochwala-stworzenia.gallery.kd-stworzenie-1.alt: "La nef de l'église de Tous-les-Saints à Varsovie pendant le concert Louange de la Création"
+concert.pochwala-stworzenia.gallery.kd-stworzenie-0.alt: "La nef de l'église de Tous-les-Saints à Varsovie depuis l'entrée : le public dans les bancs et VoctEnsemble devant le maître-autel"
+concert.pochwala-stworzenia.gallery.kd-stworzenie-1.alt: "Florent de Bazelaire dirige les chanteurs à la tribune, avec au fond la nef et le maître-autel"
+concert.pochwala-stworzenia.gallery.kd-stworzenie-2.alt: "Une chanteuse de VoctEnsemble, sa partition à la main, à la balustrade de la tribune, la nef en contrebas"
+concert.pochwala-stworzenia.gallery.kd-stworzenie-3.alt: "VoctEnsemble et son chef devant le maître-autel de l'église de Tous-les-Saints à Varsovie pendant le concert Louange de la Création"
+concert.pochwala-stworzenia.gallery.kd-stworzenie-4.alt: "VoctEnsemble en demi-cercle devant l'autel, avec le violoniste et le chef, vu d'en haut"
+concert.pochwala-stworzenia.gallery.kd-stworzenie-5.alt: "Radu Ropotan au violon parmi les chanteurs de VoctEnsemble, vu d'en haut"
+concert.pochwala-stworzenia.gallery.kd-stworzenie-6.alt: "Une chanteuse de VoctEnsemble au premier plan, les autres chanteurs derrière elle"
+concert.pochwala-stworzenia.gallery.kd-stworzenie-7.alt: "Radu Ropotan au violon, les chanteuses de VoctEnsemble derrière lui"
 
 # ── Programme · the works (`program.<i>.workHtml`, `ritornello.workHtml`) ─────────────────────
 # An original title stands exactly as written, a Polish original included ("Stoi lód na

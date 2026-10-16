@@ -11,8 +11,9 @@
  * dateline, and a share card that has dropped the date is a poster of nothing.
  *
  * The concert's own imagery does not come from here: `kd-stworzenie-hero-*` are photographs of
- * the church, prepared by `npm run photos:proxy` like every other station's (docs/
- * station-backgrounds.md). This file exists for the one surface a photograph cannot serve.
+ * the evening, prepared by `npm run photos:proxy` like every other station's (docs/
+ * station-backgrounds.md). This file exists for the one surface a photograph cannot serve: an
+ * evening still ahead, where a link is an invitation.
  *
  * The recipe — the sheet at full card height on a ground blurred out of itself — is shared with the
  * press kit's social graphics (scripts/press-pack/graphics.mjs), so the two cannot drift apart.

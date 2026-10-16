@@ -23,10 +23,11 @@ hand-edit those files.
 
 **An evening that has not happened yet has no photograph OF ITSELF**, and for a month this one was
 washed from its own POSTER instead — the only image it had, and at sigma 14 a field of colour
-rather than a picture of a poster. It is now washed from its hero like every other station: the
-hero is the CHURCH, photographed empty before the concert, which is a true picture of the evening's
-room without claiming to be a picture of the evening. Keep the poster recipe in mind for the next
-announced concert that has no venue photograph either.
+rather than a picture of a poster. It is now washed from its hero like every other station, and
+the hero is a frame of the evening itself (the photographer's set, `VE-PS-08950`). Before that
+set arrived the hero was the church photographed empty, which is the fallback worth remembering: a
+true picture of the evening's room that does not claim to be a picture of the evening. Keep the
+poster recipe in mind for the next announced concert that has no venue photograph either.
 
 **Wash one station at a time:** `node blur-stations.cjs st-stworzenie-bg`. Without an argument the
 script rebuilds every wash, which — per the note in its header — is a visible change to `/koncerty`

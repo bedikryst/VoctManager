@@ -238,8 +238,14 @@ concert.pochwala-stworzenia.roster.groups.3.voice: "Basses"
 concert.pochwala-stworzenia.roster.groups.4.voice: "Violin"
 concert.pochwala-stworzenia.roster.groups.5.voice: "Organ"
 concert.pochwala-stworzenia.roster.note: "The line-up of the evening in Warsaw, 11 October 2026, after the concert programme."
-concert.pochwala-stworzenia.gallery.kd-stworzenie-0.alt: "VoctEnsemble during the concert In Praise of Creation at All Saints’ Church in Warsaw, seen from above"
-concert.pochwala-stworzenia.gallery.kd-stworzenie-1.alt: "The nave of All Saints’ Church in Warsaw during the concert In Praise of Creation"
+concert.pochwala-stworzenia.gallery.kd-stworzenie-0.alt: "The nave of All Saints’ Church in Warsaw from the entrance: the audience in the pews and VoctEnsemble before the high altar"
+concert.pochwala-stworzenia.gallery.kd-stworzenie-1.alt: "Florent de Bazelaire conducting the singers in the choir loft, the nave and the high altar beyond"
+concert.pochwala-stworzenia.gallery.kd-stworzenie-2.alt: "A VoctEnsemble singer with her score at the balustrade of the choir loft, the nave below"
+concert.pochwala-stworzenia.gallery.kd-stworzenie-3.alt: "VoctEnsemble with its conductor before the high altar of All Saints’ Church in Warsaw during the concert In Praise of Creation"
+concert.pochwala-stworzenia.gallery.kd-stworzenie-4.alt: "VoctEnsemble in a half circle before the altar, with the violinist and the conductor, seen from above"
+concert.pochwala-stworzenia.gallery.kd-stworzenie-5.alt: "Radu Ropotan on the violin among the singers of VoctEnsemble, seen from above"
+concert.pochwala-stworzenia.gallery.kd-stworzenie-6.alt: "A VoctEnsemble singer in the foreground, the other singers behind her"
+concert.pochwala-stworzenia.gallery.kd-stworzenie-7.alt: "Radu Ropotan playing the violin, singers of VoctEnsemble behind him"
 
 # ── Programme · the works (`program.<i>.workHtml`, `ritornello.workHtml`) ─────────────────────
 # An original title stands exactly as written, a Polish original included ("Stoi lód na

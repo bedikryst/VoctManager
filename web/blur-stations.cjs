@@ -27,8 +27,8 @@ const jobs = [
   // The liturgy plate has no /o-nas twin (its milestone is a different photograph), so it keeps
   // its own source — a real 1920x1080 webp, not one of the duplicated camera originals.
   { name: "st-liturgia-bg", src: "st-liturgia-bg-desktop.webp", brightness: 0.46, saturation: 0.95 },
-  // An evening still ahead: its wash came from the POSTER while it had no photograph, and now
-  // reads its own hero like every other station (docs/station-backgrounds.md).
+  // Reads its own hero, a frame of the evening; before the evening it was washed from the POSTER,
+  // the recipe for an announced concert with no photograph (docs/station-backgrounds.md).
   { name: "st-stworzenie-bg", src: "kd-stworzenie-hero-desktop.jpg", brightness: 0.46, saturation: 0.95 },
 ];
 

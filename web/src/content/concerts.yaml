@@ -2661,26 +2661,19 @@
   # All three stems say `stworzenie`, not the concert's id — the archive's own naming, which
   # photos.ts keys by file rather than by concert.
   #
-  # The two hero frames come from different days. Desktop is the CHURCH, photographed empty before
-  # the concert: the evening's own frames are both portrait, and neither can fill a desktop window
-  # with the retable and the ensemble together at a usable size. The phone carries the evening
-  # itself — `-mobile` is the same file as `kd-stworzenie-1`, the nave from the back with the
-  # retable, the ensemble and the audience, the 9:16 view Hymn Poległym's phone hero also takes.
-  # Both evening frames are WhatsApp copies (≈1100 × 2000, under a 3× phone's width); the
-  # originals go into `.original-photos/` under the same names, and nothing here changes with them.
-  # The wash on /koncerty is blurred from the desktop frame like every other station's; while the
-  # evening had only its poster it was washed from that instead (docs/station-backgrounds.md).
+  # Both hero frames are the evening's, from the photographer's set, and neither is in the gallery.
+  # Desktop (`VE-PS-08950`, 24 mm) holds the retable, the ensemble on the floor and the pews in one
+  # landscape frame, with wall and pillar in its left third under the title. The phone takes the
+  # nave down the central aisle (`VE-PS-08908`): aisle, ensemble, crucifix, retable, the 9:16 view
+  # Hymn Poległym's phone hero also takes; the cover crop to a phone's aspect drops the pulpit at
+  # the left edge and the figure standing in it. With the desktop hero cut from the evening the
+  # concert previews off-site with it, so it carries no `share`. The wash on /koncerty is blurred
+  # from the desktop frame like every other station's (docs/station-backgrounds.md).
   bg: st-stworzenie-bg
   heroImg: kd-stworzenie-hero
   poster: poster-stworzenie
   posterAlt: Plakat koncertu Pochwała Stworzenia
   posterCredit: "Anna Marcisz · VoctEnsemble"
-  # The frame a pasted link previews with: a 1.91:1 cut of `kd-stworzenie-1` (y 470–1048 of the
-  # 1101 × 1956 copy, resized to 1200 × 630) holding the retable, the ensemble and the first pews.
-  # A sung evening normally previews with its desktop hero, and this one cannot yet: that hero is
-  # the church photographed empty before the concert, which is the wrong picture under a link to
-  # its record. Drop the field the day the desktop hero is cut from a frame of the evening.
-  share: share-stworzenie-nawa
   realizacja: "Skrzypce: Radu Ropotan"
   hasPage: true
   # The scene, and nothing the door band states in fields: the day, the hour, the festival and the
@@ -2738,12 +2731,26 @@
     note: >-
       Skład wieczoru w Warszawie, 11 października 2026, za programem koncertu.
   gallery:
-  # One evening, one run — both frames inherit the concert's own venue and date. The ensemble's
-  # own photographs, so neither carries `credit`. Stored in the order they were sent: the copies
-  # carry no capture time. -0, seen from above through the railing, is also the landing's
-  # Imagines frame (data/landing/paths.ts); -1 is the phone hero and the share frame's source.
-  - { img: kd-stworzenie-0, alt: "VoctEnsemble podczas koncertu Pochwała Stworzenia w kościele Wszystkich Świętych w Warszawie, widok z góry" }
-  - { img: kd-stworzenie-1, alt: "Nawa kościoła Wszystkich Świętych w Warszawie podczas koncertu Pochwała Stworzenia" }
+  # One evening, one run — every frame inherits the concert's own venue and date. The ensemble's
+  # own archive, one camera and one grade across the set, so no frame carries `credit`. Stored in
+  # shooting order as the camera's sequence gives it; its clock ran about 14 h off, so no date or
+  # hour here may be read from the files' EXIF.
+  #
+  # -3 is the plate. The run opens on -0, the nave from the entrance in portrait, where the
+  # ensemble is a band about a tenth of the frame's height at the far end of the aisle; at the
+  # plate's 904px that is a photograph of a church. -3 is the ensemble at the altar from the nave,
+  # a third of the frame's height. -4 is also the landing's Imagines frame (data/landing/paths.ts).
+  #
+  # No alt names an instrument beyond the violin; the concert's spec (§18) says why, and a frame
+  # added here is checked against it first.
+  - { img: kd-stworzenie-0, alt: "Nawa kościoła Wszystkich Świętych w Warszawie od wejścia: słuchacze w ławkach i VoctEnsemble przed ołtarzem głównym" }
+  - { img: kd-stworzenie-1, alt: "Florent de Bazelaire dyryguje śpiewakami na chórze kościoła, w głębi nawa i ołtarz główny" }
+  - { img: kd-stworzenie-2, alt: "Śpiewaczka VoctEnsemble z nutami przy balustradzie chóru, w dole nawa kościoła" }
+  - { img: kd-stworzenie-3, alt: "VoctEnsemble z dyrygentem przed ołtarzem głównym kościoła Wszystkich Świętych w Warszawie podczas koncertu Pochwała Stworzenia", plate: true }
+  - { img: kd-stworzenie-4, alt: "VoctEnsemble w półkolu przed ołtarzem, ze skrzypkiem i dyrygentem, widok z góry" }
+  - { img: kd-stworzenie-5, alt: "Radu Ropotan na skrzypcach wśród śpiewaków VoctEnsemble, widok z góry" }
+  - { img: kd-stworzenie-6, alt: "Śpiewaczka VoctEnsemble na pierwszym planie, za nią pozostali śpiewacy" }
+  - { img: kd-stworzenie-7, alt: "Radu Ropotan gra na skrzypcach, w tle śpiewaczki VoctEnsemble" }
   programLede: "Dziesięć utworów, jedno lustro i bis"
   # The conductor's own edit of this paragraph, returned 14.09.2026 — so the arc is his reading in
   # his words, which is the one thing the page had been missing since the generated reflection came
