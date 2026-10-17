@@ -2717,13 +2717,14 @@
   # ruled over the start of the text and never filled, and the melody Francis made for the song
   # is lost, so every setting since, Orff's among them, writes its own music into those lines.
   # It names no date for the manuscript: the literature places it anywhere from the
-  # mid-thirteenth century to c. 1300. The list's letter on this evening opens on the same fact
-  # and turns it on the letter itself (backend/outreach/letters.py).
+  # mid-thirteenth century to c. 1300. The list's letter on this evening opens on the same fact,
+  # in the same words (backend/outreach/letters.py): plain and exact, never „linie na nuty” or
+  # „przepadła”.
   reflectionNote: >-
-    Najstarszy znany rękopis Kantyku, przechowywany w Asyżu, ma nad początkiem tekstu wyrysowane
-    linie na nuty, których nikt nie wypełnił. Melodię ułożył sam Franciszek i ta melodia
-    przepadła. Każde opracowanie Kantyku wpisuje w te linie własną muzykę; tego popołudnia była
-    to muzyka Orffa.
+    Najstarszy znany rękopis Kantyku, przechowywany w Asyżu, ma nad pierwszymi wersami
+    wyrysowane linie pod melodię, na których nikt nie zapisał nut. Franciszek sam ułożył do
+    niego melodię, która się nie zachowała. Każde opracowanie Kantyku wpisuje w te linie własną
+    muzykę; tego popołudnia była to muzyka Orffa.
   # The printed programme's cast page, which the panel's confirmed participations match name for
   # name. The violinist stays in `realizacja` (the /koncerty listing's line), so the organist and
   # the conductor's assistant are named here; the colophon prints `realizacja` after these.
