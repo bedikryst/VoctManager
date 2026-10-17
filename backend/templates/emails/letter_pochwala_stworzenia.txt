@@ -18,9 +18,7 @@ et onne benedictione.
 {{ copy.otherwise }}
 {{ page_url }}
 
-{{ copy.listen }}
-
-{{ copy.listen_label|upper }}:
+{{ copy.listen_label|upper }}: {{ copy.listen_gloss }}
 {{ listen_url }}
 
 {{ copy.next }}

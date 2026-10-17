@@ -44,11 +44,12 @@
   - The letter opens as a page of a chant book: a rubric, then the Canticle's first lines under
     staves ruled for music and left empty, as they are in the oldest manuscript (letters.py says
     why). The Umbrian lines are the same in every language and stay here; their gloss is the
-    copy's. The letter ends on one more staff, the one the recording fills: it and the words
-    under it are the letter's only call to act, set as the opening sets its lines (a staff, then
-    italic 26/34 beneath it), with a red play mark (play.png, 3x) where a clef would stand. The
-    staff and the words both open the concert page without an anchor, since the page's hero
-    carries the player; the photographs open its gallery.
+    copy's. The letter ends on one more staff, written with the recording: it and the words
+    under it are the letter's only call to act, set as the opening sets its lines (a staff,
+    italic 26/34 beneath it, a small gloss under that), with a red play mark (play.png, 3x) before
+    the word. The staff and the words open the concert page without an anchor, since the page's
+    hero carries the player; the photographs open its gallery. Nothing in the copy explains the
+    rhyme between the empty staves and the written one.
   - One colour besides the ink and the letterhead's mark, the rubricator's red: #d65a3c for the
     rubric's letters and the play mark, #b4482f for the staff lines. Type: the lines under the
     staves italic 26/34 (22/30 on a phone), reading 19/30, small italic 15/22, small capitals 12.
@@ -58,17 +59,26 @@
     has not scrolled to, so the last staff rules itself when the reader reaches it. A client
     that does not animate (Outlook on Windows) shows the first frame, which is empty, and the
     words still stand, the play mark and "listen" among them. No alt: the words under each staff
-    carry its meaning. A staff keeps its 43px height at
-    every width and only its length follows the sheet: lines are horizontal, so a narrower
-    staff costs them nothing, where scaling the height would smear the four 1px lines into four
-    different weights.
-  - The photographs are one camera stepping back: an open score close up, a singer mid-phrase,
-    the nave from the door with people in the pews. All 4:5 and centred, a half, three
-    quarters and the whole of the 600px sheet, so each frame is the last one seen from further
-    away. Each follows the sentence it answers (letters.py), and stands nearer to it than to
-    the text after it (40px above, 64px below), and each opens the gallery. The
-    widths are percentages so a phone keeps the steps; Outlook on Windows reads the width
-    attribute instead.
+    carry its meaning. A staff keeps its 43px height at every width and only its length follows
+    the sheet: lines are horizontal, so a narrower staff costs them nothing, where scaling the
+    height would smear the four 1px lines into four different weights.
+  - The last staff (staff-sung.gif) is ruled the same way and then written, left to right, with
+    the excerpts reel's own loudness: one 1px bar per slice of its six minutes, in the reading
+    text's colour, under the red lines, so a phrase and the breath after it can be seen. Its
+    bars would not survive the horizontal stretch the other staves take, so a phone gets its own
+    drawing at 390px (staff-sung-narrow.gif) through the media query; a client without media
+    queries shows the 600px one, narrowed, and Outlook never sees the narrow one. Redraw both
+    whenever the reel is recut (concerts.yaml `excerpts`).
+  - The prose runs unbroken and the photographs follow it as one spread, all three from where
+    the singers stood, since the singers write the letter: their score close up, their
+    conductor between two of their shoulders, then the people who came, the full church seen
+    from the altar (cut above the front rows, where single faces are recognisable). Each frame
+    is wider than the one before: the score starts on the text's left edge (200px, 4:5), the
+    conductor runs off the sheet's right edge (336px, 4:5), both standing on one baseline, and
+    the church, the one wide frame (600px, 5:4), takes the whole sheet beneath them and leads
+    straight into the last staff. Percentages keep the spread on a phone, where the lead cell
+    narrows to the phone's 24px gutter; Outlook on Windows reads the width attributes. Every
+    photograph opens the gallery.
   - The footer is the quietest text the sheet carries and still reads: 12px, #8a8378, 4.9:1
     over the grained sheet. Dimmer fails a phone in daylight, and the controller's address is
     the line a reader is entitled to read.
@@ -91,6 +101,10 @@ a { color: #d65a3c; }
 @media (max-width: 620px) {
   .col { padding-left: 24px !important; padding-right: 24px !important; }
   .underlay { font-size: 22px !important; line-height: 30px !important; }
+  .spread-lead { width: 6.154% !important; }
+  .spread-far { width: 57.846% !important; }
+  .staff-wide { display: none !important; }
+  .staff-narrow { display: block !important; max-height: none !important; }
 }
 </style>
 </head>
@@ -118,27 +132,28 @@ a { color: #d65a3c; }
     <div style="color:#f1ebdf;">{{ greeting }}</div>
     <div style="padding-top:16px;">{{ copy.lede }}</div>
     <div style="padding-top:16px;">{{ copy.sung }}</div>
+    <div style="padding-top:16px;">{{ copy.thanks }}</div>
+    <div style="padding-top:16px;">{{ copy.otherwise }}</div>
   </td></tr>
 
-  <tr><td align="center" style="padding:40px 0 0; font-size:0; line-height:0;"><a href="{{ page_url }}" style="text-decoration:none;"><img src="{{ asset_url }}/score.jpg{{ asset_query }}" width="300" height="375" alt="{{ copy.photo_alts.0 }}" style="display:block; margin:0 auto; width:50%; max-width:300px; height:auto; border:0; color:#8f887c; font-family:'Palatino Linotype', Palatino, Georgia, serif; font-size:15px;"></a></td></tr>
+  <tr><td style="padding:64px 0 0;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+      <td class="spread-lead" width="48" style="width:8%; font-size:0; line-height:0;">&nbsp;</td>
+      <td width="200" valign="bottom" style="width:33.333%; font-size:0; line-height:0;"><a href="{{ page_url }}" style="text-decoration:none;"><img src="{{ asset_url }}/score.jpg{{ asset_query }}" width="200" height="250" alt="{{ copy.photo_alts.0 }}" style="display:block; width:100%; height:auto; border:0; color:#8f887c; font-family:'Palatino Linotype', Palatino, Georgia, serif; font-size:15px;"></a></td>
+      <td width="16" style="width:2.667%; font-size:0; line-height:0;">&nbsp;</td>
+      <td class="spread-far" width="336" valign="bottom" style="width:56%; font-size:0; line-height:0;"><a href="{{ page_url }}" style="text-decoration:none;"><img src="{{ asset_url }}/conductor.jpg{{ asset_query }}" width="336" height="420" alt="{{ copy.photo_alts.1 }}" style="display:block; width:100%; height:auto; border:0; color:#8f887c; font-family:'Palatino Linotype', Palatino, Georgia, serif; font-size:15px;"></a></td>
+    </tr></table>
+  </td></tr>
+  <tr><td style="padding:16px 0 0; font-size:0; line-height:0;"><a href="{{ page_url }}" style="text-decoration:none;"><img src="{{ asset_url }}/audience.jpg{{ asset_query }}" width="600" height="480" alt="{{ copy.photo_alts.2 }}" style="display:block; width:100%; max-width:600px; height:auto; border:0; color:#8f887c; font-family:'Palatino Linotype', Palatino, Georgia, serif; font-size:15px;"></a></td></tr>
 
-  <tr><td class="col" style="padding:64px 48px 0; font-family:'Cormorant Garamond', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif; font-variant-numeric:lining-nums; font-size:19px; line-height:30px; color:#d9d2c5;">{{ copy.thanks }}</td></tr>
-
-  <tr><td align="center" style="padding:40px 0 0; font-size:0; line-height:0;"><a href="{{ page_url }}" style="text-decoration:none;"><img src="{{ asset_url }}/voice.jpg{{ asset_query }}" width="450" height="562" alt="{{ copy.photo_alts.1 }}" style="display:block; margin:0 auto; width:75%; max-width:450px; height:auto; border:0; color:#8f887c; font-family:'Palatino Linotype', Palatino, Georgia, serif; font-size:15px;"></a></td></tr>
-
-  <tr><td class="col" style="padding:64px 48px 0; font-family:'Cormorant Garamond', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif; font-variant-numeric:lining-nums; font-size:19px; line-height:30px; color:#d9d2c5;">{{ copy.otherwise }}</td></tr>
-
-  <tr><td style="padding:40px 0 0; font-size:0; line-height:0;"><a href="{{ page_url }}" style="text-decoration:none;"><img src="{{ asset_url }}/nave.jpg{{ asset_query }}" width="600" height="750" alt="{{ copy.photo_alts.2 }}" style="display:block; width:100%; max-width:600px; height:auto; border:0; color:#8f887c; font-family:'Palatino Linotype', Palatino, Georgia, serif; font-size:15px;"></a></td></tr>
-
-  <tr><td class="col" style="padding:64px 48px 0; font-family:'Cormorant Garamond', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif; font-variant-numeric:lining-nums; font-size:19px; line-height:30px; color:#d9d2c5;">{{ copy.listen }}</td></tr>
-
-  <tr><td style="padding:40px 0 0; font-size:0; line-height:0;"><a href="{{ listen_url }}" style="text-decoration:none;"><img src="{{ asset_url }}/staff-end.gif{{ asset_query }}" width="600" height="43" alt="" style="display:block; width:100%; max-width:600px; height:43px; border:0;"></a></td></tr>
+  <tr><td style="padding:48px 0 0; font-size:0; line-height:0;"><a href="{{ listen_url }}" style="text-decoration:none;"><img class="staff-wide" src="{{ asset_url }}/staff-sung.gif{{ asset_query }}" width="600" height="43" alt="" style="display:block; width:100%; max-width:600px; height:43px; border:0;"><!--[if !mso]><!--><img class="staff-narrow" src="{{ asset_url }}/staff-sung-narrow.gif{{ asset_query }}" width="390" height="43" alt="" style="display:none; width:100%; height:43px; max-height:0; overflow:hidden; border:0;"><!--<![endif]--></a></td></tr>
   <tr><td class="col" style="padding:8px 48px 0;">
     <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
       <td valign="middle" style="padding-right:14px; font-size:0; line-height:0;"><a href="{{ listen_url }}" style="text-decoration:none;"><img src="{{ asset_url }}/play.png{{ asset_query }}" width="15" height="17" alt="" style="display:block; width:15px; height:17px; border:0;"></a></td>
       <td valign="middle" class="underlay" style="font-family:'Cormorant Garamond', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif; font-style:italic; font-size:26px; line-height:34px;"><a href="{{ listen_url }}" style="color:#f1ebdf; text-decoration:none;">{{ copy.listen_label }}</a></td>
     </tr></table>
   </td></tr>
+  <tr><td class="col" style="padding:12px 48px 0; font-family:'Cormorant Garamond', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif; font-style:italic; font-size:15px; line-height:22px; color:#8f887c;">{{ copy.listen_gloss }}</td></tr>
 
   <tr><td class="col" style="padding:72px 48px 0; font-family:'Cormorant Garamond', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif; font-variant-numeric:lining-nums; font-style:italic; font-size:19px; line-height:30px; color:#f1ebdf;">{{ copy.next }}</td></tr>
 

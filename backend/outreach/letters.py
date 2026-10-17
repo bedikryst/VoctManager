@@ -62,20 +62,20 @@ class LetterCopy:
     incipit_gloss: str
     #: The fact the letter is built on: the manuscript's empty lines and the lost melody.
     lede: str
-    #: What was sung into those lines on the day. The paragraph before the first photograph.
+    #: What was sung into those lines on the day.
     sung: str
-    #: The photographs' alt texts, in the order the letter shows them: the score, the voice,
-    #: the nave.
+    #: The photographs' alt texts, in the order the spread reads: the score, the conductor,
+    #: the audience.
     photo_alts: tuple[str, str, str]
-    #: Between the score and the voice, to whoever came.
+    #: To whoever came.
     thanks: str
-    #: Between the voice and the nave, to whoever could not come: what the page holds.
+    #: To whoever could not come: what the page holds.
     otherwise: str
-    #: After the nave: the empty lines at the top were left as the manuscript left them, and
-    #: the last one, below this paragraph, is filled by the recording.
-    listen: str
     #: The words under the last staff, which open the recording.
     listen_label: str
+    #: Under those words, as the incipit has its gloss: what the recording is. Says what it
+    #: holds and nothing about the staves; the rhyme with the empty ones is left to the reader.
+    listen_gloss: str
     #: Where things stand on the next concert. The list was promised its date; until there is
     #: one, the letter says so rather than staying silent about it.
     next: str
@@ -118,17 +118,18 @@ class Letter:
 # Convento, cod. 338) has staves ruled over the start of the text and never filled, and the
 # melody Francis made for it is lost. Every setting since writes its own music into those lines,
 # and on 11 October the ensemble sang Orff's. The letter opens on such a page, three staves left
-# empty over the first lines, and ends on one more staff, which the recording fills: it opens the
-# concert page, whose hero plays one passage of each work. The letter says what it did once, in
-# `listen`, at the point where the reader can act on it.
+# empty over the first lines, and ends on one more staff, written with the recording's own
+# loudness: it opens the concert page, whose hero plays one passage of each work. NOTHING IN THE
+# COPY EXPLAINS THE RHYME between the empty staves and the written one. A sentence that walked
+# the reader through it was tried and cut: explaining the device is what made it read as
+# machine prose.
 #
 # SEND IT ONLY ONCE THE EXCERPTS ARE LIVE ON THE HOST: the page builds its player only when the
 # file is there (concerts.yaml `excerpts`), and a letter that promises a recording the page does
 # not play cannot be corrected after it leaves.
 #
-# Each photograph answers the sentence before it: Orff's music → a score; the singing that day →
-# a voice; what the page holds for whoever could not come → the nave seen from the door. What
-# the page holds is named exactly: the photographs, the programme with a note on each work, and
+# The prose runs unbroken, as a letter does, and the photographs follow it as one spread (the
+# template says how), not one photograph per paragraph. What the page holds is named exactly: the photographs, the programme with a note on each work, and
 # the Canticle with its translation, which is the only text it gives in full. The concert was at
 # 13:30, so it is an afternoon everywhere in the copy. No date for the manuscript, which the
 # literature places anywhere from the mid-thirteenth century to c. 1300.
@@ -145,7 +146,7 @@ POCHWALA_STWORZENIA = Letter(
         NoticeLocale.FR: "/fr/koncerty/pochwala-stworzenia",
     },
     anchor="obrazy",
-    asset_rev=2,
+    asset_rev=3,
     copy={
         NoticeLocale.PL: LetterCopy(
             subject="Pochwała Stworzenia: zdjęcia i nagranie",
@@ -169,14 +170,14 @@ POCHWALA_STWORZENIA = Letter(
                 f"Każdy kompozytor, który później sięgał po ten tekst, wpisywał w{NBSP}te linie "
                 f"własną muzykę. W{NBSP}niedzielę 11{NBSP}października w{NBSP}kościele "
                 f"Wszystkich Świętych w{NBSP}Warszawie śpiewaliśmy Pieśń słoneczną z{NBSP}muzyką, "
-                "którą ponad siedemset lat po Franciszku napisał Carl Orff."
+                f"którą ponad siedemset lat po Franciszku napisał Carl{NBSP}Orff."
             ),
             photo_alts=(
                 "Otwarte nuty w dłoniach śpiewaczki VoctEnsemble, w głębi ołtarz",
-                "Śpiewaczka VoctEnsemble na pierwszym planie, za nią pozostali śpiewacy",
+                "Florent de Bazelaire dyryguje, widziany zza ramion dwóch śpiewaków VoctEnsemble",
                 (
-                    "Nawa kościoła Wszystkich Świętych w Warszawie od wejścia: słuchacze "
-                    "w ławkach i VoctEnsemble przed ołtarzem głównym"
+                    "Kościół Wszystkich Świętych w Warszawie widziany od ołtarza: słuchacze "
+                    "w ławkach aż po wejście"
                 ),
             ),
             thanks=(
@@ -188,12 +189,11 @@ POCHWALA_STWORZENIA = Letter(
                 "Jeśli tym razem nie udało Ci się przyjść, na stronie koncertu są zdjęcia, "
                 f"program z{NBSP}opisami utworów i{NBSP}tekst Pieśni z{NBSP}przekładem."
             ),
-            listen=(
-                f"Linie na początku tego listu zostawiliśmy puste, tak jak w{NBSP}rękopisie. "
-                f"Ostatnią, tę poniżej, wypełnia nagranie z{NBSP}tamtego popołudnia: po jednym "
-                f"fragmencie z{NBSP}każdego utworu, razem sześć minut."
-            ),
             listen_label="Posłuchaj",
+            listen_gloss=(
+                f"Nagranie z{NBSP}koncertu, po jednym fragmencie z{NBSP}każdego utworu: "
+                "sześć minut."
+            ),
             next=f"Daty następnego koncertu jeszcze nie znamy. Napiszemy do{NBSP}Ciebie, kiedy ją ustalimy.",
             closing="Serdecznie pozdrawiamy",
             signature="VoctEnsemble",
@@ -231,15 +231,15 @@ POCHWALA_STWORZENIA = Letter(
             sung=(
                 "Every composer who has set the text since has written their own music into "
                 f"those lines. On Sunday 11{NBSP}October, in All Saints’ Church in Warsaw, we "
-                "sang the Canticle to the music Carl Orff wrote for it more than seven hundred "
+                f"sang the Canticle to the music Carl{NBSP}Orff wrote for it more than seven hundred "
                 "years after Francis."
             ),
             photo_alts=(
                 "An open score in a VoctEnsemble singer’s hands, the altar beyond",
-                "A VoctEnsemble singer in the foreground, the other singers behind her",
+                "Florent de Bazelaire conducting, seen between the shoulders of two VoctEnsemble singers",
                 (
-                    "The nave of All Saints’ Church in Warsaw from the entrance: the audience "
-                    "in the pews and VoctEnsemble before the high altar"
+                    "All Saints’ Church in Warsaw seen from the altar: the audience in the pews "
+                    "as far as the entrance"
                 ),
             ),
             thanks=(
@@ -252,12 +252,8 @@ POCHWALA_STWORZENIA = Letter(
                 "programme with a note on each work, and the text of the Canticle with a "
                 "translation."
             ),
-            listen=(
-                "We left the lines at the start of this letter empty, as they are in the "
-                "manuscript. The last one, below, is filled by the recording of that afternoon: "
-                "one passage from each work, six minutes in all."
-            ),
             listen_label="Listen",
+            listen_gloss="The concert recording, one passage from each work: six minutes.",
             next="We don’t know the date of the next concert yet. We will write to you as soon as we do.",
             closing="With warm wishes,",
             signature="VoctEnsemble",
@@ -297,14 +293,14 @@ POCHWALA_STWORZENIA = Letter(
                 "Chaque compositeur qui s’est emparé de ce texte depuis a écrit sa propre "
                 f"musique dans ces lignes. Le dimanche 11{NBSP}octobre, en l’église de "
                 "Tous-les-Saints de Varsovie, nous avons chanté le Cantique sur la musique que "
-                "Carl Orff a écrite plus de sept cents ans après François."
+                f"Carl{NBSP}Orff a écrite plus de sept cents ans après François."
             ),
             photo_alts=(
                 "Une partition ouverte entre les mains d’une chanteuse de VoctEnsemble, l’autel au fond",
-                "Une chanteuse de VoctEnsemble au premier plan, les autres chanteurs derrière elle",
+                "Florent de Bazelaire dirige, vu entre les épaules de deux chanteurs de VoctEnsemble",
                 (
-                    "La nef de l’église de Tous-les-Saints à Varsovie depuis l’entrée"
-                    f"{NBSP}: le public dans les bancs et VoctEnsemble devant le maître-autel"
+                    "L’église de Tous-les-Saints de Varsovie vue depuis l’autel"
+                    f"{NBSP}: le public dans les bancs jusqu’à l’entrée"
                 ),
             ),
             thanks=(
@@ -317,12 +313,8 @@ POCHWALA_STWORZENIA = Letter(
                 "les photographies, le programme avec une présentation de chaque œuvre et le "
                 "texte du Cantique avec sa traduction."
             ),
-            listen=(
-                "Les lignes du début de cette lettre, nous les avons laissées vides, comme dans "
-                "le manuscrit. La dernière, ci-dessous, est remplie par l’enregistrement de cet "
-                f"après-midi-là{NBSP}: un extrait de chaque œuvre, six minutes en tout."
-            ),
             listen_label="Écouter",
+            listen_gloss=f"L’enregistrement du concert, un extrait de chaque œuvre{NBSP}: six minutes.",
             next=(
                 "Nous ne connaissons pas encore la date du prochain concert. Nous vous écrirons "
                 "dès que nous la connaîtrons."
