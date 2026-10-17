@@ -69,16 +69,24 @@
     drawing at 390px (staff-sung-narrow.gif) through the media query; a client without media
     queries shows the 600px one, narrowed, and Outlook never sees the narrow one. Redraw both
     whenever the reel is recut (concerts.yaml `excerpts`).
-  - The prose runs unbroken and the photographs follow it as one spread, all three from where
-    the singers stood, since the singers write the letter: their score close up, their
-    conductor between two of their shoulders, then the people who came, the full church seen
-    from the altar (cut above the front rows, where single faces are recognisable). Each frame
-    is wider than the one before: the score starts on the text's left edge (200px, 4:5), the
-    conductor runs off the sheet's right edge (336px, 4:5), both standing on one baseline, and
-    the church, the one wide frame (600px, 5:4), takes the whole sheet beneath them and leads
-    straight into the last staff. Percentages keep the spread on a phone, where the lead cell
-    narrows to the phone's 24px gutter; Outlook on Windows reads the width attributes. Every
-    photograph opens the gallery.
+  - The prose runs unbroken and the photographs follow it as one spread about the pews the
+    letter thanks. First a pair, taken by the photographers from one place in the aisle at the
+    same focal length: the rehearsal (rehearsal.jpg) and the concert (concert.jpg). Both are
+    cut to one scale on the altar painting, so the painting, the crucifix and the ensemble's
+    line stand in the same place in both and what changes between them is the pews, empty and
+    then full. Then the church turned round (audience.jpg): the nave seen from the altar, cut
+    just above the photographer standing in the aisle, which also keeps the front rows out,
+    where single faces and children are recognisable. The pair is 292px each at 4:5 on a 16px
+    gutter, edge to edge like the staves, and the church takes the whole sheet beneath them
+    (600px, 5:4) and leads straight into the last staff. No caption explains the pair; the
+    alts say "the same view" for a reader who hears them. The rehearsal frame comes from the
+    other camera, warmer and darker, and is drawn to the concert frame's tone by a per-channel
+    curve, so the difference the eye finds is the people and not the grade. Sources and boxes
+    (x, y, w, h on the original): rehearsal = gallery kd-stworzenie-8 (0, 200, 3056, 3820),
+    curve gamma 0.884 / 0.845 / 0.774; concert = VE-PS-08911 (515, 116, 3056, 3820); church =
+    VE-PS-08758 (0, 903, 3702, 2962). Percentages keep the spread on a phone; Outlook on
+    Windows reads the width attributes. Every photograph opens the gallery, which holds the
+    rehearsal frame and the church as well.
   - The footer is the quietest text the sheet carries and still reads: 12px, #8a8378, 4.9:1
     over the grained sheet. Dimmer fails a phone in daylight, and the controller's address is
     the line a reader is entitled to read.
@@ -101,8 +109,6 @@ a { color: #d65a3c; }
 @media (max-width: 620px) {
   .col { padding-left: 24px !important; padding-right: 24px !important; }
   .underlay { font-size: 22px !important; line-height: 30px !important; }
-  .spread-lead { width: 6.154% !important; }
-  .spread-far { width: 57.846% !important; }
   .staff-wide { display: none !important; }
   .staff-narrow { display: block !important; max-height: none !important; }
 }
@@ -138,10 +144,9 @@ a { color: #d65a3c; }
 
   <tr><td style="padding:64px 0 0;">
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
-      <td class="spread-lead" width="48" style="width:8%; font-size:0; line-height:0;">&nbsp;</td>
-      <td width="200" valign="bottom" style="width:33.333%; font-size:0; line-height:0;"><a href="{{ page_url }}" style="text-decoration:none;"><img src="{{ asset_url }}/score.jpg{{ asset_query }}" width="200" height="250" alt="{{ copy.photo_alts.0 }}" style="display:block; width:100%; height:auto; border:0; color:#8f887c; font-family:'Palatino Linotype', Palatino, Georgia, serif; font-size:15px;"></a></td>
+      <td width="292" valign="top" style="width:48.667%; font-size:0; line-height:0;"><a href="{{ page_url }}" style="text-decoration:none;"><img src="{{ asset_url }}/rehearsal.jpg{{ asset_query }}" width="292" height="365" alt="{{ copy.photo_alts.0 }}" style="display:block; width:100%; height:auto; border:0; color:#8f887c; font-family:'Palatino Linotype', Palatino, Georgia, serif; font-size:15px;"></a></td>
       <td width="16" style="width:2.667%; font-size:0; line-height:0;">&nbsp;</td>
-      <td class="spread-far" width="336" valign="bottom" style="width:56%; font-size:0; line-height:0;"><a href="{{ page_url }}" style="text-decoration:none;"><img src="{{ asset_url }}/conductor.jpg{{ asset_query }}" width="336" height="420" alt="{{ copy.photo_alts.1 }}" style="display:block; width:100%; height:auto; border:0; color:#8f887c; font-family:'Palatino Linotype', Palatino, Georgia, serif; font-size:15px;"></a></td>
+      <td width="292" valign="top" style="width:48.667%; font-size:0; line-height:0;"><a href="{{ page_url }}" style="text-decoration:none;"><img src="{{ asset_url }}/concert.jpg{{ asset_query }}" width="292" height="365" alt="{{ copy.photo_alts.1 }}" style="display:block; width:100%; height:auto; border:0; color:#8f887c; font-family:'Palatino Linotype', Palatino, Georgia, serif; font-size:15px;"></a></td>
     </tr></table>
   </td></tr>
   <tr><td style="padding:16px 0 0; font-size:0; line-height:0;"><a href="{{ page_url }}" style="text-decoration:none;"><img src="{{ asset_url }}/audience.jpg{{ asset_query }}" width="600" height="480" alt="{{ copy.photo_alts.2 }}" style="display:block; width:100%; max-width:600px; height:auto; border:0; color:#8f887c; font-family:'Palatino Linotype', Palatino, Georgia, serif; font-size:15px;"></a></td></tr>

@@ -146,7 +146,7 @@ POCHWALA_STWORZENIA = Letter(
         NoticeLocale.FR: "/fr/koncerty/pochwala-stworzenia",
     },
     anchor="obrazy",
-    asset_rev=3,
+    asset_rev=4,
     copy={
         NoticeLocale.PL: LetterCopy(
             subject="Pochwała Stworzenia: zdjęcia i nagranie",
@@ -173,8 +173,14 @@ POCHWALA_STWORZENIA = Letter(
                 f"którą ponad siedemset lat po Franciszku napisał Carl{NBSP}Orff."
             ),
             photo_alts=(
-                "Otwarte nuty w dłoniach śpiewaczki VoctEnsemble, w głębi ołtarz",
-                "Florent de Bazelaire dyryguje, widziany zza ramion dwóch śpiewaków VoctEnsemble",
+                (
+                    "Próba VoctEnsemble przed ołtarzem głównym kościoła Wszystkich Świętych, "
+                    "ławki jeszcze puste"
+                ),
+                (
+                    "Ten sam widok podczas koncertu: VoctEnsemble przed ołtarzem, słuchacze "
+                    "w ławkach"
+                ),
                 (
                     "Kościół Wszystkich Świętych w Warszawie widziany od ołtarza: słuchacze "
                     "w ławkach aż po wejście"
@@ -235,8 +241,14 @@ POCHWALA_STWORZENIA = Letter(
                 "years after Francis."
             ),
             photo_alts=(
-                "An open score in a VoctEnsemble singer’s hands, the altar beyond",
-                "Florent de Bazelaire conducting, seen between the shoulders of two VoctEnsemble singers",
+                (
+                    "VoctEnsemble rehearsing before the high altar of All Saints’ Church, the "
+                    "pews still empty"
+                ),
+                (
+                    "The same view during the concert: VoctEnsemble before the altar, the audience "
+                    "in the pews"
+                ),
                 (
                     "All Saints’ Church in Warsaw seen from the altar: the audience in the pews "
                     "as far as the entrance"
@@ -296,8 +308,14 @@ POCHWALA_STWORZENIA = Letter(
                 f"Carl{NBSP}Orff a écrite plus de sept cents ans après François."
             ),
             photo_alts=(
-                "Une partition ouverte entre les mains d’une chanteuse de VoctEnsemble, l’autel au fond",
-                "Florent de Bazelaire dirige, vu entre les épaules de deux chanteurs de VoctEnsemble",
+                (
+                    "La répétition de VoctEnsemble devant le maître-autel de l’église de "
+                    "Tous-les-Saints, les bancs encore vides"
+                ),
+                (
+                    f"La même vue pendant le concert{NBSP}: VoctEnsemble devant l’autel, le public "
+                    "dans les bancs"
+                ),
                 (
                     "L’église de Tous-les-Saints de Varsovie vue depuis l’autel"
                     f"{NBSP}: le public dans les bancs jusqu’à l’entrée"

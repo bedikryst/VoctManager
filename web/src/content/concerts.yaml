@@ -2754,19 +2754,33 @@
     note: >-
       Skład wieczoru w Warszawie, 11 października 2026, za programem koncertu.
   gallery:
-  # One evening, one run — every frame inherits the concert's own venue and date. The ensemble's
-  # own archive, one camera and one grade across the set, so no frame carries `credit`. Stored in
-  # shooting order as the camera's sequence gives it; its clock ran about 14 h off, so no date or
-  # hour here may be read from the files' EXIF.
+  # Two runs: the rehearsal in the same church that afternoon, then the concert, which inherits
+  # the concert's own venue and date. The ensemble's own archive, so no frame carries `credit`.
+  # Stored in shooting order as each camera's sequence gives it; both clocks ran hours off, so no
+  # date or hour here may be read from the files' EXIF.
   #
-  # -3 is the plate. The run opens on -0, the nave from the entrance in portrait, where the
-  # ensemble is a band about a tenth of the frame's height at the far end of the aisle; at the
-  # plate's 904px that is a photograph of a church. -3 is the ensemble at the altar from the nave,
-  # a third of the frame's height. -4 is also the landing's Imagines frame (data/landing/paths.ts).
+  # The rehearsal is one frame from the second camera (its own grade, warmer and darker, which a
+  # run of its own can carry): the ensemble before the high altar over pews still empty. The
+  # concert run is all landscape at 3:2 and twelve frames, so it hangs as four rows of three; a
+  # frame of any other aspect shifts the run's mean and drops every third landscape onto a row
+  # of its own (lib/galleryLayout), which is why -11, a portrait from the altar, is cut to 3:2
+  # rather than hung whole. That cut also keeps out the photographer in the aisle and the front
+  # rows, where single faces and children are recognisable. Names are keys rather than positions
+  # (the desk keys every alt by them), so a frame keeps its name when the order around it changes.
+  #
+  # -3 is the plate: the ensemble at the altar from the nave, a third of the frame's height. -4 is
+  # also the landing's Imagines frame (data/landing/paths.ts). The list's letter on this concert
+  # (backend/outreach) opens this gallery from a pair of the rehearsal and the concert taken from
+  # one place in the aisle, and from the church seen from the altar: -8 and -11 are those frames.
   #
   # No alt names an instrument beyond the violin; the concert's spec (§18) says why, and a frame
   # added here is checked against it first.
-  - { img: kd-stworzenie-0, alt: "Nawa kościoła Wszystkich Świętych w Warszawie od wejścia: słuchacze w ławkach i VoctEnsemble przed ołtarzem głównym" }
+  - { img: kd-stworzenie-8, alt: "Próba VoctEnsemble przed ołtarzem głównym kościoła Wszystkich Świętych w Warszawie, ławki jeszcze puste", moment: rehearsal }
+  - { img: kd-stworzenie-9, alt: "VoctEnsemble tuż przed koncertem, przy bocznym ołtarzu kościoła" }
+  - { img: kd-stworzenie-10, alt: "Śpiewacy VoctEnsemble wychodzą na koncert, widziani od tyłu; po prawej słuchacze w ławkach" }
+  - { img: kd-stworzenie-11, alt: "Kościół Wszystkich Świętych w Warszawie widziany od ołtarza podczas koncertu: słuchacze w ławkach, w głębi chór nad wejściem" }
+  - { img: kd-stworzenie-12, alt: "VoctEnsemble z dyrygentem śpiewa przed bocznym ołtarzem, widziany z ławek zza głów słuchaczy" }
+  - { img: kd-stworzenie-13, alt: "Śpiewacy VoctEnsemble na chórze kościoła, widziani od tyłu; przed nimi dyryguje Florent de Bazelaire" }
   - { img: kd-stworzenie-1, alt: "Florent de Bazelaire dyryguje śpiewakami na chórze kościoła, w głębi nawa i ołtarz główny" }
   - { img: kd-stworzenie-2, alt: "Śpiewaczka VoctEnsemble z nutami przy balustradzie chóru, w dole nawa kościoła" }
   - { img: kd-stworzenie-3, alt: "VoctEnsemble z dyrygentem przed ołtarzem głównym kościoła Wszystkich Świętych w Warszawie podczas koncertu Pochwała Stworzenia", plate: true }
