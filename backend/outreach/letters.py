@@ -37,6 +37,7 @@ from .models import (
     NoticeStatus,
 )
 from .services import preferences_url, unsubscribe_headers, unsubscribe_url
+from .vocative import polish_vocative
 
 #: Binds a one-letter Polish word to the next one, and a day to its month, so neither is left
 #: at the end of a line. Built from its code point: the character itself is invisible in the
@@ -51,20 +52,20 @@ class LetterCopy:
     subject: str
     #: Inbox snippet beside the subject. Never repeats the subject.
     preheader: str
-    #: The rubric over the image.
-    eyebrow: str
-    #: The salutation for a subscriber who gave a first name. `{name}` is filled here and the
-    #: result escaped by the template like any other value — the name is the reader's input.
+    #: The salutation for a subscriber who gave a first name. `{name}` is filled here, in the
+    #: vocative for a Polish letter, and the result escaped by the template like any other
+    #: value — the name is the reader's input.
     greeting: str
     #: The salutation for a subscriber who gave none.
     greeting_plain: str
+    #: The lines the letter opens on, in the reader's language — the site's own translation.
+    incipit_gloss: str
+    #: The paragraph before the photographs.
+    lede: str
+    #: The photographs' alt texts, in the order the letter shows them — the site's own alts.
+    photo_alts: tuple[str, str, str]
+    #: The paragraphs after the photographs.
     body: tuple[str, ...]
-    #: Alt text of the image carrying the title.
-    hero_alt: str
-    #: The roles under the two portraits, whose names the template prints, and the
-    #: portraits' alt texts, in the same order.
-    roles: tuple[str, str]
-    portrait_alts: tuple[str, str]
     button: str
     #: Where things stand on the next concert. The list was promised its date; until there is
     #: one, the letter says so rather than staying silent about it.
@@ -74,8 +75,6 @@ class LetterCopy:
     #: Who writes. The ensemble, unless a person wrote the letter themselves: a name under
     #: words its owner did not write is not a signature.
     signature: str
-    #: The concert's inscription in this language — the site's own gloss, not a new one.
-    inscription_gloss: str
     #: Why the letter arrived: the list, and the promise it was given.
     why: str
     #: That a reply reaches a person. The address stays out of the prose, so changing
@@ -101,6 +100,17 @@ class Letter:
         return f"letter_{self.slug.replace('-', '_')}"
 
 
+# The letter is built on one fact: the oldest known manuscript of the Canticle (Assisi, Sacro
+# Convento, cod. 338) has staves ruled over the start of the text and never filled, and the
+# melody Francis made for it is lost. The letter opens on such a page, says the fact once, and
+# turns it on itself: a letter carries the words and the pictures, and the music stays with
+# whoever was there. The concert page's reflection carries the same fact as a reading of the
+# work; the letter's own turn is the letter and its reader. It gives no date for the
+# manuscript, which the literature places anywhere from the mid-thirteenth century to c. 1300.
+#
+# One reader, addressed as the list addresses its readers: "Ty", in forms that carry no
+# grammatical gender ("udało Ci się przyjść"), since the list never asks for one. It thanks the
+# reader only if they came, and gives the other case the photographs and the next concert.
 POCHWALA_STWORZENIA = Letter(
     slug="pochwala-stworzenia",
     page_path={
@@ -112,44 +122,42 @@ POCHWALA_STWORZENIA = Letter(
     copy={
         NoticeLocale.PL: LetterCopy(
             subject="Zdjęcia z Pochwały Stworzenia",
-            preheader="Zdjęcia, na których po raz pierwszy zobaczyliśmy własny koncert.",
-            eyebrow="Koncert Duchowy",
+            preheader="Najstarszy rękopis Pieśni słonecznej ma linie na nuty, których nikt nie wypełnił.",
             greeting="Dzień dobry, {name},",
             greeting_plain="Dzień dobry,",
-            # One reader, addressed as the list addresses its readers: "Ty", in forms that carry
-            # no grammatical gender ("udało Ci się przyjść"), since the list never asks for one.
-            # It thanks the reader only if they came, and gives the photographs to both cases.
-            # The letter leaves the programme to the concert page and starts from the photographs:
-            # a singer sees little of their own concert, so the pictures are as new to the
-            # ensemble as to the reader. The chessboard is the hero photograph read literally:
-            # the black and white floor, the half circle in black, the violinist in front.
+            incipit_gloss=(
+                f"Najwyższy, wszechmogący, dobry Panie, Twoja jest sława, chwała i{NBSP}cześć, "
+                f"i{NBSP}wszelkie błogosławieństwo."
+            ),
+            lede=(
+                f"w{NBSP}Asyżu leży najstarszy znany rękopis Pieśni słonecznej. Nad początkiem "
+                f"tekstu ktoś wyrysował w{NBSP}nim linie na nuty, ale nikt ich nie wypełnił. "
+                f"Melodię ułożył do tej pieśni sam Franciszek i{NBSP}ta melodia przepadła, "
+                f"zostały tylko słowa i{NBSP}puste linie. W{NBSP}niedzielę 11{NBSP}października, "
+                f"w{NBSP}kościele Wszystkich Świętych, śpiewaliśmy te słowa z{NBSP}muzyką, którą "
+                "ponad siedemset lat później napisał do nich Carl Orff."
+            ),
+            photo_alts=(
+                "Śpiewaczka VoctEnsemble z nutami przy balustradzie chóru, w dole nawa kościoła",
+                "Śpiewaczka VoctEnsemble na pierwszym planie, za nią pozostali śpiewacy",
+                (
+                    "Nawa kościoła Wszystkich Świętych w Warszawie od wejścia: słuchacze "
+                    "w ławkach i VoctEnsemble przed ołtarzem głównym"
+                ),
+            ),
             body=(
-                f"kiedy się śpiewa, z{NBSP}koncertu widzi się niewiele: ręce Florenta, nuty "
-                f"i{NBSP}kawałek sklepienia. Zdjęcia z{NBSP}Pochwały Stworzenia oglądaliśmy więc "
-                "trochę tak, jakbyśmy sami siedzieli w ławce. Najdłużej patrzyliśmy na to "
-                f"zrobione z{NBSP}góry. Na czarno-białej posadzce kościoła Wszystkich Świętych "
-                f"stoimy w{NBSP}półkolu jak figury rozstawione na szachownicy, a{NBSP}Radu ze "
-                "skrzypcami na pierwszym planie wygląda, jakby to on miał teraz ruch.",
-                f"Jeśli udało Ci się wtedy przyjść, bardzo Ci dziękujemy. Śpiewa się zupełnie "
-                "inaczej, kiedy się wie, że ktoś przyszedł właśnie po tę muzykę. "
-                f"A{NBSP}jeśli tym razem się nie udało, może te zdjęcia pokażą Ci choć trochę, jak "
-                f"tam było. Są już na stronie koncertu, razem z{NBSP}programem i{NBSP}tekstami, "
-                "które śpiewaliśmy.",
+                f"Ten list jest trochę jak tamta karta. Mieszczą się w{NBSP}nim zdjęcia, program "
+                f"i{NBSP}wszystkie teksty, które śpiewaliśmy, ale muzyka się w{NBSP}nim nie "
+                f"mieści. Jeśli udało Ci się wtedy przyjść, ona jest już u{NBSP}Ciebie, "
+                f"i{NBSP}bardzo Ci za to dziękujemy. Śpiewa się zupełnie inaczej, kiedy się wie, "
+                "że ktoś przyszedł właśnie po nią.",
+                f"A{NBSP}jeśli tym razem się nie udało, zdjęcia pokażą Ci przynajmniej, jak "
+                f"wyglądało tamto popołudnie, a{NBSP}muzyka poczeka na następny koncert.",
             ),
-            hero_alt=(
-                "Pochwała Stworzenia. VoctEnsemble w półkolu przed ołtarzem kościoła "
-                "Wszystkich Świętych, widziany z góry"
-            ),
-            roles=("dyrygent", "skrzypce"),
-            portrait_alts=(
-                "Florent de Bazelaire dyryguje zespołem",
-                "Radu Ropotan gra na skrzypcach",
-            ),
-            button="Zobacz zdjęcia",
+            button=f"Zdjęcia i{NBSP}teksty",
             next=f"Daty następnego koncertu jeszcze nie znamy. Kiedy tylko ją ustalimy, napiszemy do{NBSP}Ciebie.",
             closing="Serdecznie pozdrawiamy",
             signature="Śpiewacy VoctEnsemble",
-            inscription_gloss=f"Pochwalony bądź, Panie mój, ze{NBSP}wszystkimi{NBSP}Twoimi{NBSP}stworzeniami",
             why=(
                 "Ten list przyszedł, bo ten adres jest na liście Zaproszeń VoctEnsemble. "
                 "Piszemy tylko o koncertach."
@@ -165,36 +173,42 @@ POCHWALA_STWORZENIA = Letter(
         ),
         NoticeLocale.EN: LetterCopy(
             subject="Photographs from Pochwała Stworzenia",
-            preheader="Photographs in which we saw our own concert for the first time.",
-            eyebrow="Spiritual Concert",
+            preheader="The oldest manuscript of the Canticle of the Sun has staves nobody ever filled.",
             greeting="Dear {name},",
             greeting_plain="Hello,",
+            incipit_gloss=(
+                "Most High, all-powerful, good Lord, Yours are the praises, the glory, "
+                "the honour and every blessing."
+            ),
+            lede=(
+                "In Assisi lies the oldest known manuscript of the Canticle of the Sun. Above "
+                "the beginning of the text someone ruled staves for the music, but nobody ever "
+                "filled them in. Francis made a melody for the song himself, and that melody "
+                "has been lost; all that remains are the words and the empty lines. On Sunday "
+                f"11{NBSP}October, in the church of All Saints, we sang those words to the music "
+                "Carl Orff wrote for them more than seven hundred years later."
+            ),
+            photo_alts=(
+                "A VoctEnsemble singer with her score at the balustrade of the choir loft, the nave below",
+                "A VoctEnsemble singer in the foreground, the other singers behind her",
+                (
+                    "The nave of All Saints’ Church in Warsaw from the entrance: the audience "
+                    "in the pews and VoctEnsemble before the high altar"
+                ),
+            ),
             body=(
-                "When you are singing, you see very little of the concert: Florent’s hands, the "
-                "music and a piece of the vault. So we looked at the photographs from Pochwała "
-                "Stworzenia almost as if we had been sitting in the pews ourselves. The one we kept "
-                "coming back to was taken from above. On the black and white floor of All Saints’ "
-                "we stand in a half circle like pieces set out on a chessboard, and Radu with his "
-                "violin in front looks as if it is his move.",
-                "If you were able to come that afternoon, thank you so much. Singing feels quite "
-                "different when you know someone came for this very music. And if it didn’t work "
-                "out this time, perhaps the photographs will show you a little of what it was like. "
-                "They are now on the concert page, together with the programme and the texts we sang.",
+                "This letter is a little like that page. It holds the photographs, the programme "
+                "and all the texts we sang, but the music does not fit in it. If you were able "
+                "to come that afternoon, you already have it, and we thank you for that with "
+                "all our hearts. Singing feels quite different when you know someone came "
+                "especially for it.",
+                "And if it didn’t work out this time, the photographs will at least show you "
+                "what that afternoon looked like, and the music will wait for the next concert.",
             ),
-            hero_alt=(
-                "Pochwała Stworzenia. VoctEnsemble in a half circle before the altar of "
-                "All Saints’ Church, seen from above"
-            ),
-            roles=("conductor", "violin"),
-            portrait_alts=(
-                "Florent de Bazelaire conducting the ensemble",
-                "Radu Ropotan playing the violin",
-            ),
-            button="See the photographs",
+            button="Photographs and texts",
             next="We don’t know the date of the next concert yet. As soon as we do, we will write to you.",
             closing="With warm wishes,",
             signature="The singers of VoctEnsemble",
-            inscription_gloss=f"Praised be You, my Lord, with{NBSP}all{NBSP}Your{NBSP}creatures",
             why=(
                 "This letter came because this address is on VoctEnsemble’s Invitations "
                 "list. We write only about concerts."
@@ -210,41 +224,53 @@ POCHWALA_STWORZENIA = Letter(
         ),
         NoticeLocale.FR: LetterCopy(
             subject="Les photographies de Pochwała Stworzenia",
-            preheader="Des photographies où nous avons vu notre propre concert pour la première fois.",
-            eyebrow="Concert Spirituel",
+            preheader=(
+                "Le plus ancien manuscrit du Cantique des créatures porte des portées que "
+                "personne n’a jamais remplies."
+            ),
             greeting="Bonjour {name},",
             greeting_plain="Bonjour,",
+            incipit_gloss=(
+                "Très-Haut, tout-puissant et bon Seigneur, à Toi la louange, la gloire, "
+                "l’honneur et toute bénédiction."
+            ),
+            lede=(
+                "À Assise se trouve le plus ancien manuscrit connu du Cantique des créatures. "
+                "Au-dessus du début du texte, quelqu’un a tracé des portées pour la musique, "
+                "mais personne ne les a jamais remplies. François avait composé lui-même une "
+                f"mélodie pour ce chant, et cette mélodie s’est perdue{NBSP}: il ne reste que les "
+                f"mots et les lignes vides. Le dimanche 11{NBSP}octobre, en l’église de "
+                "Tous-les-Saints, nous avons chanté ces mots sur la musique que Carl Orff leur "
+                "a donnée plus de sept cents ans plus tard."
+            ),
+            photo_alts=(
+                (
+                    "Une chanteuse de VoctEnsemble, sa partition à la main, à la balustrade "
+                    "de la tribune, la nef en contrebas"
+                ),
+                "Une chanteuse de VoctEnsemble au premier plan, les autres chanteurs derrière elle",
+                (
+                    "La nef de l’église de Tous-les-Saints à Varsovie depuis l’entrée"
+                    f"{NBSP}: le public dans les bancs et VoctEnsemble devant le maître-autel"
+                ),
+            ),
             body=(
-                f"Quand on chante, on ne voit pas grand-chose du concert{NBSP}: les mains de Florent, "
-                "la partition et un morceau de voûte. Nous avons donc regardé les photographies de "
-                "Pochwała Stworzenia presque comme si nous avions été assis dans les bancs. Celle à "
-                "laquelle nous revenions sans cesse a été prise d’en haut. Sur le sol noir et blanc "
-                "de Tous-les-Saints, nous voilà rangés en demi-cercle comme des pièces sur un "
-                "échiquier, et devant nous Radu, avec son violon, a tout l’air d’être le prochain "
-                "à jouer.",
-                "Si vous avez pu venir cet après-midi-là, merci de tout cœur. On chante tout "
-                "autrement quand on sait que quelqu’un est venu pour cette musique. Et si cela n’a "
-                "pas été possible cette fois, ces photographies vous montreront peut-être un peu ce "
-                "que c’était. Elles sont maintenant sur la page du concert, avec le programme et les "
-                "textes que nous avons chantés.",
+                "Cette lettre ressemble un peu à cette page. Elle contient les photographies, "
+                "le programme et tous les textes que nous avons chantés, mais la musique n’y "
+                "tient pas. Si vous avez pu venir cet après-midi-là, elle est déjà avec vous, "
+                "et nous vous en remercions de tout cœur. On chante tout autrement quand on "
+                "sait que quelqu’un est venu précisément pour elle.",
+                "Et si cela n’a pas été possible cette fois, les photographies vous montreront "
+                "au moins à quoi ressemblait cet après-midi, et la musique attendra le "
+                "prochain concert.",
             ),
-            hero_alt=(
-                "Pochwała Stworzenia. Le VoctEnsemble en demi-cercle devant l’autel de "
-                "l’église de Tous-les-Saints, vu d’en haut"
-            ),
-            roles=("direction", "violon"),
-            portrait_alts=(
-                "Florent de Bazelaire dirige l’ensemble",
-                "Radu Ropotan joue du violon",
-            ),
-            button="Voir les photographies",
+            button="Photographies et textes",
             next=(
                 "Nous ne connaissons pas encore la date du prochain concert. Dès que nous la "
                 "connaîtrons, nous vous écrirons."
             ),
             closing="Bien chaleureusement,",
             signature="Les chanteurs du VoctEnsemble",
-            inscription_gloss=f"Loué sois-Tu, mon Seigneur, avec{NBSP}toutes{NBSP}Tes{NBSP}créatures",
             why=(
                 "Cette lettre vous parvient parce que cette adresse figure sur la liste des "
                 "Invitations du VoctEnsemble. Nous n’écrivons que pour les concerts."
@@ -283,6 +309,8 @@ def letter_context(
     base = settings.PUBLIC_SITE_URL.rstrip('/')
     copy = letter.copy[locale]
     name = name.strip()
+    if name and locale == NoticeLocale.PL:
+        name = polish_vocative(name)
     page = letter.page_path.get(locale, letter.page_path[NoticeLocale.PL])
     return {
         'lang': locale,

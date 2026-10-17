@@ -80,17 +80,18 @@ concert.pochwala-stworzenia.festivalNote: "Three days of exhibitions, workshops 
 # The próg carries no date, hour, festival or open door: the band above prints all four from the
 # structured fields, and a paragraph restating them would be the page speaking twice.
 #
-# THE TAIL NAMES THE ANGEL AND NOT THE SAINTS, deliberately: the reveal is `reflectionNote`'s, two
-# bands down. Naming the prayers of all the saints here — three sentences after „the church of All
-# Saints” — states the coincidence before the page has earned it. Do not put them back.
-concert.pochwala-stworzenia.prologue: "A Sunday afternoon on plac Grzybowski. Above the portal of the church of All Saints a verse of the psalm is cut into the stone: “Praise the Lord in His saints”. The concert begins under that sentence already, and ends on a sentence of the same family — about an angel censing the altar with prayer."
+# THE PRÓG IS THE ONLY BAND THAT CARRIES THE ALL SAINTS RHYME: the verse over the portal names the
+# saints, the antiphon the evening ends on names them again, and the church bears their name. It
+# quotes both sentences and leaves the joining to the reader. Both halves have to survive in
+# English: "saints" in the psalm and "saints" in the antiphon, or the rhyme is gone.
+concert.pochwala-stworzenia.prologue: "A Sunday afternoon on plac Grzybowski. Above the portal of the church of All Saints a verse of the psalm is cut into the stone: “Praise the Lord in His saints”. The concert begins under that sentence already, and ends with Dubra's antiphon on words from the Book of Revelation: “the smoke of the incense went up with the prayers of the saints before God”."
 
 # THE SIGNED REFLECTION IS GONE from this evening and its rows are not to be restored: the text was
 # generated rather than written, so it could not carry the conductor's name. What the band prints is
-# ours and unsigned. Both halves of the rhyme have to survive: the saints in the antiphon and the
-# saints in the name over the door. Rendered by two different phrases, the sentence states a
-# coincidence instead of stating the point.
-concert.pochwala-stworzenia.reflectionNote: "The antiphon Dubra sets arranges words from the Book of Revelation: “the smoke of the incense went up with the prayers of the saints before God”. The last sentence of this road is therefore sung in the church that bears exactly that name — All Saints."
+# ours and unsigned: the oldest known manuscript of the Canticle has staves ruled over the start of
+# the text and never filled, and Francis's own melody is lost. "Staves" for the Polish "linie na
+# nuty", the ruled lines music is written on; no date for the manuscript, as in the Polish.
+concert.pochwala-stworzenia.reflectionNote: "The oldest known manuscript of the Canticle, kept in Assisi, has staves ruled above the beginning of the text that nobody ever filled. Francis made the melody himself, and that melody is lost. Every setting of the Canticle writes its own music into those lines; that afternoon it was Orff's."
 
 concert.pochwala-stworzenia.programLede: "Ten works, one mirror and an encore"
 # THE CONDUCTOR'S OWN EDIT of this paragraph, returned 14.09.2026, and the Polish is now his. Two
@@ -219,11 +220,11 @@ concert.pochwala-stworzenia.program.8.locus: "The floor of this road: sister dea
 concert.pochwala-stworzenia.program.8.note: "The last two lines of the Dies irae sequence: a plea that comes in the Mass for the dead once the image of judgement has passed. Since the late 1990s Borkowski has been setting the texts of the liturgy for the dead one by one: the Dies irae is his Symphony No. 1, and there are also Libera me, Lux aeterna and Symphony No. 3 “Requiem”, written from 1998 to 2011. Dona eis requiem I dates from 2015. The same words return throughout: the plea swells, then fades, and the final “dona eis requiem” is barely audible."
 
 concert.pochwala-stworzenia.program.9.inscriptioGloss: "An angel stood at the altar of the temple, holding a golden censer in his hand"
-# The All Saints rhyme is NOT here and NOT in the note: it is `reflectionNote`, in its own band,
-# where it is the evening's strongest fact rather than a tail on a work. The note stops at „an
-# antiphon arranged from words of the Book of Revelation” because the angel and the censer are
-# printed by `inscriptioGloss` one row up and the smoke and the saints by `reflectionNote` one band
-# above — a note that retold both would put the same sentence three times on one screen.
+# The All Saints rhyme is NOT here and NOT in the note: the próg carries it, at the door, where the
+# verse over the portal and the antiphon's saints stand in one paragraph. The note does not retell
+# the antiphon's image because the angel and the censer are printed by `inscriptioGloss` one row up
+# and the smoke and the saints are quoted by the próg — a note that retold both would put the same
+# sentence three times on one page.
 concert.pochwala-stworzenia.program.9.locus: "Straight after the last Pärt, the programme's last work, just before the encore."
 concert.pochwala-stworzenia.program.9.note: "Dubra was born in 1964 in Riga and started out in Soviet Latvia, where his religious music got him into trouble with the authorities. He kept writing it, and sacred music is still most of what he writes; he says he does not create music, he only writes down what has been sent to him. The text of Stetit Angelus is an antiphon the liturgy sings as the offertory on the feast of St Michael the Archangel, while the gifts are prepared. The tenor carries the words, and the rest of the choir holds long, flowing chords around him."
 concert.pochwala-stworzenia.program.10.note: "George David Weiss and the producer Bob Thiele wrote the song in 1967 for Louis Armstrong. The head of ABC Records loathed it and barely promoted it in the United States; in Britain it was number one in 1968, and it reached the American charts only in 1988, after the film Good Morning, Vietnam. The lyric lists trees of green and red roses, skies of blue and clouds of white, the bright blessed day and the dark sacred night, and at the end friends shaking hands."

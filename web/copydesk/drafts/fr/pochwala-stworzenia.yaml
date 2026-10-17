@@ -80,19 +80,18 @@ concert.pochwala-stworzenia.festivalNote: "Trois jours d'expositions, d'ateliers
 # Le seuil ne porte ni date, ni heure, ni festival, ni porte ouverte : la bande ci-dessus les imprime
 # tous les quatre depuis les champs structurés, et un paragraphe qui les répéterait serait la page
 # parlant deux fois.
-# LA CHUTE NOMME L'ANGE ET NON LES SAINTS, délibérément : la révélation appartient à
-# `reflectionNote`, deux bandes plus bas. Nommer ici les prières de tous les saints — trois phrases
-# après « l'église de Tous-les-Saints » — énonce la coïncidence avant que la page ne l'ait méritée.
-concert.pochwala-stworzenia.prologue: "Un dimanche après-midi, place Grzybowski. Au-dessus du portail de l'église de Tous-les-Saints, un verset du psaume est gravé dans la pierre : « Louez le Seigneur dans ses saints ». Le concert commence déjà sous cette phrase, et s'achève sur une phrase de la même famille — celle d'un ange encensant l'autel avec la prière."
+# LE SEUIL EST LA SEULE BANDE QUI PORTE LA RIME DE TOUS-LES-SAINTS : le verset au-dessus du portail
+# nomme les saints, l'antienne qui clôt la soirée les nomme à nouveau, et l'église porte leur nom.
+# Le paragraphe cite les deux phrases et laisse le lecteur les joindre. Les deux moitiés doivent
+# survivre en français : « saints » dans le psaume et « saints » dans l'antienne.
+concert.pochwala-stworzenia.prologue: "Un dimanche après-midi, place Grzybowski. Au-dessus du portail de l'église de Tous-les-Saints, un verset du psaume est gravé dans la pierre : « Louez le Seigneur dans ses saints ». Le concert commence déjà sous cette phrase, et s'achève sur l'antienne de Dubra, sur des mots de l'Apocalypse : « la fumée des parfums monta, avec les prières des saints, devant Dieu »."
 
 # LA RÉFLEXION SIGNÉE A DISPARU de cette soirée et ses lignes ne doivent pas être rétablies : le texte
 # était généré et non écrit, il ne pouvait donc pas porter le nom du chef. Ce que la bande imprime est
-# de nous, et sans signature.
-
-# LA NÔTRE, non signée. Les deux moitiés de la rime doivent survivre : les saints de l'antienne et
-# les saints du nom gravé au-dessus de la porte. Rendues par deux formules différentes, la phrase
-# énonce une coïncidence au lieu d'énoncer le point.
-concert.pochwala-stworzenia.reflectionNote: "L'antienne que met en musique Dubra assemble des mots de l'Apocalypse : « la fumée des parfums monta, avec les prières des saints, devant Dieu ». La dernière phrase de ce chemin est donc chantée dans l'église qui porte exactement ce nom — Tous-les-Saints."
+# de nous, et sans signature : le plus ancien manuscrit connu du Cantique porte, au-dessus du début
+# du texte, des portées tracées et jamais remplies, et la mélodie de François lui-même est perdue.
+# Pas de date pour le manuscrit, comme en polonais.
+concert.pochwala-stworzenia.reflectionNote: "Le plus ancien manuscrit connu du Cantique, conservé à Assise, porte au-dessus du début du texte des portées que personne n'a jamais remplies. François avait composé lui-même la mélodie, et cette mélodie s'est perdue. Chaque mise en musique du Cantique inscrit dans ces lignes sa propre musique ; cet après-midi-là, ce fut celle d'Orff."
 
 concert.pochwala-stworzenia.programLede: "Dix œuvres, un miroir et un bis"
 # LA RÉDACTION DU CHEF LUI-MÊME, renvoyée le 14.09.2026 : le polonais est désormais de lui. Deux
@@ -259,13 +258,12 @@ concert.pochwala-stworzenia.program.8.locus: "Le fond de ce chemin : sœur la mo
 concert.pochwala-stworzenia.program.8.note: "Les deux derniers vers de la séquence Dies irae : une prière qui, dans la messe des morts, vient une fois passée l'image du jugement. Depuis la fin des années 1990, Borkowski met en musique un à un les textes de la liturgie des défunts : le Dies irae est sa Première Symphonie, et il y a aussi Libera me, Lux aeterna et la Troisième Symphonie « Requiem », écrite de 1998 à 2011. Dona eis requiem I date de 2015. Les mêmes mots reviennent tout au long de l'œuvre : la prière enfle, puis s'éteint, et le dernier « dona eis requiem » est à peine audible."
 
 concert.pochwala-stworzenia.program.9.inscriptioGloss: "Un ange se tint près de l'autel du temple, un encensoir d'or à la main"
-# La rime de Tous-les-Saints n'est PAS ici : elle est dans `reflectionNote`, dans sa propre bande, où
-# elle est le fait le plus fort de la soirée et non la queue d'une note. La dire deux fois la dépense.
+# La rime de Tous-les-Saints n'est PAS ici : le seuil la porte, à la porte, où le verset du portail
+# et les saints de l'antienne tiennent dans un seul paragraphe. La dire deux fois la dépense.
 concert.pochwala-stworzenia.program.9.locus: "Aussitôt après le dernier Pärt, la dernière œuvre du programme, avant le bis."
-# La rime de la Toussaint n'est NI dans le locus NI dans la note : elle est dans `reflectionNote`,
-# dans sa propre bande. La note s'arrête à « une antienne assemblée à partir de mots de l'Apocalypse »
-# parce que l'ange et l'encensoir sont imprimés par `inscriptioGloss` une ligne plus haut, et la
-# fumée et les saints par `reflectionNote` une bande plus haut.
+# La rime de la Toussaint n'est NI dans le locus NI dans la note : le seuil la porte. La note ne
+# raconte pas l'image de l'antienne parce que l'ange et l'encensoir sont imprimés par
+# `inscriptioGloss` une ligne plus haut, et que la fumée et les saints sont cités par le seuil.
 concert.pochwala-stworzenia.program.9.note: "Dubra est né en 1964 à Riga et a commencé dans la Lettonie soviétique, où sa musique religieuse lui a valu des ennuis avec les autorités. Il a continué à l'écrire et compose aujourd'hui encore surtout de la musique sacrée ; de lui-même, il dit qu'il ne crée pas la musique, qu'il note seulement ce qui lui a été envoyé. Le texte de Stetit Angelus est une antienne que la liturgie chante comme offertoire à la fête de saint Michel archange, pendant la préparation des dons. Le ténor porte les paroles, et le reste du chœur tient autour de lui de longs accords fluides."
 concert.pochwala-stworzenia.program.10.note: "George David Weiss et le producteur Bob Thiele ont écrit la chanson en 1967 pour Louis Armstrong. Le patron d'ABC Records la détestait et ne l'a presque pas promue aux États-Unis ; en Grande-Bretagne, elle fut numéro un en 1968, et elle n'est entrée dans les classements américains qu'en 1988, après le film Good Morning, Vietnam. Les paroles énumèrent des arbres verts et des roses rouges, le ciel bleu et les nuages blancs, le jour clair et béni et la nuit sombre et sacrée, et pour finir des amis qui se serrent la main."
 

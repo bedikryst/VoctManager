@@ -13,7 +13,7 @@ from django.core.cache import cache
 from django.core.mail import EmailMessage, EmailMultiAlternatives
 from django.core.management import call_command
 from django.core.management.base import CommandError
-from django.test import override_settings
+from django.test import SimpleTestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
 from rest_framework import status
@@ -42,6 +42,7 @@ from .reservations import (
 from .serializers import NOTICE_SURFACES
 from .services import ConfirmOutcome, NoticeListService, SubscribeOutcome
 from .tasks import purge_notice_records, purge_reservations
+from .vocative import polish_vocative
 
 
 @override_settings(PUBLIC_SITE_URL='https://voctensemble.com')
@@ -989,6 +990,12 @@ class LetterTests(NoticeListTestCase):
             message.body,
         )
 
+    def test_a_polish_reader_is_greeted_in_the_vocative(self):
+        self._subscriber('reader@example.com', name='Anna')
+        self._run('--send')
+        self.assertIn('Dzień dobry, Anno,', mail.outbox[0].body)
+        self.assertIn('Dzień dobry, Anno,', self._html(mail.outbox[0]))
+
     def test_a_reader_without_a_name_is_greeted_without_one(self):
         self._subscriber('reader@example.com')
         self._run('--send')
@@ -1034,3 +1041,38 @@ class LetterTests(NoticeListTestCase):
 
     def test_every_language_a_subscriber_can_choose_has_copy(self):
         self.assertEqual(set(self.letter.copy), {locale for locale, _label in NoticeLocale.choices})
+
+
+class VocativeTests(SimpleTestCase):
+    """A Polish greeting declines the name it is sure of and leaves every other one as typed."""
+
+    def test_regular_names_take_their_vocative(self):
+        cases = {
+            'Anna': 'Anno', 'Joanna': 'Joanno', 'Natalia': 'Natalio', 'Julia': 'Julio',
+            'Kasia': 'Kasiu', 'Zosia': 'Zosiu', 'Ania': 'Aniu', 'Melania': 'Melanio',
+            'Ola': 'Olu', 'Kamila': 'Kamilo', 'Maja': 'Maju', 'Łucja': 'Łucjo', 'Kuba': 'Kubo',
+            'Krystian': 'Krystianie', 'Florentyn': 'Florentynie', 'Adam': 'Adamie',
+            'Stanisław': 'Stanisławie', 'Krzysztof': 'Krzysztofie', 'Jakub': 'Jakubie',
+            'Piotr': 'Piotrze', 'Kacper': 'Kacprze', 'Aleksander': 'Aleksandrze',
+            'Robert': 'Robercie', 'August': 'Auguście', 'Dawid': 'Dawidzie',
+            'Tomasz': 'Tomaszu', 'Mikołaj': 'Mikołaju', 'Wojciech': 'Wojciechu',
+            'Karol': 'Karolu', 'Henryk': 'Henryku', 'Marek': 'Marku', 'Franciszek': 'Franciszku',
+            'Maciek': 'Maćku', 'Paweł': 'Pawle', 'Michał': 'Michale', 'Staś': 'Stasiu',
+        }
+        for name, vocative in cases.items():
+            with self.subTest(name=name):
+                self.assertEqual(polish_vocative(name), vocative)
+
+    def test_a_name_typed_in_the_vocative_or_indeclinable_stays(self):
+        for name in ('Anno', 'Kasiu', 'Krystianie', 'Jerzy', 'Antoni', 'Miriam', 'Carmen'):
+            with self.subTest(name=name):
+                self.assertEqual(polish_vocative(name), name)
+
+    def test_anything_but_one_word_of_letters_stays_as_typed(self):
+        for name in ('Anna Maria', 'Jean-Luc', '<b>Anna</b>', 'R2D2', ''):
+            with self.subTest(name=name):
+                self.assertEqual(polish_vocative(name), name)
+
+    def test_capitals_are_kept(self):
+        self.assertEqual(polish_vocative('ANNA'), 'ANNO')
+        self.assertEqual(polish_vocative('anna'), 'anno')

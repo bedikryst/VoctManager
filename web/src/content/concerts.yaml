@@ -2678,16 +2678,16 @@
   hasPage: true
   # The scene, and nothing the door band states in fields: the day, the hour, the festival and the
   # open door are printed from `date`/`time`/`festival`/`admission` a screen higher, and a paragraph
-  # that repeated them would be the page saying one thing twice in two registers. This ends on the
-  # angel, which is where the próg is strongest and which the last work answers.
-  # The tail names the angel but NOT the saints, and that is the whole point of it: the reveal
-  # belongs to `reflectionNote` two bands down, which is where this evening's strongest fact is
-  # spent. Saying „modlitwami wszystkich świętych” here — three sentences after „kościoła
-  # Wszystkich Świętych” — states the coincidence before the page has earned it.
+  # that repeated them would be the page saying one thing twice in two registers.
+  # THIS IS THE ONLY BAND THAT CARRIES THE ALL SAINTS RHYME. The verse over the portal names the
+  # saints, the antiphon the evening ends on names them again, and the church bears their name:
+  # the paragraph quotes both sentences and leaves the joining to the reader. Any other band that
+  # said it — the reflection, Dubra's locus or note — would be the page telling it twice.
   prologue: >-
     Niedzielne popołudnie, plac Grzybowski. Nad portalem kościoła Wszystkich Świętych wykuto
     wers psalmu: „Chwalcie Pana w świętych Jego”. Koncert zaczyna się już pod tym zdaniem,
-    a kończy zdaniem z tej samej rodziny — o aniele, który okadza ołtarz modlitwą.
+    a kończy antyfoną Dubry na słowa Apokalipsy: „dym kadzideł wzniósł się z modlitwami świętych
+    przed Bogiem”.
   # THIS EVENING CARRIES NO SIGNED REFLECTION, and the omission is deliberate. The account the
   # conductor sent for publication was generated rather than written — he said so when he sent it
   # (docs/koncert-pochwala-stworzenia §9) — so it is not his voice and must not carry his name; and
@@ -2695,13 +2695,18 @@
   # lives. He is on the page as its conductor, in `credits`. A signed paragraph belongs here only
   # when he writes one.
   #
-  # What the band prints instead is ours, and unsigned. It is the single strongest fact this evening
-  # has, and it has to survive translation in BOTH halves at once — the saints in the antiphon and
-  # the saints in the name over the door.
+  # What the band prints instead is ours, and unsigned: the one fact about the Canticle the page
+  # says nowhere else. The oldest known manuscript (Assisi, Sacro Convento, cod. 338) has staves
+  # ruled over the start of the text and never filled, and the melody Francis made for the song
+  # is lost, so every setting since, Orff's among them, writes its own music into those lines.
+  # It names no date for the manuscript: the literature places it anywhere from the
+  # mid-thirteenth century to c. 1300. The list's letter on this evening opens on the same fact
+  # and turns it on the letter itself (backend/outreach/letters.py).
   reflectionNote: >-
-    Antyfona, którą opracował Dubra, układa słowa Apokalipsy: „dym kadzideł wzniósł się z modlitwami
-    świętych przed Bogiem”. Ostatnie zdanie tej drogi pada więc w kościele, który nosi dokładnie
-    to wezwanie — Wszystkich Świętych.
+    Najstarszy znany rękopis Kantyku, przechowywany w Asyżu, ma nad początkiem tekstu wyrysowane
+    linie na nuty, których nikt nie wypełnił. Melodię ułożył sam Franciszek i ta melodia
+    przepadła. Każde opracowanie Kantyku wpisuje w te linie własną muzykę; tego popołudnia była
+    to muzyka Orffa.
   # The printed programme's cast page, which the panel's confirmed participations match name for
   # name. The violinist stays in `realizacja` (the /koncerty listing's line), so the organist and
   # the conductor's assistant are named here; the colophon prints `realizacja` after these.
@@ -3215,15 +3220,15 @@
       work: "Stetit Angelus"
       year: "2005"
       voicing: "a 9"
-      # The All Saints rhyme is deliberately NOT here: it is `reflectionNote`, in its own band,
-      # where it is the evening's strongest fact rather than a tail on a work. Saying it twice
-      # would spend it.
+      # The All Saints rhyme is deliberately NOT here: `prologue` carries it, at the door, where
+      # the verse over the portal and the antiphon's saints stand in one paragraph. Saying it
+      # twice would spend it.
       # Nor the angel: `inscriptioGloss` prints him a line below, so the locus says only where the
       # work stands.
       locus: >-
         Zaraz po ostatnim Pärcie ostatni utwór programu, przed samym bisem.
       # The image is NOT re-told here: `inscriptioGloss` prints the angel and the censer two rows
-      # below, and `reflectionNote` prints the smoke and the saints one band above. What the note
+      # below, and `prologue` quotes the smoke and the saints at the top of the page. What the note
       # says about the text is the one thing neither of them does — where the liturgy sings it.
       # The composer's line about writing down what is sent to him is quoted in MusicWeb's review
       # of his Hyperion disc (CDA67799); the note reports it rather than quoting it.

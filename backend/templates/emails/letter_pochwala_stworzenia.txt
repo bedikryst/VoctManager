@@ -1,18 +1,19 @@
-{% autoescape off %}{{ copy.eyebrow|upper }}
+{% autoescape off %}POCHWAŁA STWORZENIA
 
-POCHWAŁA STWORZENIA
-Laudato si’, mi’ Signore, cum tucte le Tue creature
-{{ copy.inscription_gloss }}
+Altissimu, onnipotente, bon Signore,
+Tue so le laude, la gloria e l’honore
+et onne benedictione.
+{{ copy.incipit_gloss }}
 
 -----------------------------------------
 
 {{ greeting }}
 
+{{ copy.lede }}
+
 {% for paragraph in copy.body %}{{ paragraph }}
 
-{% endfor %}Florent de Bazelaire, {{ copy.roles.0 }} · Radu Ropotan, {{ copy.roles.1 }}
-
-{{ copy.button|upper }}:
+{% endfor %}{{ copy.button|upper }}:
 {{ page_url }}
 
 {{ copy.next }}
