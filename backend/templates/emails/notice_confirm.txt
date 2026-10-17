@@ -1,4 +1,4 @@
-{{ copy.eyebrow|upper }}
+{% autoescape off %}{{ copy.eyebrow|upper }}
 
 {{ copy.headline }}
 =========================================
@@ -16,3 +16,4 @@
 
 {{ copy.footer }}
 {{ copy.policyLabel }}: {{ policy_url }}
+{% endautoescape %}

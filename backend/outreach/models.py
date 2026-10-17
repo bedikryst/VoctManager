@@ -252,6 +252,42 @@ class NoticeConsentEvent(models.Model):
         return f"{self.kind} @ {self.at:%Y-%m-%d %H:%M}"
 
 
+class NoticeLetterDelivery(models.Model):
+    """
+    One of the list's letters (`outreach/letters.py`) handed to the mail provider for one
+    subscriber, written at the moment of the hand-over and never edited. It answers two
+    questions: whether a second run of the send would write to somebody twice — the unique
+    constraint makes that impossible — and which letters went out under a consent.
+
+    The same shape and the same CASCADE as `NoticeConsentEvent`, for the same reason: an
+    erasure under art. 17 takes the person's whole history with it.
+    """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    subscription = models.ForeignKey(
+        ConcertNoticeSubscription,
+        on_delete=models.CASCADE,
+        related_name='letter_deliveries',
+        verbose_name=_("Subscription"),
+    )
+    #: The letter's slug, a key of `outreach.letters.LETTERS`.
+    letter = models.CharField(max_length=64, verbose_name=_("Letter"))
+    sent_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Sent at"))
+
+    class Meta:
+        ordering = ['-sent_at']
+        verbose_name = _('Notice letter delivery')
+        verbose_name_plural = _('Notice letter deliveries')
+        constraints = [
+            models.UniqueConstraint(
+                fields=['subscription', 'letter'],
+                name='outreach_letter_once_per_subscription',
+            ),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.letter} @ {self.sent_at:%Y-%m-%d %H:%M}"
+
+
 # How long a guest's reservation outlives the concert it was for. The purpose ends when the
 # doors close; the month after it is room for the office to answer a question about the
 # evening. It is the figure the form's own clause promises (`web/src/i18n/content/rsvp.ts`) and

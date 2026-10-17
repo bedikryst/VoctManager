@@ -1376,6 +1376,18 @@ const jsonLd =
             {galleryCredits && <p class="kd-gallery-credit micro">{galleryCredits}</p>}
             <a class="kd-gallery-all" href={`/obrazy#${entry.id}`}>{ui.gallery.allImages}</a>
           </div>
+
+          {/* Once a free evening is sung, the door band leaves and takes its gift line with it, so
+              the line returns here, under the photographs: the reader who came for them has just
+              seen what the gift paid for. The sentence is the band's own (the board's), unchanged;
+              only the door names the evenings still to come. Before the evening the door band
+              asks, so this stays silent. */}
+          {!unsung && c.admission === "free" && (
+            <div class="kd-gallery-gift reveal">
+              <p class="kd-gallery-gift-line">{ui.ianua.gift}</p>
+              <a class="kd-ianua-give kd-gallery-give" href={hrefDonate} data-vault-open="100">{ui.gallery.give}</a>
+            </div>
+          )}
         </div>
       </section>
     )}
@@ -2169,6 +2181,11 @@ const jsonLd =
   .kd-gallery-credit { margin: 0; font-family: var(--mono); font-size: 10.5px; letter-spacing: .1em; color: rgba(244,241,233,.46); text-transform: none; }
   .kd-gallery-all { font-family: var(--mono); font-size: 10.5px; letter-spacing: .22em; text-transform: uppercase; color: rgba(244,241,233,.72); border-bottom: 1px solid rgba(244,241,233,.28); padding-bottom: 4px; transition: color .35s var(--ease, ease), border-color .35s var(--ease, ease); }
   .kd-gallery-all:hover { color: var(--candle); border-bottom-color: var(--candle); }
+  /* The gift line and its door in one row under the foot's rule, the door wearing the door band's
+     gold button — the same call in the same dress, one scroll from the photographs. */
+  .kd-gallery-gift { margin: clamp(28px, 3.4vw, 40px) 0 0; display: flex; flex-wrap: wrap; align-items: center; gap: 16px 28px; }
+  .kd-gallery-gift-line { margin: 0; max-width: 46ch; font-family: var(--sans); font-weight: 300; font-size: clamp(14.5px, 1.2vw, 15.5px); line-height: 1.65; color: rgba(244,241,233,.66); }
+  .kd-gallery-give { margin-top: 0; }
 
   /* ── Film: in-flow custom player ───────────────────────────────────────── */
   .kd-film { background: var(--dark, #080807); color: var(--paper); }

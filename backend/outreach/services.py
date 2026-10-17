@@ -168,12 +168,11 @@ def unsubscribe_headers(subscription: ConcertNoticeSubscription) -> dict[str, st
 
 class NoticeListService:
     """
-    The concert invitation list — double opt-in, one mail per concert, nothing else.
+    The concert invitation list — double opt-in, concerts and nothing else.
 
     THE LIST IS NOT A MAILING TOOL. Everything here is about establishing and ending a
-    consent; sending the notice itself is deliberately absent, because the evening it
-    would announce does not exist yet (that is what /koncerty's `Nondum` station says).
-    See docs/specs/web-notice-list-2026-09.md for why that is a decision rather than an omission.
+    consent. The letters the list exists for are written one concert at a time and sent
+    by `outreach/letters.py`, which reads its audience from the states kept here.
     """
 
     @staticmethod
@@ -273,7 +272,7 @@ class NoticeListService:
     @staticmethod
     def send_confirmation(subscription: ConcertNoticeSubscription) -> None:
         """
-        The one mail this app sends. Raises on transport failure; `subscribe` is what
+        The request to confirm a sign-up. Raises on transport failure; `subscribe` is what
         decides that is survivable, and anything else calling this — a resend from the
         admin, say — should be told the mail did not go out.
 

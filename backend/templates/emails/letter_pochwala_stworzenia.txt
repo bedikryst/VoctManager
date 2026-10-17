@@ -1,0 +1,36 @@
+{% autoescape off %}{{ copy.eyebrow|upper }}
+
+POCHWAŁA STWORZENIA
+VoctEnsemble & Radu Ropotan
+{{ copy.facts }}
+
+-----------------------------------------
+
+{{ greeting }}
+
+{% for paragraph in copy.body %}{{ paragraph }}
+
+{% endfor %}Florent de Bazelaire, {{ copy.roles.0 }} · Radu Ropotan, {{ copy.roles.1 }}
+
+{{ copy.button|upper }}:
+{{ page_url }}
+
+{{ copy.next }}
+
+{{ copy.signature }}
+
+-----------------------------------------
+
+Laudato si’, mi’ Signore, cum tucte le Tue creature
+{{ copy.inscription_gloss }}
+
+-----------------------------------------
+
+{{ copy.why }} {{ copy.reply }}
+
+{{ copy.unsubscribe }}: {{ unsubscribe_url }}
+{{ copy.preferences }}: {{ preferences_url }}
+{{ copy.policy }}: {{ policy_url }}
+
+{{ copy.controller }}
+{% endautoescape %}

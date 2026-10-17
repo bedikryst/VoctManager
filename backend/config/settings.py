@@ -476,6 +476,15 @@ PUBLIC_FROM_EMAIL = (
 # locales) ARE ONE PROMISE: change one and the other stops being true.
 PUBLIC_REPLY_TO_EMAIL = env("PUBLIC_REPLY_TO_EMAIL", default="").strip() or "rodo@voctensemble.com"
 
+# Where a reply to one of the list's LETTERS goes (`outreach/letters.py`). Not the data
+# mailbox above: a letter is the ensemble writing after a concert, and the reader's answer
+# to it is a reply to the ensemble, which the foundation's contact mailbox receives. The
+# letter's footer says a reply reaches us without printing the address, so changing this
+# breaks no sentence.
+PUBLIC_LETTER_REPLY_TO_EMAIL = (
+    env("PUBLIC_LETTER_REPLY_TO_EMAIL", default="").strip() or "kontakt@voctfoundation.com"
+)
+
 # Public frontend origin (no trailing slash, no /panel) — used to resolve the
 # SPA-relative deep-links produced by the message layer into absolute URLs for
 # email clients. SITE_URL is the panel base (origin + /panel) consumed by the

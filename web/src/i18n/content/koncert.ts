@@ -115,6 +115,9 @@ export interface ConcertChrome {
   readonly gallery: {
     /** The road out of the gallery, to the archive of every evening. */
     readonly allImages: string;
+    /** The door under the gallery of a sung evening with a free door — opens the donation vault.
+        It names the NEXT evenings: the one in the photographs is already paid for. */
+    readonly give: string;
   };
   readonly poster: {
     readonly caption: string;
@@ -188,7 +191,7 @@ export const CONCERT: Record<Locale, ConcertChrome> = {
       spotify: "wybrzmiało m.in. na Spotify",
     },
     quoteAria: "Cytat",
-    gallery: { allImages: "Obrazy wszystkich wieczorów" },
+    gallery: { allImages: "Obrazy wszystkich wieczorów", give: "Wesprzyj następne koncerty" },
     poster: {
       caption: "Plakat wieczoru",
       altFallback: "Plakat koncertu {title}",
@@ -246,7 +249,7 @@ export const CONCERT: Record<Locale, ConcertChrome> = {
       spotify: "some of it can be heard on Spotify",
     },
     quoteAria: "Quotation",
-    gallery: { allImages: "Images from every evening" },
+    gallery: { allImages: "Images from every evening", give: "Support the next concerts" },
     poster: {
       caption: "The evening's poster",
       altFallback: "Poster for the concert {title}",
@@ -304,7 +307,7 @@ export const CONCERT: Record<Locale, ConcertChrome> = {
       spotify: "on peut en écouter une partie sur Spotify",
     },
     quoteAria: "Citation",
-    gallery: { allImages: "Images de toutes les soirées" },
+    gallery: { allImages: "Images de toutes les soirées", give: "Soutenir les prochains concerts" },
     poster: {
       caption: "L'affiche de la soirée",
       altFallback: "Affiche du concert {title}",

@@ -3,13 +3,16 @@
 # Outreach — concert notice list, endpoint + state-machine tests
 # ==========================================
 from datetime import UTC, datetime, timedelta
+from io import StringIO
 from unittest.mock import patch
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core import mail
 from django.core.cache import cache
-from django.core.mail import EmailMultiAlternatives
+from django.core.mail import EmailMessage, EmailMultiAlternatives
+from django.core.management import call_command
+from django.core.management.base import CommandError
 from django.test import override_settings
 from django.urls import reverse
 from django.utils import timezone
@@ -17,6 +20,7 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 
 from .consent import NOTICE_CLAUSE_VERSION
+from .letters import POCHWALA_STWORZENIA
 from .models import (
     CONFIRM_TOKEN_TTL,
     EVIDENCE_RETENTION,
@@ -25,6 +29,8 @@ from .models import (
     ConcertReservation,
     NoticeConsentEvent,
     NoticeConsentEventKind,
+    NoticeLetterDelivery,
+    NoticeLocale,
     NoticeStatus,
 )
 from .reservations import (
@@ -901,3 +907,130 @@ class ReservationTests(APITestCase):
         self.assertEqual(resp.context['title'], 'Przyjdą: 1 · miejsca: 2 · nie przyjdą: 0')
         # 18:22 UTC is 20:22 in Warsaw in October (CEST).
         self.assertContains(resp, '2026-10-05 20:22:00')
+
+
+@override_settings(PUBLIC_LETTER_REPLY_TO_EMAIL='kontakt@voctfoundation.com')
+class LetterTests(NoticeListTestCase):
+    """The list's letters: only under a live consent, once per reader, the way out in each."""
+
+    letter = POCHWALA_STWORZENIA
+    command_logger = 'outreach.management.commands.send_notice_letter'
+
+    @staticmethod
+    def _subscriber(
+        email: str,
+        *,
+        status: str = NoticeStatus.CONFIRMED,
+        locale: str = 'pl',
+        name: str = '',
+    ) -> ConcertNoticeSubscription:
+        return ConcertNoticeSubscription.all_objects.create(
+            email=email, name=name, locale=locale, status=status,
+            confirmed_at=timezone.now() if status == NoticeStatus.CONFIRMED else None,
+            clause_version=NOTICE_CLAUSE_VERSION, surface='web:koncerty',
+        )
+
+    def _run(self, *args: str) -> str:
+        out = StringIO()
+        call_command('send_notice_letter', self.letter.slug, *args, stdout=out)
+        return out.getvalue()
+
+    @staticmethod
+    def _html(message: EmailMessage) -> str:
+        assert isinstance(message, EmailMultiAlternatives)
+        return str(message.alternatives[0][0])
+
+    def test_without_send_nothing_goes_out(self):
+        self._subscriber('reader@example.com')
+        output = self._run()
+        self.assertEqual(len(mail.outbox), 0)
+        self.assertIn('1 to send', output)
+
+    def test_only_a_confirmed_consent_receives_it(self):
+        self._subscriber('confirmed@example.com')
+        self._subscriber('pending@example.com', status=NoticeStatus.PENDING)
+        self._subscriber('gone@example.com', status=NoticeStatus.UNSUBSCRIBED)
+        self._run('--send')
+        self.assertEqual([message.to for message in mail.outbox], [['confirmed@example.com']])
+
+    def test_a_second_run_writes_to_nobody_twice(self):
+        self._subscriber('first@example.com')
+        self._run('--send')
+        self._subscriber('later@example.com')
+        self._run('--send')
+        self.assertEqual(
+            [message.to[0] for message in mail.outbox],
+            ['first@example.com', 'later@example.com'],
+        )
+        self.assertEqual(NoticeLetterDelivery.objects.filter(letter=self.letter.slug).count(), 2)
+
+    def test_each_letter_carries_its_reader_s_way_out_and_a_reply_to_a_person(self):
+        subscription = self._subscriber('reader@example.com')
+        self._run('--send')
+        message = mail.outbox[0]
+        self.assertEqual(message.from_email, settings.PUBLIC_FROM_EMAIL)
+        self.assertEqual(message.reply_to, ['kontakt@voctfoundation.com'])
+        self.assertIn(subscription.unsubscribe_token, message.extra_headers['List-Unsubscribe'])
+        self.assertEqual(message.extra_headers['List-Unsubscribe-Post'], 'List-Unsubscribe=One-Click')
+        self.assertIn(f'/nuntius?unsubscribe={subscription.unsubscribe_token}', self._html(message))
+        self.assertIn(f'/nuntius?preferences={subscription.unsubscribe_token}', self._html(message))
+
+    def test_the_letter_speaks_its_reader_s_language_and_greets_by_name(self):
+        self._subscriber('reader@example.com', locale='en', name="O'Neil")
+        self._run('--send')
+        message = mail.outbox[0]
+        self.assertEqual(message.subject, self.letter.copy['en'].subject)
+        # The text part is plain text: an apostrophe stays an apostrophe.
+        self.assertIn("Dear O'Neil,", message.body)
+        # Campaign parameters before the anchor, or they never reach the analytics.
+        self.assertIn(
+            'https://voctensemble.com/en/koncerty/pochwala-stworzenia'
+            '?utm_source=nuntius&utm_medium=email&utm_campaign=pochwala-stworzenia#obrazy',
+            message.body,
+        )
+
+    def test_a_reader_without_a_name_is_greeted_without_one(self):
+        self._subscriber('reader@example.com')
+        self._run('--send')
+        self.assertIn('Dzień dobry,', mail.outbox[0].body)
+        self.assertNotIn('Dzień dobry, ,', mail.outbox[0].body)
+
+    def test_the_name_is_escaped_in_the_html(self):
+        self._subscriber('reader@example.com', name='<b>Anna</b>')
+        self._run('--send')
+        html = self._html(mail.outbox[0])
+        self.assertNotIn('<b>Anna</b>', html)
+        self.assertIn('&lt;b&gt;Anna&lt;/b&gt;', html)
+
+    def test_a_test_send_reaches_one_subscriber_as_often_as_asked(self):
+        self._subscriber('me@example.com')
+        self._subscriber('other@example.com')
+        self._run('--to', 'ME@example.com')
+        self._run('--to', 'me@example.com')
+        self.assertEqual([message.to[0] for message in mail.outbox], ['me@example.com'] * 2)
+        self.assertEqual(NoticeLetterDelivery.objects.count(), 1)
+        # The test counts as that reader's delivery, so the real send skips them.
+        mail.outbox = []
+        self._run('--send')
+        self.assertEqual([message.to[0] for message in mail.outbox], ['other@example.com'])
+
+    def test_a_test_send_refuses_an_address_without_a_consent(self):
+        self._subscriber('pending@example.com', status=NoticeStatus.PENDING)
+        with self.assertRaises(CommandError):
+            self._run('--to', 'pending@example.com')
+        self.assertEqual(len(mail.outbox), 0)
+
+    def test_a_failed_send_records_nothing_and_the_next_run_retries_it(self):
+        self._subscriber('reader@example.com')
+        with (
+            patch('outreach.letters.EmailDispatcherService.dispatch', side_effect=RuntimeError('ESP down')),
+            self.assertLogs(self.command_logger, level='ERROR'),
+            self.assertRaises(CommandError),
+        ):
+            self._run('--send')
+        self.assertFalse(NoticeLetterDelivery.objects.exists())
+        self._run('--send')
+        self.assertEqual(len(mail.outbox), 1)
+
+    def test_every_language_a_subscriber_can_choose_has_copy(self):
+        self.assertEqual(set(self.letter.copy), {locale for locale, _label in NoticeLocale.choices})

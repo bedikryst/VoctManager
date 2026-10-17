@@ -446,14 +446,48 @@ export const concertUrl = (site: string, concertId: string): string =>
 
 // ── Freshness ─────────────────────────────────────────────────────────────────────────────────
 
+/** A `concerts.yaml` row as the generator reads it: the kit's slice plus the poster it copies. */
+type PackConcertRow = KitConcert & { readonly id: string; readonly poster?: string | undefined };
+
+/**
+ * The part of a concert row the pack prints: the `KitConcert` slice, with the programme and the
+ * ritornello cut down to the composers `concertFacts` lists, and the poster the generator copies.
+ * A gallery, a hero or an alt belongs to the concert page, so replacing the evening's photographs
+ * does not stale a pack that never printed them. `satisfies` makes a new `KitConcert` field a type
+ * error here until it is hashed.
+ */
+function printedConcert(row: PackConcertRow | undefined) {
+  if (!row) return null;
+  return {
+    title: row.title,
+    date: row.date,
+    time: row.time,
+    venue: row.venue,
+    venueNote: row.venueNote,
+    address: row.address,
+    admission: row.admission,
+    festival: row.festival && { name: row.festival.name, url: row.festival.url },
+    facebookEvent: row.facebookEvent,
+    credits: row.credits?.map((credit) => ({ role: credit.role, name: credit.name })),
+    essence: row.essence,
+    invitation: row.invitation,
+    posterCredit: row.posterCredit,
+    ritornello: row.ritornello && { composer: row.ritornello.composer },
+    program: row.program?.map((work) => ({ composer: work.composer, bis: work.bis })),
+    poster: row.poster,
+  } satisfies Record<keyof KitConcert | "poster", unknown>;
+}
+
 /**
  * A fingerprint of everything in git that the built pack prints: every kit file, the photo
- * manifest, the corpus rows of the concerts those kits name, the page-copy fields the pack
- * carries (`PACK_COPY_FIELDS`), the foundation facts it prints and the mark. The generator writes it into
- * `index.json`; the page recomputes it and refuses to build against a pack cut from other sources.
+ * manifest, the printed fields of the concerts those kits name (`printedConcert`), the page-copy
+ * fields the pack carries (`PACK_COPY_FIELDS`), the foundation facts it prints and the mark. The
+ * generator writes it into `index.json`; the page recomputes it and refuses to build against a
+ * pack cut from other sources.
  *
- * The corpus and the page copy are hashed per field, not as files, so an edit to another evening
- * or to a section lede does not demand a rebuild and an upload of a pack it cannot have changed.
+ * The corpus and the page copy are hashed per field, not as files, so an edit to another evening,
+ * to the evening's photographs or to a section lede does not demand a rebuild and an upload of a
+ * pack it cannot have changed.
  */
 export function computeKitHash(root: string = process.cwd()): string {
   const hash = createHash("sha256");
@@ -464,15 +498,15 @@ export function computeKitHash(root: string = process.cwd()): string {
   } catch {
     // No kits: the hash still covers the manifest.
   }
-  const concerts = YAML.parse(readFileSync(join(root, CONCERTS_FILE), "utf8")) as {
-    id: string;
-  }[];
+  const concerts = YAML.parse(
+    readFileSync(join(root, CONCERTS_FILE), "utf8"),
+  ) as PackConcertRow[];
   for (const name of kitNames) {
     const source = readFileSync(join(kitsDir, name), "utf8");
     hash.update(`kit:${name}\n${source.replace(/\r\n/g, "\n")}\n`);
     const concertId = (YAML.parse(source) as { concert?: unknown } | null)?.concert;
     const row = concerts.find((entry) => entry.id === concertId);
-    hash.update(`concert:${String(concertId)}\n${JSON.stringify(row ?? null)}\n`);
+    hash.update(`concert:${String(concertId)}\n${JSON.stringify(printedConcert(row))}\n`);
   }
   hash.update(
     `manifest\n${readFileSync(join(root, PRESS_MANIFEST), "utf8").replace(/\r\n/g, "\n")}\n`,

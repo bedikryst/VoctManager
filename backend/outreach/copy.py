@@ -3,7 +3,8 @@
 # What the confirmation mail says, in the three languages the public site speaks
 # ==========================================
 """
-The one mail this app sends, as text rather than as a gettext catalogue.
+The confirmation mail, as text rather than as a gettext catalogue. The letters keep
+their copy the same way, in `letters.py`.
 
 WHY NOT gettext, WHICH THE REST OF THE BACKEND USES. gettext makes the msgid — the
 English — the source, and every other language a translation of it. That is right for
@@ -17,10 +18,9 @@ So the three locales stand side by side, Polish first, and the template receives
 already-resolved strings. `templates/emails/notice_confirm.*` therefore carries no
 `{% translate %}` of its own.
 
-IT IS STILL NOT ON THE COPY DESK. The desk covers `web/`, and reaching into it from
-Django is a larger piece of machinery than one mail earns. If a second public mail
-appears — the concert notice itself — that calculation changes; see
-docs/specs/web-notice-list-2026-09.md.
+IT IS NOT ON THE COPY DESK. The desk covers `web/`, and reaching into it from Django is a
+larger piece of machinery than these mails earn: the confirmation is one mail, and each
+letter is written once, for one concert, and never edited after it goes out.
 
 THE LIST IS CALLED *ZAPROSZENIA* WHERE A READER CAN READ IT, and `notice` everywhere in
 this codebase. That split is deliberate rather than an unfinished rename: `/nuntius`,
