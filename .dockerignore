@@ -86,6 +86,11 @@ web/press-pack/posters
 web/src/assets/videos
 web/public/video
 
+# Concert recordings (lib/audio.ts): the films' arrangement — bind-mounted, never in a layer. They
+# are also absent from git, so a host without the upload has an empty mount and a player that says
+# the recording is unavailable.
+web/public/audio
+
 # ---- Python / Django (the backend has its OWN Dockerfile + context: ./backend,
 # but anything that would slip into this root context should still be excluded
 # in case the root image ever needs to reach in.) ----

@@ -58,6 +58,23 @@ export interface ConcertChrome {
     /** The scroll cue under the hero — an invitation, not an instruction. */
     readonly cue: string;
   };
+  /** The excerpts player: the glyph in the hero and the bar it raises at the foot of the viewport.
+      Only an evening that carries `excerpts` prints any of it. */
+  readonly excerpts: {
+    /** The glyph's serif line, beside the total running time. */
+    readonly title: string;
+    /** The mono line under it: where the sound comes from. */
+    readonly source: string;
+    /** In place of `source` when the file does not answer. */
+    readonly unavailable: string;
+    /** The accessible name of the glyph and of the bar's toggle, at rest and while it sounds. */
+    readonly play: string;
+    readonly pause: string;
+    /** The bar's stop square. */
+    readonly stop: string;
+    /** The bar's landmark name. */
+    readonly region: string;
+  };
   /** Gloss of `Tabula`: what the front-matter contents list and its aria-label are called. */
   readonly tabula: string;
   readonly bands: ConcertBands;
@@ -156,6 +173,15 @@ export const CONCERT: Record<Locale, ConcertChrome> = {
       timePrefix: "godz.",
       cue: "Wejdź w wieczór",
     },
+    excerpts: {
+      title: "Fragmenty wieczoru",
+      source: "Nagranie z koncertu",
+      unavailable: "Nagranie jest chwilowo niedostępne",
+      play: "Odtwórz fragmenty wieczoru",
+      pause: "Wstrzymaj fragmenty wieczoru",
+      stop: "Zatrzymaj",
+      region: "Odtwarzacz fragmentów wieczoru",
+    },
     tabula: "Zawartość wieczoru",
     bands: {
       ianua: "Wejście",
@@ -214,6 +240,15 @@ export const CONCERT: Record<Locale, ConcertChrome> = {
       timePrefix: "",
       cue: "Step into the evening",
     },
+    excerpts: {
+      title: "Excerpts from the evening",
+      source: "Recorded at the concert",
+      unavailable: "The recording is unavailable for now",
+      play: "Play excerpts from the evening",
+      pause: "Pause excerpts from the evening",
+      stop: "Stop",
+      region: "Excerpts player",
+    },
     tabula: "What the evening holds",
     bands: {
       ianua: "Coming in",
@@ -271,6 +306,15 @@ export const CONCERT: Record<Locale, ConcertChrome> = {
       station: "Image",
       timePrefix: "à",
       cue: "Entrez dans la soirée",
+    },
+    excerpts: {
+      title: "Extraits de la soirée",
+      source: "Enregistré pendant le concert",
+      unavailable: "Enregistrement momentanément indisponible",
+      play: "Écouter les extraits de la soirée",
+      pause: "Mettre en pause les extraits de la soirée",
+      stop: "Arrêter",
+      region: "Lecteur des extraits de la soirée",
     },
     tabula: "Le contenu de la soirée",
     bands: {

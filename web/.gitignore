@@ -36,6 +36,11 @@ src/assets/photos/
 src/assets/videos/
 public/video/
 
+# Concert recordings — the films' arrangement (lib/audio.ts), for a second reason besides size: the
+# repository is public and a recording is the foundation's to publish. Served from a bind mount in
+# production and from `astro dev` locally, uploaded to the host by hand.
+public/audio/
+
 # The downloadable press material (`npm run press:pack`): crops, previews, PDFs, ZIPs and the
 # index /press reads. Tens of megabytes of photographs that are out of git for the reason above —
 # it is built where the originals are and uploaded to the build host by hand. Its ABSENCE is a

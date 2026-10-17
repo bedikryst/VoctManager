@@ -9,6 +9,7 @@
 import { defineCollection } from "astro:content";
 import { file } from "astro/loaders";
 import { z } from "astro/zod";
+import { AUDIO_KEYS } from "./lib/audio";
 import { SCRIPTURE_BOOKS } from "./lib/scriptureRef";
 
 /**
@@ -320,6 +321,20 @@ const concerts = defineCollection({
         note: z.string().optional(),
         poster: z.string().optional(),
         portrait: z.boolean().default(false),
+      })
+      .optional(),
+    /** A short self-hosted reel of the evening's sound, played from a glyph in the hero and a bar
+        fixed to the foot of the viewport. `asset` resolves through `lib/audio.ts`; `duration` is
+        the file's length in seconds, printed before a byte of it has loaded (the player never
+        preloads). Each chapter is an offset into the file and the INDEX of the work it belongs to
+        in `program`, so its name is the programme's own in every locale and nothing here is copy. */
+    excerpts: z
+      .object({
+        asset: z.enum(AUDIO_KEYS),
+        duration: z.number().positive(),
+        chapters: z
+          .array(z.object({ at: z.number().nonnegative(), program: z.number().int().nonnegative() }))
+          .min(1),
       })
       .optional(),
     /** Named "obsada" credits for the detail page — role → person (conductor, the Jesuit

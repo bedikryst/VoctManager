@@ -53,3 +53,4 @@ services:
       # Same mount as prod: the films are excluded from the build context, so without it
       # http://localhost renders every page and 404s every player.
       - ./web/public/video:/usr/share/nginx/html/marketing/video:ro
+      - ./web/public/audio:/usr/share/nginx/html/marketing/audio:ro

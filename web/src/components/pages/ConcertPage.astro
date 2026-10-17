@@ -52,6 +52,8 @@ import { programmeLine, ritornelloLine } from "../../lib/programmeLine";
 import type { TabulaEntry } from "../../lib/tabula";
 import { absolute, musicEvent } from "../../lib/eventSchema";
 import { videoAsset, videoAssetAv1 } from "../../lib/videos";
+import { AUDIO_MIME, audioAsset } from "../../lib/audio";
+import { programmeSurnames } from "../../lib/litany";
 import { longDate } from "../../lib/dates";
 import { cycleNumerals, upcomingStation } from "../../lib/cycle";
 import { formatRef } from "../../lib/scriptureRef";
@@ -67,8 +69,11 @@ import { glossFor, localizePath, pageI18n, type Locale } from "../../i18n/config
 import VaultMount from "../../components/VaultMount.astro";
 import { ImageLightbox } from "../../islands/landing/ImageLightbox";
 import { VideoPlayer } from "../../islands/landing/video/VideoPlayer";
+import { formatTime } from "../../islands/landing/video/formatTime";
+import { ExcerptsPlayer } from "../../islands/landing/excerpts/ExcerptsPlayer";
 import "../../styles/vault.css";
 import "../../styles/vplayer.css";
+import "../../styles/excerpts.css";
 import "../../styles/image-lightbox.css";
 
 interface Props {
@@ -376,6 +381,46 @@ const filmPosterSrc = filmPoster
 const filmVideoSrc = c.video ? videoAsset(c.video.asset) : undefined;
 const filmVideoSrcAv1 = c.video ? videoAssetAv1(c.video.asset) : undefined;
 
+// ── Excerpts: the reel the hero's glyph plays. Each chapter is named by the work it points at, read
+// from the FULL programme by its corpus index (the encore included, whatever `unsung` seals below —
+// a recording of the evening exists only once the evening has been sung). The composer is reduced to
+// the surname the catalogue knows (lib/litany), per name, because the encore's credit is two people.
+// A chapter out of order or pointing past the programme fails the build: it would otherwise name
+// the wrong work under the right sound, and look correct.
+const excerpts = await (async () => {
+  if (!c.excerpts) return undefined;
+  const eras = await getCollection("repertoire");
+  const surnameOf = (composer: string): string =>
+    composer
+      .split(/\s*\/\s*/)
+      .map((part) => programmeSurnames([part], eras, lang)[0])
+      .filter(Boolean)
+      .join(" / ");
+  const chapters = c.excerpts.chapters.map((chapter, i, all) => {
+    const item = c.program[chapter.program];
+    if (!item) {
+      throw new Error(
+        `[excerpts] ${entry.id}: chapter ${i} points at program[${chapter.program}], which does not exist.`,
+      );
+    }
+    const before = all[i - 1];
+    if ((i === 0 && chapter.at !== 0) || (before && chapter.at <= before.at)) {
+      throw new Error(`[excerpts] ${entry.id}: chapters must start at 0 and rise; chapter ${i} is at ${chapter.at}s.`);
+    }
+    return {
+      at: chapter.at,
+      composer: surnameOf(item.composer),
+      work: programmeLine(entry.id, chapter.program, item, lang).work,
+    };
+  });
+  return {
+    src: audioAsset(c.excerpts.asset),
+    duration: c.excerpts.duration,
+    chapters,
+    artwork: (await getImage({ src: bg.desktop, width: 512, format: "webp" })).src,
+  };
+})();
+
 // ── The tabula: this page's own table of contents, hung from the chrome's line and summoned by a
 // run back UP the document (lib/tabula, styles/tabula.css). These are the longest documents on the
 // site — 16 400px at 1440×900 on Wołanie Gór, 17 300 on a phone — and until now the only one with
@@ -610,6 +655,34 @@ const jsonLd =
               </span>
             )}
           </p>
+        )}
+
+        {/* A control, so no register: it stands at full ink while the copy above inks in. The
+            link beside the island is the no-script stand-in (styles/excerpts.css). */}
+        {excerpts && (
+          <div class="kd-excerpts">
+            <ExcerptsPlayer
+              client:load
+              src={excerpts.src}
+              duration={excerpts.duration}
+              chapters={excerpts.chapters}
+              labels={ui.excerpts}
+              lang={lang}
+              candle={candle}
+              title={concertTitle}
+              artwork={excerpts.artwork}
+            />
+            <a class="excerpts-glyph excerpts-file" href={excerpts.src} type={AUDIO_MIME}>
+              <span class="excerpts-disc" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13l11-6.5z" /></svg>
+              </span>
+              <span class="excerpts-total">{formatTime(excerpts.duration)}</span>
+              <span class="excerpts-text">
+                <span class="excerpts-title">{ui.excerpts.title}</span>
+                <span class="excerpts-source">{ui.excerpts.source}</span>
+              </span>
+            </a>
+          </div>
         )}
 
         <span class="kd-hero-cue reveal" data-d="3" aria-hidden="true">{ui.hero.cue}</span>
@@ -1664,6 +1737,7 @@ const jsonLd =
   .kd-inscriptio-gloss { color: rgba(244, 241, 233, .72); }
   .kd-inscriptio-ref { display: inline-block; margin-left: 14px; font-family: var(--capitalis); font-size: 11px; letter-spacing: .18em; text-transform: uppercase; color: rgba(244, 241, 233, .5); }
 
+  .kd-excerpts { margin-top: clamp(30px, 4vw, 48px); }
   .kd-hero-cue { margin-top: clamp(38px, 5vw, 58px); font-family: var(--capitalis); font-size: 10px; letter-spacing: .26em; text-transform: uppercase; color: rgba(244, 241, 233, .6); display: inline-flex; align-items: center; gap: 12px; }
   .kd-hero-cue::after { content: ""; width: 40px; height: 1px; background: currentColor; opacity: .6; animation: kdCue 3.4s var(--ease-slow) infinite; }
 

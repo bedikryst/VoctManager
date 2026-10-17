@@ -22,6 +22,7 @@
     "press:pack": "node scripts/press-pack.mjs",
     "test:zip": "node --test scripts/zip.test.mjs",
     "video:stamp": "node scripts/video-stamp.mjs",
+    "audio:stamp": "node scripts/audio-stamp.mjs",
     "rite:render": "node rite/render.mjs"
   },
   "dependencies": {

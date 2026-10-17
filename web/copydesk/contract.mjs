@@ -415,6 +415,11 @@ export const NOT_COPY = {
   "video.asset": "asset id",
   "video.poster": "asset name",
   "video.portrait": "player flag",
+  "excerpts.asset": "asset id",
+  "excerpts.duration": "length of the recording, in seconds",
+  "excerpts.chapters[].at": "offset into the recording, in seconds",
+  "excerpts.chapters[].program":
+    "index into `program` — the chapter's name is that work's line, already on the desk",
   "credits[].name": "a person's name",
   "roster.groups[].names[]": "the performers' names — consent scope is this page only (§ schema)",
   "roster.groups[].instrument": "layout flag — the group prints on the instrumentalists' line",

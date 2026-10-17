@@ -44,6 +44,9 @@ services:
       # them behind `/video/` — without it the pages render and the players 404. Re-cutting
       # a film is then an upload plus a VIDEO_REVISION bump, with no rebuild at all.
       - ./web/public/video:/usr/share/nginx/html/marketing/video:ro
+      # Concert recordings, on the films' terms (web/src/lib/audio.ts). Not in git either: the
+      # folder on the host holds exactly what was uploaded to it by hand.
+      - ./web/public/audio:/usr/share/nginx/html/marketing/audio:ro
       # The Astro public site at /usr/share/nginx/html/marketing is baked INTO
       # the image by frontend/Dockerfile (web-builder stage). No host mount
       # needed — building via `make prod` (both -f files!) produces the panel

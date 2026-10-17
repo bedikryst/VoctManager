@@ -1,0 +1,324 @@
+/**
+ * @file excerpts.css
+ * @description The excerpts player (islands/landing/excerpts/ExcerptsPlayer.tsx): the glyph that
+ *  stands on the concert hero, and the bar it raises at the foot of the viewport (current work,
+ *  progress, elapsed / total, play/pause, stop). Global, because
+ *  the bar is portalled to <body> and carries no Astro scope.
+ *
+ *  THE GLYPH speaks vplayer's play affordance (`.vplayer-btn`): a 1px candle ring around a
+ *  translucent dark disc, blurred because it sits on a photograph and the blur shows there. It is a
+ *  control, so it stands outside every register (guardrails §5) and is at full ink from the first
+ *  paint while the hero's copy inks around it.
+ *
+ *  THE BAR APPEARS. It is `hidden` until the first press and shown in one frame: no slide from the
+ *  edge, no fade from zero (§5). Nothing in it moves except the playhead, which is the state it
+ *  reports. The chapter strip jumps when the work turns, because a strip that glided would be the
+ *  bar animating its own furniture.
+ *
+ *  THE iOS BAND UNDER IT (guardrails §3a). Safari 26 keeps a strip below a fixed bar that no fixed
+ *  layer can paint, and `env(safe-area-inset-bottom)` resolves to 0 there, so the padding below is
+ *  for every other browser. The strip shows the canvas instead: black over most of the page, the
+ *  footer's night once the footer is in view (BaseLayout). The bar is that same night, opaque, so
+ *  both read as one dark edge.
+ * @module styles/excerpts
+ */
+
+:root {
+  /* The bar's own height, the safe-area padding not included. The two rules that make room for
+     the bar (body, scroll-top) read it. */
+  --excerpts-bar-h: 52px;
+}
+
+/* ── The glyph ─────────────────────────────────────────────────────────────── */
+.excerpts-glyph {
+  display: inline-grid;
+  grid-template-columns: auto auto minmax(0, auto);
+  align-items: center;
+  column-gap: 16px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--paper);
+  font: inherit;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.excerpts-glyph:focus-visible {
+  outline: 1px solid var(--candle);
+  outline-offset: 6px;
+}
+
+.excerpts-disc {
+  display: grid;
+  place-items: center;
+  width: 54px;
+  height: 54px;
+  border: 1px solid color-mix(in srgb, var(--candle) 65%, transparent);
+  border-radius: 50%;
+  background: rgba(8, 8, 7, 0.35);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  color: var(--candle);
+  transition:
+    background-color 0.5s var(--ease),
+    border-color 0.5s var(--ease);
+}
+
+.excerpts-disc svg {
+  width: 20px;
+  height: 20px;
+}
+
+@media (hover: hover) {
+  .excerpts-glyph:hover .excerpts-disc {
+    background: color-mix(in srgb, var(--candle) 16%, transparent);
+    border-color: var(--candle);
+  }
+}
+
+.excerpts-total {
+  font-family: var(--mono);
+  font-size: 13px;
+  letter-spacing: 0.06em;
+  font-variant-numeric: tabular-nums;
+  color: rgba(244, 241, 233, 0.85);
+}
+
+.excerpts-text {
+  display: grid;
+  gap: 4px;
+}
+
+.excerpts-title {
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: clamp(18px, 1.5vw, 21px);
+  line-height: 1.15;
+  color: var(--paper);
+}
+
+.excerpts-source {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  line-height: 1.4;
+  text-transform: uppercase;
+  color: rgba(244, 241, 233, 0.58);
+}
+
+/* The file did not answer: the glyph rests, and its mono line says why. */
+.excerpts-glyph.is-failed {
+  cursor: default;
+}
+
+.excerpts-glyph.is-failed .excerpts-disc {
+  opacity: 0.45;
+}
+
+/* Without JavaScript the island's button is inert, so a plain link to the file stands in its
+   place — same composition, and the browser's own player does the rest. One media query both
+   shows the link and hides the button; a <noscript> could only have done the first. A browser
+   that does not know `scripting` skips the query, keeping the button and hiding the link, which
+   is right for every reader who has scripts on. */
+.excerpts-glyph.excerpts-file {
+  display: none;
+}
+
+@media (scripting: none) {
+  .excerpts-glyph.excerpts-file {
+    display: inline-grid;
+  }
+
+  .excerpts-glyph:not(.excerpts-file) {
+    display: none;
+  }
+}
+
+/* ── The bar ───────────────────────────────────────────────────────────────── */
+/* z 48: over the page, under the mobile menu's veil (49), the header (50), the scroll-top mark
+   (90, lifted clear of the bar below) and every dialog (110). */
+.excerpts-bar {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 48;
+  box-sizing: content-box;
+  height: var(--excerpts-bar-h);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  background: var(--night);
+  color: var(--paper);
+}
+
+.excerpts-bar[hidden] {
+  display: none;
+}
+
+/* The stretch of the file the current work occupies, ruled above the progress line. `--c0` and
+   `--c1` are its bounds as fractions of the file, written by the player. */
+.excerpts-span {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 1px;
+  background: color-mix(in srgb, var(--candle) 70%, transparent);
+  transform-origin: left center;
+  transform: translateX(calc(var(--c0, 0) * 100%)) scaleX(calc(var(--c1, 1) - var(--c0, 0)));
+}
+
+.excerpts-rail {
+  position: absolute;
+  top: 3px;
+  right: 0;
+  left: 0;
+  height: 2px;
+  background: rgba(244, 241, 233, 0.12);
+}
+
+/* `--p` (0..1) is the playhead, written on the bar by the player. */
+.excerpts-fill {
+  position: absolute;
+  inset: 0;
+  background: var(--candle);
+  transform-origin: left center;
+  transform: scaleX(var(--p, 0));
+}
+
+.excerpts-row {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  box-sizing: border-box;
+  height: 100%;
+  padding: 5px max(28px, 5vw, env(safe-area-inset-right, 0px)) 0
+    max(28px, 5vw, env(safe-area-inset-left, 0px));
+}
+
+.excerpts-now {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.excerpts-composer {
+  font-family: var(--capitalis);
+  font-size: 10.5px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(244, 241, 233, 0.62);
+}
+
+.excerpts-dot {
+  margin: 0 0.7em;
+  color: var(--candle);
+}
+
+.excerpts-work {
+  font-family: var(--serif);
+  font-size: 17px;
+  color: rgba(244, 241, 233, 0.92);
+}
+
+.excerpts-time {
+  flex: none;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  color: rgba(244, 241, 233, 0.78);
+}
+
+/* Two 44px targets side by side, no gap: the targets' own padding is the spacing between the
+   glyphs. The negative margin sets the stop square on the gutter. */
+.excerpts-controls {
+  flex: none;
+  display: flex;
+  margin-right: -17px;
+}
+
+.excerpts-toggle,
+.excerpts-stop {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: rgba(244, 241, 233, 0.82);
+  cursor: pointer;
+  transition: color 0.35s var(--ease);
+}
+
+.excerpts-toggle span,
+.excerpts-toggle svg {
+  display: block;
+  width: 16px;
+  height: 16px;
+}
+
+.excerpts-stop span {
+  width: 10px;
+  height: 10px;
+  background: currentColor;
+}
+
+.excerpts-toggle:focus-visible,
+.excerpts-stop:focus-visible {
+  outline: 1px solid var(--candle);
+  outline-offset: -8px;
+}
+
+@media (hover: hover) {
+  .excerpts-toggle:hover,
+  .excerpts-stop:hover {
+    color: var(--candle);
+  }
+}
+
+/* Room for the bar while it stands: the foot of the page scrolls clear of it, and the votive
+   scroll-top mark rises above it rather than yielding — a reader listening while reading is the
+   reader most likely to want the way back up. */
+body:has(> .excerpts-bar:not([hidden])) {
+  padding-bottom: calc(var(--excerpts-bar-h) + env(safe-area-inset-bottom, 0px));
+}
+
+body:has(> .excerpts-bar:not([hidden])) .scroll-top {
+  bottom: calc(env(safe-area-inset-bottom, 0px) + var(--excerpts-bar-h) + clamp(20px, 3vw, 36px));
+}
+
+@media (max-width: 720px) {
+  .excerpts-disc {
+    width: 48px;
+    height: 48px;
+  }
+
+  .excerpts-disc svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .excerpts-glyph {
+    column-gap: 14px;
+  }
+
+  .excerpts-row {
+    gap: 14px;
+  }
+
+  .excerpts-time {
+    letter-spacing: 0;
+  }
+
+  /* base.css drops the mark to a flat 16px here; it keeps that gap, measured from the bar. */
+  body:has(> .excerpts-bar:not([hidden])) .scroll-top {
+    bottom: calc(env(safe-area-inset-bottom, 0px) + var(--excerpts-bar-h) + 16px);
+  }
+}
