@@ -60,12 +60,17 @@ class LetterCopy:
     greeting_plain: str
     #: The lines the letter opens on, in the reader's language — the site's own translation.
     incipit_gloss: str
-    #: The paragraph before the photographs.
+    #: The paragraph before the first photograph.
     lede: str
-    #: The photographs' alt texts, in the order the letter shows them — the site's own alts.
+    #: The photographs' alt texts, in the order the letter shows them: the score, the voice,
+    #: the nave.
     photo_alts: tuple[str, str, str]
-    #: The paragraphs after the photographs.
-    body: tuple[str, ...]
+    #: Between the score and the voice: what the letter cannot carry.
+    turn: str
+    #: Between the voice and the nave, to whoever came.
+    thanks: str
+    #: After the nave, to whoever could not come.
+    otherwise: str
     button: str
     #: Where things stand on the next concert. The list was promised its date; until there is
     #: one, the letter says so rather than staying silent about it.
@@ -103,9 +108,12 @@ class Letter:
 # The letter is built on one fact: the oldest known manuscript of the Canticle (Assisi, Sacro
 # Convento, cod. 338) has staves ruled over the start of the text and never filled, and the
 # melody Francis made for it is lost. The letter opens on such a page, says the fact once, and
-# turns it on itself: a letter carries the words and the pictures, and the music stays with
-# whoever was there. The concert page's reflection carries the same fact as a reading of the
-# work; the letter's own turn is the letter and its reader. It gives no date for the
+# turns it on itself without a simile: the letter opens on empty lines too, because words and
+# photographs fit in it and the music does not, which stays with whoever was there. Each
+# photograph answers the sentence before it: Orff's music → a score; the music the letter cannot
+# hold → a voice; the people in the pews → the nave. The concert page's reflection carries the
+# same fact as a reading of the work; the letter's own turn is the letter and its reader. It
+# gives no date for the
 # manuscript, which the literature places anywhere from the mid-thirteenth century to c. 1300.
 #
 # One reader, addressed as the list addresses its readers: "Ty", in forms that carry no
@@ -138,26 +146,31 @@ POCHWALA_STWORZENIA = Letter(
                 "ponad siedemset lat później napisał do nich Carl Orff."
             ),
             photo_alts=(
-                "Śpiewaczka VoctEnsemble z nutami przy balustradzie chóru, w dole nawa kościoła",
+                "Otwarte nuty w dłoniach śpiewaczki VoctEnsemble, w głębi ołtarz",
                 "Śpiewaczka VoctEnsemble na pierwszym planie, za nią pozostali śpiewacy",
                 (
                     "Nawa kościoła Wszystkich Świętych w Warszawie od wejścia: słuchacze "
                     "w ławkach i VoctEnsemble przed ołtarzem głównym"
                 ),
             ),
-            body=(
-                f"Ten list jest trochę jak tamta karta. Mieszczą się w{NBSP}nim zdjęcia, program "
-                f"i{NBSP}wszystkie teksty, które śpiewaliśmy, ale muzyka się w{NBSP}nim nie "
-                f"mieści. Jeśli udało Ci się wtedy przyjść, ona jest już u{NBSP}Ciebie, "
-                f"i{NBSP}bardzo Ci za to dziękujemy. Śpiewa się zupełnie inaczej, kiedy się wie, "
-                "że ktoś przyszedł właśnie po nią.",
-                f"A{NBSP}jeśli tym razem się nie udało, zdjęcia pokażą Ci przynajmniej, jak "
-                f"wyglądało tamto popołudnie, a{NBSP}muzyka poczeka na następny koncert.",
+            turn=(
+                f"Ten list też zaczyna się od pustych linii, bo zmieszczą się w{NBSP}nim słowa "
+                f"i{NBSP}zdjęcia, a{NBSP}muzyka już nie."
+            ),
+            thanks=(
+                f"Jeśli udało Ci się wtedy przyjść, ona została u{NBSP}Ciebie, i{NBSP}bardzo Ci "
+                f"za to dziękujemy. Śpiewa się zupełnie inaczej, kiedy w{NBSP}ławkach siedzą "
+                "ludzie, którzy przyszli właśnie jej posłuchać."
+            ),
+            otherwise=(
+                f"A{NBSP}jeśli tym razem się nie udało, na stronie koncertu znajdziesz wszystkie "
+                f"zdjęcia, program i{NBSP}teksty, które śpiewaliśmy, a{NBSP}muzyka poczeka "
+                "na następny koncert."
             ),
             button=f"Zdjęcia i{NBSP}teksty",
             next=f"Daty następnego koncertu jeszcze nie znamy. Kiedy tylko ją ustalimy, napiszemy do{NBSP}Ciebie.",
             closing="Serdecznie pozdrawiamy",
-            signature="Śpiewacy VoctEnsemble",
+            signature="VoctEnsemble",
             why=(
                 "Ten list przyszedł, bo ten adres jest na liście Zaproszeń VoctEnsemble. "
                 "Piszemy tylko o koncertach."
@@ -189,26 +202,31 @@ POCHWALA_STWORZENIA = Letter(
                 "Carl Orff wrote for them more than seven hundred years later."
             ),
             photo_alts=(
-                "A VoctEnsemble singer with her score at the balustrade of the choir loft, the nave below",
+                "An open score in a VoctEnsemble singer’s hands, the altar beyond",
                 "A VoctEnsemble singer in the foreground, the other singers behind her",
                 (
                     "The nave of All Saints’ Church in Warsaw from the entrance: the audience "
                     "in the pews and VoctEnsemble before the high altar"
                 ),
             ),
-            body=(
-                "This letter is a little like that page. It holds the photographs, the programme "
-                "and all the texts we sang, but the music does not fit in it. If you were able "
-                "to come that afternoon, you already have it, and we thank you for that with "
-                "all our hearts. Singing feels quite different when you know someone came "
-                "especially for it.",
-                "And if it didn’t work out this time, the photographs will at least show you "
-                "what that afternoon looked like, and the music will wait for the next concert.",
+            turn=(
+                "This letter opens on empty lines too, because words and photographs fit in it "
+                "and the music does not."
+            ),
+            thanks=(
+                "If you were able to come that afternoon, the music stayed with you, and we "
+                "thank you for that with all our hearts. Singing is quite different when there "
+                "are people in the pews who came especially to hear it."
+            ),
+            otherwise=(
+                "And if it didn’t work out this time, you will find all the photographs, the "
+                "programme and the texts we sang on the concert page, and the music will wait "
+                "for the next concert."
             ),
             button="Photographs and texts",
             next="We don’t know the date of the next concert yet. As soon as we do, we will write to you.",
             closing="With warm wishes,",
-            signature="The singers of VoctEnsemble",
+            signature="VoctEnsemble",
             why=(
                 "This letter came because this address is on VoctEnsemble’s Invitations "
                 "list. We write only about concerts."
@@ -244,25 +262,26 @@ POCHWALA_STWORZENIA = Letter(
                 "a donnée plus de sept cents ans plus tard."
             ),
             photo_alts=(
-                (
-                    "Une chanteuse de VoctEnsemble, sa partition à la main, à la balustrade "
-                    "de la tribune, la nef en contrebas"
-                ),
+                "Une partition ouverte entre les mains d’une chanteuse de VoctEnsemble, l’autel au fond",
                 "Une chanteuse de VoctEnsemble au premier plan, les autres chanteurs derrière elle",
                 (
                     "La nef de l’église de Tous-les-Saints à Varsovie depuis l’entrée"
                     f"{NBSP}: le public dans les bancs et VoctEnsemble devant le maître-autel"
                 ),
             ),
-            body=(
-                "Cette lettre ressemble un peu à cette page. Elle contient les photographies, "
-                "le programme et tous les textes que nous avons chantés, mais la musique n’y "
-                "tient pas. Si vous avez pu venir cet après-midi-là, elle est déjà avec vous, "
-                "et nous vous en remercions de tout cœur. On chante tout autrement quand on "
-                "sait que quelqu’un est venu précisément pour elle.",
-                "Et si cela n’a pas été possible cette fois, les photographies vous montreront "
-                "au moins à quoi ressemblait cet après-midi, et la musique attendra le "
-                "prochain concert.",
+            turn=(
+                "Cette lettre commence elle aussi par des lignes vides, parce que les mots et "
+                "les photographies y tiennent, mais pas la musique."
+            ),
+            thanks=(
+                "Si vous avez pu venir cet après-midi-là, elle est restée avec vous, et nous vous "
+                "en remercions de tout cœur. On chante tout autrement quand il y a dans les bancs "
+                "des gens venus précisément pour l’écouter."
+            ),
+            otherwise=(
+                "Et si cela n’a pas été possible cette fois, vous trouverez sur la page du concert "
+                "toutes les photographies, le programme et les textes que nous avons chantés, "
+                "et la musique attendra le prochain concert."
             ),
             button="Photographies et textes",
             next=(
@@ -270,7 +289,7 @@ POCHWALA_STWORZENIA = Letter(
                 "connaîtrons, nous vous écrirons."
             ),
             closing="Bien chaleureusement,",
-            signature="Les chanteurs du VoctEnsemble",
+            signature="VoctEnsemble",
             why=(
                 "Cette lettre vous parvient parce que cette adresse figure sur la liste des "
                 "Invitations du VoctEnsemble. Nous n’écrivons que pour les concerts."

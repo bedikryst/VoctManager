@@ -11,9 +11,13 @@ et onne benedictione.
 
 {{ copy.lede }}
 
-{% for paragraph in copy.body %}{{ paragraph }}
+{{ copy.turn }}
 
-{% endfor %}{{ copy.button|upper }}:
+{{ copy.thanks }}
+
+{{ copy.otherwise }}
+
+{{ copy.button|upper }}:
 {{ page_url }}
 
 {{ copy.next }}
