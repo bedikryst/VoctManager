@@ -1,8 +1,6 @@
 {% autoescape off %}POCHWAŁA STWORZENIA
 
-Altissimu, onnipotente, bon Signore,
-Tue so le laude, la gloria e l’honore
-et onne benedictione.
+Altissimu, onnipotente, bon Signore…
 {{ copy.incipit_gloss }}
 
 -----------------------------------------

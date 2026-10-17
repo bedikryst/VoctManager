@@ -41,34 +41,39 @@
     readers get: Palatino (Windows, macOS, iOS) before Georgia, because it is Cormorant's kin and
     its figures are lining, where Georgia's are old-style whatever font-variant-numeric asks.
     Android has neither and takes its own serif.
-  - The letter opens as a page of a chant book: a rubric, then the Canticle's first lines under
-    staves ruled for music and left empty, as they are in the oldest manuscript (letters.py says
-    why). The Umbrian lines are the same in every language and stay here; their gloss is the
-    copy's. The letter ends on one more staff, written with the recording: it and the words
-    under it are the letter's only call to act, set as the opening sets its lines (a staff,
-    italic 26/34 beneath it, a small gloss under that), with a red play mark (play.png, 3x) before
-    the word. The staff and the words open the concert page without an anchor, since the page's
-    hero carries the player; the photographs open its gallery. Nothing in the copy explains the
-    rhyme between the empty staves and the written one.
+  - The letter is bracketed by two staves of one width: it opens on a staff ruled for music and
+    left empty over the Canticle's first line, as in the oldest manuscript (letters.py says
+    why), and ends on the same staff written with the recording. One against one is the whole
+    figure: a second empty staff turns it into a pattern and pushes the lede, which says what
+    the empty one is, off a phone's first screen. The Umbrian line is the same in every language and stays
+    here, closed by an ellipsis because the sentence runs on; its gloss is the copy's. The last
+    staff and the words under it are the letter's only call to act, set as the opening sets its
+    line (a staff, italic 26/34 beneath it, a small gloss under that), with a red play mark
+    (play.png, 3x) before the word. The staff and the words open the concert page without an
+    anchor, since the page's hero carries the player; the photographs open its gallery. Nothing
+    in the copy explains the rhyme between the empty staff and the written one.
   - One colour besides the ink and the letterhead's mark, the rubricator's red: #d65a3c for the
     rubric's letters and the play mark, #b4482f for the staff lines. Type: the lines under the
     staves italic 26/34 (22/30 on a phone), reading 19/30, small italic 15/22, small capitals 12.
-  - Each staff is a GIF that rules itself once, left to right, and rests on the finished staff:
-    four 1px lines 13px apart at 600px, drawn at 2x, with no loop extension. Staves 2 and 3
-    wait 0.9 s and 1.5 s, so the page is ruled from the top down; a mail client holds a GIF it
-    has not scrolled to, so the last staff rules itself when the reader reaches it. A client
-    that does not animate (Outlook on Windows) shows the first frame, which is empty, and the
-    words still stand, the play mark and "listen" among them. No alt: the words under each staff
-    carry its meaning. A staff keeps its 43px height at every width and only its length follows
-    the sheet: lines are horizontal, so a narrower staff costs them nothing, where scaling the
-    height would smear the four 1px lines into four different weights.
+  - Both staves stand in the prose column, 504px between its gutters, and begin where the words
+    beneath them begin: a staff is ruled on the page's writing block, as a chant book rules it,
+    and a staff run edge to edge across the sheet reads as a divider between sections. Each is
+    a GIF that rules itself once, left to right, with a paler head of wet ink, and rests on the
+    finished staff: four 1px lines 13px apart, drawn at 2x, with no loop extension. A mail
+    client holds a GIF it has not scrolled to, so the last staff rules itself when the reader
+    reaches it. A client that does not animate (Outlook on Windows) shows the first frame, which
+    is empty, and the words still stand, the play mark and "listen" among them. No alt: the
+    words under each staff carry its meaning. A staff keeps its 43px height at every width and
+    only its length follows the column: lines are horizontal, so a narrower staff costs them
+    nothing, where scaling the height would smear the four 1px lines into four different weights.
   - The last staff (staff-sung.gif) is ruled the same way and then written, left to right, with
-    the excerpts reel's own loudness: one 1px bar per slice of its six minutes, in the reading
-    text's colour, under the red lines, so a phrase and the breath after it can be seen. Its
-    bars would not survive the horizontal stretch the other staves take, so a phone gets its own
-    drawing at 390px (staff-sung-narrow.gif) through the media query; a client without media
-    queries shows the 600px one, narrowed, and Outlook never sees the narrow one. Redraw both
-    whenever the reel is recut (concerts.yaml `excerpts`).
+    the excerpts reel's own loudness: 168 bars 1px wide on a 3px pitch, one per slice of its six
+    minutes, in the reading text's colour, under the red lines, so a phrase and the breath after
+    it can be seen. Its bars would not survive the horizontal squeeze the opening staff takes on
+    a phone, so a phone gets its own drawing of 114 bars at 342px (staff-sung-narrow.gif, the
+    column of a 390px screen) through the media query; a client without media queries shows the
+    504px one, narrowed, and Outlook never sees the narrow one. Redraw both whenever the reel is
+    recut (concerts.yaml `excerpts`).
   - The prose runs unbroken and the photographs follow it as one spread about the pews the
     letter thanks. First a pair, taken by the photographers from one place in the aisle at the
     same focal length: the rehearsal (rehearsal.jpg) and the concert (concert.jpg). Both are
@@ -77,9 +82,9 @@
     then full. Then the church turned round (audience.jpg): the nave seen from the altar, cut
     just above the photographer standing in the aisle, which also keeps the front rows out,
     where single faces and children are recognisable. The photographs stand in the prose's
-    column (504px between its 48px gutters, 24px on a phone), and only the staves run edge to
-    edge: a pale photograph taken to the edge of a sheet lying on a white inbox leaves the sheet
-    no edge there, the church's pillars dissolving into the client's ground. The pair is 244px
+    column (504px between its 48px gutters, 24px on a phone) like everything else on the sheet:
+    a pale photograph taken to the edge of a sheet lying on a white inbox leaves the sheet no
+    edge there, the church's pillars dissolving into the client's ground. The pair is 244px
     each at 4:5 on a 16px gutter, the church 504px at 5:4 beneath them, leading straight into
     the last staff; each file is drawn at exactly 2x, so its baked grain matches the sheet's
     on a desktop. No caption explains the pair; the
@@ -130,12 +135,8 @@ a { color: #d65a3c; }
 
   <tr><td class="col" style="padding:64px 48px 28px; font-family:'Cinzel', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif; font-size:12px; line-height:16px; letter-spacing:3px; text-transform:uppercase; color:#d65a3c;">Pochwała Stworzenia</td></tr>
 
-  <tr><td style="font-size:0; line-height:0;"><img src="{{ asset_url }}/staff-1.gif{{ asset_query }}" width="600" height="43" alt="" style="display:block; width:100%; max-width:600px; height:43px; border:0;"></td></tr>
-  <tr><td class="col underlay" style="padding:8px 48px 36px; font-family:'Cormorant Garamond', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif; font-style:italic; font-size:26px; line-height:34px; color:#f1ebdf;">Altissimu, onnipotente, bon&nbsp;Signore,</td></tr>
-  <tr><td style="font-size:0; line-height:0;"><img src="{{ asset_url }}/staff-2.gif{{ asset_query }}" width="600" height="43" alt="" style="display:block; width:100%; max-width:600px; height:43px; border:0;"></td></tr>
-  <tr><td class="col underlay" style="padding:8px 48px 36px; font-family:'Cormorant Garamond', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif; font-style:italic; font-size:26px; line-height:34px; color:#f1ebdf;">Tue so le laude, la gloria e&nbsp;l’honore</td></tr>
-  <tr><td style="font-size:0; line-height:0;"><img src="{{ asset_url }}/staff-3.gif{{ asset_query }}" width="600" height="43" alt="" style="display:block; width:100%; max-width:600px; height:43px; border:0;"></td></tr>
-  <tr><td class="col underlay" style="padding:8px 48px 0; font-family:'Cormorant Garamond', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif; font-style:italic; font-size:26px; line-height:34px; color:#f1ebdf;">et onne benedictione.</td></tr>
+  <tr><td class="col" style="padding:0 48px; font-size:0; line-height:0;"><img src="{{ asset_url }}/staff.gif{{ asset_query }}" width="504" height="43" alt="" style="display:block; width:100%; max-width:504px; height:43px; border:0;"></td></tr>
+  <tr><td class="col underlay" style="padding:8px 48px 0; font-family:'Cormorant Garamond', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif; font-style:italic; font-size:26px; line-height:34px; color:#f1ebdf;">Altissimu, onnipotente, bon&nbsp;Signore…</td></tr>
   <tr><td class="col" style="padding:20px 48px 0; font-family:'Cormorant Garamond', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif; font-style:italic; font-size:15px; line-height:22px; color:#8f887c;">{{ copy.incipit_gloss }}</td></tr>
 
   <tr><td class="col" style="padding:64px 48px 0; font-family:'Cormorant Garamond', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif; font-variant-numeric:lining-nums; font-size:19px; line-height:30px; color:#d9d2c5;">
@@ -155,7 +156,7 @@ a { color: #d65a3c; }
   </td></tr>
   <tr><td class="col" style="padding:16px 48px 0; font-size:0; line-height:0;"><a href="{{ page_url }}" style="text-decoration:none;"><img src="{{ asset_url }}/audience.jpg{{ asset_query }}" width="504" height="403" alt="{{ copy.photo_alts.2 }}" style="display:block; width:100%; max-width:504px; height:auto; border:0; color:#8f887c; font-family:'Palatino Linotype', Palatino, Georgia, serif; font-size:15px;"></a></td></tr>
 
-  <tr><td style="padding:48px 0 0; font-size:0; line-height:0;"><a href="{{ listen_url }}" style="text-decoration:none;"><img class="staff-wide" src="{{ asset_url }}/staff-sung.gif{{ asset_query }}" width="600" height="43" alt="" style="display:block; width:100%; max-width:600px; height:43px; border:0;"><!--[if !mso]><!--><img class="staff-narrow" src="{{ asset_url }}/staff-sung-narrow.gif{{ asset_query }}" width="390" height="43" alt="" style="display:none; width:100%; height:43px; max-height:0; overflow:hidden; border:0;"><!--<![endif]--></a></td></tr>
+  <tr><td class="col" style="padding:48px 48px 0; font-size:0; line-height:0;"><a href="{{ listen_url }}" style="text-decoration:none;"><img class="staff-wide" src="{{ asset_url }}/staff-sung.gif{{ asset_query }}" width="504" height="43" alt="" style="display:block; width:100%; max-width:504px; height:43px; border:0;"><!--[if !mso]><!--><img class="staff-narrow" src="{{ asset_url }}/staff-sung-narrow.gif{{ asset_query }}" width="342" height="43" alt="" style="display:none; width:100%; height:43px; max-height:0; overflow:hidden; border:0;"><!--<![endif]--></a></td></tr>
   <tr><td class="col" style="padding:8px 48px 0;">
     <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
       <td valign="middle" style="padding-right:14px; font-size:0; line-height:0;"><a href="{{ listen_url }}" style="text-decoration:none;"><img src="{{ asset_url }}/play.png{{ asset_query }}" width="15" height="17" alt="" style="display:block; width:15px; height:17px; border:0;"></a></td>

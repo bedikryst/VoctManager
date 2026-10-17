@@ -58,7 +58,7 @@ class LetterCopy:
     greeting: str
     #: The salutation for a subscriber who gave none.
     greeting_plain: str
-    #: The lines the letter opens on, in the reader's language — the site's own translation.
+    #: The line the letter opens on, in the reader's language — the site's own translation.
     incipit_gloss: str
     #: The fact the letter is built on: the manuscript's empty lines and the lost melody.
     lede: str
@@ -74,7 +74,7 @@ class LetterCopy:
     #: The words under the last staff, which open the recording.
     listen_label: str
     #: Under those words, as the incipit has its gloss: what the recording is. Says what it
-    #: holds and nothing about the staves; the rhyme with the empty ones is left to the reader.
+    #: holds and nothing about the staves; the rhyme with the empty one is left to the reader.
     listen_gloss: str
     #: Where things stand on the next concert. The list was promised its date; until there is
     #: one, the letter says so rather than staying silent about it.
@@ -117,10 +117,10 @@ class Letter:
 # The letter is built on one fact: the oldest known manuscript of the Canticle (Assisi, Sacro
 # Convento, cod. 338) has staves ruled over the start of the text and never filled, and the
 # melody Francis made for it is lost. Every setting since writes its own music into those lines,
-# and on 11 October the ensemble sang Orff's. The letter opens on such a page, three staves left
-# empty over the first lines, and ends on one more staff, written with the recording's own
+# and on 11 October the ensemble sang Orff's. The letter opens on such a page, one staff left
+# empty over the first line, and ends on the same staff written with the recording's own
 # loudness: it opens the concert page, whose hero plays one passage of each work. NOTHING IN THE
-# COPY EXPLAINS THE RHYME between the empty staves and the written one. A sentence that walked
+# COPY EXPLAINS THE RHYME between the empty staff and the written one. A sentence that walked
 # the reader through it was tried and cut: explaining the device is what made it read as
 # machine prose.
 #
@@ -146,7 +146,7 @@ POCHWALA_STWORZENIA = Letter(
         NoticeLocale.FR: "/fr/koncerty/pochwala-stworzenia",
     },
     anchor="obrazy",
-    asset_rev=4,
+    asset_rev=5,
     copy={
         NoticeLocale.PL: LetterCopy(
             subject="Pochwała Stworzenia: zdjęcia i nagranie",
@@ -156,10 +156,7 @@ POCHWALA_STWORZENIA = Letter(
             ),
             greeting="Dzień dobry, {name},",
             greeting_plain="Dzień dobry,",
-            incipit_gloss=(
-                f"Najwyższy, wszechmogący, dobry Panie, Twoja jest sława, chwała i{NBSP}cześć, "
-                f"i{NBSP}wszelkie błogosławieństwo."
-            ),
+            incipit_gloss="Najwyższy, wszechmogący, dobry Panie…",
             lede=(
                 f"W{NBSP}Asyżu przechowywany jest najstarszy znany rękopis Pieśni słonecznej. "
                 f"Nad pierwszymi wersami wyrysowano w{NBSP}nim linie pod melodię, ale nikt nie "
@@ -224,10 +221,7 @@ POCHWALA_STWORZENIA = Letter(
             ),
             greeting="Dear {name},",
             greeting_plain="Hello,",
-            incipit_gloss=(
-                "Most High, all-powerful, good Lord, Yours are the praises, the glory, "
-                "the honour and every blessing."
-            ),
+            incipit_gloss="Most High, all-powerful, good Lord…",
             lede=(
                 "The oldest known manuscript of the Canticle of the Sun is kept in Assisi. "
                 "Above its first verses, lines were ruled for a melody, but no notes were ever "
@@ -290,10 +284,7 @@ POCHWALA_STWORZENIA = Letter(
             ),
             greeting="Bonjour {name},",
             greeting_plain="Bonjour,",
-            incipit_gloss=(
-                "Très-Haut, tout-puissant et bon Seigneur, à Toi la louange, la gloire, "
-                "l’honneur et toute bénédiction."
-            ),
+            incipit_gloss="Très-Haut, tout-puissant et bon Seigneur…",
             lede=(
                 "Le plus ancien manuscrit connu du Cantique des créatures est conservé à Assise. "
                 "Au-dessus des premiers vers, on y a tracé des lignes pour une mélodie, mais "
