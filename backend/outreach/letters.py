@@ -53,8 +53,6 @@ class LetterCopy:
     preheader: str
     #: The rubric over the image.
     eyebrow: str
-    #: The day and the place, under the title.
-    facts: str
     #: The salutation for a subscriber who gave a first name. `{name}` is filled here and the
     #: result escaped by the template like any other value — the name is the reader's input.
     greeting: str
@@ -71,6 +69,10 @@ class LetterCopy:
     #: Where things stand on the next concert. The list was promised its date; until there is
     #: one, the letter says so rather than staying silent about it.
     next: str
+    #: The leave-taking line above the signature.
+    closing: str
+    #: Who writes. The ensemble, unless a person wrote the letter themselves: a name under
+    #: words its owner did not write is not a signature.
     signature: str
     #: The concert's inscription in this language — the site's own gloss, not a new one.
     inscription_gloss: str
@@ -110,15 +112,29 @@ POCHWALA_STWORZENIA = Letter(
     copy={
         NoticeLocale.PL: LetterCopy(
             subject="Zdjęcia z Pochwały Stworzenia",
-            preheader="Niedziela 11 października, kościół Wszystkich Świętych w Warszawie.",
+            preheader="Zdjęcia, na których po raz pierwszy zobaczyliśmy własny koncert.",
             eyebrow="Koncert Duchowy",
-            facts=f"11{NBSP}października{NBSP}2026 · Kościół{NBSP}Wszystkich{NBSP}Świętych · Warszawa",
             greeting="Dzień dobry, {name},",
             greeting_plain="Dzień dobry,",
+            # One reader, addressed as the list addresses its readers: "Ty", in forms that carry
+            # no grammatical gender ("udało Ci się przyjść"), since the list never asks for one.
+            # It thanks the reader only if they came, and gives the photographs to both cases.
+            # The letter leaves the programme to the concert page and starts from the photographs:
+            # a singer sees little of their own concert, so the pictures are as new to the
+            # ensemble as to the reader. The chessboard is the hero photograph read literally:
+            # the black and white floor, the half circle in black, the violinist in front.
             body=(
-                f"dziękujemy wszystkim, którzy byli z{NBSP}nami 11{NBSP}października "
-                f"w{NBSP}kościele Wszystkich Świętych. Zdjęcia z{NBSP}tamtego popołudnia są już "
-                "na stronie koncertu.",
+                f"kiedy się śpiewa, z{NBSP}koncertu widzi się niewiele: ręce Florenta, nuty "
+                f"i{NBSP}kawałek sklepienia. Zdjęcia z{NBSP}Pochwały Stworzenia oglądaliśmy więc "
+                "trochę tak, jakbyśmy sami siedzieli w ławce. Najdłużej patrzyliśmy na to "
+                f"zrobione z{NBSP}góry. Na czarno-białej posadzce kościoła Wszystkich Świętych "
+                f"stoimy w{NBSP}półkolu jak figury rozstawione na szachownicy, a{NBSP}Radu ze "
+                "skrzypcami na pierwszym planie wygląda, jakby to on miał teraz ruch.",
+                f"Jeśli udało Ci się wtedy przyjść, bardzo Ci dziękujemy. Śpiewa się zupełnie "
+                "inaczej, kiedy się wie, że ktoś przyszedł właśnie po tę muzykę. "
+                f"A{NBSP}jeśli tym razem się nie udało, może te zdjęcia pokażą Ci choć trochę, jak "
+                f"tam było. Są już na stronie koncertu, razem z{NBSP}programem i{NBSP}tekstami, "
+                "które śpiewaliśmy.",
             ),
             hero_alt=(
                 "Pochwała Stworzenia. VoctEnsemble w półkolu przed ołtarzem kościoła "
@@ -130,9 +146,10 @@ POCHWALA_STWORZENIA = Letter(
                 "Radu Ropotan gra na skrzypcach",
             ),
             button="Zobacz zdjęcia",
-            next=f"Następny koncert nie ma jeszcze daty. Napiszemy, kiedy ją{NBSP}ustalimy.",
-            signature="Florent i zespół VoctEnsemble",
-            inscription_gloss="Pochwalony bądź, Panie mój, ze wszystkimi Twoimi stworzeniami",
+            next=f"Daty następnego koncertu jeszcze nie znamy. Kiedy tylko ją ustalimy, napiszemy do{NBSP}Ciebie.",
+            closing="Serdecznie pozdrawiamy",
+            signature="Śpiewacy VoctEnsemble",
+            inscription_gloss=f"Pochwalony bądź, Panie mój, ze{NBSP}wszystkimi{NBSP}Twoimi{NBSP}stworzeniami",
             why=(
                 "Ten list przyszedł, bo ten adres jest na liście Zaproszeń VoctEnsemble. "
                 "Piszemy tylko o koncertach."
@@ -148,14 +165,21 @@ POCHWALA_STWORZENIA = Letter(
         ),
         NoticeLocale.EN: LetterCopy(
             subject="Photographs from Pochwała Stworzenia",
-            preheader="Sunday 11 October, All Saints’ Church in Warsaw.",
+            preheader="Photographs in which we saw our own concert for the first time.",
             eyebrow="Spiritual Concert",
-            facts=f"11{NBSP}October{NBSP}2026 · All{NBSP}Saints’{NBSP}Church · Warsaw",
             greeting="Dear {name},",
             greeting_plain="Hello,",
             body=(
-                f"Thank you to everyone who was with us on 11{NBSP}October at All Saints’ Church. "
-                "The photographs from that afternoon are now on the concert page.",
+                "When you are singing, you see very little of the concert: Florent’s hands, the "
+                "music and a piece of the vault. So we looked at the photographs from Pochwała "
+                "Stworzenia almost as if we had been sitting in the pews ourselves. The one we kept "
+                "coming back to was taken from above. On the black and white floor of All Saints’ "
+                "we stand in a half circle like pieces set out on a chessboard, and Radu with his "
+                "violin in front looks as if it is his move.",
+                "If you were able to come that afternoon, thank you so much. Singing feels quite "
+                "different when you know someone came for this very music. And if it didn’t work "
+                "out this time, perhaps the photographs will show you a little of what it was like. "
+                "They are now on the concert page, together with the programme and the texts we sang.",
             ),
             hero_alt=(
                 "Pochwała Stworzenia. VoctEnsemble in a half circle before the altar of "
@@ -167,9 +191,10 @@ POCHWALA_STWORZENIA = Letter(
                 "Radu Ropotan playing the violin",
             ),
             button="See the photographs",
-            next="The next concert has no date yet. We will write when it does.",
-            signature="Florent and VoctEnsemble",
-            inscription_gloss="Praised be You, my Lord, with all Your creatures",
+            next="We don’t know the date of the next concert yet. As soon as we do, we will write to you.",
+            closing="With warm wishes,",
+            signature="The singers of VoctEnsemble",
+            inscription_gloss=f"Praised be You, my Lord, with{NBSP}all{NBSP}Your{NBSP}creatures",
             why=(
                 "This letter came because this address is on VoctEnsemble’s Invitations "
                 "list. We write only about concerts."
@@ -185,15 +210,23 @@ POCHWALA_STWORZENIA = Letter(
         ),
         NoticeLocale.FR: LetterCopy(
             subject="Les photographies de Pochwała Stworzenia",
-            preheader="Dimanche 11 octobre, église de Tous-les-Saints à Varsovie.",
+            preheader="Des photographies où nous avons vu notre propre concert pour la première fois.",
             eyebrow="Concert Spirituel",
-            facts=f"11{NBSP}octobre{NBSP}2026 · Église{NBSP}de{NBSP}Tous-les-Saints · Varsovie",
             greeting="Bonjour {name},",
             greeting_plain="Bonjour,",
             body=(
-                f"Merci à tous ceux qui étaient avec nous le 11{NBSP}octobre en l’église de "
-                "Tous-les-Saints. Les photographies de cet après-midi sont maintenant sur la "
-                "page du concert.",
+                f"Quand on chante, on ne voit pas grand-chose du concert{NBSP}: les mains de Florent, "
+                "la partition et un morceau de voûte. Nous avons donc regardé les photographies de "
+                "Pochwała Stworzenia presque comme si nous avions été assis dans les bancs. Celle à "
+                "laquelle nous revenions sans cesse a été prise d’en haut. Sur le sol noir et blanc "
+                "de Tous-les-Saints, nous voilà rangés en demi-cercle comme des pièces sur un "
+                "échiquier, et devant nous Radu, avec son violon, a tout l’air d’être le prochain "
+                "à jouer.",
+                "Si vous avez pu venir cet après-midi-là, merci de tout cœur. On chante tout "
+                "autrement quand on sait que quelqu’un est venu pour cette musique. Et si cela n’a "
+                "pas été possible cette fois, ces photographies vous montreront peut-être un peu ce "
+                "que c’était. Elles sont maintenant sur la page du concert, avec le programme et les "
+                "textes que nous avons chantés.",
             ),
             hero_alt=(
                 "Pochwała Stworzenia. Le VoctEnsemble en demi-cercle devant l’autel de "
@@ -205,9 +238,13 @@ POCHWALA_STWORZENIA = Letter(
                 "Radu Ropotan joue du violon",
             ),
             button="Voir les photographies",
-            next="Le prochain concert n’a pas encore de date. Nous vous écrirons dès qu’il en aura une.",
-            signature="Florent et le VoctEnsemble",
-            inscription_gloss="Loué sois-Tu, mon Seigneur, avec toutes Tes créatures",
+            next=(
+                "Nous ne connaissons pas encore la date du prochain concert. Dès que nous la "
+                "connaîtrons, nous vous écrirons."
+            ),
+            closing="Bien chaleureusement,",
+            signature="Les chanteurs du VoctEnsemble",
+            inscription_gloss=f"Loué sois-Tu, mon Seigneur, avec{NBSP}toutes{NBSP}Tes{NBSP}créatures",
             why=(
                 "Cette lettre vous parvient parce que cette adresse figure sur la liste des "
                 "Invitations du VoctEnsemble. Nous n’écrivons que pour les concerts."
@@ -239,8 +276,9 @@ def letter_context(
     What a letter's templates read. Shared by the send and by `--preview`, so a previewed
     letter is the letter, not a mock-up of it.
 
-    The page link carries campaign parameters BEFORE the anchor — after it they would be
-    part of the fragment and never reach the analytics.
+    The page link names its source in `ref`, the parameter Plausible reads as a visit's
+    source, one value per letter so letters stay apart in the report. It sits BEFORE the
+    anchor: after it, it would be part of the fragment and never reach the analytics.
     """
     base = settings.PUBLIC_SITE_URL.rstrip('/')
     copy = letter.copy[locale]
@@ -251,8 +289,7 @@ def letter_context(
         'copy': copy,
         'greeting': copy.greeting.format(name=name) if name else copy.greeting_plain,
         'page_url': (
-            f"{base}{page}?utm_source=nuntius&utm_medium=email&utm_campaign={letter.slug}"
-            f"#{letter.anchor}"
+            f"{base}{page}?ref=nuntius-{letter.slug}#{letter.anchor}"
         ),
         'site_url': base,
         'asset_url': f"{base}/listy/{letter.slug}",

@@ -982,10 +982,10 @@ class LetterTests(NoticeListTestCase):
         self.assertEqual(message.subject, self.letter.copy['en'].subject)
         # The text part is plain text: an apostrophe stays an apostrophe.
         self.assertIn("Dear O'Neil,", message.body)
-        # Campaign parameters before the anchor, or they never reach the analytics.
+        # The source before the anchor, or it never reaches the analytics.
         self.assertIn(
             'https://voctensemble.com/en/koncerty/pochwala-stworzenia'
-            '?utm_source=nuntius&utm_medium=email&utm_campaign=pochwala-stworzenia#obrazy',
+            '?ref=nuntius-pochwala-stworzenia#obrazy',
             message.body,
         )
 

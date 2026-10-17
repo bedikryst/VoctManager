@@ -1,8 +1,8 @@
 {% autoescape off %}{{ copy.eyebrow|upper }}
 
 POCHWAŁA STWORZENIA
-VoctEnsemble & Radu Ropotan
-{{ copy.facts }}
+Laudato si’, mi’ Signore, cum tucte le Tue creature
+{{ copy.inscription_gloss }}
 
 -----------------------------------------
 
@@ -17,12 +17,8 @@ VoctEnsemble & Radu Ropotan
 
 {{ copy.next }}
 
+{{ copy.closing }}
 {{ copy.signature }}
-
------------------------------------------
-
-Laudato si’, mi’ Signore, cum tucte le Tue creature
-{{ copy.inscription_gloss }}
 
 -----------------------------------------
 
