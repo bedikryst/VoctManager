@@ -11,14 +11,17 @@ et onne benedictione.
 
 {{ copy.lede }}
 
-{{ copy.turn }}
+{{ copy.sung }}
 
 {{ copy.thanks }}
 
 {{ copy.otherwise }}
-
-{{ copy.button|upper }}:
 {{ page_url }}
+
+{{ copy.listen }}
+
+{{ copy.listen_label|upper }}:
+{{ listen_url }}
 
 {{ copy.next }}
 

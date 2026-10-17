@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="x-apple-disable-message-reformatting">
-<meta name="color-scheme" content="dark">
-<meta name="supported-color-schemes" content="dark">
+<meta name="color-scheme" content="light dark">
+<meta name="supported-color-schemes" content="light dark">
 <title>{{ copy.subject }}</title>
 <!--{% comment %}
   How this file is kept:
@@ -13,12 +13,28 @@
     up above the table in a raw preview and fails HTML validation, so the body holds values
     only. A block tag it ever needs goes inside an HTML comment; Django leaves the empty
     comment behind.
-  - Dark by design, and declared dark, so Apple Mail leaves it as drawn instead of inverting it.
-  - The letter is written on the ensemble's paper: the site bar's brand (the mark and
-    "VoctEnsemble" in Cormorant Light) heads it, centred on the photographs' axis, as an
-    image, since the wordmark set in a fallback face would not be the wordmark. Coloured as
-    the bar colours it, the mark in the site's candle gold (#c6a45b) and the name in ink: the
-    gold is the brand's, and the letter's own accent stays the rubric's red.
+  - The letter is a dark 600px sheet lying on the mail client's own ground: nothing outside the
+    sheet is coloured, so a desktop inbox shows the sheet on its white (or its dark, in a dark
+    theme), with a margin above and below where the screen is wider than the sheet, and a
+    phone shows the sheet alone, edge to edge. The scheme is declared
+    "light dark": a client that honours it (Apple Mail) leaves every colour as drawn instead of
+    inverting the sheet, and lets its own ground follow the reader's setting.
+  - The sheet is the sign-up page's material: the site's --dark (#080807) under /nuntius's
+    grain (notice-letter.css, .letter-stage::before) as grain.png, a seamless 240px tile drawn
+    at 2x, white at low alpha, set as both the background attribute and the CSS background. The
+    grain lifts the sheet's average to about #141413, which is what every contrast below is
+    measured against. A
+    client that draws no background image (Outlook on Windows) shows the plain colour, which
+    is the same sheet without its texture. Everything laid on the sheet lets the grain through
+    or carries it: the staves and the letterhead are transparent, and the photographs have
+    their black lifted to the sheet's colour and the same grain baked in, so a dark edge of a
+    photograph meets the sheet as one surface instead of a darker rectangle.
+  - The letter is written on the ensemble's paper: the mark, with "VoctEnsemble" in Cormorant
+    Light centred beneath it, heads the sheet on the photographs' axis, as an image, since the
+    wordmark set in a fallback face would not be the wordmark. It is drawn at 3x: the mark is a
+    hairline, and a 2x image enlarged for a 3x phone softens it. The mark in the site's candle
+    gold (#c6a45b), the name in ink: the gold is the brand's, and the letter's own accent stays
+    the rubric's red.
   - The site's own faces come from the site's own domain, in a style block of their own: a
     client that rejects @font-face may drop the whole block it sits in. Only Apple Mail renders
     them. Gmail and the Polish webmails go down each stack, so the stack is the typography most
@@ -27,24 +43,35 @@
     Android has neither and takes its own serif.
   - The letter opens as a page of a chant book: a rubric, then the Canticle's first lines under
     staves ruled for music and left empty, as they are in the oldest manuscript (letters.py says
-    why). The last staff stands over the next concert, which is what empty lines wait for. The
-    Umbrian lines are the same in every language and stay here; their gloss is the copy's.
-  - One colour besides the ink and the letterhead's mark, the rubricator's red: #d65a3c for the rubric's letters,
-    #b4482f for the staff lines and the button's frame. Type: the lines under the staves italic
-    26/34 (22/30 on a phone), reading 19/30, small italic 15/22, small capitals 11-12.
+    why). The Umbrian lines are the same in every language and stay here; their gloss is the
+    copy's. The letter ends on one more staff, the one the recording fills: it and the words
+    under it are the letter's only call to act, set as the opening sets its lines (a staff, then
+    italic 26/34 beneath it), with a red play mark (play.png, 3x) where a clef would stand. The
+    staff and the words both open the concert page without an anchor, since the page's hero
+    carries the player; the photographs open its gallery.
+  - One colour besides the ink and the letterhead's mark, the rubricator's red: #d65a3c for the
+    rubric's letters and the play mark, #b4482f for the staff lines. Type: the lines under the
+    staves italic 26/34 (22/30 on a phone), reading 19/30, small italic 15/22, small capitals 12.
   - Each staff is a GIF that rules itself once, left to right, and rests on the finished staff:
     four 1px lines 13px apart at 600px, drawn at 2x, with no loop extension. Staves 2 and 3
     wait 0.9 s and 1.5 s, so the page is ruled from the top down; a mail client holds a GIF it
     has not scrolled to, so the last staff rules itself when the reader reaches it. A client
     that does not animate (Outlook on Windows) shows the first frame, which is empty, and the
-    words still stand. Decoration, so no link and no alt.
+    words still stand, the play mark and "listen" among them. No alt: the words under each staff
+    carry its meaning. A staff keeps its 43px height at
+    every width and only its length follows the sheet: lines are horizontal, so a narrower
+    staff costs them nothing, where scaling the height would smear the four 1px lines into four
+    different weights.
   - The photographs are one camera stepping back: an open score close up, a singer mid-phrase,
     the nave from the door with people in the pews. All 4:5 and centred, a half, three
     quarters and the whole of the 600px sheet, so each frame is the last one seen from further
-    away. Each follows the sentence it answers (letters.py), and each opens the gallery. The
+    away. Each follows the sentence it answers (letters.py), and stands nearer to it than to
+    the text after it (40px above, 64px below), and each opens the gallery. The
     widths are percentages so a phone keeps the steps; Outlook on Windows reads the width
     attribute instead.
-  - The button is framed rather than filled; the table is what Outlook draws the border on.
+  - The footer is the quietest text the sheet carries and still reads: 12px, #8a8378, 4.9:1
+    over the grained sheet. Dimmer fails a phone in daylight, and the controller's address is
+    the line a reader is entitled to read.
 {% endcomment %}-->
 <style>
 @font-face { font-family: "Cormorant Garamond"; font-style: normal; font-weight: 300 700; src: url("{{ site_url }}/fonts/CormorantGaramond-Variable.latin.woff2") format("woff2"); unicode-range: U+0000-00FF, U+2018-201E, U+2026; }
@@ -55,75 +82,78 @@
 @font-face { font-family: "Cinzel"; font-style: normal; font-weight: 400 900; src: url("{{ site_url }}/fonts/Cinzel-Variable.latin-ext.woff2") format("woff2"); unicode-range: U+0100-024F; }
 </style>
 <style>
-:root { color-scheme: dark; }
-body { margin: 0; padding: 0; background: #100f0d; }
+:root { color-scheme: light dark; }
+body { margin: 0; padding: 0; }
 a { color: #d65a3c; }
+@media (min-width: 621px) {
+  .ground { padding: 24px 0 48px !important; }
+}
 @media (max-width: 620px) {
   .col { padding-left: 24px !important; padding-right: 24px !important; }
   .underlay { font-size: 22px !important; line-height: 30px !important; }
 }
 </style>
 </head>
-<body style="margin:0; padding:0; background:#100f0d;">
+<body style="margin:0; padding:0;">
 <div style="display:none; max-height:0; overflow:hidden; mso-hide:all;">{{ copy.preheader }}&#8199;&#847;&#8199;&#847;&#8199;&#847;&#8199;&#847;&#8199;&#847;&#8199;&#847;&#8199;&#847;&#8199;&#847;&#8199;&#847;&#8199;&#847;&#8199;&#847;&#8199;&#847;</div>
 
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#100f0d" style="background:#100f0d;">
-<tr><td align="center">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+<tr><td class="ground" align="center">
 <!--[if mso]><table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0"><tr><td><![endif]-->
-<table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" bgcolor="#100f0d" style="width:100%; max-width:600px; background:#100f0d;">
+<table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" bgcolor="#080807" background="{{ asset_url }}/grain.png" style="width:100%; max-width:600px; background-color:#080807; background-image:url('{{ asset_url }}/grain.png'); background-repeat:repeat; background-size:240px 240px;">
 
-  <tr><td align="center" style="padding:48px 0 0; font-size:0; line-height:0;"><img src="{{ asset_url }}/letterhead.png" width="153" height="40" alt="VoctEnsemble" style="display:block; margin:0 auto; width:153px; height:40px; border:0; color:#f1ebdf; font-family:'Palatino Linotype', Palatino, Georgia, serif; font-size:21px;"></td></tr>
+  <tr><td align="center" style="padding:48px 0 0; font-size:0; line-height:0;"><img src="{{ asset_url }}/letterhead.png" width="138" height="112" alt="VoctEnsemble" style="display:block; margin:0 auto; width:138px; height:112px; border:0; color:#f1ebdf; font-family:'Palatino Linotype', Palatino, Georgia, serif; font-size:21px;"></td></tr>
 
   <tr><td class="col" style="padding:64px 48px 28px; font-family:'Cinzel', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif; font-size:12px; line-height:16px; letter-spacing:3px; text-transform:uppercase; color:#d65a3c;">Pochwała Stworzenia</td></tr>
 
-  <tr><td style="font-size:0; line-height:0;"><img src="{{ asset_url }}/staff-1.gif" width="600" height="43" alt="" style="display:block; width:100%; max-width:600px; height:auto; border:0;"></td></tr>
+  <tr><td style="font-size:0; line-height:0;"><img src="{{ asset_url }}/staff-1.gif" width="600" height="43" alt="" style="display:block; width:100%; max-width:600px; height:43px; border:0;"></td></tr>
   <tr><td class="col underlay" style="padding:8px 48px 36px; font-family:'Cormorant Garamond', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif; font-style:italic; font-size:26px; line-height:34px; color:#f1ebdf;">Altissimu, onnipotente, bon&nbsp;Signore,</td></tr>
-  <tr><td style="font-size:0; line-height:0;"><img src="{{ asset_url }}/staff-2.gif" width="600" height="43" alt="" style="display:block; width:100%; max-width:600px; height:auto; border:0;"></td></tr>
+  <tr><td style="font-size:0; line-height:0;"><img src="{{ asset_url }}/staff-2.gif" width="600" height="43" alt="" style="display:block; width:100%; max-width:600px; height:43px; border:0;"></td></tr>
   <tr><td class="col underlay" style="padding:8px 48px 36px; font-family:'Cormorant Garamond', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif; font-style:italic; font-size:26px; line-height:34px; color:#f1ebdf;">Tue so le laude, la gloria e&nbsp;l’honore</td></tr>
-  <tr><td style="font-size:0; line-height:0;"><img src="{{ asset_url }}/staff-3.gif" width="600" height="43" alt="" style="display:block; width:100%; max-width:600px; height:auto; border:0;"></td></tr>
+  <tr><td style="font-size:0; line-height:0;"><img src="{{ asset_url }}/staff-3.gif" width="600" height="43" alt="" style="display:block; width:100%; max-width:600px; height:43px; border:0;"></td></tr>
   <tr><td class="col underlay" style="padding:8px 48px 0; font-family:'Cormorant Garamond', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif; font-style:italic; font-size:26px; line-height:34px; color:#f1ebdf;">et onne benedictione.</td></tr>
   <tr><td class="col" style="padding:20px 48px 0; font-family:'Cormorant Garamond', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif; font-style:italic; font-size:15px; line-height:22px; color:#8f887c;">{{ copy.incipit_gloss }}</td></tr>
 
   <tr><td class="col" style="padding:64px 48px 0; font-family:'Cormorant Garamond', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif; font-variant-numeric:lining-nums; font-size:19px; line-height:30px; color:#d9d2c5;">
     <div style="color:#f1ebdf;">{{ greeting }}</div>
     <div style="padding-top:16px;">{{ copy.lede }}</div>
+    <div style="padding-top:16px;">{{ copy.sung }}</div>
   </td></tr>
 
-  <tr><td align="center" style="padding:56px 0 0; font-size:0; line-height:0;"><a href="{{ page_url }}" style="text-decoration:none;"><img src="{{ asset_url }}/score.jpg" width="300" height="375" alt="{{ copy.photo_alts.0 }}" style="display:block; margin:0 auto; width:50%; max-width:300px; height:auto; border:0; color:#8f887c; font-family:'Palatino Linotype', Palatino, Georgia, serif; font-size:15px;"></a></td></tr>
+  <tr><td align="center" style="padding:40px 0 0; font-size:0; line-height:0;"><a href="{{ page_url }}" style="text-decoration:none;"><img src="{{ asset_url }}/score.jpg" width="300" height="375" alt="{{ copy.photo_alts.0 }}" style="display:block; margin:0 auto; width:50%; max-width:300px; height:auto; border:0; color:#8f887c; font-family:'Palatino Linotype', Palatino, Georgia, serif; font-size:15px;"></a></td></tr>
 
-  <tr><td class="col" style="padding:48px 48px 0; font-family:'Cormorant Garamond', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif; font-variant-numeric:lining-nums; font-size:19px; line-height:30px; color:#d9d2c5;">{{ copy.turn }}</td></tr>
+  <tr><td class="col" style="padding:64px 48px 0; font-family:'Cormorant Garamond', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif; font-variant-numeric:lining-nums; font-size:19px; line-height:30px; color:#d9d2c5;">{{ copy.thanks }}</td></tr>
 
-  <tr><td align="center" style="padding:56px 0 0; font-size:0; line-height:0;"><a href="{{ page_url }}" style="text-decoration:none;"><img src="{{ asset_url }}/voice.jpg" width="450" height="563" alt="{{ copy.photo_alts.1 }}" style="display:block; margin:0 auto; width:75%; max-width:450px; height:auto; border:0; color:#8f887c; font-family:'Palatino Linotype', Palatino, Georgia, serif; font-size:15px;"></a></td></tr>
+  <tr><td align="center" style="padding:40px 0 0; font-size:0; line-height:0;"><a href="{{ page_url }}" style="text-decoration:none;"><img src="{{ asset_url }}/voice.jpg" width="450" height="562" alt="{{ copy.photo_alts.1 }}" style="display:block; margin:0 auto; width:75%; max-width:450px; height:auto; border:0; color:#8f887c; font-family:'Palatino Linotype', Palatino, Georgia, serif; font-size:15px;"></a></td></tr>
 
-  <tr><td class="col" style="padding:48px 48px 0; font-family:'Cormorant Garamond', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif; font-variant-numeric:lining-nums; font-size:19px; line-height:30px; color:#d9d2c5;">{{ copy.thanks }}</td></tr>
+  <tr><td class="col" style="padding:64px 48px 0; font-family:'Cormorant Garamond', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif; font-variant-numeric:lining-nums; font-size:19px; line-height:30px; color:#d9d2c5;">{{ copy.otherwise }}</td></tr>
 
-  <tr><td style="padding:56px 0 0; font-size:0; line-height:0;"><a href="{{ page_url }}" style="text-decoration:none;"><img src="{{ asset_url }}/nave.jpg" width="600" height="750" alt="{{ copy.photo_alts.2 }}" style="display:block; width:100%; max-width:600px; height:auto; border:0; color:#8f887c; font-family:'Palatino Linotype', Palatino, Georgia, serif; font-size:15px;"></a></td></tr>
+  <tr><td style="padding:40px 0 0; font-size:0; line-height:0;"><a href="{{ page_url }}" style="text-decoration:none;"><img src="{{ asset_url }}/nave.jpg" width="600" height="750" alt="{{ copy.photo_alts.2 }}" style="display:block; width:100%; max-width:600px; height:auto; border:0; color:#8f887c; font-family:'Palatino Linotype', Palatino, Georgia, serif; font-size:15px;"></a></td></tr>
 
-  <tr><td class="col" style="padding:48px 48px 0; font-family:'Cormorant Garamond', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif; font-variant-numeric:lining-nums; font-size:19px; line-height:30px; color:#d9d2c5;">{{ copy.otherwise }}</td></tr>
+  <tr><td class="col" style="padding:64px 48px 0; font-family:'Cormorant Garamond', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif; font-variant-numeric:lining-nums; font-size:19px; line-height:30px; color:#d9d2c5;">{{ copy.listen }}</td></tr>
 
-  <tr><td class="col" style="padding:40px 48px 0;">
+  <tr><td style="padding:40px 0 0; font-size:0; line-height:0;"><a href="{{ listen_url }}" style="text-decoration:none;"><img src="{{ asset_url }}/staff-end.gif" width="600" height="43" alt="" style="display:block; width:100%; max-width:600px; height:43px; border:0;"></a></td></tr>
+  <tr><td class="col" style="padding:8px 48px 0;">
     <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
-      <td style="border:1px solid #b4482f;">
-        <a href="{{ page_url }}" style="display:inline-block; padding:16px 32px; font-family:'Cinzel', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif; font-size:11px; line-height:16px; letter-spacing:3px; text-transform:uppercase; color:#f1ebdf; text-decoration:none;">{{ copy.button }}</a>
-      </td>
+      <td valign="middle" style="padding-right:14px; font-size:0; line-height:0;"><a href="{{ listen_url }}" style="text-decoration:none;"><img src="{{ asset_url }}/play.png" width="15" height="17" alt="" style="display:block; width:15px; height:17px; border:0;"></a></td>
+      <td valign="middle" class="underlay" style="font-family:'Cormorant Garamond', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif; font-style:italic; font-size:26px; line-height:34px;"><a href="{{ listen_url }}" style="color:#f1ebdf; text-decoration:none;">{{ copy.listen_label }}</a></td>
     </tr></table>
   </td></tr>
 
-  <tr><td style="padding:72px 0 0; font-size:0; line-height:0;"><img src="{{ asset_url }}/staff-end.gif" width="600" height="43" alt="" style="display:block; width:100%; max-width:600px; height:auto; border:0;"></td></tr>
-  <tr><td class="col" style="padding:8px 48px 0; font-family:'Cormorant Garamond', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif; font-variant-numeric:lining-nums; font-style:italic; font-size:19px; line-height:30px; color:#f1ebdf;">{{ copy.next }}</td></tr>
+  <tr><td class="col" style="padding:72px 48px 0; font-family:'Cormorant Garamond', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif; font-variant-numeric:lining-nums; font-style:italic; font-size:19px; line-height:30px; color:#f1ebdf;">{{ copy.next }}</td></tr>
 
   <tr><td class="col" style="padding:48px 48px 0; font-family:'Cormorant Garamond', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif; font-size:19px; line-height:30px; color:#d9d2c5;">{{ copy.closing }}</td></tr>
   <tr><td class="col" style="padding:0 48px; font-family:'Cormorant Garamond', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif; font-style:italic; font-size:19px; line-height:30px; color:#f1ebdf;">{{ copy.signature }}</td></tr>
 
-  <tr><td class="col" style="padding:72px 48px 0; font-family:Arial, Helvetica, sans-serif; font-size:11.5px; line-height:18px; color:#7d766c;">{{ copy.why }} {{ copy.reply }}</td></tr>
-  <tr><td class="col" style="padding:16px 48px 0; font-family:Arial, Helvetica, sans-serif; font-size:11.5px; line-height:18px; color:#7d766c;">
+  <tr><td class="col" style="padding:72px 48px 0; font-family:Arial, Helvetica, sans-serif; font-size:12px; line-height:18px; color:#8a8378;">{{ copy.why }} {{ copy.reply }}</td></tr>
+  <tr><td class="col" style="padding:16px 48px 0; font-family:Arial, Helvetica, sans-serif; font-size:12px; line-height:18px; color:#8a8378;">
     <a href="{{ unsubscribe_url }}" style="color:#a39b8e; text-decoration:underline;">{{ copy.unsubscribe }}</a>
     &nbsp;·&nbsp;
     <a href="{{ preferences_url }}" style="color:#a39b8e; text-decoration:underline;">{{ copy.preferences }}</a>
     &nbsp;·&nbsp;
     <a href="{{ policy_url }}" style="color:#a39b8e; text-decoration:underline;">{{ copy.policy }}</a>
   </td></tr>
-  <tr><td class="col" style="padding:16px 48px 48px; font-family:Arial, Helvetica, sans-serif; font-size:11.5px; line-height:18px; color:#5f594f;">{{ copy.controller }}</td></tr>
+  <tr><td class="col" style="padding:16px 48px 48px; font-family:Arial, Helvetica, sans-serif; font-size:12px; line-height:18px; color:#8a8378;">{{ copy.controller }}</td></tr>
 
 </table>
 <!--[if mso]></td></tr></table><![endif]-->

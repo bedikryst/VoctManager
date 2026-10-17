@@ -60,18 +60,22 @@ class LetterCopy:
     greeting_plain: str
     #: The lines the letter opens on, in the reader's language — the site's own translation.
     incipit_gloss: str
-    #: The paragraph before the first photograph.
+    #: The fact the letter is built on: the manuscript's empty lines and the lost melody.
     lede: str
+    #: What was sung into those lines on the day. The paragraph before the first photograph.
+    sung: str
     #: The photographs' alt texts, in the order the letter shows them: the score, the voice,
     #: the nave.
     photo_alts: tuple[str, str, str]
-    #: Between the score and the voice: what the letter cannot carry.
-    turn: str
-    #: Between the voice and the nave, to whoever came.
+    #: Between the score and the voice, to whoever came.
     thanks: str
-    #: After the nave, to whoever could not come.
+    #: Between the voice and the nave, to whoever could not come: what the page holds.
     otherwise: str
-    button: str
+    #: After the nave: the empty lines at the top were left as the manuscript left them, and
+    #: the last one, below this paragraph, is filled by the recording.
+    listen: str
+    #: The words under the last staff, which open the recording.
+    listen_label: str
     #: Where things stand on the next concert. The list was promised its date; until there is
     #: one, the letter says so rather than staying silent about it.
     next: str
@@ -96,7 +100,8 @@ class Letter:
     slug: str
     #: The concert page the letter sends its reader to, per language, from the site root.
     page_path: dict[str, str]
-    #: The band of that page the letter is about.
+    #: The band of that page the photographs open. The recording's link opens the page itself,
+    #: whose hero carries the player.
     anchor: str
     copy: dict[str, LetterCopy]
 
@@ -107,18 +112,27 @@ class Letter:
 
 # The letter is built on one fact: the oldest known manuscript of the Canticle (Assisi, Sacro
 # Convento, cod. 338) has staves ruled over the start of the text and never filled, and the
-# melody Francis made for it is lost. The letter opens on such a page, says the fact once, and
-# turns it on itself without a simile: the letter opens on empty lines too, because words and
-# photographs fit in it and the music does not, which stays with whoever was there. Each
-# photograph answers the sentence before it: Orff's music → a score; the music the letter cannot
-# hold → a voice; the people in the pews → the nave. The concert page's reflection carries the
-# same fact as a reading of the work; the letter's own turn is the letter and its reader. It
-# gives no date for the
-# manuscript, which the literature places anywhere from the mid-thirteenth century to c. 1300.
+# melody Francis made for it is lost. Every setting since writes its own music into those lines,
+# and on 11 October the ensemble sang Orff's. The letter opens on such a page, three staves left
+# empty over the first lines, and ends on one more staff, which the recording fills: it opens the
+# concert page, whose hero plays one passage of each work. The letter says what it did once, in
+# `listen`, at the point where the reader can act on it.
+#
+# SEND IT ONLY ONCE THE EXCERPTS ARE LIVE ON THE HOST: the page builds its player only when the
+# file is there (concerts.yaml `excerpts`), and a letter that promises a recording the page does
+# not play cannot be corrected after it leaves.
+#
+# Each photograph answers the sentence before it: Orff's music → a score; the singing that day →
+# a voice; what the page holds for whoever could not come → the nave seen from the door. What
+# the page holds is named exactly: the photographs, the programme with a note on each work, and
+# the Canticle with its translation, which is the only text it gives in full. The concert was at
+# 13:30, so it is an afternoon everywhere in the copy. No date for the manuscript, which the
+# literature places anywhere from the mid-thirteenth century to c. 1300.
 #
 # One reader, addressed as the list addresses its readers: "Ty", in forms that carry no
 # grammatical gender ("udało Ci się przyjść"), since the list never asks for one. It thanks the
-# reader only if they came, and gives the other case the photographs and the next concert.
+# reader only if they came, and gives the other case the page and the recording. Warm means
+# plain and exact here, not colloquial: no "po prostu", no "ktoś", no "przepadła".
 POCHWALA_STWORZENIA = Letter(
     slug="pochwala-stworzenia",
     page_path={
@@ -129,8 +143,11 @@ POCHWALA_STWORZENIA = Letter(
     anchor="obrazy",
     copy={
         NoticeLocale.PL: LetterCopy(
-            subject="Zdjęcia z Pochwały Stworzenia",
-            preheader="Najstarszy rękopis Pieśni słonecznej ma linie na nuty, których nikt nie wypełnił.",
+            subject="Pochwała Stworzenia: zdjęcia i nagranie",
+            preheader=(
+                "W najstarszym rękopisie Pieśni słonecznej linie przygotowane pod melodię "
+                "zostały puste."
+            ),
             greeting="Dzień dobry, {name},",
             greeting_plain="Dzień dobry,",
             incipit_gloss=(
@@ -138,12 +155,16 @@ POCHWALA_STWORZENIA = Letter(
                 f"i{NBSP}wszelkie błogosławieństwo."
             ),
             lede=(
-                f"w{NBSP}Asyżu leży najstarszy znany rękopis Pieśni słonecznej. Nad początkiem "
-                f"tekstu ktoś wyrysował w{NBSP}nim linie na nuty, ale nikt ich nie wypełnił. "
-                f"Melodię ułożył do tej pieśni sam Franciszek i{NBSP}ta melodia przepadła, "
-                f"zostały tylko słowa i{NBSP}puste linie. W{NBSP}niedzielę 11{NBSP}października, "
-                f"w{NBSP}kościele Wszystkich Świętych, śpiewaliśmy te słowa z{NBSP}muzyką, którą "
-                "ponad siedemset lat później napisał do nich Carl Orff."
+                f"W{NBSP}Asyżu przechowywany jest najstarszy znany rękopis Pieśni słonecznej. "
+                f"Nad pierwszymi wersami wyrysowano w{NBSP}nim linie pod melodię, ale nikt nie "
+                "zapisał na nich nut. Franciszek sam ułożył do tej pieśni melodię, która się nie "
+                f"zachowała. Zostały tylko słowa i{NBSP}puste linie."
+            ),
+            sung=(
+                f"Każdy kompozytor, który później sięgał po ten tekst, wpisywał w{NBSP}te linie "
+                f"własną muzykę. W{NBSP}niedzielę 11{NBSP}października w{NBSP}kościele "
+                f"Wszystkich Świętych w{NBSP}Warszawie śpiewaliśmy Pieśń słoneczną z{NBSP}muzyką, "
+                "którą ponad siedemset lat po Franciszku napisał Carl Orff."
             ),
             photo_alts=(
                 "Otwarte nuty w dłoniach śpiewaczki VoctEnsemble, w głębi ołtarz",
@@ -153,40 +174,43 @@ POCHWALA_STWORZENIA = Letter(
                     "w ławkach i VoctEnsemble przed ołtarzem głównym"
                 ),
             ),
-            turn=(
-                f"Ten list też zaczyna się od pustych linii, bo zmieszczą się w{NBSP}nim słowa "
-                f"i{NBSP}zdjęcia, a{NBSP}muzyka już nie."
-            ),
             thanks=(
-                f"Jeśli udało Ci się wtedy przyjść, ona została u{NBSP}Ciebie, i{NBSP}bardzo Ci "
-                f"za to dziękujemy. Śpiewa się zupełnie inaczej, kiedy w{NBSP}ławkach siedzą "
-                "ludzie, którzy przyszli właśnie jej posłuchać."
+                "Jeśli udało Ci się wtedy przyjść, dziękujemy Ci za to niedzielne popołudnie. "
+                f"Śpiewało nam się inaczej niż na próbach, bo w{NBSP}ławkach siedzieli ludzie, "
+                "którzy przyszli posłuchać właśnie tej muzyki."
             ),
             otherwise=(
-                f"A{NBSP}jeśli tym razem się nie udało, na stronie koncertu znajdziesz wszystkie "
-                f"zdjęcia, program i{NBSP}teksty, które śpiewaliśmy, a{NBSP}muzyka poczeka "
-                "na następny koncert."
+                "Jeśli tym razem nie udało Ci się przyjść, na stronie koncertu są zdjęcia, "
+                f"program z{NBSP}opisami utworów i{NBSP}tekst Pieśni z{NBSP}przekładem."
             ),
-            button=f"Zdjęcia i{NBSP}teksty",
-            next=f"Daty następnego koncertu jeszcze nie znamy. Kiedy tylko ją ustalimy, napiszemy do{NBSP}Ciebie.",
+            listen=(
+                f"Linie na początku tego listu zostawiliśmy puste, tak jak w{NBSP}rękopisie. "
+                f"Ostatnią, tę poniżej, wypełnia nagranie z{NBSP}tamtego popołudnia: po jednym "
+                f"fragmencie z{NBSP}każdego utworu, razem sześć minut."
+            ),
+            listen_label="Posłuchaj",
+            next=f"Daty następnego koncertu jeszcze nie znamy. Napiszemy do{NBSP}Ciebie, kiedy ją ustalimy.",
             closing="Serdecznie pozdrawiamy",
             signature="VoctEnsemble",
             why=(
-                "Ten list przyszedł, bo ten adres jest na liście Zaproszeń VoctEnsemble. "
+                "Dostajesz ten list, bo Twój adres jest na liście Zaproszeń VoctEnsemble. "
                 "Piszemy tylko o koncertach."
             ),
-            reply="Na ten list można po prostu odpowiedzieć.",
+            reply="Jeśli na niego odpiszesz, przeczytamy Twoją odpowiedź.",
             unsubscribe="Wypisz się",
             preferences="Zmień powitanie",
             policy="Polityka prywatności",
             controller=(
                 "Administratorem danych jest Fundacja VoctFoundation, "
-                "ul. Św. Filipa 23/3, 31-150 Kraków."
+                f"ul.{NBSP}Św.{NBSP}Filipa{NBSP}23/3, 31-150{NBSP}Kraków."
             ),
         ),
         NoticeLocale.EN: LetterCopy(
-            subject="Photographs from Pochwała Stworzenia",
-            preheader="The oldest manuscript of the Canticle of the Sun has staves nobody ever filled.",
+            subject="Pochwała Stworzenia: photographs and a recording",
+            preheader=(
+                "In the oldest manuscript of the Canticle of the Sun, the lines ruled for its "
+                "melody were left empty."
+            ),
             greeting="Dear {name},",
             greeting_plain="Hello,",
             incipit_gloss=(
@@ -194,12 +218,16 @@ POCHWALA_STWORZENIA = Letter(
                 "the honour and every blessing."
             ),
             lede=(
-                "In Assisi lies the oldest known manuscript of the Canticle of the Sun. Above "
-                "the beginning of the text someone ruled staves for the music, but nobody ever "
-                "filled them in. Francis made a melody for the song himself, and that melody "
-                "has been lost; all that remains are the words and the empty lines. On Sunday "
-                f"11{NBSP}October, in the church of All Saints, we sang those words to the music "
-                "Carl Orff wrote for them more than seven hundred years later."
+                "The oldest known manuscript of the Canticle of the Sun is kept in Assisi. "
+                "Above its first verses, lines were ruled for a melody, but no notes were ever "
+                "written on them. Francis composed a melody for the song himself, and it has not "
+                "survived. Only the words and the empty lines remain."
+            ),
+            sung=(
+                "Every composer who has set the text since has written their own music into "
+                f"those lines. On Sunday 11{NBSP}October, in All Saints’ Church in Warsaw, we "
+                "sang the Canticle to the music Carl Orff wrote for it more than seven hundred "
+                "years after Francis."
             ),
             photo_alts=(
                 "An open score in a VoctEnsemble singer’s hands, the altar beyond",
@@ -209,42 +237,43 @@ POCHWALA_STWORZENIA = Letter(
                     "in the pews and VoctEnsemble before the high altar"
                 ),
             ),
-            turn=(
-                "This letter opens on empty lines too, because words and photographs fit in it "
-                "and the music does not."
-            ),
             thanks=(
-                "If you were able to come that afternoon, the music stayed with you, and we "
-                "thank you for that with all our hearts. Singing is quite different when there "
-                "are people in the pews who came especially to hear it."
+                "If you were able to come, thank you for that Sunday afternoon. We sang "
+                "differently than we do in rehearsal, because there were people in the pews who "
+                "had come to hear this very music."
             ),
             otherwise=(
-                "And if it didn’t work out this time, you will find all the photographs, the "
-                "programme and the texts we sang on the concert page, and the music will wait "
-                "for the next concert."
+                "If you could not come this time, the concert page has the photographs, the "
+                "programme with a note on each work, and the text of the Canticle with a "
+                "translation."
             ),
-            button="Photographs and texts",
-            next="We don’t know the date of the next concert yet. As soon as we do, we will write to you.",
+            listen=(
+                "We left the lines at the start of this letter empty, as they are in the "
+                "manuscript. The last one, below, is filled by the recording of that afternoon: "
+                "one passage from each work, six minutes in all."
+            ),
+            listen_label="Listen",
+            next="We don’t know the date of the next concert yet. We will write to you as soon as we do.",
             closing="With warm wishes,",
             signature="VoctEnsemble",
             why=(
-                "This letter came because this address is on VoctEnsemble’s Invitations "
-                "list. We write only about concerts."
+                "You are receiving this letter because your address is on VoctEnsemble’s "
+                "Invitations list. We write only about concerts."
             ),
-            reply="You can simply reply to this letter.",
+            reply="If you reply, we will read what you write.",
             unsubscribe="Unsubscribe",
             preferences="Change the greeting",
             policy="Privacy policy",
             controller=(
                 "The data controller is Fundacja VoctFoundation, "
-                "ul. Św. Filipa 23/3, 31-150 Kraków, Poland."
+                f"ul.{NBSP}Św.{NBSP}Filipa{NBSP}23/3, 31-150{NBSP}Kraków, Poland."
             ),
         ),
         NoticeLocale.FR: LetterCopy(
-            subject="Les photographies de Pochwała Stworzenia",
+            subject=f"Pochwała Stworzenia{NBSP}: photographies et enregistrement",
             preheader=(
-                "Le plus ancien manuscrit du Cantique des créatures porte des portées que "
-                "personne n’a jamais remplies."
+                "Dans le plus ancien manuscrit du Cantique des créatures, les lignes tracées "
+                "pour la mélodie sont restées vides."
             ),
             greeting="Bonjour {name},",
             greeting_plain="Bonjour,",
@@ -253,13 +282,17 @@ POCHWALA_STWORZENIA = Letter(
                 "l’honneur et toute bénédiction."
             ),
             lede=(
-                "À Assise se trouve le plus ancien manuscrit connu du Cantique des créatures. "
-                "Au-dessus du début du texte, quelqu’un a tracé des portées pour la musique, "
-                "mais personne ne les a jamais remplies. François avait composé lui-même une "
-                f"mélodie pour ce chant, et cette mélodie s’est perdue{NBSP}: il ne reste que les "
-                f"mots et les lignes vides. Le dimanche 11{NBSP}octobre, en l’église de "
-                "Tous-les-Saints, nous avons chanté ces mots sur la musique que Carl Orff leur "
-                "a donnée plus de sept cents ans plus tard."
+                "Le plus ancien manuscrit connu du Cantique des créatures est conservé à Assise. "
+                "Au-dessus des premiers vers, on y a tracé des lignes pour une mélodie, mais "
+                "aucune note n’y a jamais été écrite. François avait lui-même composé une "
+                "mélodie pour ce chant, mais elle ne nous est pas parvenue. Il ne reste que les "
+                "mots et les lignes vides."
+            ),
+            sung=(
+                "Chaque compositeur qui s’est emparé de ce texte depuis a écrit sa propre "
+                f"musique dans ces lignes. Le dimanche 11{NBSP}octobre, en l’église de "
+                "Tous-les-Saints de Varsovie, nous avons chanté le Cantique sur la musique que "
+                "Carl Orff a écrite plus de sept cents ans après François."
             ),
             photo_alts=(
                 "Une partition ouverte entre les mains d’une chanteuse de VoctEnsemble, l’autel au fond",
@@ -269,38 +302,39 @@ POCHWALA_STWORZENIA = Letter(
                     f"{NBSP}: le public dans les bancs et VoctEnsemble devant le maître-autel"
                 ),
             ),
-            turn=(
-                "Cette lettre commence elle aussi par des lignes vides, parce que les mots et "
-                "les photographies y tiennent, mais pas la musique."
-            ),
             thanks=(
-                "Si vous avez pu venir cet après-midi-là, elle est restée avec vous, et nous vous "
-                "en remercions de tout cœur. On chante tout autrement quand il y a dans les bancs "
-                "des gens venus précisément pour l’écouter."
+                "Si vous avez pu venir, merci pour ce dimanche après-midi. Nous avons chanté "
+                "autrement qu’en répétition, parce que dans les bancs se trouvaient des gens "
+                "venus écouter précisément cette musique."
             ),
             otherwise=(
-                "Et si cela n’a pas été possible cette fois, vous trouverez sur la page du concert "
-                "toutes les photographies, le programme et les textes que nous avons chantés, "
-                "et la musique attendra le prochain concert."
+                "Si vous n’avez pas pu venir cette fois, vous trouverez sur la page du concert "
+                "les photographies, le programme avec une présentation de chaque œuvre et le "
+                "texte du Cantique avec sa traduction."
             ),
-            button="Photographies et textes",
+            listen=(
+                "Les lignes du début de cette lettre, nous les avons laissées vides, comme dans "
+                "le manuscrit. La dernière, ci-dessous, est remplie par l’enregistrement de cet "
+                f"après-midi-là{NBSP}: un extrait de chaque œuvre, six minutes en tout."
+            ),
+            listen_label="Écouter",
             next=(
-                "Nous ne connaissons pas encore la date du prochain concert. Dès que nous la "
-                "connaîtrons, nous vous écrirons."
+                "Nous ne connaissons pas encore la date du prochain concert. Nous vous écrirons "
+                "dès que nous la connaîtrons."
             ),
             closing="Bien chaleureusement,",
             signature="VoctEnsemble",
             why=(
-                "Cette lettre vous parvient parce que cette adresse figure sur la liste des "
-                "Invitations du VoctEnsemble. Nous n’écrivons que pour les concerts."
+                "Cette lettre vous parvient parce que votre adresse figure sur la liste des "
+                "Invitations de VoctEnsemble. Nous n’écrivons qu’au sujet des concerts."
             ),
-            reply="Il suffit de répondre à cette lettre pour nous écrire.",
+            reply="Si vous y répondez, nous lirons votre réponse.",
             unsubscribe="Se désinscrire",
             preferences="Modifier la salutation",
             policy="Politique de confidentialité",
             controller=(
                 "Le responsable du traitement est la Fundacja VoctFoundation, "
-                "ul. Św. Filipa 23/3, 31-150 Cracovie, Pologne."
+                f"ul.{NBSP}Św.{NBSP}Filipa{NBSP}23/3, 31-150{NBSP}Cracovie, Pologne."
             ),
         ),
     },
@@ -330,14 +364,13 @@ def letter_context(
     name = name.strip()
     if name and locale == NoticeLocale.PL:
         name = polish_vocative(name)
-    page = letter.page_path.get(locale, letter.page_path[NoticeLocale.PL])
+    page = f"{base}{letter.page_path.get(locale, letter.page_path[NoticeLocale.PL])}"
     return {
         'lang': locale,
         'copy': copy,
         'greeting': copy.greeting.format(name=name) if name else copy.greeting_plain,
-        'page_url': (
-            f"{base}{page}?ref=nuntius-{letter.slug}#{letter.anchor}"
-        ),
+        'page_url': f"{page}?ref=nuntius-{letter.slug}#{letter.anchor}",
+        'listen_url': f"{page}?ref=nuntius-{letter.slug}",
         'site_url': base,
         'asset_url': f"{base}/listy/{letter.slug}",
         'unsubscribe_url': unsubscribe_link,
