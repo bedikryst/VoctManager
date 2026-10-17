@@ -104,6 +104,8 @@ docs/archive/
 docs/legal/
 docs/about/
 docs/umowy/
+# The list's letters as the board approves them, before they are sent.
+docs/listy/
 # Analytics exports and screenshots: traffic and donation figures are fundraising material.
 docs/plausible-stats/
 # Brand identity lab: study scripts and their renders, local only. What a
