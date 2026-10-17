@@ -102,17 +102,18 @@ concert.pochwala-stworzenia.programLede: "Dix œuvres, un miroir et un bis"
 # disparu, et le français ne doit pas remettre la négation.
 concert.pochwala-stworzenia.programArc: "L'ordre descend depuis la louange et la lumière : Gloria II et Lumen de Borkowski ouvrent la soirée, et aussitôt après vient Laudes creaturarum de Carl Orff, qui met directement en musique le Cantique des créatures de saint François. De là le programme passe de l'image cosmique de la création vers l'homme : la Méditation de Massenet, liée dans l'opéra à la transformation intérieure de Thaïs ; le ciel nocturne d'Ešenvalds ; l'alouette de Vaughan Williams, montant vers la lumière ; la Prosna gelée de Sykulski et le ménétrier de village d'Enescu. À la fin viennent Dona eis requiem de Borkowski et l'ange de Dubra près de l'autel. Entre les groupes d'œuvres revient le Spiegel im Spiegel de Pärt, joué de la tribune à l'orgue comme le miroir musical de la relation entre la création et son Créateur."
 
-concert.pochwala-stworzenia.program.0.locus: "Borkowski a trois œuvres dans ce programme ; la première l'ouvre sur un seul mot : gloire."
-concert.pochwala-stworzenia.program.0.note: "Sa musique sacrée prend d'ordinaire un seul mot latin et en construit la pièce entière : par plans sonores, par registres extrêmes et par répétition, non par la mélodie."
+concert.pochwala-stworzenia.program.0.locus: "La première des trois œuvres de Borkowski dans ce programme, et le premier mot du chœur après l'ouverture à l'orgue : gloire."
+concert.pochwala-stworzenia.program.0.note: "Borkowski est né en 1934 à Pabianice. De 1966 à 1968, il a étudié à Paris auprès de Nadia Boulanger, d'Olivier Messiaen et de Iannis Xenakis, puis a enseigné pendant plus de quarante ans à l'Académie de musique de Varsovie, dont il a été deux fois vice-recteur. Dans sa musique chorale, il prend d'ordinaire un seul mot latin ou une formule brève et en construit toute une pièce, sur de brusques changements de registre et de nuance. Il revient plusieurs fois aux mêmes textes et numérote ses mises en musique : il y a trois Pax in terra, trois Ave. Alleluia. Amen, deux Libera me. En 2012 sont nés deux Gloria, le premier pour chœur de femmes, le second pour chœur mixte."
 # L'œuvre 01 n'a AUCUNE note, dans aucune langue : tout ce que la ligne portait était une lecture et
 # non un fait, et le programme ne dit rien d'autre. N'en écrivez pas une pour combler le vide.
-concert.pochwala-stworzenia.program.1.locus: "Après la louange vient ce par quoi quelque chose devient visible."
+concert.pochwala-stworzenia.program.1.locus: "Encore Borkowski : après le mot « gloria », le mot « lumen », la lumière."
+concert.pochwala-stworzenia.program.1.note: "La lumière revient plusieurs fois dans les titres de Borkowski : Lux aeterna pour chœur et orchestre (2008–2011), Lux pour chœur a cappella (2010) et Lumen, de 2016. Le latin médiéval distinguait lux, la lumière dans sa source, de lumen, la lumière qui en part et qui éclaire. L'œuvre commence à la limite de l'audible et monte plusieurs fois jusqu'à un sommet."
 
 # Sans « le centre de la soirée » en tête : la phrase le dit mieux seule, et ce concert est à 13:30
 # — le mot du moment de la journée appartient à la scène du prologue et au paragraphe du chef, pas
 # aux dix lignes du programme.
-concert.pochwala-stworzenia.program.2.locus: "Tout ce que le reste du programme touche l'un après l'autre passe ici d'un seul coup."
-concert.pochwala-stworzenia.program.2.note: "Le Cantique tout entier, dans l'original ombrien de la première moitié du XIIIe siècle, celui dans lequel François l'a composé : le soleil, la lune et les étoiles, le vent, l'eau, le feu, la mère terre, ceux qui pardonnent, et sœur la mort. Orff l'a mis en musique en 1954, dans le recueil Concento di voci. Il porte le texte en récitatif, proche de la parole et sur le rythme des syllabes, si bien que l'ensemble passe d'un seul tenant."
+concert.pochwala-stworzenia.program.2.locus: "La seule œuvre du programme sur les mots de François lui-même : le Cantique entier, dans sa propre langue."
+concert.pochwala-stworzenia.program.2.note: "François a composé le Cantique en ombrien vers 1225 à Saint-Damien, malade et presque aveugle ; c'est l'un des plus anciens poèmes de la littérature italienne. Il n'a pas été écrit d'un seul jet. François a ajouté la strophe sur ceux qui pardonnent pour réconcilier l'évêque et le podestat d'Assise, alors brouillés, et la strophe sur sœur la mort quand il a appris qu'il allait mourir. Orff, l'auteur de Carmina Burana, a mis le Cantique en musique en 1954, comme deuxième partie du recueil Concento di voci. Il porte le texte en récitatif, proche de la parole et sur le rythme des syllabes, si bien que l'ensemble passe d'un seul tenant."
 concert.pochwala-stworzenia.program.2.textGloss: |-
   Très-Haut, tout-puissant et bon Seigneur,
   à Toi la louange, la gloire, l'honneur et toute bénédiction.
@@ -157,12 +158,12 @@ concert.pochwala-stworzenia.program.2.textGloss: |-
   Louez et bénissez mon Seigneur, rendez-Lui grâce
   et servez-Le en grande humilité.
 
-concert.pochwala-stworzenia.program.3.locus: "Le premier intérieur de cet après-midi : un intérieur en train de se retourner."
-concert.pochwala-stworzenia.program.3.note: "Un intermède entre les tableaux du deuxième acte de l'opéra : dans Thaïs, c'est le moment où l'héroïne, courtisane d'Alexandrie, décide de changer de vie. Toute la transformation se joue sans un mot, à la partie de violon."
+concert.pochwala-stworzenia.program.3.locus: "La première entrée du violon, et la première image d'un être humain dans le programme : une femme qui décide de changer de vie."
+concert.pochwala-stworzenia.program.3.note: "L'opéra Thaïs, créé à Paris en 1894 d'après le roman d'Anatole France, raconte l'histoire d'un moine du désert égyptien qui part à Alexandrie convertir une courtisane célèbre. La Méditation est l'intermède d'orchestre entre les deux tableaux du deuxième acte : Thaïs reste seule avec ce qu'elle a entendu de lui et décide de le suivre. Pas un mot n'est chanté ; le violon solo porte toute la transformation. Le même thème revient au dernier acte, quand Thaïs meurt en sainte dans un couvent et que le moine qui l'a convertie lui avoue son amour à son chevet."
 
 concert.pochwala-stworzenia.program.4.inscriptioGloss: "texte : Sara Teasdale"
-concert.pochwala-stworzenia.program.4.locus: "Aussitôt après l'intérieur, le ciel, et un homme dessous : la question de sa place dans la création commence ici."
-concert.pochwala-stworzenia.program.4.note: "Un poème de la poétesse américaine Sara Teasdale sur une nuit solitaire sous les étoiles. Ešenvalds a ajouté au chœur des harmonicas de verre (des verres accordés que l'on frotte d'un doigt mouillé) pour qu'ils sonnent comme un scintillement."
+concert.pochwala-stworzenia.program.4.locus: "Du théâtre au ciel ouvert. Quelqu'un se tient seul la nuit sur une colline et regarde les étoiles."
+concert.pochwala-stworzenia.program.4.note: "Ešenvalds a chanté pendant neuf ans, jusqu'en 2011, dans le Chœur d'État de Lettonie « Latvija ». Il a écrit Stars la même année, sur commande des Salt Lake Vocal Artists, dans l'Utah, sur un poème de Sara Teasdale, qui reçut en 1918 le premier prix Pulitzer décerné à la poésie. Au chœur, il a ajouté des harmonicas de verre : des verres accordés avec de l'eau, dont on frotte le bord d'un doigt mouillé. Leur son devait rappeler le scintillement des étoiles."
 concert.pochwala-stworzenia.program.4.textGloss: |-
   Seul dans la nuit
   sur une colline sombre,
@@ -190,8 +191,8 @@ concert.pochwala-stworzenia.program.4.textGloss: |-
   d'une si grande majesté.
 
 concert.pochwala-stworzenia.program.5.inscriptioGloss: "texte : George Meredith · arr. pour violon et chœur : Paul Drayton"
-concert.pochwala-stworzenia.program.5.locus: "Le point le plus haut : l'alouette monte jusqu'à se perdre dans la lumière. À partir d'ici, tout descend."
-concert.pochwala-stworzenia.program.5.note: "Un poème symphonique pastoral pour violon, écrit en 1914 et révisé en 1920 ; il a attendu six ans sa création, car la guerre avait éclaté. Il s'inspire du poème de George Meredith sur l'alouette qui monte vers le ciel ; la ligne mélodique monte et retombe en imitant le vol. Paul Drayton a récrit la pièce pour violon et chœur, si bien que les mots de Meredith, dans l'original seulement inscrits au-dessus des notes, s'entendent ici pour de bon."
+concert.pochwala-stworzenia.program.5.locus: "Le sommet du programme. Juste après l'alouette, la musique revient sur terre, au bord d'une rivière gelée."
+concert.pochwala-stworzenia.program.5.note: "Vaughan Williams l'a commencé en 1914, pour violon et piano. À la déclaration de guerre, à plus de quarante ans, il s'est engagé comme simple soldat dans le service de santé de l'armée, et l'œuvre a attendu : Marie Hall, sa dédicataire, ne l'a créée qu'en 1920. Elle s'inspire du poème de George Meredith sur l'alouette, dont le compositeur a recopié douze vers sur la partition. Paul Drayton l'a arrangée pour le Chœur de chambre suédois : le violon joue la partie soliste originale, et le chœur prend la place de l'orchestre. Il chante surtout sans paroles et, dans la partie centrale, place sous la musique les vers de Meredith."
 concert.pochwala-stworzenia.program.5.textGloss: |-
   Il s'élève et se met à tracer des cercles,
   il laisse tomber une chaîne d'argent sonore
@@ -247,25 +248,26 @@ concert.pochwala-stworzenia.program.6.textGloss: |-
   Dana, dana… na na…
 
 concert.pochwala-stworzenia.program.7.inscriptioGloss: "du cycle Impressions d'enfance op. 28 · le ménétrier du village"
-concert.pochwala-stworzenia.program.7.locus: "La seule pulsation rapide de tout le programme, et la dernière lumière avant le requiem."
-concert.pochwala-stworzenia.program.7.note: "La première des dix miniatures du cycle Impressions d'enfance op. 28, souvenirs d'enfance rangés selon le cours d'une journée : du violoneux au grillon et au vent dans la cheminée, puis à l'orage nocturne et au lever du soleil. La seule où le violon reste seul, sans le piano. Le ménétrier, c'est le violoneux du village, celui des noces. C'est Radu Ropotan qui joue : comme Enescu, un Roumain."
+concert.pochwala-stworzenia.program.7.locus: "Après le moulin sur la Prosna, une seconde image du village : le violoneux, celui des noces. Le violon reste seul avant que vienne le requiem."
+concert.pochwala-stworzenia.program.7.note: "Enescu a achevé les Impressions d'enfance le 10 avril 1940, à cinquante-huit ans. Ce sont dix tableaux d'enfance joués sans interruption et disposés comme une seule journée : du violoneux du village au grillon et au vent dans la cheminée, puis à l'orage nocturne et au lever du soleil. Ménétrier ouvre le cycle et c'est le seul sans piano. Ses premières leçons, à quatre ans, Enescu les a reçues d'un violoneux de village, le lăutar Niculae Chioru ; il a dédié le cycle à la mémoire d'Eduard Caudella, son premier professeur de violon, au conservatoire de Iași. C'est Radu Ropotan qui jouait, Roumain comme Enescu."
 
 # L'incipit est la clausule du Dies irae : la glose est donc un texte liturgique et non une
 # paraphrase, et suit le français d'un livret de requiem. La note ne doit PAS la redire — elle dit
 # où le vers se tient dans la messe et ce que la partition en fait, ce que la glose ne dit pas.
 concert.pochwala-stworzenia.program.8.inscriptioGloss: "Doux Jésus, Seigneur, donne-leur le repos"
 concert.pochwala-stworzenia.program.8.locus: "Le fond de ce chemin : sœur la mort, la dernière que le Cantique salue par son nom."
-concert.pochwala-stworzenia.program.8.note: "Les derniers vers de la séquence Dies irae, ceux qui, dans la messe des morts, viennent une fois passée l'image du jugement. Borkowski les répète tout au long de l'œuvre : la prière enfle, puis s'éteint, et le dernier « dona eis requiem » est à peine audible."
+concert.pochwala-stworzenia.program.8.note: "Les deux derniers vers de la séquence Dies irae : une prière qui, dans la messe des morts, vient une fois passée l'image du jugement. Depuis la fin des années 1990, Borkowski met en musique un à un les textes de la liturgie des défunts : le Dies irae est sa Première Symphonie, et il y a aussi Libera me, Lux aeterna et la Troisième Symphonie « Requiem », écrite de 1998 à 2011. Dona eis requiem I date de 2015. Les mêmes mots reviennent tout au long de l'œuvre : la prière enfle, puis s'éteint, et le dernier « dona eis requiem » est à peine audible."
 
 concert.pochwala-stworzenia.program.9.inscriptioGloss: "Un ange se tint près de l'autel du temple, un encensoir d'or à la main"
 # La rime de Tous-les-Saints n'est PAS ici : elle est dans `reflectionNote`, dans sa propre bande, où
 # elle est le fait le plus fort de la soirée et non la queue d'une note. La dire deux fois la dépense.
-concert.pochwala-stworzenia.program.9.locus: "Ici le chemin se referme, déjà au-delà du visible."
+concert.pochwala-stworzenia.program.9.locus: "Aussitôt après le dernier Pärt, la dernière œuvre du programme, avant le bis."
 # La rime de la Toussaint n'est NI dans le locus NI dans la note : elle est dans `reflectionNote`,
 # dans sa propre bande. La note s'arrête à « une antienne assemblée à partir de mots de l'Apocalypse »
 # parce que l'ange et l'encensoir sont imprimés par `inscriptioGloss` une ligne plus haut, et la
 # fumée et les saints par `reflectionNote` une bande plus haut.
-concert.pochwala-stworzenia.program.9.note: "Un compositeur letton dont la musique sacrée procède du chant grégorien et du minimalisme. Le texte est une antienne assemblée à partir de mots de l'Apocalypse."
+concert.pochwala-stworzenia.program.9.note: "Dubra est né en 1964 à Riga et a commencé dans la Lettonie soviétique, où sa musique religieuse lui a valu des ennuis avec les autorités. Il a continué à l'écrire et compose aujourd'hui encore surtout de la musique sacrée ; de lui-même, il dit qu'il ne crée pas la musique, qu'il note seulement ce qui lui a été envoyé. Le texte de Stetit Angelus est une antienne que la liturgie chante comme offertoire à la fête de saint Michel archange, pendant la préparation des dons. Le ténor porte les paroles, et le reste du chœur tient autour de lui de longs accords fluides."
+concert.pochwala-stworzenia.program.10.note: "George David Weiss et le producteur Bob Thiele ont écrit la chanson en 1967 pour Louis Armstrong. Le patron d'ABC Records la détestait et ne l'a presque pas promue aux États-Unis ; en Grande-Bretagne, elle fut numéro un en 1968, et elle n'est entrée dans les classements américains qu'en 1988, après le film Good Morning, Vietnam. Les paroles énumèrent des arbres verts et des roses rouges, le ciel bleu et les nuages blancs, le jour clair et béni et la nuit sombre et sacrée, et pour finir des amis qui se serrent la main."
 
 concert.pochwala-stworzenia.textNote: "Le Cantique est donné dans l'original ombrien dans lequel François l'a composé ; traductions françaises les nôtres."
 concert.pochwala-stworzenia.credits.0.role: "Direction"

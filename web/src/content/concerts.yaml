@@ -2806,46 +2806,62 @@
       work: "Gloria II"
       year: "2012"
       voicing: "a 7"
-      locus: "Borkowski ma w tym programie trzy utwory; pierwszy otwiera go jednym słowem: chwała."
+      # The Pärt that opens the evening precedes this row, so the choir's first word is the claim
+      # here and „otwiera program” would not be true.
+      locus: "Pierwszy z trzech utworów Borkowskiego w tym programie i pierwsze słowo chóru po organowym wstępie: chwała."
+      # The composer is introduced once, here, for all three of his works; the one-word habit is
+      # stated here too, so `Lumen` one row down can name its word without explaining the method.
       note: >-
-        Jego muzyka sakralna bierze zwykle jedno łacińskie słowo i buduje z niego całość:
-        płaszczyznami brzmienia, skrajnymi rejestrami i powtórzeniem, nie melodią.
+        Borkowski urodził się w 1934 roku w Pabianicach. W latach 1966–1968 uczył się w Paryżu
+        u Nadii Boulanger, Oliviera Messiaena i Iannisa Xenakisa, a potem przez ponad czterdzieści
+        lat wykładał w warszawskiej Akademii Muzycznej, której dwukrotnie był prorektorem. W muzyce
+        chóralnej bierze zwykle jedno łacińskie słowo albo krótki zwrot i buduje z niego cały
+        utwór na gwałtownych zmianach rejestru i dynamiki. Do tych samych tekstów wraca po kilka
+        razy i numeruje kolejne opracowania: są trzy Pax in terra, trzy Ave. Alleluia. Amen, dwa
+        Libera me. W 2012 roku powstały dwie Glorie, pierwsza na chór żeński, druga na mieszany.
     - composer: "Marian Borkowski"
       work: "Lumen"
       year: "2016"
       voicing: "a 5"
-      # No `note`: everything this entry used to say was a reading of the programme rather than a
-      # fact about the piece, and the booklet is silent on the rest. An empty field is the spec's
-      # answer to that, and the Canticle's own line about brother sun is printed under the Orff.
-      locus: "Po chwale przychodzi to, dzięki czemu cokolwiek widać."
+      locus: "Drugi Borkowski z rzędu: po słowie „gloria” słowo „lumen”, światło."
+      # The dynamic shape comes from the printed booklet; the lux/lumen distinction is the
+      # scholastic one, light in its source against light cast from it.
+      note: >-
+        Światło wraca w tytułach Borkowskiego kilka razy: Lux aeterna na chór i orkiestrę
+        (2008–2011), Lux na chór a cappella (2010) i Lumen z 2016 roku. Średniowieczna łacina
+        odróżniała lux, światło w samym źródle, od lumen, światła, które od niego biegnie
+        i oświetla. Utwór zaczyna się na granicy słyszalności i kilka razy dochodzi do
+        kulminacji.
       clasp: "Spiegel im Spiegel · Arvo Pärt"
     - composer: "Carl Orff"
       years: "1895–1982"
       work: "Laudes creaturarum"
       year: "1954"
       voicing: "a 8"
-      # No „Centrum wieczoru” in front: the sentence that follows says it better, and the hour on
-      # this page is 13:30 — the time-of-day word belongs to the prologue's scene and to the
-      # conductor's own paragraph, not to ten programme rows.
+      # No time-of-day word in any locus: the hour on this page is 13:30, and that word belongs to
+      # the prologue's scene and the conductor's own paragraph.
       locus: >-
-        Tu przechodzi naraz wszystko, czego reszta programu dotyka po kolei.
-      # THE THIRD SENTENCE IS THE CENTRE OF THE EVENING DESCRIBED AS SOUND, which this note lacked
-      # while carrying the heaviest work in the programme. It is written as what a listener hears
+        Jedyny utwór programu na słowa samego Franciszka: Kantyk w całości, w jego własnym języku.
+      # The creatures are not listed: the text box this note heads prints all of them. What the
+      # note adds is how the Canticle was made, in stages, the last stanza when Francis knew he was
+      # dying (the Assisi Compilation's account).
+      #
+      # THE LAST SENTENCE IS THIS WORK DESCRIBED AS SOUND. It is written as what a listener hears
       # and NOT as the answer to our own question: the conductor settled on 15.09.2026 that the
       # choir sings this rather than speaking it (§2 had it down as Sprechchor for years), but the
       # reader never suspected speech, so an answer would arrive with no question in front of it.
       # „Recytatyw” is named AND glossed in the same clause, which is what lets one term of art
       # stand on a page written for strangers: „blisko mowy i na rytmie sylab” teaches it to
-      # whoever needs it and costs nothing to whoever does not. The version that failed was „chór
-      # śpiewa go recytacją”, which reads as an oxymoron. Nor may this reach for repetition or for
-      # the absence of melody: `program[0].note` ends on „powtórzeniem, nie melodią” about this
-      # composer's neighbour in the list, and the move cannot be spent twice in three rows.
+      # whoever needs it and costs nothing to whoever does not. „Chór śpiewa go recytacją” reads
+      # as an oxymoron, which is why the gloss is there.
       note: >-
-        Cały Kantyk, w umbryjskim oryginale z pierwszej połowy XIII wieku, w którym Franciszek
-        go ułożył: słońce, księżyc i gwiazdy, wiatr, woda, ogień, matka ziemia, ci, którzy
-        przebaczają, i siostra śmierć. Orff opracował go w 1954 roku, w zbiorze Concento di voci.
-        Prowadzi tekst recytatywem, blisko mowy i na rytmie sylab, więc cały przechodzi jednym
-        nieprzerwanym ciągiem.
+        Franciszek ułożył Kantyk po umbryjsku około 1225 roku w San Damiano, chory i prawie
+        niewidomy; to jeden z najstarszych wierszy literatury włoskiej. Tekst nie powstał naraz.
+        Strofę o tych, którzy przebaczają, Franciszek dopisał, żeby pogodzić skłóconych biskupa
+        i podestę Asyżu, a strofę o siostrze śmierci wtedy, gdy usłyszał, że sam umiera. Orff,
+        autor Carmina Burana, opracował Kantyk w 1954 roku jako drugą część zbioru Concento di
+        voci. Prowadzi tekst recytatywem, blisko mowy i na rytmie sylab, więc całość przechodzi
+        jednym nieprzerwanym ciągiem.
       text: |-
         Altissimu, onnipotente, bon Signore,
         Tue so le laude, la gloria e l'honore et onne benedictione.
@@ -2939,23 +2955,29 @@
       year: "1894"
       voicing: "skrzypce i organy"
       locus: >-
-        Pierwsze wnętrze tego popołudnia: takie, które właśnie się odwraca.
+        Pierwsze wejście skrzypiec i pierwszy w programie obraz człowieka: kobieta, która
+        postanawia zmienić życie.
       note: >-
-        Przerywnik między obrazami drugiego aktu opery: w Thaïs to moment, w którym tytułowa
-        bohaterka, kurtyzana z Aleksandrii, postanawia zmienić życie. Cała przemiana dzieje się
-        bez jednego słowa, w partii skrzypiec.
+        Opera Thaïs, wystawiona w Paryżu w 1894 roku według powieści Anatole'a France'a, opowiada
+        o mnichu z egipskiej pustyni, który jedzie do Aleksandrii nawrócić słynną kurtyzanę.
+        Méditation to orkiestrowy przerywnik między dwiema odsłonami drugiego aktu: Thaïs zostaje
+        sama z tym, co od niego usłyszała, i postanawia pójść za nim. Nie pada przy tym ani jedno
+        słowo, całą przemianę niesie solo skrzypiec. Ten sam temat wraca w ostatnim akcie, gdy
+        Thaïs umiera w klasztorze jako święta, a mnich, który ją nawrócił, wyznaje jej miłość przy
+        łożu śmierci.
     - composer: "Ēriks Ešenvalds"
       years: "ur. 1977"
       work: "Stars"
       year: "2011"
       voicing: "a 8"
       locus: >-
-        Zaraz po wnętrzu niebo, a pod nim człowiek: pytanie o jego miejsce w stworzeniu zaczyna
-        się tutaj.
+        Z teatru pod gołe niebo. Ktoś stoi nocą sam na wzgórzu i patrzy w gwiazdy.
       note: >-
-        Wiersz amerykańskiej poetki Sary Teasdale o samotnej nocy pod gwiazdami. Ešenvalds dopisał
-        do chóru szklane harmonijki (strojone kieliszki, po których wodzi się mokrym palcem), żeby
-        brzmiały jak migotanie.
+        Ešenvalds przez dziewięć lat, do 2011 roku, śpiewał w Państwowym Chórze Łotwy „Latvija”.
+        Stars napisał w tym samym roku na zamówienie Salt Lake Vocal Artists z Utah, do wiersza
+        Sary Teasdale, która w 1918 roku dostała pierwszą Nagrodę Pulitzera przyznaną za poezję.
+        Do chóru dopisał szklane harmonijki: strojone wodą kieliszki, po których brzegu wodzi się
+        mokrym palcem. Ich dźwięk miał przypominać migotanie gwiazd.
       inscriptioGloss: { pl: "tekst: Sara Teasdale" }
       text: |-
         Alone in the night
@@ -3015,13 +3037,18 @@
       year: "1914 · rew. 1920 · oprac. Paul Drayton 2019"
       voicing: "skrzypce i chór a 12"
       locus: >-
-        Najwyższy punkt: skowronek wznosi się, aż ginie w świetle. Dalej wszystko już schodzi.
+        Szczyt programu. Zaraz po skowronku muzyka wraca na ziemię, nad zamarzniętą rzekę.
+      # The Margate arrest of August 1914 is left out on purpose: the arrest is widely told, but
+      # what he was writing (the Lark, or a Purcell lecture) and what ships he watched are
+      # disputed, and a note that cannot vouch for its anecdote should not carry it.
       note: >-
-        Pastoralny poemat na skrzypce, napisany w 1914 roku i zrewidowany w 1920; na prawykonanie
-        czekał sześć lat, bo wybuchła wojna. Inspirował go wiersz George'a Mereditha o skowronku
-        wznoszącym się ku niebu; linia melodyczna wznosi się i opada, naśladując lot. Paul Drayton
-        przepisał utwór na skrzypce i chór, więc słowa Mereditha, w oryginale tylko wypisane nad
-        nutami, tutaj naprawdę słychać.
+        Vaughan Williams zaczął go w 1914 roku, na skrzypce i fortepian. Po wybuchu wojny, już po
+        czterdziestce, zaciągnął się jako szeregowy sanitariusz, a utwór czekał: prawykonała go
+        dopiero w 1920 roku Marie Hall, której jest zadedykowany. Natchnął go wiersz George'a
+        Mereditha o skowronku; dwanaście wersów kompozytor wypisał na partyturze. Paul Drayton
+        opracował utwór dla Szwedzkiego Chóru Kameralnego: skrzypce grają oryginalną partię
+        solową, a w miejsce orkiestry wchodzi chór. Śpiewa przeważnie bez słów, a w środkowej
+        części podkłada pod muzykę wersy Mereditha.
       inscriptioGloss: { pl: "tekst: George Meredith · oprac. na skrzypce i chór: Paul Drayton" }
       text: |-
         He rises and begins to round,
@@ -3146,12 +3173,18 @@
       # a question about this concert's forces.
       voicing: "skrzypce solo"
       locus: >-
-        Jedyny szybki rytm w całym programie, i ostatnie światło przed requiem.
+        Po młynie nad Prosną drugi obraz wsi: grajek, ten od wesel. Skrzypce zostają same, zanim
+        przyjdzie requiem.
+      # Two first teachers, kept apart on purpose: the lăutar gave the four-year-old his first
+      # lessons, and Caudella, whom the dedication names, was the first trained one.
       note: >-
-        Pierwsza z dziesięciu miniatur cyklu Impressions d'enfance op. 28, wspomnień z dzieciństwa
-        ułożonych wedle biegu dnia: od skrzypka, przez świerszcza i wiatr w kominie, po nocną burzę
-        i wschód słońca. Jedyna, w której skrzypce zostają same, bez fortepianu. Ménétrier to
-        wiejski skrzypek, ten od wesel. Gra Radu Ropotan: jak Enescu, Rumun.
+        Enescu skończył cykl Impressions d'enfance 10 kwietnia 1940 roku, mając pięćdziesiąt osiem
+        lat. To dziesięć obrazków z dzieciństwa granych bez przerwy i ułożonych jak jeden dzień:
+        od wiejskiego skrzypka, przez świerszcza i wiatr w kominie, po nocną burzę i wschód słońca.
+        Ménétrier otwiera cykl i jako jedyny obywa się bez fortepianu. Pierwszych lekcji gry
+        udzielił czteroletniemu Enescu wiejski grajek, lăutar Niculae Chioru; cykl kompozytor
+        zadedykował pamięci Eduarda Caudelli, swojego pierwszego profesora skrzypiec,
+        z konserwatorium w Jassach. Grał Radu Ropotan, Rumun jak Enescu.
       inscriptioGloss: { pl: "z cyklu Impressions d'enfance op. 28 · wiejski skrzypek" }
       clasp: "Spiegel im Spiegel · Arvo Pärt"
     - composer: "Marian Borkowski"
@@ -3164,9 +3197,12 @@
       locus: >-
         Dno tej drogi: siostra śmierć, ostatnie, co Kantyk wita po imieniu.
       note: >-
-        Ostatnie wersy sekwencji Dies irae, te, które w mszy żałobnej padają już po obrazie sądu.
-        Borkowski powtarza je przez cały utwór: prośba narasta, a potem gaśnie, i ostatnie „dona
-        eis requiem” jest ledwie słyszalne.
+        Dwa ostatnie wersy sekwencji Dies irae: prośba, która w mszy żałobnej pada już po obrazie
+        sądu. Borkowski od końca lat dziewięćdziesiątych opracowuje teksty liturgii za zmarłych
+        osobno, jeden po drugim: Dies irae jest jego I Symfonią, są też Libera me, Lux aeterna
+        i III Symfonia „Requiem”, pisana od 1998 do 2011 roku. Dona eis requiem I powstało
+        w 2015 roku. Te same słowa wracają przez cały utwór: prośba narasta, potem gaśnie,
+        a ostatnie „dona eis requiem” jest ledwie słyszalne.
       inscriptio: "Pie Jesu Domine, dona eis requiem"
       inscriptioGloss: { pl: "Litościwy Panie Jezu, daj im odpoczynek" }
       # The LAST of the five, and the one that settled a fifteen-day argument: the mirror stands
@@ -3182,14 +3218,22 @@
       # The All Saints rhyme is deliberately NOT here: it is `reflectionNote`, in its own band,
       # where it is the evening's strongest fact rather than a tail on a work. Saying it twice
       # would spend it.
+      # Nor the angel: `inscriptioGloss` prints him a line below, so the locus says only where the
+      # work stands.
       locus: >-
-        Tu droga się domyka, już poza tym, co widzialne.
+        Zaraz po ostatnim Pärcie ostatni utwór programu, przed samym bisem.
       # The image is NOT re-told here: `inscriptioGloss` prints the angel and the censer two rows
-      # below, and `reflectionNote` prints the smoke and the saints one band above. A note that
-      # restated both would be the page saying the same sentence three times in one screen.
+      # below, and `reflectionNote` prints the smoke and the saints one band above. What the note
+      # says about the text is the one thing neither of them does — where the liturgy sings it.
+      # The composer's line about writing down what is sent to him is quoted in MusicWeb's review
+      # of his Hyperion disc (CDA67799); the note reports it rather than quoting it.
       note: >-
-        Łotewski kompozytor, którego muzyka sakralna wyrasta z chorału i z minimalizmu. Tekst jest
-        antyfoną ułożoną ze słów Apokalipsy.
+        Dubra urodził się w 1964 roku w Rydze i zaczynał w sowieckiej Łotwie, gdzie za muzykę
+        religijną miewał kłopoty z władzami. Pisał ją mimo to i do dziś pisze przede wszystkim
+        muzykę sakralną; o sobie mówi, że nie tworzy muzyki, tylko zapisuje to, co zostało mu
+        posłane. Tekst Stetit Angelus to antyfona, którą liturgia śpiewa jako offertorium w święto
+        św. Michała Archanioła, podczas przygotowania darów. Tenor prowadzi słowa, a reszta chóru
+        trzyma wokół niego długie, płynne współbrzmienia.
       inscriptio: "Stetit Angelus iuxta aram templi, habens thuribulum aureum in manu sua"
       inscriptioGloss: { pl: "Stanął anioł przy ołtarzu świątyni, mając w ręku złotą kadzielnicę" }
       inscriptioRef: { scripture: [{ book: rev, chapter: "8", verses: ["3–4"] }] }
@@ -3198,3 +3242,13 @@
       year: "1967"
       voicing: "a 4"
       bis: true
+      # The last sentence lists what the song names and stops: the reader can hear the Canticle in
+      # it without the page drawing a fourth citation (the Orff, Stoi lód and the requiem carry
+      # the three).
+      note: >-
+        Piosenkę napisali w 1967 roku George David Weiss i producent Bob Thiele dla Louisa
+        Armstronga. Szef wytwórni ABC jej nie znosił i w Stanach prawie jej nie promował;
+        w Wielkiej Brytanii w 1968 roku była numerem jeden, a na amerykańską listę przebojów
+        weszła dopiero w 1988 roku, po filmie Good Morning, Vietnam. Tekst wylicza zielone drzewa
+        i czerwone róże, błękitne niebo i białe chmury, jasny błogosławiony dzień i ciemną świętą
+        noc, a na końcu przyjaciół, którzy podają sobie ręce.

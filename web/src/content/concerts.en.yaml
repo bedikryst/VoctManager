@@ -564,15 +564,17 @@ concert.pochwala-stworzenia.inscriptioRef.source: "St Francis's Canticle of the 
 concert.pochwala-stworzenia.invitation: "St Francis’s Canticle of the Sun greets the sun, the wind, the water and the fire as its own kin, and at the end greets death on the same terms. The programme follows that road: from light towards what is fragile in us, and further — to where the praise of creation becomes the prayer of all the saints, in the church that bears their name."
 concert.pochwala-stworzenia.metaPlace: "All Saints’ Church, Warsaw"
 concert.pochwala-stworzenia.posterAlt: "Poster for the concert In Praise of Creation"
-concert.pochwala-stworzenia.program.0.locus: "Borkowski has three works in this programme; the first opens it on one word: glory."
-concert.pochwala-stworzenia.program.0.note: "His sacred music usually takes a single Latin word and builds the whole piece out of it: in planes of sound, in extreme registers and in repetition, not in melody."
+concert.pochwala-stworzenia.program.0.locus: "The first of Borkowski's three works in this programme, and the choir's first word after the organ opening: glory."
+concert.pochwala-stworzenia.program.0.note: "Borkowski was born in 1934 in Pabianice. From 1966 to 1968 he studied in Paris with Nadia Boulanger, Olivier Messiaen and Iannis Xenakis, and then taught for more than forty years at the Warsaw Academy of Music, twice serving as its vice-rector. In his choral music he usually takes a single Latin word or a short phrase and builds a whole piece from it on abrupt shifts of register and dynamics. He returns to the same texts several times and numbers the settings: there are three Pax in terra, three Ave. Alleluia. Amen, two Libera me. In 2012 he wrote two Glorias, the first for women's choir, the second for mixed choir."
 concert.pochwala-stworzenia.program.0.workHtml: "Gloria II"
 concert.pochwala-stworzenia.program.1.clasp: "Spiegel im Spiegel · Arvo Pärt"
-concert.pochwala-stworzenia.program.1.locus: "After praise comes the thing by which anything at all can be seen."
+concert.pochwala-stworzenia.program.1.locus: "Borkowski again: after the word “gloria”, the word “lumen”, light."
+concert.pochwala-stworzenia.program.1.note: "Light comes back in Borkowski's titles several times: Lux aeterna for choir and orchestra (2008–2011), Lux for choir a cappella (2010) and Lumen from 2016. Medieval Latin distinguished lux, light in its source, from lumen, the light that travels out from it and illuminates. The piece begins at the edge of audibility and rises to a climax several times."
 concert.pochwala-stworzenia.program.1.workHtml: "Lumen"
+concert.pochwala-stworzenia.program.10.note: "George David Weiss and the producer Bob Thiele wrote the song in 1967 for Louis Armstrong. The head of ABC Records loathed it and barely promoted it in the United States; in Britain it was number one in 1968, and it reached the American charts only in 1988, after the film Good Morning, Vietnam. The lyric lists trees of green and red roses, skies of blue and clouds of white, the bright blessed day and the dark sacred night, and at the end friends shaking hands."
 concert.pochwala-stworzenia.program.10.workHtml: "What a Wonderful World"
-concert.pochwala-stworzenia.program.2.locus: "Everything the rest of the programme touches one at a time passes through here at once."
-concert.pochwala-stworzenia.program.2.note: "The whole Canticle, in the Umbrian original of the first half of the thirteenth century in which Francis composed it: the sun, the moon and the stars, wind, water, fire, mother earth, those who forgive, and sister death. Orff set it in 1954, in the collection Concento di voci. He carries the text in recitative, close to speech and on the rhythm of the syllables, so the whole of it passes in one unbroken span."
+concert.pochwala-stworzenia.program.2.locus: "The only work in the programme on Francis's own words: the whole Canticle, in his own language."
+concert.pochwala-stworzenia.program.2.note: "Francis composed the Canticle in the Umbrian vernacular around 1225 at San Damiano, ill and almost blind; it is one of the oldest poems in Italian literature. It was not written all at once. Francis added the stanza on those who forgive to reconcile the quarrelling bishop and podestà of Assisi, and the stanza on sister death when he was told that he himself was dying. Orff, the composer of Carmina Burana, set the Canticle in 1954 as the second part of the collection Concento di voci. He carries the text in recitative, close to speech and on the rhythm of the syllables, so the whole of it passes in one unbroken span."
 concert.pochwala-stworzenia.program.2.textGloss: |-
   Most High, all-powerful, good Lord,
   Yours are the praises, the glory, the honour and every blessing.
@@ -617,13 +619,13 @@ concert.pochwala-stworzenia.program.2.textGloss: |-
   Praise and bless my Lord, and give Him thanks,
   and serve Him with great humility.
 concert.pochwala-stworzenia.program.2.workHtml: "Laudes creaturarum"
-concert.pochwala-stworzenia.program.3.locus: "The first interior of the afternoon: one that is turning as we listen."
-concert.pochwala-stworzenia.program.3.note: "An interlude between the scenes of the opera's second act: in Thaïs it is the moment when the title character, a courtesan of Alexandria, decides to change her life. The whole transformation happens without a single word, in the violin part."
+concert.pochwala-stworzenia.program.3.locus: "The violin's first entry, and the programme's first image of a human being: a woman deciding to change her life."
+concert.pochwala-stworzenia.program.3.note: "Thaïs, staged in Paris in 1894 after Anatole France's novel, tells of a monk from the Egyptian desert who travels to Alexandria to convert a famous courtesan. The Méditation is the orchestral interlude between the two scenes of the second act: Thaïs is left alone with what he has told her and decides to follow him. Not a word is sung; the solo violin carries the whole change. The same theme returns in the last act, when Thaïs dies a saint in a convent and the monk who converted her confesses his love at her deathbed."
 concert.pochwala-stworzenia.program.3.workHtml: "Méditation from the opera <em>Thaïs</em>"
 concert.pochwala-stworzenia.program.4.clasp: "Spiegel im Spiegel · Arvo Pärt"
 concert.pochwala-stworzenia.program.4.inscriptioGloss: "text: Sara Teasdale"
-concert.pochwala-stworzenia.program.4.locus: "Straight after the interior, the sky, and a human being standing under it: the question of our place in creation begins here."
-concert.pochwala-stworzenia.program.4.note: "A poem by the American poet Sara Teasdale about a solitary night beneath the stars. To the choir Ešenvalds added glass harmonicas — tuned glasses played with a wet finger — so that they would sound like a shimmer."
+concert.pochwala-stworzenia.program.4.locus: "From the theatre to the open sky. Someone stands alone on a hill at night, looking at the stars."
+concert.pochwala-stworzenia.program.4.note: "Ešenvalds sang for nine years, until 2011, in the State Choir Latvija. He wrote Stars the same year, commissioned by the Salt Lake Vocal Artists of Utah, to a poem by Sara Teasdale, who in 1918 received the first Pulitzer Prize awarded for poetry. To the choir he added glass harmonicas: water-tuned glasses played by running a wet finger round the rim. Their sound was meant to recall the twinkling of stars."
 concert.pochwala-stworzenia.program.4.textGloss: |-
   Alone in the night
   on a dark hill
@@ -651,8 +653,8 @@ concert.pochwala-stworzenia.program.4.textGloss: |-
   of so much majesty.
 concert.pochwala-stworzenia.program.4.workHtml: "Stars"
 concert.pochwala-stworzenia.program.5.inscriptioGloss: "text: George Meredith · arr. for violin and choir: Paul Drayton"
-concert.pochwala-stworzenia.program.5.locus: "The highest point: the lark rises until it is lost in the light. From here everything descends."
-concert.pochwala-stworzenia.program.5.note: "A pastoral tone poem for violin, written in 1914 and revised in 1920; it waited six years for its first performance because the war had broken out. Its inspiration was George Meredith's poem about a lark rising towards the sky; the melodic line rises and falls in imitation of the flight. Paul Drayton rewrote the piece for violin and choir, so that Meredith's words — in the original only written above the notes — can here actually be heard."
+concert.pochwala-stworzenia.program.5.locus: "The peak of the programme. Straight after the lark the music comes back to earth, to a frozen river."
+concert.pochwala-stworzenia.program.5.note: "Vaughan Williams began it in 1914, for violin and piano. When war broke out he enlisted, already past forty, as a private in the Royal Army Medical Corps, and the piece waited: Marie Hall, its dedicatee, gave the first performance only in 1920. It was inspired by George Meredith's poem about a lark; the composer copied twelve of its lines onto the score. Paul Drayton arranged it for the Swedish Chamber Choir: the violin plays the original solo part, and the choir takes the place of the orchestra. It sings mostly without words, and in the middle section sets Meredith's lines under the music."
 concert.pochwala-stworzenia.program.5.textGloss: |-
   He rises and begins to round,
   he drops the silver chain of sound,
@@ -701,17 +703,17 @@ concert.pochwala-stworzenia.program.6.textGloss: |-
 concert.pochwala-stworzenia.program.6.workHtml: "Stoi lód na Prośnie"
 concert.pochwala-stworzenia.program.7.clasp: "Spiegel im Spiegel · Arvo Pärt"
 concert.pochwala-stworzenia.program.7.inscriptioGloss: "from the cycle Impressions d'enfance op. 28 · the village fiddler"
-concert.pochwala-stworzenia.program.7.locus: "The only fast pulse in the whole programme, and the last light before the requiem."
-concert.pochwala-stworzenia.program.7.note: "The first of the ten miniatures of Impressions d'enfance op. 28, childhood memories arranged by the course of a day: from the fiddler, through the cricket and the wind in the chimney, to the night storm and the sunrise. The only one in which the violin is left alone, without the piano. The ménétrier is the village fiddler, the one who plays at weddings. The player is Radu Ropotan: like Enescu, a Romanian."
+concert.pochwala-stworzenia.program.7.locus: "After the mill on the Prosna, a second picture of the village: the fiddler who plays at weddings. The violin is left alone before the requiem comes."
+concert.pochwala-stworzenia.program.7.note: "Enescu finished Impressions d'enfance on 10 April 1940, at fifty-eight. It is ten childhood pictures played without a break and laid out like a single day: from the village fiddler, through the cricket and the wind in the chimney, to the storm at night and the sunrise. Ménétrier opens the cycle and is the only one without piano. Enescu's first lessons, at four, came from a village fiddler, the lăutar Niculae Chioru; he dedicated the cycle to the memory of Eduard Caudella, his first violin professor, from the conservatoire in Iași. The player was Radu Ropotan, a Romanian like Enescu."
 concert.pochwala-stworzenia.program.7.workHtml: "Ménétrier from <em>Impressions d'enfance</em>, Op. 28"
 concert.pochwala-stworzenia.program.8.clasp: "Spiegel im Spiegel · Arvo Pärt"
 concert.pochwala-stworzenia.program.8.inscriptioGloss: "Merciful Lord Jesus, give them rest"
 concert.pochwala-stworzenia.program.8.locus: "The floor of this road: sister death, the last thing the Canticle greets by name."
-concert.pochwala-stworzenia.program.8.note: "The last lines of the Dies irae sequence, the ones that come in the Mass for the dead once the image of judgement has passed. Borkowski repeats them through the whole piece: the plea swells, then fades, and the final “dona eis requiem” is barely audible."
+concert.pochwala-stworzenia.program.8.note: "The last two lines of the Dies irae sequence: a plea that comes in the Mass for the dead once the image of judgement has passed. Since the late 1990s Borkowski has been setting the texts of the liturgy for the dead one by one: the Dies irae is his Symphony No. 1, and there are also Libera me, Lux aeterna and Symphony No. 3 “Requiem”, written from 1998 to 2011. Dona eis requiem I dates from 2015. The same words return throughout: the plea swells, then fades, and the final “dona eis requiem” is barely audible."
 concert.pochwala-stworzenia.program.8.workHtml: "Dona eis requiem I"
 concert.pochwala-stworzenia.program.9.inscriptioGloss: "An angel stood at the altar of the temple, holding a golden censer in his hand"
-concert.pochwala-stworzenia.program.9.locus: "Here the road closes, already beyond the visible."
-concert.pochwala-stworzenia.program.9.note: "A Latvian composer whose sacred music grows out of chant and out of minimalism. The text is an antiphon arranged from words of the Book of Revelation."
+concert.pochwala-stworzenia.program.9.locus: "Straight after the last Pärt, the programme's last work, just before the encore."
+concert.pochwala-stworzenia.program.9.note: "Dubra was born in 1964 in Riga and started out in Soviet Latvia, where his religious music got him into trouble with the authorities. He kept writing it, and sacred music is still most of what he writes; he says he does not create music, he only writes down what has been sent to him. The text of Stetit Angelus is an antiphon the liturgy sings as the offertory on the feast of St Michael the Archangel, while the gifts are prepared. The tenor carries the words, and the rest of the choir holds long, flowing chords around him."
 concert.pochwala-stworzenia.program.9.workHtml: "Stetit Angelus"
 concert.pochwala-stworzenia.programArc: "The order descends from praise and light: Borkowski's Gloria II and Lumen open the evening, and immediately after them comes Carl Orff's Laudes creaturarum, which sets St Francis's Canticle of the Sun directly. From there the programme moves from the cosmic image of creation towards the human: Massenet's Méditation, bound in the opera to the inward change of Thaïs; Ešenvalds's night sky; Vaughan Williams's lark, rising towards the light; Sykulski's frozen Prosna and Enescu's village fiddler. At the end come Borkowski's Dona eis requiem and Dubra's angel at the altar. Between the groups of works Pärt's Spiegel im Spiegel returns, played from the gallery on the organ as the musical mirror of the relation between creation and its Creator."
 concert.pochwala-stworzenia.programLede: "Ten works, one mirror and an encore"
