@@ -117,8 +117,13 @@ COPY web/ ./
 #    Symptom: image lines reading `(before: … after: …)` instead of `(reused cache entry)`.
 # Sources are 2560px proxies (web/downscale-photos.mjs), so even a genuinely cold pass is
 # minutes rather than the half-hour the 8256px camera originals cost.
+#
+# `dist/audio` is removed in the same step. The concert recordings are in this context only so the
+# build can see which of them the host holds (a page prints its player only for an uploaded file,
+# web/src/lib/audio.ts); nginx serves them from the bind mount in docker-compose.prod.yml, so a
+# copy in the image would be bytes nobody can reach under the mount.
 RUN --mount=type=cache,target=/app/node_modules/.astro,sharing=locked \
-    npm run build
+    npm run build && rm -rf dist/audio
 
 
 # ==========================================

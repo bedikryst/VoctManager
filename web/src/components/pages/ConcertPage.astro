@@ -52,7 +52,7 @@ import { programmeLine, ritornelloLine } from "../../lib/programmeLine";
 import type { TabulaEntry } from "../../lib/tabula";
 import { absolute, musicEvent } from "../../lib/eventSchema";
 import { videoAsset, videoAssetAv1 } from "../../lib/videos";
-import { AUDIO_MIME, audioAsset } from "../../lib/audio";
+import { AUDIO_MIME, hostedAudio } from "../../lib/audio";
 import { programmeSurnames } from "../../lib/litany";
 import { longDate } from "../../lib/dates";
 import { cycleNumerals, upcomingStation } from "../../lib/cycle";
@@ -386,9 +386,12 @@ const filmVideoSrcAv1 = c.video ? videoAssetAv1(c.video.asset) : undefined;
 // a recording of the evening exists only once the evening has been sung). The composer is reduced to
 // the surname the catalogue knows (lib/litany), per name, because the encore's credit is two people.
 // A chapter out of order or pointing past the programme fails the build: it would otherwise name
-// the wrong work under the right sound, and look correct.
+// the wrong work under the right sound, and look correct. A recording not yet uploaded to the host
+// that builds the page prints no glyph at all (lib/audio `hostedAudio`).
 const excerpts = await (async () => {
   if (!c.excerpts) return undefined;
+  const src = hostedAudio(c.excerpts.asset);
+  if (!src) return undefined;
   const eras = await getCollection("repertoire");
   const surnameOf = (composer: string): string =>
     composer
@@ -414,7 +417,7 @@ const excerpts = await (async () => {
     };
   });
   return {
-    src: audioAsset(c.excerpts.asset),
+    src,
     duration: c.excerpts.duration,
     chapters,
     artwork: (await getImage({ src: bg.desktop, width: 512, format: "webp" })).src,

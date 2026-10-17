@@ -86,10 +86,10 @@ web/press-pack/posters
 web/src/assets/videos
 web/public/video
 
-# Concert recordings (lib/audio.ts): the films' arrangement — bind-mounted, never in a layer. They
-# are also absent from git, so a host without the upload has an empty mount and a player that says
-# the recording is unavailable.
-web/public/audio
+# NOT `web/public/audio`. The concert recordings are bind-mounted like the films, but they stay in
+# this context on purpose: the Astro build looks for each one and prints a concert's player only
+# when its file is on the host (web/src/lib/audio.ts). frontend/Dockerfile strips `dist/audio` after
+# the build, so they reach no image; a few megabytes per recording is what the look costs.
 
 # ---- Python / Django (the backend has its OWN Dockerfile + context: ./backend,
 # but anything that would slip into this root context should still be excluded
