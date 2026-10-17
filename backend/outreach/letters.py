@@ -104,6 +104,10 @@ class Letter:
     #: whose hero carries the player.
     anchor: str
     copy: dict[str, LetterCopy]
+    #: Raised whenever an image of the letter is redrawn under the same file name. Gmail's image
+    #: proxy caches by URL, so a redrawn file at an address it has fetched before (a `--to` test
+    #: is enough) reaches readers as the old drawing.
+    asset_rev: int = 1
 
     @property
     def template_name(self) -> str:
@@ -141,6 +145,7 @@ POCHWALA_STWORZENIA = Letter(
         NoticeLocale.FR: "/fr/koncerty/pochwala-stworzenia",
     },
     anchor="obrazy",
+    asset_rev=2,
     copy={
         NoticeLocale.PL: LetterCopy(
             subject="Pochwała Stworzenia: zdjęcia i nagranie",
@@ -373,6 +378,7 @@ def letter_context(
         'listen_url': f"{page}?ref=nuntius-{letter.slug}",
         'site_url': base,
         'asset_url': f"{base}/listy/{letter.slug}",
+        'asset_query': f"?v={letter.asset_rev}",
         'unsubscribe_url': unsubscribe_link,
         'preferences_url': preferences_link,
         'policy_url': f"{base}{POLICY_PATH.get(locale, POLICY_PATH['pl'])}",
