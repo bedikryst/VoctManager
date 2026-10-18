@@ -21,7 +21,8 @@
  *
  *  Joins the site's sound etiquette as VideoPlayer does: `voct:audio-duck` before play and
  *  `voct:audio-restore` on pause (the landing's chant bed, where it is mounted), and
- *  `voct:video-play` both ways, so a film and the reel never sound together.
+ *  `voct:video-play` both ways, so a film and the reel never sound together. Whenever the bar
+ *  appears or leaves it sends `voct:edge-refresh`, so BaseLayout re-reads the iOS edge colour.
  * @module islands/landing/excerpts/ExcerptsPlayer
  */
 
@@ -122,6 +123,13 @@ export function ExcerptsPlayer({
   const sessionRef = useRef(false);
 
   useEffect(() => setHost(document.body), []);
+
+  // A page may colour iOS Safari's strip under the bar by whether the bar stands (`--edge-foot`
+  // keyed on `.excerpts-bar:not([hidden])`), and BaseLayout otherwise reads that colour only when
+  // the footer crosses the viewport's edge. Runs after the commit, so `hidden` is already set.
+  useEffect(() => {
+    document.dispatchEvent(new CustomEvent("voct:edge-refresh"));
+  }, [active]);
 
   const restore = useCallback((): void => {
     window.dispatchEvent(new CustomEvent("voct:audio-restore"));

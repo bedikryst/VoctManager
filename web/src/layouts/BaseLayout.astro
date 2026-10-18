@@ -291,26 +291,31 @@ const breadcrumbLd = breadcrumb ? breadcrumbList(breadcrumb, lang) : undefined;
       // settled, and body's slot carries no visible surface (that is an opaque background-image
       // on every page), so writing it costs nothing.
       let edgeWatch: IntersectionObserver | undefined;
+      let footerInView = false;
+      // READ AT PAINT TIME, not at arm time. A page's footer colour is not necessarily a
+      // constant for the life of the page: the landing's ends on the ground of the canonical
+      // hour it is read in (`--nox`, styles/landing/06-footer.css), so a value cached here
+      // would leave a parchment strip under a night plate. Reading two custom properties when
+      // the footer crosses the viewport edge costs nothing at that rate.
+      const paintEdge = (): void => {
+        const v = getComputedStyle(document.body)
+          .getPropertyValue(footerInView ? "--edge-foot" : "--edge-band")
+          .trim();
+        if (!v) return;
+        document.documentElement.style.setProperty("background-color", v);
+        document.body.style.setProperty("background-color", v);
+      };
       const armEdgeBands = (): void => {
         edgeWatch?.disconnect();
+        footerInView = false;
         // `.site-footer` is the landing's, `.site-foot` every other page's.
         const footer = document.querySelector(".site-footer, .site-foot");
         if (!footer) return;
-        // READ AT PAINT TIME, not at arm time. A page's footer colour is not necessarily a
-        // constant for the life of the page: the landing's ends on the ground of the canonical
-        // hour it is read in (`--nox`, styles/landing/06-footer.css), so a value cached here
-        // would leave a parchment strip under a night plate. Reading two custom properties when
-        // the footer crosses the viewport edge costs nothing at that rate.
-        const paint = (v: string): void => {
-          if (!v) return;
-          document.documentElement.style.setProperty("background-color", v);
-          document.body.style.setProperty("background-color", v);
-        };
         edgeWatch = new IntersectionObserver((entries) => {
-          const cs = getComputedStyle(document.body);
-          const band = cs.getPropertyValue("--edge-band").trim();
-          const foot = cs.getPropertyValue("--edge-foot").trim();
-          entries.forEach((e) => paint(e.isIntersecting ? foot : band));
+          entries.forEach((e) => {
+            footerInView = e.isIntersecting;
+            paintEdge();
+          });
         });
         edgeWatch.observe(footer);
       };
@@ -318,6 +323,11 @@ const breadcrumbLd = breadcrumb ? breadcrumbList(breadcrumb, lang) : undefined;
       // ClientRouter swaps <body>, taking the inline style, the observer's target and the page's
       // own --edge-foot with it.
       document.addEventListener("astro:page-load", armEdgeBands);
+      // A page whose --edge-foot changes while the footer stays in view (the excerpts bar raised
+      // or stopped there) asks for a fresh read; with the footer away, the canvas is the band.
+      document.addEventListener("voct:edge-refresh", () => {
+        if (footerInView) paintEdge();
+      });
     </script>
 
     <script>
