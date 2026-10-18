@@ -67,18 +67,19 @@ class LetterCopy:
     lede: str
     #: What was sung into those lines on the day.
     sung: str
-    #: The photographs' alt texts, in the order the spread reads: the score, the conductor,
-    #: the audience.
+    #: The photographs' alt texts, in the order the spread reads: the rehearsal, the concert,
+    #: the church seen from the altar.
     photo_alts: tuple[str, str, str]
-    #: To whoever came.
+    #: To whoever came. The spread follows it: the pews it speaks of, empty and then full.
     thanks: str
+    #: Under the spread, in the glosses' small italic: what else the concert page holds. It
+    #: opens the page's gallery, as the photographs above it do.
+    photos_gloss: str
     #: To the donors, as a fact of this concert: what their support made possible. Ends on the
     #: lead-in to the one invitation to join them, which `donors_link` completes.
     donors: str
     #: The linked phrase closing `donors`. It opens the concert page with the vault open.
     donors_link: str
-    #: To whoever could not come: what the page holds.
-    otherwise: str
     #: The words under the last staff, which open the recording.
     listen_label: str
     #: Under those words, as the incipit has its gloss: what the recording is. Says what it
@@ -136,9 +137,15 @@ class Letter:
 # file is there (concerts.yaml `excerpts`), and a letter that promises a recording the page does
 # not play cannot be corrected after it leaves.
 #
-# The prose runs unbroken, as a letter does, and the photographs follow it as one spread (the
-# template says how), not one photograph per paragraph. What the page holds is named exactly: the photographs, the programme with a note on each work, and
-# the Canticle with its translation, which is the only text it gives in full. The concert was at
+# The prose before the first photograph is kept to what a phone shows in about one screen: the
+# fact, the concert, the thanks. A letter that holds its reader for two hundred words before the
+# first image reads as a wall, however well each sentence is made. The photographs then come
+# as one spread, right after the thanks they answer (the template says how), not one photograph
+# per paragraph, and the donors follow them. The letter does not branch into "if you came" and
+# "if you could not": the photographs and the recording are for both readers, and what else the
+# page holds is a gloss under the spread, named exactly: more photographs, the programme with a
+# note on each work, and the Canticle with its translation, which is the only text it gives in
+# full. The concert was at
 # 13:30, so it is an afternoon everywhere in the copy. No date for the manuscript, which the
 # literature places anywhere from the mid-thirteenth century to c. 1300.
 #
@@ -168,14 +175,12 @@ POCHWALA_STWORZENIA = Letter(
             lede=(
                 f"W{NBSP}Asyżu przechowywany jest najstarszy znany rękopis Pieśni słonecznej. "
                 f"Nad pierwszymi wersami wyrysowano w{NBSP}nim linie pod melodię, ale nikt nie "
-                "zapisał na nich nut. Franciszek sam ułożył do tej pieśni melodię, która się nie "
-                f"zachowała. Zostały tylko słowa i{NBSP}puste linie."
+                "zapisał na nich nut. Melodia, którą ułożył sam Franciszek, nie zachowała się."
             ),
             sung=(
-                f"Każdy kompozytor, który później sięgał po ten tekst, wpisywał w{NBSP}te linie "
-                f"własną muzykę. W{NBSP}niedzielę 11{NBSP}października w{NBSP}kościele "
-                f"Wszystkich Świętych w{NBSP}Warszawie śpiewaliśmy Pieśń słoneczną z{NBSP}muzyką, "
-                f"którą ponad siedemset lat po Franciszku napisał Carl{NBSP}Orff."
+                f"Kolejni kompozytorzy wpisywali w{NBSP}te linie własną muzykę. W{NBSP}niedzielę "
+                f"11{NBSP}października w{NBSP}kościele Wszystkich Świętych w{NBSP}Warszawie "
+                f"śpiewaliśmy Pieśń słoneczną z{NBSP}muzyką Carla{NBSP}Orffa."
             ),
             photo_alts=(
                 (
@@ -196,16 +201,16 @@ POCHWALA_STWORZENIA = Letter(
                 f"Śpiewało nam się inaczej niż na próbach, bo w{NBSP}ławkach siedzieli ludzie, "
                 "którzy przyszli posłuchać właśnie tej muzyki."
             ),
+            photos_gloss=(
+                f"Na stronie koncertu jest więcej zdjęć, program z{NBSP}opisami utworów "
+                f"i{NBSP}tekst Pieśni z{NBSP}przekładem."
+            ),
             donors=(
                 "Koncert był otwarty dla wszystkich dzięki darczyńcom, którzy wspierają nasze "
                 f"Koncerty Duchowe. Im także bardzo dziękujemy. Jeśli chcesz dołączyć do{NBSP}ich "
                 "grona,"
             ),
             donors_link="serdecznie zapraszamy",
-            otherwise=(
-                "Jeśli tym razem nie udało Ci się przyjść, na stronie koncertu są zdjęcia, "
-                f"program z{NBSP}opisami utworów i{NBSP}tekst Pieśni z{NBSP}przekładem."
-            ),
             listen_label="Posłuchaj",
             listen_gloss=(
                 f"Nagranie z{NBSP}koncertu, po jednym fragmencie z{NBSP}każdego utworu: "
@@ -239,14 +244,12 @@ POCHWALA_STWORZENIA = Letter(
             lede=(
                 "The oldest known manuscript of the Canticle of the Sun is kept in Assisi. "
                 "Above its first verses, lines were ruled for a melody, but no notes were ever "
-                "written on them. Francis composed a melody for the song himself, and it has not "
-                "survived. Only the words and the empty lines remain."
+                "written on them. The melody Francis himself composed has not survived."
             ),
             sung=(
-                "Every composer who has set the text since has written their own music into "
-                f"those lines. On Sunday 11{NBSP}October, in All Saints’ Church in Warsaw, we "
-                f"sang the Canticle to the music Carl{NBSP}Orff wrote for it more than seven hundred "
-                "years after Francis."
+                "The composers who came after him wrote their own music into those lines. On "
+                f"Sunday 11{NBSP}October, in All Saints’ Church in Warsaw, we sang the Canticle "
+                f"to Carl{NBSP}Orff’s music."
             ),
             photo_alts=(
                 (
@@ -267,16 +270,15 @@ POCHWALA_STWORZENIA = Letter(
                 "differently than we do in rehearsal, because there were people in the pews who "
                 "had come to hear this very music."
             ),
+            photos_gloss=(
+                "The concert page has more photographs, the programme with a note on each work, "
+                "and the text of the Canticle with a translation."
+            ),
             donors=(
                 "The concert was open to everyone thanks to the donors who support our Spiritual "
                 "Concerts, and we thank them warmly too. If you would like to join them,"
             ),
             donors_link="you are most welcome",
-            otherwise=(
-                "If you could not come this time, the concert page has the photographs, the "
-                "programme with a note on each work, and the text of the Canticle with a "
-                "translation."
-            ),
             listen_label="Listen",
             listen_gloss="The concert recording, one passage from each work: six minutes.",
             next="We don’t know the date of the next concert yet. We will write to you as soon as we do.",
@@ -307,15 +309,13 @@ POCHWALA_STWORZENIA = Letter(
             lede=(
                 "Le plus ancien manuscrit connu du Cantique des créatures est conservé à Assise. "
                 "Au-dessus des premiers vers, on y a tracé des lignes pour une mélodie, mais "
-                "aucune note n’y a jamais été écrite. François avait lui-même composé une "
-                "mélodie pour ce chant, mais elle ne nous est pas parvenue. Il ne reste que les "
-                "mots et les lignes vides."
+                "aucune note n’y a jamais été écrite. La mélodie que François avait lui-même "
+                "composée ne nous est pas parvenue."
             ),
             sung=(
-                "Chaque compositeur qui s’est emparé de ce texte depuis a écrit sa propre "
-                f"musique dans ces lignes. Le dimanche 11{NBSP}octobre, en l’église de "
-                "Tous-les-Saints de Varsovie, nous avons chanté le Cantique sur la musique que "
-                f"Carl{NBSP}Orff a écrite plus de sept cents ans après François."
+                "Les compositeurs venus après lui ont écrit leur propre musique dans ces lignes. "
+                f"Le dimanche 11{NBSP}octobre, en l’église de Tous-les-Saints de Varsovie, nous "
+                f"avons chanté le Cantique sur la musique de Carl{NBSP}Orff."
             ),
             photo_alts=(
                 (
@@ -336,17 +336,16 @@ POCHWALA_STWORZENIA = Letter(
                 "autrement qu’en répétition, parce que dans les bancs se trouvaient des gens "
                 "venus écouter précisément cette musique."
             ),
+            photos_gloss=(
+                "Sur la page du concert, vous trouverez d’autres photographies, le programme avec "
+                "une présentation de chaque œuvre et le texte du Cantique avec sa traduction."
+            ),
             donors=(
                 "Le concert était ouvert à tous grâce aux donateurs qui soutiennent nos Concerts "
                 "Spirituels, et nous les remercions eux aussi de tout cœur. Si vous souhaitez "
                 "les rejoindre,"
             ),
             donors_link="nous vous y invitons chaleureusement",
-            otherwise=(
-                "Si vous n’avez pas pu venir cette fois, vous trouverez sur la page du concert "
-                "les photographies, le programme avec une présentation de chaque œuvre et le "
-                "texte du Cantique avec sa traduction."
-            ),
             listen_label="Écouter",
             listen_gloss=f"L’enregistrement du concert, un extrait de chaque œuvre{NBSP}: six minutes.",
             next=(

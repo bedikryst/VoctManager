@@ -52,8 +52,9 @@
     accent (play.png, 3x) before the word. The staff and the words open the concert page without
     an anchor, since the page's hero carries the player; the photographs open its gallery.
     Nothing in the copy explains the rhyme between the empty staff and the written one.
-  - The donors are thanked in the prose, after the reader, as a fact of this concert: it was
-    open to everyone because of them. Their paragraph ends on the one invitation that is not to
+  - The donors are thanked in the prose, after the reader and under the church full of the people
+    their support let in, as a fact of this concert: it was open to everyone because of them.
+    Their paragraph ends on the one invitation that is not to
     the music, a phrase linked to the concert page with `?donate`, which opens the vault as the
     page loads. It stays a phrase in a sentence, never a button or a block of its own: the
     footer tells the reader the list writes only about concerts (letters.py says why).
@@ -83,8 +84,10 @@
     column of a 390px screen) through the media query; a client without media queries shows the
     504px one, narrowed, and Outlook never sees the narrow one. Redraw both whenever the reel is
     recut (concerts.yaml `excerpts`).
-  - The prose runs unbroken and the photographs follow it as one spread about the pews the
-    letter thanks. First a pair, taken by the photographers from one place in the aisle at the
+  - The prose breaks once, after the thanks, for one spread about the pews it thanks: the words
+    above the first photograph are the fact, the concert and the thanks, about one phone screen,
+    and the photographs are the letter's subject, so they do not wait for the end of the prose.
+    The spread stands 40px under the sentence it answers and 64px above the next. First a pair, taken by the photographers from one place in the aisle at the
     same focal length: the rehearsal (rehearsal.jpg) and the concert (concert.jpg). Both are
     cut to one scale on the altar painting, so the painting, the crucifix and the ensemble's
     line stand in the same place in both and what changes between them is the pews, empty and
@@ -94,10 +97,11 @@
     column (504px between its 48px gutters, 24px on a phone) like everything else on the sheet:
     a pale photograph taken to the edge of a sheet lying on a white inbox leaves the sheet no
     edge there, the church's pillars dissolving into the client's ground. The pair is 244px
-    each at 4:5 on a 16px gutter, the church 504px at 5:4 beneath them, leading straight into
-    the last staff; each file is drawn at exactly 2x, so its baked grain matches the sheet's
-    on a desktop. No caption explains the pair; the
-    alts say "the same view" for a reader who hears them. The rehearsal frame comes from the
+    each at 4:5 on a 16px gutter, the church 504px at 5:4 beneath them; each file is drawn at
+    exactly 2x, so its baked grain matches the sheet's on a desktop. No caption explains the
+    pair; the alts say "the same view" for a reader who hears them. The one gloss under the
+    church, in the opening's small italic, names what else the page holds and opens the
+    gallery as the photographs do. The rehearsal frame comes from the
     other camera, warmer and darker, and is drawn to the concert frame's tone by a per-channel
     curve, so the difference the eye finds is the people and not the grade. The curve is a gamma
     per channel that gives the rehearsal's box the concert box's mean in that channel, measured
@@ -157,11 +161,9 @@ a { color: #dc9952; }
     <div style="padding-top:16px;">{{ copy.lede }}</div>
     <div style="padding-top:16px;">{{ copy.sung }}</div>
     <div style="padding-top:16px;">{{ copy.thanks }}</div>
-    <div style="padding-top:16px;">{{ copy.donors }} <a href="{{ donate_url }}" style="color:#dc9952; text-decoration:underline;">{{ copy.donors_link }}</a>.</div>
-    <div style="padding-top:16px;">{{ copy.otherwise }}</div>
   </td></tr>
 
-  <tr><td class="col" style="padding:64px 48px 0;">
+  <tr><td class="col" style="padding:40px 48px 0;">
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
       <td width="244" valign="top" style="width:48.413%; font-size:0; line-height:0;"><a href="{{ page_url }}" style="text-decoration:none;"><img src="{{ asset_url }}/rehearsal.jpg{{ asset_query }}" width="244" height="305" alt="{{ copy.photo_alts.0 }}" style="display:block; width:100%; height:auto; border:0; color:#8f887c; font-family:'Palatino Linotype', Palatino, Georgia, serif; font-size:15px;"></a></td>
       <td width="16" style="width:3.175%; font-size:0; line-height:0;">&nbsp;</td>
@@ -169,8 +171,11 @@ a { color: #dc9952; }
     </tr></table>
   </td></tr>
   <tr><td class="col" style="padding:16px 48px 0; font-size:0; line-height:0;"><a href="{{ page_url }}" style="text-decoration:none;"><img src="{{ asset_url }}/audience.jpg{{ asset_query }}" width="504" height="403" alt="{{ copy.photo_alts.2 }}" style="display:block; width:100%; max-width:504px; height:auto; border:0; color:#8f887c; font-family:'Palatino Linotype', Palatino, Georgia, serif; font-size:15px;"></a></td></tr>
+  <tr><td class="col" style="padding:16px 48px 0; font-family:'Cormorant Garamond', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif; font-style:italic; font-size:15px; line-height:22px; color:#8f887c;"><a href="{{ page_url }}" style="color:#8f887c; text-decoration:none;">{{ copy.photos_gloss }}</a></td></tr>
 
-  <tr><td class="col" style="padding:48px 48px 0; font-size:0; line-height:0;"><a href="{{ listen_url }}" style="text-decoration:none;"><img class="staff-wide" src="{{ asset_url }}/staff-sung.gif{{ asset_query }}" width="504" height="43" alt="" style="display:block; width:100%; max-width:504px; height:43px; border:0;"><!--[if !mso]><!--><img class="staff-narrow" src="{{ asset_url }}/staff-sung-narrow.gif{{ asset_query }}" width="342" height="43" alt="" style="display:none; width:100%; height:43px; max-height:0; overflow:hidden; border:0;"><!--<![endif]--></a></td></tr>
+  <tr><td class="col" style="padding:64px 48px 0; font-family:'Cormorant Garamond', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif; font-variant-numeric:lining-nums; font-size:19px; line-height:30px; color:#d9d2c5;">{{ copy.donors }} <a href="{{ donate_url }}" style="color:#dc9952; text-decoration:underline;">{{ copy.donors_link }}</a>.</td></tr>
+
+  <tr><td class="col" style="padding:56px 48px 0; font-size:0; line-height:0;"><a href="{{ listen_url }}" style="text-decoration:none;"><img class="staff-wide" src="{{ asset_url }}/staff-sung.gif{{ asset_query }}" width="504" height="43" alt="" style="display:block; width:100%; max-width:504px; height:43px; border:0;"><!--[if !mso]><!--><img class="staff-narrow" src="{{ asset_url }}/staff-sung-narrow.gif{{ asset_query }}" width="342" height="43" alt="" style="display:none; width:100%; height:43px; max-height:0; overflow:hidden; border:0;"><!--<![endif]--></a></td></tr>
   <tr><td class="col" style="padding:8px 48px 0;">
     <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
       <td valign="middle" style="padding-right:14px; font-size:0; line-height:0;"><a href="{{ listen_url }}" style="text-decoration:none;"><img src="{{ asset_url }}/play.png{{ asset_query }}" width="15" height="17" alt="" style="display:block; width:15px; height:17px; border:0;"></a></td>

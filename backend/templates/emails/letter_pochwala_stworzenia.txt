@@ -13,11 +13,11 @@ Altissimu, onnipotente, bon Signore…
 
 {{ copy.thanks }}
 
+{{ copy.photos_gloss }}
+{{ page_url }}
+
 {{ copy.donors }} {{ copy.donors_link }}:
 {{ donate_url }}
-
-{{ copy.otherwise }}
-{{ page_url }}
 
 {{ copy.listen_label|upper }}: {{ copy.listen_gloss }}
 {{ listen_url }}
