@@ -438,9 +438,8 @@ html.voct-motion .pdz-folio:not(.is-in) :is(.pdz-incipit, .pdz-incipit-gloss) {
 }
 
 /* ── The photographs ───────────────────────────────────────────────────────────
-   Portraits in pairs across two columns, the listeners and the ensemble afterwards across both,
-   so every frame shares the grid's edges and a file missing from the host leaves no empty
-   column. Only the hosts carry a caption: their names are what the frames are there for. */
+   The portrait pair in two columns, the listeners and the ensemble afterwards across both, so
+   every frame shares the grid's edges and a file missing from the host leaves no empty column. */
 .pdz-photos {
   max-width: 720px;
   margin: clamp(72px, 9vw, 120px) auto 0;
@@ -471,12 +470,42 @@ html.voct-motion .pdz-folio:not(.is-in) :is(.pdz-incipit, .pdz-incipit-gloss) {
   grid-column: 1 / -1;
 }
 
-.pdz-shot-caption {
-  margin: 12px 0 clamp(8px, 1.6vw, 16px);
-  color: var(--inv-ink-soft);
+/* The hosts the acknowledgements open on: two prints side by side, each over a name and a
+   function in the roll's own two voices, the name as `.pdz-credit-who` sets it and the function
+   in the italic of `.pdz-credit-for`, a size down at a print's width. */
+.pdz-hosts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  gap: 12px;
+  max-width: 400px;
+  margin: clamp(28px, 3.4vw, 40px) auto 0;
+}
+
+.pdz-host {
+  margin: 0;
+}
+
+.pdz-host-caption {
+  margin-top: 14px;
+}
+
+.pdz-host-name {
+  display: block;
+  color: var(--inv-text);
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.pdz-host-role {
+  display: block;
+  margin-top: 3px;
+  color: var(--inv-muted);
   font-size: 15px;
+  font-style: italic;
   font-weight: 500;
-  line-height: 1.4;
+  line-height: 1.35;
   text-wrap: balance;
 }
 

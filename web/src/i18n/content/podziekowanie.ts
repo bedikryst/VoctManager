@@ -121,7 +121,7 @@ export const PODZIEKOWANIE = {
     /** The pair, in reading order. No caption explains it; the second alt says "the same view". */
     rehearsalAlt: "Próba VoctEnsemble przed ołtarzem głównym kościoła Wszystkich Świętych, ławki jeszcze puste",
     concertAlt: "Ten sam widok podczas koncertu: VoctEnsemble przed ołtarzem, słuchacze w ławkach",
-    gallery: "Wszystkie zdjęcia z koncertu",
+    gallery: "Więcej zdjęć z koncertu",
   },
   /** The programme's back page. The cast's groups and the conductor's role are the corpus's. */
   cast: {
