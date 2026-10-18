@@ -1,21 +1,22 @@
 /**
  * @file invitation-notice.css
  * @description The concert notice list's island (`NoticeForm.tsx`) dressed in the invitation's
- *  material, for the pages cut from that material that end on the list: `/zaproszenie` and
- *  `/podziekowanie`. The section (`.inv-ask`) with its rubric and its two-line sentence
+ *  material, for the pages cut from that material that carry the list: `/zaproszenie`, which ends
+ *  on it, and `/podziekowanie`, which sets it after its photographs. The section (`.inv-ask`)
+ *  with its rubric and its two-line sentence
  *  (`.inv-say`), the slot it enters in (`.inv-slot`), and the reply card that holds the island
  *  (`.inv-notice`, worn beside `.inv-card`): the blank, the act, the small print and the receipt.
  *  Each page imports it after `styles/invitation.css`, whose tokens and card it builds on, and
  *  reads only `--inv-*` tokens and the site's own.
  *
- *  THE ASK IS A POSTSCRIPT, WITH ONE BLANK. The lighter single frame and modest act keep the page
- *  ahead of the list. The label captions the dotted line from below; a submitted address can be
+ *  THE ASK IS QUIET, WITH ONE BLANK. The lighter single frame and modest act keep the page ahead
+ *  of the list. The label captions the dotted line from below; a submitted address can be
  *  checked and corrected on the same paper.
  * @module styles/invitation-notice
  */
 
 /* ── The ask ───────────────────────────────────────────────────────────────────
-   A postscript for future concerts; its ornament yields to the words on a narrow sheet. */
+   An invitation to future concerts; its ornament yields to the words on a narrow sheet. */
 .inv-ask {
   position: relative;
   isolation: isolate;

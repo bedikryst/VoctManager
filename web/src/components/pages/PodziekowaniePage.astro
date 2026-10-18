@@ -6,30 +6,33 @@
  *  It is that page's pair: the invitation's paper and ink (`styles/invitation.css`), bound to the
  *  same corpus entry (`INVITATION_CONCERT_ID`), Polish only, signed by the ensemble.
  *
- *  A KEEPSAKE OF THE AFTERNOON, PRINTED ON THE CARD'S PAPER, in five openings:
+ *  A KEEPSAKE OF THE AFTERNOON, PRINTED ON THE CARD'S PAPER, in reading order:
  *  - the cover: the invitation's hands and light, the title, the word of thanks and the day;
  *  - the Canticle: the fact the list's letter is built on, the empty staff the oldest manuscript
  *    rules over the first verse (the verse and its gloss are the first lines of the programme's
  *    own text of the Canticle), what was written into it, and the recording (`ExcerptsGlyph`);
- *  - the thanks, the donors' sentences and the act that opens the donation vault in place
- *    (`data-vault-open`, `scripts/vault-triggers.ts`; its href, the landing's donation section,
- *    is the road without JS);
- *  - four photographs, two over two: the rehearsal and the concert from one place in the aisle,
- *    then the church seen from the altar and the ensemble on its steps afterwards, each opening
- *    the site's lightbox as one set, with the door to the concert's gallery;
- *  - the programme's back page: the cast and the acknowledgements side by side; then the line for
- *    whoever could not come and the signature.
- *  The list follows as a postscript, `NoticeForm` in the invitation's dress
- *  (`styles/invitation-notice.css`) under its own screen value, `web:podziekowanie`.
+ *  - the thanks, and under it the donors in a printed frame with the act that opens the donation
+ *    vault in place (`data-vault-open`, `scripts/vault-triggers.ts`; its href, the landing's
+ *    donation section, is the road without JS);
+ *  - four photographs: the rehearsal and the concert from one place in the aisle side by side,
+ *    then the church seen from the altar and the ensemble on its steps afterwards, each across
+ *    the grid; each opens the site's lightbox as one set, with the door to the concert's gallery;
+ *  - the list, `NoticeForm` in the invitation's dress (`styles/invitation-notice.css`) under its
+ *    own screen value, `web:podziekowanie`. It stands high, straight after the photographs:
+ *    these guests joining the list is what the page is for. The photographs between it and the
+ *    donors' frame keep the two asks from reading as one appeal;
+ *  - the programme's back page: the cast beside the acknowledgements; then the way to the concert
+ *    page and the signature.
  *
  *  THE INVITATION'S HANDS, REACHING AS THEY DID THERE. The guests opened the invitation on them,
- *  so the thanks opens on them too, and only the word under the title differs
- *  (`scripts/podziekowanie.ts` runs the entrance on the invitation's contract; the invitation's
- *  own script and its breathing stay on /zaproszenie). Reveal comes from BaseLayout.
+ *  so the thanks opens on them too, and only the word under the title differs.
+ *  `scripts/podziekowanie.ts` runs the entrance on the invitation's contract and rests the light
+ *  and the clouds out of view, in a hidden tab and while a guest writes; the invitation's own
+ *  script and the hands' breathing stay on /zaproszenie. Reveal comes from BaseLayout.
  *
- *  THE CAST IS THE CORPUS'S (`roster`, and the conductor from `credits`, as the concert page
- *  closes its Voces band), so a correction there reaches both pages. Its names are cleared for
- *  this concert's pages, and this is one of them.
+ *  THE CAST IS THE CORPUS'S (`roster`, then the music assistant and the conductor from
+ *  `credits`, as the concert page closes its Voces band with the conductor), so a correction there
+ *  reaches both pages. Its names are cleared for this concert's pages, and this is one of them.
  *
  *  EVERY PHOTOGRAPH IS OPTIONAL TO THE BUILD (`photoOptional`), being uploaded to the host by hand.
  *  The pair prints only when both of its files resolve, since one frame of it says nothing; each
@@ -79,8 +82,12 @@ const CHURCH = "kd-stworzenie-11";
 const AFTER = "kd-stworzenie-17";
 /** The programme item whose text is the Canticle. */
 const CANTICLE_WORK = "Laudes creaturarum";
-/** The empty staff's lines: the four of the chant staff a scribe of the manuscript's time ruled. */
+/** The empty staff's lines. Four is the chant staff of the manuscript's age, assumed, not yet read
+    off cod. 338 itself; the list's letter draws five. */
 const STAFF_LINES = [0, 1, 2, 3];
+
+/** Holds the separator to the name before it. Built from its code point, as `lib/typo` builds its own. */
+const NBSP = String.fromCharCode(0xa0);
 
 const lang = "pl";
 const ui = UI[lang];
@@ -133,19 +140,19 @@ const candle = candleFrom(concert.accent);
 const churchImg = photoOptional(CHURCH);
 const ogImage = (await getImage({ src: churchImg ?? hero.desktop, width: 1200, format: "webp" })).src;
 
-/* Two columns, four frames read in order: the pair (before, during) over the two landscapes (the
-   listeners seen from the altar, the ensemble after). Below 600px each landscape takes the whole
-   line. The grid is 720px, inside the sheet's gutter (max(28px, 5vw)) below 800px. Each frame
-   opens the lightbox with the whole photograph, the four as one set, and an exit to the concert's
-   gallery. */
+/* Four frames read in order: the pair (before, during) side by side, then each landscape across
+   both columns (the listeners seen from the altar, the ensemble after), so a missing landscape
+   never leaves a column empty. The grid is 720px, inside the sheet's gutter (max(28px, 5vw))
+   below 800px. Each frame opens the lightbox with the whole photograph, the four as one set, and
+   an exit to the concert's gallery. */
 const PAIR_ASPECT = 4 / 5;
 const WIDE_ASPECT = 3 / 2;
 const PAIR_SIZES = "(min-width: 800px) 354px, (min-width: 600px) calc(45vw - 6px), calc(50vw - 32px)";
-const WIDE_SIZES = "(min-width: 800px) 354px, (min-width: 600px) calc(45vw - 6px), calc(100vw - 56px)";
+const WIDE_SIZES = "(min-width: 800px) 720px, (min-width: 560px) 90vw, calc(100vw - 56px)";
 const frame = async (img: ImageMetadata, wide: boolean, alt: string) => ({
   thumb: await croppedShot(
     img,
-    wide ? { aspect: WIDE_ASPECT, widths: [360, 540, 720, 1080] } : { aspect: PAIR_ASPECT, widths: [360, 540, 720] },
+    wide ? { aspect: WIDE_ASPECT, widths: [540, 720, 1080, 1440] } : { aspect: PAIR_ASPECT, widths: [360, 540, 720] },
   ),
   full: await framedShot(img),
   sizes: wide ? WIDE_SIZES : PAIR_SIZES,
@@ -166,13 +173,16 @@ const shots = [
   ...(afterImg ? [await frame(afterImg, true, galleryAlt(AFTER))] : []),
 ];
 
-/* The cast in the order a programme's back page sets it: the voices, the instruments, and the
-   conductor last, matched in `credits` on the Polish role as the concert page matches him. */
+/* The cast in the order a programme's back page sets it: the voices, the instruments, the music
+   assistant who prepared the ensemble, and the conductor last. The last two are matched in
+   `credits` on their Polish roles, as the concert page matches the conductor. */
 const rosterGroups = concert.roster?.groups ?? [];
+const assistant = concert.credits.find((credit) => /asystent/i.test(credit.role));
 const conductor = concert.credits.find((credit) => /dyrygent/i.test(credit.role));
 const cast = [
   ...rosterGroups.filter((group) => !group.instrument).map((group) => ({ ...group, conductor: false })),
   ...rosterGroups.filter((group) => group.instrument).map((group) => ({ ...group, conductor: false })),
+  ...(assistant ? [{ voice: assistant.role, names: [assistant.name], conductor: false }] : []),
   ...(conductor ? [{ voice: conductor.role, names: [conductor.name], conductor: true }] : []),
 ];
 
@@ -260,16 +270,18 @@ const hasHands = Boolean(handLeft && handRight);
       )}
     </div>
 
-    {/* ── The thanks, the donors, and the act that asks for no more than a press ── */}
+    {/* ── The thanks, and the donors in the frame a programme prints its patrons in ── */}
     <div class="pdz-thanks">
       <p class="pdz-text reveal">{letter.thanks}</p>
-      <p class="pdz-text reveal" data-d="1">{letter.donors}</p>
-      <p class="pdz-give reveal" data-d="2">
+    </div>
+    <div class="pdz-patrons reveal">
+      <p class="pdz-text">{letter.donors}</p>
+      <p class="pdz-give">
         <a class="inv-act pdz-act" href="/#wesprzyj" data-vault-open="100"><span>{copy.give.act}</span></a>
       </p>
     </div>
 
-    {/* ── Three photographs, and the door to the rest ── */}
+    {/* ── Four photographs, and the door to the rest ── */}
     {(shots.length > 0 || concert.hasPage) && (
       <section class="pdz-photos" aria-label={copy.photos.aria}>
         {shots.length > 0 && (
@@ -277,7 +289,7 @@ const hasHands = Boolean(handLeft && handRight);
             {shots.map((shot) => (
               <button
                 type="button"
-                class:list={["pdz-shot", "shot-open", { "pdz-shot-wide": shot.wide }]}
+                class:list={["shot-open", { "pdz-shot-wide": shot.wide }]}
                 data-image-open
                 data-image-group="pdz-photos"
                 data-image-src={shot.full.src}
@@ -302,57 +314,7 @@ const hasHands = Boolean(handLeft && handRight);
       </section>
     )}
 
-    {/* ── The programme's back page: who sang and played, and whom the ensemble thanks ── */}
-    <div class="pdz-back">
-      {cast.length > 0 && (
-        <section class="pdz-back-page" aria-labelledby="pdz-cast-heading">
-          <h2 id="pdz-cast-heading" class="inv-rubric pdz-rubric reveal">{copy.cast.rubric}</h2>
-          <dl class="pdz-roll">
-            {cast.map((group) => (
-              <div class:list={["pdz-roll-entry", "reveal", { "pdz-roll-conductor": group.conductor }]} data-d="1">
-                <dt class="pdz-roll-label">{group.voice}</dt>
-                <dd class="pdz-roll-names">
-                  {group.names.map((name, index) => (
-                    <>{index > 0 && <span class="pdz-roll-dot" aria-hidden="true"> · </span>}<span class="pdz-roll-name">{name}</span></>
-                  ))}
-                </dd>
-              </div>
-            ))}
-          </dl>
-        </section>
-      )}
-      <section class="pdz-back-page" aria-labelledby="pdz-partners-heading">
-        <h2 id="pdz-partners-heading" class="inv-rubric pdz-rubric reveal">{copy.partners.rubric}</h2>
-        <ul class="pdz-roll">
-          {copy.partners.list.map((partner) => (
-            <li class="pdz-roll-entry reveal" data-d="2">
-              <span class="pdz-credit-who">{partner.who}</span>
-              <span class="pdz-credit-for">
-                {partner.for}
-                {partner.link && (
-                  <>{" "}<a class="inv-link" href={partner.link.href} target="_blank" rel="noopener noreferrer">{partner.link.text}<span class="inv-out" aria-hidden="true">↗</span></a></>
-                )}
-              </span>
-            </li>
-          ))}
-        </ul>
-      </section>
-    </div>
-
-    {/* ── For whoever could not come, and the leave-taking ── */}
-    <div class="pdz-close">
-      <p class="pdz-text reveal">
-        {letter.otherwise.before}{" "}
-        <a class="inv-link" href={concertPath}>{letter.otherwise.link}</a>{" "}
-        {letter.otherwise.after}
-      </p>
-      <p class="pdz-sign reveal" data-d="1">
-        <span class="pdz-closing">{letter.closing}</span>
-        <span class="pdz-signature">{letter.signature}</span>
-      </p>
-    </div>
-
-    {/* ── The list, as a postscript ── */}
+    {/* ── The list, straight after the photographs ── */}
     <section class="inv-ask pdz-ask" aria-labelledby="pdz-ask-heading">
       <h2 id="pdz-ask-heading" class="inv-rubric inv-ask-rubric reveal">{copy.ask.rubric}</h2>
       <p class="inv-say reveal" data-d="1">
@@ -379,6 +341,53 @@ const hasHands = Boolean(handLeft && handRight);
         </div>
       </div>
     </section>
+
+    {/* ── The programme's back page: who sang and played, and whom the ensemble thanks ── */}
+    <div class="pdz-back">
+      {cast.length > 0 && (
+        <section class="pdz-back-page" aria-labelledby="pdz-cast-heading">
+          <h2 id="pdz-cast-heading" class="inv-rubric pdz-rubric reveal">{copy.cast.rubric}</h2>
+          <dl class="pdz-roll">
+            {cast.map((group) => (
+              <div class:list={["pdz-roll-entry", "reveal", { "pdz-roll-conductor": group.conductor }]} data-d="1">
+                <dt class="pdz-roll-label">{group.voice}</dt>
+                <dd class="pdz-roll-names">
+                  {/* The spaces stay outside the hidden dot, so a screen reader still hears two names. */}
+                  {group.names.map((name, index) => (
+                    <>{index > 0 && <>{NBSP}<span class="pdz-roll-dot" aria-hidden="true">·</span>{" "}</>}<span class="pdz-roll-name">{name}</span></>
+                  ))}
+                </dd>
+              </div>
+            ))}
+          </dl>
+        </section>
+      )}
+      <section class="pdz-back-page" aria-labelledby="pdz-partners-heading">
+        <h2 id="pdz-partners-heading" class="inv-rubric pdz-rubric reveal">{copy.partners.rubric}</h2>
+        {/* `role="list"`: Safari drops a list's semantics once its markers are styled away. */}
+        <ul class="pdz-roll" role="list">
+          {copy.partners.list.map((partner) => (
+            <li class="pdz-roll-entry reveal" data-d="2">
+              <span class="pdz-credit-who">{partner.who}</span>
+              <span class="pdz-credit-for">
+                {partner.for}
+                {partner.link && (
+                  <>{" "}<a class="inv-link" href={partner.link.href} target="_blank" rel="noopener noreferrer">{partner.link.text}<span class="inv-out" aria-hidden="true">↗</span></a></>
+                )}
+              </span>
+            </li>
+          ))}
+        </ul>
+      </section>
+    </div>
+
+    {/* ── The way to the concert page, and the signature ── */}
+    <div class="pdz-close">
+      <p class="pdz-text reveal">
+        {letter.more.before}<a class="inv-link" href={concertPath}>{letter.more.link}</a>{letter.more.after}
+      </p>
+      <p class="pdz-sign reveal" data-d="1">{letter.signature}</p>
+    </div>
   </main>
 
   <SiteFooter lang={lang} variant="invitation" />
@@ -390,12 +399,12 @@ const hasHands = Boolean(handLeft && handRight);
 <script>
   import "../../scripts/vault-triggers.ts";
   import "../../scripts/image-triggers.ts";
-  import { setupThanksCover } from "../../scripts/podziekowanie";
+  import { setupThanks } from "../../scripts/podziekowanie";
 
   let dispose: (() => void) | undefined;
   document.addEventListener("astro:page-load", () => {
     dispose?.();
-    dispose = setupThanksCover();
+    dispose = setupThanks();
   });
   document.addEventListener("astro:before-swap", () => {
     dispose?.();

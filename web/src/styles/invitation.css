@@ -332,7 +332,7 @@ html.voct-motion .inv-rubric:not(.is-in)::after {
 /* ── The act ───────────────────────────────────────────────────────────────────
    A bar of the invitation's ink with the card's inner frame drawn on it, lettered in the card's
    capitals. While the reply is on its way a band of light passes across it. `.inv-act` is the
-   same bar on a link that leaves the sheet; the page that sets one says how wide it runs. */
+   same bar on a link; the page that sets one says how wide it runs. */
 .rsvp-act,
 .inv-card .notice-act,
 .inv-act {
@@ -526,14 +526,16 @@ html.voct-motion .inv-card .notice-act:disabled::after {
 
   /* The act's words must hold at 320px: tighter capitals, and a second line if they still cannot. */
   .rsvp-act,
-  .inv-card .notice-act {
+  .inv-card .notice-act,
+  .inv-act {
     padding: 12px 12px;
     font-size: 15px;
     letter-spacing: 0.15em;
   }
 
   .rsvp-act > span,
-  .inv-card .notice-act > span {
+  .inv-card .notice-act > span,
+  .inv-act > span {
     padding-left: 0.15em;
   }
 }

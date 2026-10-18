@@ -3,9 +3,10 @@
  * @description `/podziekowanie`, the thanks sent after one concert: what the page composes from the
  *  invitation's material (`styles/invitation.css`, imported first). The cover with the card's
  *  hands and light; the Canticle's opening, with an empty chant staff over its first verse; the
- *  recording's glyph; the thanks and the donors' act; four photographs, two over two; the
- *  programme's back page, the cast beside the acknowledgements; the signature. The list's
- *  postscript is dressed by `styles/invitation-notice.css`.
+ *  recording's glyph; the thanks and the donors' frame; four photographs, the pair side by side
+ *  and each landscape across; the programme's back page, the cast beside the acknowledgements;
+ *  the signature. The list's ask between the photographs and the back page is dressed by
+ *  `styles/invitation-notice.css`.
  *
  *  THE HANDS ARE THE INVITATION'S, AND THEY REACH AS THEY DID THERE. Their geometry and their
  *  entrance are `styles/zaproszenie.css`'s (`.zap-touch`, `zap-reach`, `zap-dawn`): the artwork's
@@ -35,12 +36,20 @@
  *  BaseLayout paints the canvas with `--edge-foot` once the footer is in view. On this sheet that
  *  is the invitation's paper, which under the night bar would read as a rose strip; while the bar
  *  stands the edge is night instead. BaseLayout reads the token when the footer crosses the
- *  viewport's edge, so a bar raised or stopped with the footer already in view is picked up at the
- *  next crossing.
+ *  viewport's edge and again whenever the player raises or stops the bar (`voct:edge-refresh`).
+ *
+ *  THE DONORS ARE FRAMED AS A PROGRAMME FRAMES ITS PATRONS: the reply card's printer's frame, two
+ *  hairlines of the ink, drawn on the sheet itself. No lighter card, so it reads as print, and the
+ *  list's card further down stays the one object on the sheet to write on. No colour of its own:
+ *  the card's material has no gold, and an amber hairline on this paper reads as a brown line.
  *
  *  THE PHOTOGRAPHS ARE PRINTS LYING ON THE SHEET, as the reply card does: a shadow and no frame.
  *  Each is a button into the site's lightbox (`.shot-open`, styles/image-lightbox.css), whose
  *  candle hover is redrawn here in the ink.
+ *
+ *  THE ATMOSPHERE PAUSES where `scripts/podziekowanie.ts` says nobody sees it, and while a guest
+ *  writes: the material's light and clouds run on `animation`, and only their play state is set
+ *  here.
  * @module styles/podziekowanie
  */
 
@@ -186,7 +195,7 @@ html.voct-motion .pdz-cover[data-entrance="play"] .pdz-glow img {
 @keyframes pdz-dawn {
   from {
     opacity: 0;
-    transform: scale(0.9);
+    transform: scale(0.92);
   }
   to {
     opacity: 1;
@@ -296,7 +305,7 @@ html.voct-motion .pdz-cover[data-entrance="play"] .pdz-glow img {
 }
 
 html.voct-motion .pdz-staff-line {
-  transition: transform 1.1s var(--ease-rule, var(--ease)) calc(var(--line) * 180ms);
+  transition: transform 1.1s var(--ease-rule) calc(var(--line) * 180ms);
 }
 
 html.voct-motion .pdz-folio:not(.is-in) .pdz-staff-line {
@@ -321,7 +330,9 @@ html.voct-motion .pdz-folio:not(.is-in) :is(.pdz-incipit, .pdz-incipit-gloss) {
 
 /* ── The recording ─────────────────────────────────────────────────────────────
    The glyph on paper; see the header. Hover inverts the disc to the act's ink, as the card's
-   act is a bar of that ink. */
+   act is a bar of that ink. The inversion is a cut, not a fade: faded, the disc and its triangle
+   would pass through the same colour and the triangle would vanish halfway. Focus is the
+   sheet's own ring (`.inv-sheet` in invitation.css). */
 .pdz-listen {
   display: flex;
   justify-content: center;
@@ -332,16 +343,13 @@ html.voct-motion .pdz-folio:not(.is-in) :is(.pdz-incipit, .pdz-incipit-gloss) {
   color: var(--inv-ink);
 }
 
-.pdz-listen .excerpts-glyph:focus-visible {
-  outline-color: var(--inv-ink);
-}
-
 .pdz-listen .excerpts-disc {
   border-color: var(--inv-ink);
   background: var(--inv-card);
   -webkit-backdrop-filter: none;
   backdrop-filter: none;
   color: var(--inv-ink);
+  transition: none;
 }
 
 @media (hover: hover) {
@@ -378,13 +386,36 @@ html.voct-motion .pdz-folio:not(.is-in) :is(.pdz-incipit, .pdz-incipit-gloss) {
   text-transform: none;
 }
 
-/* ── The thanks and the act ────────────────────────────────────────────────── */
+/* ── The thanks, and the donors' frame ─────────────────────────────────────────
+   The frame is the reply card's (`.inv-card` and its inner frame), drawn without the card; see
+   the header. */
 .pdz-thanks {
   margin-top: clamp(72px, 9vw, 120px);
 }
 
+.pdz-patrons {
+  position: relative;
+  max-width: 640px;
+  margin: clamp(56px, 7vw, 88px) auto 0;
+  padding: clamp(36px, 5vw, 52px) clamp(24px, 5vw, 56px);
+  border: 1px solid var(--inv-line-strong);
+  text-align: center;
+}
+
+.pdz-patrons::before {
+  content: "";
+  position: absolute;
+  inset: 6px;
+  border: 1px solid var(--inv-line);
+  pointer-events: none;
+}
+
+.pdz-patrons .pdz-text {
+  color: var(--inv-ink);
+}
+
 .pdz-give {
-  margin: clamp(32px, 4vw, 44px) 0 0;
+  margin: clamp(28px, 3.6vw, 40px) 0 0;
   text-align: center;
 }
 
@@ -407,8 +438,8 @@ html.voct-motion .pdz-folio:not(.is-in) :is(.pdz-incipit, .pdz-incipit-gloss) {
 }
 
 /* ── The photographs ───────────────────────────────────────────────────────────
-   Two columns of one width, so the portrait pair and the two landscapes under it share their
-   edges. */
+   The portrait pair in two columns, each landscape across both, so every frame shares the grid's
+   edges and a landscape missing from the host leaves no empty column. */
 .pdz-photos {
   max-width: 720px;
   margin: clamp(72px, 9vw, 120px) auto 0;
@@ -431,12 +462,12 @@ html.voct-motion .pdz-folio:not(.is-in) :is(.pdz-incipit, .pdz-incipit-gloss) {
     0 22px 44px -30px rgb(var(--inv-shadow) / 0.4);
 }
 
-.pdz .shot-open:hover::after {
-  border-color: rgb(var(--inv-shadow) / 0.5);
+.pdz-shot-wide {
+  grid-column: 1 / -1;
 }
 
-.pdz .shot-open:focus-visible {
-  outline-color: var(--inv-ink);
+.pdz .shot-open:hover::after {
+  border-color: rgb(var(--inv-shadow) / 0.5);
 }
 
 .pdz-gallery {
@@ -569,37 +600,33 @@ html.voct-motion .pdz-folio:not(.is-in) :is(.pdz-incipit, .pdz-incipit-gloss) {
   text-wrap: balance;
 }
 
-/* ── The leave-taking ──────────────────────────────────────────────────────── */
+/* ── The leave-taking: the card is signed with the name alone ──────────────── */
 .pdz-close {
   margin-top: clamp(88px, 11vw, 144px);
 }
 
 .pdz-sign {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
   margin: clamp(36px, 4.4vw, 52px) 0 0;
-  text-align: center;
-}
-
-.pdz-closing {
-  color: var(--inv-ink-soft);
-  font-size: clamp(19px, 1.6vw, 21px);
-  font-weight: 500;
-}
-
-.pdz-signature {
-  margin-top: 6px;
   color: var(--inv-ink);
   font-size: clamp(30px, 3vw, 38px);
   font-style: italic;
   font-weight: 500;
   line-height: 1.15;
+  text-align: center;
 }
 
-/* ── The postscript ────────────────────────────────────────────────────────── */
+/* ── The list ──────────────────────────────────────────────────────────────── */
 .pdz-ask {
   margin-top: clamp(80px, 10vw, 128px);
+}
+
+/* ── The atmosphere at rest ────────────────────────────────────────────────────
+   States written by `scripts/podziekowanie.ts`; see the header. Each selector outranks the
+   material's own `animation` rules, so its place in the cascade does not matter. */
+html.voct-motion .pdz-cover[data-atmosphere="paused"] .inv-light,
+html.voct-motion .pdz .inv-cloud[data-atmosphere="paused"],
+html.voct-motion .pdz:is([data-writing], [data-motion-paused]) :is(.inv-light, .inv-cloud) {
+  animation-play-state: paused;
 }
 
 /* ── A narrower sheet ──────────────────────────────────────────────────────── */
@@ -622,8 +649,13 @@ html.voct-motion .pdz-folio:not(.is-in) :is(.pdz-incipit, .pdz-incipit-gloss) {
 }
 
 @media (max-width: 599px) {
-  .pdz-frames .pdz-shot-wide {
-    grid-column: 1 / -1;
+  /* The act's words must fit the frame on a phone, the frame's gutter and its own given back. */
+  .pdz-patrons {
+    padding: 32px 18px;
+  }
+
+  .pdz-act {
+    padding-inline: 20px;
   }
 
   .pdz-cover {

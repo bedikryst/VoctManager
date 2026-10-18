@@ -1,8 +1,8 @@
 /**
  * @file podziekowanie.ts
  * @description Every word of `/podziekowanie`: the thanks sent after one concert to the guests its
- *  invitation reached outside the notice list, with the recording, the photographs, the cast and
- *  the acknowledgements, and, as a postscript, the list itself.
+ *  invitation reached outside the notice list, with the recording, the donors, the photographs,
+ *  the list itself, the cast and the acknowledgements.
  *
  *  POLISH ONLY AND OFF THE COPY DESK, like `/zaproszenie`, whose concert it is bound to
  *  (`INVITATION_CONCERT_ID`): the guests were invited in Polish, by a link sent by hand, and the
@@ -12,12 +12,13 @@
  *
  *  THE PROSE STARTS FROM THE LIST'S LETTER on this concert (`backend/outreach/letters.py`,
  *  `POCHWALA_STWORZENIA`, Polish) AND DOES NOT FOLLOW IT. The two are copies: an edit to one never
- *  reaches the other. Kept from the letter: its fact and its sentences (`lede`, `sung`, `thanks`,
- *  the donors' first two sentences, the first two photograph alts) and its register ("Ty", in
- *  forms with no grammatical gender, because the thanks and the list's own strings are written in
- *  it). The page is not the letter: the donors are asked by an act, not a link in the sentence; the
- *  acknowledgements and the cast stand as a programme prints them, from those the ensemble
- *  published after the concert; the list's ask opens with an invitation of the page's own, since
+ *  reaches the other. Kept from the letter: its fact (`lede`), its thanks, the donors' first two
+ *  sentences, the first two photograph alts, and its register ("Ty", in forms with no grammatical
+ *  gender, because the thanks and the list's own strings are written in it). The page is not the
+ *  letter: the day and the city are the cover's, so `sung` does not repeat them; the donors stand
+ *  in their own frame with an act under their sentences; the acknowledgements and the cast stand
+ *  as a programme prints them, from those the ensemble published after the concert; the card is
+ *  signed with the name alone; the list's ask opens with an invitation of the page's own, since
  *  these readers are not on the list yet.
  *
  *  THE ASK IS THE LIST'S, IN ITS OWN VOICE. The promise, the receipt and the errors are /koncerty's
@@ -62,10 +63,11 @@ const PARTNERS: readonly Partner[] = [
 ];
 
 /** The glyph's chrome on this page. The concert page's says "wieczór", the site's word for a
-    concert, and this concert was an afternoon; these readers meet the site here first. */
+    concert, and this concert was an afternoon; these readers meet the site here first. The source
+    line promises an order and not a count: the reel is cut by hand and need not hold every work. */
 const LISTEN: ConcertChrome["excerpts"] = {
   title: "Posłuchaj",
-  source: "Po jednym fragmencie z każdego utworu",
+  source: "Fragmenty utworów w kolejności programu",
   unavailable: "Nagranie jest chwilowo niedostępne",
   play: "Odtwórz fragmenty nagrania z koncertu",
   pause: "Wstrzymaj fragmenty nagrania z koncertu",
@@ -78,7 +80,7 @@ export const PODZIEKOWANIE = {
     title: "Dziękujemy · Pochwała Stworzenia — VoctEnsemble",
     /** What a messenger prints under the link, so the first sentence a guest reads. */
     description:
-      "Zdjęcia i nagranie z koncertu Pochwała Stworzenia w kościele Wszystkich Świętych w Warszawie, 11 października 2026.",
+      "Zdjęcia i fragmenty nagrania z koncertu Pochwała Stworzenia w kościele Wszystkich Świętych w Warszawie, 11 października 2026.",
   },
   cover: {
     line: "Dziękujemy",
@@ -90,26 +92,26 @@ export const PODZIEKOWANIE = {
       "sam ułożył do tej pieśni melodię, która się nie zachowała. Zostały tylko słowa i puste linie.",
     sung:
       "Każdy kompozytor, który później sięgał po ten tekst, wpisywał w te linie własną muzykę. " +
-      "W niedzielę 11 października w kościele Wszystkich Świętych w Warszawie śpiewaliśmy Pieśń " +
-      `słoneczną z muzyką, którą ponad siedemset lat po Franciszku napisał Carl${NBSP}Orff.`,
+      "Tamtej niedzieli w kościele Wszystkich Świętych śpiewaliśmy Pieśń słoneczną w opracowaniu " +
+      `Carla${NBSP}Orffa, napisanym ponad siedemset lat po Franciszku.`,
     thanks:
       "Jeśli udało Ci się wtedy przyjść, dziękujemy Ci za to niedzielne popołudnie. Śpiewało nam " +
       "się inaczej niż na próbach, bo w ławkach siedzieli ludzie, którzy przyszli posłuchać właśnie " +
       "tej muzyki.",
-    /** The letter's sentences; the invitation to join the donors is the act under them. */
+    /** The letter's sentences, in the donors' frame; the invitation to join them is the act under them. */
     donors:
       "Koncert był otwarty dla wszystkich dzięki darczyńcom, którzy wspierają nasze Koncerty " +
       "Duchowe. Im także bardzo dziękujemy.",
-    /** For whoever could not come, split around its link to the concert page. */
-    otherwise: {
-      before: "Jeśli tym razem nie udało Ci się przyjść,",
+    /** What the concert page holds and this one does not, split around its link; the spaces are
+        the strings', since the link sits between them with none of its own. */
+    more: {
+      before: "Program z opisami utworów i pełny tekst Pieśni z przekładem znajdziesz ",
       link: "na stronie koncertu",
-      after: "są też program z opisami utworów i tekst Pieśni z przekładem.",
+      after: ".",
     },
-    closing: "Serdecznie pozdrawiamy",
     signature: "VoctEnsemble",
   },
-  /** The act under the donors' sentences. It opens the donation vault in place. */
+  /** The act in the donors' frame. It opens the donation vault in place. */
   give: {
     act: "Dołącz do darczyńców",
   },
