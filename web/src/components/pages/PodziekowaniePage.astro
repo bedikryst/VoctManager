@@ -327,7 +327,12 @@ const hasHands = Boolean(handLeft && handRight);
           {copy.partners.list.map((partner) => (
             <li class="pdz-roll-entry reveal" data-d="2">
               <span class="pdz-credit-who">{partner.who}</span>
-              <span class="pdz-credit-for">{partner.for}</span>
+              <span class="pdz-credit-for">
+                {partner.for}
+                {partner.link && (
+                  <>{" "}<a class="inv-link" href={partner.link.href} target="_blank" rel="noopener noreferrer">{partner.link.text}<span class="inv-out" aria-hidden="true">↗</span></a></>
+                )}
+              </span>
             </li>
           ))}
         </ul>

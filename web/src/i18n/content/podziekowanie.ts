@@ -32,6 +32,35 @@ const NBSP = String.fromCharCode(0xa0);
 
 const CONTACT_MAILBOX = "kontakt@voctensemble.com";
 
+/** One acknowledgement: who, then what for. A `link` ends the "what for" line and leaves the
+    site, so the page marks it as the card marks its other ways out. */
+interface Partner {
+  readonly who: string;
+  readonly for: string;
+  readonly link?: { readonly text: string; readonly href: string };
+}
+
+/** Those the afternoon was prepared with, as the ensemble thanked them after the concert, in the
+    nominative a programme's credits use. */
+const PARTNERS: readonly Partner[] = [
+  {
+    who: `Ewa${NBSP}Gnatkowska i Fundacja Hospicyjna „Mój Dom”`,
+    for: `za zaproszenie do finału III${NBSP}edycji festiwalu „Fenomen Człowieka”`,
+  },
+  { who: "Polskie Centrum Informacji Muzycznej POLMIC", for: "za patronat medialny" },
+  { who: `Kamil${NBSP}Staszowski`, for: "za wprowadzenie do koncertu" },
+  {
+    who: `dr${NBSP}Wiktoria${NBSP}Antonczyk`,
+    for: "za",
+    link: {
+      text: "artykuł o koncercie",
+      href:
+        "https://polmic.pl/pl/dzieje-sie/" +
+        "iii-fenomen-czlowieka-widziany-przez-pryzmat-piekna-koncert-voctensemble-w-warszawskim-kosciele-wszystkich-swietych",
+    },
+  },
+];
+
 /** The glyph's chrome on this page. The concert page's says "wieczór", the site's word for a
     concert, and this concert was an afternoon; these readers meet the site here first. */
 const LISTEN: ConcertChrome["excerpts"] = {
@@ -96,19 +125,9 @@ export const PODZIEKOWANIE = {
   cast: {
     rubric: "Wykonawcy",
   },
-  /** Those the afternoon was prepared with, as the ensemble thanked them after the concert: who,
-      in the nominative a programme's credits use, then what for. */
   partners: {
     rubric: "Podziękowania",
-    list: [
-      {
-        who: `Ewa${NBSP}Gnatkowska i Fundacja Hospicyjna „Mój Dom”`,
-        for: `za zaproszenie do finału III${NBSP}edycji festiwalu „Fenomen Człowieka”`,
-      },
-      { who: "Polskie Centrum Informacji Muzycznej POLMIC", for: "za patronat medialny" },
-      { who: `Kamil${NBSP}Staszowski`, for: "za wprowadzenie do koncertu" },
-      { who: `dr${NBSP}Wiktoria${NBSP}Antonczyk`, for: "za artykuł o koncercie" },
-    ],
+    list: PARTNERS,
   },
   ask: {
     rubric: "Zaproszenia",
