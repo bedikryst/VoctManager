@@ -2772,7 +2772,7 @@
   # rather than positions (the desk keys every alt by them), so a frame keeps its name when the
   # order around it changes.
   #
-  # -3 is the plate: the ensemble at the altar from the nave, a third of the frame's height. -4 is
+  # -3 is the plate: the ensemble at the altar from the nave, a third of the frame's height. It is
   # also the landing's Imagines frame (data/landing/paths.ts). The list's letter on this concert
   # (backend/outreach) opens this gallery from a pair of the rehearsal and the concert taken from
   # one place in the aisle, and from the church seen from the altar: -8 and -11 are those frames.

@@ -321,19 +321,24 @@ export const PATHS: readonly Path[] = [
     concertId: "pochwala-stworzenia",
     year: "MMXXVI",
     poster: "poster-stworzenie",
-    // The ensemble from above on the chequered floor before the altar: a mid shot, so the line
-    // stays one of mid shots. No square holds the whole half circle; the centre one keeps the
-    // conductor at the stand, the violinist and most of the singers, and loses the two ends of
-    // the arc. `left` keeps every soprano and pushes the conductor to the edge — the worse trade.
-    frame: "kd-stworzenie-4",
+    // The gallery's plate: the ensemble's line before the high altar, seen from the nave, with the
+    // retable, its painting and the crucifix above it. The only frame of the evening where both
+    // the building and the singers read at 316px, which is what this band asks of a panel; the
+    // overhead shot from the loft (-4) reads as floor and people, and its square loses both ends
+    // of the arc.
+    frame: "kd-stworzenie-3",
     frameMonth: "2026-10",
-    // DAMPED, because the set arrives in a brightened grade: at the panel's crop and base grade
-    // the frame measures 0.589 lit-mean, 27.6% of its area above mid-luma, against 0.360–0.443
-    // for the five graded panels above (geometric mean 0.403). The 40% rule asks for 0.86, which
-    // still leaves it at 0.50 and brightest in the line, so it is capped like Hymn Poległym: 0.75
-    // is the highest lift that keeps it inside the line's band (0.441, 11.3% above mid-luma, level
-    // with Aeternam's 11.1%, p99 0.666). The grade's lifted shadows survive the damp, which is
-    // linear; only the overall level comes down.
-    frameLift: 0.75,
+    // DAMPED ON BOTH AXES, and here the lit-mean alone would have misled. This is a white
+    // interior in even light with no night in it: undamped the square measures 0.460 lit-mean,
+    // so the 40% rule asks only for 0.95, yet its FLAT mean is 0.267 against 0.181–0.215 for the
+    // other five, and on a contact sheet it reads as the brightest square in the line. The
+    // statistic that ignores the ground is right about a dark room and wrong about a pale one.
+    // At 0.8 both agree it belongs: lit-mean 0.368 (the line runs 0.363–0.448), flat mean 0.214,
+    // 5.1% above mid-luma. At 0.85 the flat mean already leaves the line.
+    frameLift: 0.8,
+    // The set's grade is cool, and on a pale wall that reads as a teal field beside four warm
+    // panels: B−R of the lit part +15.1. 0.8 brings it to +9.6 at mean chroma 0.178, just above
+    // Wołanie Gór's 0.171, the line's most muted; lower would make this panel the greyest of six.
+    frameSaturation: 0.8,
   },
 ];
