@@ -154,7 +154,7 @@ POCHWALA_STWORZENIA = Letter(
         NoticeLocale.FR: "/fr/koncerty/pochwala-stworzenia",
     },
     anchor="obrazy",
-    asset_rev=7,
+    asset_rev=8,
     copy={
         NoticeLocale.PL: LetterCopy(
             subject="Pochwała Stworzenia: zdjęcia i nagranie",
