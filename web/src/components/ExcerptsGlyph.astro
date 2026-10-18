@@ -1,0 +1,51 @@
+---
+/**
+ * @file ExcerptsGlyph.astro
+ * @description One concert's excerpts glyph: the island (`ExcerptsPlayer`) and, beside it, the plain
+ *  link to the file that stands in for it without JavaScript (styles/excerpts.css shows one or the
+ *  other). The props come from `lib/excerpts` `concertExcerpts`, so a page prints this only when
+ *  that returned a reel. Where it stands, what wraps it and how it is dressed are the page's: the
+ *  page imports `styles/excerpts.css` itself, so the sheet keeps its place in that page's cascade.
+ * @module components/ExcerptsGlyph
+ */
+import type { Locale } from "../i18n/config";
+import type { ConcertChrome } from "../i18n/content/koncert";
+import { ExcerptsPlayer } from "../islands/landing/excerpts/ExcerptsPlayer";
+import { formatTime } from "../islands/landing/video/formatTime";
+import { AUDIO_MIME } from "../lib/audio";
+import type { ConcertExcerpts } from "../lib/excerpts";
+
+interface Props {
+  excerpts: ConcertExcerpts;
+  labels: ConcertChrome["excerpts"];
+  lang: Locale;
+  /** The concert's candle colour, for the bar the island portals out of the page. */
+  candle: string;
+  /** The concert's title, as the system's media controls name the reel. */
+  title: string;
+}
+
+const { excerpts, labels, lang, candle, title } = Astro.props;
+---
+
+<ExcerptsPlayer
+  client:load
+  src={excerpts.src}
+  duration={excerpts.duration}
+  chapters={excerpts.chapters}
+  labels={labels}
+  lang={lang}
+  candle={candle}
+  title={title}
+  artwork={excerpts.artwork}
+/>
+<a class="excerpts-glyph excerpts-file" href={excerpts.src} type={AUDIO_MIME}>
+  <span class="excerpts-disc" aria-hidden="true">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13l11-6.5z" /></svg>
+  </span>
+  <span class="excerpts-total">{formatTime(excerpts.duration)}</span>
+  <span class="excerpts-text">
+    <span class="excerpts-title">{labels.title}</span>
+    <span class="excerpts-source">{labels.source}</span>
+  </span>
+</a>

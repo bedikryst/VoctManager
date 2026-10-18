@@ -2,8 +2,8 @@
  * @file zaproszenie.css
  * @description `/zaproszenie`, the invitation opened on a screen: what the page composes from the
  *  invitation's material (`styles/invitation.css`, imported first) — the cover, an editorial
- *  spread, the response strip, the ask and the foundation's close — and the dress of the list's
- *  island (`NoticeForm.tsx`) as a quiet postscript.
+ *  spread, the response strip and the foundation's close. The ask between the last two, the list's
+ *  island as a quiet postscript, is dressed by `styles/invitation-notice.css`.
  *
  *  THE COVER IS ITS TWO HANDS, AND THE GAP BETWEEN THEM. The card's cover is the fresco's gesture:
  *  two hands reaching for each other, the light where the fingertips nearly meet. Each hand is its
@@ -22,10 +22,6 @@
  *  composed after it leaves view. The radial light stays visible while the artwork loads; only the
  *  burst image dawns. The clouds billow on the material's clock too. The title is readable at full
  *  opacity throughout.
- *
- *  THE ASK IS A POSTSCRIPT, WITH ONE BLANK. The lighter single frame and modest act keep the
- *  invitation ahead of the list. The label captions the dotted line from below; a submitted
- *  address can be checked and corrected on the same paper.
  * @module styles/zaproszenie
  */
 
@@ -612,242 +608,6 @@ html.voct-motion.vt-nav .zap-spread .reveal.is-in {
   font-style: italic;
 }
 
-/* ── The ask ───────────────────────────────────────────────────────────────────
-   A postscript for future concerts; its ornament yields to the words on a narrow sheet. */
-.zap-ask {
-  position: relative;
-  isolation: isolate;
-  max-width: 1000px;
-  margin: clamp(64px, 8vw, 96px) auto 0;
-  text-align: center;
-}
-
-.zap-ask::before {
-  content: "";
-  position: absolute;
-  top: -14%;
-  right: calc(50% - 50vw);
-  bottom: -14%;
-  left: calc(50% - 50vw);
-  z-index: -1;
-  background: radial-gradient(44% 44% at 50% 58%, rgb(255 255 255 / 0.5), transparent 74%);
-  pointer-events: none;
-}
-
-.zap-rubric {
-  --rubric-tracking: 0.34em;
-  letter-spacing: var(--rubric-tracking);
-}
-
-.zap-rubric::before,
-.zap-rubric::after {
-  flex: 0 1 72px;
-  min-width: 0;
-}
-
-.zap-rubric::after {
-  margin-left: calc(-1 * var(--rubric-tracking));
-}
-
-.zap-say {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  max-width: 27em;
-  margin: clamp(24px, 3vw, 32px) auto 0;
-  line-height: 1.45;
-  text-wrap: balance;
-}
-
-.zap-say-invitation {
-  color: var(--inv-text);
-  font-size: clamp(19px, 1.9vw, 22px);
-  font-weight: 500;
-}
-
-.zap-say-promise {
-  color: var(--inv-ink);
-  font-size: clamp(19px, 1.9vw, 22px);
-  font-style: italic;
-  font-weight: 500;
-}
-
-.zap-slot {
-  margin-top: clamp(26px, 3.6vw, 38px);
-}
-
-.zap-card {
-  padding: clamp(26px, 4vw, 36px) clamp(22px, 5vw, 42px) 26px;
-  box-shadow: 0 10px 28px -20px rgb(var(--inv-shadow) / 0.22);
-}
-
-.zap-card::before {
-  content: none;
-}
-
-.zap-card .notice-act {
-  width: fit-content;
-  max-width: 100%;
-  min-height: 50px;
-  margin: 28px auto 0;
-  padding: 12px 22px;
-  font-size: 15px;
-  letter-spacing: 0.16em;
-}
-
-.zap-card .notice-act > span {
-  padding-left: 0.16em;
-}
-
-.zap-card .notice-consent-text {
-  margin-top: 18px;
-}
-
-/* The island's blank, captioned from below. */
-.zap-card .notice-form {
-  margin: 0;
-}
-
-.zap-card .notice-blank {
-  display: flex;
-  flex-direction: column-reverse;
-}
-
-/* The field's name, set as the card's lowercase caption. */
-.zap-card .notice-blank-label {
-  text-transform: lowercase;
-}
-
-/* 16px is the floor below which iOS zooms the page on focus; this field writes well above it.
-   Upright, unlike the name on /rsvp: an address is a string to get right, not a hand. */
-.zap-card .notice-email {
-  display: block;
-  width: 100%;
-  margin: 0 0 var(--blank-lift);
-  padding: 0 0.4em;
-  border: 0;
-  border-radius: 0;
-  background: none;
-  color: var(--inv-ink);
-  caret-color: var(--inv-ink);
-  font-family: var(--serif);
-  font-size: clamp(22px, 2.4vw, 26px);
-  font-variant-numeric: lining-nums;
-  font-weight: 500;
-  line-height: var(--blank-lead);
-  text-align: center;
-}
-
-.zap-card .notice-email:focus {
-  outline: none;
-  text-align: start;
-}
-
-.zap-card .notice-email:not([data-blank]) {
-  text-align: start;
-}
-
-.zap-card .notice-email:-webkit-autofill,
-.zap-card .notice-email:-webkit-autofill:focus {
-  -webkit-text-fill-color: var(--inv-ink);
-  box-shadow: 0 0 0 1000px var(--inv-card) inset;
-  transition: background-color 9999s ease-out;
-}
-
-/* The act answers a written address: the frame drawn on it comes up to the card's light. */
-.zap-card .notice-form[data-ready] .notice-act::before {
-  border-color: rgb(251 247 245 / 0.55);
-}
-
-/* The receipt: the island holds the card at the form's height, and the receipt is centred in it. */
-.zap-card[data-sent] {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-}
-
-.zap-card .notice-done:focus {
-  outline: none;
-}
-
-.zap-card .notice-done-mark {
-  display: block;
-  margin: 0 auto 16px;
-  color: var(--inv-ink);
-  font-size: 22px;
-  line-height: 1;
-}
-
-.zap-card .notice-done-title {
-  margin: 0;
-  color: var(--inv-ink);
-  font-size: clamp(26px, 3vw, 32px);
-  font-style: italic;
-  font-weight: 500;
-  line-height: 1.25;
-}
-
-.zap-card .notice-done-body {
-  max-width: 22em;
-  margin: 16px auto 0;
-  color: var(--inv-text);
-  font-size: 20px;
-  font-weight: 500;
-  line-height: 1.45;
-  text-wrap: balance;
-}
-
-.zap-card .notice-done-hint {
-  max-width: 24em;
-  margin: 14px auto 0;
-  color: var(--inv-muted);
-  font-size: 17px;
-  font-style: italic;
-  font-weight: 500;
-  line-height: 1.45;
-  text-wrap: balance;
-}
-
-.zap-card .notice-done-address {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  min-width: 0;
-  margin: 18px 0 0;
-}
-
-.zap-card .notice-done-address-label {
-  color: var(--inv-muted);
-  font-size: 17px;
-  font-style: italic;
-  font-weight: 500;
-}
-
-.zap-card .notice-done-address-value {
-  max-width: 100%;
-  overflow-wrap: anywhere;
-  color: var(--inv-ink);
-  font-size: 20px;
-  font-weight: 600;
-  line-height: 1.3;
-}
-
-.zap-card .notice-textlink {
-  min-height: 44px;
-  padding: 8px 12px;
-  border: 0;
-  background: none;
-  color: var(--inv-ink-soft);
-  font: inherit;
-  font-size: 17px;
-  text-decoration: underline;
-  text-decoration-color: var(--inv-line-strong);
-  text-underline-offset: 3px;
-  cursor: pointer;
-}
-
 /* ── The foundation ────────────────────────────────────────────────────────── */
 .zap-foundation {
   max-width: 34em;
@@ -946,10 +706,6 @@ html.voct-motion .zap-cover[data-entrance="composed"] .zap-hand-right {
   animation-delay: 2.5s;
 }
 
-html.voct-motion .zap-card .notice-done > * {
-  animation: inv-arrive 0.32s var(--ease) both;
-}
-
 /* Must stay after every rule that sets an `animation` shorthand on these nodes: the shorthand
    resets the play state, and the hands' rule above ties with these on specificity. */
 html.voct-motion .zap-cover[data-atmosphere="paused"] :is(.inv-light, .zap-hand),
@@ -1034,11 +790,6 @@ html.voct-motion .zap[data-motion-paused] :is(.inv-light, .inv-cloud, .zap-hand)
     margin-top: 36px;
   }
 
-  .zap-rubric {
-    --rubric-tracking: 0.16em;
-    gap: 10px;
-  }
-
   .zap-utilities {
     column-gap: 18px;
   }
@@ -1065,9 +816,7 @@ html.voct-motion .zap[data-motion-paused] :is(.inv-light, .inv-cloud, .zap-hand)
   html.voct-motion .zap .zap-glow,
   html.voct-motion .zap .zap-cover .zap-glow img,
   html.voct-motion .zap .zap-cover .zap-hand,
-  html.voct-motion .zap .zap-title,
-  html.voct-motion .zap .notice-done > *,
-  html.voct-motion .zap .notice-act::after {
+  html.voct-motion .zap .zap-title {
     animation: none;
     transition: none;
     opacity: 1;
@@ -1085,14 +834,11 @@ html.voct-motion .zap[data-motion-paused] :is(.inv-light, .inv-cloud, .zap-hand)
     transition: none;
   }
 
-  html.voct-motion .zap .reveal-rule::before,
-  html.voct-motion .zap .zap-rubric::before,
-  html.voct-motion .zap .zap-rubric::after {
+  html.voct-motion .zap .reveal-rule::before {
     transform: scaleX(1);
     transition: none;
   }
 
-  .zap-card .notice-blank-line::before,
   .zap-accept {
     transition: none;
   }

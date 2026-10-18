@@ -1,0 +1,285 @@
+/**
+ * @file invitation-notice.css
+ * @description The concert notice list's island (`NoticeForm.tsx`) dressed in the invitation's
+ *  material, for the pages cut from that material that end on the list: `/zaproszenie` and
+ *  `/podziekowanie`. The section (`.inv-ask`) with its rubric and its two-line sentence
+ *  (`.inv-say`), the slot it enters in (`.inv-slot`), and the reply card that holds the island
+ *  (`.inv-notice`, worn beside `.inv-card`): the blank, the act, the small print and the receipt.
+ *  Each page imports it after `styles/invitation.css`, whose tokens and card it builds on, and
+ *  reads only `--inv-*` tokens and the site's own.
+ *
+ *  THE ASK IS A POSTSCRIPT, WITH ONE BLANK. The lighter single frame and modest act keep the page
+ *  ahead of the list. The label captions the dotted line from below; a submitted address can be
+ *  checked and corrected on the same paper.
+ * @module styles/invitation-notice
+ */
+
+/* ── The ask ───────────────────────────────────────────────────────────────────
+   A postscript for future concerts; its ornament yields to the words on a narrow sheet. */
+.inv-ask {
+  position: relative;
+  isolation: isolate;
+  max-width: 1000px;
+  margin: clamp(64px, 8vw, 96px) auto 0;
+  text-align: center;
+}
+
+.inv-ask::before {
+  content: "";
+  position: absolute;
+  top: -14%;
+  right: calc(50% - 50vw);
+  bottom: -14%;
+  left: calc(50% - 50vw);
+  z-index: -1;
+  background: radial-gradient(44% 44% at 50% 58%, rgb(255 255 255 / 0.5), transparent 74%);
+  pointer-events: none;
+}
+
+.inv-ask-rubric {
+  --rubric-tracking: 0.34em;
+  letter-spacing: var(--rubric-tracking);
+}
+
+.inv-ask-rubric::before,
+.inv-ask-rubric::after {
+  flex: 0 1 72px;
+  min-width: 0;
+}
+
+.inv-ask-rubric::after {
+  margin-left: calc(-1 * var(--rubric-tracking));
+}
+
+.inv-say {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  max-width: 27em;
+  margin: clamp(24px, 3vw, 32px) auto 0;
+  line-height: 1.45;
+  text-wrap: balance;
+}
+
+.inv-say-invitation {
+  color: var(--inv-text);
+  font-size: clamp(19px, 1.9vw, 22px);
+  font-weight: 500;
+}
+
+.inv-say-promise {
+  color: var(--inv-ink);
+  font-size: clamp(19px, 1.9vw, 22px);
+  font-style: italic;
+  font-weight: 500;
+}
+
+.inv-slot {
+  margin-top: clamp(26px, 3.6vw, 38px);
+}
+
+.inv-notice {
+  padding: clamp(26px, 4vw, 36px) clamp(22px, 5vw, 42px) 26px;
+  box-shadow: 0 10px 28px -20px rgb(var(--inv-shadow) / 0.22);
+}
+
+.inv-notice::before {
+  content: none;
+}
+
+.inv-notice .notice-act {
+  width: fit-content;
+  max-width: 100%;
+  min-height: 50px;
+  margin: 28px auto 0;
+  padding: 12px 22px;
+  font-size: 15px;
+  letter-spacing: 0.16em;
+}
+
+.inv-notice .notice-act > span {
+  padding-left: 0.16em;
+}
+
+.inv-notice .notice-consent-text {
+  margin-top: 18px;
+}
+
+/* The island's blank, captioned from below. */
+.inv-notice .notice-form {
+  margin: 0;
+}
+
+.inv-notice .notice-blank {
+  display: flex;
+  flex-direction: column-reverse;
+}
+
+/* The field's name, set as the card's lowercase caption. */
+.inv-notice .notice-blank-label {
+  text-transform: lowercase;
+}
+
+/* 16px is the floor below which iOS zooms the page on focus; this field writes well above it.
+   Upright, unlike the name on /rsvp: an address is a string to get right, not a hand. */
+.inv-notice .notice-email {
+  display: block;
+  width: 100%;
+  margin: 0 0 var(--blank-lift);
+  padding: 0 0.4em;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  color: var(--inv-ink);
+  caret-color: var(--inv-ink);
+  font-family: var(--serif);
+  font-size: clamp(22px, 2.4vw, 26px);
+  font-variant-numeric: lining-nums;
+  font-weight: 500;
+  line-height: var(--blank-lead);
+  text-align: center;
+}
+
+.inv-notice .notice-email:focus {
+  outline: none;
+  text-align: start;
+}
+
+.inv-notice .notice-email:not([data-blank]) {
+  text-align: start;
+}
+
+.inv-notice .notice-email:-webkit-autofill,
+.inv-notice .notice-email:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--inv-ink);
+  box-shadow: 0 0 0 1000px var(--inv-card) inset;
+  transition: background-color 9999s ease-out;
+}
+
+/* The act answers a written address: the frame drawn on it comes up to the card's light. */
+.inv-notice .notice-form[data-ready] .notice-act::before {
+  border-color: rgb(251 247 245 / 0.55);
+}
+
+/* The receipt: the island holds the card at the form's height, and the receipt is centred in it. */
+.inv-notice[data-sent] {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.inv-notice .notice-done:focus {
+  outline: none;
+}
+
+.inv-notice .notice-done-mark {
+  display: block;
+  margin: 0 auto 16px;
+  color: var(--inv-ink);
+  font-size: 22px;
+  line-height: 1;
+}
+
+.inv-notice .notice-done-title {
+  margin: 0;
+  color: var(--inv-ink);
+  font-size: clamp(26px, 3vw, 32px);
+  font-style: italic;
+  font-weight: 500;
+  line-height: 1.25;
+}
+
+.inv-notice .notice-done-body {
+  max-width: 22em;
+  margin: 16px auto 0;
+  color: var(--inv-text);
+  font-size: 20px;
+  font-weight: 500;
+  line-height: 1.45;
+  text-wrap: balance;
+}
+
+.inv-notice .notice-done-hint {
+  max-width: 24em;
+  margin: 14px auto 0;
+  color: var(--inv-muted);
+  font-size: 17px;
+  font-style: italic;
+  font-weight: 500;
+  line-height: 1.45;
+  text-wrap: balance;
+}
+
+.inv-notice .notice-done-address {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  margin: 18px 0 0;
+}
+
+.inv-notice .notice-done-address-label {
+  color: var(--inv-muted);
+  font-size: 17px;
+  font-style: italic;
+  font-weight: 500;
+}
+
+.inv-notice .notice-done-address-value {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  color: var(--inv-ink);
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.inv-notice .notice-textlink {
+  min-height: 44px;
+  padding: 8px 12px;
+  border: 0;
+  background: none;
+  color: var(--inv-ink-soft);
+  font: inherit;
+  font-size: 17px;
+  text-decoration: underline;
+  text-decoration-color: var(--inv-line-strong);
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+/* ── Motion ────────────────────────────────────────────────────────────────────
+   Gated on `html.voct-motion` (JS live, motion allowed). */
+html.voct-motion .inv-notice .notice-done > * {
+  animation: inv-arrive 0.32s var(--ease) both;
+}
+
+/* ── A narrow sheet ─────────────────────────────────────────────────────────── */
+@media (max-width: 599px) {
+  .inv-ask-rubric {
+    --rubric-tracking: 0.16em;
+    gap: 10px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html.voct-motion .inv-notice .notice-done > *,
+  html.voct-motion .inv-notice .notice-act::after {
+    animation: none;
+    transition: none;
+    opacity: 1;
+    transform: none;
+  }
+
+  html.voct-motion .inv-ask .inv-ask-rubric::before,
+  html.voct-motion .inv-ask .inv-ask-rubric::after {
+    transform: scaleX(1);
+    transition: none;
+  }
+
+  .inv-notice .notice-blank-line::before {
+    transition: none;
+  }
+}

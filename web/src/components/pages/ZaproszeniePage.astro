@@ -24,7 +24,7 @@
  *  THE ASK IS THE LIST'S ISLAND IN THIS PAGE'S DRESS. `NoticeForm` is mounted here directly rather
  *  through `NoticeSignup`, whose rubric, Latin and headline are /koncerty's: here the rubric is the
  *  card's, the sentence is in the card's voice, and the blank and the act are the reply card's
- *  (`styles/zaproszenie.css`). What a consent record depends on is the same as on every other
+ *  (`styles/invitation-notice.css`). What a consent record depends on is the same as on every other
  *  placement: the clause and the act come from `nuntius.ts`, prepared by `chromeHtmlForIsland`,
  *  the promise and the receipt's hint from /koncerty's `notice.*`, and the screen is recorded as
  *  `web:zaproszenie`.
@@ -52,6 +52,7 @@ import { chromeHtmlForIsland } from "../../lib/islandCopy";
 import { pageCopy } from "../../lib/pageCopy";
 import { bleedPair, photoOptional } from "../../lib/photos";
 import "../../styles/invitation.css";
+import "../../styles/invitation-notice.css";
 import "../../styles/zaproszenie.css";
 import "../../styles/vault.css";
 
@@ -123,7 +124,7 @@ const hasHands = Boolean(handLeft && handRight);
   <Fragment slot="head">
     <meta name="robots" content="noindex,follow" />
     {/* Without JavaScript the island's server-rendered form cannot send; the address replaces it. */}
-    <noscript><style is:inline>.zap-card .notice-form { display: none; }</style></noscript>
+    <noscript><style is:inline>.inv-notice .notice-form { display: none; }</style></noscript>
   </Fragment>
 
   <a class="skip-link" href="#tresc">{ui.skipToContent}</a>
@@ -252,14 +253,14 @@ const hasHands = Boolean(handLeft && handRight);
     </div>
 
     {/* ── The ask, where the card prints its RSVP ── */}
-    <section class="zap-ask" aria-labelledby="zap-ask-heading">
-      <h2 id="zap-ask-heading" class="inv-rubric zap-rubric reveal">{copy.ask.rubric}</h2>
-      <p class="zap-say reveal" data-d="1">
-        <span class="zap-say-invitation">{copy.ask.invitation}</span>
-        <span class="zap-say-promise">{notice.lede}</span>
+    <section class="inv-ask" aria-labelledby="zap-ask-heading">
+      <h2 id="zap-ask-heading" class="inv-rubric inv-ask-rubric reveal">{copy.ask.rubric}</h2>
+      <p class="inv-say reveal" data-d="1">
+        <span class="inv-say-invitation">{copy.ask.invitation}</span>
+        <span class="inv-say-promise">{notice.lede}</span>
       </p>
-      <div class="zap-slot reveal" data-d="2">
-        <div class="inv-card zap-card notice-inner">
+      <div class="inv-slot reveal" data-d="2">
+        <div class="inv-card inv-notice notice-inner">
           <NoticeForm
             client:visible
             lang={lang}
