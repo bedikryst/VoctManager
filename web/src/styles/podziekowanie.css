@@ -605,6 +605,17 @@ html.voct-motion .pdz-folio:not(.is-in) :is(.pdz-incipit, .pdz-incipit-gloss) {
   margin-top: clamp(88px, 11vw, 144px);
 }
 
+/* The way to the concert page sits on the signature's axis, in balanced lines, and its link is
+   never split across two of them. */
+.pdz-close .pdz-text {
+  text-align: center;
+  text-wrap: balance;
+}
+
+.pdz-close .inv-link {
+  white-space: nowrap;
+}
+
 .pdz-sign {
   margin: clamp(36px, 4.4vw, 52px) 0 0;
   color: var(--inv-ink);

@@ -105,7 +105,7 @@ export const PODZIEKOWANIE = {
     /** What the concert page holds and this one does not, split around its link; the spaces are
         the strings', since the link sits between them with none of its own. */
     more: {
-      before: "Program z opisami utworów i pełny tekst Pieśni z przekładem znajdziesz ",
+      before: "Opisy utworów i pełny tekst Pieśni z przekładem znajdziesz ",
       link: "na stronie koncertu",
       after: ".",
     },
