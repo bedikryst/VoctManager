@@ -13,6 +13,9 @@ Altissimu, onnipotente, bon Signore…
 
 {{ copy.thanks }}
 
+{{ copy.donors }} {{ copy.donors_link }}:
+{{ donate_url }}
+
 {{ copy.otherwise }}
 {{ page_url }}
 

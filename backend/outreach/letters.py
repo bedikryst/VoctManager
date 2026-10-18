@@ -18,8 +18,11 @@ Sending is `manage.py send_notice_letter <slug>`. Each subscriber gets a letter 
 `NoticeLetterDelivery` records the hand-over, and a second run skips whoever has it.
 
 EVERY LETTER STAYS INSIDE THE LIST'S PROMISE — "we write only about concerts". A letter
-that asks for money, or announces anything that is not a concert, needs a consent nobody on
-this list has given. The donation door belongs on the concert page the letter links to.
+written to raise money, or announcing anything that is not a concert, needs a consent nobody
+on this list has given. Who made a concert possible is part of that concert: its letter may
+thank the donors as a fact of the evening and close that thanks on one linked phrase to the
+donation door. Never a button, a fundraising block or a letter of its own — the footer of
+every letter repeats the promise, and a button under it would break it in the same email.
 """
 from dataclasses import dataclass
 from typing import Any
@@ -69,6 +72,11 @@ class LetterCopy:
     photo_alts: tuple[str, str, str]
     #: To whoever came.
     thanks: str
+    #: To the donors, as a fact of this concert: what their support made possible. Ends on the
+    #: lead-in to the one invitation to join them, which `donors_link` completes.
+    donors: str
+    #: The linked phrase closing `donors`. It opens the concert page with the vault open.
+    donors_link: str
     #: To whoever could not come: what the page holds.
     otherwise: str
     #: The words under the last staff, which open the recording.
@@ -146,7 +154,7 @@ POCHWALA_STWORZENIA = Letter(
         NoticeLocale.FR: "/fr/koncerty/pochwala-stworzenia",
     },
     anchor="obrazy",
-    asset_rev=6,
+    asset_rev=7,
     copy={
         NoticeLocale.PL: LetterCopy(
             subject="Pochwała Stworzenia: zdjęcia i nagranie",
@@ -188,6 +196,12 @@ POCHWALA_STWORZENIA = Letter(
                 f"Śpiewało nam się inaczej niż na próbach, bo w{NBSP}ławkach siedzieli ludzie, "
                 "którzy przyszli posłuchać właśnie tej muzyki."
             ),
+            donors=(
+                "Koncert był otwarty dla wszystkich dzięki darczyńcom, którzy wspierają nasze "
+                f"Koncerty Duchowe. Im także bardzo dziękujemy. Jeśli chcesz dołączyć do{NBSP}ich "
+                "grona,"
+            ),
+            donors_link="serdecznie zapraszamy",
             otherwise=(
                 "Jeśli tym razem nie udało Ci się przyjść, na stronie koncertu są zdjęcia, "
                 f"program z{NBSP}opisami utworów i{NBSP}tekst Pieśni z{NBSP}przekładem."
@@ -253,6 +267,11 @@ POCHWALA_STWORZENIA = Letter(
                 "differently than we do in rehearsal, because there were people in the pews who "
                 "had come to hear this very music."
             ),
+            donors=(
+                "The concert was open to everyone thanks to the donors who support our Spiritual "
+                "Concerts, and we thank them warmly too. If you would like to join them,"
+            ),
+            donors_link="you are most welcome",
             otherwise=(
                 "If you could not come this time, the concert page has the photographs, the "
                 "programme with a note on each work, and the text of the Canticle with a "
@@ -317,6 +336,12 @@ POCHWALA_STWORZENIA = Letter(
                 "autrement qu’en répétition, parce que dans les bancs se trouvaient des gens "
                 "venus écouter précisément cette musique."
             ),
+            donors=(
+                "Le concert était ouvert à tous grâce aux donateurs qui soutiennent nos Concerts "
+                "Spirituels, et nous les remercions eux aussi de tout cœur. Si vous souhaitez "
+                "les rejoindre,"
+            ),
+            donors_link="nous vous y invitons chaleureusement",
             otherwise=(
                 "Si vous n’avez pas pu venir cette fois, vous trouverez sur la page du concert "
                 "les photographies, le programme avec une présentation de chaque œuvre et le "
@@ -363,7 +388,8 @@ def letter_context(
 
     The page link names its source in `ref`, the parameter Plausible reads as a visit's
     source, one value per letter so letters stay apart in the report. It sits BEFORE the
-    anchor: after it, it would be part of the fragment and never reach the analytics.
+    anchor: after it, it would be part of the fragment and never reach the analytics. The
+    donors' link adds `donate`, which opens the page's vault as it loads (VaultIsland).
     """
     base = settings.PUBLIC_SITE_URL.rstrip('/')
     copy = letter.copy[locale]
@@ -377,6 +403,7 @@ def letter_context(
         'greeting': copy.greeting.format(name=name) if name else copy.greeting_plain,
         'page_url': f"{page}?ref=nuntius-{letter.slug}#{letter.anchor}",
         'listen_url': f"{page}?ref=nuntius-{letter.slug}",
+        'donate_url': f"{page}?donate&ref=nuntius-{letter.slug}",
         'site_url': base,
         'asset_url': f"{base}/listy/{letter.slug}",
         'asset_query': f"?v={letter.asset_rev}",
