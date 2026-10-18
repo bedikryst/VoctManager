@@ -2761,17 +2761,23 @@
   #
   # The rehearsal is one frame from the second camera (its own grade, warmer and darker, which a
   # run of its own can carry): the ensemble before the high altar over pews still empty. The
-  # concert run is all landscape at 3:2 and twelve frames, so it hangs as four rows of three; a
-  # frame of any other aspect shifts the run's mean and drops every third landscape onto a row
-  # of its own (lib/galleryLayout), which is why -11, a portrait from the altar, is cut to 3:2
-  # rather than hung whole. That cut also keeps out the photographer in the aisle and the front
-  # rows, where single faces and children are recognisable. Names are keys rather than positions
-  # (the desk keys every alt by them), so a frame keeps its name when the order around it changes.
+  # concert run is fifteen frames, EVERY ONE LANDSCAPE AT 3:2, so it hangs as five rows of three
+  # and runs from the minutes before the walk-out to the group on the church steps. A frame of any other aspect
+  # shifts the run's mean and drops every third landscape onto a row of its own
+  # (lib/galleryLayout), which is why -11, a portrait from the altar, is cut to 3:2 rather than
+  # hung whole; a frame added here is cut to 3:2 or left out. That cut also keeps out the
+  # photographer in the aisle and the front rows, where single faces and children are
+  # recognisable. The concert frames are all in one grade, the brighter one the set was
+  # re-delivered in; a frame in the earlier grade shows as a seam inside its row. Names are keys
+  # rather than positions (the desk keys every alt by them), so a frame keeps its name when the
+  # order around it changes.
   #
   # -3 is the plate: the ensemble at the altar from the nave, a third of the frame's height. -4 is
   # also the landing's Imagines frame (data/landing/paths.ts). The list's letter on this concert
   # (backend/outreach) opens this gallery from a pair of the rehearsal and the concert taken from
   # one place in the aisle, and from the church seen from the altar: -8 and -11 are those frames.
+  # -17 is who stayed for the photograph on the steps, not the line-up (the conductor is not in
+  # it), so its alt names singers rather than the ensemble.
   #
   # No alt names an instrument beyond the violin; the concert's spec (§18) says why, and a frame
   # added here is checked against it first.
@@ -2780,7 +2786,6 @@
   - { img: kd-stworzenie-10, alt: "Śpiewacy VoctEnsemble wychodzą na koncert, widziani od tyłu; po prawej słuchacze w ławkach" }
   - { img: kd-stworzenie-11, alt: "Kościół Wszystkich Świętych w Warszawie widziany od ołtarza podczas koncertu: słuchacze w ławkach, w głębi chór nad wejściem" }
   - { img: kd-stworzenie-12, alt: "VoctEnsemble z dyrygentem śpiewa przed bocznym ołtarzem, widziany z ławek zza głów słuchaczy" }
-  - { img: kd-stworzenie-13, alt: "Śpiewacy VoctEnsemble na chórze kościoła, widziani od tyłu; przed nimi dyryguje Florent de Bazelaire" }
   - { img: kd-stworzenie-1, alt: "Florent de Bazelaire dyryguje śpiewakami na chórze kościoła, w głębi nawa i ołtarz główny" }
   - { img: kd-stworzenie-2, alt: "Śpiewaczka VoctEnsemble z nutami przy balustradzie chóru, w dole nawa kościoła" }
   - { img: kd-stworzenie-3, alt: "VoctEnsemble z dyrygentem przed ołtarzem głównym kościoła Wszystkich Świętych w Warszawie podczas koncertu Pochwała Stworzenia", plate: true }
@@ -2788,6 +2793,10 @@
   - { img: kd-stworzenie-5, alt: "Radu Ropotan na skrzypcach wśród śpiewaków VoctEnsemble, widok z góry" }
   - { img: kd-stworzenie-6, alt: "Śpiewaczka VoctEnsemble na pierwszym planie, za nią pozostali śpiewacy" }
   - { img: kd-stworzenie-7, alt: "Radu Ropotan gra na skrzypcach, w tle śpiewaczki VoctEnsemble" }
+  - { img: kd-stworzenie-14, alt: "Śpiewaczki VoctEnsemble w trakcie śpiewu, z lewej wyciągnięta ręka dyrygenta" }
+  - { img: kd-stworzenie-15, alt: "Śpiewacy VoctEnsemble z nutami pod krucyfiksem przy ołtarzu" }
+  - { img: kd-stworzenie-16, alt: "Śpiewaczki VoctEnsemble i Radu Ropotan uśmiechnięci po koncercie" }
+  - { img: kd-stworzenie-17, alt: "Śpiewacy VoctEnsemble i Radu Ropotan na schodach kościoła Wszystkich Świętych w Warszawie po koncercie" }
   programLede: "Dziesięć utworów, jedno lustro i bis"
   # The conductor's own edit of this paragraph, returned 14.09.2026 — so the arc is his reading in
   # his words, which is the one thing the page had been missing since the generated reflection came

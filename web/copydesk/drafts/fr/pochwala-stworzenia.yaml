@@ -284,7 +284,6 @@ concert.pochwala-stworzenia.gallery.kd-stworzenie-9.alt: "VoctEnsemble juste ava
 concert.pochwala-stworzenia.gallery.kd-stworzenie-10.alt: "Les chanteurs de VoctEnsemble entrent pour le concert, vus de dos ; à droite, le public dans les bancs"
 concert.pochwala-stworzenia.gallery.kd-stworzenie-11.alt: "L'église de Tous-les-Saints à Varsovie vue depuis l'autel pendant le concert : le public dans les bancs, au fond la tribune au-dessus de l'entrée"
 concert.pochwala-stworzenia.gallery.kd-stworzenie-12.alt: "VoctEnsemble et son chef chantent devant un autel latéral, vus depuis les bancs, par-dessus les têtes du public"
-concert.pochwala-stworzenia.gallery.kd-stworzenie-13.alt: "Les chanteurs de VoctEnsemble à la tribune, vus de dos, dirigés par Florent de Bazelaire"
 concert.pochwala-stworzenia.gallery.kd-stworzenie-1.alt: "Florent de Bazelaire dirige les chanteurs à la tribune, avec au fond la nef et le maître-autel"
 concert.pochwala-stworzenia.gallery.kd-stworzenie-2.alt: "Une chanteuse de VoctEnsemble, sa partition à la main, à la balustrade de la tribune, la nef en contrebas"
 concert.pochwala-stworzenia.gallery.kd-stworzenie-3.alt: "VoctEnsemble et son chef devant le maître-autel de l'église de Tous-les-Saints à Varsovie pendant le concert Louange de la Création"
@@ -292,6 +291,10 @@ concert.pochwala-stworzenia.gallery.kd-stworzenie-4.alt: "VoctEnsemble en demi-c
 concert.pochwala-stworzenia.gallery.kd-stworzenie-5.alt: "Radu Ropotan au violon parmi les chanteurs de VoctEnsemble, vu d'en haut"
 concert.pochwala-stworzenia.gallery.kd-stworzenie-6.alt: "Une chanteuse de VoctEnsemble au premier plan, les autres chanteurs derrière elle"
 concert.pochwala-stworzenia.gallery.kd-stworzenie-7.alt: "Radu Ropotan au violon, les chanteuses de VoctEnsemble derrière lui"
+concert.pochwala-stworzenia.gallery.kd-stworzenie-14.alt: "Des chanteuses de VoctEnsemble en train de chanter, à gauche le bras tendu du chef"
+concert.pochwala-stworzenia.gallery.kd-stworzenie-15.alt: "Des chanteurs de VoctEnsemble, partition en main, sous le crucifix près de l'autel"
+concert.pochwala-stworzenia.gallery.kd-stworzenie-16.alt: "Des chanteuses de VoctEnsemble et Radu Ropotan, souriants, après le concert"
+concert.pochwala-stworzenia.gallery.kd-stworzenie-17.alt: "Des chanteurs de VoctEnsemble et Radu Ropotan sur les marches de l'église de Tous-les-Saints à Varsovie, après le concert"
 
 # ── Programme · the works (`program.<i>.workHtml`, `ritornello.workHtml`) ─────────────────────
 # An original title stands exactly as written, a Polish original included ("Stoi lód na

@@ -246,7 +246,6 @@ concert.pochwala-stworzenia.gallery.kd-stworzenie-9.alt: "VoctEnsemble just befo
 concert.pochwala-stworzenia.gallery.kd-stworzenie-10.alt: "The singers of VoctEnsemble walking out for the concert, seen from behind; the audience in the pews on the right"
 concert.pochwala-stworzenia.gallery.kd-stworzenie-11.alt: "All Saints’ Church in Warsaw seen from the altar during the concert: the audience in the pews, the choir loft above the entrance beyond"
 concert.pochwala-stworzenia.gallery.kd-stworzenie-12.alt: "VoctEnsemble and its conductor singing before a side altar, seen from the pews over the listeners’ heads"
-concert.pochwala-stworzenia.gallery.kd-stworzenie-13.alt: "The singers of VoctEnsemble in the choir loft, seen from behind, with Florent de Bazelaire conducting them"
 concert.pochwala-stworzenia.gallery.kd-stworzenie-1.alt: "Florent de Bazelaire conducting the singers in the choir loft, the nave and the high altar beyond"
 concert.pochwala-stworzenia.gallery.kd-stworzenie-2.alt: "A VoctEnsemble singer with her score at the balustrade of the choir loft, the nave below"
 concert.pochwala-stworzenia.gallery.kd-stworzenie-3.alt: "VoctEnsemble with its conductor before the high altar of All Saints’ Church in Warsaw during the concert In Praise of Creation"
@@ -254,6 +253,10 @@ concert.pochwala-stworzenia.gallery.kd-stworzenie-4.alt: "VoctEnsemble in a half
 concert.pochwala-stworzenia.gallery.kd-stworzenie-5.alt: "Radu Ropotan on the violin among the singers of VoctEnsemble, seen from above"
 concert.pochwala-stworzenia.gallery.kd-stworzenie-6.alt: "A VoctEnsemble singer in the foreground, the other singers behind her"
 concert.pochwala-stworzenia.gallery.kd-stworzenie-7.alt: "Radu Ropotan playing the violin, singers of VoctEnsemble behind him"
+concert.pochwala-stworzenia.gallery.kd-stworzenie-14.alt: "Singers of VoctEnsemble mid-phrase, the conductor’s outstretched arm on the left"
+concert.pochwala-stworzenia.gallery.kd-stworzenie-15.alt: "Singers of VoctEnsemble with their scores beneath the crucifix by the altar"
+concert.pochwala-stworzenia.gallery.kd-stworzenie-16.alt: "Singers of VoctEnsemble and Radu Ropotan smiling after the concert"
+concert.pochwala-stworzenia.gallery.kd-stworzenie-17.alt: "Singers of VoctEnsemble and Radu Ropotan on the steps of All Saints’ Church in Warsaw after the concert"
 
 # ── Programme · the works (`program.<i>.workHtml`, `ritornello.workHtml`) ─────────────────────
 # An original title stands exactly as written, a Polish original included ("Stoi lód na

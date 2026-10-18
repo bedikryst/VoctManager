@@ -327,8 +327,13 @@ export const PATHS: readonly Path[] = [
     // the arc. `left` keeps every soprano and pushes the conductor to the edge — the worse trade.
     frame: "kd-stworzenie-4",
     frameMonth: "2026-10",
-    // NO LIFT AND NO DAMP: at the panel's crop and base grade it measures 0.386 lit-mean against
-    // 0.360–0.443 for the five graded panels above (geometric mean 0.403), so the arithmetic asks
-    // for 1.02, inside the noise. Mean saturation 0.20 sits inside the line as well.
+    // DAMPED, because the set arrives in a brightened grade: at the panel's crop and base grade
+    // the frame measures 0.589 lit-mean, 27.6% of its area above mid-luma, against 0.360–0.443
+    // for the five graded panels above (geometric mean 0.403). The 40% rule asks for 0.86, which
+    // still leaves it at 0.50 and brightest in the line, so it is capped like Hymn Poległym: 0.75
+    // is the highest lift that keeps it inside the line's band (0.441, 11.3% above mid-luma, level
+    // with Aeternam's 11.1%, p99 0.666). The grade's lifted shadows survive the damp, which is
+    // linear; only the overall level comes down.
+    frameLift: 0.75,
   },
 ];
