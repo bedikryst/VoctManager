@@ -1,11 +1,12 @@
 /**
  * @file invitation.css
- * @description The printed invitation's material, shared by the two pages cut from it: `/zaproszenie`
- *  (the invitation itself, opened on a screen) and `/rsvp` (its reply card alone). The rose paper and
- *  its grain, the plum ink, the cloud banks of the card's corners, the burst of light from its
- *  cover, the reply card lying on the sheet, the rubric between two hairlines, the writing line and
- *  the act. What each page composes from it lives in `styles/zaproszenie.css` and `styles/rsvp.css`,
- *  which each page imports after this one.
+ * @description The printed invitation's material, shared by the pages cut from it: `/zaproszenie`
+ *  (the invitation itself, opened on a screen), `/rsvp` (its reply card alone) and `/podziekowanie`
+ *  (the thanks after the concert). The rose paper and its grain, the plum ink, the cloud banks of
+ *  the card's corners, the burst of light from its cover, the reply card lying on the sheet, the
+ *  rubric between two hairlines, the writing line and the act. What each page composes from it
+ *  lives in `styles/zaproszenie.css`, `styles/rsvp.css` and `styles/podziekowanie.css`, which each
+ *  page imports after this one.
  *
  *  ONE FACE, SET HEAVIER THAN THE SITE SETS IT. The card is a serif object, so every word on the
  *  sheet is Cormorant; only the legal clauses stay in the reading sans, where small print belongs.
@@ -330,9 +331,11 @@ html.voct-motion .inv-rubric:not(.is-in)::after {
 
 /* ── The act ───────────────────────────────────────────────────────────────────
    A bar of the invitation's ink with the card's inner frame drawn on it, lettered in the card's
-   capitals. While the reply is on its way a band of light passes across it. */
+   capitals. While the reply is on its way a band of light passes across it. `.inv-act` is the
+   same bar on a link that leaves the sheet; the page that sets one says how wide it runs. */
 .rsvp-act,
-.inv-card .notice-act {
+.inv-card .notice-act,
+.inv-act {
   position: relative;
   display: block;
   width: 100%;
@@ -355,7 +358,8 @@ html.voct-motion .inv-rubric:not(.is-in)::after {
 }
 
 .rsvp-act::before,
-.inv-card .notice-act::before {
+.inv-card .notice-act::before,
+.inv-act::before {
   content: "";
   position: absolute;
   inset: 4px;
@@ -366,18 +370,21 @@ html.voct-motion .inv-rubric:not(.is-in)::after {
 
 /* The label is pulled back onto the axis by its own trailing tracking. */
 .rsvp-act > span,
-.inv-card .notice-act > span {
+.inv-card .notice-act > span,
+.inv-act > span {
   position: relative;
   padding-left: 0.24em;
 }
 
 .rsvp-act:hover:not(:disabled),
-.inv-card .notice-act:hover:not(:disabled) {
+.inv-card .notice-act:hover:not(:disabled),
+.inv-act:hover {
   background: var(--inv-ink-deep);
 }
 
 .rsvp-act:hover:not(:disabled)::before,
-.inv-card .notice-act:hover:not(:disabled)::before {
+.inv-card .notice-act:hover:not(:disabled)::before,
+.inv-act:hover::before {
   border-color: rgb(251 247 245 / 0.5);
 }
 

@@ -2734,7 +2734,8 @@
     - { role: "Organy", name: "Sebastian Kuczyński" }
   # The evening's forces as the panel confirms them: twelve singers, violin, organ.
   forces: { pl: "12 głosów · skrzypce · organy" }
-  # Roster consent: names cleared for concert pages ONLY (do not reuse elsewhere).
+  # Roster consent: names cleared for this concert's pages ONLY, its concert page and the thanks
+  # sent after it (/podziekowanie); do not reuse elsewhere.
   # Four families, as every roster on this site prints them. The programme splits each into I and
   # II, which at twelve voices leaves four groups of one name; within a family the names keep the
   # programme's order, I before II. Its „liderka” beside Karolina Grodecka is not carried: no

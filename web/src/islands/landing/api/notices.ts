@@ -44,7 +44,9 @@ export type NoticeSurface =
       without having gone looking for the list. */
   | "web:landing"
   /** The invitation to one concert opened on a screen, where the card prints its RSVP. */
-  | "web:zaproszenie";
+  | "web:zaproszenie"
+  /** The thank-you page sent after one concert to the guests its invitation reached. */
+  | "web:podziekowanie";
 
 /** The site's three locales, as the backend spells them. */
 export type NoticeLocale = "pl" | "en" | "fr";

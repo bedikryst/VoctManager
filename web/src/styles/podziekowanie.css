@@ -1,0 +1,637 @@
+/**
+ * @file podziekowanie.css
+ * @description `/podziekowanie`, the thanks sent after one concert: what the page composes from the
+ *  invitation's material (`styles/invitation.css`, imported first). The cover with the card's
+ *  hands and light; the Canticle's opening, with an empty chant staff over its first verse; the
+ *  recording's glyph; the thanks and the donors' act; one row of three photographs; the
+ *  programme's back page, the cast beside the acknowledgements; the signature. The list's
+ *  postscript is dressed by `styles/invitation-notice.css`.
+ *
+ *  THE HANDS ARE THE INVITATION'S, AT REST. Their geometry is `styles/zaproszenie.css`'s
+ *  (`.zap-touch`): the artwork's cut puts the fingertips at 49 % of the hands' height, and the gap
+ *  and the masks are the ones it measured. Nothing here moves them; the light between them
+ *  breathes as the material's own.
+ *
+ *  THE STAFF IS RULED, NOT PRINTED. Four hairlines of the ink, drawn in one after another from the
+ *  left when the figure comes into view (`.reveal-cue`, scripts/reveal.ts), and the verse and its
+ *  gloss settle under them once the last is drawn. Without motion the staff simply stands.
+ *
+ *  THE GLYPH IS DRAWN AGAIN FOR PAPER. `styles/excerpts.css` draws it for a photograph: paper ink, a
+ *  candle ring, a dark translucent disc, blur, and mono captions. On rose paper all of that
+ *  disappears, so here the ring and the triangle are the plum ink on the card's light, nothing is
+ *  blurred (the paper under it is flat), and the captions are Cormorant like every other word on
+ *  the sheet. The bar it raises keeps its own dress: night, with the concert's candle.
+ *
+ *  THE iOS BAND UNDER THE BAR. Safari keeps a strip below a fixed bar that shows the canvas, and
+ *  BaseLayout paints the canvas with `--edge-foot` once the footer is in view. On this sheet that
+ *  is the invitation's paper, which under the night bar would read as a rose strip; while the bar
+ *  stands the edge is night instead. BaseLayout reads the token when the footer crosses the
+ *  viewport's edge, so a bar raised or stopped with the footer already in view is picked up at the
+ *  next crossing.
+ *
+ *  THE PHOTOGRAPHS ARE PRINTS LYING ON THE SHEET, as the reply card does: a shadow and no frame.
+ *  Each is a button into the site's lightbox (`.shot-open`, styles/image-lightbox.css), whose
+ *  candle hover is redrawn here in the ink.
+ * @module styles/podziekowanie
+ */
+
+body.page-podziekowanie {
+  --edge-foot: var(--inv-paper);
+}
+
+body.page-podziekowanie:has(> .excerpts-bar:not([hidden])) {
+  --edge-foot: var(--night);
+}
+
+/* The sky dissolves into the same paper before the sheet's physical edge. */
+.pdz > .inv-sky {
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    #000 calc(100% - clamp(100px, 12vw, 160px)),
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    #000 calc(100% - clamp(100px, 12vw, 160px)),
+    transparent 100%
+  );
+}
+
+.pdz {
+  padding: 0 var(--gutter) clamp(96px, 10vw, 140px);
+}
+
+/* ── The cover ─────────────────────────────────────────────────────────────── */
+.pdz-cover {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 84vh;
+  min-height: 84svh;
+  padding: clamp(112px, 11vw, 140px) 0 clamp(32px, 5vw, 64px);
+  text-align: center;
+}
+
+/* The cover's sky: light gathered where the hands meet, spent before the cover ends so the page
+   below sits on plain paper. Bled to the window's edges past the sheet's gutters. */
+.pdz-cover::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: calc(50% - 50vw);
+  bottom: 0;
+  left: calc(50% - 50vw);
+  z-index: -1;
+  background: radial-gradient(
+    60% 46% at 50% 42%,
+    rgb(255 255 255 / 0.74),
+    rgb(255 255 255 / 0.24) 52%,
+    transparent 78%
+  );
+}
+
+.pdz-touch {
+  --hand-h: clamp(168px, 25vw, 360px);
+  --hand-gap: clamp(2px, 0.45vw, 8px);
+  position: relative;
+  isolation: isolate;
+  flex-shrink: 0;
+  width: 100vw;
+  height: var(--hand-h);
+}
+
+.pdz-hand {
+  position: absolute;
+  top: 0;
+  display: block;
+  width: auto;
+  height: 100%;
+  max-width: none;
+  user-select: none;
+}
+
+.pdz-hand-left {
+  right: calc(50% + var(--hand-gap));
+  -webkit-mask-image: linear-gradient(90deg, transparent 2%, #000 46%);
+  mask-image: linear-gradient(90deg, transparent 2%, #000 46%);
+}
+
+.pdz-hand-right {
+  left: calc(50% + var(--hand-gap));
+  -webkit-mask-image: linear-gradient(270deg, transparent 2%, #000 46%);
+  mask-image: linear-gradient(270deg, transparent 2%, #000 46%);
+}
+
+/* The light between the fingertips. */
+.pdz-glow {
+  position: absolute;
+  top: 49%;
+  left: 50%;
+  z-index: -1;
+  width: calc(var(--hand-h) * 2.7);
+  aspect-ratio: 1;
+  translate: -50% -50%;
+  pointer-events: none;
+}
+
+.pdz-title {
+  --wght-rest: 460;
+  margin: clamp(26px, 3.6vw, 44px) 0 0;
+  padding-left: 0.075em;
+  color: var(--inv-ink-deep);
+  font-size: clamp(36px, 5.4vw, 74px);
+  font-weight: var(--wght-rest);
+  letter-spacing: 0.075em;
+  line-height: 1.06;
+  text-transform: uppercase;
+  text-wrap: balance;
+}
+
+.pdz-cover-line {
+  margin: 18px 0 0;
+  padding-left: 0.3em;
+  color: var(--inv-ink-soft);
+  font-size: clamp(14px, 1.25vw, 16px);
+  font-weight: 650;
+  letter-spacing: 0.3em;
+  line-height: 1.3;
+  text-transform: uppercase;
+}
+
+.pdz-cover-moment {
+  margin: 12px 0 0;
+  color: var(--inv-ink-soft);
+  font-size: clamp(17px, 1.5vw, 19px);
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  line-height: 1.4;
+  text-wrap: balance;
+}
+
+.pdz-cover-moment time {
+  white-space: nowrap;
+}
+
+/* ── Prose ─────────────────────────────────────────────────────────────────────
+   Every paragraph keeps one reading measure, centred on the sheet. */
+.pdz-text {
+  max-width: 32em;
+  margin: 0 auto;
+  color: var(--inv-text);
+  font-size: clamp(20px, 1.8vw, 22px);
+  font-weight: 500;
+  line-height: 1.6;
+  text-wrap: pretty;
+}
+
+.pdz-text + .pdz-text {
+  margin-top: 0.9em;
+}
+
+/* ── The Canticle ──────────────────────────────────────────────────────────── */
+.pdz-canticle {
+  margin-top: clamp(24px, 4vw, 56px);
+}
+
+.pdz-folio {
+  max-width: 34em;
+  margin: clamp(48px, 6vw, 80px) auto;
+  text-align: center;
+}
+
+.pdz-staff {
+  display: grid;
+  gap: clamp(10px, 1.1vw, 13px);
+  width: 100%;
+}
+
+.pdz-staff-line {
+  display: block;
+  height: 1px;
+  background: var(--inv-line-strong);
+  transform-origin: left center;
+}
+
+.pdz-incipit {
+  margin: clamp(22px, 2.6vw, 30px) 0 0;
+  color: var(--inv-ink);
+  font-size: clamp(26px, 3vw, 38px);
+  font-style: italic;
+  font-weight: 500;
+  line-height: 1.2;
+  text-wrap: balance;
+}
+
+.pdz-incipit p {
+  margin: 0;
+}
+
+.pdz-incipit-gloss {
+  margin: 12px 0 0;
+  color: var(--inv-muted);
+  font-size: 17px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  line-height: 1.4;
+}
+
+html.voct-motion .pdz-staff-line {
+  transition: transform 1.1s var(--ease-rule, var(--ease)) calc(var(--line) * 180ms);
+}
+
+html.voct-motion .pdz-folio:not(.is-in) .pdz-staff-line {
+  transform: scaleX(0);
+}
+
+html.voct-motion .pdz-incipit,
+html.voct-motion .pdz-incipit-gloss {
+  transition:
+    opacity 1.2s var(--ease) 1s,
+    transform 1.2s var(--ease) 1s;
+}
+
+html.voct-motion .pdz-incipit-gloss {
+  transition-delay: 1.3s;
+}
+
+html.voct-motion .pdz-folio:not(.is-in) :is(.pdz-incipit, .pdz-incipit-gloss) {
+  opacity: 0;
+  transform: translateY(8px);
+}
+
+/* ── The recording ─────────────────────────────────────────────────────────────
+   The glyph on paper; see the header. Hover inverts the disc to the act's ink, as the card's
+   act is a bar of that ink. */
+.pdz-listen {
+  display: flex;
+  justify-content: center;
+  margin: clamp(40px, 6vw, 64px) auto 0;
+}
+
+.pdz-listen .excerpts-glyph {
+  color: var(--inv-ink);
+}
+
+.pdz-listen .excerpts-glyph:focus-visible {
+  outline-color: var(--inv-ink);
+}
+
+.pdz-listen .excerpts-disc {
+  border-color: var(--inv-ink);
+  background: var(--inv-card);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  color: var(--inv-ink);
+}
+
+@media (hover: hover) {
+  .pdz-listen .excerpts-glyph:hover .excerpts-disc {
+    border-color: var(--inv-ink);
+    background: var(--inv-ink);
+    color: var(--inv-card);
+  }
+}
+
+.pdz-listen .excerpts-total {
+  color: var(--inv-ink-soft);
+  font-family: var(--serif);
+  font-size: 18px;
+  font-variant-numeric: lining-nums tabular-nums;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.pdz-listen .excerpts-title {
+  color: var(--inv-ink);
+  font-size: clamp(22px, 2vw, 25px);
+  font-weight: 500;
+}
+
+.pdz-listen .excerpts-source {
+  color: var(--inv-muted);
+  font-family: var(--serif);
+  font-size: 17px;
+  font-style: italic;
+  font-weight: 500;
+  letter-spacing: 0;
+  line-height: 1.3;
+  text-transform: none;
+}
+
+/* ── The thanks and the act ────────────────────────────────────────────────── */
+.pdz-thanks {
+  margin-top: clamp(72px, 9vw, 120px);
+}
+
+.pdz-give {
+  margin: clamp(32px, 4vw, 44px) 0 0;
+  text-align: center;
+}
+
+/* The material's act, shrink-wrapped to its words. */
+.pdz-act {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: auto;
+  max-width: 100%;
+  min-height: 56px;
+  margin: 0;
+  padding: 12px clamp(28px, 4vw, 44px);
+  text-decoration: none;
+}
+
+.pdz-act:focus-visible {
+  outline: 2px solid var(--inv-ink);
+  outline-offset: 4px;
+}
+
+/* ── The photographs ───────────────────────────────────────────────────────── */
+.pdz-photos {
+  max-width: 960px;
+  margin: clamp(72px, 9vw, 120px) auto 0;
+}
+
+.pdz-frames {
+  display: flex;
+  gap: clamp(8px, 1.2vw, 12px);
+}
+
+.pdz-frames .pdz-shot {
+  flex: var(--share) 1 0;
+  width: auto;
+  min-width: 0;
+}
+
+.pdz-photo {
+  display: block;
+  width: 100%;
+  height: auto;
+  background: rgb(var(--inv-shadow) / 0.08);
+  box-shadow:
+    0 1px 2px rgb(var(--inv-shadow) / 0.06),
+    0 22px 44px -30px rgb(var(--inv-shadow) / 0.4);
+}
+
+.pdz .shot-open:hover::after {
+  border-color: rgb(var(--inv-shadow) / 0.5);
+}
+
+.pdz .shot-open:focus-visible {
+  outline-color: var(--inv-ink);
+}
+
+.pdz-gallery {
+  margin: clamp(20px, 2.6vw, 28px) 0 0;
+  text-align: center;
+}
+
+.pdz-gallery .inv-door {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6em;
+  min-height: 44px;
+}
+
+.pdz-door-arrow {
+  display: inline-block;
+  letter-spacing: 0;
+  transition: transform 240ms var(--ease);
+}
+
+.pdz .inv-door:is(:hover, :focus-visible) .pdz-door-arrow {
+  transform: translateX(3px);
+}
+
+/* ── The programme's back page ─────────────────────────────────────────────────
+   The cast and the acknowledgements as two facing pages, divided by a hairline as the
+   invitation's spread is; one page under the other on a narrow sheet. */
+.pdz-back {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  max-width: 1000px;
+  margin: clamp(88px, 11vw, 144px) auto 0;
+}
+
+.pdz-back-page {
+  min-width: 0;
+  padding: 0 clamp(24px, 4vw, 56px);
+  text-align: center;
+}
+
+.pdz-back-page + .pdz-back-page {
+  border-left: 1px solid var(--inv-line);
+}
+
+/* A rubric whose hairlines give way before the word does, as the ask's do. */
+.pdz-rubric {
+  --rubric-tracking: 0.34em;
+  letter-spacing: var(--rubric-tracking);
+}
+
+.pdz-rubric::before,
+.pdz-rubric::after {
+  flex: 0 1 72px;
+  min-width: 0;
+}
+
+.pdz-rubric::after {
+  margin-left: calc(-1 * var(--rubric-tracking));
+}
+
+.pdz-roll {
+  margin: clamp(28px, 3.4vw, 40px) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pdz-roll-entry {
+  margin: 0;
+}
+
+.pdz-roll-entry + .pdz-roll-entry {
+  margin-top: 22px;
+}
+
+.pdz-roll-label {
+  padding-left: 0.26em;
+  color: var(--inv-ink-soft);
+  font-size: 13.5px;
+  font-weight: 650;
+  letter-spacing: 0.26em;
+  line-height: 1.3;
+  text-transform: uppercase;
+}
+
+.pdz-roll-names {
+  margin: 6px 0 0;
+  color: var(--inv-text);
+  font-size: clamp(19px, 1.6vw, 21px);
+  font-weight: 500;
+  line-height: 1.45;
+  text-wrap: balance;
+}
+
+.pdz-roll-name {
+  white-space: nowrap;
+}
+
+.pdz-roll-dot {
+  color: var(--inv-ink-soft);
+}
+
+/* The conductor closes the page, a grade up, as a programme bills him. */
+.pdz-roll-entry.pdz-roll-conductor {
+  margin-top: 34px;
+}
+
+.pdz-roll-conductor .pdz-roll-names {
+  color: var(--inv-ink);
+  font-size: clamp(23px, 2vw, 26px);
+  font-style: italic;
+}
+
+.pdz-credit-who {
+  display: block;
+  color: var(--inv-text);
+  font-size: clamp(19px, 1.6vw, 21px);
+  font-weight: 600;
+  line-height: 1.35;
+  text-wrap: balance;
+}
+
+.pdz-credit-for {
+  display: block;
+  margin-top: 4px;
+  color: var(--inv-muted);
+  font-size: 17px;
+  font-style: italic;
+  font-weight: 500;
+  line-height: 1.4;
+  text-wrap: balance;
+}
+
+/* ── The leave-taking ──────────────────────────────────────────────────────── */
+.pdz-close {
+  margin-top: clamp(88px, 11vw, 144px);
+}
+
+.pdz-sign {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: clamp(36px, 4.4vw, 52px) 0 0;
+  text-align: center;
+}
+
+.pdz-closing {
+  color: var(--inv-ink-soft);
+  font-size: clamp(19px, 1.6vw, 21px);
+  font-weight: 500;
+}
+
+.pdz-signature {
+  margin-top: 6px;
+  color: var(--inv-ink);
+  font-size: clamp(30px, 3vw, 38px);
+  font-style: italic;
+  font-weight: 500;
+  line-height: 1.15;
+}
+
+/* ── The postscript ────────────────────────────────────────────────────────── */
+.pdz-ask {
+  margin-top: clamp(80px, 10vw, 128px);
+}
+
+/* ── A narrower sheet ──────────────────────────────────────────────────────── */
+@media (max-width: 899px) {
+  .pdz-back {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 56px;
+    max-width: 38em;
+  }
+
+  .pdz-back-page {
+    padding: 0;
+  }
+
+  .pdz-back-page + .pdz-back-page {
+    padding-top: 48px;
+    border-top: 1px solid var(--inv-line);
+    border-left: 0;
+  }
+}
+
+@media (max-width: 719px) {
+  .pdz-frames {
+    flex-wrap: wrap;
+  }
+
+  .pdz-frames .pdz-shot-church {
+    flex-basis: 100%;
+  }
+}
+
+@media (max-width: 599px) {
+  .pdz-cover {
+    min-height: 74vh;
+    min-height: 74svh;
+  }
+
+  .pdz-text {
+    line-height: 1.55;
+  }
+
+  .pdz-rubric {
+    --rubric-tracking: 0.16em;
+    gap: 10px;
+  }
+}
+
+/* Gated on `html.voct-motion` like the material's own motion, for a preference changed after the
+   page has armed its motion. */
+@media (prefers-reduced-motion: reduce) {
+  html.voct-motion .pdz .inv-cloud,
+  html.voct-motion .pdz .inv-cloud.is-in,
+  html.voct-motion .pdz .inv-light {
+    animation: none;
+    transition: none;
+    opacity: 1;
+    transform: none;
+  }
+
+  html.voct-motion .pdz .inv-cloud {
+    translate: none;
+  }
+
+  html.voct-motion .pdz .reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+
+  html.voct-motion .pdz .pdz-rubric::before,
+  html.voct-motion .pdz .pdz-rubric::after {
+    transform: scaleX(1);
+    transition: none;
+  }
+
+  html.voct-motion .pdz-folio .pdz-staff-line,
+  html.voct-motion .pdz-folio:not(.is-in) .pdz-staff-line,
+  html.voct-motion .pdz-folio :is(.pdz-incipit, .pdz-incipit-gloss),
+  html.voct-motion .pdz-folio:not(.is-in) :is(.pdz-incipit, .pdz-incipit-gloss) {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+
+  html.voct-motion .pdz .pdz-door-arrow,
+  html.voct-motion .pdz .inv-door:is(:hover, :focus-visible) .pdz-door-arrow {
+    transform: none;
+    transition: none;
+  }
+}

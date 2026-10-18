@@ -31,6 +31,8 @@ NOTICE_SURFACES: list[str] = [
     #: The invitation to one concert opened on a screen (`/zaproszenie`), where the printed card
     #: asks for an RSVP. Its sentence is in the invitation's voice; the clause is the same one.
     'web:zaproszenie',
+    #: The thank-you page sent after one concert (`/podziekowanie`) to the guests it invited.
+    'web:podziekowanie',
 ]
 
 
