@@ -17,8 +17,8 @@
  *  forms with no grammatical gender, because the thanks and the list's own strings are written in
  *  it). The page is not the letter: the donors are asked by an act, not a link in the sentence; the
  *  acknowledgements and the cast stand as a programme prints them, from those the ensemble
- *  published after the concert; the letter's line about the next concert opens the list's ask,
- *  since these readers are not on the list yet.
+ *  published after the concert; the list's ask opens with an invitation of the page's own, since
+ *  these readers are not on the list yet.
  *
  *  THE ASK IS THE LIST'S, IN ITS OWN VOICE. The promise, the receipt and the errors are /koncerty's
  *  `notice.*` and `nuntius.ts`'s, already in "Ty", so only the sentence before them is written here.
@@ -112,8 +112,9 @@ export const PODZIEKOWANIE = {
   },
   ask: {
     rubric: "Zaproszenia",
-    invitation:
-      "Daty następnego koncertu jeszcze nie znamy. Zostaw adres, a napiszemy do Ciebie, kiedy ją ustalimy.",
+    /** Says what the list does for this reader and nothing about how little it sends: the scope
+        is the promise's under it (`notice.lede`), which the consent version records. */
+    invitation: "Zostaw adres, a zaprosimy Cię na kolejny koncert.",
     noscript: "Formularz wymaga JavaScriptu. Napisz do nas na adres",
     contactEmail: CONTACT_MAILBOX,
   },

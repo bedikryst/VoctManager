@@ -14,26 +14,26 @@
  *  - the thanks, the donors' sentences and the act that opens the donation vault in place
  *    (`data-vault-open`, `scripts/vault-triggers.ts`; its href, the landing's donation section,
  *    is the road without JS);
- *  - three photographs in one row — the rehearsal and the concert from one place in the aisle,
- *    then the church seen from the altar — each opening the site's lightbox as one set, with the
- *    door to the concert's gallery;
+ *  - four photographs, two over two: the rehearsal and the concert from one place in the aisle,
+ *    then the church seen from the altar and the ensemble on its steps afterwards, each opening
+ *    the site's lightbox as one set, with the door to the concert's gallery;
  *  - the programme's back page: the cast and the acknowledgements side by side; then the line for
  *    whoever could not come and the signature.
  *  The list follows as a postscript, `NoticeForm` in the invitation's dress
  *  (`styles/invitation-notice.css`) under its own screen value, `web:podziekowanie`.
  *
- *  THE INVITATION'S HANDS, AT REST. The guests opened the invitation on this cover, so the thanks
- *  opens on it too. Only the composed state is drawn: the reach, the breathing and their script
- *  (`scripts/invitation.ts`) belong to the invitation, and this page imports none of it. Reveal
- *  comes from BaseLayout.
+ *  THE INVITATION'S HANDS, REACHING AS THEY DID THERE. The guests opened the invitation on them,
+ *  so the thanks opens on them too, and only the word under the title differs
+ *  (`scripts/podziekowanie.ts` runs the entrance on the invitation's contract; the invitation's
+ *  own script and its breathing stay on /zaproszenie). Reveal comes from BaseLayout.
  *
  *  THE CAST IS THE CORPUS'S (`roster`, and the conductor from `credits`, as the concert page
  *  closes its Voces band), so a correction there reaches both pages. Its names are cleared for
  *  this concert's pages, and this is one of them.
  *
  *  EVERY PHOTOGRAPH IS OPTIONAL TO THE BUILD (`photoOptional`), being uploaded to the host by hand.
- *  The pair prints only when both of its files resolve, since one frame of it says nothing; the
- *  church prints on its own file. The glyph prints only when the recording is on the host
+ *  The pair prints only when both of its files resolve, since one frame of it says nothing; each
+ *  landscape prints on its own file. The glyph prints only when the recording is on the host
  *  (`lib/excerpts`). So open the page on the host before sending its link.
  *
  *  `noindex`, out of the sitemap and out of `TRANSLATED_ROUTES`, like `/zaproszenie`.
@@ -73,8 +73,10 @@ import "../../styles/vault.css";
 /** The pair, cut to one scale on the altar painting from the originals the letter's spread uses. */
 const PAIR_REHEARSAL = "kd-stworzenie-pair-rehearsal";
 const PAIR_CONCERT = "kd-stworzenie-pair-concert";
-/** The church seen from the altar: the gallery's own frame, as it hangs there. */
+/** The church seen from the altar, and the ensemble on its steps afterwards: the gallery's own
+    frames, as they hang there. */
 const CHURCH = "kd-stworzenie-11";
+const AFTER = "kd-stworzenie-17";
 /** The programme item whose text is the Canticle. */
 const CANTICLE_WORK = "Laudes creaturarum";
 /** The empty staff's lines: the four of the chant staff a scribe of the manuscript's time ruled. */
@@ -93,9 +95,12 @@ if (!date) throw new Error(`[podziekowanie] "${INVITATION_CONCERT_ID}" needs the
 const city = concert.venue?.split(",").at(-1)?.trim();
 const concertPath = `/koncerty/${INVITATION_CONCERT_ID}`;
 
-/* The church's alt is the gallery's, so the frame is described in one place. */
-const churchAlt = concert.gallery.find((shot) => shot.img === CHURCH)?.alt;
-if (!churchAlt) throw new Error(`[podziekowanie] "${CHURCH}" has no alt in the gallery of "${INVITATION_CONCERT_ID}".`);
+/* A gallery frame's alt is the gallery's, so the frame is described in one place. */
+const galleryAlt = (img: string): string => {
+  const alt = concert.gallery.find((shot) => shot.img === img)?.alt;
+  if (!alt) throw new Error(`[podziekowanie] "${img}" has no alt in the gallery of "${INVITATION_CONCERT_ID}".`);
+  return alt;
+};
 
 /* The Canticle's first verse, the one the manuscript rules its empty lines over, and its gloss:
    the first line of each, without the comma the verse runs on with. */
@@ -128,32 +133,37 @@ const candle = candleFrom(concert.accent);
 const churchImg = photoOptional(CHURCH);
 const ogImage = (await getImage({ src: churchImg ?? hero.desktop, width: 1200, format: "webp" })).src;
 
-/* One row of three at one height, each frame as wide as its share of the row (its aspect ratio);
-   below 720px the pair keeps the first line and the church takes the second. The row's column is
-   960px, inside the sheet's gutter (max(28px, 5vw)) below that. Each frame opens the lightbox
-   with the whole photograph, the three as one set, and an exit to the concert's gallery. */
+/* Two columns, four frames read in order: the pair (before, during) over the two landscapes (the
+   listeners seen from the altar, the ensemble after). Below 600px each landscape takes the whole
+   line. The grid is 720px, inside the sheet's gutter (max(28px, 5vw)) below 800px. Each frame
+   opens the lightbox with the whole photograph, the four as one set, and an exit to the concert's
+   gallery. */
 const PAIR_ASPECT = 4 / 5;
-const CHURCH_ASPECT = 3 / 2;
-const PAIR_SIZES = "(min-width: 1067px) 248px, (min-width: 720px) 23vw, calc(50vw - 32px)";
-const CHURCH_SIZES = "(min-width: 1067px) 464px, (min-width: 720px) 44vw, calc(100vw - 56px)";
-const frame = async (img: ImageMetadata, aspect: number, widths: readonly number[], sizes: string, alt: string) => ({
-  thumb: await croppedShot(img, { aspect, widths }),
+const WIDE_ASPECT = 3 / 2;
+const PAIR_SIZES = "(min-width: 800px) 354px, (min-width: 600px) calc(45vw - 6px), calc(50vw - 32px)";
+const WIDE_SIZES = "(min-width: 800px) 354px, (min-width: 600px) calc(45vw - 6px), calc(100vw - 56px)";
+const frame = async (img: ImageMetadata, wide: boolean, alt: string) => ({
+  thumb: await croppedShot(
+    img,
+    wide ? { aspect: WIDE_ASPECT, widths: [360, 540, 720, 1080] } : { aspect: PAIR_ASPECT, widths: [360, 540, 720] },
+  ),
   full: await framedShot(img),
-  share: aspect,
-  sizes,
+  sizes: wide ? WIDE_SIZES : PAIR_SIZES,
   alt,
-  church: aspect === CHURCH_ASPECT,
+  wide,
 });
 const rehearsalImg = photoOptional(PAIR_REHEARSAL);
 const concertImg = photoOptional(PAIR_CONCERT);
+const afterImg = photoOptional(AFTER);
 const shots = [
   ...(rehearsalImg && concertImg
     ? await Promise.all([
-        frame(rehearsalImg, PAIR_ASPECT, [320, 480, 640, 960], PAIR_SIZES, copy.photos.rehearsalAlt),
-        frame(concertImg, PAIR_ASPECT, [320, 480, 640, 960], PAIR_SIZES, copy.photos.concertAlt),
+        frame(rehearsalImg, false, copy.photos.rehearsalAlt),
+        frame(concertImg, false, copy.photos.concertAlt),
       ])
     : []),
-  ...(churchImg ? [await frame(churchImg, CHURCH_ASPECT, [480, 640, 960, 1280], CHURCH_SIZES, churchAlt)] : []),
+  ...(churchImg ? [await frame(churchImg, true, galleryAlt(CHURCH))] : []),
+  ...(afterImg ? [await frame(afterImg, true, galleryAlt(AFTER))] : []),
 ];
 
 /* The cast in the order a programme's back page sets it: the voices, the instruments, and the
@@ -209,7 +219,7 @@ const hasHands = Boolean(handLeft && handRight);
     </div>
 
     {/* ── The cover ── */}
-    <header class="pdz-cover">
+    <header class="pdz-cover" data-entrance="waiting">
       <div class="pdz-touch" role={hasHands ? "img" : undefined} aria-label={hasHands ? ZAPROSZENIE.cover.hands : undefined} aria-hidden={hasHands ? undefined : "true"}>
         <span class="pdz-glow" aria-hidden="true">
           <span class="inv-light">
@@ -267,8 +277,7 @@ const hasHands = Boolean(handLeft && handRight);
             {shots.map((shot) => (
               <button
                 type="button"
-                class:list={["pdz-shot", "shot-open", { "pdz-shot-church": shot.church }]}
-                style={`--share: ${shot.share}`}
+                class:list={["pdz-shot", "shot-open", { "pdz-shot-wide": shot.wide }]}
                 data-image-open
                 data-image-group="pdz-photos"
                 data-image-src={shot.full.src}
@@ -376,4 +385,15 @@ const hasHands = Boolean(handLeft && handRight);
 <script>
   import "../../scripts/vault-triggers.ts";
   import "../../scripts/image-triggers.ts";
+  import { setupThanksCover } from "../../scripts/podziekowanie";
+
+  let dispose: (() => void) | undefined;
+  document.addEventListener("astro:page-load", () => {
+    dispose?.();
+    dispose = setupThanksCover();
+  });
+  document.addEventListener("astro:before-swap", () => {
+    dispose?.();
+    dispose = undefined;
+  });
 </script>

@@ -3,14 +3,23 @@
  * @description `/podziekowanie`, the thanks sent after one concert: what the page composes from the
  *  invitation's material (`styles/invitation.css`, imported first). The cover with the card's
  *  hands and light; the Canticle's opening, with an empty chant staff over its first verse; the
- *  recording's glyph; the thanks and the donors' act; one row of three photographs; the
+ *  recording's glyph; the thanks and the donors' act; four photographs, two over two; the
  *  programme's back page, the cast beside the acknowledgements; the signature. The list's
  *  postscript is dressed by `styles/invitation-notice.css`.
  *
- *  THE HANDS ARE THE INVITATION'S, AT REST. Their geometry is `styles/zaproszenie.css`'s
- *  (`.zap-touch`): the artwork's cut puts the fingertips at 49 % of the hands' height, and the gap
- *  and the masks are the ones it measured. Nothing here moves them; the light between them
- *  breathes as the material's own.
+ *  THE HANDS ARE THE INVITATION'S, AND THEY REACH AS THEY DID THERE. Their geometry and their
+ *  entrance are `styles/zaproszenie.css`'s (`.zap-touch`, `zap-reach`, `zap-dawn`): the artwork's
+ *  cut puts the fingertips on each image's inner edge at 49 % of its height, the gap and the masks
+ *  are the ones it measured, and `scripts/podziekowanie.ts` sets `data-entrance` on its contract.
+ *  The gap stays open. Closing it would turn Michelangelo's moment into the poster quotation of
+ *  it, and two separately cut images meeting edge to edge would show the seam. Without motion the
+ *  cover is simply composed.
+ *
+ *  THE COVER'S WORDS ARE LIFTED OVER THE HANDS' LAYER. `.pdz-touch` is positioned and isolated,
+ *  so its light (z-index -1) is trapped inside it, and a positioned box paints over the in-flow
+ *  blocks that follow it: the light, which overhangs the hands by far, would lie over the title.
+ *  The title, the word of thanks and the day are positioned at z-index 1 in the cover's own
+ *  stacking context, so the ink is always over the light.
  *
  *  THE STAFF IS RULED, NOT PRINTED. Four hairlines of the ink, drawn in one after another from the
  *  left when the figure comes into view (`.reveal-cue`, scripts/reveal.ts), and the verse and its
@@ -103,6 +112,13 @@ body.page-podziekowanie:has(> .excerpts-bar:not([hidden])) {
   height: var(--hand-h);
 }
 
+.pdz-title,
+.pdz-cover-line,
+.pdz-cover-moment {
+  position: relative;
+  z-index: 1;
+}
+
 .pdz-hand {
   position: absolute;
   top: 0;
@@ -113,19 +129,24 @@ body.page-podziekowanie:has(> .excerpts-bar:not([hidden])) {
   user-select: none;
 }
 
+/* Each hand is anchored at its fingertips, on its inner edge at 49 % of its height. */
 .pdz-hand-left {
+  --reach-from: -6%;
   right: calc(50% + var(--hand-gap));
+  transform-origin: 100% 49%;
   -webkit-mask-image: linear-gradient(90deg, transparent 2%, #000 46%);
   mask-image: linear-gradient(90deg, transparent 2%, #000 46%);
 }
 
 .pdz-hand-right {
+  --reach-from: 6%;
   left: calc(50% + var(--hand-gap));
+  transform-origin: 0% 49%;
   -webkit-mask-image: linear-gradient(270deg, transparent 2%, #000 46%);
   mask-image: linear-gradient(270deg, transparent 2%, #000 46%);
 }
 
-/* The light between the fingertips. */
+/* The light between the fingertips, as wide as the invitation's. */
 .pdz-glow {
   position: absolute;
   top: 49%;
@@ -135,6 +156,42 @@ body.page-podziekowanie:has(> .excerpts-bar:not([hidden])) {
   aspect-ratio: 1;
   translate: -50% -50%;
   pointer-events: none;
+}
+
+/* Gated on `html.voct-motion` (JS live, motion allowed): a reduced-motion or no-JS visitor gets
+   the cover composed, the hands at rest with the light between them. */
+html.voct-motion .pdz-cover[data-entrance="waiting"] :is(.pdz-hand, .pdz-glow img) {
+  opacity: 0;
+}
+
+html.voct-motion .pdz-cover[data-entrance="play"] .pdz-hand {
+  animation: pdz-reach 1.8s cubic-bezier(0.3, 0.1, 0.3, 1) both;
+}
+
+html.voct-motion .pdz-cover[data-entrance="play"] .pdz-glow img {
+  animation: pdz-dawn 1.8s cubic-bezier(0.3, 0.1, 0.3, 1) both;
+}
+
+@keyframes pdz-reach {
+  from {
+    opacity: 0;
+    transform: translateX(var(--reach-from));
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes pdz-dawn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 .pdz-title {
@@ -349,21 +406,19 @@ html.voct-motion .pdz-folio:not(.is-in) :is(.pdz-incipit, .pdz-incipit-gloss) {
   outline-offset: 4px;
 }
 
-/* ── The photographs ───────────────────────────────────────────────────────── */
+/* ── The photographs ───────────────────────────────────────────────────────────
+   Two columns of one width, so the portrait pair and the two landscapes under it share their
+   edges. */
 .pdz-photos {
-  max-width: 960px;
+  max-width: 720px;
   margin: clamp(72px, 9vw, 120px) auto 0;
 }
 
 .pdz-frames {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
   gap: clamp(8px, 1.2vw, 12px);
-}
-
-.pdz-frames .pdz-shot {
-  flex: var(--share) 1 0;
-  width: auto;
-  min-width: 0;
 }
 
 .pdz-photo {
@@ -566,17 +621,11 @@ html.voct-motion .pdz-folio:not(.is-in) :is(.pdz-incipit, .pdz-incipit-gloss) {
   }
 }
 
-@media (max-width: 719px) {
-  .pdz-frames {
-    flex-wrap: wrap;
-  }
-
-  .pdz-frames .pdz-shot-church {
-    flex-basis: 100%;
-  }
-}
-
 @media (max-width: 599px) {
+  .pdz-frames .pdz-shot-wide {
+    grid-column: 1 / -1;
+  }
+
   .pdz-cover {
     min-height: 74vh;
     min-height: 74svh;
@@ -606,6 +655,12 @@ html.voct-motion .pdz-folio:not(.is-in) :is(.pdz-incipit, .pdz-incipit-gloss) {
 
   html.voct-motion .pdz .inv-cloud {
     translate: none;
+  }
+
+  html.voct-motion .pdz-cover[data-entrance] :is(.pdz-hand, .pdz-glow img) {
+    animation: none;
+    opacity: 1;
+    transform: none;
   }
 
   html.voct-motion .pdz .reveal {
