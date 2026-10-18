@@ -14,9 +14,11 @@
  *  - the thanks, and under it the donors in a printed frame with the act that opens the donation
  *    vault in place (`data-vault-open`, `scripts/vault-triggers.ts`; its href, the landing's
  *    donation section, is the road without JS);
- *  - four photographs: the rehearsal and the concert from one place in the aisle side by side,
- *    then the church seen from the altar and the ensemble on its steps afterwards, each across
- *    the grid; each opens the site's lightbox as one set, with the door to the concert's gallery;
+ *  - six photographs: the rehearsal and the concert from one place in the aisle side by side,
+ *    the church full of listeners seen from the altar across the grid, the two hosts the
+ *    acknowledgements thank side by side under their names, and the ensemble on the church steps
+ *    afterwards across the grid; each opens the site's lightbox as one set, with the door to the
+ *    concert's gallery;
  *  - the list, `NoticeForm` in the invitation's dress (`styles/invitation-notice.css`) under its
  *    own screen value, `web:podziekowanie`. It stands high, straight after the photographs:
  *    these guests joining the list is what the page is for. The photographs between it and the
@@ -35,8 +37,8 @@
  *  reaches both pages. Its names are cleared for this concert's pages, and this is one of them.
  *
  *  EVERY PHOTOGRAPH IS OPTIONAL TO THE BUILD (`photoOptional`), being uploaded to the host by hand.
- *  The pair prints only when both of its files resolve, since one frame of it says nothing; each
- *  landscape prints on its own file. The glyph prints only when the recording is on the host
+ *  The pair and the hosts print only when both of their files resolve, since one frame of either
+ *  leaves a column empty; each frame across the grid prints on its own file. The glyph prints only when the recording is on the host
  *  (`lib/excerpts`). So open the page on the host before sending its link.
  *
  *  `noindex`, out of the sitemap and out of `TRANSLATED_ROUTES`, like `/zaproszenie`.
@@ -76,9 +78,14 @@ import "../../styles/vault.css";
 /** The pair, cut to one scale on the altar painting from the originals the letter's spread uses. */
 const PAIR_REHEARSAL = "kd-stworzenie-pair-rehearsal";
 const PAIR_CONCERT = "kd-stworzenie-pair-concert";
-/** The church seen from the altar, and the ensemble on its steps afterwards: the gallery's own
-    frames, as they hang there. */
-const CHURCH = "kd-stworzenie-11";
+/** The church seen from the altar, cut taller than the gallery's 3:2 from the same file, so the
+    vault, the organ and every row of listeners stand in one frame. The alt is the gallery frame's. */
+const CHURCH = "kd-stworzenie-listeners";
+const CHURCH_GALLERY = "kd-stworzenie-11";
+/** The director of POLMIC, who introduced the concert, and the festival's organiser: the gallery's
+    own frames, named by the gallery's captions. */
+const HOSTS = ["kd-stworzenie-38", "kd-stworzenie-39"] as const;
+/** The ensemble on the church steps afterwards: the gallery's own frame, as it hangs there. */
 const AFTER = "kd-stworzenie-17";
 /** The programme item whose text is the Canticle. */
 const CANTICLE_WORK = "Laudes creaturarum";
@@ -102,12 +109,14 @@ if (!date) throw new Error(`[podziekowanie] "${INVITATION_CONCERT_ID}" needs the
 const city = concert.venue?.split(",").at(-1)?.trim();
 const concertPath = `/koncerty/${INVITATION_CONCERT_ID}`;
 
-/* A gallery frame's alt is the gallery's, so the frame is described in one place. */
+/* A gallery frame's alt and caption are the gallery's, so the frame is described in one place. */
 const galleryAlt = (img: string): string => {
   const alt = concert.gallery.find((shot) => shot.img === img)?.alt;
   if (!alt) throw new Error(`[podziekowanie] "${img}" has no alt in the gallery of "${INVITATION_CONCERT_ID}".`);
   return alt;
 };
+const galleryCaption = (img: string): string | undefined =>
+  concert.gallery.find((shot) => shot.img === img)?.caption;
 
 /* The Canticle's first verse, the one the manuscript rules its empty lines over, and its gloss:
    the first line of each, without the comma the verse runs on with. */
@@ -136,41 +145,49 @@ const hero = bleedPair(concert.heroImg ?? concert.bg);
 const excerpts = await concertExcerpts(entry, lang, hero.desktop);
 const candle = candleFrom(concert.accent);
 
-/* A link pasted into a message shows the church full of listeners. */
-const churchImg = photoOptional(CHURCH);
-const ogImage = (await getImage({ src: churchImg ?? hero.desktop, width: 1200, format: "webp" })).src;
+/* A link pasted into a message shows the church full of listeners, in the gallery's landscape cut:
+   a preview card crops to landscape, and the tall cut would lose the pews to it. */
+const ogFrame = photoOptional(CHURCH_GALLERY);
+const ogImage = (await getImage({ src: ogFrame ?? hero.desktop, width: 1200, format: "webp" })).src;
 
-/* Four frames read in order: the pair (before, during) side by side, then each landscape across
-   both columns (the listeners seen from the altar, the ensemble after), so a missing landscape
-   never leaves a column empty. The grid is 720px, inside the sheet's gutter (max(28px, 5vw))
-   below 800px. Each frame opens the lightbox with the whole photograph, the four as one set, and
-   an exit to the concert's gallery. */
-const PAIR_ASPECT = 4 / 5;
+/* Six frames read in order: the pair (before, during) side by side; the listeners seen from the
+   altar across the grid at the pair's 4:5; the hosts side by side at 4:5, each over its name; the
+   ensemble afterwards across the grid at 3:2. A frame across the grid prints on its own file and a
+   frame in a column only with its neighbour, so no column is ever left empty. The grid is 720px,
+   inside the sheet's gutter (max(28px, 5vw)) below 800px. Each frame opens the lightbox with the
+   whole photograph, the six as one set, and an exit to the concert's gallery. */
+const PORTRAIT_ASPECT = 4 / 5;
 const WIDE_ASPECT = 3 / 2;
-const PAIR_SIZES = "(min-width: 800px) 354px, (min-width: 600px) calc(45vw - 6px), calc(50vw - 32px)";
-const WIDE_SIZES = "(min-width: 800px) 720px, (min-width: 560px) 90vw, calc(100vw - 56px)";
-const frame = async (img: ImageMetadata, wide: boolean, alt: string) => ({
-  thumb: await croppedShot(
-    img,
-    wide ? { aspect: WIDE_ASPECT, widths: [540, 720, 1080, 1440] } : { aspect: PAIR_ASPECT, widths: [360, 540, 720] },
-  ),
+const COLUMN_SIZES = "(min-width: 800px) 354px, (min-width: 600px) calc(45vw - 6px), calc(50vw - 32px)";
+const ACROSS_SIZES = "(min-width: 800px) 720px, (min-width: 560px) 90vw, calc(100vw - 56px)";
+const frame = async (img: ImageMetadata, across: boolean, aspect: number, alt: string, caption?: string) => ({
+  thumb: await croppedShot(img, { aspect, widths: across ? [540, 720, 1080, 1440] : [360, 540, 720] }),
   full: await framedShot(img),
-  sizes: wide ? WIDE_SIZES : PAIR_SIZES,
+  sizes: across ? ACROSS_SIZES : COLUMN_SIZES,
   alt,
-  wide,
+  caption,
+  across,
 });
 const rehearsalImg = photoOptional(PAIR_REHEARSAL);
 const concertImg = photoOptional(PAIR_CONCERT);
+const churchImg = photoOptional(CHURCH);
+const [introImg, organiserImg] = HOSTS.map((name) => photoOptional(name));
 const afterImg = photoOptional(AFTER);
 const shots = [
   ...(rehearsalImg && concertImg
     ? await Promise.all([
-        frame(rehearsalImg, false, copy.photos.rehearsalAlt),
-        frame(concertImg, false, copy.photos.concertAlt),
+        frame(rehearsalImg, false, PORTRAIT_ASPECT, copy.photos.rehearsalAlt),
+        frame(concertImg, false, PORTRAIT_ASPECT, copy.photos.concertAlt),
       ])
     : []),
-  ...(churchImg ? [await frame(churchImg, true, galleryAlt(CHURCH))] : []),
-  ...(afterImg ? [await frame(afterImg, true, galleryAlt(AFTER))] : []),
+  ...(churchImg ? [await frame(churchImg, true, PORTRAIT_ASPECT, galleryAlt(CHURCH_GALLERY))] : []),
+  ...(introImg && organiserImg
+    ? await Promise.all([
+        frame(introImg, false, PORTRAIT_ASPECT, galleryAlt(HOSTS[0]), galleryCaption(HOSTS[0])),
+        frame(organiserImg, false, PORTRAIT_ASPECT, galleryAlt(HOSTS[1]), galleryCaption(HOSTS[1])),
+      ])
+    : []),
+  ...(afterImg ? [await frame(afterImg, true, WIDE_ASPECT, galleryAlt(AFTER))] : []),
 ];
 
 /* The cast in the order a programme's back page sets it: the voices, the instruments, the music
@@ -281,28 +298,32 @@ const hasHands = Boolean(handLeft && handRight);
       </p>
     </div>
 
-    {/* ── Four photographs, and the door to the rest ── */}
+    {/* ── Six photographs, and the door to the rest ── */}
     {(shots.length > 0 || concert.hasPage) && (
       <section class="pdz-photos" aria-label={copy.photos.aria}>
         {shots.length > 0 && (
           <div class="pdz-frames reveal">
             {shots.map((shot) => (
-              <button
-                type="button"
-                class:list={["shot-open", { "pdz-shot-wide": shot.wide }]}
-                data-image-open
-                data-image-group="pdz-photos"
-                data-image-src={shot.full.src}
-                data-image-srcset={shot.full.srcset}
-                data-image-sizes={shot.full.sizes}
-                data-image-alt={shot.alt}
-                data-image-w={String(shot.full.width)}
-                data-image-h={String(shot.full.height)}
-                data-image-href={concert.hasPage ? `${concertPath}#obrazy` : undefined}
-                data-image-href-label={concert.hasPage ? copy.photos.gallery : undefined}
-              >
-                <img class="pdz-photo" src={shot.thumb.src} srcset={shot.thumb.srcset} sizes={shot.sizes} width={shot.thumb.width} height={shot.thumb.height} alt={shot.alt} loading="lazy" decoding="async" />
-              </button>
+              <figure class:list={["pdz-shot", { "pdz-shot-across": shot.across }]}>
+                <button
+                  type="button"
+                  class="shot-open"
+                  data-image-open
+                  data-image-group="pdz-photos"
+                  data-image-src={shot.full.src}
+                  data-image-srcset={shot.full.srcset}
+                  data-image-sizes={shot.full.sizes}
+                  data-image-alt={shot.alt}
+                  data-image-caption={shot.caption}
+                  data-image-w={String(shot.full.width)}
+                  data-image-h={String(shot.full.height)}
+                  data-image-href={concert.hasPage ? `${concertPath}#obrazy` : undefined}
+                  data-image-href-label={concert.hasPage ? copy.photos.gallery : undefined}
+                >
+                  <img class="pdz-photo" src={shot.thumb.src} srcset={shot.thumb.srcset} sizes={shot.sizes} width={shot.thumb.width} height={shot.thumb.height} alt={shot.alt} loading="lazy" decoding="async" />
+                </button>
+                {shot.caption && <figcaption class="pdz-shot-caption">{shot.caption}</figcaption>}
+              </figure>
             ))}
           </div>
         )}

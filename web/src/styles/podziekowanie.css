@@ -438,8 +438,9 @@ html.voct-motion .pdz-folio:not(.is-in) :is(.pdz-incipit, .pdz-incipit-gloss) {
 }
 
 /* ── The photographs ───────────────────────────────────────────────────────────
-   The portrait pair in two columns, each landscape across both, so every frame shares the grid's
-   edges and a landscape missing from the host leaves no empty column. */
+   Portraits in pairs across two columns, the listeners and the ensemble afterwards across both,
+   so every frame shares the grid's edges and a file missing from the host leaves no empty
+   column. Only the hosts carry a caption: their names are what the frames are there for. */
 .pdz-photos {
   max-width: 720px;
   margin: clamp(72px, 9vw, 120px) auto 0;
@@ -462,8 +463,21 @@ html.voct-motion .pdz-folio:not(.is-in) :is(.pdz-incipit, .pdz-incipit-gloss) {
     0 22px 44px -30px rgb(var(--inv-shadow) / 0.4);
 }
 
-.pdz-shot-wide {
+.pdz-shot {
+  margin: 0;
+}
+
+.pdz-shot-across {
   grid-column: 1 / -1;
+}
+
+.pdz-shot-caption {
+  margin: 12px 0 clamp(8px, 1.6vw, 16px);
+  color: var(--inv-ink-soft);
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.4;
+  text-wrap: balance;
 }
 
 .pdz .shot-open:hover::after {
