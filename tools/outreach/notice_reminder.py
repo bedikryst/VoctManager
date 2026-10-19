@@ -22,7 +22,7 @@ MODE (passed with -e MODE=...):
              so it also reaches anyone who confirmed since the previous run
   reconfirm  a fresh confirmation link to every PENDING address, once; it is the only mail a
              PENDING row licenses, so it never carries the concert
-EXCLUDE (-e EXCLUDE=a@x,b@y) leaves addresses out of `send`.
+EXCLUDE (-e EXCLUDE=a@x,b@y) leaves addresses out of `send` and `reconfirm`.
 
 The send logs live in the container's /tmp, so they last until the container is recreated.
 """
@@ -355,12 +355,16 @@ def test() -> None:
         print(f"test sent: {locale} -> {to}")
 
 
+def excluded() -> set[str]:
+    return {a.strip().lower() for a in os.environ.get("EXCLUDE", "").split(",") if a.strip()}
+
+
 def send() -> None:
     recipients = confirmed()
     check_languages(recipients)
     for row in recipients:
         render(row)
-    exclude = {a.strip().lower() for a in os.environ.get("EXCLUDE", "").split(",") if a.strip()}
+    exclude = excluded()
     log = load_log(SEND_LOG)
     queue = [r for r in recipients if log.get(r.email, {}).get("status") != "sent" and r.email not in exclude]
     print(f"{len(queue)} to send, {len(recipients) - len(queue)} already sent or excluded")
@@ -379,8 +383,12 @@ def send() -> None:
 
 def reconfirm() -> None:
     log = load_log(RECONFIRM_LOG)
+    exclude = excluded()
     pending = ConcertNoticeSubscription.objects.filter(status=NoticeStatus.PENDING).order_by("created_at")
     for row in pending:
+        if row.email in exclude:
+            print(f"excluded: {row.email}")
+            continue
         if row.email in log:
             print(f"already asked again: {row.email}")
             continue
