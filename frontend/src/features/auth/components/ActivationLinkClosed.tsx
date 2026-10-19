@@ -62,7 +62,7 @@ export const ActivationLinkClosed = ({
             variant="primary"
             size="lg"
             fullWidth
-            onClick={() => navigate("/login")}
+            onClick={() => navigate("/panel/login")}
           >
             {t("auth.activate.invalid.cta_login")}
           </Button>

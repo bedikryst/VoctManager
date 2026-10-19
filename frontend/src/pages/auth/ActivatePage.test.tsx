@@ -22,7 +22,7 @@ import ActivatePage from "./ActivatePage";
 
 const UID = "MQ";
 const TOKEN = "abc-def";
-const ACTIVATION_ROUTE = `/activate?uid=${UID}&token=${TOKEN}&lang=pl`;
+const ACTIVATION_ROUTE = `/panel/activate?uid=${UID}&token=${TOKEN}&lang=pl`;
 
 const PREVIEW_URL = "*/api/users/activate/preview/";
 const ACTIVATE_URL = "*/api/users/activate/";

@@ -1,6 +1,6 @@
 /**
  * @file collection.dto.ts
- * @description Wire contracts for the collection desk at `/redakcja/zbiorka`.
+ * @description Wire contracts for the collection desk at `/panel/redakcja/zbiorka`.
  * Mirrors `CollectionDeskView` in `backend/payments/views.py`. Every figure is
  * whole PLN; the public vault prints `total` against `goal ?? default_goal`.
  * @module features/copydesk/types/collection.dto

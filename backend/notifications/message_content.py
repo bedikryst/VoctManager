@@ -2407,9 +2407,9 @@ def _compose_announcement_pending(ctx: MessageContext) -> MessageContent:
     )
 
 
-#: The desk's reviewer entrance. Stage D owns the route tree (`/redakcja/*`);
+#: The desk's reviewer entrance. Stage D owns the route tree (`/panel/redakcja/*`);
 #: this is the address the nudge promises, so the two must agree.
-_COPY_DESK_REVIEW_URL = "/redakcja/przeglad"
+_COPY_DESK_REVIEW_URL = "/panel/redakcja/przeglad"
 
 def _locale_names(codes: Iterable[str]) -> str:
     """Bare locale codes rendered in the reader's language, in the site's order.

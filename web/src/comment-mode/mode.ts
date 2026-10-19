@@ -119,7 +119,7 @@ function signInUrl(param: string): string {
   back.searchParams.set(param, "");
   const next = `${back.pathname}${back.search}${back.hash}`;
   const origin = import.meta.env.DEV ? DEV_PANEL_ORIGIN : "";
-  return `${origin}/login?next=${encodeURIComponent(next)}`;
+  return `${origin}/panel/login?next=${encodeURIComponent(next)}`;
 }
 
 /** `row`'s proposal into the index's own row for the same field. */

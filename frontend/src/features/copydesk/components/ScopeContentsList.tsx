@@ -159,7 +159,7 @@ const ScopeRow = ({ scope, language }: ScopeRowProps): React.JSX.Element => {
           an editor is scanning for, so it keeps the full measure and the marks
           sit under it until there is room for both. */}
       <Link
-        to={`/redakcja/${scope.scope}`}
+        to={`/panel/redakcja/${scope.scope}`}
         className="flex flex-col gap-2 px-5 py-4 transition-colors hover:bg-ethereal-gold/8 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ethereal-gold/40 sm:flex-row sm:items-start sm:justify-between sm:gap-4"
       >
         <div className="flex min-w-0 flex-col gap-1.5">

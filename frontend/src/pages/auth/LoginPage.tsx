@@ -211,7 +211,7 @@ export default function LoginPage(): React.JSX.Element {
                 with the action it is not. */}
             <div className="mt-5 text-center">
               <Link
-                to="/reset-password"
+                to="/panel/reset-password"
                 className="text-ethereal-graphite underline decoration-ethereal-incense/40 underline-offset-4 transition-colors hover:text-ethereal-gold"
               >
                 <Text as="span" size="base" color="inherit">

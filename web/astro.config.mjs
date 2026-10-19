@@ -48,7 +48,7 @@ export default defineConfig({
   // where nginx serves site, panel and API together. The dev server hands those calls to the nginx
   // stack (`make up`, http://localhost) and rewrites `Origin` to it, because the dev trusted
   // origins do not include :4321. Cookies do not isolate ports, so a login at
-  // http://localhost/login also serves localhost:4321.
+  // http://localhost/panel/login also serves localhost:4321.
   vite: {
     server: {
       proxy: {

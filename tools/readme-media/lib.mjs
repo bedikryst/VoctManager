@@ -118,11 +118,12 @@ export async function login(browser, email, password) {
 async function freshLogin(browser, email, password) {
   const context = await browser.newContext(VIEWPORTS.desktop);
   const page = await context.newPage();
-  await page.goto(`${BASE}/login`);
+  await page.goto(`${BASE}/panel/login`);
   await page.locator('input[type="email"]').fill(email);
   await page.locator('input[type="password"]').fill(password);
   await Promise.all([
-    page.waitForURL(/\/panel/, { timeout: 30_000 }),
+    // The sign-in page is under /panel too, so wait for the URL to leave it.
+    page.waitForURL((url) => !url.pathname.startsWith("/panel/login"), { timeout: 30_000 }),
     page.locator('button[type="submit"]').click(),
   ]);
   const state = await context.storageState();

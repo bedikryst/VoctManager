@@ -133,7 +133,7 @@ reset-test-data:
 	bash infra/reset-test-data.sh $(ARGS)
 
 # ------------------------------------------------------------------
-# Copy desk — the loop between the repository and /redakcja
+# Copy desk — the loop between the repository and /panel/redakcja
 # ------------------------------------------------------------------
 # These four run in `web/`, not in a container: the desk's mirror is fed from a
 # CHECKOUT and written back to one, which is the whole shape of §3 (git stays
@@ -142,7 +142,7 @@ reset-test-data:
 # and fill the password in. The stack must be up AND migrated first; `make up`
 # applies no migrations.
 #
-#   make copy-sync    the corpus enters the desk. Until this has run, /redakcja
+#   make copy-sync    the corpus enters the desk. Until this has run, the desk
 #                     is empty — that is what its empty state is telling you.
 #                     Refuses a dirty web/src/content/.
 #   make copy-draft   the finished drafts become accepted proposals, EN then FR.

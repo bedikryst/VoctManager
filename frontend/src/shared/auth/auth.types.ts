@@ -58,7 +58,7 @@ export interface AuthProfile {
    */
   vocal_range_prompt_enabled?: boolean;
   /**
-   * The copy-desk capability (`/redakcja`). A capability and NOT a fourth role:
+   * The copy-desk capability (`/panel/redakcja`). A capability and NOT a fourth role:
    * the panel splits the world binarily into manager and not-manager, and an
    * editor of the public site's text is orthogonal to that split. Granted from
    * the Django admin, never by the account itself, which is why it is read-only

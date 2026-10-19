@@ -33,7 +33,7 @@ export interface VaultConfig {
     readonly patronInterest: string;
     /**
      * The collection figure: SETTLED gateway donations plus the offline tallies editors keep at
-     * `/redakcja/zbiorka`, with the goal and whether the sheet draws its fill rail.
+     * `/panel/redakcja/zbiorka`, with the goal and whether the sheet draws its fill rail.
      */
     readonly progress: string;
   };

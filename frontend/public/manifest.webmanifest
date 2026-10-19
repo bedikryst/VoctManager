@@ -4,7 +4,7 @@
   "description": "Panel chóru VoctEnsemble: harmonogram, nuty, Twoje partie i obecności — gotowe do ćwiczeń, także offline.",
   "id": "/panel",
   "start_url": "/panel",
-  "scope": "/",
+  "scope": "/panel",
   "display": "standalone",
   "display_override": ["standalone", "minimal-ui"],
   "background_color": "#060607",

@@ -116,7 +116,7 @@ class UserIdentityService:
             # Generate Activation Tokens
             payload = UserIdentityService.generate_activation_token_payload(user)
             activation_link = (
-                f"{settings.CORS_ALLOWED_ORIGINS[0]}/activate"
+                f"{settings.CORS_ALLOWED_ORIGINS[0]}/panel/activate"
                 f"?uid={payload['uidb64']}&token={payload['token']}&lang={language}"
             )
 
@@ -175,7 +175,7 @@ class UserIdentityService:
 
         payload = UserIdentityService.generate_activation_token_payload(user)
         activation_link = (
-            f"{settings.CORS_ALLOWED_ORIGINS[0]}/activate"
+            f"{settings.CORS_ALLOWED_ORIGINS[0]}/panel/activate"
             f"?uid={payload['uidb64']}&token={payload['token']}&lang={language}"
         )
 
@@ -293,7 +293,7 @@ class UserIdentityService:
                         "first_name": getattr(user, "first_name", ""),
                         "first_name_vocative": vocative,
                         "salutation": getattr(getattr(user, "profile", None), "salutation", "N"),
-                        "frontend_url": f"{settings.CORS_ALLOWED_ORIGINS[0]}/login",
+                        "frontend_url": f"{settings.CORS_ALLOWED_ORIGINS[0]}/panel/login",
                     },
                     fallback_language=fallback_lang,
                     email_type=EmailType.OPERATIONAL
@@ -324,7 +324,7 @@ class UserIdentityService:
 
         payload = UserIdentityService.generate_activation_token_payload(user)
         reset_link = (
-            f"{settings.CORS_ALLOWED_ORIGINS[0]}/reset-password"
+            f"{settings.CORS_ALLOWED_ORIGINS[0]}/panel/reset-password"
             f"?uid={payload['uidb64']}&token={payload['token']}"
         )
 

@@ -308,12 +308,17 @@ const PANEL_ROUTE_PRELOADERS: readonly DashboardRoutePreloader[] = [
  * (e.g. the Project Hub's unsaved-changes guard) — unavailable in declarative
  * routers.
  *
+ * Every route lives under `/panel`, which is also the PWA manifest's scope:
+ * anything outside it is the public site and must open there, not in the
+ * installed app. nginx redirects the SPA's older top-level addresses here.
+ *
  * Suspense strategy: EtherealLoader is panel-only.
- *  - Auth lazy routes (`/login`, `/activate`) and `/documents/*` suspend
- *    against this outer boundary with a `null` fallback, so no global spinner
- *    flashes on public auth or full-screen authed surfaces.
- *  - Only `/panel/*` lazy chunks resolve against the inner boundary that
- *    renders <EtherealLoader />.
+ *  - Auth lazy routes (`/panel/login`, `/panel/activate`) and
+ *    `/panel/documents/*` suspend against this outer boundary with a `null`
+ *    fallback, so no global spinner flashes on public auth or full-screen
+ *    authed surfaces.
+ *  - Only the dashboard tree's lazy chunks resolve against the inner boundary
+ *    that renders <EtherealLoader />.
  *
  * NO Google Maps provider lives on this route tree, deliberately. It used to
  * wrap <ProtectedRoute>, which loaded the Maps SDK for every authenticated
@@ -349,7 +354,7 @@ export const router = createBrowserRouter(
     <Route element={<RootLayout />} errorElement={<RouteErrorBoundary />}>
       <Route path="/" element={<Navigate to="/panel" replace />} />
       <Route
-        path="/login"
+        path="/panel/login"
         element={
           <PageTransition>
             <Login />
@@ -357,7 +362,7 @@ export const router = createBrowserRouter(
         }
       />
       <Route
-        path="/activate"
+        path="/panel/activate"
         element={
           <PageTransition>
             <Activate />
@@ -365,7 +370,7 @@ export const router = createBrowserRouter(
         }
       />
       <Route
-        path="/reset-password"
+        path="/panel/reset-password"
         element={
           <PageTransition>
             <ResetPassword />
@@ -373,14 +378,17 @@ export const router = createBrowserRouter(
         }
       />
       <Route
-        path="/legal/:type"
+        path="/panel/legal/:type"
         element={
           <PageTransition>
             <Legal />
           </PageTransition>
         }
       />
-      <Route path="/legal" element={<Navigate to="/legal/terms" replace />} />
+      <Route
+        path="/panel/legal"
+        element={<Navigate to="/panel/legal/terms" replace />}
+      />
 
       <Route element={<ProtectedRoute />}>
         <Route
@@ -485,17 +493,17 @@ export const router = createBrowserRouter(
         </Route>
 
         <Route
-          path="/documents/:docType/:docId"
+          path="/panel/documents/:docType/:docId"
           element={<DocumentViewerPage />}
         />
 
-        {/* `/redakcja/przeglad` is an address stage B already promised in three
-            places — the push, the digest e-mail's CTA and the bell's deep link
-            — so the tree owns it as well as its own front page. The desk's
-            shell gates the whole tree on one request and renders its own
-            Suspense inside the rail; nothing here belongs to <DashboardLayout>. */}
+        {/* `/panel/redakcja/przeglad` is an address promised in three places —
+            the push, the digest e-mail's CTA and the bell's deep link — so the
+            tree owns it as well as its own front page. The desk's shell gates
+            the whole tree on one request and renders its own Suspense inside
+            the rail; nothing here belongs to <DashboardLayout>. */}
         <Route
-          path="/redakcja"
+          path="/panel/redakcja"
           element={
             <Suspense fallback={<EtherealLoader />}>
               <CopyDeskShell />
@@ -509,14 +517,13 @@ export const router = createBrowserRouter(
           {/* A scope is a dotted key (`concert.wcielenie`), which is one path
               segment; the static routes above outrank it either way. */}
           <Route path=":scope" element={<CopyDeskScopePage />} />
-          <Route path="*" element={<Navigate to="/redakcja" replace />} />
+          <Route path="*" element={<Navigate to="/panel/redakcja" replace />} />
         </Route>
 
         {/* The finance workspace takes the screen over, so it is a sibling of
-            the panel tree rather than a child of <DashboardLayout>; the path
-            stays under `/panel`, where nginx and the service worker already
-            serve the app. Its shell gates the tree on the overview request and
-            suspends each section inside its own frame. */}
+            the panel tree rather than a child of <DashboardLayout>. Its shell
+            gates the tree on the overview request and suspends each section
+            inside its own frame. */}
         <Route element={<ManagerRoute />}>
           <Route
             path="/panel/finance"

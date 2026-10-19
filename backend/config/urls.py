@@ -216,7 +216,7 @@ urlpatterns = [
     path("api/logistics/", include("logistics.urls")),
 
     # --- Copy desk: the editorial surface over the public site's text ---
-    # The panel mounts these under its own /redakcja/* route tree, which takes
+    # The panel mounts these under its own /panel/redakcja/* route tree, which takes
     # over the shell rather than rendering as another tab.
     path("api/copydesk/", include("copydesk.urls")),
 

@@ -24,7 +24,7 @@ export default function LegalPage(): React.JSX.Element {
   const { t } = useTranslation();
 
   if (type !== "privacy" && type !== "terms") {
-    return <Navigate to="/legal/terms" replace />;
+    return <Navigate to="/panel/legal/terms" replace />;
   }
 
   const title =
@@ -42,7 +42,7 @@ export default function LegalPage(): React.JSX.Element {
         {/* Chrome — hidden on paper */}
         <div className="mb-10 flex items-center justify-between print:hidden">
           <Link
-            to="/login"
+            to="/panel/login"
             className="inline-flex items-center gap-2 text-ethereal-graphite transition-colors hover:text-ethereal-ink"
           >
             <ArrowLeft className="h-4 w-4" aria-hidden="true" />

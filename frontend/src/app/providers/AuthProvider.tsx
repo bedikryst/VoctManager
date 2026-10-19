@@ -112,7 +112,7 @@ export interface AuthContextType {
 export const AuthContext = createContext<AuthContextType | null>(null);
 
 /**
- * Identity probes must stay silent (no hard redirect to /login — the router
+ * Identity probes must stay silent (no hard redirect to /panel/login — the router
  * decides what an unauthenticated visitor sees) but they must NOT opt out of the
  * token refresh. This is the only request that establishes the session on a cold
  * start, and the access cookie lives 15 minutes against a 30-day refresh cookie:
@@ -300,14 +300,14 @@ export const AuthProvider = ({
       // device. The snapshot lives in IndexedDB, whose delete only becomes
       // durable when its transaction commits: awaited, because the navigation
       // below would otherwise be free to tear the page down mid-transaction.
-      // A failure must still land the user on /login — a stuck logout leaves
+      // A failure must still land the user on /panel/login — a stuck logout leaves
       // them signed in, which is the worse of the two outcomes.
       await clearPersistedQueryCache().catch(() => undefined);
       void clearAllOffline();
       // The tray entries and the app-icon count are this user's too. Awaited so
       // the navigation cannot cut it short; it never throws.
       await clearPushTray();
-      window.location.href = "/login";
+      window.location.href = "/panel/login";
     }
   };
 

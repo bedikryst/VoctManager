@@ -8,7 +8,7 @@
 ![Framer Motion v12](https://img.shields.io/badge/Framer_Motion_v12-black?logo=framer&logoColor=blue)
 ![TanStack Query v5](https://img.shields.io/badge/TanStack_Query_v5-FF4154?logo=react-query&logoColor=white)
 
-The authenticated SPA: the ERP panel at `/panel/*`, plus the auth flows at `/login`, `/activate` and `/documents/*`. Three things govern how it's written — Feature-Sliced Design boundaries, no layout shift during async loads, and all server state owned by TanStack Query rather than scattered across components.
+The authenticated SPA: the ERP panel, its auth flows (`/panel/login`, `/panel/activate`), the document viewer (`/panel/documents/*`) and the copy desk (`/panel/redakcja`), all under `/panel` — the installed PWA's scope, so every other address on the domain opens as the public site. Three things govern how it's written — Feature-Sliced Design boundaries, no layout shift during async loads, and all server state owned by TanStack Query rather than scattered across components.
 
 Working notes for whoever edits this directory. The project overview is in the [root README](../README.md).
 
@@ -103,7 +103,7 @@ Used **only** for global UI state that cannot reasonably live in URL or context:
 
 ## Routing & Code-Splitting
 
-The route table lives in [`app/App.tsx`](src/app/App.tsx) using **React Router v7**; access guards (`ProtectedRoute`, `ManagerRoute`) and idle panel-chunk preloaders live in [`app/router/`](src/app/router/). Every panel route is lazy-loaded behind a `<Suspense>` boundary that renders `<EtherealLoader>` — never a generic spinner. The auth routes (`/login`, `/activate`) and the full-screen `/documents/:docType/:docId` route resolve against an outer `<Suspense fallback={null}>` so the SaaS loader never flashes on those surfaces. Hitting `/` on the SPA build redirects to `/panel` — production nginx serves the Astro public site at `/` instead. This keeps the initial JS bundle small and guarantees a stable, on-brand loading state.
+The route table lives in [`app/App.tsx`](src/app/App.tsx) using **React Router v7**; access guards (`ProtectedRoute`, `ManagerRoute`) and idle panel-chunk preloaders live in [`app/router/`](src/app/router/). Every panel route is lazy-loaded behind a `<Suspense>` boundary that renders `<EtherealLoader>` — never a generic spinner. The auth routes (`/panel/login`, `/panel/activate`) and the full-screen `/panel/documents/:docType/:docId` route resolve against an outer `<Suspense fallback={null}>` so the SaaS loader never flashes on those surfaces. Hitting `/` on the SPA build redirects to `/panel` — production nginx serves the Astro public site at `/` instead. This keeps the initial JS bundle small and guarantees a stable, on-brand loading state.
 
 ---
 

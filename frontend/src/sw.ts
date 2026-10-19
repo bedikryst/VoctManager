@@ -336,28 +336,20 @@ registerRoute(
 // Boot offline: serve the precached APP shell for navigations to the panel SPA.
 // ALLOWLIST (not denylist) is critical — this SW is registered at scope "/", but
 // the marketing site (Astro) lives at "/", "/o-nas", "/koncerty"… on the SAME
-// origin. A denylist would make the app shell hijack those public pages. We
-// match exactly the routes nginx serves from the app build (`^~ /panel|/login|
-// /documents`), so the SW mirrors the server and also makes those routes immune
-// to any stale CDN/browser cache. Production-only (dev shell isn't precached).
+// origin. A denylist would make the app shell hijack those public pages. Every
+// SPA route lives under `/panel` — the auth flows, the document viewer and the
+// copy desk included — which is also the manifest's scope and the one prefix
+// nginx serves from the app build, so the SW mirrors the server and makes those
+// routes immune to any stale CDN/browser cache. Production-only (dev shell
+// isn't precached).
 //
-// KEEP THIS LIST AND NGINX'S `^~` BLOCKS IN STEP. They answer the same question in two
-// places, and a route added to one alone fails in exactly one direction: missing from
-// nginx, a cold load or a reload 404s into the marketing site; missing from here, the
-// same load fails offline while working online. `/redakcja` — the copy desk, which
-// replaces the panel shell and so has a route tree of its own — was missing from both.
+// A route outside `/panel` would fail three ways at once: nginx would serve the
+// marketing site on a cold load, this worker would not boot it offline, and the
+// installed app would open it as an out-of-scope page.
 if (import.meta.env.PROD) {
   registerRoute(
     new NavigationRoute(createHandlerBoundToURL("index.html"), {
-      allowlist: [
-        /^\/panel/,
-        /^\/redakcja/,
-        /^\/login/,
-        /^\/legal/,
-        /^\/activate/,
-        /^\/reset-password/,
-        /^\/documents\//,
-      ],
+      allowlist: [/^\/panel/],
     }),
   );
 }

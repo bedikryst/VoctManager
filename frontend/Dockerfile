@@ -4,7 +4,7 @@
 # ==========================================
 # Build context is the REPO ROOT (`context: .` in docker-compose.yml) so this
 # single Dockerfile can produce both frontends in one nginx image:
-#   • panel SPA      → /usr/share/nginx/html/app        (served at /panel, /login, /documents)
+#   • panel SPA      → /usr/share/nginx/html/app        (served at /panel/*, the PWA's whole scope)
 #   • Astro public  → /usr/share/nginx/html/marketing  (served at /, /koncerty, /o-nas, /kontakt, /polityka-prywatnosci)
 #
 # The public site needs `web/src/assets/photos/` and `web/src/assets/videos/`

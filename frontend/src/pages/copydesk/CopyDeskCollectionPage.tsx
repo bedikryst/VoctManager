@@ -1,6 +1,6 @@
 /**
  * @file CopyDeskCollectionPage.tsx
- * @description `/redakcja/zbiorka` — where the people who see the money arrive
+ * @description `/panel/redakcja/zbiorka` — where the people who see the money arrive
  * (Zrzutka, the bank statement, cash) bring the vault's collection figure up to
  * date themselves. Default export required for the lazy route.
  *
@@ -67,7 +67,7 @@ export default function CopyDeskCollectionPage(): React.JSX.Element {
               )}
               actions={
                 <Button variant="outline" size="sm" asChild>
-                  <Link to="/redakcja">{t("copy_desk.review.back", "Spis treści")}</Link>
+                  <Link to="/panel/redakcja">{t("copy_desk.review.back", "Spis treści")}</Link>
                 </Button>
               }
             />

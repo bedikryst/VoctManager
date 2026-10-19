@@ -1,6 +1,6 @@
 /**
  * @file CopyDeskScopePage.tsx
- * @description `/redakcja/:scope` — one page of the site, editable, in the
+ * @description `/panel/redakcja/:scope` — one page of the site, editable, in the
  * order it is read. Default export required for the lazy route.
  *
  * The surface is a column of the page's own text, not a table of keys: the
@@ -195,7 +195,7 @@ export default function CopyDeskScopePage(): React.JSX.Element {
             actions={
               <div className="flex flex-wrap items-center justify-center gap-2">
                 <Button variant="secondary" size="sm" asChild>
-                  <Link to="/redakcja">
+                  <Link to="/panel/redakcja">
                     {t("copy_desk.review.back", "Spis treści")}
                   </Link>
                 </Button>

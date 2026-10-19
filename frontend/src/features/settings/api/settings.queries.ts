@@ -133,7 +133,7 @@ export const useDeleteAccount = () => {
     mutationFn: (payload: DeleteAccountPayload) =>
       settingsService.deleteAccount(payload),
     onSuccess: () => {
-      window.location.href = "/login";
+      window.location.href = "/panel/login";
     },
   });
 };

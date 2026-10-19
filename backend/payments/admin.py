@@ -60,7 +60,7 @@ class PatronLeadAdmin(admin.ModelAdmin):
 
 class _CollectionReadOnlyAdmin(admin.ModelAdmin):
     """
-    The collection figure is edited only from `/redakcja/zbiorka`. An admin edit
+    The collection figure is edited only from `/panel/redakcja/zbiorka`. An admin edit
     would skip the revision a tally save writes, which is the trail that lets a
     hand-typed public figure go live unreviewed, so the admin only reads.
     """

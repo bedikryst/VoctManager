@@ -84,7 +84,7 @@ export const COMMAND_ACTIONS: readonly CommandActionDef[] = [
   },
   // One of two doorways into the desk; the other is the sidebar footer, beside
   // the settings and log-out that also leave the panel. Neither is a nav item,
-  // and that is the constraint: `/redakcja` takes the shell over, so a rail tab
+  // and that is the constraint: `/panel/redakcja` takes the shell over, so a rail tab
   // pointing at it would be a tab that closes the panel. The address editors
   // are given is a link; this is for the editor who is already inside.
   {
@@ -92,7 +92,7 @@ export const COMMAND_ACTIONS: readonly CommandActionDef[] = [
     labelKey: "dashboard.layout.command.actions.open_copy_desk",
     defaultLabel: "Redakcja tekstów serwisu",
     icon: PenLine,
-    to: "/redakcja",
+    to: "/panel/redakcja",
     scope: "copy_editor",
   },
 ] as const;

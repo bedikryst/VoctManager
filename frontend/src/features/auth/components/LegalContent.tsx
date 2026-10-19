@@ -3,7 +3,7 @@
  * @description Single source of truth for the legal documents: the version
  * identifier recorded at account activation and the section bodies of the
  * Privacy Policy and Terms of Service. Rendered by both the pre-login
- * LegalModal and the public printable /legal/:type page.
+ * LegalModal and the public printable /panel/legal/:type page.
  */
 
 import React from "react";

@@ -2,7 +2,7 @@
  * @file LegalModals.tsx
  * @description Pre-login modal shell for the Terms of Service and Privacy
  * Policy. Section bodies and the document version live in LegalContent.tsx
- * (shared with the public printable /legal/:type page).
+ * (shared with the public printable /panel/legal/:type page).
  *
  * It portals to `document.body`: `AuthShell` gives its header a higher stacking
  * order than the `<main>` this modal is rendered from, so an in-tree dialog let
@@ -49,7 +49,7 @@ export const LegalModal: React.FC<LegalModalProps> = ({
   // The modal itself has no print styling — the public page does. Open the
   // printable document view instead of window.print()ing the layered modal.
   const handleOpenPrintable = (): void => {
-    window.open(`/legal/${type}`, "_blank", "noopener");
+    window.open(`/panel/legal/${type}`, "_blank", "noopener");
   };
 
   const titleId = `legal-modal-${type}-title`;
@@ -68,7 +68,7 @@ export const LegalModal: React.FC<LegalModalProps> = ({
             aria-hidden="true"
           />
 
-          {/* Same width as the printable `/legal/:type` page: one document, one
+          {/* Same width as the printable `/panel/legal/:type` page: one document, one
               size, whichever way a member opens it. */}
           <div className="relative w-full max-w-3xl">
             <GlassCard

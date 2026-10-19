@@ -390,7 +390,7 @@ export const DesktopSidebar = ({
             />
 
             {/* The doorway to the copy desk, and the reason it is HERE and not
-                in the nav above: `/redakcja` takes the whole shell over, so a
+                in the nav above: `/panel/redakcja` takes the whole shell over, so a
                 rail item pointing at it would be a tab that closes the panel.
                 The footer is where the panel keeps what leaves it — settings,
                 log-out — and this belongs in that company. Gold outline rather
@@ -410,7 +410,7 @@ export const DesktopSidebar = ({
                 side="right"
               >
                 <Link
-                  to="/redakcja"
+                  to="/panel/redakcja"
                   aria-label={t(
                     "dashboard.layout.actions.copy_desk",
                     "Redakcja tekstów serwisu",

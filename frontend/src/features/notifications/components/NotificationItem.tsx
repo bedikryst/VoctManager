@@ -1036,7 +1036,7 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
       // nothing in that vocabulary, so it would type-check, render, and then
       // dead-end at /panel. The desk takes over the shell, so this leaves the
       // panel's route tree entirely.
-      return navigate("/redakcja/przeglad");
+      return navigate("/panel/redakcja/przeglad");
     }
     if (notification.notification_type === "REHEARSAL_DELEGATED") {
       // Needs its own branch ahead of the substring chain: the type contains

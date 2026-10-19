@@ -171,7 +171,7 @@ export default function ActivatePage(): React.JSX.Element {
                 variant="primary"
                 size="lg"
                 fullWidth
-                onClick={() => navigate("/login")}
+                onClick={() => navigate("/panel/login")}
               >
                 {t("auth.activate.success.go_to_login")}
               </Button>

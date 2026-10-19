@@ -188,7 +188,7 @@ class DonationProgressView(APIView):
 
 class CollectionDeskView(APIView):
     """
-    The collection desk under `/redakcja/zbiorka`: the offline tallies, the
+    The collection desk under `/panel/redakcja/zbiorka`: the offline tallies, the
     gateway half shown read-only beside them, the total the site prints, the goal
     and rail switch, and the last changes.
 

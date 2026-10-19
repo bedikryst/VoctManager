@@ -26,7 +26,7 @@ your upcoming projects, access sheet music, and review rehearsal schedules.
 {% translate "Stay up to date with rehearsal times, locations, and any last-minute changes." %}
 
 {% translate "Access Your Dashboard here:" %}
-{{ frontend_url|default:'https://voctensemble.com/login' }}
+{{ frontend_url|default:'https://voctensemble.com/panel/login' }}
 
 -----------------------------------------
 {% translate "If you experience any issues logging in, please reach out to the administration team." %}

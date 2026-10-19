@@ -91,7 +91,7 @@ export default function CopyDeskContentsPage(): React.JSX.Element {
               </Button>
               {contents.is_reviewer && (
                 <Button variant="secondary" size="sm" asChild>
-                  <Link to="/redakcja/przeglad">
+                  <Link to="/panel/redakcja/przeglad">
                     {waiting > 0
                       ? t("copy_desk.review.link_count", {
                           count: waiting,
@@ -111,7 +111,7 @@ export default function CopyDeskContentsPage(): React.JSX.Element {
                   asChild
                   leftIcon={<HandCoins size={14} aria-hidden="true" />}
                 >
-                  <Link to="/redakcja/zbiorka">
+                  <Link to="/panel/redakcja/zbiorka">
                     {t("copy_desk.collection.link", "Zbiórka")}
                   </Link>
                 </Button>

@@ -2,8 +2,8 @@
  * @file progress.ts
  * @description Donation progress from its one source, `/api/payments/donations/progress/`:
  *  SETTLED gateway (Axepta) donations plus the offline tallies (Zrzutka, bank transfers, other)
- *  that editors keep live at `/redakcja/zbiorka`, the goal, and whether the sheet draws the fill
- *  rail. The backend sums both halves, so the site never adds anything itself.
+ *  that editors keep live at `/panel/redakcja/zbiorka`, the goal, and whether the sheet draws
+ *  the fill rail. The backend sums both halves, so the site never adds anything itself.
  *  A failed request degrades to an empty figure with the rail off: the sheet then prints the
  *  "awaiting" line and the build-time goal, and never draws a rail it has no figure for.
  * @module features/landing/api/progress

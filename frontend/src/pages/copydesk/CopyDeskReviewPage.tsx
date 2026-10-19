@@ -1,6 +1,6 @@
 /**
  * @file CopyDeskReviewPage.tsx
- * @description `/redakcja/przeglad` — the reviewer's queue: everything an
+ * @description `/panel/redakcja/przeglad` — the reviewer's queue: everything an
  * editor is waiting on a verdict for, and the pile of decisions the repository
  * has not yet been told about. Default export required for the lazy route.
  *
@@ -102,7 +102,7 @@ export default function CopyDeskReviewPage(): React.JSX.Element {
 
   const backToContents = (
     <Button variant="outline" size="sm" asChild>
-      <Link to="/redakcja">{t("copy_desk.review.back", "Spis treści")}</Link>
+      <Link to="/panel/redakcja">{t("copy_desk.review.back", "Spis treści")}</Link>
     </Button>
   );
 
@@ -233,7 +233,7 @@ export default function CopyDeskReviewPage(): React.JSX.Element {
                   icon={<Icon size={15} strokeWidth={1.5} aria-hidden="true" />}
                   action={
                     <Button variant="ghost" size="sm" asChild>
-                      <Link to={`/redakcja/${group.scope}`}>
+                      <Link to={`/panel/redakcja/${group.scope}`}>
                         {t("copy_desk.queue.open_page", "Cała strona")}
                       </Link>
                     </Button>

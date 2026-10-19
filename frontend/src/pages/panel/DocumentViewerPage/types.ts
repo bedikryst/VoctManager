@@ -64,7 +64,7 @@ export const isDocumentDisplayHint = (
   );
 };
 
-const DOCUMENT_VIEWER_BASE = "/documents";
+const DOCUMENT_VIEWER_BASE = "/panel/documents";
 
 export const buildDocumentViewerPath = (
   descriptor: Pick<DocumentDescriptor, "type" | "id">,

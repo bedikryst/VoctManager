@@ -157,14 +157,14 @@ api.interceptors.response.use(
         // Only a refresh the server answered with 401 means the session is
         // over. One that got no answer — no signal, a timeout, a 5xx mid-deploy,
         // a 429 — leaves the session intact: the request fails like any other
-        // and the next one tries again. A hard navigation to /login here would
+        // and the next one tries again. A hard navigation to /panel/login here would
         // close whatever the member had open (a score on the stand) and, with no
         // signal, leave them on a login form they cannot submit.
         const sessionEnded =
           axios.isAxiosError(refreshError) && refreshError.response?.status === 401;
-        const isLoginRoute = window.location.pathname === "/login";
+        const isLoginRoute = window.location.pathname === "/panel/login";
         if (sessionEnded && !originalRequest.skipAuthRedirect && !isLoginRoute) {
-          window.location.href = "/login";
+          window.location.href = "/panel/login";
         }
 
         return Promise.reject(refreshError);

@@ -3,7 +3,7 @@
  * @description The copy desk's own shell — the second layout in the app, and a
  * takeover rather than a tab.
  *
- * Entering `/redakcja` replaces the panel's chrome outright: no sidebar, no nav
+ * Entering `/panel/redakcja` replaces the panel's chrome outright: no sidebar, no nav
  * dock, no command palette, no ambient dock. What remains is the ground the
  * panel is painted on and one rail carrying the two ways out of a room with no
  * other doors — a step back one level, and the panel itself. The desk composes
@@ -41,7 +41,7 @@ import { Eyebrow } from "@/shared/ui/primitives/typography";
 import { EtherealBackground } from "@/shared/ui/kinematics/EtherealBackground";
 import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
 
-/** What every page under `/redakcja` is handed, already loaded and gated. */
+/** What every page under `/panel/redakcja` is handed, already loaded and gated. */
 export interface CopyDeskOutletContext {
   readonly contents: CopyDeskContents;
 }
@@ -70,7 +70,7 @@ export const CopyDeskShell = (): React.JSX.Element => {
     return () => document.body.classList.remove("admin-mode");
   }, []);
 
-  const isDeskIndex = pathname.replace(/\/$/, "") === "/redakcja";
+  const isDeskIndex = pathname.replace(/\/$/, "") === "/panel/redakcja";
 
   return (
     <div className="relative flex min-h-screen w-full flex-col bg-transparent font-sans text-ethereal-ink antialiased">
@@ -103,7 +103,7 @@ export const CopyDeskShell = (): React.JSX.Element => {
           {isDeskIndex ? (
             <Link to="/panel">{t("copy_desk.back_to_panel", "Panel")}</Link>
           ) : (
-            <Link to="/redakcja">{t("copy_desk.review.back", "Spis treści")}</Link>
+            <Link to="/panel/redakcja">{t("copy_desk.review.back", "Spis treści")}</Link>
           )}
         </Button>
 

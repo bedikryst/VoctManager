@@ -104,7 +104,7 @@ export function VaultModal(): React.JSX.Element {
             <p className="vault-lede">{vault.head.lede}</p>
 
             <section className="vault-progress" aria-label={t.progressAria}>
-              {/* Switched by the editors at `/redakcja/zbiorka`; off whenever the figure is
+              {/* Switched by the editors at `/panel/redakcja/zbiorka`; off whenever the figure is
                   unavailable, so a failed request never draws an empty rail. */}
               {progress?.showRail && (
                 <div className="vault-progress-rail">

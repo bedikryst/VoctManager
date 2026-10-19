@@ -1889,7 +1889,7 @@ class NotificationWiringTests(TestCase):
         self.assertIn("Florent", content.title)
         self.assertIn("12", content.title)
         self.assertEqual(content.body, "Kontemplacja Wcielenia")
-        self.assertEqual(content.url_path, "/redakcja/przeglad")
+        self.assertEqual(content.url_path, "/panel/redakcja/przeglad")
         self.assertNotEqual(content.title, "Something new for you")
 
     def test_the_ledger_hides_the_row_from_a_non_staff_manager(self):

@@ -1,7 +1,7 @@
 """
 @file urls.py
 @description Copy desk routes, mounted under /api/copydesk/. The panel's own
-             route tree for this feature is `/redakcja/*` (a layout takeover, not
+             route tree for this feature is `/panel/redakcja/*` (a layout takeover, not
              a tab); these are the endpoints behind it.
 @module copydesk/urls
 """

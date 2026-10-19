@@ -452,13 +452,13 @@ export const MobileNavSheet = ({
             </div>
 
             {/* Same doorway as the desktop rail's footer, and here for the same
-                reason: `/redakcja` replaces the shell, so it belongs with what
+                reason: `/panel/redakcja` replaces the shell, so it belongs with what
                 leaves the panel rather than in the command list above. Gold
                 rather than the list's neutral rows — it is not one more place
                 inside the panel. */}
             {canEditSiteCopy(user) && (
               <NavLink
-                to="/redakcja"
+                to="/panel/redakcja"
                 onClick={onClose}
                 className="flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-ethereal-gold outline-none transition-colors hover:bg-ethereal-gold/10 focus-visible:ring-2 focus-visible:ring-ethereal-gold/40 active:scale-[0.99]"
               >

@@ -58,7 +58,7 @@ export default function ResetPasswordPage(): React.JSX.Element {
   const backToLogin = (
     <button
       type="button"
-      onClick={() => navigate("/login")}
+      onClick={() => navigate("/panel/login")}
       className="group mt-7 flex w-full items-center justify-center gap-2 border-t border-hairline pt-5 text-ethereal-graphite/70 transition-colors hover:text-ethereal-gold"
     >
       <ArrowLeft
@@ -86,7 +86,7 @@ export default function ResetPasswordPage(): React.JSX.Element {
                 variant="primary"
                 size="lg"
                 fullWidth
-                onClick={() => navigate("/login")}
+                onClick={() => navigate("/panel/login")}
               >
                 {t("auth.reset.go_to_login")}
               </Button>

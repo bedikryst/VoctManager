@@ -136,7 +136,7 @@ Each Astro island is a **separate React root** — context providers from one do
 Three endpoints are consumed:
 
 * **`POST /api/payments/donations/initiate/`** — Axepta hosted-link redirect. The Vault initiates the donation, the gateway returns `?donated=success|failure` and the result modal self-triggers.
-* **`GET /api/payments/donations/progress/`** — the Vault's campaign line: SETTLED gateway donations plus the offline tallies (Zrzutka, transfers, other) that editors keep at `/redakcja/zbiorka` in the panel, the goal, and whether the fill rail is drawn. Cached 60 s server-side; the Vault reads it once per page load.
+* **`GET /api/payments/donations/progress/`** — the Vault's campaign line: SETTLED gateway donations plus the offline tallies (Zrzutka, transfers, other) that editors keep at `/panel/redakcja/zbiorka`, the goal, and whether the fill rail is drawn. Cached 60 s server-side; the Vault reads it once per page load.
 * **`POST /api/contact/`** (since 2026-05-25) — public contact form (Django `contact` app). Currently surfaced as channels-only on `/kontakt`; form is pending a final RODO review.
 
 ---

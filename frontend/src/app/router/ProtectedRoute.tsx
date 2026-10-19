@@ -22,7 +22,7 @@ export default function ProtectedRoute(): React.JSX.Element {
 
   // Redirect unauthorized traffic to login, persisting target path for post-login redirection
   if (!isAuthenticated) {
-    return <Navigate to="/login" state={{ from: location }} replace />;
+    return <Navigate to="/panel/login" state={{ from: location }} replace />;
   }
 
   // Authentication confirmed, render the requested secure view
