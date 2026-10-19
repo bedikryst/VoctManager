@@ -23,6 +23,12 @@
  *  `navigateFromOverlay`, never a bare `<a>`: pushed on top of the overlay's own entry, the
  *  destination leaves a shadow entry that eats the first back press.
  *
+ *  A set may CLOSE ON A CODA (lib/imageFrame): one stop past the last frame, between it and the
+ *  first, holding the page's own sentence and its gift. It exists because the frame is where a
+ *  reader of a long gallery actually finishes it — closing the room puts them back at the frame
+ *  they pressed, which on a phone can be a dozen screens above the block that asks. The coda is a
+ *  stop in the lap and not a frame: the counter does not number it, and one more press walks on.
+ *
  *  It carries NO entrance register, and that is the rule rather than an omission: a register's
  *  half-lit rest state is justified by a node holding layout on a surface the reader is already
  *  looking at. This surface does not exist until it is asked for, so there is no hole to keep
@@ -89,17 +95,21 @@ export function ImageLightbox(): React.JSX.Element | null {
   const close = useCallback((): void => setSet(null), []);
   const isOpen = set !== null;
   const items = set?.items ?? NO_ITEMS;
-  const count = items.length;
-  const current = items[index];
-  const many = count > 1;
+  const coda = set?.coda;
+  const frames = items.length;
+  // The coda takes the index one past the last frame, so every lap of the set passes it once.
+  const stops = frames + (coda ? 1 : 0);
+  const atCoda = coda !== undefined && index === frames;
+  const current = atCoda ? undefined : items[index];
+  const many = stops > 1;
 
   // Wrapping is deliberate: a set is a line of frames from one evening (or one archive), and a
   // line the reader can fall off the end of asks them to remember where the end was.
   const go = useCallback(
     (delta: number): void => {
-      setIndex((i) => (count > 0 ? (i + delta + count) % count : 0));
+      setIndex((i) => (stops > 0 ? (i + delta + stops) % stops : 0));
     },
-    [count],
+    [stops],
   );
 
   // User-initiated close routes through `dismiss`: pop the entry we pushed on open (→ popstate →
@@ -140,25 +150,26 @@ export function ImageLightbox(): React.JSX.Element | null {
   // Both neighbours, so a walk in either direction is a repaint. Two files, asked for once each
   // per step, against a set whose whole point is that the visitor keeps pressing →.
   useEffect(() => {
-    if (!isOpen || count < 2) return;
-    warm(items[(index + 1) % count]);
-    warm(items[(index - 1 + count) % count]);
-  }, [isOpen, index, count, items]);
+    if (!isOpen || stops < 2) return;
+    warm(items[(index + 1) % stops]);
+    warm(items[(index - 1 + stops) % stops]);
+  }, [isOpen, index, stops, items]);
 
+  // End is the last PHOTOGRAPH: the key names the end of the set, and the coda is not in it.
   useEffect(() => {
-    if (!isOpen || count < 2) return;
+    if (!isOpen || stops < 2) return;
     const onKey = (event: KeyboardEvent): void => {
       if (event.metaKey || event.ctrlKey || event.altKey) return;
       if (event.key === "ArrowLeft") go(-1);
       else if (event.key === "ArrowRight") go(1);
       else if (event.key === "Home") setIndex(0);
-      else if (event.key === "End") setIndex(count - 1);
+      else if (event.key === "End") setIndex(frames - 1);
       else return;
       event.preventDefault();
     };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
-  }, [isOpen, count, go]);
+  }, [isOpen, stops, frames, go]);
 
   // History integration: open → push a hash-marked entry via ClientRouter's navigate() (see
   // overlayHistory.ts — a raw pushState made the router re-swap the whole document on back), so
@@ -190,7 +201,7 @@ export function ImageLightbox(): React.JSX.Element | null {
       const start = touchRef.current;
       touchRef.current = null;
       const touch = event.changedTouches[0];
-      if (!start || !touch || count < 2) return;
+      if (!start || !touch || stops < 2) return;
       const dx = touch.clientX - start.x;
       const dy = touch.clientY - start.y;
       if (Math.abs(dx) < SWIPE_MIN_PX || Math.abs(dx) < Math.abs(dy) * SWIPE_AXIS_BIAS) return;
@@ -198,7 +209,7 @@ export function ImageLightbox(): React.JSX.Element | null {
       // Carried leftwards means the next frame comes in from the right — the page's own direction.
       go(dx < 0 ? 1 : -1);
     },
-    [count, go],
+    [stops, go],
   );
 
   /** What the two halves call. A press the swipe already spent is swallowed here, once. */
@@ -223,7 +234,47 @@ export function ImageLightbox(): React.JSX.Element | null {
     void navigateFromOverlay("imageOpen", href);
   }, []);
 
-  if (!set || !current) return null;
+  // The coda's gift hands the reader to the vault, and the room has to be GONE first: two
+  // overlays open at once are two scroll locks and two focus traps, and the vault's entry pushed
+  // on top of this room's would strand a shadow that eats the first back press after the vault
+  // closes. So the room spends its own entry, and the vault opens once that traversal has landed.
+  // The link carries no `data-vault-open` for the same reason: scripts/vault-triggers listens in
+  // the document's capture phase, ahead of this handler, and would open the vault over the room.
+  const give = useCallback(
+    (event: React.MouseEvent<HTMLAnchorElement>): void => {
+      if (swipedRef.current) {
+        swipedRef.current = false;
+        event.preventDefault();
+        return;
+      }
+      if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+        return;
+      }
+      event.preventDefault();
+      const amount = coda?.amount;
+      const openVault = (): void => {
+        window.dispatchEvent(new CustomEvent("voct:open-vault", { detail: { amount } }));
+      };
+      if (!isOverlayEntry("imageOpen")) {
+        close();
+        openVault();
+        return;
+      }
+      const onLanded = (): void => {
+        if (isOverlayEntry("imageOpen")) return;
+        window.removeEventListener("popstate", onLanded);
+        openVault();
+      };
+      window.addEventListener("popstate", onLanded);
+      history.back();
+    },
+    [coda, close],
+  );
+
+  if (!set || (!current && !atCoda)) return null;
+  // The road out the stop offers: a frame's own, and on the coda the last frame's, which leaves
+  // the same evening by the same door.
+  const exit = current ?? items[frames - 1];
 
   return (
     <div className="image-lightbox" role="dialog" aria-modal="true" aria-label={t.dialogAria}>
@@ -258,7 +309,7 @@ export function ImageLightbox(): React.JSX.Element | null {
             onTouchStart={onTouchStart}
             onTouchEnd={onTouchEnd}
           >
-            {current.thumb && (
+            {current?.thumb && (
               <img
                 className="image-lightbox-thumb"
                 src={current.thumb}
@@ -270,23 +321,37 @@ export function ImageLightbox(): React.JSX.Element | null {
             {/* Keyed by src: without it React keeps the node and swaps the attribute, and the
                 previous photograph stays painted under a `loaded` flag that has already gone
                 false — a frame showing one image while the caption names another. */}
-            <img
-              key={current.src}
-              ref={imgRef}
-              className="image-lightbox-img"
-              src={current.src}
-              srcSet={current.srcset}
-              sizes={current.sizes}
-              width={current.width}
-              height={current.height}
-              alt={current.alt}
-              decoding="async"
-              onLoad={() => setLoaded(true)}
-              // A rendition that fails leaves the blurred ground standing over nothing. Turning
-              // the frame over anyway prints the browser's broken-image box and, with it, the alt
-              // — which is the only honest thing left to show.
-              onError={() => setLoaded(true)}
-            />
+            {current && (
+              <img
+                key={current.src}
+                ref={imgRef}
+                className="image-lightbox-img"
+                src={current.src}
+                srcSet={current.srcset}
+                sizes={current.sizes}
+                width={current.width}
+                height={current.height}
+                alt={current.alt}
+                decoding="async"
+                onLoad={() => setLoaded(true)}
+                // A rendition that fails leaves the blurred ground standing over nothing. Turning
+                // the frame over anyway prints the browser's broken-image box and, with it, the
+                // alt — which is the only honest thing left to show.
+                onError={() => setLoaded(true)}
+              />
+            )}
+            {/* The coda stands where the photograph stood, in a frame of the same rim, so the
+                halves over it still turn the set and the swipe still lands on the stage. Only the
+                gift rises above the halves (image-lightbox.css), which is why the card itself
+                must never become a stacking context. */}
+            {atCoda && coda && (
+              <div className="image-lightbox-coda">
+                <p className="image-lightbox-coda-line">{coda.line}</p>
+                <a className="image-lightbox-give" href={coda.giveHref} onClick={give}>
+                  {coda.giveLabel}
+                </a>
+              </div>
+            )}
             {many && (
               <>
                 {/* The two halves of the frame ARE the controls where there is a POINTER — a
@@ -329,14 +394,14 @@ export function ImageLightbox(): React.JSX.Element | null {
               Instrumented, because the question this exit was built to answer is whether it is
               used at all — the frame's dead end was found by reading the markup, and only a number
               says whether closing it changed anything. */}
-          {current.href && (
+          {exit?.href && (
             <div className="image-lightbox-foot">
               <a
                 className="image-lightbox-exit"
-                href={current.href}
+                href={exit.href}
                 onClick={leave}
               >
-                {current.hrefLabel ?? "Zobacz wieczór"} <span aria-hidden="true">→</span>
+                {exit.hrefLabel ?? "Zobacz wieczór"} <span aria-hidden="true">→</span>
               </a>
             </div>
           )}
@@ -351,17 +416,18 @@ export function ImageLightbox(): React.JSX.Element | null {
                 one COUNTS. /obrazy's own head authors both in one row — the evening's numeral in
                 roman beside "9 fot." in arabic — and this caption already prints a date in arabic
                 one line below. A position in a set of forty-eight is a count. */}
-            {many && (
+            {current && frames > 1 && (
               <span className="image-lightbox-count">
-                {index + 1} / {count}
+                {index + 1} / {frames}
               </span>
             )}
-            {current.caption && <span className="image-lightbox-place">{current.caption}</span>}
+            {current?.caption && <span className="image-lightbox-place">{current.caption}</span>}
             {/* Printed verbatim: the label belongs to the trigger, which is the only side that
                 knows whether this frame has a photographer, an outlet, or the ensemble itself
                 behind it (lib/photoCredit). */}
-            {current.credit && <span className="image-lightbox-credit">{current.credit}</span>}
-            {current.alt && <span className="sr-only">{current.alt}</span>}
+            {current?.credit && <span className="image-lightbox-credit">{current.credit}</span>}
+            {current?.alt && <span className="sr-only">{current.alt}</span>}
+            {atCoda && coda && <span className="sr-only">{coda.line}</span>}
           </figcaption>
         </figure>
       </div>

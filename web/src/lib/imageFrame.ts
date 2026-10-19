@@ -34,6 +34,11 @@
  *  Neither form reaches the island differently — both arrive as an `ImageFrameSet`, and the room
  *  cannot tell them apart, which is the property that keeps this an extension and not a mode.
  *
+ *  A GROUP MAY CLOSE ON A CODA, and only a group: an element carrying `data-image-coda` equal to
+ *  the group's name adds one stop after the last frame (`ImageFrameCoda`). It is declared on the
+ *  page's own block rather than on every trigger, because it belongs to the set and not to any
+ *  photograph in it.
+ *
  *  Types only, plus the two event names. Nothing here may import `astro:assets` or any other
  *  virtual module — `image-triggers.ts` is a browser script and pulls whatever this file pulls.
  * @module lib/imageFrame
@@ -70,10 +75,25 @@ export interface ImageFrameItem {
   readonly hrefLabel?: string;
 }
 
+/**
+ * What a set closes on, one stop past its last frame: a sentence and the gift it asks for. The
+ * page states it once, on the block it already prints under the photographs (`[data-image-coda]`,
+ * scripts/image-triggers), and the room repeats it where the reader who walked the whole set is.
+ */
+export interface ImageFrameCoda {
+  readonly line: string;
+  readonly giveLabel: string;
+  /** The no-JS road to the same vault, followed only by a modified click (a new tab). */
+  readonly giveHref: string;
+  /** The amount the vault opens on, as `data-vault-open` carries it. */
+  readonly amount?: number;
+}
+
 /** A set of photographs and which one was pressed. `index` is clamped by the island. */
 export interface ImageFrameSet {
   readonly items: readonly ImageFrameItem[];
   readonly index: number;
+  readonly coda?: ImageFrameCoda;
 }
 
 /** Trigger → island. Carries an `ImageFrameSet`. */

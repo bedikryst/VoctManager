@@ -6,7 +6,8 @@
  *  order — the whole document on /obrazy, one evening's gallery on a concert page. A trigger with
  *  no group publishes itself as a one-item set (lib/imageFrame states the contract), which is what
  *  every POSTER on the site does: one evening's announcement is not a member of a run, so the
- *  landing's band, each station on /koncerty and a concert page's coda each open alone.
+ *  landing's band, each station on /koncerty and a concert page's coda each open alone. A group
+ *  set also carries the stop it closes on, when the page declares one (`readCoda`).
  *
  *  One delegated listener on the document in the CAPTURE phase, as vault-triggers.ts uses:
  *  ClientRouter's own click handler sits on the document too (bubbling, registered earlier in
@@ -27,6 +28,7 @@
 import {
   IMAGE_READY_EVENT,
   OPEN_IMAGE_EVENT,
+  type ImageFrameCoda,
   type ImageFrameItem,
   type ImageFrameSet,
 } from "../lib/imageFrame";
@@ -84,6 +86,24 @@ const read = (el: HTMLElement): ImageFrameItem | null => {
 };
 
 /**
+ * The stop a group closes on, if its page declared one: the element whose `data-image-coda` names
+ * the group. On a concert page that element is the gift block printed under the photographs, so
+ * the room's last stop says nothing the page does not, and exists only where the page printed it.
+ * A declaration missing any of its three texts declares nothing.
+ */
+const readCoda = (group: string): ImageFrameCoda | undefined => {
+  for (const el of document.querySelectorAll<HTMLElement>("[data-image-coda]")) {
+    if (el.dataset.imageCoda !== group) continue;
+    const line = el.dataset.imageCodaLine;
+    const giveLabel = el.dataset.imageCodaGive;
+    const giveHref = el.dataset.imageCodaHref;
+    if (!line || !giveLabel || !giveHref) return undefined;
+    return { line, giveLabel, giveHref, amount: px(el.dataset.imageCodaAmount) };
+  }
+  return undefined;
+};
+
+/**
  * The set this press belongs to. Membership is `data-image-group`, order is the document's own,
  * which is also the order the reader sees — so ← and → move the way the page reads.
  *
@@ -112,7 +132,7 @@ const collect = (trigger: HTMLElement): ImageFrameSet => {
     if (el === trigger) index = items.length;
     items.push(item);
   }
-  return index < 0 ? alone : { items, index };
+  return index < 0 ? alone : { items, index, coda: readCoda(group) };
 };
 
 /** The full renditions already asked for, so an idle hand over a line of frames asks once. */

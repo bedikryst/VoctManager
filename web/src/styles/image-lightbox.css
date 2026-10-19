@@ -273,6 +273,90 @@
   outline-offset: -8px;
 }
 
+/* ── The coda ───────────────────────────────────────────────────────────────────
+   The stop a set closes on (islands/landing/ImageLightbox): the page's own sentence and its gift,
+   standing in the photograph's place and in the photograph's rim, so it reads as the last plate
+   of the set and not as a notice pinned over the room. Sized by itself, because there is no image
+   to size the stage: taller than it is wide, and capped by the viewport's height as the
+   photographs are.
+
+   NOT A STACKING CONTEXT, and that is load-bearing: the halves (z-index 2) lie over the whole
+   card so a press anywhere on it still turns the set, and the gift rises above them at z-index 3.
+   A transform, an opacity animation or a z-index on the card would trap the gift inside it, under
+   the halves, and the one control on the stop could not be pressed. The entrance therefore
+   animates the card's CHILDREN, never the card. */
+.image-lightbox-coda {
+  box-sizing: border-box;
+  width: min(30rem, 88vw);
+  min-height: min(60svh, 34rem);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(26px, 4vh, 36px);
+  padding: clamp(28px, 6vw, 56px) clamp(22px, 5vw, 48px);
+  text-align: center;
+  background: rgba(244, 241, 233, 0.025);
+  box-shadow:
+    0 0 0 1px rgba(244, 241, 233, 0.1),
+    0 40px 120px -40px rgba(0, 0, 0, 0.9);
+}
+
+.image-lightbox-coda > * {
+  animation: imageCodaIn 0.5s var(--ease, ease) both;
+}
+
+.image-lightbox-coda > * + * {
+  animation-delay: 0.12s;
+}
+
+.image-lightbox-coda-line {
+  margin: 0;
+  max-width: 20ch;
+  font-family: var(--serif);
+  font-style: italic;
+  font-weight: 300;
+  font-size: clamp(24px, 3vw, 32px);
+  line-height: 1.32;
+  letter-spacing: -0.005em;
+  color: rgba(244, 241, 233, 0.92);
+  text-wrap: balance;
+}
+
+/* The page's gift door (`.kd-ianua-give` on a concert page), redrawn here because a page's scoped
+   rules do not reach an island mounted outside its <main>. It wraps rather than overflows: the
+   French label is the widest and a narrow phone's card has no room to spare. */
+.image-lightbox-give {
+  position: relative;
+  z-index: 3;
+  display: inline-block;
+  max-width: 100%;
+  padding: 14px 24px;
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 400;
+  line-height: 1.35;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  text-wrap: balance;
+  color: var(--ink);
+  background: var(--candle);
+  border: 1px solid var(--candle);
+  transition:
+    background-color 0.4s var(--ease, ease),
+    color 0.4s var(--ease, ease);
+}
+
+.image-lightbox-give:hover {
+  background: transparent;
+  color: var(--candle);
+}
+
+.image-lightbox-give:focus-visible {
+  outline: 1px solid var(--candle);
+  outline-offset: 4px;
+}
+
 /* Three voices on one line, the rubric this site sets facts in: the count and the place in the
    inscriptional capital, the photographer in mono minuscule a grade quieter. The row is a live
    region and is always in the document, so its top margin has to survive being the margin of an
@@ -388,6 +472,11 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
+@keyframes imageCodaIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 /* On a phone the ✕ has no room above the frame — the photograph already starts near the top
    edge — so it moves under it, where the thumb is.
 
@@ -499,7 +588,8 @@
 
 @media (prefers-reduced-motion: reduce) {
   .image-lightbox-backdrop,
-  .image-lightbox-panel {
+  .image-lightbox-panel,
+  .image-lightbox-coda > * {
     animation: none;
   }
   /* The crossfade off the blurred ground goes too — but the two states must still SWAP, or the

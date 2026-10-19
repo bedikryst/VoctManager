@@ -1415,9 +1415,22 @@ const jsonLd =
               the line returns here, under the photographs: the reader who came for them has just
               seen what the gift paid for. The sentence is the band's own (the board's), unchanged;
               only the door names the evenings still to come. Before the evening the door band
-              asks, so this stays silent. */}
+              asks, so this stays silent.
+
+              The same block is the gallery's LAST STOP in the frame (`data-image-coda`,
+              scripts/image-triggers). A reader who walks the set in the lightbox closes it at the
+              photograph they pressed, which on a phone can be a dozen screens above this line, so the
+              room repeats it where they finish. It reads both texts off these attributes, so the
+              two cannot drift, and the stop exists only where this block is printed. */}
           {!unsung && c.admission === "free" && (
-            <div class="kd-gallery-gift reveal">
+            <div
+              class="kd-gallery-gift reveal"
+              data-image-coda="kd-gallery"
+              data-image-coda-line={ui.ianua.gift}
+              data-image-coda-give={ui.gallery.give}
+              data-image-coda-href={hrefDonate}
+              data-image-coda-amount="100"
+            >
               <p class="kd-gallery-gift-line">{ui.ianua.gift}</p>
               <a class="kd-ianua-give kd-gallery-give" href={hrefDonate} data-vault-open="100">{ui.gallery.give}</a>
             </div>
