@@ -1,8 +1,8 @@
 /**
  * @file excerpts.css
  * @description The excerpts player (islands/landing/excerpts/ExcerptsPlayer.tsx): the glyph that
- *  stands on the concert hero, and the bar it raises at the foot of the viewport (current work,
- *  progress, elapsed / total, play/pause, stop). Global, because
+ *  stands on the concert hero, and the bar it raises at the foot of the viewport (a timeline cut
+ *  into one segment per work, current work, elapsed / total, play/pause, stop). Global, because
  *  the bar is portalled to <body> and carries no Astro scope.
  *
  *  THE GLYPH speaks vplayer's play affordance (`.vplayer-btn`): a 1px candle ring around a
@@ -11,9 +11,10 @@
  *  paint while the hero's copy inks around it.
  *
  *  THE BAR APPEARS. It is `hidden` until the first press and shown in one frame: no slide from the
- *  edge, no fade from zero (§5). Nothing in it moves except the playhead, which is the state it
- *  reports. The chapter strip jumps when the work turns, because a strip that glided would be the
- *  bar animating its own furniture.
+ *  edge, no fade from zero (§5). Nothing in it moves on its own except the playhead, which is the
+ *  state it reports. The segment of the work now sounding lights in one step when the work turns,
+ *  because a light that glided would be the bar animating its own furniture. The rail thickens
+ *  under a pointer, and that is an answer to the hand, not motion of its own.
  *
  *  THE iOS BAND UNDER IT (guardrails §3a). Safari 26 keeps a strip below a fixed bar that no fixed
  *  layer can paint, and `env(safe-area-inset-bottom)` resolves to 0 there, so the padding below is
@@ -26,7 +27,7 @@
 :root {
   /* The bar's own height, the safe-area padding not included. The two rules that make room for
      the bar (body, scroll-top) read it. */
-  --excerpts-bar-h: 52px;
+  --excerpts-bar-h: 56px;
 }
 
 /* ── The glyph ─────────────────────────────────────────────────────────────── */
@@ -148,35 +149,106 @@
   display: none;
 }
 
-/* The stretch of the file the current work occupies, ruled above the progress line. `--c0` and
-   `--c1` are its bounds as fractions of the file, written by the player. */
-.excerpts-span {
+/* The timeline: the bar's top band, the viewport's full width. The band is the target and the rail
+   inside it is the drawing — a 2px line is no target for a thumb. It overlaps the controls' 44px
+   squares by their top 4px and stands above them there. */
+.excerpts-scrub {
   position: absolute;
   top: 0;
+  right: 0;
   left: 0;
-  width: 100%;
-  height: 1px;
-  background: color-mix(in srgb, var(--candle) 70%, transparent);
-  transform-origin: left center;
-  transform: translateX(calc(var(--c0, 0) * 100%)) scaleX(calc(var(--c1, 1) - var(--c0, 0)));
+  z-index: 1;
+  display: block;
+  height: 16px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  /* Horizontal drags seek; vertical gestures stay with the page scroll. */
+  touch-action: pan-y;
+}
+
+.excerpts-scrub:focus-visible {
+  outline: 1px solid var(--candle);
+  outline-offset: -1px;
 }
 
 .excerpts-rail {
   position: absolute;
-  top: 3px;
+  top: 6px;
   right: 0;
   left: 0;
   height: 2px;
-  background: rgba(244, 241, 233, 0.12);
+  transition: transform 0.25s var(--ease);
 }
 
-/* `--p` (0..1) is the playhead, written on the bar by the player. */
+.excerpts-scrub:focus-visible .excerpts-rail,
+.excerpts-bar.is-scrubbing .excerpts-rail {
+  transform: scaleY(2);
+}
+
+/* One work's stretch of the file: `--c0` and `--c1` are its bounds as fractions of the file,
+   written by the player. The transparent right border is the gap that parts it from the next
+   work; the work now sounding is the lit one. */
+.excerpts-segment {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: calc(var(--c0) * 100%);
+  box-sizing: border-box;
+  width: calc((var(--c1) - var(--c0)) * 100%);
+  border-right: 2px solid transparent;
+  background: rgba(244, 241, 233, 0.14) padding-box;
+}
+
+.excerpts-segment.is-now {
+  background-color: rgba(244, 241, 233, 0.34);
+}
+
+/* `--p` (0..1) is the playhead, written on the bar by the player. Each segment fills its own share
+   of it, so the played stretch reads across the gaps as one line. */
 .excerpts-fill {
   position: absolute;
   inset: 0;
   background: var(--candle);
   transform-origin: left center;
-  transform: scaleX(var(--p, 0));
+  transform: scaleX(clamp(0, (var(--p, 0) - var(--c0)) / (var(--c1) - var(--c0)), 1));
+}
+
+/* VideoPlayer's playhead dot, shown only while a hand is on the timeline. A sibling of the rail,
+   not its child, so the rail's thickening does not stretch it. */
+.excerpts-head {
+  position: absolute;
+  top: 7px;
+  left: calc(var(--p, 0) * 100%);
+  width: 9px;
+  height: 9px;
+  margin: -4.5px 0 0 -4.5px;
+  border-radius: 50%;
+  background: var(--candle);
+  opacity: 0;
+  transform: scale(0.4);
+  transition:
+    opacity 0.25s var(--ease),
+    transform 0.25s var(--ease);
+}
+
+.excerpts-scrub:focus-visible .excerpts-head,
+.excerpts-bar.is-scrubbing .excerpts-head {
+  opacity: 1;
+  transform: scale(1);
+}
+
+@media (hover: hover) {
+  .excerpts-scrub:hover .excerpts-rail {
+    transform: scaleY(2);
+  }
+
+  .excerpts-scrub:hover .excerpts-head {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 .excerpts-row {
@@ -185,7 +257,7 @@
   gap: 18px;
   box-sizing: border-box;
   height: 100%;
-  padding: 5px max(28px, 5vw, env(safe-area-inset-right, 0px)) 0
+  padding: 12px max(28px, 5vw, env(safe-area-inset-right, 0px)) 0
     max(28px, 5vw, env(safe-area-inset-left, 0px));
 }
 

@@ -73,6 +73,7 @@ const LISTEN: ConcertChrome["excerpts"] = {
   pause: "Wstrzymaj fragmenty nagrania z koncertu",
   stop: "Zatrzymaj",
   region: "Odtwarzacz fragmentów nagrania z koncertu",
+  timeline: "Oś czasu nagrania",
 };
 
 export const PODZIEKOWANIE = {

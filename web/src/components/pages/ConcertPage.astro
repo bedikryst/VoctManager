@@ -348,6 +348,9 @@ const program = c.program.map((p, i) => ({
     text: glossFor(p.text, sayIf(`program.${i}.textGloss`, p.textGloss?.pl)),
     clasp: glossFor(p.claspText, sayIf(`program.${i}.claspTextGloss`, p.claspTextGloss?.pl)),
   },
+  // Where this work begins in the excerpts reel, if the reel holds it. The chip it feeds is
+  // printed only when the reel is on this host (`excerpts`, below).
+  excerptAt: c.excerpts?.chapters.find((chapter) => chapter.program === i)?.at,
 })).filter((p) => !(unsung && p.bis));
 
 // A page carries the sung word when any work — or any clasp, since in 9 Kart the psalm itself
@@ -1053,11 +1056,26 @@ const jsonLd =
                       {/* The three facts travel as ONE rail: loose in the title's flex row they
                           left the line one chip at a time, so a work could set its year beside
                           the title and its scoring a line below. */}
-                      {(p.year || p.voicing || p.duration) && (
+                      {(p.year || p.voicing || p.duration || (excerpts && p.excerptAt !== undefined)) && (
                         <span class="kd-program-meta">
                           {p.year && <span class="kd-program-year">{p.year}</span>}
                           {p.voicing && <span class="kd-program-voicing">{p.voicing}</span>}
                           {p.duration && <span class="kd-program-duration">{p.duration}</span>}
+                          {/* Answered by the hero's ExcerptsPlayer, which also writes its state
+                              back (`data-sounding`, `disabled`). */}
+                          {excerpts && p.excerptAt !== undefined && (
+                            <button type="button" class="kd-program-listen" data-excerpt-at={p.excerptAt}>
+                              <svg class="kd-listen-play" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                                <path d="M8 5.5v13l11-6.5z" />
+                              </svg>
+                              <svg class="kd-listen-pause" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                                <rect x="6" y="5" width="4" height="14" rx="1" />
+                                <rect x="14" y="5" width="4" height="14" rx="1" />
+                              </svg>
+                              <span class="kd-listen-rest">{ui.program.listen}</span>
+                              <span class="kd-listen-on">{ui.program.listenPause}</span>
+                            </button>
+                          )}
                         </span>
                       )}
                     </p>
@@ -1968,6 +1986,23 @@ const jsonLd =
   .kd-program-year,
   .kd-program-voicing,
   .kd-program-duration { font-family: var(--capitalis); font-style: normal; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-soft, #34302b); padding-left: 12px; border-left: 1px solid var(--line, rgba(22,21,20,.16)); }
+  /* The rail's last chip, and the one that does something: the evening's recording from this
+     work. Set like its neighbours, in the candle's ink. Its target reaches past the 11px line it
+     sits on, and while its work is sounding the mark and the word turn to pause. Without
+     JavaScript it would do nothing, so it is not shown. */
+  .kd-program-listen { position: relative; display: inline-flex; align-items: center; gap: 7px; margin: 0; padding: 0 0 0 12px; border: 0; border-left: 1px solid var(--line, rgba(22,21,20,.16)); background: none; font-family: var(--capitalis); font-style: normal; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--candle-ink); cursor: pointer; }
+  .kd-program-listen::after { content: ""; position: absolute; inset: -12px -8px; }
+  .kd-program-listen svg { flex: none; width: 9px; height: 9px; }
+  .kd-program-listen .kd-listen-pause,
+  .kd-program-listen .kd-listen-on,
+  .kd-program-listen[data-sounding] .kd-listen-play,
+  .kd-program-listen[data-sounding] .kd-listen-rest { display: none; }
+  .kd-program-listen[data-sounding] .kd-listen-pause { display: block; }
+  .kd-program-listen[data-sounding] .kd-listen-on { display: inline; }
+  .kd-program-listen:disabled { cursor: default; opacity: .45; }
+  .kd-program-listen:focus-visible { outline: 1px solid var(--candle-ink); outline-offset: 4px; }
+  @media (hover: hover) { .kd-program-listen:not(:disabled):hover { color: var(--ink); } }
+  @media (scripting: none) { .kd-program-listen { display: none; } }
 
   /* The entry's epigraph — the scripture the work is written on. Its floor sits above the sans
      note's, and must keep doing so: a narrow window that left the epigraph the smaller of the two
@@ -2526,8 +2561,9 @@ const jsonLd =
        carrying a rule that divides it from the left margin: the rail hangs 13px (rule + its
        padding) into the gutter and clips that column back off, which takes the leading rule from
        EVERY line it breaks onto — the one thing `:first-child` cannot reach — while the text of
-       each line still starts flush on the measure. */
-    .kd-program-meta { flex-basis: 100%; margin-left: -13px; clip-path: inset(0 0 0 13px); }
+       each line still starts flush on the measure. The clip opens 12px above and below, where the
+       listen chip's target reaches: a clip-path clips hit-testing too. */
+    .kd-program-meta { flex-basis: 100%; margin-left: -13px; clip-path: inset(-12px 0 -12px 13px); }
     .kd-text-cols, .kd-text-cols.is-single { grid-template-columns: 1fr; gap: 18px; }
     .kd-tour-row { grid-template-columns: 1fr; gap: 4px; padding: 20px 0; }
     /* The announcement becomes three authored tiers — a phone column never holds the rubric, the

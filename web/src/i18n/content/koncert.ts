@@ -74,6 +74,8 @@ export interface ConcertChrome {
     readonly stop: string;
     /** The bar's landmark name. */
     readonly region: string;
+    /** The accessible name of the bar's timeline, the slider that seeks. */
+    readonly timeline: string;
   };
   /** Gloss of `Tabula`: what the front-matter contents list and its aria-label are called. */
   readonly tabula: string;
@@ -126,6 +128,10 @@ export interface ConcertChrome {
     readonly textNoteDefault: string;
     /** The Spotify link's own words. */
     readonly spotify: string;
+    /** The chip in a work's rail that plays the evening's recording from that work, and its word
+        while that work is the one sounding. Printed only beside works the excerpts reel holds. */
+    readonly listen: string;
+    readonly listenPause: string;
   };
   /** aria-label on the pull quote, which prints no heading of its own. */
   readonly quoteAria: string;
@@ -181,6 +187,7 @@ export const CONCERT: Record<Locale, ConcertChrome> = {
       pause: "Wstrzymaj fragmenty wieczoru",
       stop: "Zatrzymaj",
       region: "Odtwarzacz fragmentów wieczoru",
+      timeline: "Oś czasu nagrania",
     },
     tabula: "Zawartość wieczoru",
     bands: {
@@ -215,6 +222,8 @@ export const CONCERT: Record<Locale, ConcertChrome> = {
       textNoteDefault:
         "Teksty łacińskie i oryginalne — z programów zespołu; przekłady polskie własne.",
       spotify: "wybrzmiało m.in. na Spotify",
+      listen: "Posłuchaj",
+      listenPause: "Wstrzymaj",
     },
     quoteAria: "Cytat",
     gallery: { allImages: "Obrazy wszystkich wieczorów", give: "Wesprzyj następne koncerty" },
@@ -248,6 +257,7 @@ export const CONCERT: Record<Locale, ConcertChrome> = {
       pause: "Pause excerpts from the evening",
       stop: "Stop",
       region: "Excerpts player",
+      timeline: "Recording timeline",
     },
     tabula: "What the evening holds",
     bands: {
@@ -282,6 +292,8 @@ export const CONCERT: Record<Locale, ConcertChrome> = {
       textNoteDefault:
         "Latin and original texts from the ensemble's own programmes; English translations our own.",
       spotify: "some of it can be heard on Spotify",
+      listen: "Listen",
+      listenPause: "Pause",
     },
     quoteAria: "Quotation",
     gallery: { allImages: "Images from every evening", give: "Support the next concerts" },
@@ -315,6 +327,7 @@ export const CONCERT: Record<Locale, ConcertChrome> = {
       pause: "Mettre en pause les extraits de la soirée",
       stop: "Arrêter",
       region: "Lecteur des extraits de la soirée",
+      timeline: "Barre de progression de l'enregistrement",
     },
     tabula: "Le contenu de la soirée",
     bands: {
@@ -349,6 +362,8 @@ export const CONCERT: Record<Locale, ConcertChrome> = {
       textNoteDefault:
         "Textes latins et originaux tirés des programmes de l'ensemble ; traductions françaises les nôtres.",
       spotify: "on peut en écouter une partie sur Spotify",
+      listen: "Écouter",
+      listenPause: "Pause",
     },
     quoteAria: "Citation",
     gallery: { allImages: "Images de toutes les soirées", give: "Soutenir les prochains concerts" },
