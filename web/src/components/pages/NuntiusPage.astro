@@ -30,7 +30,6 @@
  *  unable to answer that question, which is the test the copy desk's §6r sets for chrome.
  * @module components/pages/NuntiusPage
  */
-import { getImage } from "astro:assets";
 
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import SiteChrome from "../SiteChrome.astro";
@@ -124,9 +123,7 @@ const occurrences: NoticeOccurrence[] = cycleStations(await getCollection("conce
   .filter((evening) => evening.date >= builtOn)
   .sort((a, b) => a.date.localeCompare(b.date));
 
-const ogImage = (
-  await getImage({ src: bleedPair("koncerty-hero").desktop, width: 1200, format: "webp" })
-).src;
+const ogImage = bleedPair("koncerty-hero").desktop;
 ---
 
 <BaseLayout

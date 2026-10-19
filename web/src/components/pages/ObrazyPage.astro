@@ -62,11 +62,11 @@
  */
 import type { ImageMetadata } from "astro";
 import { getCollection } from "astro:content";
-import { getImage, Image } from "astro:assets";
+import { Image } from "astro:assets";
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import SiteChrome from "../SiteChrome.astro";
 import SiteFooter from "../SiteFooter.astro";
-import { photoOptional } from "../../lib/photos";
+import { bleedPair, photoOptional } from "../../lib/photos";
 import { layoutShots } from "../../lib/galleryLayout";
 import { galleryRuns } from "../../lib/galleryRuns";
 import { creditList, creditSentence, frameCredit } from "../../lib/photoCredit";
@@ -246,11 +246,9 @@ const scale = [
 const figure = (n: number): string => counted(n, t.figure, lang);
 
 // The share image is a frame from the archive itself, not a hero from elsewhere: the page is the
-// photographs, so anything else would misrepresent it in a preview card.
-const ogSource = evenings[0]?.runs[0]?.plate.img;
-const ogImage = ogSource
-  ? (await getImage({ src: ogSource, width: 1200, format: "webp" })).src
-  : "/logo_gold.png";
+// photographs, so anything else would misrepresent it in a preview card. The landing's hero
+// stands in only while the archive holds no photograph at all.
+const ogImage = evenings[0]?.runs[0]?.plate.img ?? bleedPair("hero-landing").desktop;
 
 // JSON-LD: one ImageGallery for the page. Deliberately WITHOUT a per-frame ImageObject list —
 // one node per photograph with `creditText` would quadruple the graph to restate what the visible

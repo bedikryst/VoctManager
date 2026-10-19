@@ -94,9 +94,7 @@ const noticeCopy = {
 
 /* A link pasted into a message shows the evening's poster, the same frame its own page shares. */
 const shareImg = concert.share ? photoOptional(concert.share) : undefined;
-const ogImage = (
-  await getImage({ src: shareImg ?? bleedPair("koncerty-hero").desktop, width: 1200, format: "webp" })
-).src;
+const ogImage = shareImg ?? bleedPair("koncerty-hero").desktop;
 
 /* The invitation's artwork. Each is optional; see the header. */
 const art = async (name: string, width: number) => {

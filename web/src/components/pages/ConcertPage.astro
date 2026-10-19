@@ -42,6 +42,7 @@ import SiteFooter from "../SiteFooter.astro";
 import BleedImage from "../BleedImage.astro";
 import NoticeSignup from "../NoticeSignup.astro";
 import { bleedPair, photoOptional } from "../../lib/photos";
+import { shareImage } from "../../lib/shareImage";
 import { layoutShots } from "../../lib/galleryLayout";
 import { galleryRuns } from "../../lib/galleryRuns";
 import { creditSentence, designCredit, frameCredit } from "../../lib/photoCredit";
@@ -143,7 +144,7 @@ const bg = bleedPair(c.heroImg ?? c.bg);
 // content.config.ts). `photoOptional`, so a declared-but-missing file falls back rather than
 // failing a build on the host the photographs are uploaded to by hand.
 const shareImg = c.share ? photoOptional(c.share) : undefined;
-const ogImage = (await getImage({ src: shareImg ?? bg.desktop, width: 1200, format: "webp" })).src;
+const ogImage = shareImg ?? bg.desktop;
 
 // ── The station's own light: `--candle` inside <main> takes the concert accent's hue at
 // the base gold's OKLCH lightness (build-time hex — no runtime CSS feature risk). Gold
@@ -500,7 +501,7 @@ const description = unsung
 // The node describes THIS locale's page, so its url and its prose are this render's — the
 // alternates in <head> are what tie the three documents together.
 const eventUrl = absolute(path);
-const eventImage = absolute(ogImage);
+const eventImage = absolute((await shareImage(ogImage)).src);
 const events = hasTour
   ? c.dates.map((d) =>
       musicEvent({

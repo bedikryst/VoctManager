@@ -79,9 +79,7 @@ const ui = UI[lang];
 // One base path → this render's own URL and its hreflang graph.
 const { path, alternates } = pageI18n("/", lang);
 
-const ogImage = (
-  await getImage({ src: bleedPair("hero-landing").desktop, width: 1200, format: "webp" })
-).src;
+const ogImage = bleedPair("hero-landing").desktop;
 
 // Desktop "registrum" ribbons for the StickyHeader island — derived here because a client
 // island cannot read the concerts collection itself (see lib/registrum). Their hrefs are

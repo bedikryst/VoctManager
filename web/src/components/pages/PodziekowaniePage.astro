@@ -152,7 +152,7 @@ const candle = candleFrom(concert.accent);
 /* A link pasted into a message shows the church full of listeners, in the gallery's landscape cut:
    a preview card crops to landscape, and the tall cut would lose the pews to it. */
 const ogFrame = photoOptional(CHURCH_GALLERY);
-const ogImage = (await getImage({ src: ogFrame ?? hero.desktop, width: 1200, format: "webp" })).src;
+const ogImage = ogFrame ?? hero.desktop;
 
 /* Four frames read in order: the pair (before, during) side by side, then the listeners seen from
    the altar at the pair's 4:5 and the ensemble afterwards at 3:2, each across the grid, so a

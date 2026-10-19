@@ -46,7 +46,6 @@
  *  rule setting either one ties its specificity and silently wins on bundle order.
  * @module components/pages/KolofonPage
  */
-import { getImage } from "astro:assets";
 import { getCollection } from "astro:content";
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import SiteChrome from "../SiteChrome.astro";
@@ -87,9 +86,7 @@ const { path, alternates, available } = pageI18n("/kolofon", lang);
 // and the two pages state the foundation's purpose differently in the same locale.
 const mission = pageCopy(KONTAKT_PAGE, lang).locus.mission;
 
-const ogImage = (
-  await getImage({ src: bleedPair("hero-landing").desktop, width: 1200, format: "webp" })
-).src;
+const ogImage = bleedPair("hero-landing").desktop;
 
 // The impression: when THIS COPY of the page was struck, which is a fact about the printing and
 // is deliberately not published as the graph's `dateModified`. Every deploy restrikes the page,

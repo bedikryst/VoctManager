@@ -29,7 +29,6 @@
  *  the same legal facts the JSON-LD carries, and they read identically in every language.
  * @module components/pages/ContactPage
  */
-import { getImage } from "astro:assets";
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import SiteChrome from "../SiteChrome.astro";
 import SiteFooter from "../SiteFooter.astro";
@@ -106,7 +105,7 @@ const jsonLd = {
 };
 
 // Build-time optimized share image derived from the hero original.
-const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp" })).src;
+const ogImage = hero.desktop;
 ---
 
 <BaseLayout

@@ -365,7 +365,7 @@ const metaDescription = announced
 // day, the hour and the door (content.config). Falls back to the nave the rest of the year, and
 // for an announced evening that has no share frame of its own.
 const shareImg = announced?.share ? photoOptional(announced.share) : undefined;
-const ogImage = (await getImage({ src: shareImg ?? hero.desktop, width: 1200, format: "webp" })).src;
+const ogImage = shareImg ?? hero.desktop;
 ---
 
 <BaseLayout

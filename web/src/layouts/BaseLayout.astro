@@ -6,11 +6,13 @@
  *  smooth-scroll lifecycle (fine-pointer + motion-allowed only, re-anchored on navigation).
  * @module layouts/BaseLayout
  */
+import type { ImageMetadata } from "astro";
 import { ClientRouter } from "astro:transitions";
 import DocumentGates from "../components/DocumentGates.astro";
 import SiteIcons from "../components/SiteIcons.astro";
 import { LOCALE_META, LOCALES, SITE, type Locale } from "../i18n/config";
 import { breadcrumbList, type Crumb } from "../lib/breadcrumb";
+import { shareImage } from "../lib/shareImage";
 import "../styles/tokens.css";
 import "../styles/base.css";
 import "../styles/registers.css";
@@ -26,10 +28,10 @@ interface Props {
   description: string;
   /** Absolute path of this page, e.g. "/kontakt" — drives canonical + og:url. */
   path: string;
-  /** OG/Twitter share image (absolute path under the build root). Required — the old
-      default pointed at /photos/…, a directory that does not exist in public/, so any
-      page relying on it shipped a 404 og:image. Every page now passes a real image. */
-  image: string;
+  /** Source photograph for the OG/Twitter share image. Required: there is no site-wide default,
+      so every page shares a picture of its own. The layout builds the preview file from it
+      (lib/shareImage — format and dimensions are decided there, not per page). */
+  image: ImageMetadata;
   /** Alt text for the share image (og:image:alt / twitter:image:alt). Defaults to the page
       title — every image here is the page's own hero, so the title describes it adequately. */
   imageAlt?: string;
@@ -99,7 +101,8 @@ const {
 } = Astro.props;
 
 const canonical = new URL(path, SITE).href;
-const ogImage = new URL(image, SITE).href;
+const share = await shareImage(image);
+const ogImage = new URL(share.src, SITE).href;
 const ogLocale = LOCALE_META[lang].ogLocale;
 // og:locale:alternate advertises the OTHER locales this same page exists in — only meaningful
 // when the page is actually translated (it carries an hreflang graph).
@@ -208,6 +211,9 @@ const breadcrumbLd = breadcrumb ? breadcrumbList(breadcrumb, lang) : undefined;
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonical} />
     <meta property="og:image" content={ogImage} />
+    <meta property="og:image:type" content={share.type} />
+    <meta property="og:image:width" content={String(share.width)} />
+    <meta property="og:image:height" content={String(share.height)} />
     <meta property="og:image:alt" content={imageAlt} />
     <meta property="og:locale" content={ogLocale} />
     {ogLocaleAlternates.map((loc) => <meta property="og:locale:alternate" content={loc} />)}

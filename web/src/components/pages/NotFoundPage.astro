@@ -25,7 +25,6 @@
  *  name the chrome already prints for that destination (see `i18n/content/notFound.ts`).
  * @module components/pages/NotFoundPage
  */
-import { getImage } from "astro:assets";
 
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import SiteChrome from "../SiteChrome.astro";
@@ -62,9 +61,7 @@ const ways = [
   { href: localizePath("/kontakt", lang), lat: "Epistula", name: ui.nav.contact },
 ];
 
-const ogImage = (
-  await getImage({ src: bleedPair("hero-landing").desktop, width: 1200, format: "webp" })
-).src;
+const ogImage = bleedPair("hero-landing").desktop;
 ---
 
 <BaseLayout

@@ -32,7 +32,6 @@
  *  can be caught making.
  * @module components/pages/NewsletterPage
  */
-import { getImage } from "astro:assets";
 import { getCollection } from "astro:content";
 
 import BaseLayout from "../../layouts/BaseLayout.astro";
@@ -72,9 +71,7 @@ const register = noticeRegister(
 /* THE CARD IS THE PAGE'S OWN PICTURE. What a shared link shows is the room the letter is about —
    the same frame, in the cut that carries the vault — rather than a hero belonging to another
    page. */
-const ogImage = (
-  await getImage({ src: photo("nuntius-room-spread"), width: 1200, format: "webp" })
-).src;
+const ogImage = photo("nuntius-room-spread");
 ---
 
 <BaseLayout
