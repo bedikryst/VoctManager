@@ -27,7 +27,7 @@ import { programmeSurnames } from "./litany";
 import { programmeLine } from "./programmeLine";
 
 export interface ConcertExcerpts {
-  /** The hosted file's URL, the island's source and the no-script link's href. */
+  /** The hosted file's URL: the island's `<audio>` source, and never a link's href. */
   readonly src: string;
   /** The reel's length in seconds, as the corpus states it. */
   readonly duration: number;

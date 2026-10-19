@@ -1,18 +1,18 @@
 ---
 /**
  * @file ExcerptsGlyph.astro
- * @description One concert's excerpts glyph: the island (`ExcerptsPlayer`) and, beside it, the plain
- *  link to the file that stands in for it without JavaScript (styles/excerpts.css shows one or the
- *  other). The props come from `lib/excerpts` `concertExcerpts`, so a page prints this only when
- *  that returned a reel. Where it stands, what wraps it and how it is dressed are the page's: the
- *  page imports `styles/excerpts.css` itself, so the sheet keeps its place in that page's cascade.
+ * @description One concert's excerpts glyph: the island (`ExcerptsPlayer`) alone. Without
+ *  JavaScript nothing stands in for it (styles/excerpts.css hides the inert button), because the
+ *  only stand-in would be a link to the file, and the recordings are not offered for download
+ *  (lib/audio). The props come from `lib/excerpts` `concertExcerpts`, so a page prints this only
+ *  when that returned a reel. Where it stands, what wraps it and how it is dressed are the page's:
+ *  the page imports `styles/excerpts.css` itself, so the sheet keeps its place in that page's
+ *  cascade.
  * @module components/ExcerptsGlyph
  */
 import type { Locale } from "../i18n/config";
 import type { ConcertChrome } from "../i18n/content/koncert";
 import { ExcerptsPlayer } from "../islands/landing/excerpts/ExcerptsPlayer";
-import { formatTime } from "../islands/landing/video/formatTime";
-import { AUDIO_MIME } from "../lib/audio";
 import type { ConcertExcerpts } from "../lib/excerpts";
 
 interface Props {
@@ -39,13 +39,3 @@ const { excerpts, labels, lang, candle, title } = Astro.props;
   title={title}
   artwork={excerpts.artwork}
 />
-<a class="excerpts-glyph excerpts-file" href={excerpts.src} type={AUDIO_MIME}>
-  <span class="excerpts-disc" aria-hidden="true">
-    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13l11-6.5z" /></svg>
-  </span>
-  <span class="excerpts-total">{formatTime(excerpts.duration)}</span>
-  <span class="excerpts-text">
-    <span class="excerpts-title">{labels.title}</span>
-    <span class="excerpts-source">{labels.source}</span>
-  </span>
-</a>

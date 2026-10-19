@@ -26,6 +26,12 @@
  *  the name written here — and says so in the build log, naming the file it found instead. A new
  *  mix is: drop it in `public/audio/`, `npm run audio:stamp`, paste what it prints below, upload,
  *  and `npm run audio:stamp -- --verify` on the host.
+ *
+ *  NO PAGE LINKS TO A FILE. The conductor asked that the recordings not be offered for download,
+ *  so they are reached only through the player's `<audio>`, which has no native controls and so no
+ *  "save" menu; nginx refuses a recording opened as a page (infra/nginx/prod.conf). That removes
+ *  every visible route to the bytes. It cannot stop a reader with developer tools, since a browser
+ *  that plays a file has already downloaded it.
  * @module lib/audio
  */
 import { existsSync, readdirSync } from "node:fs";
@@ -40,11 +46,8 @@ export type AudioAssetKey = (typeof AUDIO_KEYS)[number];
 
 /** AAC in MP4, the one container every browser plays, with the index at the head of the file. */
 export const AUDIO_ASSETS: Record<AudioAssetKey, string> = {
-  "pochwala-stworzenia-excerpts": audioUrl("pochwala-stworzenia-excerpts.20082980.m4a"),
+  "pochwala-stworzenia-excerpts": audioUrl("pochwala-stworzenia-excerpts.77d4a871.m4a"),
 };
-
-/** `type` for a link to one of these files: the container, so a browser need not sniff it. */
-export const AUDIO_MIME = "audio/mp4";
 
 export const audioAsset = (key: AudioAssetKey): string => AUDIO_ASSETS[key];
 

@@ -128,7 +128,8 @@ class Letter:
 # melody Francis made for it is lost. Every setting since writes its own music into those lines,
 # and on 11 October the ensemble sang Orff's. The letter opens on such a page, one staff left
 # empty over the first line, and ends on the same staff written with the recording's own
-# loudness: it opens the concert page, whose hero plays one passage of each work. NOTHING IN THE
+# loudness: it opens the concert page, whose hero plays the passages the conductor chose (not
+# every work is among them, so no copy may say "each work"). NOTHING IN THE
 # COPY EXPLAINS THE RHYME between the empty staff and the written one. A sentence that walked
 # the reader through it was tried and cut: explaining the device is what made it read as
 # machine prose.
@@ -161,7 +162,7 @@ POCHWALA_STWORZENIA = Letter(
         NoticeLocale.FR: "/fr/koncerty/pochwala-stworzenia",
     },
     anchor="obrazy",
-    asset_rev=8,
+    asset_rev=9,
     copy={
         NoticeLocale.PL: LetterCopy(
             subject="Pochwała Stworzenia: zdjęcia i nagranie",
@@ -213,8 +214,8 @@ POCHWALA_STWORZENIA = Letter(
             donors_link="serdecznie zapraszamy",
             listen_label="Posłuchaj",
             listen_gloss=(
-                f"Nagranie z{NBSP}koncertu, po jednym fragmencie z{NBSP}każdego utworu: "
-                "sześć minut."
+                f"Nagranie z{NBSP}koncertu, fragmenty wybrane przez dyrygenta: "
+                "dziesięć minut."
             ),
             next=f"Daty następnego koncertu jeszcze nie znamy. Napiszemy do{NBSP}Ciebie, kiedy ją ustalimy.",
             closing="Serdecznie pozdrawiamy",
@@ -280,7 +281,7 @@ POCHWALA_STWORZENIA = Letter(
             ),
             donors_link="you are most welcome",
             listen_label="Listen",
-            listen_gloss="The concert recording, one passage from each work: six minutes.",
+            listen_gloss="The concert recording, passages chosen by the conductor: ten minutes.",
             next="We don’t know the date of the next concert yet. We will write to you as soon as we do.",
             closing="With warm wishes,",
             signature="VoctEnsemble",
@@ -347,7 +348,7 @@ POCHWALA_STWORZENIA = Letter(
             ),
             donors_link="nous vous y invitons chaleureusement",
             listen_label="Écouter",
-            listen_gloss=f"L’enregistrement du concert, un extrait de chaque œuvre{NBSP}: six minutes.",
+            listen_gloss=f"L’enregistrement du concert, des extraits choisis par le chef de chœur{NBSP}: dix minutes.",
             next=(
                 "Nous ne connaissons pas encore la date du prochain concert. Nous vous écrirons "
                 "dès que nous la connaîtrons."

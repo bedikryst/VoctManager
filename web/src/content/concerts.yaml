@@ -2676,23 +2676,23 @@
   posterCredit: "Anna Marcisz · VoctEnsemble"
   realizacja: "Skrzypce: Radu Ropotan"
   hasPage: true
-  # One passage from each work of the evening, in programme order, cut from the concert recording.
-  # `program` is an index into `program` below, so the bis (What a Wonderful World) is 10.
+  # The passages the conductor chose from the concert recording, in programme order; Lumen and
+  # the Méditation are left out by his choice, so no copy may promise a passage of every work.
+  # One chapter per work, even where a work gives two passages. `program` is an index into
+  # `program` below, so the bis (What a Wonderful World) is 10.
   excerpts:
     asset: pochwala-stworzenia-excerpts
-    duration: 364.6
+    duration: 594.6
     chapters:
       - { at: 0, program: 0 }
-      - { at: 28.0, program: 1 }
-      - { at: 57.6, program: 2 }
-      - { at: 84.5, program: 3 }
-      - { at: 123.6, program: 4 }
-      - { at: 152.2, program: 5 }
-      - { at: 184.5, program: 6 }
-      - { at: 224.0, program: 7 }
-      - { at: 251.3, program: 8 }
-      - { at: 290.5, program: 9 }
-      - { at: 324.1, program: 10 }
+      - { at: 79.9, program: 2 }
+      - { at: 126.6, program: 4 }
+      - { at: 213.8, program: 5 }
+      - { at: 317.2, program: 6 }
+      - { at: 380.6, program: 7 }
+      - { at: 416.7, program: 8 }
+      - { at: 500.8, program: 9 }
+      - { at: 545.8, program: 10 }
   # The scene, and nothing the door band states in fields: the day, the hour, the festival and the
   # open door are printed from `date`/`time`/`festival`/`admission` a screen higher, and a paragraph
   # that repeated them would be the page saying one thing twice in two registers.

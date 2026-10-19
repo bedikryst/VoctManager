@@ -118,21 +118,12 @@
   opacity: 0.45;
 }
 
-/* Without JavaScript the island's button is inert, so a plain link to the file stands in its
-   place — same composition, and the browser's own player does the rest. One media query both
-   shows the link and hides the button; a <noscript> could only have done the first. A browser
-   that does not know `scripting` skips the query, keeping the button and hiding the link, which
-   is right for every reader who has scripts on. */
-.excerpts-glyph.excerpts-file {
-  display: none;
-}
-
+/* Without JavaScript the island's button is inert, and nothing takes its place: the one possible
+   stand-in, a link to the file, would offer the recording for download (lib/audio). A browser
+   that does not know `scripting` skips the query and keeps the button, which is right for every
+   reader who has scripts on. */
 @media (scripting: none) {
-  .excerpts-glyph.excerpts-file {
-    display: inline-grid;
-  }
-
-  .excerpts-glyph:not(.excerpts-file) {
+  .excerpts-glyph {
     display: none;
   }
 }
