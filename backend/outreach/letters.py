@@ -53,7 +53,8 @@ class LetterCopy:
     """Every string one letter prints, in one language."""
 
     subject: str
-    #: Inbox snippet beside the subject. Never repeats the subject.
+    #: Inbox snippet beside the subject. Never repeats the subject, nor the letter's opening,
+    #: which the reader meets a second later.
     preheader: str
     #: The salutation for a subscriber who gave a first name. `{name}` is filled here, in the
     #: vocative for a Polish letter, and the result escaped by the template like any other
@@ -78,7 +79,8 @@ class LetterCopy:
     #: To the donors, as a fact of this concert: what their support made possible. Ends on the
     #: lead-in to the one invitation to join them, which `donors_link` completes.
     donors: str
-    #: The linked phrase closing `donors`. It opens the concert page with the vault open.
+    #: The linked phrase closing `donors`. It opens the concert page with the vault open, and it
+    #: names that act, joining the donors, so the reader knows where it leads before clicking.
     donors_link: str
     #: The words under the last staff, which open the recording.
     listen_label: str
@@ -167,14 +169,14 @@ POCHWALA_STWORZENIA = Letter(
         NoticeLocale.PL: LetterCopy(
             subject="Pochwała Stworzenia: zdjęcia i nagranie",
             preheader=(
-                "W najstarszym rękopisie Pieśni słonecznej linie przygotowane pod melodię "
-                "zostały puste."
+                f"Dziękujemy wszystkim, którzy 11{NBSP}października byli z{NBSP}nami "
+                f"w{NBSP}kościele Wszystkich Świętych."
             ),
             greeting="Dzień dobry, {name},",
             greeting_plain="Dzień dobry,",
             incipit_gloss="Najwyższy, wszechmogący, dobry Panie…",
             lede=(
-                f"W{NBSP}Asyżu przechowywany jest najstarszy znany rękopis Pieśni słonecznej. "
+                f"Najstarszy znany rękopis Pieśni słonecznej leży w{NBSP}Asyżu. "
                 f"Nad pierwszymi wersami wyrysowano w{NBSP}nim linie pod melodię, ale nikt nie "
                 "zapisał na nich nut. Melodia, którą ułożył sam Franciszek, nie zachowała się."
             ),
@@ -200,7 +202,7 @@ POCHWALA_STWORZENIA = Letter(
             thanks=(
                 "Jeśli udało Ci się wtedy przyjść, dziękujemy Ci za to niedzielne popołudnie. "
                 f"Śpiewało nam się inaczej niż na próbach, bo w{NBSP}ławkach siedzieli ludzie, "
-                "którzy przyszli posłuchać właśnie tej muzyki."
+                "którzy chcieli posłuchać właśnie tej muzyki."
             ),
             photos_gloss=(
                 f"Na stronie koncertu jest więcej zdjęć, program z{NBSP}opisami utworów "
@@ -208,10 +210,9 @@ POCHWALA_STWORZENIA = Letter(
             ),
             donors=(
                 "Koncert był otwarty dla wszystkich dzięki darczyńcom, którzy wspierają nasze "
-                f"Koncerty Duchowe. Im także bardzo dziękujemy. Jeśli chcesz dołączyć do{NBSP}ich "
-                "grona,"
+                "Koncerty Duchowe. Im także bardzo dziękujemy. Będzie nam miło, jeśli zechcesz"
             ),
-            donors_link="serdecznie zapraszamy",
+            donors_link=f"dołączyć do{NBSP}ich grona",
             listen_label="Posłuchaj",
             listen_gloss=(
                 f"Nagranie z{NBSP}koncertu, fragmenty wybrane przez dyrygenta: "
@@ -236,8 +237,8 @@ POCHWALA_STWORZENIA = Letter(
         NoticeLocale.EN: LetterCopy(
             subject="Pochwała Stworzenia: photographs and a recording",
             preheader=(
-                "In the oldest manuscript of the Canticle of the Sun, the lines ruled for its "
-                "melody were left empty."
+                "Thank you to everyone who was with us at All Saints’ Church on "
+                f"11{NBSP}October."
             ),
             greeting="Dear {name},",
             greeting_plain="Hello,",
@@ -269,7 +270,7 @@ POCHWALA_STWORZENIA = Letter(
             thanks=(
                 "If you were able to come, thank you for that Sunday afternoon. We sang "
                 "differently than we do in rehearsal, because there were people in the pews who "
-                "had come to hear this very music."
+                "wanted to hear this very music."
             ),
             photos_gloss=(
                 "The concert page has more photographs, the programme with a note on each work, "
@@ -277,9 +278,9 @@ POCHWALA_STWORZENIA = Letter(
             ),
             donors=(
                 "The concert was open to everyone thanks to the donors who support our Spiritual "
-                "Concerts, and we thank them warmly too. If you would like to join them,"
+                "Concerts, and we thank them warmly too. We would be glad to"
             ),
-            donors_link="you are most welcome",
+            donors_link="count you among them",
             listen_label="Listen",
             listen_gloss="The concert recording, passages chosen by the conductor: ten minutes.",
             next="We don’t know the date of the next concert yet. We will write to you as soon as we do.",
@@ -301,8 +302,8 @@ POCHWALA_STWORZENIA = Letter(
         NoticeLocale.FR: LetterCopy(
             subject=f"Pochwała Stworzenia{NBSP}: photographies et enregistrement",
             preheader=(
-                "Dans le plus ancien manuscrit du Cantique des créatures, les lignes tracées "
-                "pour la mélodie sont restées vides."
+                f"Merci à tous ceux qui étaient avec nous le 11{NBSP}octobre en l’église de "
+                "Tous-les-Saints."
             ),
             greeting="Bonjour {name},",
             greeting_plain="Bonjour,",
@@ -335,7 +336,7 @@ POCHWALA_STWORZENIA = Letter(
             thanks=(
                 "Si vous avez pu venir, merci pour ce dimanche après-midi. Nous avons chanté "
                 "autrement qu’en répétition, parce que dans les bancs se trouvaient des gens "
-                "venus écouter précisément cette musique."
+                "qui voulaient écouter précisément cette musique."
             ),
             photos_gloss=(
                 "Sur la page du concert, vous trouverez d’autres photographies, le programme avec "
@@ -343,10 +344,10 @@ POCHWALA_STWORZENIA = Letter(
             ),
             donors=(
                 "Le concert était ouvert à tous grâce aux donateurs qui soutiennent nos Concerts "
-                "Spirituels, et nous les remercions eux aussi de tout cœur. Si vous souhaitez "
-                "les rejoindre,"
+                "Spirituels, et nous les remercions eux aussi de tout cœur. Nous serions heureux "
+                "de"
             ),
-            donors_link="nous vous y invitons chaleureusement",
+            donors_link="vous compter parmi eux",
             listen_label="Écouter",
             listen_gloss=f"L’enregistrement du concert, des extraits choisis par le chef de chœur{NBSP}: dix minutes.",
             next=(
