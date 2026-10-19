@@ -164,8 +164,12 @@
       height: 5px;
     }
 
+    /* The vertical split is optical, not a typo: at 9.5px a symmetric 5px frame leaves the
+       capitals ~1.5px high (half-leading is floored above the line), so one pixel moves from the
+       bottom to the top. The sum stays 10px — the frame's height, and with it the row, is
+       unchanged. SiteChrome's phone `.nav-support` carries the same split; keep them alike. */
     .support-link--give {
-      padding: 5px 9px;
+      padding: 6px 9px 4px;
       font-size: 9.5px;
       letter-spacing: 0.12em;
     }

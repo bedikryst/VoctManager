@@ -1219,9 +1219,12 @@
        counterweight, and it is load-bearing. `.chrome-actions` centres its items by BOX, so an
        asymmetric box centres the gutter and leaves the letters riding half of it high — against
        the audio pill, whose padding is symmetric, that put the links ~1.9px off its baseline.
-       Keep the two paddings equal, or the row loses its common line of writing again. */
+       Keep the two paddings equal, or the row loses its common line of writing again.
+       The leading is the bar's own, not the page's: SiteChrome pins the same 1.6 against a body
+       set at 1.7, and the two bars stay alike only while both declare it. */
     padding-top: 3px;
     padding-bottom: 3px;
+    line-height: 1.6;
     opacity: 0.82;
     transition: opacity 0.35s var(--ease);
     text-decoration: none;
@@ -1256,7 +1259,7 @@
      in the gold SiteChrome's `.nav-support` gives it on every subpage. Full candle reads 8.08 : 1
      over the hero's night and 2.10 : 1 over parchment, so wherever the bar stands on a light
      section it takes the ink gold, the same split SiteChrome makes with `--chrome-candle`.
-     Its horizontal padding and border are part of the measured row (6px 11px and 5px 9px in
+     Its horizontal padding and border are part of the measured row (11px and 9px sides in
      07-responsive.css): change them and the phone thresholds there must be re-measured. */
   .support-link--give {
     color: var(--candle);
