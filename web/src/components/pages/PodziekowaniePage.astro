@@ -188,7 +188,9 @@ const shots = [
 /* The hosts the acknowledgements open on, prints side by side in a block of at most 400px (the
    thanks column is 378–388px wide beside the cast, the sheet's measure under it); one alone keeps
    a column's width. The gallery's caption reads `Name, function`, so its first comma is where the
-   second line starts. */
+   second line starts. A print is cut from its gallery frame, so the cursor's loupe magnifies the
+   print's own renditions (`data-lens="cut"`); the ladder past 400 is the loupe's, which draws the
+   194px print at up to 2.9×. */
 const HOST_SIZES = "(min-width: 460px) 194px, calc(50vw - 34px)";
 const hostPrint = async ({ print, gallery }: (typeof HOSTS)[number]) => {
   const printImg = photoOptional(print);
@@ -201,7 +203,7 @@ const hostPrint = async ({ print, gallery }: (typeof HOSTS)[number]) => {
     throw new Error(`[podziekowanie] "${gallery}" needs a caption "Name, function" in the gallery of "${INVITATION_CONCERT_ID}".`);
   }
   return {
-    thumb: await croppedShot(printImg, { aspect: PORTRAIT_ASPECT, widths: [200, 300, 400] }),
+    thumb: await croppedShot(printImg, { aspect: PORTRAIT_ASPECT, widths: [200, 300, 400, 600, 900, 1200] }),
     full: await framedShot(galleryImg),
     alt: galleryAlt(gallery),
     caption,
@@ -414,6 +416,7 @@ const hasHands = Boolean(handLeft && handRight);
                   class="shot-open"
                   data-image-open
                   data-image-group="pdz-photos"
+                  data-lens="cut"
                   data-image-src={host.full.src}
                   data-image-srcset={host.full.srcset}
                   data-image-sizes={host.full.sizes}

@@ -71,10 +71,25 @@ const lensSources = new Map<string, string>();
 /** Requests in flight, so a pointer resting on a panel asks once instead of once per frame. */
 const lensRequested = new Set<string>();
 
-/** The rendition to sample, or `null` while it is still arriving — the ring keeps its drawn
- *  plate until then, and the frame after the decode lands is the one that lights the glass. */
-const lensSourceFor = (trigger: HTMLElement): string | null => {
-  const key = trigger.dataset.imageSrc;
+/**
+ * The rendition to sample, or `null` while it is still arriving — the ring keeps its drawn plate
+ * until then, and the frame after the decode lands is the one that lights the glass.
+ *
+ * The lens draws its file over the `<img>`'s box, so the file has to be the shape of what that box
+ * shows. By default that is the photograph the frame opens. A trigger whose `<img>` is a different
+ * cut of it (a portrait cut from a landscape frame) declares `data-lens="cut"`, and the lens
+ * samples the `<img>`'s own renditions instead: the whole frame drawn over a box of another shape
+ * is squeezed into it, and the patch under the ring is not the patch the pointer stands on. Those
+ * renditions are chosen for the width the lens draws them at fully pressed, so the `<img>`'s
+ * ladder has to reach that far.
+ */
+const lensSourceFor = (
+  trigger: HTMLElement,
+  shown: HTMLImageElement,
+  boxWidth: number,
+): string | null => {
+  const cut = trigger.dataset.lens === "cut";
+  const key = cut ? shown.getAttribute("src") : trigger.dataset.imageSrc;
   if (!key) return null;
   const ready = lensSources.get(key);
   if (ready) return ready;
@@ -84,8 +99,13 @@ const lensSourceFor = (trigger: HTMLElement): string | null => {
   img.decoding = "async";
   // `sizes` before `srcset` before `src`: the candidate is chosen the moment the source set is,
   // and an unset `sizes` at that moment is chosen against a 100vw default.
-  if (trigger.dataset.imageSizes) img.sizes = trigger.dataset.imageSizes;
-  if (trigger.dataset.imageSrcset) img.srcset = trigger.dataset.imageSrcset;
+  if (cut) {
+    img.sizes = `${Math.ceil(boxWidth * LENS_Z_PRESS)}px`;
+    if (shown.srcset) img.srcset = shown.srcset;
+  } else {
+    if (trigger.dataset.imageSizes) img.sizes = trigger.dataset.imageSizes;
+    if (trigger.dataset.imageSrcset) img.srcset = trigger.dataset.imageSrcset;
+  }
   img.src = key;
   const settle = (): void => {
     lensSources.set(key, img.currentSrc || key);
@@ -421,12 +441,15 @@ export function useSiteCursor(cursorRef: React.RefObject<HTMLElement | null>): v
       // (`width: 100%; height: auto` — the panel IS the photograph, uncropped), and the
       // distinction is what keeps the state honest where they would not: a trigger that is a NAME
       // rather than a picture has no `<img>` to measure and keeps the ring's drawn plate, which
-      // is the colophon's row of photographers.
+      // is the colophon's row of photographers. A box cut to another shape than the photograph
+      // is the trigger's to declare (`data-lens="cut"`, lensSourceFor).
       const lensImg =
         onFrame && !frameStep && frameEl ? frameEl.querySelector<HTMLImageElement>("img") : null;
-      const nextLens = frameEl && lensImg ? lensSourceFor(frameEl) : null;
-      if (lensImg && nextLens) {
-        lensRect = lensImg.getBoundingClientRect();
+      const lensBox = lensImg ? lensImg.getBoundingClientRect() : null;
+      const nextLens =
+        frameEl && lensImg && lensBox ? lensSourceFor(frameEl, lensImg, lensBox.width) : null;
+      if (lensBox && nextLens) {
+        lensRect = lensBox;
         if (nextLens !== lensUrl) {
           lensUrl = nextLens;
           el.style.setProperty("--lens", `url("${nextLens}")`);

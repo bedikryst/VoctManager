@@ -256,7 +256,8 @@
    Triggered over any `[data-image-open]`. A ring, as the site's other media states are, but
    what it holds is the photograph underneath at the rendition the frame will OPEN — the same
    file `scripts/image-triggers.ts` warms on the same hover, sampled by useSiteCursor and handed
-   here as the `--lens*` custom properties.
+   here as the `--lens*` custom properties. A thumbnail cut to another shape than that photograph
+   (`data-lens="cut"`) is magnified from its own renditions instead.
 
    Which is the whole argument for this figure over any drawn one. A mark held over a photograph
    costs the reader the patch of picture it stands on, and the picture is the thing they are
