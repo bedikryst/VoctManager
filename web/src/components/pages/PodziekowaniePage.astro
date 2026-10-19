@@ -84,13 +84,12 @@ const PAIR_CONCERT = "kd-stworzenie-pair-concert";
     vault, the organ and every row of listeners stand in one frame. The alt is the gallery frame's. */
 const CHURCH = "kd-stworzenie-listeners";
 const CHURCH_GALLERY = "kd-stworzenie-11";
-/** Whoever introduced the concert, and the festival's organiser: a close portrait cut from each
-    gallery frame for the print, the gallery frame itself for the lightbox, and the gallery's
-    caption, `Name, function`, set as two lines. A frame whose caption the gallery leaves out does
-    not print: the introduction's speaker is not confirmed, and -38 returns once it is named there. */
+/** The festival's organiser and the speaker of the introduction, in the order the acknowledgements
+    thank them: a close portrait cut from each gallery frame for the print, the gallery frame itself
+    for the lightbox, and the gallery's caption, `Name, function`, set as two lines. */
 const HOSTS = [
-  { print: "kd-stworzenie-38-portrait", gallery: "kd-stworzenie-38" },
   { print: "kd-stworzenie-39-portrait", gallery: "kd-stworzenie-39" },
+  { print: "kd-stworzenie-38-portrait", gallery: "kd-stworzenie-38" },
 ] as const;
 /** The ensemble on the church steps afterwards: the gallery's own frame, as it hangs there. */
 const AFTER = "kd-stworzenie-17";

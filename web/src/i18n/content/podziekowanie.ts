@@ -49,6 +49,7 @@ const PARTNERS: readonly Partner[] = [
     for: `za zaproszenie do finału III${NBSP}edycji festiwalu „Fenomen Człowieka”`,
   },
   { who: "Polskie Centrum Informacji Muzycznej POLMIC", for: "za patronat medialny" },
+  { who: `Mateusz${NBSP}Kaczmarek`, for: "za wprowadzenie do koncertu" },
   {
     who: `dr${NBSP}Wiktoria${NBSP}Antonczyk`,
     for: "za",
