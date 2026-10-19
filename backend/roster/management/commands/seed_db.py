@@ -144,7 +144,6 @@ from finance.dtos import (
     SignContractDTO,
 )
 from finance.models import (
-    CONTRACT_FORMS,
     BudgetLine,
     BudgetStatus,
     Contract,
@@ -161,7 +160,7 @@ from finance.models import (
     ProjectBudget,
     ProjectFunding,
 )
-from finance.rules import finance_today, money
+from finance.rules import finance_today, has_contract_text, money
 from finance.services.contracts import ContractService
 from finance.services.expenses import ExpenseService
 from finance.services.funding import FundingService
@@ -1968,7 +1967,9 @@ class Command(BaseCommand):
         PlanService.approve(project, actor=None)
         fees = CostItem.objects.filter(
             budget__project=project, kind=CostKind.FEE,
-        ).select_related("participation__artist").order_by("payee_name", "pk")
+        ).select_related(
+            "participation__artist", "crew_assignment__collaborator",
+        ).order_by("payee_name", "pk")
 
         if spec.status != Project.Status.COMPLETED:
             for item in fees:
@@ -1988,7 +1989,11 @@ class Command(BaseCommand):
             signed_on=(when - timedelta(days=7)).date(),
             signed_copy_location=f"Biuro fundacji, segregator „Umowy {issued_at.year}”",
         )
-        contracts = [ContractService.issue(item, actor=None) for item in fees if item.form in CONTRACT_FORMS]
+        contracts = [
+            ContractService.issue(item, actor=None)
+            for item in fees
+            if has_contract_text(item.form, item.participation, item.crew_assignment)
+        ]
         # The service stamps the moment of issue; the paper went out before the
         # concert, and a contract dated after its own signature reads as an error.
         Contract.objects.filter(pk__in=[contract.pk for contract in contracts]).update(issued_at=issued_at)

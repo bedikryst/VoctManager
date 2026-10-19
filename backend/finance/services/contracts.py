@@ -38,7 +38,7 @@ from ..models import (
     FeeForm,
     FinanceAction,
 )
-from ..rules import contract_number, finance_today, is_artistic_payee
+from ..rules import contract_number, finance_today, has_contract_text
 from . import audit
 from .budget import BudgetService
 from .ledger import has_live_contract, refresh_item
@@ -121,8 +121,9 @@ class ContractService:
                 raise ContractRefused(params={"reason": "form", "form": item.form})
             if item.contract_amount is None:
                 raise ContractRefused(params={"reason": "unpriced"})
-            if item.form == FeeForm.DZIELO and not is_artistic_payee(item.participation, item.crew_assignment):
-                raise ContractRefused(params={"reason": "artistic_template"})
+            if not has_contract_text(item.form, item.participation, item.crew_assignment):
+                reason = "artistic_template" if item.form == FeeForm.DZIELO else "performer_template"
+                raise ContractRefused(params={"reason": reason})
             if has_live_contract(item):
                 raise ContractExists()
             seat = item.participation

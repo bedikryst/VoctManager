@@ -7,7 +7,7 @@ from typing import Any
 
 from rest_framework.test import APITestCase
 
-from roster.models import Collaborator
+from roster.models import Collaborator, VoiceType
 
 from ..models import (
     Contract,
@@ -77,6 +77,47 @@ class ContractTests(APITestCase):
     def test_outside_cast_instrumentalist_can_receive_a_deed(self) -> None:
         crew = make_crew(self.project, specialty=Collaborator.Specialty.INSTRUMENT)
         self.assertEqual(self.issue(price(self.project, crew=crew, amount="600", form="DZIELO")).status_code, 201)
+
+    def test_a_cast_performer_who_invoices_gets_the_artist_contract_on_its_own_sequence(self) -> None:
+        self.issue(self.priced_seat())
+        item = price(self.project, participation=make_seat(self.project, "Ewa", "Faktura"), amount="1500",
+                     form="INVOICE")
+
+        response = self.issue(item)
+
+        self.assertEqual(response.status_code, 201)
+        contract = Contract.objects.get(cost_item=item)
+        self.assertEqual((contract.number, contract.form), (f"VF—UMJDG/{self.year % 100:02d}/01", FeeForm.INVOICE))
+        [row] = [row for row in response.data["ledger"] if row["cost_item_id"] == str(item.pk)]
+        self.assertEqual(row["contract"]["number"], contract.number)
+
+    def test_an_invoice_outside_the_performing_cast_has_no_contract_text(self) -> None:
+        conductor = make_seat(self.project, "Jan", "Dyrygent", voice_type=VoiceType.CONDUCTOR)
+        player = make_crew(self.project, specialty=Collaborator.Specialty.INSTRUMENT)
+        items = [
+            price(self.project, participation=conductor, amount="2000", form="INVOICE"),
+            price(self.project, crew=player, amount="900", form="INVOICE"),
+        ]
+
+        for item in items:
+            response = self.issue(item)
+            self.assertEqual(response.status_code, 400)
+            self.assertEqual(response.data["params"]["reason"], "performer_template")
+        self.assertFalse(ContractSequence.objects.exists())
+
+    def test_the_ledger_offers_a_contract_only_where_there_is_a_text(self) -> None:
+        performer = price(self.project, participation=make_seat(self.project), amount="900", form="INVOICE")
+        vendor = price(self.project, crew=make_crew(self.project, company_name="Firma"), amount="900")
+        sound = price(self.project, crew=make_crew(self.project, "Ewa", "Dźwięk"), amount="600", form="DZIELO")
+
+        rows = {
+            row["cost_item_id"]: row["has_contract_text"]
+            for row in self.client.get(f"/api/finance/projects/{self.project.pk}/budget/").data["ledger"]
+        }
+
+        self.assertEqual(
+            (rows[str(performer.pk)], rows[str(vendor.pk)], rows[str(sound.pk)]), (True, False, False),
+        )
 
     def test_the_contract_freezes_amount_and_payee(self) -> None:
         item = self.priced_seat("450")

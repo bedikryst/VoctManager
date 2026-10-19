@@ -105,8 +105,10 @@ class FeeForm(models.TextChoices):
 
 
 # Forms the foundation issues a document of its own for. An invoice is the
-# vendor's document, and OTHER has none by definition.
-CONTRACT_FORMS = (FeeForm.DZIELO, FeeForm.ZLECENIE, FeeForm.VOLUNTEER)
+# vendor's document, but a cast performer who invoices still signs the
+# foundation's artist contract beside it; OTHER has none by definition. Which
+# payee a form's text covers is `rules.has_contract_text`.
+CONTRACT_FORMS = (FeeForm.DZIELO, FeeForm.ZLECENIE, FeeForm.INVOICE, FeeForm.VOLUNTEER)
 
 
 class ContractStatus(models.TextChoices):

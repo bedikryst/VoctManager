@@ -57,6 +57,7 @@ from ..rules import (
     charge_limit,
     default_form_for,
     exceeds_tolerance,
+    has_contract_text,
     in_kind_value,
     is_eligible_on,
     line_tolerance_pct,
@@ -130,6 +131,9 @@ class LedgerRow:
     budget_line_id: UUID | None
     form: str
     default_form: str | None
+    # The foundation has a contract text for this payee under `form`; the
+    # panel offers to issue one only then.
+    has_contract_text: bool
     contract_amount: Decimal | None
     employer_contributions: Decimal | None
     cost_amount: Decimal | None
@@ -739,6 +743,7 @@ def _row(
             category=category_for(roster_source) if roster_source is not None else "",
             budget_line_id=None,
             form=default_form or "", default_form=default_form,
+            has_contract_text=has_contract_text(default_form or "", participation, crew_assignment),
             contract_amount=None, employer_contributions=None, cost_amount=None,
             in_kind_hours=None, in_kind_hourly_rate=None, in_kind_value=None,
             incurred_on=concert_day, due_on=None, paid_on=None, paid_marked_at=None,
@@ -759,6 +764,7 @@ def _row(
         category=item.category,
         budget_line_id=item.budget_line_id,
         form=item.form, default_form=default_form,
+        has_contract_text=has_contract_text(item.form, item.participation, item.crew_assignment),
         contract_amount=item.contract_amount,
         employer_contributions=item.employer_contributions,
         cost_amount=item.cost_amount,

@@ -20,7 +20,14 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from django.utils import timezone, translation
 
-from roster.models import DEFAULT_EVENT_TIMEZONE, Collaborator, CrewAssignment, Participation, VoiceType
+from roster.models import (
+    DEFAULT_EVENT_TIMEZONE,
+    SINGING_VOICE_TYPES,
+    Collaborator,
+    CrewAssignment,
+    Participation,
+    VoiceType,
+)
 
 from .models import NON_CASH_FUNDING_KINDS, CostCategory, CostKind, FeeForm, FundingKind, FundingStatus
 
@@ -33,6 +40,29 @@ def is_artistic_payee(seat: Participation | None, crew: CrewAssignment | None) -
     """The musical contract covers cast members and outside-cast concert players."""
     return seat is not None or (crew is not None and crew.collaborator.specialty == Collaborator.Specialty.INSTRUMENT)
 
+
+def is_cast_performer(seat: Participation | None) -> bool:
+    """A cast singer or player, whose contract is the board's performer wording
+    and names their parts. A conductor is cast too but holds no part in a piece."""
+    if seat is None:
+        return False
+    voice_type = seat.artist.voice_type
+    return voice_type in SINGING_VOICE_TYPES or voice_type == VoiceType.INSTRUMENTALIST
+
+
+def has_contract_text(form: str, seat: Participation | None, crew: CrewAssignment | None) -> bool:
+    """Whether the foundation has a contract text for this payee under ``form``.
+    The work contract is written for an artistic performance only. The contract
+    beside an invoice is the board's performer wording with the payee as a
+    business, so it reaches cast performers alone: a vendor who invoices (a
+    sound company, a venue) signs nothing of ours, and a conductor or a player
+    outside the cast has no business wording yet."""
+    if form == FeeForm.DZIELO:
+        return is_artistic_payee(seat, crew)
+    if form == FeeForm.INVOICE:
+        return is_cast_performer(seat)
+    return form in (FeeForm.ZLECENIE, FeeForm.VOLUNTEER)
+
 # Where "today" is decided: the foundation's office, not the server's UTC clock.
 # A payment made on the evening of the 31st belongs to that month in the books.
 FINANCE_TIMEZONE = ZoneInfo(DEFAULT_EVENT_TIMEZONE)
@@ -40,10 +70,11 @@ FINANCE_TIMEZONE = ZoneInfo(DEFAULT_EVENT_TIMEZONE)
 # The one place contract numbers are shaped. The accounting office may have a
 # scheme of its own; adopting it is a change to this table and nothing else.
 # Placeholders: `n` the sequence number, `yy` the year's last two digits,
-# `yyyy` the full year. The work contract follows the board's scheme, em dash
-# included, as the signed paper prints it.
+# `yyyy` the full year. The work contract and the contract beside an invoice
+# follow the board's scheme, em dash included, as the signed paper prints it.
 CONTRACT_NUMBER_FORMATS: dict[str, str] = {
     FeeForm.DZIELO: 'VF—UMD/{yy}/{n:02d}',
+    FeeForm.INVOICE: 'VF—UMJDG/{yy}/{n:02d}',
     FeeForm.ZLECENIE: 'UZ/{n}/{yyyy}',
     FeeForm.VOLUNTEER: 'W/{n}/{yyyy}',
 }

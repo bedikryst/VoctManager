@@ -1,8 +1,10 @@
 """
 @file documents.py
 @description The foundation's own documents for a fee, rendered from the
-             contract row: the umowa o dzieło, the umowa zlecenia and the
-             porozumienie wolontariackie, each with its annexes, and the bill.
+             contract row: the umowa o dzieło, the umowa zlecenia, the
+             porozumienie wolontariackie and the umowa o świadczenie usług
+             artystycznych a cast performer signs beside their own invoice,
+             each with its annexes, and the bill.
              The paper prints the row's number, frozen amount and payee — never
              the item's live figures, which may have moved since issuance.
              What it reads live is the concert: the programme, a cast
@@ -16,7 +18,8 @@
              than translation, and a word resolved through the request's
              language would drop French into a Polish contract. A cast
              performer's umowa o dzieło is the board's own wording (2026-10),
-             transcribed in `docs/umowy/generator/umowa_dzielo.py`; every other
+             transcribed in `docs/umowy/generator/umowa_dzielo.py`, and the
+             contract beside an invoice is that wording retitled; every other
              document's source is
              `docs/specs/project-finance-contract-drafts-2026-09.md`. A
              correction lands in its source first, then in the template.
@@ -63,7 +66,9 @@ from ..rules import (
     FINANCE_TIMEZONE,
     PAYABLE_CONTRACT_FORMS,
     VOLUNTEER_INSURANCE_MAX_DAYS,
+    has_contract_text,
     is_artistic_payee,
+    is_cast_performer,
     local_date,
     local_moment,
 )
@@ -75,9 +80,17 @@ from .vocabulary import MONTH_NAMES, MONTH_NAMES_GENITIVE
 _CONTRACT_TEMPLATES: dict[str, str] = {
     FeeForm.DZIELO: "finance/contract_dzielo.html",
     FeeForm.ZLECENIE: "finance/contract_zlecenie.html",
+    FeeForm.INVOICE: "finance/contract_dzielo.html",
     FeeForm.VOLUNTEER: "finance/agreement_volunteer.html",
 }
 _BILL_TEMPLATE = "finance/bill.html"
+
+# The day the board added to the contract beside an invoice what a contract
+# with a business needs: the payee's NIP, their statement that they contract
+# within their business, and payment against an invoice instead of a bill. A
+# paper signed before it is the work contract retitled and nothing more, and
+# the text frozen for it has to say what that paper says.
+_BUSINESS_CLAUSES_FROM = date(2026, 10, 19)
 
 # What the person performs, which decides how the subject clause reads.
 SUBJECT_VOCAL = "vocal"
@@ -275,12 +288,6 @@ def programme(project: Project) -> list[ProgrammeEntry]:
         )
         for item in items
     ]
-
-
-def _is_performer(item: CostItem, subject: Subject) -> bool:
-    """A cast singer or player, whose contract names their parts. A conductor
-    is cast too but holds no part in a piece, so receives the programme annex."""
-    return item.participation is not None and subject.kind in (SUBJECT_VOCAL, SUBJECT_INSTRUMENTAL)
 
 
 _LINE_ORDER = {code: index for index, code in enumerate(VoiceLine.values)}
@@ -562,13 +569,19 @@ def _compose_contract_html(contract: Contract) -> str:
     context["font_css"] = mark_safe(_FONT_FACES_SLOT)
     item = contract.cost_item
     project = item.budget.project
-    if contract.form in (FeeForm.DZIELO, FeeForm.ZLECENIE):
+    if contract.form in (FeeForm.DZIELO, FeeForm.ZLECENIE, FeeForm.INVOICE):
         seat = item.participation
-        performer = seat is not None and _is_performer(item, context["subject"])
+        performer = is_cast_performer(seat)
         conductor = seat is not None and seat.artist.voice_type == VoiceType.CONDUCTOR
         artistic = is_artistic_payee(seat, item.crew_assignment)
-        if contract.form == FeeForm.DZIELO and not artistic:
+        if not has_contract_text(contract.form, seat, item.crew_assignment):
             raise ContractRefused()
+        if contract.form == FeeForm.INVOICE:
+            context["document_title"] = "Umowa o świadczenie usług artystycznych"
+            context["business_clauses"] = contract.signed_on is None or contract.signed_on >= _BUSINESS_CLAUSES_FROM
+            context["vendor_nip"] = item.vendor_nip.strip()
+        else:
+            context["document_title"] = "Umowa o dzieło"
         context["performer"] = performer
         context["artistic"] = artistic
         context["conductor"] = conductor

@@ -2,7 +2,7 @@
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
-    <title>Umowa o dzieło nr {{ number }} — {{ payee_name }}</title>
+    <title>{{ document_title }} nr {{ number }} — {{ payee_name }}</title>
     {% comment %}
         Umowa o dzieło: one artistic performance at one concert, with the
         related rights transferred. Two texts.
@@ -15,6 +15,14 @@
         The signing place is left to the pen; the date prints once the
         signature is recorded, so the text frozen then carries it.
 
+        A cast performer who invoices (`invoice`) signs the same wording as an
+        "umowa o świadczenie usług artystycznych": the board kept the body,
+        "Dzieło" included, and changed the title. `business_clauses` adds what
+        a contract with a business needs: the NIP among the payee's data, the
+        statement that they contract within their business, and payment
+        against an invoice. A paper signed before the board added them carries
+        none of the three, and its frozen text neither.
+
         A conductor or a player outside the cast keeps document 1 of
         docs/specs/project-finance-contract-drafts-2026-09.md until the board
         words one: the programme, the acceptance record and the GDPR clause as
@@ -26,12 +34,12 @@
         performance of the agreement. A correction lands in the text's source
         first.
     {% endcomment %}
-    <style>{% include "finance/_styles.html" with footer_label="Umowa o dzieło" %}</style>
+    <style>{% include "finance/_styles.html" with footer_label=document_title %}</style>
 </head>
 <body>
     {% include "finance/_masthead.html" %}
 
-    <div class="title">UMOWA O DZIEŁO <span class="title-number">nr {{ number }}</span></div>
+    <div class="title">{{ document_title|upper }} <span class="title-number">nr {{ number }}</span></div>
 {% if performer %}
     <p class="title-sub">z przeniesieniem majątkowych praw do artystycznego wykonania</p>
     <p class="concluded">zawarta w <span class="blank blank--s"></span> dnia {% if signed_on %}{{ signed_on|date:"d.m.Y" }}{% else %}<span class="blank blank--s"></span>{% endif %} r. pomiędzy:</p>
@@ -46,7 +54,8 @@
         <p><strong>{{ foundation.legal_name_instrumental }}</strong> z siedzibą w {{ foundation.seat_locative }}, {{ foundation.address }}, wpisaną do Krajowego Rejestru Sądowego pod numerem KRS {{ foundation.krs }}, NIP {{ foundation.nip }}, REGON {{ foundation.regon }}, reprezentowaną przez: {{ representative.name }} – {{ representative.function }}, zwaną dalej „Zamawiającym” lub „Fundacją”,</p>
         <p class="parties-and">a</p>
         <p>Imię (imiona) i nazwisko: <strong>{{ payee_name }}</strong><br>
-            PESEL: <span class="blank"></span><br>
+            {% if business_clauses %}NIP: {% if vendor_nip %}{{ vendor_nip }}{% else %}<span class="blank"></span>{% endif %}<br>
+            {% endif %}PESEL: <span class="blank"></span><br>
             Adres zamieszkania: <span class="blank blank--l"></span><br>
             Nr rachunku bankowego: <span class="blank blank--l"></span></p>
         <p>zwanym/zwaną dalej „Artystą”,<br>zwanymi łącznie „Stronami”.</p>
@@ -73,7 +82,12 @@
         <li>Strony ustalają łączne wynagrodzenie brutto w wysokości wskazanej poniżej za przygotowanie i wykonanie Dzieła oraz przeniesienie na Zamawiającego majątkowych praw do artystycznych wykonań na wszystkich polach eksploatacji wymienionych w § 4 i udzielenie przewidzianych w nim upoważnień i zezwoleń:
             <p class="fee">Kwota brutto: <strong>{{ amount }} zł</strong>, słownie: {{ amount_words_fraction }}</p>
         </li>
+{% if business_clauses %}
+        <li>Wynagrodzenie wskazane w ust. 1 będzie płatne przelewem, na rachunek bankowy Artysty, na podstawie faktury wystawionej przez Artystę po zrealizowaniu i przyjęciu Dzieła przez Zamawiającego, w terminie do 14 dni od dnia doręczenia prawidłowo wystawionej faktury.</li>
+        <li>Artysta oświadcza, że zawiera Umowę w ramach prowadzonej działalności gospodarczej.</li>
+{% else %}
         <li>Wynagrodzenie wskazane w ust. 1 będzie płatne przelewem, na rachunek bankowy Artysty, na podstawie rachunku wystawionego przez Artystę po zrealizowaniu i przyjęciu Dzieła przez Zamawiającego, w terminie do 14 dni od dnia doręczenia prawidłowo wystawionego rachunku.</li>
+{% endif %}
     </ol>
 
     <h2>§ 4 Prawa do artystycznego wykonania</h2>

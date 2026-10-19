@@ -62,6 +62,7 @@ class LedgerRowSerializer(serializers.Serializer):
     budget_line_id = serializers.UUIDField(allow_null=True)
     form = serializers.CharField(allow_blank=True)
     default_form = serializers.CharField(allow_null=True)
+    has_contract_text = serializers.BooleanField()
     contract_amount = _amount(allow_null=True)
     employer_contributions = _amount(allow_null=True)
     cost_amount = _amount(allow_null=True)

@@ -24,13 +24,6 @@ export const FEE_FORMS: readonly FeeForm[] = [
   "OTHER",
 ];
 
-/** The forms the foundation issues a document of its own for. */
-export const CONTRACT_FORMS: readonly FeeForm[] = [
-  "DZIELO",
-  "ZLECENIE",
-  "VOLUNTEER",
-];
-
 /** The forms whose contract has a bill beside it. */
 export const BILLED_FORMS: readonly FeeForm[] = ["DZIELO", "ZLECENIE"];
 
@@ -215,6 +208,13 @@ export interface LedgerRowDTO {
   readonly form: FeeForm | "";
   /** The form `default_form_for` picks; null for a one-off payee. */
   readonly default_form: FeeForm | null;
+  /**
+   * The foundation has a contract text for this payee under `form`: the work
+   * contract for an artistic payee, the contract beside an invoice for a cast
+   * performer, a mandate or volunteer agreement for anyone. A vendor's
+   * invoice has none.
+   */
+  readonly has_contract_text: boolean;
   readonly contract_amount: DecimalString | null;
   readonly employer_contributions: DecimalString | null;
   readonly cost_amount: DecimalString | null;

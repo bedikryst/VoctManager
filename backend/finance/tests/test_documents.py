@@ -262,6 +262,51 @@ class DocumentRenderTests(TestCase):
         Contract.objects.filter(pk=contract.pk).update(signed_on=date(2026, 10, 11))
         self.assertIn(f"zawarta w {blank} dnia 11.10.2026 r. pomiędzy:", render_contract_html(contract))
 
+    def test_the_contract_beside_an_invoice_is_the_performer_wording_with_a_business_as_the_artist(self) -> None:
+        item = price(self.project, participation=make_seat(self.project, "Ewa", "Faktura"), amount="1500",
+                     form="INVOICE")
+        CostItem.objects.filter(pk=item.pk).update(vendor_nip="1234563218")
+        contract = self.issue(item)
+        html = render_contract_html(contract)
+
+        self.assert_typography_is_intact(html)
+        self.assert_parties_are_real(html)
+        self.assertIn(
+            f"UMOWA O ŚWIADCZENIE USŁUG ARTYSTYCZNYCH <span class=\"title-number\">nr {contract.number}</span>", html,
+        )
+        self.assertIn('content: "Umowa o świadczenie usług artystycznych nr', html)
+        self.assertIn("z przeniesieniem majątkowych praw do artystycznego wykonania", html)
+        self.assertIn("NIP: 1234563218<br>", html)
+        self.assertIn("na podstawie faktury wystawionej przez Artystę", html)
+        self.assertIn("prawidłowo wystawionej faktury.", html)
+        self.assertIn("Artysta oświadcza, że zawiera Umowę w ramach prowadzonej działalności gospodarczej.", html)
+        self.assertIn(VOCAL_ANNEX, html)
+        self.assertNotIn("rachunku wystawionego", html)
+        self.assertNotIn("Umowa o dzieło", html)
+
+        ContractService.sign(contract, SignContractDTO(signed_on=date(2026, 10, 19)), actor=self.manager)
+        self.assertIn("w ramach prowadzonej działalności gospodarczej", render_contract_html(contract))
+
+    def test_a_paper_signed_before_the_business_clauses_is_the_work_contract_retitled(self) -> None:
+        seat = make_seat(self.project, "Ewa", "Faktura")
+        deed = self.issue(price(self.project, participation=seat, amount="1500"))
+        Contract.objects.filter(pk=deed.pk).update(signed_on=date(2026, 10, 11))
+        work_contract = render_contract_html(deed)
+        ContractService.annul(deed, reason="Faktura", actor=self.manager)
+        item = price(self.project, participation=seat, amount="1500", form="INVOICE")
+        CostItem.objects.filter(pk=item.pk).update(vendor_nip="1234563218")
+        contract = self.issue(item)
+
+        ContractService.sign(contract, SignContractDTO(signed_on=date(2026, 10, 11)), actor=self.manager)
+
+        frozen = (
+            render_contract_html(contract)
+            .replace(contract.number, deed.number)
+            .replace("UMOWA O ŚWIADCZENIE USŁUG ARTYSTYCZNYCH", "UMOWA O DZIEŁO")
+            .replace("Umowa o świadczenie usług artystycznych", "Umowa o dzieło")
+        )
+        self.assertEqual(frozen, work_contract)
+
     def test_a_crew_mandate_keeps_its_clause_and_leaves_the_declaration_to_the_office(self) -> None:
         crew = make_crew(self.project, "Jan", "Dźwiękowiec", specialty=Collaborator.Specialty.SOUND)
         crew.role_description = "Realizacja dźwięku"

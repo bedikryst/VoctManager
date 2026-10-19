@@ -12,14 +12,9 @@ import { isPriceEditable } from "./feeDraft";
 import { canChargeRow } from "./funding";
 import {
   BILLED_FORMS,
-  CONTRACT_FORMS,
-  type FeeForm,
   type LedgerRowDTO,
   type ProjectFundingDTO,
 } from "../types/finance.dto";
-
-const isContractForm = (form: FeeForm | ""): boolean =>
-  form !== "" && CONTRACT_FORMS.includes(form);
 
 /**
  * Mark paid: a priced fee above zero, not yet paid, whose seat still counts.
@@ -41,11 +36,11 @@ export const canPay = (row: LedgerRowDTO): boolean =>
 export const canRelease = (row: LedgerRowDTO): boolean =>
   row.cost_item_id !== null && row.orphaned && row.contract === null;
 
-/** Issue: a priced, billable fee under a form we write a document for. */
+/** Issue: a priced, billable fee we have a contract text for. */
 export const canIssue = (row: LedgerRowDTO): boolean =>
   row.cost_item_id !== null &&
   row.is_priced &&
-  isContractForm(row.form) &&
+  row.has_contract_text &&
   row.contract === null &&
   row.billable;
 
