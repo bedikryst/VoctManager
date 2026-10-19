@@ -22,11 +22,11 @@
  *    own screen value, `web:podziekowanie`. It stands high, straight after the photographs:
  *    these guests joining the list is what the page is for. The photographs between it and the
  *    donors' frame keep the two asks from reading as one appeal;
- *  - the programme's back page: the cast beside the acknowledgements, which open on the two hosts
- *    they thank, the director of POLMIC who introduced the concert and the festival's organiser,
- *    each print over a name and a function; then the way to the concert page and the signature.
- *    The hosts stand where they are thanked rather than among the afternoon's photographs: a
- *    portrait of a stranger needs its name, and here the name is already on the page.
+ *  - the programme's back page: the cast beside the acknowledgements, which open on the hosts
+ *    they thank, each print over a name and a function; then the way to the concert page and the
+ *    signature. The hosts stand where they are thanked rather than among the afternoon's
+ *    photographs: a portrait of a stranger needs its name, and here the name is already on the
+ *    page. So a host prints only while the gallery's caption names them.
  *
  *  THE INVITATION'S HANDS, REACHING AS THEY DID THERE. The guests opened the invitation on them,
  *  so the thanks opens on them too, and only the word under the title differs.
@@ -39,8 +39,8 @@
  *  reaches both pages. Its names are cleared for this concert's pages, and this is one of them.
  *
  *  EVERY PHOTOGRAPH IS OPTIONAL TO THE BUILD (`photoOptional`), being uploaded to the host by hand.
- *  The pair and the hosts print only when both of their files resolve, since one frame of either
- *  leaves a column empty; each landscape prints on its own file. The glyph prints only when the recording is on the host
+ *  The pair prints only when both of its files resolve, since one frame leaves a column empty;
+ *  each host and each landscape prints on its own file, and a lone host print stands centred. The glyph prints only when the recording is on the host
  *  (`lib/excerpts`). So open the page on the host before sending its link.
  *
  *  `noindex`, out of the sitemap and out of `TRANSLATED_ROUTES`, like `/zaproszenie`.
@@ -84,9 +84,10 @@ const PAIR_CONCERT = "kd-stworzenie-pair-concert";
     vault, the organ and every row of listeners stand in one frame. The alt is the gallery frame's. */
 const CHURCH = "kd-stworzenie-listeners";
 const CHURCH_GALLERY = "kd-stworzenie-11";
-/** The director of POLMIC, who introduced the concert, and the festival's organiser: a close
-    portrait cut from each gallery frame for the print, the gallery frame itself for the lightbox,
-    and the gallery's caption, `Name, function`, set as two lines. */
+/** Whoever introduced the concert, and the festival's organiser: a close portrait cut from each
+    gallery frame for the print, the gallery frame itself for the lightbox, and the gallery's
+    caption, `Name, function`, set as two lines. A frame whose caption the gallery leaves out does
+    not print: the introduction's speaker is not confirmed, and -38 returns once it is named there. */
 const HOSTS = [
   { print: "kd-stworzenie-38-portrait", gallery: "kd-stworzenie-38" },
   { print: "kd-stworzenie-39-portrait", gallery: "kd-stworzenie-39" },
@@ -185,15 +186,17 @@ const shots = [
   ...(afterImg ? [await frame(afterImg, true, WIDE_ASPECT, galleryAlt(AFTER))] : []),
 ];
 
-/* The hosts the acknowledgements open on, two prints side by side in a block of at most 400px
-   (the thanks column is 378–388px wide beside the cast, the sheet's measure under it). The
-   gallery's caption reads `Name, function`, so its first comma is where the second line starts. */
+/* The hosts the acknowledgements open on, prints side by side in a block of at most 400px (the
+   thanks column is 378–388px wide beside the cast, the sheet's measure under it); one alone keeps
+   a column's width. The gallery's caption reads `Name, function`, so its first comma is where the
+   second line starts. */
 const HOST_SIZES = "(min-width: 460px) 194px, calc(50vw - 34px)";
 const hostPrint = async ({ print, gallery }: (typeof HOSTS)[number]) => {
   const printImg = photoOptional(print);
   const galleryImg = photoOptional(gallery);
   if (!printImg || !galleryImg) return undefined;
-  const caption = concert.gallery.find((shot) => shot.img === gallery)?.caption ?? "";
+  const caption = concert.gallery.find((shot) => shot.img === gallery)?.caption;
+  if (!caption) return undefined;
   const seam = caption.indexOf(", ");
   if (seam < 1) {
     throw new Error(`[podziekowanie] "${gallery}" needs a caption "Name, function" in the gallery of "${INVITATION_CONCERT_ID}".`);
@@ -208,7 +211,7 @@ const hostPrint = async ({ print, gallery }: (typeof HOSTS)[number]) => {
   };
 };
 const hostPrints = await Promise.all(HOSTS.map(hostPrint));
-const hosts = hostPrints.every((host): host is NonNullable<typeof host> => host !== undefined) ? hostPrints : [];
+const hosts = hostPrints.filter((host): host is NonNullable<typeof host> => host !== undefined);
 
 /* The cast in the order a programme's back page sets it: the voices, the instruments, the music
    assistant who prepared the ensemble, and the conductor last. The last two are matched in

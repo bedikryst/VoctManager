@@ -472,14 +472,20 @@ html.voct-motion .pdz-folio:not(.is-in) :is(.pdz-incipit, .pdz-incipit-gloss) {
 
 /* The hosts the acknowledgements open on: two prints side by side, each over a name and a
    function in the roll's own two voices, the name as `.pdz-credit-who` sets it and the function
-   in the italic of `.pdz-credit-for`, a size down at a print's width. */
+   in the italic of `.pdz-credit-for`, a size down at a print's width. A lone print keeps the
+   width it has in the pair, so `HOST_SIZES` stays true, and stands centred. */
 .pdz-hosts {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
+  justify-content: center;
   align-items: start;
   gap: 12px;
   max-width: 400px;
   margin: clamp(28px, 3.4vw, 40px) auto 0;
+}
+
+.pdz-hosts:has(> .pdz-host:only-child) {
+  grid-template-columns: minmax(0, calc((100% - 12px) / 2));
 }
 
 .pdz-host {

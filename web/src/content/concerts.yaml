@@ -2785,9 +2785,11 @@
   # The conductor leads a third of these frames, so no two of them stand side by side: of the loft
   # passage only -21 hangs, the closest of the three frames taken within twenty seconds there.
   #
-  # -38 and -39 carry a `caption` because their subject is a person a reader cannot know by sight:
-  # the director of POLMIC, the concert's media patron, who introduced it, and the organiser of the
-  # festival it closed. Both also hang on /podziekowanie, whose back page thanks them by name.
+  # -39 carries a `caption` because its subject is a person a reader cannot know by sight: the
+  # organiser of the festival the concert closed. It also hangs on /podziekowanie, whose back page
+  # thanks the organiser by name. -38 is the spoken introduction before the walk-out; who gave it is not
+  # confirmed, so it carries no caption and its alt names no one. A caption `Name, function` added
+  # here puts its portrait back on /podziekowanie's back page beside -39.
   #
   # -3 is the plate: the ensemble at the altar from the nave, a third of the frame's height. It is
   # also the landing's Imagines frame (data/landing/paths.ts). The list's letter on this concert
@@ -2803,7 +2805,7 @@
   - { img: kd-stworzenie-35, alt: "Próba VoctEnsemble przed prezbiterium kościoła Wszystkich Świętych w Warszawie, dyrygent przy pulpicie, widok z góry", moment: rehearsal }
   - { img: kd-stworzenie-36, alt: "Roześmiana śpiewaczka i śpiewak VoctEnsemble z nutami u stopni ołtarza podczas próby", moment: rehearsal }
   - { img: kd-stworzenie-37, alt: "Śpiewaczki VoctEnsemble z nutami u stopni ołtarza podczas próby", moment: rehearsal }
-  - { img: kd-stworzenie-38, alt: "Kamil Staszowski przy pulpicie przed prezbiterium wprowadza słuchaczy w koncert", caption: "Kamil Staszowski, dyrektor POLMIC" }
+  - { img: kd-stworzenie-38, alt: "Wprowadzenie do koncertu przy pulpicie przed prezbiterium" }
   - { img: kd-stworzenie-9, alt: "VoctEnsemble tuż przed koncertem, przy bocznym ołtarzu kościoła" }
   - { img: kd-stworzenie-10, alt: "Śpiewacy VoctEnsemble wychodzą na koncert, widziani od tyłu; po prawej słuchacze w ławkach" }
   - { img: kd-stworzenie-20, alt: "VoctEnsemble z dyrygentem przed prezbiterium, tuż po wyjściu na koncert" }
