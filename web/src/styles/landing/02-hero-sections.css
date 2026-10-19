@@ -235,13 +235,32 @@
     display: block;
   }
 
-  /* The display gold, not a pale cream: the plate under this word is near-black, which is the ground
-     `--candle` was drawn for (8.46:1), and the chrome's own Voice pill is ruled in the same candle,
-     so the page's first gold and the header's agree. The word opens at weight 620 (the hero breath,
-     scripts/landing.ts), heavy enough that the hue reads in the stroke rather than only at its edge. */
+  /* Gold lit from above, not a flat fill. The word opens at weight 620 (the hero breath,
+     scripts/landing.ts), and at that mass the raw `--candle` (oklch 0.73 0.10 85) reads as mustard
+     against the plate's cold blue shaft, while a cream (0.88 0.05 89) loses the hue next to the white
+     first line. This sits between them and a few degrees warmer, toward flame rather than brass. The
+     falloff borrows the photograph's own light, which comes from the top of the frame: the ascender of
+     "ł" catches it, the descender of "g" sinks. Every stop holds ≥ 7.8:1 on the near-black ground.
+     Kept to one hue and a short lightness range; wider, it reads as foil. */
   .hero-title em {
     font-style: normal;
-    color: var(--candle);
+    color: oklch(0.8 0.07 76);
+  }
+
+  @supports (background-clip: text) or (-webkit-background-clip: text) {
+    @media (forced-colors: none) {
+      .hero-title em {
+        background-image: linear-gradient(
+          180deg,
+          oklch(0.86 0.055 80) 8%,
+          oklch(0.8 0.07 76) 52%,
+          oklch(0.72 0.075 72) 92%
+        );
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+    }
   }
 
   /* The air under the h1 is measured against its DESCENDERS, not its baseline. `.hero-title` is set
