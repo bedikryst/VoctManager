@@ -24,7 +24,7 @@ Współzałożyłem fundację, która prowadzi zespół, i jestem jedynym progra
 
 Pierwszy koncert w systemie (u św. Andrzeja Boboli, maj 2026) to były głównie dane, które wpisałem sam, żeby sprawdzić cały proces. Proces zadziałał, ale dyrygent z niego nie korzystał. Swoją pracę robi świetnie i między próbami nie ma czasu na naukę nowych narzędzi, czego nie przewidziałem. Namówienie go, żeby otworzył aplikację w zwykły wtorek, okazało się trudniejsze niż cała strona techniczna.
 
-Koncert z końca sierpnia poprowadził przez aplikację już sam, a chórzyści korzystali z niej w trakcie koncertu. Teraz trwają próby do kolejnego programu i pracują w niej i dyrygent, i chór. Na bieżąco przysyła mi uwagi, a opisany niżej plan próby powstał z dwóch jego zgłoszeń. Od 20 września otwiera aplikację codziennie. Od tego dnia do 1 października wysłał przyciskiem w aplikacji 59 zgłoszeń, a 53 z nich zamknąłem tego samego dnia.
+Koncert z końca sierpnia poprowadził przez aplikację już sam, a chórzyści korzystali z niej w trakcie koncertu. Październikowy program przygotowywali w niej i dyrygent, i większość chóru. Na bieżąco przysyła mi uwagi, a opisany niżej plan próby powstał z dwóch jego zgłoszeń. Kiedy trwają przygotowania do koncertu, otwiera aplikację codziennie. Od 20 września do 1 października przez przycisk w aplikacji przyszło 59 zgłoszeń, większość od niego, kilka od chórzystów, a 53 z nich zamknąłem tego samego dnia.
 
 <picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/feedback-sheet-dark.png"><img src="docs/assets/feedback-sheet-light.png" width="240" alt="Okno zgłoszenia otwarte na telefonie: wybrany rodzaj Pomysł i wpisana notatka z prośbą, żeby odtwarzacz pamiętał tempo dla każdego utworu"></picture>
 
