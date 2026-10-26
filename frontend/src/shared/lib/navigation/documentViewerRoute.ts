@@ -1,16 +1,17 @@
 /**
- * @file types.ts
- * @description Public type contract for the deep-linkable document viewer route.
- * Lives in its own module so callsite shells (e.g. PdfViewerModal) can import the
- * descriptor and path builder eagerly without pulling the heavyweight page chunk
- * into the main bundle. The page component lives in `./index.tsx` and is loaded
- * lazily by the router.
- * @module pages/app/DocumentViewerPage/types
+ * @file documentViewerRoute.ts
+ * @description Public contract of the deep-linkable document viewer route: the
+ * descriptor, the display hint and the path builder. Kept in `shared/` so the
+ * viewer shell (`PdfViewerModal`) and the features that open documents can link
+ * to the route without importing upward into `pages/`. The page itself lives in
+ * `pages/panel/DocumentViewerPage` and is loaded lazily by the router.
+ * @module shared/lib/navigation/documentViewerRoute
  */
 
 /**
  * Closed set of document types the viewer route knows how to resolve.
- * Adding a new type requires extending the resolver in `./index.tsx`.
+ * Adding a new type requires extending the resolver in
+ * `pages/panel/DocumentViewerPage/index.tsx`.
  *
  * The concert-day sheet appears twice on purpose. `project-day-sheet` is the
  * *personal* one — the server reads the audience off the caller, so a manager

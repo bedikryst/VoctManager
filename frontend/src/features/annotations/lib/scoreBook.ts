@@ -96,6 +96,23 @@ export const bookPageFor = (
 };
 
 /**
+ * A height on the edition's page, as a height on the book page that bound it.
+ * A mark's `y` is measured against its EDITION's page, which the book places in
+ * a rectangle with margins of its own; a jump aimed at the raw `y` lands off
+ * the mark by those margins, further the lower on the page it sits.
+ */
+export const bookFocusY = (
+  book: ScoreBook,
+  bookPage: number,
+  y: number,
+): number => {
+  const frame = book.frames.get(bookPage);
+  if (!frame) return y;
+  const [, top, , height] = frame.box;
+  return top + y * height;
+};
+
+/**
  * Which piece the reader is standing in. Spans are contiguous and ordered by
  * binding, but a page can fall between two of them (front matter, a duplex
  * blank), and that is an honest "nowhere in particular" rather than a guess.

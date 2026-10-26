@@ -162,18 +162,20 @@ export default function ArchivePieceCardPage(): React.JSX.Element {
   const cardPath = (pieceId: string | number): string =>
     `/panel/archive-management/${pieceId}`;
 
-  // Conductor markup, right in the main score preview. Archive is manager-only,
-  // so editing is always on.
-  const annotator = useScoreAnnotator({
-    editionId: piece ? getReviewPdf(piece)?.id ?? null : null,
-    mode: "conductor",
-  });
-
   // Below lg the inline viewer letterboxes a tiny page under an overlapping
   // pager; there the score opens full-screen in the shared stand instead. Gated
   // by a media query (not just CSS) so the heavy inline PdfViewer never mounts
   // on phones.
   const isDesktopScore = useMediaQuery("(min-width: 1024px)");
+
+  // Conductor markup, right in the main score preview. Archive is manager-only,
+  // so editing is always on. Idle below lg, where that preview is not mounted
+  // and the stand carries its own annotator.
+  const annotator = useScoreAnnotator({
+    editionId: piece ? getReviewPdf(piece)?.id ?? null : null,
+    mode: "conductor",
+    active: isDesktopScore,
+  });
   const [isScoreOpen, setIsScoreOpen] = useState(false);
   const [isApproveOpen, setIsApproveOpen] = useState(false);
 

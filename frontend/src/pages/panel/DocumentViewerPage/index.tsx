@@ -27,12 +27,11 @@ import {
 import { ScoreMarksToggle } from "@/features/projects/components/ScoreMarksToggle";
 import { ScheduleService } from "@/features/schedule/api/schedule.service";
 import { ChoristerHubService } from "@/features/chorister-hub/api/chorister-hub.service";
-
 import {
   isDocumentDisplayHint,
   type DocumentDisplayHint,
   type DocumentType,
-} from "./types";
+} from "@/shared/lib/navigation/documentViewerRoute";
 
 const KNOWN_DOCUMENT_TYPES: readonly DocumentType[] = [
   "project-score",

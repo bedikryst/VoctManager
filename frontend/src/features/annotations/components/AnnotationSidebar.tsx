@@ -50,6 +50,11 @@ interface AnnotationSidebarProps {
    * jumped to come through here. Identity for a single edition.
    */
   displayPage?: (sourcePage: number) => number;
+  /**
+   * The same translation for a mark's height: in the binder the edition's page
+   * sits inside a rectangle of the book page. Identity for a single edition.
+   */
+  displayFocusY?: (sourcePage: number, y: number) => number;
   visibleLayers: LayerVisibility;
   toggleLayerVisibility: (layer: AnnotationLayer) => void;
   /** Decides which layer rows make sense: choir/private vs conductor/mine. */
@@ -63,6 +68,7 @@ export const AnnotationSidebar = ({
   currentPage,
   goToPage,
   displayPage = (page) => page,
+  displayFocusY = (_page, y) => y,
   visibleLayers,
   toggleLayerVisibility,
   mode,
@@ -220,7 +226,7 @@ export const AnnotationSidebar = ({
                         key={page}
                         type="button"
                         onClick={() => goToPage(page)}
-                        title={t("annotations.panel.page_marks", "{{count}} oznaczeń", { count })}
+                        title={t("annotations.panel.page_marks", { count })}
                         className={cn(
                           "flex h-8 min-w-8 items-center justify-center gap-1 rounded-lg px-2 text-xs font-medium transition-colors",
                           page === currentPage
@@ -257,7 +263,10 @@ export const AnnotationSidebar = ({
                               // that shows half a page at a time, "go to page 7"
                               // can land a screen above the thing that was
                               // clicked.
-                              goToPage(displayPage(note.page_number), payload.y);
+                              goToPage(
+                                displayPage(note.page_number),
+                                displayFocusY(note.page_number, payload.y),
+                              );
                               onSelectMark(note.id, note.page_number);
                             }}
                             className="flex w-full items-start gap-2 rounded-lg px-2 py-1.5 text-left transition-colors hover:bg-ink-on-inverse/10"

@@ -12,7 +12,9 @@
  *
  * Every control commits on tap. There is no draft here and therefore no OK: each
  * one states a single fact about a marking that already exists, and every one of
- * them is undoable with the history the toolbar already carries. Delete goes
+ * them is undoable with the history the toolbar already carries. The size slider
+ * is the one control that moves through values on its way to one: it previews
+ * while held and commits on release, so a resize is one edit. Delete goes
  * unconfirmed for the same reason the eraser does — an arm-then-confirm here
  * would make the card stricter than the tool sitting next to it.
  *
@@ -61,7 +63,11 @@ interface MarkActionCardProps {
   audiences: readonly WriteLayer[];
   onChangeLayer: (next: WriteLayer) => void;
   onChangeColor: (next: string) => void;
-  onChangeScale: (next: number) => void;
+  /** A symbol's size while its slider is held; null when nothing is held. */
+  previewScale: number | null;
+  onPreviewScale: (next: number) => void;
+  /** The slider was let go: write the previewed size, once. */
+  onCommitScale: () => void;
   onDelete: () => void;
   onClose: () => void;
 }
@@ -91,7 +97,9 @@ export const MarkActionCard = ({
   audiences,
   onChangeLayer,
   onChangeColor,
-  onChangeScale,
+  previewScale,
+  onPreviewScale,
+  onCommitScale,
   onDelete,
   onClose,
 }: MarkActionCardProps): React.JSX.Element | null => {
@@ -104,7 +112,10 @@ export const MarkActionCard = ({
 
   const stamp = isStamp(annotation) ? (annotation.payload as StampPayload) : null;
   const stampDef = stamp ? getStampDef(stamp.symbol) : null;
+  // The card is placed from the STORED size: following the preview would slide
+  // the slider out from under the thumb that is dragging it.
   const scale = clampMarkScale(stamp?.scale);
+  const shownScale = previewScale ?? scale;
 
   // How far the marking's own ink reaches from the anchor, so the card clears
   // the whole drawing rather than its centre point. A stroke reaches half its
@@ -209,7 +220,7 @@ export const MarkActionCard = ({
             <StampGlyph
               symbol={stamp.symbol}
               color={annotation.color}
-              size={10 + scale * 8}
+              size={10 + shownScale * 8}
             />
           </span>
           <input
@@ -217,8 +228,14 @@ export const MarkActionCard = ({
             min={MARK_SCALE_MIN}
             max={MARK_SCALE_MAX}
             step={MARK_SCALE_STEP}
-            value={scale}
-            onChange={(event) => onChangeScale(Number(event.target.value))}
+            value={shownScale}
+            onChange={(event) => onPreviewScale(Number(event.target.value))}
+            // Release, by any hand: a pointer lifting, an arrow key let go, or
+            // focus leaving. Each is a no-op when nothing is held.
+            onPointerUp={onCommitScale}
+            onPointerCancel={onCommitScale}
+            onKeyUp={onCommitScale}
+            onBlur={onCommitScale}
             aria-label={t("annotations.scale.stamp", "Rozmiar symbolu")}
             className="w-full accent-ethereal-ink"
           />

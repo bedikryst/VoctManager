@@ -16,7 +16,8 @@
  * a project (which mails the whole cast and cannot be recalled), a chorister's
  * RSVP, a conductor's roll-call, account activation, the score marks' writes
  * (the read-back that leaves a singer's own markings on their device, the write
- * rules, undo, and the "new marks" baseline), and the microphone capture behind
+ * rules, undo, the "new marks" baseline, and which pointer may write on the
+ * page), and the microphone capture behind
  * the vocal-range screen. The rest of the panel has no component tests, and that is
  * a decision, not a gap someone forgot to close. These are the ones where a
  * regression sends mail, marks the wrong person absent, burns a single-use

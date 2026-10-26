@@ -15,6 +15,7 @@
     },
     "markup": "Annotation",
     "pending_hint": "Enregistré sur cet appareil. L'envoi se fera seul dès le retour du réseau.",
+    "queue_label": "Annotation de partition",
     "incoming": {
       "line_one": "Nouvelle annotation · p. {{page}}",
       "line_few": "{{count}} nouvelles annotations · p. {{page}}",
@@ -93,7 +94,10 @@
       "notes": "Notes",
       "open": "Afficher les annotations",
       "page": "p. {{page}}",
-      "page_marks": "{{count}} marques",
+      "page_marks_one": "{{count}} marque",
+      "page_marks_few": "{{count}} marques",
+      "page_marks_many": "{{count}} marques",
+      "page_marks_other": "{{count}} marques",
       "pages": "Pages annotées",
       "title": "Annotations"
     },

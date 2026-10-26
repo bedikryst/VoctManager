@@ -105,14 +105,14 @@ interface ToolDef {
 }
 
 const TOOLS: ReadonlyArray<ToolDef> = [
-  { id: "pointer", icon: MousePointer2, labelKey: "annotations.tools.pointer", fallback: "Browse", drawOnly: false },
-  { id: "pen", icon: PenLine, labelKey: "annotations.tools.pen", fallback: "Pen", drawOnly: true },
-  { id: "highlighter", icon: Highlighter, labelKey: "annotations.tools.highlighter", fallback: "Highlighter", drawOnly: true },
-  { id: "shape", icon: Shapes, labelKey: "annotations.tools.shape", fallback: "Shapes", drawOnly: true },
+  { id: "pointer", icon: MousePointer2, labelKey: "annotations.tools.pointer", fallback: "Przeglądaj", drawOnly: false },
+  { id: "pen", icon: PenLine, labelKey: "annotations.tools.pen", fallback: "Pióro", drawOnly: true },
+  { id: "highlighter", icon: Highlighter, labelKey: "annotations.tools.highlighter", fallback: "Zakreślacz", drawOnly: true },
+  { id: "shape", icon: Shapes, labelKey: "annotations.tools.shape", fallback: "Kształty", drawOnly: true },
   // A speech bubble says "comment thread". This tool writes a WORD on paper.
-  { id: "note", icon: Type, labelKey: "annotations.tools.note", fallback: "Note", drawOnly: false },
+  { id: "note", icon: Type, labelKey: "annotations.tools.note", fallback: "Notatka", drawOnly: false },
   { id: "stamp", icon: Stamp, labelKey: "annotations.tools.stamp", fallback: "Symbol", drawOnly: false },
-  { id: "eraser", icon: Eraser, labelKey: "annotations.tools.eraser", fallback: "Erase", drawOnly: false },
+  { id: "eraser", icon: Eraser, labelKey: "annotations.tools.eraser", fallback: "Gumka", drawOnly: false },
 ];
 
 /** The line is drawn slanted: it rules itself level or plumb only near those
@@ -125,9 +125,9 @@ const SHAPE_ICONS: Record<ShapeKind, typeof PenLine> = {
 };
 
 const SIZES: ReadonlyArray<{ id: StrokeSize; dot: number; labelKey: string; fallback: string }> = [
-  { id: "fine", dot: 5, labelKey: "annotations.size.fine", fallback: "Fine" },
-  { id: "medium", dot: 8, labelKey: "annotations.size.medium", fallback: "Medium" },
-  { id: "bold", dot: 12, labelKey: "annotations.size.bold", fallback: "Bold" },
+  { id: "fine", dot: 5, labelKey: "annotations.size.fine", fallback: "Cienka" },
+  { id: "medium", dot: 8, labelKey: "annotations.size.medium", fallback: "Średnia" },
+  { id: "bold", dot: 12, labelKey: "annotations.size.bold", fallback: "Gruba" },
 ];
 
 /**

@@ -7,13 +7,9 @@
  * corner to corner that lands as ordinary ink (see `lib/shapes`), so from the
  * moment it is placed it is a stroke like any other. All coordinates are normalized
  * (0..1) to the page box so a marking holds its musical position across zoom
- * and devices. Input routing follows `fingerDraw`: on a stylus device the
- * finger PANS the score (manual scroll of the viewer viewport) and only
- * pen/mouse draw — palm rejection; on a device with no stylus the finger draws,
- * because reserving it for panning would leave the pencil unable to write at
- * all. Two fingers are never a stroke: a second touch abandons the line in
- * progress and hands the gesture to the viewer's pinch zoom. Note + stamp
- * placement is tap-detected so panning stays possible on touch.
+ * and devices. Which pointer draws, pans or taps — palm rejection, pinch, the
+ * edge-zone page turn — is decided in `lib/useOverlayInput`; this file renders
+ * and turns finished gestures into marks.
  * Which existing marks may be erased/edited is decided by the `canModify`
  * predicate — a chorister touches only their personal layer.
  *
@@ -25,18 +21,20 @@
  * @module features/annotations/components
  */
 
-import React, { useCallback, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Lock, Pin } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 import { cn } from "@/shared/lib/utils";
-import {
-  resolveTapZone,
-  type PdfPageGeometry,
-} from "@/shared/ui/composites/PdfViewer";
+import type { PdfPageGeometry } from "@/shared/ui/composites/PdfViewer";
 
 import { MarkActionCard } from "./MarkActionCard";
-import { inlineFontSize, NoteCard } from "./NoteCard";
+import {
+  INLINE_MARK_BACKGROUND,
+  INLINE_MARK_CLASS,
+  inlineFontSize,
+  NoteCard,
+} from "./NoteCard";
 import {
   isComment,
   isFreehand,
@@ -65,6 +63,7 @@ import { getStampDef, StampGlyph } from "../lib/stamps";
 import { buildSmoothPath } from "../lib/smoothing";
 import { buildShapePaths, type ShapeKind } from "../lib/shapes";
 import { pickRecentPhrases, QUICK_PHRASES } from "../lib/quickPhrases";
+import { slopFor, surfaceModes, useOverlayInput } from "../lib/useOverlayInput";
 
 interface AnnotationOverlayProps {
   geometry: PdfPageGeometry;
@@ -123,21 +122,6 @@ const STROKE_HIT_MIN_WIDTH = 16;
 const STROKE_HIT_MAX_WIDTH = 28;
 /** How far the selection wash spreads beyond the ink it traces, each side. */
 const SELECTION_HALO_PX = 5;
-/** Pointer drift beyond this many px stops being a tap and becomes a drag/pan. */
-const MOUSE_SLOP_PX = 6;
-/**
- * A finger is not a mouse. A tap on a tablet wanders ten-odd pixels before it
- * lifts, and reading that wander as a drag is what made tapping a note nudge it
- * instead of opening it — the single biggest reason the text tool felt stiff.
- */
-const TOUCH_SLOP_PX = 14;
-
-const slopFor = (pointerType: string): number =>
-  pointerType === "mouse" ? MOUSE_SLOP_PX : TOUCH_SLOP_PX;
-
-/** Marks the wrappers around placed marks, so the surface below never treats a
- *  press on an existing mark as a request to place a new one. */
-const MARK_ATTR = "data-annotation-mark";
 
 /** Ink and highlighter share a payload and every rule below that draws one. */
 const isStrokeMark = (
@@ -173,37 +157,10 @@ export const AnnotationOverlay = ({
   const { t } = useTranslation();
   const { width, height, pageNumber } = geometry;
   const surfaceRef = useRef<HTMLDivElement | null>(null);
-  const [stroke, setStroke] = useState<NormPoint[] | null>(null);
   const [pendingNote, setPendingNote] = useState<{ x: number; y: number } | null>(null);
-
-  // Finger-pan session while a pen tool is armed (stylus-first routing). The
-  // start point rides along so a pan that never moved can still be read as the
-  // tap it was — see `handlePointerUp`.
-  const panRef = useRef<{
-    pointerId: number;
-    startX: number;
-    startY: number;
-    lastX: number;
-    lastY: number;
-    viewport: HTMLElement;
-  } | null>(null);
-  // Tap candidate for note/stamp placement (placement happens on pointerUP so
-  // a drag can still pan the score instead of dropping a mark).
-  const tapRef = useRef<{
-    pointerId: number;
-    x: number;
-    y: number;
-    slop: number;
-    moved: boolean;
-  } | null>(null);
-  // The pointer currently laying down ink, so a second finger can abandon it.
-  const strokePointerRef = useRef<number | null>(null);
-
-  const releaseStroke = useCallback((element: Element, pointerId: number) => {
-    strokePointerRef.current = null;
-    setStroke(null);
-    if (element.hasPointerCapture(pointerId)) element.releasePointerCapture(pointerId);
-  }, []);
+  // A composer opened under one tool closes when the tool changes: an anchor
+  // left open under the pen would take the next tap on the page as its own.
+  useEffect(() => () => setPendingNote(null), [tool]);
 
   // Memoised because a stroke in progress re-renders this component on every
   // sampled point, and the list below is walked five more times per render.
@@ -215,24 +172,12 @@ export const AnnotationOverlay = ({
     [annotations, pageNumber, visibleLayers],
   );
 
-  const toNorm = useCallback((clientX: number, clientY: number): NormPoint => {
-    const rect = surfaceRef.current?.getBoundingClientRect();
-    if (!rect || rect.width === 0 || rect.height === 0) return [0, 0];
-    return [
-      clamp01((clientX - rect.left) / rect.width),
-      clamp01((clientY - rect.top) / rect.height),
-    ];
-  }, []);
-
-  const drawing =
-    canEdit && (tool === "pen" || tool === "highlighter" || tool === "shape");
   // A shape's "stroke" holds two points only — where the drag began and where
   // it is now — and the figure is rebuilt from them on every move.
-  const shaping = tool === "shape";
-  const placing = canEdit && tool === "note";
-  const stamping = canEdit && tool === "stamp";
-  const erasing = canEdit && tool === "eraser";
-  const browsing = tool === "pointer";
+  const { drawing, shaping, placing, stamping, erasing, browsing } = surfaceModes(
+    tool,
+    canEdit,
+  );
   const surfaceInteractive = drawing || placing || stamping;
   /**
    * Modes in which an EXISTING mark answers to a touch — tap to open, drag to
@@ -300,194 +245,105 @@ export const AnnotationOverlay = ({
     onUpdate(a.id, { layer_name: next }, { layer_name: a.layer_name });
   };
 
-  const handlePointerDown = useCallback(
-    (event: React.PointerEvent<HTMLDivElement>) => {
-      if (drawing) {
-        // A second pointer means a pinch is starting, not a line: drop the
-        // stroke so the viewer's zoom gesture takes the page cleanly.
-        const active = strokePointerRef.current;
-        if (active !== null && active !== event.pointerId) {
-          releaseStroke(event.currentTarget, active);
-          return;
-        }
-        if (event.pointerType === "touch" && !fingerDraw) {
-          // Palm rejection: the finger pans (manually scrolling the viewer
-          // viewport, since touch-action is "none" here) — only the stylus draws.
-          const viewport =
-            surfaceRef.current?.closest<HTMLElement>("[data-pdf-viewport]");
-          if (viewport) {
-            event.currentTarget.setPointerCapture(event.pointerId);
-            panRef.current = {
-              pointerId: event.pointerId,
-              startX: event.clientX,
-              startY: event.clientY,
-              lastX: event.clientX,
-              lastY: event.clientY,
-              viewport,
-            };
-          }
-          return;
-        }
-        event.currentTarget.setPointerCapture(event.pointerId);
-        strokePointerRef.current = event.pointerId;
-        setStroke([toNorm(event.clientX, event.clientY)]);
-      } else if (placing || stamping) {
-        // A press that started on an existing mark belongs to that mark.
-        if ((event.target as Element | null)?.closest?.(`[${MARK_ATTR}]`)) return;
-        tapRef.current = {
-          pointerId: event.pointerId,
-          x: event.clientX,
-          y: event.clientY,
-          slop: slopFor(event.pointerType),
-          moved: false,
-        };
-      }
-    },
-    [drawing, fingerDraw, placing, releaseStroke, stamping, toNorm],
-  );
+  /**
+   * A symbol's size while its slider is held, drawn on the page but not yet
+   * written. Release commits it as one edit — one request and one undo step —
+   * where every tick of the slider used to be both. After the commit the draft
+   * holds the size until the mark itself changes (the optimistic patch, or a
+   * rollback), so the symbol never flicks back to its old size in between.
+   */
+  const [scaleDraft, setScaleDraft] = useState<{
+    id: string;
+    scale: number;
+    /** The mark as it stood when the draft was written; null while held. */
+    committed: ScoreAnnotation | null;
+  } | null>(null);
+  if (
+    scaleDraft &&
+    (actionMark?.id !== scaleDraft.id ||
+      (scaleDraft.committed !== null && actionMark !== scaleDraft.committed))
+  ) {
+    setScaleDraft(null);
+  }
 
-  const handlePointerMove = useCallback(
-    (event: React.PointerEvent<HTMLDivElement>) => {
-      const pan = panRef.current;
-      if (pan && pan.pointerId === event.pointerId) {
-        pan.viewport.scrollLeft -= event.clientX - pan.lastX;
-        pan.viewport.scrollTop -= event.clientY - pan.lastY;
-        pan.lastX = event.clientX;
-        pan.lastY = event.clientY;
-        return;
-      }
-      const tap = tapRef.current;
-      if (tap && tap.pointerId === event.pointerId) {
-        if (Math.hypot(event.clientX - tap.x, event.clientY - tap.y) > tap.slop) {
-          tap.moved = true;
-        }
-        return;
-      }
-      if (!drawing || !stroke) return;
-      if (strokePointerRef.current !== event.pointerId) return;
-      const next = toNorm(event.clientX, event.clientY);
-      if (shaping) {
-        setStroke([stroke[0], next]);
-        return;
-      }
-      const last = stroke[stroke.length - 1];
-      // Skip sub-threshold jitter to keep payloads lean.
-      if (Math.hypot(next[0] - last[0], next[1] - last[1]) < 0.0025) return;
-      setStroke([...stroke, next]);
-    },
-    [drawing, shaping, stroke, toNorm],
-  );
-
-  const handlePointerUp = useCallback(
-    (event: React.PointerEvent<HTMLDivElement>) => {
-      const pan = panRef.current;
-      if (pan && pan.pointerId === event.pointerId) {
-        panRef.current = null;
-        // A finger that pressed and lifted without travelling did not pan — it
-        // tapped. In the edge zones that is the score's page turn, which this
-        // surface would otherwise swallow whole (it is gesture-exempt, so the
-        // viewer never sees the touch), leaving a reader with the pencil in
-        // hand stranded on one page.
-        const travelled = Math.hypot(
-          event.clientX - pan.startX,
-          event.clientY - pan.startY,
-        );
-        if (travelled <= TOUCH_SLOP_PX) {
-          // The surface covers the page, so its box is the paper.
-          const zone = resolveTapZone(
-            event.clientX,
-            pan.viewport.getBoundingClientRect(),
-            event.currentTarget.getBoundingClientRect(),
-          );
-          if (zone !== 0) onTurnPage(zone);
-        }
-        return;
-      }
-      const tap = tapRef.current;
-      if (tap && tap.pointerId === event.pointerId) {
-        tapRef.current = null;
-        if (!tap.moved) {
-          // An open composer (or a selected mark) owns the next tap on the
-          // page: it closes, nothing is placed. Placing on that same tap would
-          // drop a mark under the card the writer was still using.
-          if (pendingNote || selectedId) {
-            setPendingNote(null);
-            onSelect(null);
-            return;
-          }
-          const [x, y] = toNorm(event.clientX, event.clientY);
-          if (stamping) {
-            onCreate({
-              page_number: pageNumber,
-              annotation_type: "ST",
-              payload: { x, y, symbol: stamp, scale: stampScale },
-              color,
-              layer_name: layer,
-            });
-          } else if (placing) {
-            onSelect(null);
-            setPendingNote({ x, y });
-          }
-        }
-        return;
-      }
-      if (!drawing || !stroke) return;
-      if (strokePointerRef.current !== event.pointerId) return;
-      strokePointerRef.current = null;
-      if (shaping) {
-        const paths =
-          stroke.length > 1
-            ? buildShapePaths(shape, stroke[0], stroke[stroke.length - 1], width, height)
-            : [];
-        if (paths.length > 0) {
-          onCreate({
-            page_number: pageNumber,
-            annotation_type: "FH",
-            payload: { paths, width: strokeFraction("pen", size) },
-            color,
-            layer_name: layer,
-          });
-        }
-      } else if (stroke.length > 1) {
-        const isHl = tool === "highlighter";
-        onCreate({
-          page_number: pageNumber,
-          annotation_type: isHl ? "HL" : "FH",
-          payload: {
-            paths: [stroke],
-            width: strokeFraction(isHl ? "highlighter" : "pen", size),
-          },
-          color,
-          layer_name: layer,
-        });
-      }
-      setStroke(null);
-    },
-    [drawing, shaping, shape, width, height, stroke, tool, size, stamping, placing, pendingNote, selectedId, stamp, stampScale, onCreate, onSelect, onTurnPage, pageNumber, color, layer, toNorm],
-  );
-
-  const handlePointerCancel = useCallback(() => {
-    panRef.current = null;
-    tapRef.current = null;
-    strokePointerRef.current = null;
-    setStroke(null);
-  }, []);
-
-  const handlePointerLeave = useCallback((event: React.PointerEvent<HTMLDivElement>) => {
-    // A note/stamp tap candidate that slides off the page is CANCELLED, not
-    // dropped at the edge (which is what routing this to pointerUp did). End a
-    // stray finger-pan too. A drawing stroke uses pointer capture, so
-    // pointerleave never fires mid-stroke — its commit is left untouched.
-    const pan = panRef.current;
-    if (pan && pan.pointerId === event.pointerId) {
-      panRef.current = null;
+  const commitScale = (): void => {
+    if (!scaleDraft || scaleDraft.committed || !actionMark || !isStamp(actionMark)) {
       return;
     }
-    const tap = tapRef.current;
-    if (tap && tap.pointerId === event.pointerId) {
-      tapRef.current = null;
+    const current = actionMark.payload as StampPayload;
+    if (clampMarkScale(current.scale) === scaleDraft.scale) {
+      setScaleDraft(null);
+      return;
     }
-  }, []);
+    onUpdate(
+      actionMark.id,
+      { payload: { ...current, scale: scaleDraft.scale } },
+      { payload: { ...current } },
+    );
+    setScaleDraft({ ...scaleDraft, committed: actionMark });
+  };
+
+  /** A finished drag with a drawing tool becomes ink — or a shape, as ink. */
+  const commitStroke = (points: NormPoint[]): void => {
+    if (points.length < 2) return;
+    if (shaping) {
+      const paths = buildShapePaths(shape, points[0], points[1], width, height);
+      if (paths.length === 0) return;
+      onCreate({
+        page_number: pageNumber,
+        annotation_type: "FH",
+        payload: { paths, width: strokeFraction("pen", size) },
+        color,
+        layer_name: layer,
+      });
+      return;
+    }
+    const isHl = tool === "highlighter";
+    onCreate({
+      page_number: pageNumber,
+      annotation_type: isHl ? "HL" : "FH",
+      payload: {
+        paths: [points],
+        width: strokeFraction(isHl ? "highlighter" : "pen", size),
+      },
+      color,
+      layer_name: layer,
+    });
+  };
+
+  /** A tap on blank paper with a note or a stamp in hand. */
+  const placeAt = ([x, y]: NormPoint): void => {
+    // An open composer (or a selected mark) owns the next tap on the page: it
+    // closes, nothing is placed. Placing on that same tap would drop a mark
+    // under the card the writer was still using.
+    if (pendingNote || selectedId) {
+      setPendingNote(null);
+      onSelect(null);
+      return;
+    }
+    if (stamping) {
+      onCreate({
+        page_number: pageNumber,
+        annotation_type: "ST",
+        payload: { x, y, symbol: stamp, scale: stampScale },
+        color,
+        layer_name: layer,
+      });
+    } else if (placing) {
+      onSelect(null);
+      setPendingNote({ x, y });
+    }
+  };
+
+  const { stroke, surfaceHandlers } = useOverlayInput({
+    surfaceRef,
+    tool,
+    canEdit,
+    fingerDraw,
+    onStroke: commitStroke,
+    onTap: placeAt,
+    onTurnPage,
+  });
 
   // --- Reposition an existing stamp / note (browse mode, own marks only) -----
   // A press within TAP_SLOP_PX stays a tap (select / open the note editor, run
@@ -708,14 +564,13 @@ export const AnnotationOverlay = ({
         height,
         pointerEvents: surfaceInteractive ? "auto" : "none",
         // Pen tools own every touch (finger pan is re-implemented manually);
-        // tap-to-place tools leave panning to the browser.
-        touchAction: drawing ? "none" : surfaceInteractive ? "pan-x pan-y" : undefined,
+        // tap-to-place tools leave panning to the browser. The eraser's surface
+        // stays click-through, but touch-action reaches the hit bands inside
+        // it, so rubbing over ink erases instead of scrolling the score.
+        touchAction:
+          drawing || erasing ? "none" : surfaceInteractive ? "pan-x pan-y" : undefined,
       }}
-      onPointerDown={handlePointerDown}
-      onPointerMove={handlePointerMove}
-      onPointerUp={handlePointerUp}
-      onPointerLeave={handlePointerLeave}
-      onPointerCancel={handlePointerCancel}
+      {...surfaceHandlers}
     >
       <svg
         width={width}
@@ -769,6 +624,7 @@ export const AnnotationOverlay = ({
         const draggable = arranging && modifiable;
         const offset = dragOffset?.id === a.id ? dragOffset : null;
         const selected = selectedId === a.id;
+        const scale = scaleDraft?.id === a.id ? scaleDraft.scale : payload.scale;
         return (
           <div
             key={a.id}
@@ -812,7 +668,7 @@ export const AnnotationOverlay = ({
               <StampGlyph
                 symbol={payload.symbol}
                 color={a.color}
-                size={def.sizeFraction * width * clampMarkScale(payload.scale)}
+                size={def.sizeFraction * width * clampMarkScale(scale)}
               />
             </button>
           </div>
@@ -869,7 +725,8 @@ export const AnnotationOverlay = ({
                 aria-label={payload.text}
                 aria-pressed={selectedId === a.id}
                 className={cn(
-                  "relative rounded-md px-1.5 py-0.5 text-center font-semibold leading-snug shadow-sm ring-1 transition-shadow",
+                  INLINE_MARK_CLASS,
+                  "relative transition-shadow",
                   // The ring colour is named, never left to default: this
                   // button sets `color` to the note's own ink below, and
                   // Tailwind's default ring is `currentColor` — so an unnamed
@@ -880,7 +737,7 @@ export const AnnotationOverlay = ({
                 )}
                 style={{
                   color: a.color,
-                  backgroundColor: "rgba(255,255,255,0.82)",
+                  backgroundColor: INLINE_MARK_BACKGROUND,
                   fontSize: inlineFontSize(width) * clampMarkScale(payload.scale),
                   cursor: draggable
                     ? offset
@@ -1035,15 +892,11 @@ export const AnnotationOverlay = ({
           onChangeColor={(next) =>
             onUpdate(actionMark.id, { color: next }, { color: actionMark.color })
           }
-          onChangeScale={(next) => {
-            if (!isStamp(actionMark)) return;
-            const current = actionMark.payload as StampPayload;
-            onUpdate(
-              actionMark.id,
-              { payload: { ...current, scale: next } },
-              { payload: { ...current } },
-            );
-          }}
+          previewScale={scaleDraft?.id === actionMark.id ? scaleDraft.scale : null}
+          onPreviewScale={(next) =>
+            setScaleDraft({ id: actionMark.id, scale: next, committed: null })
+          }
+          onCommitScale={commitScale}
           onDelete={() => {
             onDelete(actionMark.id);
             onSelect(null);

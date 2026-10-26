@@ -31,7 +31,7 @@ import {
 import {
   buildDocumentViewerPath,
   type DocumentDescriptor,
-} from "@/pages/panel/DocumentViewerPage/types";
+} from "@/shared/lib/navigation/documentViewerRoute";
 
 type CloseWatcherHandle = {
   onclose: (() => void) | null;
@@ -135,7 +135,13 @@ export const PdfViewerModal = ({
     return () => window.clearTimeout(timer);
   }, [isOpen, docKey, title]);
 
-  // Android/iOS hardware-back gesture — close via CloseWatcher when available.
+  // The system back gesture (Android, via CloseWatcher where available) is
+  // Escape first: an overlay that claims Escape winds down its own state, and
+  // only an unclaimed back closes the document. A watcher that has fired is
+  // spent, so a claimed back arms the next one.
+  const escapeRef = useRef(onEscapeKeyDown);
+  escapeRef.current = onEscapeKeyDown;
+  const [backArmed, setBackArmed] = useState(0);
   useEffect(() => {
     if (!isOpen) return;
 
@@ -144,7 +150,10 @@ export const PdfViewerModal = ({
 
     const watcher = new closeWatcherWindow.CloseWatcher();
     watcher.onclose = () => {
-      onClose();
+      const claimed =
+        escapeRef.current?.(new KeyboardEvent("keydown", { key: "Escape" })) ?? false;
+      if (claimed) setBackArmed((count) => count + 1);
+      else onClose();
     };
 
     return () => {
@@ -154,7 +163,7 @@ export const PdfViewerModal = ({
         // CloseWatcher implementations may throw when already released.
       }
     };
-  }, [isOpen, onClose]);
+  }, [isOpen, onClose, backArmed]);
 
   const resolvedFullViewHref =
     fullViewHref ?? (fullView ? buildDocumentViewerPath(fullView) : undefined);

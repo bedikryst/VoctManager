@@ -15,6 +15,7 @@
     },
     "markup": "Adnotacje",
     "pending_hint": "Zapisane na tym urządzeniu. Wyślą się same, gdy wróci internet.",
+    "queue_label": "Oznaczenie na nutach",
     "incoming": {
       "line_one": "Nowe oznaczenie · s. {{page}}",
       "line_few": "{{count}} nowe oznaczenia · s. {{page}}",
@@ -93,7 +94,10 @@
       "notes": "Notatki",
       "open": "Pokaż adnotacje",
       "page": "s. {{page}}",
-      "page_marks": "{{count}} oznaczeń",
+      "page_marks_one": "{{count}} oznaczenie",
+      "page_marks_few": "{{count}} oznaczenia",
+      "page_marks_many": "{{count}} oznaczeń",
+      "page_marks_other": "{{count}} oznaczeń",
       "pages": "Oznaczone strony",
       "title": "Adnotacje"
     },

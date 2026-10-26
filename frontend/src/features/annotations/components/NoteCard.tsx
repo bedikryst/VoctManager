@@ -36,6 +36,15 @@ export const inlineFontSize = (pageWidth: number): number =>
   Math.min(22, Math.max(11, pageWidth * 0.026));
 
 /**
+ * The on-score word's own box, shared by the composer and the placed mark so
+ * that what is written is what stays: same padding, weight, wash and line
+ * breaks. Rings are left to each, because selection and focus differ.
+ */
+export const INLINE_MARK_CLASS =
+  "whitespace-pre-wrap break-words rounded-md px-1.5 py-0.5 text-center font-semibold leading-snug shadow-sm ring-1";
+export const INLINE_MARK_BACKGROUND = "rgba(255,255,255,0.82)";
+
+/**
  * Moving an EXISTING note to another audience. Absent for a note that does not
  * exist yet — the toolbar's write pill already chose the reach for the next mark,
  * and asking twice in one gesture is asking the writer to answer a question they
@@ -266,10 +275,15 @@ export const NoteCard = ({
             onInput={setText}
             onSubmit={submit}
             onCancel={onCancel}
-            className="min-w-14 rounded-md px-1.5 py-0.5 text-center font-semibold leading-snug shadow-sm outline-none ring-1 ring-black/10 focus:ring-2 focus:ring-ethereal-gold"
+            className={cn(
+              INLINE_MARK_CLASS,
+              "outline-none ring-black/10 focus:ring-2 focus:ring-ethereal-gold",
+              // Something to tap while the mark is still empty.
+              text.length === 0 && "min-w-14",
+            )}
             style={{
               color,
-              backgroundColor: "rgba(255,255,255,0.92)",
+              backgroundColor: INLINE_MARK_BACKGROUND,
               // The mark's TRUE size — that is the whole point of writing here.
               // Below ~16px iOS magnifies the page on focus and a standalone
               // app does not zoom back out; the trade is deliberate.

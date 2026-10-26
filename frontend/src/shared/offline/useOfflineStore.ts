@@ -68,9 +68,9 @@ export interface QueuedWrite {
    *
    * NOTHING RENDERS THIS TODAY. The shell surfaces `pendingCount` — a number —
    * and `useOfflineSync` toasts two fixed sentences, one for "synced", one for
-   * "the server rejected some of it". So do not spend effort translating what
-   * you pass here; every feature currently writes a hardcoded Polish string and
-   * no reader has ever seen one.
+   * "the server rejected some of it". Score marks pass a translated label; the
+   * other features still write a hardcoded Polish string, and no reader has
+   * ever seen one.
    *
    * It is kept rather than deleted because the rejection toast is the obvious
    * place for it: "the server rejected some of it" is a sentence that cannot be

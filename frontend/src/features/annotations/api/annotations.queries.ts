@@ -32,6 +32,7 @@ import {
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 
+import { RECONCILING_REFETCH } from "@/shared/api/queryPolicy";
 import { classifyWriteFailure, statusOf } from "@/shared/offline/replayPolicy";
 import {
   useOfflineStore,
@@ -187,7 +188,10 @@ export const useScoreAnnotations = (
     queryKey: annotationKeys.byEdition(editionId ?? "none"),
     queryFn: () => AnnotationsService.list(editionId as string),
     enabled: !!editionId,
+    // Another hand writes here, so a list restored from the device's snapshot
+    // paints at once and is reconciled behind it on every open.
     staleTime: 1000 * 30,
+    ...RECONCILING_REFETCH,
   });
 
   useMarkFingerprintWatch(editionId, options?.live ?? false, data);
@@ -377,10 +381,10 @@ export const useAnnotationMutations = (
       url: collapsed.replace.url,
       body: collapsed.replace.body,
       dedupeKey: collapsed.replace.dedupeKey,
-      label: "Oznaczenie na nutach",
+      label: t("annotations.queue_label"),
       meta: collapsed.replace.meta,
     });
-  }, []);
+  }, [t]);
 
   const pendingFor = useCallback(
     () => pendingMarkEntries(useOfflineStore.getState().queue, editionId),

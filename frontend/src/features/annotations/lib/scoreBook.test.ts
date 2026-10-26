@@ -5,13 +5,15 @@
  * bound early is reached early, whatever its number in the programme), and that
  * going back from the middle of a piece returns to that piece's own opening
  * first — the way a thumb does in a paper binder — instead of skipping to the
- * one before it.
+ * one before it. Also that a jump to a mark aims through the rectangle its
+ * edition page was bound into.
  * @module features/annotations/lib/scoreBook.test
  */
 
 import { describe, expect, it } from "vitest";
 
 import {
+  bookFocusY,
   bookPageFor,
   buildScoreBook,
   itemAtPage,
@@ -94,6 +96,22 @@ describe("bookPageFor", () => {
     );
     expect(bookPageFor(twice, "E1", 1, 8)).toBe(9);
     expect(bookPageFor(twice, "E1", 1, 3)).toBe(2);
+  });
+});
+
+describe("bookFocusY", () => {
+  it("aims a mark's height through the rectangle its page was bound into", () => {
+    const inset = buildScoreBook(
+      [{ page: 4, edition: "E1", src_page: 2, box: [0.1, 0.2, 0.8, 0.5] }],
+      [],
+    );
+    expect(bookFocusY(inset, 4, 0)).toBeCloseTo(0.2);
+    expect(bookFocusY(inset, 4, 0.5)).toBeCloseTo(0.45);
+    expect(bookFocusY(inset, 4, 1)).toBeCloseTo(0.7);
+  });
+
+  it("leaves the height alone on a page with no frame", () => {
+    expect(bookFocusY(book, 1, 0.3)).toBe(0.3);
   });
 });
 

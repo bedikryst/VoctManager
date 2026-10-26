@@ -15,6 +15,7 @@
     },
     "markup": "Markup",
     "pending_hint": "Saved on this device. It will send itself once you are back online.",
+    "queue_label": "Score marking",
     "incoming": {
       "line_one": "New marking · p. {{page}}",
       "line_few": "{{count}} new markings · p. {{page}}",
@@ -93,7 +94,10 @@
       "notes": "Notes",
       "open": "Show annotations",
       "page": "p. {{page}}",
-      "page_marks": "{{count}} marks",
+      "page_marks_one": "{{count}} mark",
+      "page_marks_few": "{{count}} marks",
+      "page_marks_many": "{{count}} marks",
+      "page_marks_other": "{{count}} marks",
       "pages": "Marked pages",
       "title": "Annotations"
     },

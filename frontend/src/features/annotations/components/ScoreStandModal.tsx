@@ -64,7 +64,9 @@ export const ScoreStandModal = ({
   preferredFit,
   onClose,
 }: ScoreStandModalProps): React.JSX.Element => {
-  const annotator = useScoreAnnotator({ editionId, mode });
+  // A closed stand stays mounted under the page that owns it; it must not poll
+  // or take Ctrl+Z from that page while nothing of it is on screen.
+  const annotator = useScoreAnnotator({ editionId, mode, active: isOpen });
 
   return (
     <PdfViewerModal

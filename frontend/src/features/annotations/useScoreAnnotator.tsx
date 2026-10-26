@@ -45,7 +45,7 @@ import { useAnnotationTools } from "./lib/useAnnotationTools";
 import { useAnnotationHistory } from "./lib/useAnnotationHistory";
 import { useCanDraw } from "./lib/useCanDraw";
 import { useIncomingMarks } from "./lib/useIncomingMarks";
-import { bookPageFor, type ScoreBook } from "./lib/scoreBook";
+import { bookFocusY, bookPageFor, type ScoreBook } from "./lib/scoreBook";
 import { layerOf, WRITE_LAYERS, type WriteLayer } from "./lib/layers";
 import type {
   AnnotationPatch,
@@ -102,6 +102,13 @@ export interface UseScoreAnnotatorOptions {
    * when the piece is later opened on its own.
    */
   book?: ScoreBook | null;
+  /**
+   * False while no score is on screen: a stand that is closed, or a preview
+   * pane this width does not mount. The marks stay loaded — a closing dialog
+   * still draws them through its exit — but nothing polls for new ones and no
+   * undo shortcut is bound. Defaults to true.
+   */
+  active?: boolean;
 }
 
 export interface ScoreAnnotatorBindings {
@@ -122,6 +129,7 @@ export const useScoreAnnotator = ({
   editionId,
   mode,
   book = null,
+  active = true,
 }: UseScoreAnnotatorOptions): ScoreAnnotatorBindings => {
   const isConductor = mode === "conductor";
   const isLeader = mode === "leader";
@@ -184,9 +192,8 @@ export const useScoreAnnotator = ({
     activeEditionId,
     {
       isCleared,
-      // The stand is on screen exactly when an edition is loaded — which is also
-      // the only time a singer can be looking at a page the conductor is writing on.
-      live: !!activeEditionId,
+      // Only a score on screen can show a mark the conductor is writing now.
+      live: active && !!activeEditionId,
     },
   );
 
@@ -310,9 +317,14 @@ export const useScoreAnnotator = ({
 
   /**
    * Escape leaves annotation mode before performance mode or a wrapping dialog
-   * see it. Text composers still receive the key so they can discard their
-   * local draft; every other active tool is claimed here, keeping the viewer
-   * open. The guide is the topmost layer and closes before either one.
+   * see it — and so does the system back gesture, which the score's dialog
+   * routes through here. The guide is the topmost layer and closes first.
+   *
+   * The key is claimed whole, even from inside a note's composer. Putting the
+   * note tool down closes a new note's composer (the overlay resets it with the
+   * tool) and dropping the selection closes an edited one, so there is nothing
+   * left for the composer's own handler to do; letting the key travel on would
+   * hand it to the dialog, which closes the score.
    */
   const onEscapeKeyDown = useCallback(
     (event: KeyboardEvent): boolean => {
@@ -323,16 +335,10 @@ export const useScoreAnnotator = ({
         return true;
       }
       if (selectedId === null && activeTool === "pointer") return false;
-      const target = event.target as HTMLElement | null;
-      const editingText = target?.isContentEditable ?? false;
       if (selectedId !== null) setSelectedId(null);
       if (activeTool !== "pointer") setActiveTool("pointer");
-      // NoteCard owns its draft. Let its key handler run so Escape both enters
-      // browse and removes a newly placed, unsaved text anchor.
-      if (!editingText) {
-        event.preventDefault();
-        event.stopPropagation();
-      }
+      event.preventDefault();
+      event.stopPropagation();
       return true;
     },
     [activeTool, guideOpen, selectedId, setActiveTool],
@@ -353,6 +359,16 @@ export const useScoreAnnotator = ({
         bookPageFor(book, activeEditionId, sourcePage, pageApi.currentPage) ??
         sourcePage
       );
+    },
+    [activeEditionId, book, pageApi.currentPage],
+  );
+
+  /** A mark's own height on the page on screen — see `bookFocusY`. */
+  const displayFocusY = useCallback(
+    (sourcePage: number, y: number): number => {
+      if (!book || !activeEditionId) return y;
+      const page = bookPageFor(book, activeEditionId, sourcePage, pageApi.currentPage);
+      return page === null ? y : bookFocusY(book, page, y);
     },
     [activeEditionId, book, pageApi.currentPage],
   );
@@ -396,11 +412,11 @@ export const useScoreAnnotator = ({
     incoming.dismiss();
   }, [displayPage, incoming, pageApi]);
 
-  // Keyboard: undo / redo, ignoring text inputs. Only while a score is open —
-  // otherwise a stray Ctrl+Z anywhere in the app would replay annotation
-  // history against a closed viewer.
+  // Keyboard: undo / redo, ignoring text inputs. Only while a score is on
+  // screen — otherwise a stray Ctrl+Z anywhere in the app would replay
+  // annotation history against a closed viewer.
   useEffect(() => {
-    if (!activeEditionId) return;
+    if (!active || !activeEditionId) return;
     const onKeyDown = (event: KeyboardEvent) => {
       if (!(event.ctrlKey || event.metaKey)) return;
       const target = event.target as HTMLElement | null;
@@ -421,7 +437,7 @@ export const useScoreAnnotator = ({
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [activeEditionId, undo, redo]);
+  }, [active, activeEditionId, undo, redo]);
 
   const {
     tool,
@@ -445,8 +461,8 @@ export const useScoreAnnotator = ({
   }, [canDraw, tool]);
 
   // Read through a ref: the overlay only needs it at the moment a finger lifts,
-  // and rebuilding the whole drawing surface every time the page number moves
-  // would throw away a stroke in progress.
+  // and the page handle is replaced whenever the page or its width moves — a
+  // new callback each time for a surface that has not changed.
   const turnPageRef = useRef(pageApi.turnPage);
   turnPageRef.current = pageApi.turnPage;
   const turnPage = useCallback((delta: 1 | -1) => turnPageRef.current(delta), []);
@@ -468,6 +484,11 @@ export const useScoreAnnotator = ({
       const [left, top, width, height] = frame?.box ?? [0, 0, 1, 1];
       const surface = (
         <AnnotationOverlay
+          // One surface per page: a line half-drawn or a note half-written when
+          // the page turns is dropped with the page, never carried onto the
+          // next one. The viewer stays out of it — it renders whatever this
+          // returns, keyed or not.
+          key={geometry.pageNumber}
           geometry={{
             pageNumber: frame?.src_page ?? geometry.pageNumber,
             width: geometry.width * width,
@@ -548,6 +569,7 @@ export const useScoreAnnotator = ({
         currentPage={pageApi.currentPage}
         goToPage={pageApi.goToPage}
         displayPage={displayPage}
+        displayFocusY={displayFocusY}
         visibleLayers={visibleLayers}
         toggleLayerVisibility={tools.toggleLayerVisibility}
         mode={mode}
