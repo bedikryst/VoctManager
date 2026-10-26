@@ -32,18 +32,13 @@ from django.template.loader import render_to_string
 from django.utils import translation
 from pypdf import PdfReader, PdfWriter, Transformation
 
-from archive.models import SHARED_ANNOTATION_LAYER, Annotation, Piece, ScoreEdition
+from archive.models import Piece, ScoreEdition
 from roster.domain.liturgy import ProgramItemPresentation, build_program_presentation
 from roster.infrastructure.document_generator import (
     DocumentRenderDependencyError,
     _render_pdf,
 )
 from roster.infrastructure.print_fonts import BOOK_FONT_STACK, font_face_css
-from roster.infrastructure.score_markings import (
-    marks_from_annotations,
-    merge_overlay,
-    plan_markings,
-)
 from roster.infrastructure.score_source_numbering import FolioBox, detect_source_folios
 from roster.models import ProgramItem, Project, ScorePackage
 from roster.score_package_config import (
@@ -677,40 +672,6 @@ def _add_outline(writer: PdfWriter, package: ScorePackage, body_start: int, plan
         writer.add_outline_item(label, absolute_index)
 
 
-def _stamp_shared_markings(
-    writer: PdfWriter,
-    page_map: list[PageMapRow],
-    plan: list[PlannedItem],
-    project: Project,
-) -> None:
-    """Print the conductor's ``shared`` markings onto the assembled body.
-
-    Every shared mark on a bound edition is fetched; the page map then decides
-    what actually lands, since it holds a row only for a source page the book
-    really contains. That is deliberate — the trim window lives in one place and
-    the query does not get to re-implement it.
-    """
-    edition_ids = {p.edition.pk for p in plan if p.edition is not None}
-    if not edition_ids:
-        return
-    annotations = (
-        Annotation.objects
-        .filter(
-            edition_id__in=edition_ids,
-            layer_name=SHARED_ANNOTATION_LAYER,
-            is_deleted=False,
-        )
-        .order_by("created_at")
-    )
-    planned = plan_markings(page_map, marks_from_annotations(annotations))
-    if not planned:
-        return
-    merged = merge_overlay(writer, planned)
-    logger.info(
-        "score_package.markings_printed project=%s pages=%s", project.pk, merged
-    )
-
-
 def build_score_package(project: Project, package: ScorePackage) -> BuildResult:
     """
     Assemble the concert score book for `project` under `package`'s settings.
@@ -916,13 +877,10 @@ def _assemble_book(project: Project, package: ScorePackage) -> BuildResult:
         for offset, overlay_page in enumerate(overlay_pages[:body_count]):
             writer.pages[body_start + offset].merge_page(overlay_page)
 
-    # 5b) The conductor's markings for the choir, drawn onto the music they were
-    #     made on. Only the 'shared' layer: it is the one addressed to everyone
-    #     holding this book. A mark on a page the programme trimmed away has no
-    #     row in the page map and therefore nowhere to land — the readiness
-    #     engine is what tells the conductor, so it is never a silent loss.
-    if package.include_markings:
-        _stamp_shared_markings(writer, page_map, plan, project)
+    # No marks are drawn here, whatever `include_markings` says. The reader in
+    # the app draws every layer live over these pages, so ink in the file would
+    # be drawn twice there; a copy leaving the app has its marks composed when it
+    # is served (see `roster.views._requested_mark_layers`).
 
     # 6) Navigable outline (anchors at physical offsets, past any front pad).
     if package.include_bookmarks:

@@ -66,6 +66,7 @@ import { useUnsavedChangesWarning } from "@/shared/lib/dom/useUnsavedChangesWarn
 import { useEnrichedProject } from "./hooks/useEnrichedProjects";
 import { useProjectCard } from "./ProjectCard/hooks/useProjectCard";
 import { ProjectService } from "./api/project.service";
+import { BOOK_COPY_LAYERS } from "./api/project.score-marks";
 import {
   useAnnouncementReview,
   useDeleteProject,
@@ -262,8 +263,10 @@ export default function ProjectHubLayout(): React.JSX.Element {
     return new Blob([response.data], { type: "application/pdf" });
   }, [id]);
 
+  // A plain viewer with no pencil in it, so the copy it shows and hands out is
+  // the choir's: the conductor's marks composed in.
   const fetchScorePdfBlob = useCallback(
-    () => ProjectService.fetchScorePdfBlob(id),
+    () => ProjectService.fetchScorePdfBlob(id, BOOK_COPY_LAYERS),
     [id],
   );
 
@@ -727,8 +730,11 @@ export default function ProjectHubLayout(): React.JSX.Element {
           fetchBlob={fetchScorePdfBlob}
           // The generator overwrites the file under the same name, so the id
           // alone would serve the previous book for the rest of the session.
-          // A completed build saves the project, which moves `updated_at`.
+          // A completed build saves the project, which moves `updated_at`. The
+          // marks composed in move with nothing the client holds, so the copy
+          // is fetched again on every open.
           docKey={`score-pdf-${project.id}-${project.updated_at ?? ""}`}
+          volatile
           fullView={{
             type: "project-score",
             id: project.id,

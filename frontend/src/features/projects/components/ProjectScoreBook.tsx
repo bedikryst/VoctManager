@@ -97,7 +97,7 @@ export const ProjectScoreBook = ({
     // The clean binder, never the server-composed one: the marks are drawn live
     // on top of it here, and asking for a copy with them baked in would print
     // every one of them twice.
-    () => ProjectService.fetchScorePdfBlob(projectId, false, stamp),
+    () => ProjectService.fetchScorePdfBlob(projectId, [], stamp),
     [projectId, stamp],
   );
 

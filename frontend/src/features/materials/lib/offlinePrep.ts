@@ -106,7 +106,9 @@ const planBinder = async (
     return {
       // The map is listed even though the fetch above already put it in the
       // worker's cache: it belongs to the manifest, so that removing the
-      // concert removes the whole binder and not just its heavy half.
+      // concert removes the whole binder and not just its heavy half. The book
+      // is the clean one, asked for with no marks: this copy is for the stand,
+      // which draws the cached markings over it.
       assets: [
         { url: scoreBookMapUrl(projectId), kind: "score" },
         { url: scoreBookPdfUrl(projectId, map.stamp), kind: "score" },

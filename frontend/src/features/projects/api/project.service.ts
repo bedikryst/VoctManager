@@ -371,6 +371,16 @@ export interface ScorePackageItemPatch {
 }
 
 /**
+ * A layer the server can compose onto a copy of the binder. The stored book
+ * carries none of them, because the stand draws every layer live over it.
+ * `shared` is the conductor's word to the choir, served only while the book's
+ * own `include_markings` is on; `personal` is the asker's own pencil;
+ * `conductor` is manager-only; `leader` goes to managers and whoever runs the
+ * project.
+ */
+export type ScoreMarkLayer = "shared" | "personal" | "conductor" | "leader";
+
+/**
  * Whether the reader has marks of their own that the stored book could carry.
  * `count` is how many would actually land: marks on pages the book trimmed away
  * are none of the reader's business to chase, but they must not raise a switch
@@ -647,27 +657,23 @@ export const ProjectService = {
   },
 
   /**
-   * The concert binder. `marks` asks the server to compose ink onto it for this
-   * download only — `true` for the caller's own pencil, or named layers for the
-   * conductor's copy (`["conductor"]`), which is manager-only. Either way the
-   * stored book is untouched: what differs is the copy, not the file.
+   * The concert binder. With no `marks` it is the clean stored book, which only
+   * a surface that draws the marks live over it may ask for. Every copy that
+   * leaves the app names its layers — `BOOK_COPY_LAYERS` at the least — and the
+   * server composes them onto that download alone; the stored book is
+   * untouched: what differs is the copy, not the file.
    *
    * `stamp` (from `getScoreMap`) makes the request name the bytes it expects,
    * which is the only form the service worker will keep on the device.
    */
   fetchScorePdfBlob: async (
     projectId: string,
-    marks: boolean | readonly string[] = false,
+    marks: readonly ScoreMarkLayer[] = [],
     stamp = "",
   ): Promise<Blob> => {
-    const requested = Array.isArray(marks)
-      ? marks.join(",")
-      : marks === true
-        ? "1"
-        : null;
     const response = await api.get(scoreBookPdfUrl(projectId, stamp), {
       responseType: "blob",
-      params: requested ? { [BINDER_MARKS_PARAM]: requested } : undefined,
+      params: marks.length ? { [BINDER_MARKS_PARAM]: marks.join(",") } : undefined,
     });
     return response.data;
   },
@@ -678,7 +684,7 @@ export const ProjectService = {
    */
   getScoreMarksAvailability: async (
     projectId: string | number,
-    layers?: readonly string[],
+    layers?: readonly ScoreMarkLayer[],
   ): Promise<ScoreMarksAvailability> => {
     const response = await api.get<ScoreMarksAvailability>(
       `${PROJECTS_BASE_URL}${projectId}/score_marks/`,

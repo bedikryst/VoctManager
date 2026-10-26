@@ -1,8 +1,10 @@
 /**
  * @file project.score-marks.ts
- * @description The reader's own pencil on the concert binder: whether the server
- * has any of their marks it could draw, and — when they ask for them — a blob
- * fetcher that requests the composed copy instead of the stored one.
+ * @description Marks on copies of the concert binder that leave the app. Such a
+ * copy always asks for the conductor's marks for the choir (`BOOK_COPY_LAYERS`):
+ * the stored book is clean, because the stand draws every layer live over it.
+ * On top of that, the reader's own pencil: whether the server has any of their
+ * marks it could draw, and a blob fetcher that adds them when asked.
  *
  * The switch is deliberately per-viewer state rather than a saved preference.
  * The book with someone's private marks on it is a different document each time
@@ -17,7 +19,21 @@ import { useQuery } from "@tanstack/react-query";
 import { RECONCILING_REFETCH } from "@/shared/api/queryPolicy";
 
 import { projectKeys } from "./project.query-keys";
-import { ProjectService } from "./project.service";
+import { ProjectService, type ScoreMarkLayer } from "./project.service";
+
+/**
+ * What every copy of the binder that leaves the app carries: the conductor's
+ * marks for the choir. Asked for by name, never implied — a surface that forgets
+ * hands out a book without them, which shows, rather than one that draws them
+ * twice. The server serves them only while the book's own switch is on.
+ */
+export const BOOK_COPY_LAYERS: readonly ScoreMarkLayer[] = ["shared"];
+
+/** The reader's copy with their own pencil on it as well. */
+const BOOK_COPY_WITH_PENCIL: readonly ScoreMarkLayer[] = [
+  ...BOOK_COPY_LAYERS,
+  "personal",
+];
 
 export interface ScoreMarksControl {
   /** The server has marks of this reader's that this book can carry. */
@@ -26,7 +42,10 @@ export interface ScoreMarksControl {
   count: number;
   enabled: boolean;
   setEnabled: (next: boolean) => void;
-  /** Fetches the binder in whichever state the switch is currently in. */
+  /**
+   * Fetches the copy to keep: the conductor's marks, and the reader's own while
+   * the switch is on.
+   */
   fetchBlob: () => Promise<Blob>;
   /**
    * Append to the viewer's `docKey`. The composed book is different bytes under
@@ -59,7 +78,11 @@ export const useScoreMarks = (
   const active = available && wanted;
 
   const fetchBlob = useCallback(
-    () => ProjectService.fetchScorePdfBlob(id, active),
+    () =>
+      ProjectService.fetchScorePdfBlob(
+        id,
+        active ? BOOK_COPY_WITH_PENCIL : BOOK_COPY_LAYERS,
+      ),
     [id, active],
   );
 
@@ -76,8 +99,11 @@ export const useScoreMarks = (
   );
 };
 
-/** The layers a manager may pull into a copy of his own. */
-export const CONDUCTOR_MARK_LAYERS = ["conductor"] as const;
+/**
+ * The manager's own cue layer. The copy he pulls for the music desk carries it
+ * on top of `BOOK_COPY_LAYERS`; asked on its own, it says whether he has any.
+ */
+export const CONDUCTOR_MARK_LAYERS: readonly ScoreMarkLayer[] = ["conductor"];
 
 /**
  * Whether the conductor has cues of his own on this book — the one thing that

@@ -5,9 +5,10 @@
     for public-domain or manager), the append-only access log with stable
     per-recipient copy numbering, and proof that watermarking left the score-book
     distribution signal (mark_distributed) untouched. Since Stage 4 it also covers
-    the other thing composed per recipient: the reader's own ``personal`` marks at
-    download, which compose BEFORE the watermark and may never leak another
-    reader's layer. WeasyPrint is absent on the
+    the other thing composed per copy: marks at download — the conductor's
+    ``shared`` layer only when asked for and only while the book's switch is on,
+    the reader's own ``personal`` pencil — which compose BEFORE the watermark and
+    may never leak another reader's layer. WeasyPrint is absent on the
     host, so the serve tests patch ``roster.views.stamp_pdf`` and the one real
     stamp test patches the overlay renderer — the merge/placement contract is
     still exercised on pure pypdf.
@@ -381,13 +382,17 @@ class BinderServeTests(_ServeBase):
 
 @override_settings(MEDIA_ROOT=_MEDIA)
 class ReaderMarksServeTests(_ServeBase):
-    """Stage 4: `?marks=1` composes the reader's OWN pencil onto the stored book
-    at download time. Nothing is written back, nobody else's layer is readable
-    through it, and the licence watermark still has the last word on the bytes."""
+    """`?marks=` composes the named layers onto the stored book at download
+    time: `shared` for every copy that leaves the app, `1` / `personal` for the
+    reader's OWN pencil. A plain GET is the clean book. Nothing is written back,
+    nobody else's layer is readable through it, and the licence watermark still
+    has the last word on the bytes."""
 
     _BOX: ClassVar[list[float]] = [14.0, 20.0, 560.0, 800.0]
 
-    def _prepare(self, *, protected: bool = False, mapped: bool = True) -> None:
+    def _prepare(
+        self, *, protected: bool = False, mapped: bool = True, markings: bool = False,
+    ) -> None:
         self.edition.license_type = (
             ScoreLicenseType.LICENSED_COPIES if protected else ScoreLicenseType.PUBLIC_DOMAIN
         )
@@ -396,6 +401,7 @@ class ReaderMarksServeTests(_ServeBase):
         package.status = ScorePackage.Status.READY
         package.build_version = 1
         package.generated_at = timezone.now()
+        package.include_markings = markings
         package.page_map = [
             {"phys": 0, "kind": "front"},
             {"phys": 1, "kind": "music", "edition": str(self.edition.pk),
@@ -454,10 +460,65 @@ class ReaderMarksServeTests(_ServeBase):
     def test_nobody_elses_pencil_is_readable_through_the_switch(self) -> None:
         self._prepare()
         self._mark(self.singer2_user)                       # another singer's own layer
-        self._mark(self.manager, layer=SHARED_ANNOTATION_LAYER)  # already in the book
+        self._mark(self.manager, layer=SHARED_ANNOTATION_LAYER)  # not asked for
         self.client.force_authenticate(self.singer_user)
         _, captured = self._serve(f"{self.binder_url}?marks=1")
         self.assertEqual(captured, [])
+
+    def test_a_plain_get_carries_no_marks(self) -> None:
+        # The in-app reader draws every layer over this copy; ink in the file
+        # would be drawn twice.
+        self._prepare(markings=True)
+        self._mark(self.manager, layer=SHARED_ANNOTATION_LAYER)
+        self.client.force_authenticate(self.singer_user)
+        body, captured = self._serve(self.binder_url)
+        self.assertEqual(captured, [])
+        self.assertEqual(body, _pdf_bytes(3))
+
+    def test_shared_is_composed_while_the_book_carries_markings(self) -> None:
+        self._prepare(markings=True)
+        self._mark(self.manager, layer=SHARED_ANNOTATION_LAYER)
+        self.client.force_authenticate(self.singer_user)
+        body, captured = self._serve(f"{self.binder_url}?marks=shared")
+        self.assertEqual(len(captured), 1)
+        self.assertIn("<path", captured[0])
+        self.assertNotEqual(body, _pdf_bytes(3))
+
+    def test_shared_is_not_composed_while_markings_are_off(self) -> None:
+        # The conductor's switch decides; asking is not an error, the copy is
+        # simply the book the switch describes.
+        self._prepare(markings=False)
+        self._mark(self.manager, layer=SHARED_ANNOTATION_LAYER)
+        self.client.force_authenticate(self.singer_user)
+        body, captured = self._serve(f"{self.binder_url}?marks=shared")
+        self.assertEqual(captured, [])
+        self.assertEqual(body, _pdf_bytes(3))
+        self.assertEqual(
+            self.client.get(f"{self.marks_url}?layers=shared").json(),
+            {"available": False, "count": 0},
+        )
+
+    def test_the_choirs_copy_is_composed_once_for_everyone(self) -> None:
+        self._prepare(markings=True)
+        self._mark(self.manager, layer=SHARED_ANNOTATION_LAYER)
+        self.client.force_authenticate(self.singer_user)
+        first, _ = self._serve(f"{self.binder_url}?marks=shared")
+        self.client.force_authenticate(self.singer2_user)
+        second, captured = self._serve(f"{self.binder_url}?marks=shared")
+        self.assertEqual(captured, [])
+        self.assertEqual(first, second)
+
+    def test_a_readers_pencil_rides_on_the_choirs_copy(self) -> None:
+        self._prepare(markings=True)
+        self._mark(self.manager, layer=SHARED_ANNOTATION_LAYER)
+        self._mark(self.singer_user)
+        self.client.force_authenticate(self.singer_user)
+        # Warm the shared-only entry first: the copy with a pencil on it must
+        # not be answered from it.
+        self._serve(f"{self.binder_url}?marks=shared")
+        _, captured = self._serve(f"{self.binder_url}?marks=shared,personal")
+        self.assertEqual(len(captured), 1)
+        self.assertEqual(captured[0].count("<path"), 2)
 
     def test_marks_are_composed_before_the_licence_watermark(self) -> None:
         self._prepare(protected=True)

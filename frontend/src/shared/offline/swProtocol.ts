@@ -41,9 +41,10 @@ export const OFFLINE_CACHES = [AUDIO_CACHE, SCORE_CACHE, API_CACHE] as const;
 export const BINDER_STAMP_PARAM = "v";
 
 /**
- * Asks the server to compose the reader's own ink into the file. Such a copy is
- * never kept: the marks it carries are a snapshot of a live, editable layer, and
- * a stored one would go on showing the rehearsal before last. Named here so the
+ * Asks the server to compose ink into the file — the conductor's marks on a
+ * copy leaving the app, the reader's own pencil on request. Such a copy is never
+ * kept: the marks it carries are a snapshot of live, editable layers, and a
+ * stored one would go on showing the rehearsal before last. Named here so the
  * worker can refuse it by rule rather than by anyone remembering to.
  */
 export const BINDER_MARKS_PARAM = "marks";

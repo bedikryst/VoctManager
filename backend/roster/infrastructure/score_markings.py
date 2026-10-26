@@ -3,10 +3,12 @@
 @description Prints score markings onto an assembled score book. Reads the
     package's page map to learn where each edition page landed on its A4 sheet,
     renders one WeasyPrint overlay carrying every mark that falls on a bound
-    page, and merges it onto the stored PDF. Used twice: at build time for the
-    conductor's ``shared`` layer (baked into the book every choir member gets)
-    and at serve time for one reader's ``personal`` layer (composed per download,
-    never stored).
+    page, and merges it onto a copy of the stored PDF. Used only at serve time:
+    the stored book carries no marks, because the in-app reader draws every layer
+    live over it, and a mark baked into the file would be drawn twice there. A
+    copy that leaves the app asks for its layers — the conductor's ``shared``
+    marks, a reader's own ``personal`` pencil — and gets them composed for that
+    download, never stored.
 
     **Screen and paper are not the same medium**, so two marks are deliberately
     translated rather than copied:

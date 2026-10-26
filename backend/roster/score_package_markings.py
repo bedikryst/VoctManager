@@ -1,25 +1,23 @@
 """
 @file score_package_markings.py
 @description What the database knows about the marks on a book — the read side of
-    both layers that can reach the printed page.
+    every layer that can reach a printed copy.
 
     For the conductor's ``shared`` layer, a census of the whole programme: per
-    program item, how many of his marks the book would actually print, how many
-    the page trim drops on the floor, when the newest one was made, and whether
-    the marks live on an edition the item no longer binds.
+    program item, how many of his marks a copy of the book would actually carry,
+    how many the page trim drops on the floor, and whether the marks live on an
+    edition the item no longer binds. The cockpit shows these as warnings,
+    because the two ways a marking silently fails to print (it sits outside the
+    bound page range; it belongs to a different edition of the piece) are both
+    invisible in the PDF: the page simply comes out blank where the conductor
+    expected his cue.
 
-    Two consumers, one query. The staleness hash needs a fingerprint — draw a new
-    mark and the finished book must stop reading "Gotowa". The cockpit needs the
-    same numbers as a warning, because the two ways a marking silently fails to
-    print (it sits outside the bound page range; it belongs to a different
-    edition of the piece) are both invisible in the built PDF: the page simply
-    comes out blank where the conductor expected his cue.
-
-    For a reader's own ``personal`` layer, the serve-time counterpart: the marks
-    ONE user made on the editions this stored book binds, plus a fingerprint of
-    them, since the composed download is cached and a new pencil mark has to
-    invalidate that copy. The page map is what says which editions those are —
-    a hand-uploaded book has none, and then no mark can be placed at all.
+    For a download, the serve-time composition: the marks of the asked-for
+    layers on the editions this stored book binds, plus a fingerprint of them,
+    since the composed copy is cached and a new mark has to invalidate it. The
+    stored book itself carries none. The page map is what says which editions
+    those are — a hand-uploaded book has none, and then no mark can be placed at
+    all.
 @module roster/score_package_markings
 """
 
@@ -27,7 +25,6 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from dataclasses import dataclass
-from datetime import datetime
 from enum import StrEnum
 from typing import Any
 
@@ -64,21 +61,10 @@ class ItemMarkings:
     #: Marks on a DIFFERENT edition of the same piece. Pinning another edition
     #: discards every one of them, and nothing else in the cockpit says so.
     elsewhere: int = 0
-    #: Newest ``updated_at`` among the marks that print; drives the staleness hash.
-    latest: datetime | None = None
 
     @property
     def total_relevant(self) -> int:
         return self.inside + self.outside
-
-    def fingerprint(self) -> str:
-        """Stable string for the source hash. Only marks that actually print
-        belong in it: a mark outside the trim changes nothing about the book, so
-        it must not flag a perfectly current book as stale."""
-        if not self.inside:
-            return "0"
-        stamp = self.latest.isoformat() if self.latest else ""
-        return f"{self.inside}:{stamp}"
 
 
 def compute_program_markings(items: list[ProgramItem]) -> dict[Any, ItemMarkings]:
@@ -97,13 +83,13 @@ def compute_program_markings(items: list[ProgramItem]) -> dict[Any, ItemMarkings
             layer_name=SHARED_ANNOTATION_LAYER,
             is_deleted=False,
         )
-        .values_list("edition_id", "edition__piece_id", "page_number", "updated_at")
+        .values_list("edition_id", "edition__piece_id", "page_number")
     )
 
-    # (piece, edition) -> [(page, updated_at), …]
-    by_edition: dict[tuple[Any, Any], list[tuple[int, datetime]]] = {}
-    for edition_id, piece_id, page_number, updated_at in rows:
-        by_edition.setdefault((piece_id, edition_id), []).append((page_number, updated_at))
+    # (piece, edition) -> [page, …]
+    by_edition: dict[tuple[Any, Any], list[int]] = {}
+    for edition_id, piece_id, page_number in rows:
+        by_edition.setdefault((piece_id, edition_id), []).append(page_number)
 
     result: dict[Any, ItemMarkings] = {}
     for item in items:
@@ -121,31 +107,34 @@ def compute_program_markings(items: list[ProgramItem]) -> dict[Any, ItemMarkings
 
         first, last = resolve_item_page_window(item, edition)
         bound = by_edition.get((item.piece_id, edition.pk), [])
-        inside = [(page, ts) for page, ts in bound if first <= page <= last]
-        outside = len(bound) - len(inside)
+        inside = sum(1 for page in bound if first <= page <= last)
         elsewhere = sum(
             len(marks)
             for (piece_id, edition_id), marks in by_edition.items()
             if piece_id == item.piece_id and edition_id != edition.pk
         )
         result[item.pk] = ItemMarkings(
-            inside=len(inside),
-            outside=outside,
+            inside=inside,
+            outside=len(bound) - inside,
             elsewhere=elsewhere,
-            latest=max((ts for _, ts in inside), default=None),
         )
     return result
 
 
 @dataclass(frozen=True)
 class ReaderMarks:
-    """One reader's own marks on the book they are about to download."""
+    """The marks one download asked for, on the book it is about to receive."""
 
     by_source: dict[tuple[str, int], list[PrintMark]]
     #: Changes whenever anything about those marks changes — the serve-time cache
     #: key carries it, so a mark drawn a second ago cannot be served from the copy
     #: composed a minute ago.
     fingerprint: str
+    #: Whether the composition depends on who asked. Only ``personal`` is scoped
+    #: to the reader; every other layer reads the same for everyone allowed to
+    #: ask for it, so a copy without it is one cache entry for the whole choir
+    #: rather than one per singer.
+    per_reader: bool = False
 
     def __bool__(self) -> bool:
         return bool(self.by_source)
@@ -163,20 +152,37 @@ class MarkAudience(StrEnum):
 
 
 #: What a reader may ask to have drawn onto their download, and who may ask.
-#: ``personal`` is scoped to the asker; ``conductor`` is the maestro's own cue
-#: layer, which nobody else ever receives; ``leader`` is the layer written FOR a
-#: stand-in, so it travels to the stand and to the hand that wrote it.
+#: ``shared`` is the conductor's message to the choir and every copy that leaves
+#: the app asks for it, but it is served only while the book's own switch is on
+#: (see `servable_layers`); ``personal`` is scoped to the asker; ``conductor`` is
+#: the maestro's own cue layer, which nobody else ever receives; ``leader`` is
+#: the layer written FOR a stand-in, so it travels to the stand and to the hand
+#: that wrote it.
 #:
 #: A three-valued audience rather than a manager_only boolean because a stand-in
 #: is neither a manager nor just any reader, and collapsing that into "not a
 #: manager" is what would hand them a printed copy with the one layer they were
-#: given missing from it. ``shared`` is deliberately absent from this table: it
-#: is already baked into the book at build time.
+#: given missing from it.
 READER_MARK_LAYERS: dict[str, MarkAudience] = {
+    SHARED_ANNOTATION_LAYER: MarkAudience.ANY,
     PERSONAL_ANNOTATION_LAYER: MarkAudience.ANY,
     CONDUCTOR_ANNOTATION_LAYER: MarkAudience.MANAGER,
     LEADER_ANNOTATION_LAYER: MarkAudience.LEADER,
 }
+
+
+def servable_layers(layers: Sequence[str], *, include_markings: bool) -> list[str]:
+    """The asked-for layers this book may actually carry.
+
+    ``shared`` only while the book's ``include_markings`` is on: whether the
+    conductor's marks travel with copies of the book is his switch, and a reader
+    asking for them does not overrule it. Asking anyway is not an error — the
+    copy is the plain book, which is exactly what the switch says it is.
+    """
+    return [
+        layer for layer in layers
+        if include_markings or layer != SHARED_ANNOTATION_LAYER
+    ]
 
 
 def reader_marks_for_book(
@@ -188,10 +194,11 @@ def reader_marks_for_book(
 
     ``personal`` is scoped by ``created_by`` as well as by layer — a personal
     layer is nobody else's business, and this path composes a file that leaves
-    the building. ``conductor`` and ``leader`` are not per-user: one is the layer
-    a manager keeps for himself, the other the layer he writes for whoever takes
-    the evening, so every copy of either carries the same cues. WHO may ask for
-    which layer is the view's decision, not this function's.
+    the building. ``shared``, ``conductor`` and ``leader`` are not per-user: one
+    is the conductor's word to the choir, one the layer a manager keeps for
+    himself, the other the layer he writes for whoever takes the evening, so
+    every copy of any of them carries the same cues. WHO may ask for which layer
+    is the view's decision, not this function's.
 
     Which pages of those editions are actually bound is not decided here either
     — the page map decides it later, in one place, exactly as the build does.
@@ -221,6 +228,7 @@ def reader_marks_for_book(
     return ReaderMarks(
         by_source=marks_from_annotations(rows),
         fingerprint=f"{'+'.join(sorted(wanted))}:{len(rows)}:{latest.timestamp():.0f}",
+        per_reader=PERSONAL_ANNOTATION_LAYER in wanted,
     )
 
 
@@ -254,4 +262,5 @@ __all__ = [
     "compute_program_markings",
     "markings_status",
     "reader_marks_for_book",
+    "servable_layers",
 ]

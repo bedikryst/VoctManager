@@ -156,6 +156,7 @@ from .score_package_markings import (
     MarkAudience,
     ReaderMarks,
     reader_marks_for_book,
+    servable_layers,
 )
 from .score_package_service import ScorePackageItemError, ScorePackageService
 from .score_page_map import book_frames, book_item_spans
@@ -247,11 +248,14 @@ def _requested_mark_layers(
 ) -> list[str]:
     """Which mark layers a download asked for.
 
-    ``?marks=1`` is the singer's switch and means their own pencil; a layer may
-    also be named outright (``?marks=conductor,personal``), which is how the
-    conductor's copy is fetched. Asking for a layer that is not this reader's is
-    refused rather than quietly downgraded: a copy that silently lacks the cues
-    it was asked for is worse than an error.
+    Layers are named outright (``?marks=shared,personal``); ``?marks=1`` is
+    shorthand for the reader's own pencil alone. Nothing is composed unless asked
+    for: the stored book is clean, the in-app reader draws every layer live over
+    it, and each surface that hands the file out of the app asks for ``shared``
+    itself. A surface that forgets serves a book without the conductor's marks,
+    which shows, instead of one that draws them twice. Asking for a layer that
+    is not this reader's is refused rather than quietly downgraded: a copy that
+    silently lacks the cues it was asked for is worse than an error.
 
     ``leads_project`` is what separates a stand-in from any other singer. They
     are not a manager and must not reach the conductor's private layer, but the
@@ -754,10 +758,12 @@ class ProjectViewSet(viewsets.ModelViewSet):
         """
         Manages the project score PDF.
         GET  — All authenticated users who have access to this project.
-               ``?marks=1`` composes the caller's own marks onto the copy served;
-               ``?marks=conductor[,personal]`` is the manager-only conductor's
-               copy. Either way nothing is written back: the stored book is one
-               file, and everything per-recipient happens on the way out.
+               A plain GET is the clean book, which the in-app reader draws
+               marks over. ``?marks=`` names the layers composed onto the copy
+               served: ``shared`` (only while the book's ``include_markings`` is
+               on), ``personal``, and the manager-only ``conductor``. Nothing
+               is written back: the stored book is one file, and everything
+               per-recipient happens on the way out.
         POST — Managers only. Multipart upload with field name 'score_pdf'.
         DELETE — Managers only. Clears the stored file.
         """
@@ -821,19 +827,17 @@ class ProjectViewSet(viewsets.ModelViewSet):
             # `build_version` scopes the audit trail and the copy numbering;
             # `generated_at` identifies the BYTES (see `_binder_bytes_stamp`). The
             # watermark cache is keyed on the latter — see below.
-            build_version, generated_at, page_map = (
+            build_version, generated_at, page_map, include_markings = (
                 ScorePackage.objects.filter(project=project)
-                .values_list('build_version', 'generated_at', 'page_map')
+                .values_list('build_version', 'generated_at', 'page_map', 'include_markings')
                 .first()
-            ) or (None, None, [])
+            ) or (None, None, [], False)
             decision = record_binder_access(
                 request.user, project,
                 build_version=build_version, protected=protected, is_manager=is_manager,
             )
-            # The ink composed for this download and never stored. It rides on top
-            # of whatever the book already carries (the conductor's shared layer is
-            # baked in at build time), which is why it is a second overlay rather
-            # than a choice between two.
+            # The ink composed for this download and never stored.
+            layers = servable_layers(layers, include_markings=include_markings)
             marks = (
                 reader_marks_for_book(page_map or [], request.user, layers)
                 if layers
@@ -875,12 +879,17 @@ class ProjectViewSet(viewsets.ModelViewSet):
                 )
 
             if marks:
+                # Keyed on the reader only when the copy is theirs alone: the
+                # choir's book with the conductor's marks is one composition for
+                # everyone, and composing it per singer would render it forty
+                # times over. Who may ask was settled above, before any cache.
+                reader = request.user.pk if marks.per_reader else "any"
                 try:
                     raw = _marked_pdf(
                         raw,
                         cache_key=(
                             f"score_marks:binder:{project.pk}:{marks_stamp}:"
-                            f"{request.user.pk}:{marks.fingerprint}"
+                            f"{reader}:{marks.fingerprint}"
                         ),
                         page_map=page_map or [],
                         marks=marks,
@@ -904,7 +913,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
             # hand-uploaded replacement keeps the version, so a version-keyed entry
             # would serve the PREVIOUS book — stamped with this reader's name, and
             # looking entirely authoritative — for the rest of the TTL.
-            # The reader's own marks are part of the bytes being stamped, so their
+            # The composed marks are part of the bytes being stamped, so their
             # fingerprint is part of the identity of the stamped result too.
             cache_key = (
                 f"score_wm:binder:{project.pk}:{build_version}:{marks_stamp}:"
@@ -985,13 +994,14 @@ class ProjectViewSet(viewsets.ModelViewSet):
             return Response({"available": False, "count": 0})
         if not project.score_pdf:
             return Response({"available": False, "count": 0})
-        page_map = (
+        page_map, include_markings = (
             ScorePackage.objects.filter(project=project)
-            .values_list('page_map', flat=True)
+            .values_list('page_map', 'include_markings')
             .first()
-        ) or []
-        marks = reader_marks_for_book(page_map, request.user, layers)
-        planned = plan_markings(page_map, marks.by_source)
+        ) or ([], False)
+        layers = servable_layers(layers, include_markings=include_markings)
+        marks = reader_marks_for_book(page_map or [], request.user, layers)
+        planned = plan_markings(page_map or [], marks.by_source)
         count = sum(len(page_marks) for _, page_marks in planned)
         return Response({"available": count > 0, "count": count})
 

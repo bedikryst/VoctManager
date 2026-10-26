@@ -4,9 +4,10 @@
     build records where every source page landed, that the record dies with the
     file it describes, that a mark is placed on the book page its music actually
     occupies, that print translation happens (a highlighter must never print as a
-    filled band), and that drawing on a score ages the book that carries the
-    drawing — and only that book. WeasyPrint's native renderer is absent on host
-    CI, so both render paths are stubbed and asserted on the markup they produce.
+    filled band), and that the stored book carries no marks at all — so drawing
+    on a score never ages it. Composing marks onto a served copy is covered in
+    test_score_protection. WeasyPrint's native renderer is absent on host CI, so
+    both render paths are stubbed and asserted on the markup they produce.
 @module roster/test_score_markings
 """
 
@@ -31,6 +32,7 @@ from archive.models import (
     Piece,
     ScoreEdition,
 )
+from roster import score_package_service
 from roster.infrastructure import score_markings
 from roster.infrastructure.score_markings import (
     PrintMark,
@@ -417,50 +419,27 @@ class PrintTranslationTests(SimpleTestCase):
         self.assertIn("line-height: 0", html)
 
 
-class OverlayAssemblyTests(_Base):
-    def test_shared_markings_are_printed_onto_the_page_that_holds_them(self) -> None:
+class BuiltBookCarriesNoMarksTests(_Base):
+    """The reader in the app draws every layer live over the stored book, so ink
+    in the file would be drawn twice there. Marks reach paper only through a
+    copy composed at download."""
+
+    def test_the_built_book_carries_no_marks_with_markings_on(self) -> None:
         edition = self._add_edition(pages=3)
-        self._mark(edition, page=2)
+        for layer in (
+            SHARED_ANNOTATION_LAYER, CONDUCTOR_ANNOTATION_LAYER,
+            LEADER_ANNOTATION_LAYER, PERSONAL_ANNOTATION_LAYER,
+        ):
+            self._mark(edition, page=2, layer=layer)
         self.package.include_markings = True
         self.package.save()
 
         result, captured = self._build_capturing()
 
-        # One overlay render for the whole book, one sheet (only page 2 is marked).
-        self.assertEqual(len(captured), 1)
-        self.assertEqual(captured[0].count('class="pg"'), 1)
-        self.assertIn("<path", captured[0])
+        self.assertEqual(captured, [])
         self.assertEqual(result.page_count, 1 + 3)
-
-    def test_only_marked_pages_become_overlay_sheets(self) -> None:
-        edition = self._add_edition(pages=5)
-        self._mark(edition, page=1)
-        self._mark(edition, page=4)
-        self.package.include_markings = True
-        self.package.save()
-        _, captured = self._build_capturing()
-        self.assertEqual(captured[0].count('class="pg"'), 2)
-
-    def test_a_personal_mark_never_reaches_the_book(self) -> None:
-        edition = self._add_edition(pages=2)
-        self._mark(edition, page=1, layer=PERSONAL_ANNOTATION_LAYER)
-        self.package.include_markings = True
-        self.package.save()
-        self.assertEqual(self._build_capturing()[1], [])
-
-    def test_markings_off_renders_no_overlay(self) -> None:
-        edition = self._add_edition(pages=2)
-        self._mark(edition, page=1)
-        self.assertEqual(self._build_capturing()[1], [])
-
-    def test_a_mark_on_a_trimmed_page_renders_no_overlay(self) -> None:
-        edition = self._add_edition(pages=6)
-        self.item.pdf_page_end = 2
-        self.item.save()
-        self._mark(edition, page=5)
-        self.package.include_markings = True
-        self.package.save()
-        self.assertEqual(self._build_capturing()[1], [])
+        # The map is still recorded: it is what a served copy composes against.
+        self.assertTrue(music_pages(result.page_map))
 
 
 class OverlayRegistrationTests(SimpleTestCase):
@@ -514,7 +493,7 @@ class AnnotationGroupingTests(_Base):
 
 
 # ---------------------------------------------------------------------------
-# Stage 3 — the census: staleness and the cockpit's warnings
+# Stage 3 — the census (the cockpit's warnings) and staleness
 # ---------------------------------------------------------------------------
 
 class MarkingsCensusTests(_Base):
@@ -543,9 +522,9 @@ class MarkingsCensusTests(_Base):
         self.assertEqual(markings_status(census, enabled=True), MARKINGS_NONE)
 
     def test_leader_marks_are_never_printed_into_the_choirs_book(self) -> None:
-        # The census is what the binder stamps. A cue written for whoever runs
-        # the rehearsal is addressed to one person; printing it into forty
-        # copies would publish it to the choir by accident.
+        # The census counts what the choir's copies carry. A cue written for
+        # whoever runs the rehearsal is addressed to one person; printing it into
+        # forty copies would publish it to the choir by accident.
         edition = self._add_edition(pages=2)
         self._mark(edition, page=1, layer=LEADER_ANNOTATION_LAYER)
         self._mark(edition, page=1, layer=CONDUCTOR_ANNOTATION_LAYER)
@@ -594,38 +573,31 @@ class MarkingsStalenessTests(_Base):
         self.package.refresh_from_db()
         return ScorePackageService.compute_source_hash(self.project, self.package)
 
-    def test_a_new_mark_ages_a_book_that_carries_markings(self) -> None:
+    def test_a_new_mark_never_ages_the_book(self) -> None:
+        # The stored book carries no marks, so a rebuild would produce the same
+        # bytes; a served copy picks the mark up on its own.
         edition = self._add_edition(pages=3)
         self.package.include_markings = True
         self.package.save()
         before = self._hash()
         self._mark(edition, page=1)
-        self.assertNotEqual(before, self._hash())
-
-    def test_a_new_mark_leaves_a_book_without_markings_alone(self) -> None:
-        edition = self._add_edition(pages=3)
-        before = self._hash()
-        self._mark(edition, page=1)
         self.assertEqual(before, self._hash())
 
-    def test_a_mark_outside_the_bound_pages_does_not_age_the_book(self) -> None:
-        edition = self._add_edition(pages=8)
-        self.item.pdf_page_start = 1
-        self.item.pdf_page_end = 2
-        self.item.save()
-        self.package.include_markings = True
-        self.package.save()
-        before = self._hash()
-        # Nothing about the printed book changes, so nothing may say it did.
-        self._mark(edition, page=6)
-        self.assertEqual(before, self._hash())
-
-    def test_the_toggle_itself_ages_the_book(self) -> None:
+    def test_the_toggle_does_not_age_the_book(self) -> None:
+        # It decides what a served copy carries, not what the stored file is.
         self._add_edition(pages=3)
         before = self._hash()
         self.package.include_markings = True
         self.package.save()
-        self.assertNotEqual(before, self._hash())
+        self.assertEqual(before, self._hash())
+
+    def test_a_new_build_format_ages_every_book(self) -> None:
+        self._add_edition(pages=3)
+        before = self._hash()
+        with mock.patch.object(
+            score_package_service, "BUILD_FORMAT", score_package_service.BUILD_FORMAT + 1,
+        ):
+            self.assertNotEqual(before, self._hash())
 
 
 class CockpitReadModelTests(_Base):

@@ -86,6 +86,14 @@ CONFIGURABLE_FIELDS: frozenset[str] = frozenset({
 
 _IN_FLIGHT_STATUSES = frozenset({ScorePackage.Status.QUEUED, ScorePackage.Status.BUILDING})
 
+# What the builder puts into a book, as opposed to what the book is built from.
+# It is part of the source hash, so raising it reads every book built under an
+# older builder as stale. Raise it whenever the builder starts producing
+# different bytes from the same inputs. 2: the book carries no marks (they are
+# composed per download); a format-1 book with markings on has them baked in and
+# draws them twice under the live overlay until it is rebuilt.
+BUILD_FORMAT = 2
+
 
 def _build_timeout() -> timedelta:
     """How long an in-flight build may go quiet before it counts as abandoned."""
@@ -160,11 +168,7 @@ class ScorePackageService:
         return book_program_items(project)
 
     @staticmethod
-    def _item_signature(
-        item: ProgramItem,
-        package: ScorePackage,
-        markings_fingerprint: str,
-    ) -> dict[str, Any]:
+    def _item_signature(item: ProgramItem, package: ScorePackage) -> dict[str, Any]:
         """Everything about one program item that affects the assembled output."""
         piece = item.piece
         edition = resolve_item_edition(item)
@@ -200,9 +204,6 @@ class ScorePackageService:
             ),
             "hide_source_numbers": item.hide_source_page_numbers,
             "content_ts": max(timestamps).isoformat(),
-            # Empty while the book does not print markings — drawing on a score
-            # must not age a book that was never going to carry the drawing.
-            "markings": markings_fingerprint,
         }
 
     @staticmethod
@@ -210,7 +211,6 @@ class ScorePackageService:
         project: Project,
         package: ScorePackage,
         items: list[ProgramItem] | None = None,
-        markings: dict[Any, ItemMarkings] | None = None,
     ) -> str:
         """
         Stable SHA-256 over everything that affects the output: the ordered
@@ -218,26 +218,19 @@ class ScorePackageService:
         overrides) plus the layout settings and the title-page facts. Reads the DB
         only (uses the edition's stored ``sha256``/``page_count``), never a PDF.
 
-        ``items`` and ``markings`` may be passed to reuse work the caller has
-        already done (the cockpit read does this so the programme and the
-        markings census are each loaded once, not twice).
+        Marks are not in it: the stored book carries none (they are composed per
+        download), so drawing on a score never ages the book.
+
+        ``items`` may be passed to reuse work the caller has already done (the
+        cockpit read does this so the programme is loaded once, not twice).
         """
         if items is None:
             items = list(ScorePackageService._ordered_items(project))
-        # One census for the whole programme; skipped entirely when the book does
-        # not print markings, so an unused feature costs no query.
-        if markings is None:
-            markings = (
-                compute_program_markings(items) if package.include_markings else {}
-            )
         repertoire = [
-            ScorePackageService._item_signature(
-                item, package,
-                markings[item.pk].fingerprint() if item.pk in markings else "",
-            )
-            for item in items
+            ScorePackageService._item_signature(item, package) for item in items
         ]
         payload = {
+            "format": BUILD_FORMAT,
             "repertoire": repertoire,
             "cfg": {
                 "density": package.density_mode,
@@ -251,7 +244,6 @@ class ScorePackageService:
                 "cards": package.include_cards,
                 "card_els": sorted(package.card_default_elements or []),
                 "lang": package.translation_language,
-                "markings": package.include_markings,
             },
             "project_title": project.title,
             "date": project.date_time.isoformat() if project.date_time else None,
@@ -384,9 +376,7 @@ class ScorePackageService:
         package = ScorePackageService.get_or_create(project)
         items = list(ScorePackageService._ordered_items(project))
         markings = compute_program_markings(items) if package.include_markings else {}
-        live_hash = ScorePackageService.compute_source_hash(
-            project, package, items=items, markings=markings
-        )
+        live_hash = ScorePackageService.compute_source_hash(project, package, items=items)
         readiness = compute_program_readiness(project, items, package)
         # Ensemble size drives the "more singers than licensed copies" warning.
         cast_size = project.participations.filter(is_deleted=False).count()

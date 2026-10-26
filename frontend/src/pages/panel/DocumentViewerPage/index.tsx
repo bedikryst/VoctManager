@@ -20,7 +20,10 @@ import { PdfViewer } from "@/shared/ui/composites/PdfViewer";
 import { StatePanel } from "@/shared/ui/composites/StatePanel";
 import { PageTransition } from "@/shared/ui/kinematics/PageTransition";
 import { ProjectService } from "@/features/projects/api/project.service";
-import { useScoreMarks } from "@/features/projects/api/project.score-marks";
+import {
+  BOOK_COPY_LAYERS,
+  useScoreMarks,
+} from "@/features/projects/api/project.score-marks";
 import { ScoreMarksToggle } from "@/features/projects/components/ScoreMarksToggle";
 import { ScheduleService } from "@/features/schedule/api/schedule.service";
 import { ChoristerHubService } from "@/features/chorister-hub/api/chorister-hub.service";
@@ -79,7 +82,11 @@ const resolveDocument = (
           ),
         subtitle: hint?.subtitle,
         fileName: hint?.fileName ?? `Score_${idSegment}.pdf`,
-        fetchBlob: () => ProjectService.fetchScorePdfBlob(id),
+        // No pencil is drawn over this viewer, so the copy it shows is the one
+        // it hands out: the conductor's marks composed in, which makes it a
+        // server-assembled document like the sheets below.
+        fetchBlob: () => ProjectService.fetchScorePdfBlob(id, BOOK_COPY_LAYERS),
+        volatile: true,
       };
     case "project-call-sheet":
       return {

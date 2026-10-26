@@ -699,10 +699,11 @@ class ScorePackage(SoftDeleteModel):
     )
     include_markings = models.BooleanField(
         default=False,
-        help_text=_("Print the conductor's 'shared' markings onto the music pages. Only that "
-                    "layer: it is his message to the whole choir. A reader's own 'personal' "
-                    "pencil marks are never baked in here — they are composed per download, "
-                    "and nobody may switch on marks they are not allowed to see."),
+        help_text=_("Copies of the book that leave the app carry the conductor's 'shared' "
+                    "markings, composed onto each copy as it is downloaded. Only that layer: "
+                    "it is his message to the whole choir. The stored book never carries "
+                    "marks, and a reader's own 'personal' pencil is added only to their own "
+                    "copy, when they ask for it."),
         verbose_name=_("Include Conductor's Markings"),
     )
 

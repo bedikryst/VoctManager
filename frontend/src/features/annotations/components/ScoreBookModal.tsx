@@ -41,12 +41,17 @@ export interface ScoreBookModalProps {
   readonly subtitle?: string;
   readonly fileName?: string;
   readonly mode: ScoreAnnotatorMode;
-  /** Whether the binder may leave the app; false → in-app only. */
+  /**
+   * Whether the binder may leave the app; false → in-app only. Honoured only
+   * for a book with no map: with the pencil in it, the export controls are
+   * never offered here (see below).
+   */
   readonly canExport?: boolean;
   /**
    * Deep link to the full document viewer — the surface that hands out a copy
-   * to keep or to print, with the reader's marks composed into the file. Typed
-   * off the shell it is forwarded to, so this stays free of a route import.
+   * to keep or to print, with the conductor's marks (and the reader's own, on
+   * request) composed into the file. Typed off the shell it is forwarded to, so
+   * this stays free of a route import.
    */
   readonly fullView?: React.ComponentProps<typeof PdfViewerModal>["fullView"];
   readonly onClose: () => void;
@@ -99,7 +104,13 @@ export const ScoreBookModal = ({
       onPageApiChange={hasMap ? annotator.onPageApiChange : undefined}
       onEscapeKeyDown={hasMap ? annotator.onEscapeKeyDown : undefined}
       fullView={fullView}
-      canExport={canExport}
+      // With a map, the file on screen is the clean book and every mark is
+      // drawn live over it, so handing that file out would hand out a book
+      // with none of them. A copy to keep or print comes from the full view,
+      // which shows exactly the composed file it gives away. Fetching that
+      // copy on the tap instead would break share and open-in-browser: both
+      // must run inside the gesture, and a second download outlasts it.
+      canExport={canExport && !hasMap}
       fitScope="score"
       onClose={onClose}
     />

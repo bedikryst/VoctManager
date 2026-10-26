@@ -45,6 +45,7 @@ import { ProjectService } from "../api/project.service";
 import type {
   CardElement,
   ScorePackageConfig,
+  ScoreMarkLayer,
   ScorePackageItem,
   ScorePackageState,
 } from "../api/project.service";
@@ -55,9 +56,16 @@ import {
   useUpdateScorePackageItem,
 } from "../api/project.score-package";
 import {
+  BOOK_COPY_LAYERS,
   CONDUCTOR_MARK_LAYERS,
   useConductorMarksAvailable,
 } from "../api/project.score-marks";
+
+/** The copy for the music desk: the choir's book with his own cues on top. */
+const CONDUCTOR_COPY_LAYERS: readonly ScoreMarkLayer[] = [
+  ...BOOK_COPY_LAYERS,
+  ...CONDUCTOR_MARK_LAYERS,
+];
 import { CardElementPills } from "./CardElementPills";
 import { ScoreManualUploadRail } from "./ScoreManualUploadRail";
 import { ScorePackageItemRow } from "./ScorePackageItemRow";
@@ -206,7 +214,7 @@ export function ScorePackagePanel({
   // The gated fetch can legitimately refuse (a closed project, a renderer that
   // cannot stamp a protected book). Unhandled, that reads as a dead button.
   const handleDownload = async (
-    marks: boolean | readonly string[] = false,
+    marks: readonly ScoreMarkLayer[] = BOOK_COPY_LAYERS,
   ): Promise<void> => {
     try {
       const blob = await ProjectService.fetchScorePdfBlob(projectId, marks);
@@ -215,7 +223,7 @@ export function ScorePackagePanel({
       anchor.href = url;
       // The conductor's copy names itself, because once it is a file in a
       // downloads folder nothing else says it is not the choir's book.
-      const suffix = Array.isArray(marks)
+      const suffix = marks.includes("conductor")
         ? `_${t("projects.score_package.conductor_copy_suffix", "dyrygencka")}`
         : "";
       anchor.download = `${sanitizeFilename(projectTitle ?? "partytura")}${suffix}.pdf`;
@@ -428,7 +436,7 @@ export function ScorePackagePanel({
                         size="sm"
                         leftIcon={<PencilLine size={14} aria-hidden="true" />}
                         onClick={() => {
-                          void handleDownload(CONDUCTOR_MARK_LAYERS);
+                          void handleDownload(CONDUCTOR_COPY_LAYERS);
                         }}
                       >
                         {t(
@@ -775,18 +783,22 @@ export function ScorePackagePanel({
         onClose={() => setPreview(null)}
       />
 
-      {/* The doc key carries the build stamp: the viewer caches a fetched blob
-          for the session, so a key that ignored the rebuild would show the old
-          book after pressing "Wygeneruj ponownie". */}
+      {/* The preview is the choir's copy, so it carries the conductor's marks
+          composed per request — and is re-fetched on every open, because he is
+          the one drawing them, often minutes before he looks. The doc key
+          carries the build stamp as well, for the rebuild. */}
       <PdfViewerModal
         isOpen={bookPreviewOpen}
         title={projectTitle ?? t("projects.score_package.title", "Książka nutowa")}
         subtitle={t("projects.score_package.preview_book_full", "Podgląd partytury")}
         fileName={`${sanitizeFilename(projectTitle ?? "partytura")}.pdf`}
         fetchBlob={
-          bookPreviewOpen ? () => ProjectService.fetchScorePdfBlob(projectId) : null
+          bookPreviewOpen
+            ? () => ProjectService.fetchScorePdfBlob(projectId, BOOK_COPY_LAYERS)
+            : null
         }
         docKey={`book-${projectId}-${state?.build_version ?? 0}-${state?.generated_at ?? ""}`}
+        volatile
         onClose={() => setBookPreviewOpen(false)}
       />
     </SectionCard>
