@@ -3350,6 +3350,10 @@
     "license": "The edition's copyright status — anything other than public domain reaches choristers in the app only, watermarked."
   },
   "logistics": {
+    "picker": {
+      "create": "Add a new venue",
+      "search": "Search by name or address"
+    },
     "atlas": {
       "empty_desc": "Add a location from Google Maps to see it on the atlas.",
       "empty_title": "No coordinates to display",
@@ -4850,7 +4854,6 @@
         "description": "Description (optional)",
         "place": "Where this item happens",
         "place_default": "Event venue",
-        "place_new": "Add a new venue",
         "time": "Time",
         "title": "Item name",
         "day": "Day of this point",
@@ -6677,6 +6680,10 @@
   "shared": {
     "loader": {
       "authorizing": "Synchronizing..."
+    },
+    "search_select": {
+      "empty": "Nothing matches “{{query}}”.",
+      "search": "Search…"
     },
     "datetime": {
       "placeholder": "Pick a date and time",

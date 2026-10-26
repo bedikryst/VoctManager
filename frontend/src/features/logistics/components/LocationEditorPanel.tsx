@@ -39,6 +39,8 @@ interface LocationEditorPanelProps {
   location: LocationDto | null;
   /** Fires with the new venue when this opened to fill a field elsewhere. */
   onCreated?: (created: LocationDto) => void;
+  /** Words to start the place search with, for a new venue. */
+  initialQuery?: string;
 }
 
 const FORM_ID = "logistics-location-editor-form";
@@ -51,6 +53,7 @@ export function LocationEditorPanel({
   onClose,
   location,
   onCreated,
+  initialQuery,
 }: LocationEditorPanelProps): React.ReactPortal | null {
   const { t } = useTranslation();
   const [showExitConfirm, setShowExitConfirm] = useState<boolean>(false);
@@ -194,6 +197,7 @@ export function LocationEditorPanel({
                       initialPosition={initialPickerPosition}
                       initialName={location?.name}
                       initialAddress={location?.formatted_address}
+                      initialQuery={isNewEntry ? initialQuery : undefined}
                     />
                   </div>
                 </section>

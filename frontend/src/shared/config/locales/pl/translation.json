@@ -3378,6 +3378,10 @@
     "license": "Status praw autorskich wydania — wszystko poza domeną publiczną chórzyści widzą tylko w aplikacji i ze znakiem wodnym."
   },
   "logistics": {
+    "picker": {
+      "create": "Dodaj nowe miejsce",
+      "search": "Szukaj po nazwie lub adresie"
+    },
     "atlas": {
       "empty_desc": "Dodaj lokację z mapy Google, aby zobaczyć ją na atlasie.",
       "empty_title": "Brak współrzędnych do wyświetlenia",
@@ -4931,7 +4935,6 @@
         "description": "Opis (opcjonalny)",
         "place": "Miejsce tego punktu",
         "place_default": "Miejsce wydarzenia",
-        "place_new": "Dodaj nowe miejsce",
         "time": "Godzina",
         "title": "Nazwa punktu",
         "day": "Dzień tego punktu",
@@ -6781,6 +6784,10 @@
   "shared": {
     "loader": {
       "authorizing": "Synchronizacja nut..."
+    },
+    "search_select": {
+      "empty": "Nic nie pasuje do „{{query}}”.",
+      "search": "Szukaj…"
     },
     "datetime": {
       "placeholder": "Wybierz datę i godzinę",

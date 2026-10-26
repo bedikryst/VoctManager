@@ -54,6 +54,7 @@ import {
   TimeField,
   type CalendarMarker,
 } from "@/shared/ui/composites/DateTimeField";
+import { LocationPicker } from "@/features/logistics/components/LocationPicker";
 import { Input } from "@/shared/ui/primitives/Input";
 import { Select } from "@/shared/ui/primitives/Select";
 import { Textarea } from "@/shared/ui/primitives/Textarea";
@@ -105,7 +106,6 @@ export const RehearsalsTab = ({
     pastTimeline,
     projectParticipations,
     artistMap,
-    locations,
     rollCallLeaders,
     handleSubmit,
     handleEditClick,
@@ -531,32 +531,23 @@ export const RehearsalsTab = ({
                 )}
               </div>
 
-              <Select
+              <LocationPicker
                 label={t("projects.rehearsals.form.location", "Sala próby *")}
                 required
                 leftIcon={<MapPin aria-hidden="true" />}
                 value={formData.location_id}
-                onValueChange={(nextLocationId) => {
-                  const selectedLocation =
-                    locations.find(
-                      (location) => String(location.id) === nextLocationId,
-                    ) ?? null;
-
+                onChange={(nextLocationId, location) =>
                   setFormData({
                     ...formData,
                     location_id: nextLocationId,
-                    timezone: selectedLocation?.timezone ?? formData.timezone,
-                  });
-                }}
+                    timezone: location?.timezone ?? formData.timezone,
+                  })
+                }
                 disabled={isSubmitting}
                 placeholder={t(
                   "projects.rehearsals.form.location_placeholder",
                   "Wybierz salę",
                 )}
-                options={locations.map((location) => ({
-                  value: String(location.id),
-                  label: location.name,
-                }))}
               />
 
               <TimezoneField

@@ -49,6 +49,9 @@ interface LocationMapPickerProps {
   /** Seeds the confirmation chip when editing an existing venue. */
   initialName?: string;
   initialAddress?: string;
+  /** Seeds the place search — the words a picker was filtered by before it
+   *  sent the producer here to create what it did not find. */
+  initialQuery?: string;
 }
 
 interface SelectedMeta {
@@ -75,6 +78,7 @@ const MapPickerSurface = ({
   initialPosition,
   initialName,
   initialAddress,
+  initialQuery,
 }: LocationMapPickerProps): React.JSX.Element => {
   const { t } = useTranslation();
   const prefersReduced = useReducedMotion();
@@ -89,7 +93,7 @@ const MapPickerSurface = ({
   const [markerPos, setMarkerPos] = useState<google.maps.LatLngLiteral>(
     initialPosition ?? DEFAULT_CENTER,
   );
-  const [inputValue, setInputValue] = useState<string>("");
+  const [inputValue, setInputValue] = useState<string>(initialQuery ?? "");
   const [debouncedValue] = useDebounceValue(inputValue, 300);
 
   const [suggestions, setSuggestions] = useState<

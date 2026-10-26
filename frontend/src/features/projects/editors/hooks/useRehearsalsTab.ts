@@ -85,7 +85,6 @@ export interface UseRehearsalsTabResult {
   pastTimeline: RehearsalTimelineEntry[];
   projectParticipations: Participation[];
   artistMap: Map<string, Artist>;
-  locations: Location[];
   /**
    * The project's leaders who may take the roll call — the only people a
    * rehearsal can name as standing in front besides the conductor. Empty on a
@@ -602,7 +601,6 @@ export const useRehearsalsTab = (projectId: string): UseRehearsalsTabResult => {
     pastTimeline,
     projectParticipations,
     artistMap,
-    locations,
     rollCallLeaders,
     handleSubmit,
     handleEditClick,

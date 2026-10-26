@@ -19,8 +19,9 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { motion } from "framer-motion";
-import { CalendarDays, Luggage, MapPin, MapPinPlus, Trash2 } from "lucide-react";
+import { CalendarDays, Luggage, MapPin, Trash2 } from "lucide-react";
 
+import { LocationPicker } from "@/features/logistics/components/LocationPicker";
 import type { RunSheetItem } from "@/shared/types";
 import { cn } from "@/shared/lib/utils";
 import { Button } from "@/shared/ui/primitives/Button";
@@ -39,8 +40,6 @@ export const RUN_SHEET_TIME_GUTTER = "w-24 shrink-0";
 
 interface RunSheetRowProps {
   readonly item: RunSheetItem;
-  /** The saved venues, already shaped by the tab that owns the locations query. */
-  readonly locationOptions: readonly SelectOption[];
   /**
    * The plan's days as dates, concert day marked. Concert day is also the
    * empty value, so an untouched row stores no `day` at all.
@@ -51,19 +50,15 @@ interface RunSheetRowProps {
   readonly onUpdate: RunSheetItemUpdater;
   readonly onCommitOrder: () => void;
   readonly onRemove: (id: string) => void;
-  /** Opens the venue editor for this row; the new venue lands in its picker. */
-  readonly onCreatePlace: (id: string) => void;
 }
 
 export const RunSheetRow = ({
   item,
-  locationOptions,
   dayOptions,
   dayPlaceholder,
   onUpdate,
   onCommitOrder,
   onRemove,
-  onCreatePlace,
 }: RunSheetRowProps): React.JSX.Element => {
   const { t } = useTranslation();
   const id = String(item.id);
@@ -201,48 +196,29 @@ export const RunSheetRow = ({
               />
             </div>
 
-            <div className="flex min-w-48 flex-1 items-center gap-1">
-              <div className="min-w-0 flex-1">
-                <Select
-                  variant="ghost"
-                  size="sm"
-                  value={item.location_id || ""}
-                  onValueChange={(locationId) =>
-                    onUpdate(id, "location_id", locationId)
-                  }
-                  options={locationOptions}
-                  leftIcon={<MapPin size={14} aria-hidden="true" />}
-                  placeholder={t(
-                    "projects.details_tab.run_sheet.place_default",
-                    "Miejsce wydarzenia",
-                  )}
-                  clearLabel={t(
-                    "projects.details_tab.run_sheet.place_default",
-                    "Miejsce wydarzenia",
-                  )}
-                  ariaLabel={t(
-                    "projects.details_tab.run_sheet.place",
-                    "Miejsce tego punktu",
-                  )}
-                />
-              </div>
-
-              {/* The restaurant on the way is a venue nobody had a reason to save
-                  before this row existed. Opening the editor here, over the tab,
-                  is what keeps that from costing the producer their unsaved form. */}
-              <Button
-                type="button"
+            {/* The restaurant on the way is a venue nobody had a reason to save
+                before this row existed; the picker creates it over the tab, so
+                that costs the producer none of their unsaved form. */}
+            <div className="min-w-48 flex-1">
+              <LocationPicker
                 variant="ghost"
-                size="icon"
-                onClick={() => onCreatePlace(id)}
-                aria-label={t(
-                  "projects.details_tab.run_sheet.place_new",
-                  "Dodaj nowe miejsce",
+                size="sm"
+                value={item.location_id || ""}
+                onChange={(locationId) => onUpdate(id, "location_id", locationId)}
+                leftIcon={<MapPin size={14} aria-hidden="true" />}
+                placeholder={t(
+                  "projects.details_tab.run_sheet.place_default",
+                  "Miejsce wydarzenia",
                 )}
-                className="shrink-0 text-ethereal-graphite/50 hover:text-ethereal-gold"
-              >
-                <MapPinPlus size={15} aria-hidden="true" />
-              </Button>
+                clearLabel={t(
+                  "projects.details_tab.run_sheet.place_default",
+                  "Miejsce wydarzenia",
+                )}
+                ariaLabel={t(
+                  "projects.details_tab.run_sheet.place",
+                  "Miejsce tego punktu",
+                )}
+              />
             </div>
           </div>
         </div>

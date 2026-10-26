@@ -3359,6 +3359,10 @@
     "license": "Le statut des droits de l'édition — hors domaine public, les choristes n'y accèdent que dans l'application, avec filigrane."
   },
   "logistics": {
+    "picker": {
+      "create": "Ajouter un nouveau lieu",
+      "search": "Rechercher par nom ou adresse"
+    },
     "atlas": {
       "empty_desc": "Ajoutez un lieu depuis Google Maps pour le voir apparaître sur l'atlas.",
       "empty_title": "Aucune coordonnée à afficher",
@@ -4859,7 +4863,6 @@
         "description": "Description (optionnelle)",
         "place": "Lieu de cette étape",
         "place_default": "Lieu de l'événement",
-        "place_new": "Ajouter un nouveau lieu",
         "time": "Heure",
         "title": "Nom de l'étape",
         "day": "Jour de ce point",
@@ -6689,6 +6692,10 @@
   "shared": {
     "loader": {
       "authorizing": "Synchronisation des partitions..."
+    },
+    "search_select": {
+      "empty": "Aucun résultat pour « {{query}} ».",
+      "search": "Rechercher…"
     },
     "datetime": {
       "placeholder": "Choisissez une date et une heure",

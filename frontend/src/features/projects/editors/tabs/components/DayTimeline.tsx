@@ -41,8 +41,6 @@ import { RUN_SHEET_TIME_GUTTER, RunSheetRow } from "./RunSheetRow";
 
 interface DayTimelineProps {
   readonly entries: readonly DayTimelineEntry[];
-  /** Saved venues a point can be sent to; owned by the tab that queries them. */
-  readonly locationOptions: readonly SelectOption[];
   /** The plan's days, for each row's day select. */
   readonly dayOptions: readonly SelectOption[];
   /** What a row with no day reads as — the event's own day. */
@@ -52,8 +50,6 @@ interface DayTimelineProps {
   readonly onUpdate: RunSheetItemUpdater;
   readonly onCommitOrder: () => void;
   readonly onRemove: (id: string) => void;
-  /** Opens the venue editor for one row; the new venue lands in its picker. */
-  readonly onCreatePlace: (id: string) => void;
   /** Names the downbeat: the form's live value, so switching the kind renames
    *  the row before the project is saved. */
   readonly eventKind: ProjectEventKind;
@@ -61,14 +57,12 @@ interface DayTimelineProps {
 
 export const DayTimeline = ({
   entries,
-  locationOptions,
   dayOptions,
   dayPlaceholder,
   dayLabel,
   onUpdate,
   onCommitOrder,
   onRemove,
-  onCreatePlace,
   eventKind,
 }: DayTimelineProps): React.JSX.Element => {
   const { t } = useTranslation();
@@ -83,13 +77,11 @@ export const DayTimeline = ({
         <RunSheetRow
           key={String(entry.item.id)}
           item={entry.item}
-          locationOptions={locationOptions}
           dayOptions={dayOptions}
           dayPlaceholder={dayPlaceholder}
           onUpdate={onUpdate}
           onCommitOrder={onCommitOrder}
           onRemove={onRemove}
-          onCreatePlace={onCreatePlace}
         />
       );
     }

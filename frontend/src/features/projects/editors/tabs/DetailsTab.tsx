@@ -17,7 +17,7 @@
  * @module features/projects/editors/tabs/DetailsTab
  */
 
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Clock,
@@ -29,9 +29,7 @@ import {
   TriangleAlert,
 } from "lucide-react";
 
-import { useLocations } from "@/features/logistics/api/logistics.queries";
-import { LocationEditorPanel } from "@/features/logistics/components/LocationEditorPanel";
-import type { LocationDto } from "@/features/logistics/types/logistics.dto";
+import { LocationPicker } from "@/features/logistics/components/LocationPicker";
 import type { Project } from "@/shared/types";
 import {
   PROJECT_EVENT_KIND,
@@ -119,36 +117,7 @@ export const DetailsTab = ({
     handleSubmit,
   } = useDetailsForm(project?.id, onSuccess, onDirtyStateChange);
 
-  const { data: locationsData } = useLocations();
   const { data: artists } = useProjectArtistsDictionary();
-
-  /**
-   * The run-sheet row waiting for a venue that does not exist yet. Held here
-   * rather than in the row so the editor opens once, over the whole tab: the
-   * alternative — sending the producer to the logistics module — costs them
-   * every unsaved field on this form.
-   */
-  const [placeDraftRowId, setPlaceDraftRowId] = useState<string | null>(null);
-
-  const handleCreatedPlace = useCallback(
-    (created: LocationDto): void => {
-      if (placeDraftRowId) {
-        handleUpdateRunSheetItem(placeDraftRowId, "location_id", created.id);
-      }
-    },
-    [placeDraftRowId, handleUpdateRunSheetItem],
-  );
-
-  const locationOptions = useMemo<SelectOption[]>(
-    () =>
-      (locationsData ?? []).map((location) => ({
-        value: String(location.id),
-        label: location.formatted_address
-          ? `${location.name} - ${location.formatted_address.split(",")[0]}`
-          : location.name,
-      })),
-    [locationsData],
-  );
 
   // The four kinds are a closed set the API validates, so they are named here
   // rather than fetched; the liturgical *vocabulary* is the opposite case and
@@ -423,6 +392,33 @@ export const DetailsTab = ({
                 />
               </div>
 
+              {/* The whole width: a venue's name is the longest value in the
+                  section, and the one a half column clipped mid-word. */}
+              <div className="md:col-span-2">
+                <LocationPicker
+                  label={t("projects.details_tab.fields.location", "Miejsce wydarzenia")}
+                  value={formData.location_id || ""}
+                  onChange={(locationId, location) =>
+                    setFormData({
+                      ...formData,
+                      location_id: locationId || null,
+                      // The venue owns the timezone: every field on this tab is
+                      // wall-clock in it, so adopting it here is what keeps the
+                      // stated hour and the stored instant the same event.
+                      timezone: location?.timezone || formData.timezone,
+                    })
+                  }
+                  placeholder={t(
+                    "projects.details_tab.placeholders.location",
+                    "Wybierz miejsce",
+                  )}
+                  clearLabel={t(
+                    "projects.details_tab.placeholders.location_clear",
+                    "Bez lokalizacji",
+                  )}
+                />
+              </div>
+
               <DateTimeField
                 label={t("projects.details_tab.fields.date_time", "Data i godzina *")}
                 required
@@ -430,41 +426,6 @@ export const DetailsTab = ({
                 onChange={(date_time) => setFormData({ ...formData, date_time })}
                 defaultTime={CONCERT_DEFAULT_TIME}
               />
-
-              <Select
-                label={t("projects.details_tab.fields.location", "Miejsce wydarzenia")}
-                value={formData.location_id || ""}
-                onValueChange={(locationId) => {
-                  const selected = (locationsData ?? []).find(
-                    (location) => String(location.id) === locationId,
-                  );
-
-                  setFormData({
-                    ...formData,
-                    location_id: locationId || null,
-                    // The venue owns the timezone: every field on this tab is
-                    // wall-clock in it, so adopting it here is what keeps the
-                    // stated hour and the stored instant the same event.
-                    timezone: selected?.timezone || formData.timezone,
-                  });
-                }}
-                placeholder={t(
-                  "projects.details_tab.placeholders.location",
-                  "Wybierz miejsce",
-                )}
-                clearLabel={t(
-                  "projects.details_tab.placeholders.location_clear",
-                  "Bez lokalizacji",
-                )}
-                options={locationOptions}
-              />
-
-              <div className="md:col-span-2">
-                <TimezoneField
-                  timezone={formData.timezone}
-                  onChange={(timezone) => setFormData({ ...formData, timezone })}
-                />
-              </div>
 
               <Select
                 label={t("projects.details_tab.fields.conductor", "Dyrygent")}
@@ -485,6 +446,13 @@ export const DetailsTab = ({
                 )}
                 options={conductorOptions}
               />
+
+              <div className="md:col-span-2">
+                <TimezoneField
+                  timezone={formData.timezone}
+                  onChange={(timezone) => setFormData({ ...formData, timezone })}
+                />
+              </div>
 
               {/* Not a label on the poster: this is the answer that decides
                   whether the programme is a running order or an order of
@@ -678,14 +646,12 @@ export const DetailsTab = ({
               {hasDayPlan ? (
                 <DayTimeline
                   entries={timelineEntries}
-                  locationOptions={locationOptions}
                   dayOptions={dayOptions}
                   dayPlaceholder={eventDayLabel}
                   dayLabel={dayLabel}
                   onUpdate={handleUpdateRunSheetItem}
                   onCommitOrder={handleCommitRunSheetOrder}
                   onRemove={handleRemoveRunSheetItem}
-                  onCreatePlace={setPlaceDraftRowId}
                   eventKind={formData.event_kind}
                 />
               ) : (
@@ -844,15 +810,6 @@ export const DetailsTab = ({
           <AssistantConductorCard projectId={String(project.id)} />
         </div>
       )}
-
-      {/* Portalled, so it lies over this tab instead of navigating away from a
-          form that has not been saved. */}
-      <LocationEditorPanel
-        isOpen={placeDraftRowId !== null}
-        onClose={() => setPlaceDraftRowId(null)}
-        location={null}
-        onCreated={handleCreatedPlace}
-      />
     </div>
   );
 };
