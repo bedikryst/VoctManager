@@ -16,6 +16,7 @@ from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from django.utils.translation import gettext as _
 from django.utils.translation import override
 
+from archive.models import PERSONAL_ANNOTATION_LAYER, Annotation, AnnotationType
 from notifications.email_service import EmailType
 
 # Notifications
@@ -503,6 +504,15 @@ class UserIdentityService:
             #    queryset's own `delete()` would only set a flag.
             Note.all_objects.filter(owner=user).hard_delete()
 
+            # 3a. Erase their personal pencil marks on scores, for the same two
+            #     reasons: the auth row survives, so `created_by` never nulls
+            #     out, and a note on a score is free text only its author could
+            #     read. Marks they wrote for others ('shared', the conductor's
+            #     layers) are the choir's material and stay.
+            Annotation.all_objects.filter(
+                created_by=user, layer_name=PERSONAL_ANNOTATION_LAYER,
+            ).hard_delete()
+
             # 3b. Finance records are deliberately NOT erased. A fee, a payment and
             #     a contract are accounting records: the Accounting Act (art. 74)
             #     requires them for five years from the end of the financial year,
@@ -637,6 +647,30 @@ class UserPreferencesService:
                     "done_at": note.done_at.isoformat() if note.done_at else None,
                 }
                 for note in Note.objects.filter(owner=user)
+            ],
+            # Marks they drew on scores, every layer, erased ones left out like
+            # the notes. Where each sits and what it says; a stroke's points
+            # are geometry, not information about the person.
+            "score_marks": [
+                {
+                    "edition": str(mark.edition_id),
+                    "piece": mark.edition.piece.title if mark.edition.piece else "",
+                    "page": mark.page_number,
+                    "type": mark.annotation_type,
+                    "layer": mark.layer_name,
+                    "text": (
+                        mark.payload.get("text")
+                        if mark.annotation_type == AnnotationType.COMMENT
+                        and isinstance(mark.payload, dict)
+                        else None
+                    ),
+                    "created_at": mark.created_at.isoformat(),
+                }
+                for mark in (
+                    Annotation.objects.filter(created_by=user)
+                    .select_related("edition__piece")
+                    .order_by("created_at")
+                )
             ],
         }
 

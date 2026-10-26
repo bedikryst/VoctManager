@@ -1226,7 +1226,7 @@ class MaterialsAccessControlTests(APITestCase):
     def test_singer_can_create_stamp_on_personal_layer(self) -> None:
         self.client.force_authenticate(user=self.singer_user)
         resp = self.client.post("/api/archive/annotations/", {
-            "edition": str(self.edition_live.id), "page_number": 2,
+            "edition": str(self.edition_live.id), "page_number": 1,
             "annotation_type": "ST", "payload": {"x": 0.3, "y": 0.4, "symbol": "breath"},
             "layer_name": "personal",
         }, format="json")
@@ -1418,7 +1418,7 @@ class MaterialsAccessControlTests(APITestCase):
     def test_manager_can_create_highlighter_marking(self) -> None:
         self.client.force_authenticate(user=self.manager)
         resp = self.client.post("/api/archive/annotations/", {
-            "edition": str(self.edition_live.id), "page_number": 2,
+            "edition": str(self.edition_live.id), "page_number": 1,
             "annotation_type": "HL",
             "payload": {"paths": [[[0.1, 0.1], [0.4, 0.1]]], "width": 0.02},
             "layer_name": "shared",

@@ -37,6 +37,12 @@ from typing import Any
 
 from pypdf import PdfReader, PdfWriter
 
+from archive.annotation_sizes import (
+    DEFAULT_HIGHLIGHT_WIDTH,
+    DEFAULT_PEN_WIDTH,
+    MAX_MARK_SCALE,
+    MIN_MARK_SCALE,
+)
 from archive.annotation_stamps import get_stamp
 from roster.infrastructure.document_generator import _render_pdf
 from roster.infrastructure.print_fonts import BOOK_FONT_STACK, font_face_css
@@ -214,12 +220,12 @@ def _scale(payload: dict[str, Any]) -> float:
         value = float(payload.get("scale", 1.0))
     except (TypeError, ValueError):
         return 1.0
-    return min(4.0, max(0.2, value))
+    return min(MAX_MARK_SCALE, max(MIN_MARK_SCALE, value))
 
 
 def _render_freehand(mark: PrintMark, box: PlacedBox) -> str:
     fill, alpha = _ink(mark.color)
-    width = _stroke_width(mark.payload, box, 0.004)
+    width = _stroke_width(mark.payload, box, DEFAULT_PEN_WIDTH)
     width = max(_MIN_PEN_PT, width * (_HEAVY_FACTOR if mark.heavy else 1.0))
     out: list[str] = []
     for path in mark.payload.get("paths") or []:
@@ -237,7 +243,7 @@ def _render_highlight(mark: PrintMark, box: PlacedBox) -> str:
     dropped by half the band so it runs UNDER the passage the singer swept over,
     not through the noteheads."""
     fill, alpha = _ink(mark.color)
-    band = _stroke_width(mark.payload, box, 0.021)
+    band = _stroke_width(mark.payload, box, DEFAULT_HIGHLIGHT_WIDTH)
     hairline = min(_MAX_UNDERLINE_PT, max(_MIN_UNDERLINE_PT, band * 0.16))
     width = hairline * (_HEAVY_FACTOR if mark.heavy else 1.0)
     out: list[str] = []

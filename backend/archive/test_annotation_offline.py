@@ -143,7 +143,10 @@ class ClientMintedIdTests(APITestCase):
         self.client.force_authenticate(self.singer_user)
         self.client.post(_ENDPOINT, body, format="json")
         self.client.delete(f"{_ENDPOINT}{chosen}/")
-        self.client.post(_ENDPOINT, body, format="json")
+        replay = self.client.post(_ENDPOINT, body, format="json")
+        # Gone, not the row: answering with it would tell the queue the mark
+        # is alive while the server keeps it erased.
+        self.assertEqual(replay.status_code, 410)
         self.assertTrue(Annotation.all_objects.get(pk=chosen).is_deleted)
         self.assertFalse(Annotation.objects.filter(pk=chosen).exists())
 
@@ -229,6 +232,12 @@ class MarkFingerprintTests(ClientMintedIdTests):
         created = self.client.post(_ENDPOINT, self._body(), format="json").json()
         self.assertEqual(self._fingerprint()["count"], 1)
         self.client.delete(f"{_ENDPOINT}{created['id']}/")
+        self.assertEqual(self._fingerprint()["count"], 0)
+
+    def test_it_ignores_marks_on_a_deleted_edition(self) -> None:
+        self.client.force_authenticate(self.singer_user)
+        self.client.post(_ENDPOINT, self._body(), format="json")
+        self.edition.delete()
         self.assertEqual(self._fingerprint()["count"], 0)
 
     def test_it_needs_a_real_edition_id(self) -> None:

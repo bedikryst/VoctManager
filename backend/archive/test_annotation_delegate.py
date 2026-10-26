@@ -353,6 +353,24 @@ class DelegateMarkVisibilityTests(APITestCase):
 
     # --- what the stand is told ---------------------------------------------
 
+    def _fingerprint_count(self) -> int:
+        response = self.client.get(
+            f"{_ENDPOINT}fingerprint/", {"edition": str(self.edition.pk)},
+        )
+        self.assertEqual(response.status_code, 200)
+        return response.json()["count"]
+
+    def test_the_fingerprint_follows_the_leader_layer_with_the_grant(self) -> None:
+        # The poll answers "did MY view change": the leader mark counts while
+        # the grant opens it, and the conductor's private cue never does.
+        self.client.force_authenticate(self.deputy_user)
+        self.assertEqual(self._fingerprint_count(), 1)
+        grant = self._grant()
+        self.assertEqual(self._fingerprint_count(), 2)
+        grant.can_see_leader_marks = False
+        grant.save(update_fields=["can_see_leader_marks"])
+        self.assertEqual(self._fingerprint_count(), 1)
+
     def _songbook_choir_flag(self) -> bool:
         rows = self.client.get("/api/participations/materials-dashboard/").json()
         row = next(r for r in rows if r["project"]["id"] == str(self.project.pk))
@@ -449,6 +467,27 @@ class DelegateOutsideTheCastTests(APITestCase):
         rows = self.client.get(f"{_ENDPOINT}?edition={self.edition.pk}").json()
         self.assertIn(created.json()["id"], {row["id"] for row in rows})
 
+    def test_choir_marks_without_the_music_open_nothing(self) -> None:
+        # The choir's layer opens on music the stand-in may open at all. A grant
+        # that withholds the materials leaves an uncast deputy no door to it.
+        RehearsalDelegate.objects.filter(artist=self.deputy).update(
+            can_open_materials=False, can_mark_for_choir=True,
+        )
+        self.client.force_authenticate(self.deputy_user)
+        response = self.client.post(
+            _ENDPOINT,
+            {
+                "edition": str(self.edition.pk),
+                "page_number": 1,
+                "annotation_type": AnnotationType.FREEHAND,
+                "payload": {"paths": [[[0.1, 0.1], [0.2, 0.2]]], "width": 0.004},
+                "layer_name": SHARED_ANNOTATION_LAYER,
+                "color": _PENCIL,
+            },
+            format="json",
+        )
+        self.assertEqual(response.status_code, 403)
+
 
 @override_settings(MEDIA_ROOT=_MEDIA)
 class ConductorWithoutManagershipTests(APITestCase):
@@ -520,3 +559,27 @@ class ConductorWithoutManagershipTests(APITestCase):
         self.client.force_authenticate(self.maestro_user)
         response = self.client.get(f"{_ENDPOINT}?edition={self.edition.pk}")
         self.assertEqual(response.json(), [])
+
+    def test_a_deleted_project_takes_the_podium_s_access_with_it(self) -> None:
+        self.project.delete()
+        self.client.force_authenticate(self.maestro_user)
+        response = self.client.get(f"{_ENDPOINT}?edition={self.edition.pk}")
+        self.assertEqual(response.json(), [])
+
+    def test_the_podium_writes_the_choir_s_layer(self) -> None:
+        # The podium branch carries every lead scope, `choir_marks` included,
+        # without a grant row.
+        self.client.force_authenticate(self.maestro_user)
+        response = self.client.post(
+            _ENDPOINT,
+            {
+                "edition": str(self.edition.pk),
+                "page_number": 1,
+                "annotation_type": AnnotationType.FREEHAND,
+                "payload": {"paths": [[[0.1, 0.1], [0.2, 0.2]]], "width": 0.004},
+                "layer_name": SHARED_ANNOTATION_LAYER,
+                "color": _PENCIL,
+            },
+            format="json",
+        )
+        self.assertEqual(response.status_code, 201, response.content)

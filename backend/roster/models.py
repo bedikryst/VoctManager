@@ -885,8 +885,10 @@ class Participation(SoftDeleteModel):
         once the concert is over) but never widens it, so `CLOSED_PROJECT_STATUSES`
         composes on top rather than replacing anything here.
         """
+        # A deleted project is soft-deleted alone: its seats and programme rows
+        # stay behind, so the project's own flag is part of the third condition.
         return (
-            cls.objects.filter(is_deleted=False, **artist_lookup)
+            cls.objects.filter(is_deleted=False, project__is_deleted=False, **artist_lookup)
             .exclude(status=cls.Status.DECLINED)
             .exclude(project__status__in=Project.HIDDEN_FROM_CAST_STATUSES)
         )

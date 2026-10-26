@@ -33,6 +33,13 @@ from core.constants import VoiceLine
 from core.voice_labels import voice_line_label
 
 from .annotation_palette import normalize_ink
+from .annotation_sizes import (
+    DEFAULT_HIGHLIGHT_WIDTH,
+    DEFAULT_PEN_WIDTH,
+    MAX_MARK_SCALE,
+    MIN_MARK_SCALE,
+)
+from .annotation_stamps import get_stamp
 from .dtos import PieceWriteDTO, VoiceRequirementDTO
 from .models import (
     PERSONAL_ANNOTATION_LAYER,
@@ -387,9 +394,10 @@ _MAX_POINTS_PER_PATH = 8000
 _MAX_TEXT_LEN = 2000
 _MAX_STROKE_WIDTH = 0.2  # fraction of page width
 _NOTE_DISPLAY_MODES = ('pin', 'inline')
-# Bounds for a mark's size multiplier (text notes + stamps); default = 1.0.
-_MIN_MARK_SCALE = 0.4
-_MAX_MARK_SCALE = 4.0
+# The stored row as a whole, measured as compact JSON. The per-stroke caps above
+# still let one row reach megabytes; a pen line held for a minute is about a
+# tenth of this.
+_MAX_PAYLOAD_BYTES = 256 * 1024
 
 
 def _clamp01(value: Any) -> float:
@@ -405,7 +413,7 @@ def _clamp01(value: Any) -> float:
 def _clamp_scale(value: Any) -> float:
     """Coerce a mark's size multiplier into sane bounds; absent/garbage -> 1.0."""
     try:
-        return min(_MAX_MARK_SCALE, max(_MIN_MARK_SCALE, float(value)))
+        return min(MAX_MARK_SCALE, max(MIN_MARK_SCALE, float(value)))
     except (TypeError, ValueError):
         return 1.0
 
@@ -459,6 +467,12 @@ class AnnotationSerializer(serializers.ModelSerializer):
         # an existing mark keeps the key it was born with.
         if self.instance is not None:
             attrs.pop('id', None)
+        # Each rule below judges only what this write carries, so a row stored
+        # before the rule (page 0, a retired stamp) can still be moved and
+        # erased by its owner.
+        if 'page_number' in attrs:
+            edition = attrs.get('edition', getattr(self.instance, 'edition', None))
+            self._check_page(attrs['page_number'], edition)
         # On PATCH either field may be absent; resolve the effective pair so the
         # payload is always validated against the type it will be stored under.
         touches_shape = 'payload' in attrs or 'annotation_type' in attrs
@@ -468,16 +482,36 @@ class AnnotationSerializer(serializers.ModelSerializer):
             'annotation_type', getattr(self.instance, 'annotation_type', None)
         )
         payload = attrs.get('payload', getattr(self.instance, 'payload', None))
-        attrs['payload'] = self._clean_payload(atype, payload)
+        cleaned = self._clean_payload(atype, payload)
+        if len(json.dumps(cleaned, separators=(',', ':'))) > _MAX_PAYLOAD_BYTES:
+            raise serializers.ValidationError(
+                {'payload': _('This marking is too large to store.')}
+            )
+        attrs['payload'] = cleaned
         return attrs
+
+    @staticmethod
+    def _check_page(page_number: int, edition: ScoreEdition | None) -> None:
+        """Pages count from 1, and stop at the edition's last page once
+        ingestion has counted them (0 or null means not counted yet)."""
+        if page_number < 1:
+            raise serializers.ValidationError(
+                {'page_number': _('Pages are numbered from 1.')}
+            )
+        if edition is not None and edition.page_count and page_number > edition.page_count:
+            raise serializers.ValidationError(
+                {'page_number': _('This edition has no such page.')}
+            )
 
     def _clean_payload(self, atype: str | None, payload: Any) -> dict[str, Any]:
         if not isinstance(payload, Mapping):
             raise serializers.ValidationError(
                 {'payload': _('Payload must be an object.')}
             )
-        if atype in (AnnotationType.FREEHAND, AnnotationType.HIGHLIGHT):
-            return self._clean_strokes(payload)
+        if atype == AnnotationType.FREEHAND:
+            return self._clean_strokes(payload, default_width=DEFAULT_PEN_WIDTH)
+        if atype == AnnotationType.HIGHLIGHT:
+            return self._clean_strokes(payload, default_width=DEFAULT_HIGHLIGHT_WIDTH)
         if atype == AnnotationType.COMMENT:
             return self._clean_comment(payload)
         if atype == AnnotationType.STAMP:
@@ -486,7 +520,9 @@ class AnnotationSerializer(serializers.ModelSerializer):
             {'annotation_type': _('Unsupported annotation type.')}
         )
 
-    def _clean_strokes(self, payload: Mapping[str, Any]) -> dict[str, Any]:
+    def _clean_strokes(
+        self, payload: Mapping[str, Any], *, default_width: float,
+    ) -> dict[str, Any]:
         raw_paths = payload.get('paths')
         if not isinstance(raw_paths, (list, tuple)) or not raw_paths:
             raise serializers.ValidationError(
@@ -515,7 +551,7 @@ class AnnotationSerializer(serializers.ModelSerializer):
                 cleaned_points.append([_clamp01(point[0]), _clamp01(point[1])])
             cleaned_paths.append(cleaned_points)
         try:
-            width = float(payload.get('width', 0.004))
+            width = float(payload.get('width', default_width))
         except (TypeError, ValueError) as exc:
             raise serializers.ValidationError(
                 {'payload': _('Stroke width must be a number.')}
@@ -546,12 +582,27 @@ class AnnotationSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 {'payload': _('A stamp requires a "symbol" code.')}
             )
+        symbol = symbol.strip()[:40]
+        # A symbol print cannot draw prints nothing where the conductor expected
+        # a mark. The row's own symbol passes, so moving a stamp whose symbol
+        # was retired is not a write of that symbol.
+        if get_stamp(symbol) is None and symbol != self._stored_symbol():
+            raise serializers.ValidationError(
+                {'payload': _('Unknown stamp symbol.')}
+            )
         return {
             'x': _clamp01(payload.get('x')),
             'y': _clamp01(payload.get('y')),
-            'symbol': symbol.strip()[:40],
+            'symbol': symbol,
             'scale': _clamp_scale(payload.get('scale', 1.0)),
         }
+
+    def _stored_symbol(self) -> str | None:
+        instance = self.instance
+        if not isinstance(instance, Annotation) or instance.annotation_type != AnnotationType.STAMP:
+            return None
+        stored = instance.payload.get('symbol') if isinstance(instance.payload, Mapping) else None
+        return stored if isinstance(stored, str) else None
 
 
 # ===========================================================================

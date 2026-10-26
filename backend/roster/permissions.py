@@ -170,7 +170,9 @@ def led_projects_q(
         })
         & ~Q(**{f'{p}status': Project.Status.CANCELLED})
     )
-    return delegated | conducted
+    # Deleting a project soft-deletes the project row alone, and a path from a
+    # ProgramItem or a Rehearsal reaches it past the default manager's filter.
+    return Q(**{f'{p}is_deleted': False}) & (delegated | conducted)
 
 
 def led_project_ids(user: User | None, *, scope: LeadScope) -> QuerySet[Project, UUID]:

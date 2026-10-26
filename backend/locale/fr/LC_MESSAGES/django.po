@@ -5780,6 +5780,50 @@ msgstr ""
 msgid "See what waits for publication"
 msgstr "Voir ce qui attend la publication"
 
+#: archive/views.py:937
+msgid "edition is required."
+msgstr "Le paramètre edition est obligatoire."
+
+#: archive/views.py:941
+msgid "edition must be a valid id."
+msgstr "Le paramètre edition doit être un identifiant valide."
+
+#: archive/views.py:948
+msgid "The request body must be an object."
+msgstr "Le corps de la requête doit être un objet."
+
+#: archive/views.py:955
+msgid "ids must be a list of mark ids."
+msgstr "Le champ ids doit être une liste d’identifiants d’annotations."
+
+#: archive/views.py:957
+msgid "Too many mark ids in one request."
+msgstr "Trop d’identifiants d’annotations dans une seule requête."
+
+#: archive/views.py:1175
+msgid "This mark has been erased."
+msgstr "Cette annotation a été effacée."
+
+#: archive/views.py:1264
+msgid "layer_name must be text."
+msgstr "Le champ layer_name doit être du texte."
+
+#: archive/serializers.py:488
+msgid "This marking is too large to store."
+msgstr "Cette annotation est trop volumineuse pour être enregistrée."
+
+#: archive/serializers.py:499
+msgid "Pages are numbered from 1."
+msgstr "Les pages sont numérotées à partir de 1."
+
+#: archive/serializers.py:503
+msgid "This edition has no such page."
+msgstr "Cette édition ne comporte pas cette page."
+
+#: archive/serializers.py:591
+msgid "Unknown stamp symbol."
+msgstr "Symbole inconnu."
+
 #~ msgid "Review the request"
 #~ msgstr "Examiner la demande"
 

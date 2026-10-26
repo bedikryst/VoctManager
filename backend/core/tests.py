@@ -29,7 +29,15 @@ from PIL import Image
 from pydantic import ValidationError
 from rest_framework.test import APITestCase
 
-from archive.models import Composer
+from archive.models import (
+    PERSONAL_ANNOTATION_LAYER,
+    SHARED_ANNOTATION_LAYER,
+    Annotation,
+    AnnotationType,
+    Composer,
+    Piece,
+    ScoreEdition,
+)
 from documents.models import DocumentCategory
 from payments.models import Donation, PatronLead
 
@@ -41,7 +49,7 @@ from .ical_service import ICalGeneratorService
 from .management.commands.reset_test_data import Command as ResetTestData
 from .models import FeedbackReport, UserProfile
 from .permissions import IsManager, IsManagerOrReadOnly
-from .services import FeedbackService, UserIdentityService
+from .services import FeedbackService, UserIdentityService, UserPreferencesService
 from .tasks import ping_beat_heartbeat
 
 # `get_user_model()` returns a runtime value mypy cannot use as a type. Bind the
@@ -960,6 +968,84 @@ class AccountErasureTests(TestCase):
         self.user.refresh_from_db()
         self.assertNotIn("erasure@example.com", self.user.email)
         self.assertFalse(self.user.is_active)
+
+    @patch(EMAIL_TASK)
+    def test_erasure_removes_personal_score_marks_and_keeps_the_choirs(self, _enqueue_mock):
+        from .dtos import UserAccountDeletionDTO
+
+        marks = _ScoreMarks(self.user)
+        with self.captureOnCommitCallbacks(execute=True):
+            UserIdentityService.process_account_soft_deletion(
+                self.user, UserAccountDeletionDTO(current_password="pw12345678"),
+            )
+
+        # Erased ones too: a soft-deleted note on a score is still its text.
+        self.assertFalse(
+            Annotation.all_objects.filter(
+                pk__in=[marks.note.pk, marks.erased.pk],
+            ).exists()
+        )
+        self.assertTrue(Annotation.objects.filter(pk=marks.shared.pk).exists())
+
+
+class _ScoreMarks:
+    """One person's marks on one score: a personal note, a personal mark they
+    erased, and a mark they put on the choir's layer."""
+
+    def __init__(self, user: "User") -> None:
+        composer = Composer.objects.create(first_name="Anton", last_name="Bruckner")
+        piece = Piece.objects.create(title="Locus iste", composer=composer)
+        self.edition = ScoreEdition.objects.create(
+            piece=piece, original_filename="locus.pdf",
+            page_count=2, is_default=True, sha256="e" * 64,
+        )
+        self.note = self._mark(
+            user, PERSONAL_ANNOTATION_LAYER, AnnotationType.COMMENT,
+            {"x": 0.5, "y": 0.5, "text": "Oddech przed Deo", "display": "pin", "scale": 1.0},
+        )
+        self.erased = self._mark(
+            user, PERSONAL_ANNOTATION_LAYER, AnnotationType.FREEHAND,
+            {"paths": [[[0.1, 0.1], [0.2, 0.2]]], "width": 0.004},
+        )
+        self.erased.delete()
+        self.shared = self._mark(
+            user, SHARED_ANNOTATION_LAYER, AnnotationType.STAMP,
+            {"x": 0.3, "y": 0.3, "symbol": "breath", "scale": 1.0},
+        )
+
+    def _mark(self, user: "User", layer: str, kind: str, payload: dict) -> Annotation:
+        return Annotation.objects.create(
+            edition=self.edition, page_number=2, annotation_type=kind,
+            payload=payload, layer_name=layer, created_by=user,
+        )
+
+
+class ScoreMarksExportTests(TestCase):
+    """Portability hands back the marks a person drew, and what their notes say."""
+
+    def setUp(self) -> None:
+        self.user = User.objects.create_user(
+            username=str(uuid4()), email="export@example.com", password="pw12345678",
+        )
+        self.marks = _ScoreMarks(self.user)
+
+    def test_the_export_lists_live_marks_with_their_text(self) -> None:
+        exported = UserPreferencesService.generate_gdpr_export(self.user, {})["score_marks"]
+        self.assertEqual(len(exported), 2)
+        note = next(row for row in exported if row["type"] == AnnotationType.COMMENT)
+        self.assertEqual(note["text"], "Oddech przed Deo")
+        self.assertEqual(note["piece"], "Locus iste")
+        self.assertEqual(note["page"], 2)
+        self.assertEqual(note["layer"], PERSONAL_ANNOTATION_LAYER)
+        stamp = next(row for row in exported if row["type"] == AnnotationType.STAMP)
+        self.assertIsNone(stamp["text"])
+
+    def test_the_export_leaves_out_other_peoples_marks(self) -> None:
+        other = User.objects.create_user(
+            username=str(uuid4()), email="other@example.com", password="pw12345678",
+        )
+        exported = UserPreferencesService.generate_gdpr_export(other, {})["score_marks"]
+        self.assertEqual(exported, [])
 
 
 class AccountEmailAuditCommandTests(TestCase):

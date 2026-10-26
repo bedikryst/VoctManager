@@ -15,10 +15,12 @@ Standards: SaaS 2026, RFC 7807 (Global Exception Handling), Aggregate Roots.
 
 import logging
 import uuid
+from collections.abc import Mapping
+from typing import Any
 
 from django.core.cache import cache
 from django.core.exceptions import ValidationError as DjangoValidationError
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from django.db.models import Count, Max, Q
 from django.http import Http404
 from django.utils.translation import gettext as _
@@ -26,8 +28,9 @@ from django_filters.rest_framework import DjangoFilterBackend
 from pydantic import ValidationError as PydanticValidationError
 from rest_framework import permissions, status, viewsets
 from rest_framework.decorators import action
-from rest_framework.exceptions import PermissionDenied
+from rest_framework.exceptions import APIException, PermissionDenied, ValidationError
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
+from rest_framework.request import Request
 from rest_framework.response import Response
 
 from core.exceptions import format_pydantic_validation_errors, make_error_response
@@ -627,7 +630,6 @@ class ScoreEditionViewSet(viewsets.ModelViewSet):
                 'piece__recordings',
                 'piece__program_notes',
                 'piece__voice_requirements',
-                'annotations',
             )
             .order_by('-created_at')
         )
@@ -913,13 +915,58 @@ class ScoreEditionViewSet(viewsets.ModelViewSet):
 # stand-in because it was written for one.
 # ===========================================================================
 
+#: Most mark ids one `clear` or `restore` may name. An edition carries a few
+#: hundred marks at the very most; the cap keeps a hostile body from becoming an
+#: IN clause with tens of thousands of parameters.
+_MAX_BULK_MARK_IDS = 5000
+
+
+class AnnotationGone(APIException):
+    """A replayed create names a mark its author has since erased.
+
+    410 rather than the row: answering with the row would tell the offline queue
+    the mark is alive, while the server keeps it erased.
+    """
+    status_code = status.HTTP_410_GONE
+    default_code = 'gone'
+
+
+def _edition_param(raw: object) -> uuid.UUID:
+    """The edition a request names, checked to be an id."""
+    if not raw:
+        raise ValidationError({'edition': [_('edition is required.')]})
+    try:
+        return uuid.UUID(str(raw))
+    except (ValueError, TypeError) as exc:
+        raise ValidationError({'edition': [_('edition must be a valid id.')]}) from exc
+
+
+def _body_object(request: Request) -> Mapping[str, Any]:
+    """The request body, refused unless it is an object."""
+    data = request.data
+    if not isinstance(data, Mapping):
+        raise ValidationError(_('The request body must be an object.'))
+    return data
+
+
+def _mark_ids(raw: object) -> list[uuid.UUID]:
+    """A body's `ids`: a list of mark ids, bounded."""
+    if not isinstance(raw, list):
+        raise ValidationError({'ids': [_('ids must be a list of mark ids.')]})
+    if len(raw) > _MAX_BULK_MARK_IDS:
+        raise ValidationError({'ids': [_('Too many mark ids in one request.')]})
+    try:
+        return [uuid.UUID(str(item)) for item in raw]
+    except (ValueError, TypeError) as exc:
+        raise ValidationError({'ids': [_('ids must be a list of mark ids.')]}) from exc
+
 
 class AnnotationViewSet(viewsets.ModelViewSet):
     """
     CRUD for score annotations. Thin controller: read scope is decided in
     `get_queryset` (role-aware; also bounds object lookup for writes), write
-    scope in the `perform_*` hooks (non-managers may only touch their own
-    'personal' marks), and `created_by` is stamped from the request — never
+    scope in `_writable_layers` and the one gate every write passes
+    (`_assert_can_write`), and `created_by` is stamped from the request — never
     trusted from the payload.
     """
     serializer_class = AnnotationSerializer
@@ -927,15 +974,21 @@ class AnnotationViewSet(viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['edition', 'page_number', 'layer_name']
 
+    def initial(self, request, *args, **kwargs) -> None:
+        super().initial(request, *args, **kwargs)
+        self._writable_by_edition: dict[uuid.UUID, frozenset[str]] = {}
+
     def _is_manager(self) -> bool:
         return user_is_manager(request_user(self.request))
 
     def get_queryset(self):
         user = request_user(self.request)
+        # A soft-deleted edition takes its marks with it: they are neither
+        # listed nor fingerprinted, and so not writable either.
         base = (
             Annotation.objects
             .select_related('edition')
-            .filter(is_deleted=False)
+            .filter(is_deleted=False, edition__is_deleted=False)
             .order_by('created_at')
         )
         own_personal = Q(layer_name=PERSONAL_ANNOTATION_LAYER, created_by=user)
@@ -966,6 +1019,45 @@ class AnnotationViewSet(viewsets.ModelViewSet):
             )
         )
 
+    def _writable_layers(self, edition: ScoreEdition) -> frozenset[str]:
+        """
+        The layers a NON-manager may write on this edition, always in their own
+        hand. The one answer behind every write — create, edit, erase, clear and
+        restore — so the per-mark gate and the bulk ones cannot disagree about
+        what a reader's pencil reaches.
+
+        Their 'personal' layer, plus 'shared' where a delegation's `choir_marks`
+        scope opens it on this music. Nothing at all without live access to the
+        edition, by the union predicate (a seat in the cast OR running the
+        project), so a stand-in rehearsing a programme they do not sing in still
+        keeps their own pencil.
+
+        A rehearsal leader stays a non-manager here. The widened read scope lets
+        them FIND a leader-layer mark, and this set is what refuses the write: a
+        403, the honest answer, since the mark is not hidden from them, it is
+        simply not theirs to move. A mark the conductor put on 'shared' stays
+        his because the gate's own-row rule does not care which layer.
+
+        Memoised per request, because `restore` asks once per row.
+        """
+        known = self._writable_by_edition.get(edition.pk)
+        if known is not None:
+            return known
+        user = request_user(self.request)
+        piece_id = edition.piece_id
+        if piece_id is None or not user_has_live_access_to_piece(user, piece_id):
+            layers: frozenset[str] = frozenset()
+        elif (
+            led_piece_ids(user, scope='choir_marks')
+            .filter(piece_id=piece_id)
+            .exists()
+        ):
+            layers = frozenset({PERSONAL_ANNOTATION_LAYER, SHARED_ANNOTATION_LAYER})
+        else:
+            layers = frozenset({PERSONAL_ANNOTATION_LAYER})
+        self._writable_by_edition[edition.pk] = layers
+        return layers
+
     def _assert_can_write(
         self,
         *,
@@ -975,87 +1067,125 @@ class AnnotationViewSet(viewsets.ModelViewSet):
         color: str | None = None,
     ) -> None:
         """
-        Non-managers may only touch their OWN marks on the 'personal' layer, and
-        only on editions they still have live access to. Managers pass freely —
-        other users' personal marks are already unreachable via get_queryset.
+        Non-managers write only their OWN marks, on the layers
+        `_writable_layers` returns for this edition. Managers write every layer
+        but other users' 'personal': `get_queryset` already hides those rows,
+        and `restore`, which reads past it, is refused here.
 
-        A rehearsal leader is a non-manager here and stays one. The widened read
-        scope lets them FIND a leader-layer mark, so a write aimed at one now
-        reaches this guard and is refused by the first condition below — a 403
-        rather than the 404 it used to be, which is the honest answer: the mark
-        is not hidden from them, it is simply not theirs to move.
-
-        The one door a delegation can open here is the choir's layer: with the
-        `choir_marks` scope on, a leader writes 'shared' on the music of the
-        project they run — in their own hand only, so a mark the conductor put
-        there stays his (the own-row rule below does not care which layer). The
-        leader layer stays closed either way.
-
-        The palette's reserved ink is gated here too, for the same reason and by
-        the same rule: crimson is how the page says "the conductor wrote this",
-        and one book can now carry both hands at once.
+        The palette's reserved ink is gated here too: crimson is how the page
+        says "the conductor wrote this", and one book can carry both hands at
+        once.
         """
-        if self._is_manager():
-            return
         user = request_user(self.request)
-        if layer_name == SHARED_ANNOTATION_LAYER:
-            may_mark_for_choir = edition.piece_id is not None and (
-                led_piece_ids(user, scope='choir_marks')
-                .filter(piece_id=edition.piece_id)
-                .exists()
-            )
-            if not may_mark_for_choir:
-                raise PermissionDenied('Only personal-layer annotations may be written.')
-        elif layer_name != PERSONAL_ANNOTATION_LAYER:
+        if self._is_manager():
+            if (
+                instance is not None
+                and instance.layer_name == PERSONAL_ANNOTATION_LAYER
+                and instance.created_by_id != user.id
+            ):
+                raise PermissionDenied('You may only modify your own annotations.')
+            return
+        layers = self._writable_layers(edition)
+        if not layers:
+            raise PermissionDenied('No live access to this edition.')
+        if layer_name not in layers:
             raise PermissionDenied('Only personal-layer annotations may be written.')
         if color is not None and is_reserved_ink(color):
             raise PermissionDenied('That ink is reserved for the conductor.')
         if instance is not None and instance.created_by_id != user.id:
             raise PermissionDenied('You may only modify your own annotations.')
-        # The union predicate: a seat in the cast OR running the project. A
-        # stand-in rehearsing a programme they do not sing in still keeps their
-        # own pencil.
-        if not user_has_live_access_to_piece(user, edition.piece_id):
-            raise PermissionDenied('No live access to this edition.')
+
+    def _assert_can_edit(self, instance: Annotation, changes: Mapping[str, Any]) -> None:
+        """
+        An edit takes a mark off where it is and puts it where the patch says,
+        so both ends are gated. Gating only the target would let a stand-in
+        whose `choir_marks` scope was withdrawn pull their own rows off 'shared'.
+
+        Colour is judged only when the patch RECOLOURS, so a mark that predates
+        the palette can still be moved or erased by its owner.
+        """
+        target_layer = changes.get('layer_name', instance.layer_name)
+        target_edition = changes.get('edition', instance.edition)
+        if (target_layer, target_edition.pk) != (instance.layer_name, instance.edition_id):
+            self._assert_can_write(
+                layer_name=instance.layer_name, edition=instance.edition,
+                instance=instance,
+            )
+        self._assert_can_write(
+            layer_name=target_layer, edition=target_edition, instance=instance,
+            color=changes.get('color'),
+        )
+
+    def list(self, request, *args, **kwargs):
+        # Readers ask for one edition at a time; an unbounded list would hand a
+        # manager every mark in the database, payloads included.
+        _edition_param(request.query_params.get('edition'))
+        return super().list(request, *args, **kwargs)
 
     def perform_create(self, serializer) -> None:
+        # A client-chosen key means this POST may be a REPLAY: the mark was drawn
+        # with no signal, the queued write went out on reconnect, and this is
+        # either its first arrival or a later one (an earlier reply died in the
+        # tunnel). A later one is answered from the row that already exists,
+        # never with a second copy of the pencil line.
+        supplied_id = serializer.validated_data.get('id')
+        if supplied_id is not None:
+            existing = self._stored_row(supplied_id)
+            if existing is not None:
+                self._answer_replay(serializer, existing)
+                return
         edition = serializer.validated_data['edition']
         layer = serializer.validated_data.get('layer_name') or CONDUCTOR_ANNOTATION_LAYER
         self._assert_can_write(
             layer_name=layer, edition=edition,
             color=serializer.validated_data.get('color'),
         )
-        user = request_user(self.request)
-        # A client-chosen key means this POST may be a REPLAY: the mark was drawn
-        # with no signal, the queued write went out on reconnect, and this is
-        # either its first arrival or its second (the first reply died in the
-        # tunnel). Answer the second with the row that already exists rather than
-        # a duplicate pencil line. Soft-deleted rows count as existing — the
-        # queue replays the erase right behind this create, and resurrecting the
-        # mark here would leave the reader's page one stroke ahead of their
-        # intent. `all_objects` is what sees them.
-        supplied_id = serializer.validated_data.get('id')
-        if supplied_id is not None:
-            existing = Annotation.all_objects.filter(pk=supplied_id).first()
-            if existing is not None:
-                if existing.created_by_id != user.id:
-                    raise PermissionDenied('That annotation id is already taken.')
-                serializer.instance = existing
-                return
-        serializer.save(created_by=user)
+        try:
+            with transaction.atomic():
+                serializer.save(created_by=request_user(self.request))
+        except IntegrityError:
+            # Two replays of one create, both past the lookup above: the loser
+            # answers from the winner's row instead of a 500.
+            existing = self._stored_row(supplied_id) if supplied_id is not None else None
+            if existing is None:
+                raise
+            self._answer_replay(serializer, existing)
+
+    @staticmethod
+    def _stored_row(pk: uuid.UUID) -> Annotation | None:
+        # `all_objects`, because an erased row still exists for a replay.
+        return Annotation.all_objects.filter(pk=pk).first()
+
+    def _answer_replay(self, serializer, existing: Annotation) -> None:
+        """
+        A create naming a row that already exists.
+
+        * Somebody else's row: the key is taken, and a chosen id is never a way
+          into another person's mark.
+        * An erased row: 410. The queue replays an erase right behind its
+          create, and un-deleting here would bring back a mark the reader wiped.
+        * The author's own live row: the replayed body is applied as an edit,
+          through the edit's gate. The client folds offline edits into the
+          unsent create, so a later arrival can carry a newer body than the one
+          that landed. An identical body writes nothing, so a plain duplicate
+          does not move the fingerprint of every open stand.
+        """
+        if existing.created_by_id != request_user(self.request).id:
+            raise PermissionDenied('That annotation id is already taken.')
+        if existing.is_deleted:
+            raise AnnotationGone(_('This mark has been erased.'))
+        edit = self.get_serializer(existing, data=self.request.data, partial=True)
+        edit.is_valid(raise_exception=True)
+        self._assert_can_edit(existing, edit.validated_data)
+        if any(
+            getattr(existing, field) != value
+            for field, value in edit.validated_data.items()
+        ):
+            edit.save()
+        serializer.instance = edit.instance
 
     def perform_update(self, serializer) -> None:
-        instance = serializer.instance
-        # Validate against the TARGET layer so a patch can't smuggle a personal
-        # mark onto 'shared' (or a chorister edit onto a shared mark). Colour is
-        # read the same way: only a patch that RECOLOURS is judged, so a mark
-        # that predates the palette can still be moved or erased by its owner.
-        layer = serializer.validated_data.get('layer_name', instance.layer_name)
-        edition = serializer.validated_data.get('edition', instance.edition)
-        self._assert_can_write(
-            layer_name=layer, edition=edition, instance=instance,
-            color=serializer.validated_data.get('color'),
-        )
+        self._assert_can_edit(serializer.instance, serializer.validated_data)
         serializer.save()
 
     def perform_destroy(self, instance: Annotation) -> None:
@@ -1088,19 +1218,7 @@ class AnnotationViewSet(viewsets.ModelViewSet):
         A soft delete leaves the row out of the count, and every write bumps
         `updated_at`, so the pair moves on create, edit, erase and clear alike.
         """
-        edition_id = request.query_params.get('edition')
-        if not edition_id:
-            return Response(
-                {'detail': 'edition is required.'},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        try:
-            uuid.UUID(str(edition_id))
-        except (ValueError, TypeError):
-            return Response(
-                {'detail': 'edition must be a valid id.'},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        edition_id = _edition_param(request.query_params.get('edition'))
         stats = self.get_queryset().filter(edition_id=edition_id).aggregate(
             count=Count('id'), latest=Max('updated_at'),
         )
@@ -1122,25 +1240,30 @@ class AnnotationViewSet(viewsets.ModelViewSet):
         the gesture that hands remarks about singers to one of them; taking a
         manager's own markings back carries no such risk, so the trash takes
         them with the rest. Pass `layer_name` to narrow ('personal' narrows to
-        their own marks). Non-managers wipe only their OWN marks: the personal
-        layer, plus what they themselves put on 'shared' where the `choir_marks`
-        scope let them — the same door `_assert_can_write` opens, so a leader's
-        "clear everything" reaches exactly what their pencil could. The
-        conductor's shared marks are never theirs. Body: {edition, layer_name?}.
+        their own marks). Non-managers wipe only their OWN marks on the layers
+        `_writable_layers` gives them — the personal layer, plus 'shared' where
+        the `choir_marks` scope opens it — so "clear everything" reaches exactly
+        what their pencil could; `layer_name` narrows that to one of them. The
+        conductor's shared marks are never theirs.
+
+        `ids` bounds the wipe to the marks the client showed as clearable when
+        the gesture was made, queued creates included (their ids are minted on
+        the device). A clear replayed late from the offline queue then cannot
+        take marks drawn after it. Deliberately not a time bound: the queue
+        replays a create drawn offline ahead of the clear that follows it, the
+        server stamps that row with the replay time, and a bound would spare a
+        mark the user wiped. Without `ids` the wipe stays unbounded, for clients
+        that predate it.
+
+        Body: {edition, layer_name?, ids?}. Answers {deleted, ids}: how many
+        marks went and which, so an undo can hand the same list to `restore`.
         """
-        edition_id = request.data.get('edition')
-        if not edition_id:
-            return Response(
-                {'detail': 'edition is required.'},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        try:
-            uuid.UUID(str(edition_id))
-        except (ValueError, TypeError):
-            return Response(
-                {'detail': 'edition must be a valid id.'},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        data = _body_object(request)
+        edition_id = _edition_param(data.get('edition'))
+        layer = data.get('layer_name')
+        if layer is not None and not isinstance(layer, str):
+            raise ValidationError({'layer_name': [_('layer_name must be text.')]})
+        bound_ids = _mark_ids(data['ids']) if 'ids' in data else None
         # Never blind-delete by raw id: confirm the edition exists so a stray or
         # forged id can't silently no-op (and so the response is an honest 404).
         edition = ScoreEdition.objects.filter(pk=edition_id).only('id', 'piece_id').first()
@@ -1151,7 +1274,6 @@ class AnnotationViewSet(viewsets.ModelViewSet):
             )
         user = request_user(request)
         qs = Annotation.objects.filter(edition_id=edition_id, is_deleted=False)
-        layer = request.data.get('layer_name')
         if self._is_manager():
             if layer:
                 qs = qs.filter(layer_name=layer)
@@ -1160,14 +1282,57 @@ class AnnotationViewSet(viewsets.ModelViewSet):
             else:
                 qs = qs.exclude(layer_name=PERSONAL_ANNOTATION_LAYER)
         else:
-            own_layers = [PERSONAL_ANNOTATION_LAYER]
-            if edition.piece_id is not None and (
-                led_piece_ids(user, scope='choir_marks')
-                .filter(piece_id=edition.piece_id)
-                .exists()
-            ):
-                own_layers.append(SHARED_ANNOTATION_LAYER)
-            qs = qs.filter(layer_name__in=own_layers, created_by=user)
-        deleted = qs.count()
-        qs.delete()  # SoftDeleteQuerySet → bulk is_deleted=True
-        return Response({'deleted': deleted}, status=status.HTTP_200_OK)
+            layers = self._writable_layers(edition)
+            if layer:
+                layers = layers & {layer}
+            qs = qs.filter(layer_name__in=layers, created_by=user)
+        if bound_ids is not None:
+            qs = qs.filter(pk__in=bound_ids)
+        # The rows are locked as they are listed, so the ids answered are
+        # exactly the rows this request erased.
+        with transaction.atomic():
+            wiped = list(qs.select_for_update().values_list('id', flat=True))
+            Annotation.objects.filter(pk__in=wiped).delete()  # soft delete
+        return Response(
+            {'deleted': len(wiped), 'ids': [str(pk) for pk in wiped]},
+            status=status.HTTP_200_OK,
+        )
+
+    @action(detail=False, methods=['post'], url_path='restore')
+    def restore(self, request):
+        """
+        Undo for an erase or a clear: brings the named marks back with the ids,
+        authors and stacking order they had, rather than as fresh copies in the
+        undoer's hand. Body: {ids}.
+
+        Each row passes the same gate a write would, so a reader restores only
+        what their pencil may touch today and a manager never another user's
+        personal mark. Idempotent: a live row the caller may write is answered
+        as it stands, and an id the server never had is skipped (an erase that
+        only ever lived in the offline queue). Marks on a deleted edition stay
+        gone with it.
+
+        Answers {restored: [rows]}.
+        """
+        ids = _mark_ids(_body_object(request).get('ids'))
+        rows = (
+            Annotation.all_objects
+            .select_related('edition')
+            .filter(pk__in=ids, edition__is_deleted=False)
+            .order_by('created_at')
+        )
+        restored: list[Annotation] = []
+        for row in rows:
+            try:
+                self._assert_can_write(
+                    layer_name=row.layer_name, edition=row.edition, instance=row,
+                )
+            except PermissionDenied:
+                continue
+            if row.is_deleted:
+                row.restore()
+            restored.append(row)
+        return Response(
+            {'restored': self.get_serializer(restored, many=True).data},
+            status=status.HTTP_200_OK,
+        )

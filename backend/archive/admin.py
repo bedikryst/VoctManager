@@ -14,6 +14,7 @@ management for audio tracks and divis/vocal requirements.
 from django.contrib import admin
 
 from .models import (
+    PERSONAL_ANNOTATION_LAYER,
     Annotation,
     Composer,
     Movement,
@@ -128,6 +129,12 @@ class AnnotationAdmin(admin.ModelAdmin):
     list_display = ('edition', 'page_number', 'annotation_type', 'layer_name', 'created_by', 'created_at')
     list_filter = ('annotation_type', 'layer_name')
     search_fields = ('edition__piece__title', 'layer_name')
+    list_select_related = ('edition__piece', 'created_by')
+
+    def get_queryset(self, request):
+        # A singer's personal pencil marks are invisible to the conductor in the
+        # app, and the admin is no side door to them.
+        return super().get_queryset(request).exclude(layer_name=PERSONAL_ANNOTATION_LAYER)
 
 
 @admin.register(ProgramNote)

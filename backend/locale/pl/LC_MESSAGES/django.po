@@ -5744,6 +5744,50 @@ msgstr ""
 msgid "See what waits for publication"
 msgstr "Zobacz, co czeka na publikację"
 
+#: archive/views.py:937
+msgid "edition is required."
+msgstr "Parametr edition jest wymagany."
+
+#: archive/views.py:941
+msgid "edition must be a valid id."
+msgstr "Parametr edition musi być prawidłowym identyfikatorem."
+
+#: archive/views.py:948
+msgid "The request body must be an object."
+msgstr "Treść żądania musi być obiektem."
+
+#: archive/views.py:955
+msgid "ids must be a list of mark ids."
+msgstr "Pole ids musi być listą identyfikatorów oznaczeń."
+
+#: archive/views.py:957
+msgid "Too many mark ids in one request."
+msgstr "Za dużo identyfikatorów oznaczeń w jednym żądaniu."
+
+#: archive/views.py:1175
+msgid "This mark has been erased."
+msgstr "To oznaczenie zostało usunięte."
+
+#: archive/views.py:1264
+msgid "layer_name must be text."
+msgstr "Pole layer_name musi być tekstem."
+
+#: archive/serializers.py:488
+msgid "This marking is too large to store."
+msgstr "To oznaczenie jest zbyt duże, by je zapisać."
+
+#: archive/serializers.py:499
+msgid "Pages are numbered from 1."
+msgstr "Strony numeruje się od 1."
+
+#: archive/serializers.py:503
+msgid "This edition has no such page."
+msgstr "To wydanie nie ma takiej strony."
+
+#: archive/serializers.py:591
+msgid "Unknown stamp symbol."
+msgstr "Nieznany symbol."
+
 #~ msgid "Review the request"
 #~ msgstr "Rozpatrz prośbę"
 
