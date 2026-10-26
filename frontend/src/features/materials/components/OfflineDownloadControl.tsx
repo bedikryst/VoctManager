@@ -21,7 +21,7 @@ import { Eyebrow } from "@/shared/ui/primitives/typography";
 import { cn } from "@/shared/lib/utils";
 import { useArtistPreview } from "@/app/providers/ArtistPreviewProvider";
 import { INERT_SURFACE } from "@/shared/ui/primitives/inertSurface";
-import { useOfflineStore } from "@/app/store/useOfflineStore";
+import { useOfflineStore } from "@/shared/offline/useOfflineStore";
 import {
   isServiceWorkerSupported,
   removeProjectFromOffline,

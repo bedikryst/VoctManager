@@ -1,9 +1,11 @@
 /**
  * @file offlineClient.ts
  * @description App-thread half of the offline system: registers the service
- * worker for *everyone* (not just push opt-ins), collects a concert's practice
- * assets, drives explicit downloads over a MessageChannel, and replays the
- * offline write queue once the network returns.
+ * worker for *everyone* (not just push opt-ins), drives explicit downloads over
+ * a MessageChannel, and replays the offline write queue once the network
+ * returns. Which assets make up a concert, and which caches a landed write
+ * makes stale, belong to the features — they hand this module the list and
+ * register their reconcilers.
  * @module shared/offline/offlineClient
  */
 
@@ -11,12 +13,17 @@ import type { QueryClient } from "@tanstack/react-query";
 
 import api from "@/shared/api/api";
 import { armAppUpdateWatch } from "@/shared/pwa/appUpdateController";
-import { getPiecePdfLinks } from "@/features/archive/constants/piecePdfs";
-import type { MaterialsDashboardGroup } from "@/features/materials/types/materials.dto";
 import {
   useOfflineStore,
+  type OfflineWriteKind,
   type QueuedWrite,
-} from "@/app/store/useOfflineStore";
+} from "./useOfflineStore";
+import {
+  classifyWriteFailure,
+  GIVE_UP_AFTER_MS,
+  retryDelayMs,
+  statusOf,
+} from "./replayPolicy";
 import {
   type OfflineAsset,
   type OfflineSwReply,
@@ -71,42 +78,15 @@ const getActiveWorker = async (): Promise<ServiceWorker | null> => {
   }
 };
 
-/**
- * Flattens a concert into its downloadable practice assets: every voice track
- * (blend/minus-mine need the whole choir, not just my line) plus the primary
- * score edition of each piece. Deduplicated by URL.
- *
- * `extra` is whatever the caller had to resolve over the network first — today
- * the concert binder, whose URL is only knowable once the server has said which
- * build this device is taking (see `offlinePrep`).
- */
-export const collectProjectAssets = (
-  group: MaterialsDashboardGroup,
-  extra: readonly OfflineAsset[] = [],
-): OfflineAsset[] => {
-  const seen = new Set<string>();
-  const assets: OfflineAsset[] = [];
-
-  const push = (url: string | null | undefined, kind: OfflineAsset["kind"]) => {
-    const trimmed = url?.trim();
-    if (!trimmed || seen.has(trimmed)) return;
-    seen.add(trimmed);
-    assets.push({ url: trimmed, kind });
-  };
-
-  for (const item of group.program) {
-    for (const track of item.piece.tracks) push(track.audio_file, "audio");
-    const primaryScore = getPiecePdfLinks(item.piece)[0];
-    if (primaryScore) push(primaryScore.url, "score");
-  }
-  for (const asset of extra) push(asset.url, asset.kind);
-
-  return assets;
-};
-
 interface DownloadOutcome {
   cached: number;
   failed: number;
+}
+
+/** The concert a download belongs to, as the manifest records it. */
+export interface OfflineProjectRef {
+  id: string;
+  title: string;
 }
 
 /**
@@ -115,14 +95,13 @@ interface DownloadOutcome {
  * per-asset failures are surfaced as `failed` in the resolved outcome.
  */
 export const downloadProjectForOffline = async (
-  group: MaterialsDashboardGroup,
-  extra: readonly OfflineAsset[] = [],
+  project: OfflineProjectRef,
+  assets: readonly OfflineAsset[],
 ): Promise<DownloadOutcome> => {
   const worker = await getActiveWorker();
   if (!worker) throw new Error("offline-unavailable");
 
-  const assets = collectProjectAssets(group, extra);
-  const projectId = group.project.id;
+  const projectId = project.id;
   const store = useOfflineStore.getState();
   // What this device held a moment ago, so the parts of it that are no longer
   // part of the concert can be dropped. The binder makes this matter: it is
@@ -148,7 +127,7 @@ export const downloadProjectForOffline = async (
     });
     store.saveManifest({
       projectId,
-      title: group.project.title,
+      title: project.title,
       assetUrls: [],
       assetCount: 0,
       failed: 0,
@@ -200,7 +179,7 @@ export const downloadProjectForOffline = async (
         dropSuperseded(urls);
         current.saveManifest({
           projectId,
-          title: group.project.title,
+          title: project.title,
           assetUrls: urls,
           assetCount: message.cached,
           failed: message.failed,
@@ -244,6 +223,27 @@ export interface FlushSummary {
 }
 
 /**
+ * Re-reads whatever a feature's caches showed from the queue, once the queue
+ * has let go of one of its writes (landed, refused, or given up on).
+ */
+export type OfflineReconciler = (queryClient: QueryClient) => Promise<unknown>;
+
+const reconcilers = new Map<OfflineWriteKind, OfflineReconciler>();
+
+/**
+ * A feature names what to re-read after its queued writes settle. The app
+ * registers every feature's reconciler at boot, before the first flush: a write
+ * left over from a session that ended offline is replayed on mount, often long
+ * before the screen that queued it is loaded again.
+ */
+export const registerOfflineReconciler = (
+  kind: OfflineWriteKind,
+  reconcile: OfflineReconciler,
+): void => {
+  reconcilers.set(kind, reconcile);
+};
+
+/**
  * True when a failed write almost certainly died on the network rather than
  * being rejected by the server — so it's safe to queue and replay later.
  * axios network errors carry no `response`; a genuine 4xx/5xx does.
@@ -266,11 +266,25 @@ const replayWrite = async (write: QueuedWrite): Promise<void> => {
   });
 };
 
+export interface FlushOptions {
+  /**
+   * Ignore every write's backoff — the reader pressed "sync now", and a person
+   * asking is a better signal than the timer's guess.
+   */
+  force?: boolean;
+}
+
 /**
- * Replays queued writes oldest-first. Stops at the first genuine network
- * failure (still offline — keep the rest); drops writes the server rejects
- * (4xx/5xx) so a poison entry can't wedge the queue forever. Reconciles the
- * affected caches afterwards.
+ * Replays queued writes oldest-first, one at a time, by the rules in
+ * `replayPolicy`:
+ *   · a write that lands, or whose purpose the answer shows is already met,
+ *     leaves the queue;
+ *   · a write the server refuses for good leaves it, and is counted as rejected;
+ *   · network and server trouble keep the write, schedule its next try, and stop
+ *     the loop — the writes behind it may depend on it — until the server has
+ *     answered it badly for a whole day, when it is given up on.
+ * The loop also stops at a write whose next try is not due yet, for the same
+ * reason. Each kind whose writes left the queue is reconciled afterwards.
  *
  * Order is load-bearing for score markings: a mark's create must reach the
  * server before the edit or erase that follows it, and a clear must land after
@@ -278,72 +292,73 @@ const replayWrite = async (write: QueuedWrite): Promise<void> => {
  */
 export const flushOfflineQueue = async (
   queryClient: QueryClient,
+  { force = false }: FlushOptions = {},
 ): Promise<FlushSummary> => {
-  const { queue, dequeueWrite } = useOfflineStore.getState();
+  const store = useOfflineStore.getState;
+  const queue = store().queue;
   if (queue.length === 0) {
     return { flushed: 0, rejected: 0, remaining: 0 };
   }
 
   let flushed = 0;
   let rejected = 0;
-  let letGoOfMarks = false;
-  let letGoOfNotes = false;
+  const settledKinds = new Set<OfflineWriteKind>();
 
-  for (const write of [...queue]) {
+  for (const write of queue) {
+    if (!force && write.nextAttemptAt > Date.now()) break;
+    // Withdrawn or superseded by the reader while an earlier replay was in the air.
+    if (!store().queue.some((item) => item.id === write.id)) continue;
+
+    store().startAttempt(write.id);
     try {
       await replayWrite(write);
-      dequeueWrite(write.id);
+      store().dequeueWrite(write.id);
       flushed += 1;
+      settledKinds.add(write.kind);
+      continue;
     } catch (error) {
-      if (isLikelyOfflineError(error)) break; // network dropped again — retry later
-      dequeueWrite(write.id); // server rejected it — don't retry forever
-      rejected += 1;
+      const verdict = classifyWriteFailure(error, write.method);
+      if (verdict === "done") {
+        store().dequeueWrite(write.id);
+        flushed += 1;
+        settledKinds.add(write.kind);
+        continue;
+      }
+      if (verdict === "reject") {
+        store().dequeueWrite(write.id);
+        rejected += 1;
+        settledKinds.add(write.kind);
+        continue;
+      }
+
+      const failedAt = Date.now();
+      const answered = statusOf(error) !== null;
+      const failingSince = answered
+        ? (write.failingSince ?? failedAt)
+        : write.failingSince;
+      if (answered && failingSince !== null && failedAt - failingSince >= GIVE_UP_AFTER_MS) {
+        store().dequeueWrite(write.id);
+        rejected += 1;
+        settledKinds.add(write.kind);
+        continue;
+      }
+      store().deferWrite(write.id, {
+        nextAttemptAt: failedAt + retryDelayMs(write.attempts + 1),
+        failingSince,
+      });
+      break;
     }
-    if (write.kind === "annotation") letGoOfMarks = true;
-    if (write.kind === "note") letGoOfNotes = true;
   }
 
-  if (flushed > 0 || rejected > 0) {
-    await Promise.all([
-      queryClient.invalidateQueries({ queryKey: ["materials", "dashboard"] }),
-      queryClient.invalidateQueries({ queryKey: ["schedule", "dashboard"] }),
-    ]);
-  }
-
-  // Score markings: the queue was the page's source of truth while it held them,
-  // so the moment it lets go the server's answer has to be re-read — otherwise
-  // the marks blink out between the flush and the next refetch.
-  //
-  // `refetchType: "all"`, because the reader is usually nowhere near the score
-  // when signal comes back. Marking a closed stand stale only defers the read to
-  // its next mount, which may well be the next rehearsal in the same basement —
-  // by then the queue is empty and both the snapshot and the worker's copy would
-  // predate the marks that just landed. This runs on a connection that has just
-  // proved itself, over a handful of small lists.
-  if (letGoOfMarks) {
-    await queryClient.invalidateQueries({
-      queryKey: ["annotations"],
-      refetchType: "all",
-    });
-  }
-
-  // Notes: a replayed create returns 201 even for a row that was soft-deleted
-  // offline in the meantime, and a replayed edit returns the row's stored
-  // body rather than the queued one — see `notes.queries.ts`. The queue was
-  // the list's source of truth while it held these writes, so the moment it
-  // lets go the server's answer has to be re-read, `refetchType: "all"` for
-  // the same reason as marks: the queue is empty by the time the reader is
-  // back at the panel, and a merely-stale cache would defer past that.
-  if (letGoOfNotes) {
-    await queryClient.invalidateQueries({
-      queryKey: ["notes"],
-      refetchType: "all",
-    });
-  }
+  await Promise.all(
+    [...settledKinds].map((kind) =>
+      reconcilers.get(kind)?.(queryClient).catch(() => {}),
+    ),
+  );
 
   return {
     flushed,
     rejected,
-    remaining: useOfflineStore.getState().queue.length,
+    remaining: store().queue.length,
   };
 };

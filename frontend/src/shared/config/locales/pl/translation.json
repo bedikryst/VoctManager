@@ -16,10 +16,15 @@
     "markup": "Adnotacje",
     "pending_hint": "Zapisane na tym urządzeniu. Wyślą się same, gdy wróci internet.",
     "incoming": {
-      "line_one": "Dyrygent dopisał oznaczenie · s. {{page}}",
-      "line_few": "Dyrygent dopisał {{count}} oznaczenia · s. {{page}}",
-      "line_many": "Dyrygent dopisał {{count}} oznaczeń · s. {{page}}",
-      "line_other": "Dyrygent dopisał {{count}} oznaczeń · s. {{page}}"
+      "line_one": "Nowe oznaczenie · s. {{page}}",
+      "line_few": "{{count}} nowe oznaczenia · s. {{page}}",
+      "line_many": "{{count}} nowych oznaczeń · s. {{page}}",
+      "line_other": "{{count}} nowych oznaczeń · s. {{page}}"
+    },
+    "rejected": {
+      "reserved_ink": "Tym kolorem pisze tylko dyrygent. Oznaczenie nie zostało zapisane.",
+      "no_access": "Nie masz już dostępu do tego oznaczenia. Zmiana nie została zapisana.",
+      "invalid": "Serwer nie przyjął tego oznaczenia. Zmiana nie została zapisana."
     },
     "guide": {
       "open": "Jak działają adnotacje",
@@ -4403,6 +4408,11 @@
       "pending_few": "{{count}} zmian czeka na synchronizację",
       "pending_many": "{{count}} zmian czeka na synchronizację",
       "pending_other": "{{count}} zmian czeka na synchronizację",
+      "stuck": "Serwer chwilowo nie przyjmuje zmian · {{count}} czeka",
+      "stuck_one": "Serwer chwilowo nie przyjmuje zmian · {{count}} czeka",
+      "stuck_few": "Serwer chwilowo nie przyjmuje zmian · {{count}} czekają",
+      "stuck_many": "Serwer chwilowo nie przyjmuje zmian · {{count}} czeka",
+      "stuck_other": "Serwer chwilowo nie przyjmuje zmian · {{count}} czeka",
       "sync_now": "Synchronizuj teraz",
       "syncing": "Synchronizacja…"
     },

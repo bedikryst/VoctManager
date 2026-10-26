@@ -65,11 +65,31 @@ export const AnnotationsService = {
     await api.delete(`${ANNOTATIONS_ENDPOINT}${id}/`);
   },
 
-  clear: async (editionId: string): Promise<{ deleted: number }> => {
-    const response = await api.post<{ deleted: number }>(
+  /**
+   * Wipes the named marks, within the caller's clear scope. Naming them is what
+   * keeps a late replay from taking marks drawn after the gesture.
+   */
+  clear: async (
+    editionId: string,
+    ids: readonly string[],
+  ): Promise<{ deleted: number; ids: string[] }> => {
+    const response = await api.post<{ deleted: number; ids: string[] }>(
       `${ANNOTATIONS_ENDPOINT}clear/`,
-      { edition: editionId },
+      { edition: editionId, ids },
     );
     return response.data;
+  },
+
+  /**
+   * Brings erased marks back with their ids, authors and stacking order. Ids
+   * the server never had, or that the caller may no longer write, are skipped;
+   * the answer lists what came back.
+   */
+  restore: async (ids: readonly string[]): Promise<ScoreAnnotation[]> => {
+    const response = await api.post<{ restored: ScoreAnnotation[] }>(
+      `${ANNOTATIONS_ENDPOINT}restore/`,
+      { ids },
+    );
+    return response.data.restored;
   },
 };

@@ -16,10 +16,15 @@
     "markup": "Markup",
     "pending_hint": "Saved on this device. It will send itself once you are back online.",
     "incoming": {
-      "line_one": "The conductor added a marking · p. {{page}}",
-      "line_few": "The conductor added {{count}} markings · p. {{page}}",
-      "line_many": "The conductor added {{count}} markings · p. {{page}}",
-      "line_other": "The conductor added {{count}} markings · p. {{page}}"
+      "line_one": "New marking · p. {{page}}",
+      "line_few": "{{count}} new markings · p. {{page}}",
+      "line_many": "{{count}} new markings · p. {{page}}",
+      "line_other": "{{count}} new markings · p. {{page}}"
+    },
+    "rejected": {
+      "reserved_ink": "Only the conductor writes in this colour. The marking was not saved.",
+      "no_access": "You no longer have access to this marking. The change was not saved.",
+      "invalid": "The server did not accept this marking. The change was not saved."
     },
     "guide": {
       "open": "How markings work",
@@ -4322,6 +4327,11 @@
       "pending_few": "{{count}} changes waiting to sync",
       "pending_many": "{{count}} changes waiting to sync",
       "pending_other": "{{count}} changes waiting to sync",
+      "stuck": "The server is not taking changes right now · {{count}} waiting",
+      "stuck_one": "The server is not taking changes right now · {{count}} waiting",
+      "stuck_few": "The server is not taking changes right now · {{count}} waiting",
+      "stuck_many": "The server is not taking changes right now · {{count}} waiting",
+      "stuck_other": "The server is not taking changes right now · {{count}} waiting",
       "sync_now": "Sync now",
       "syncing": "Syncing…"
     },

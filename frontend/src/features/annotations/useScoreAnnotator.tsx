@@ -44,6 +44,7 @@ import {
 import { useAnnotationTools } from "./lib/useAnnotationTools";
 import { useAnnotationHistory } from "./lib/useAnnotationHistory";
 import { useCanDraw } from "./lib/useCanDraw";
+import { useIncomingMarks } from "./lib/useIncomingMarks";
 import { bookPageFor, type ScoreBook } from "./lib/scoreBook";
 import { layerOf, WRITE_LAYERS, type WriteLayer } from "./lib/layers";
 import type {
@@ -117,12 +118,6 @@ export interface ScoreAnnotatorBindings {
 /** Tools that need a stylus/precision surface — coerced away on phones. */
 const PRECISION_TOOLS = new Set(["pen", "highlighter", "shape"]);
 
-/** A mark that arrived from someone else, and the page it is waiting on. */
-interface IncomingMarks {
-  count: number;
-  page: number;
-}
-
 export const useScoreAnnotator = ({
   editionId,
   mode,
@@ -185,15 +180,24 @@ export const useScoreAnnotator = ({
     ? (book.frames.get(pageApi.currentPage)?.edition ?? null)
     : editionId;
 
-  const { annotations, pendingCount } = useScoreAnnotations(activeEditionId, {
-    isCleared,
-    // The stand is on screen exactly when an edition is loaded — which is also
-    // the only time a singer can be looking at a page the conductor is writing on.
-    live: !!activeEditionId,
-  });
+  const { annotations, pendingCount, isLoaded } = useScoreAnnotations(
+    activeEditionId,
+    {
+      isCleared,
+      // The stand is on screen exactly when an edition is loaded — which is also
+      // the only time a singer can be looking at a page the conductor is writing on.
+      live: !!activeEditionId,
+    },
+  );
 
-  const { create, update, remove, clear, draftAnnotation } =
-    useAnnotationMutations(activeEditionId, { isCleared, authorId: userId });
+  const {
+    createMark,
+    updateMark,
+    eraseMark,
+    clearMarks,
+    reviveMarks,
+    draftAnnotation,
+  } = useAnnotationMutations(activeEditionId, { authorId: userId });
 
   // Freehand needs a page large enough for a stroke to mean something — which
   // the reader can reach by zooming or by switching the fit, on any device.
@@ -203,23 +207,24 @@ export const useScoreAnnotator = ({
     stylusSeen: tools.stylusSeen,
   });
 
+  // Every gesture goes through the history, so each step holds the write it
+  // made and an undo can act on what that write came to.
   const history = useAnnotationHistory({
     editionId: activeEditionId,
-    // Undoing an erase writes a NEW mark rather than reviving the old key: the
-    // server treats a known id as a replay and hands back the row it already
-    // has — soft-deleted included — which is exactly what keeps a queued
-    // create-then-erase from resurrecting itself, and exactly the wrong answer
-    // here.
-    createAnnotation: async (payload) => {
-      const draft = draftAnnotation(payload);
-      if (!draft) throw new Error("No edition open.");
-      return create.mutateAsync(draft);
-    },
-    removeAnnotation: (id) => remove.mutateAsync(id),
-    updateAnnotation: (id, patch) => update.mutateAsync({ id, patch }),
+    createMark,
+    updateMark,
+    eraseMark,
+    clearMarks,
+    reviveMarks,
   });
-  const { recordCreate, recordDelete, recordClear, recordUpdate, undo, redo } =
-    history;
+  const {
+    undo,
+    redo,
+    create: recordCreate,
+    update: recordUpdate,
+    erase: recordErase,
+    clear: recordClear,
+  } = history;
 
   // Reset transient editor state when a different score opens — in the binder
   // that is also a page turn into the next piece, which is right: a note
@@ -237,29 +242,26 @@ export const useScoreAnnotator = ({
       // and never changes, so undo works on a mark the network has not yet
       // heard of — which is the whole point of drawing in a basement.
       recordCreate(draft);
-      create.mutate(draft);
     },
-    [create, draftAnnotation, recordCreate],
+    [draftAnnotation, recordCreate],
   );
 
   const handleUpdate = useCallback(
     (id: string, after: AnnotationPatch, before: AnnotationPatch) => {
-      update.mutateAsync({ id, patch: after }).catch(() => {});
       recordUpdate(id, before, after);
     },
-    [update, recordUpdate],
+    [recordUpdate],
   );
 
   const handleDelete = useCallback(
     (id: string) => {
       const target = annotations.find((a) => a.id === id);
-      remove.mutateAsync(id).catch(() => {});
-      if (target) recordDelete(target);
+      if (target) recordErase(target);
       // Wherever the erase came from — the card, the eraser, an undo — a mark
       // that is gone cannot stay selected, or its card outlives it.
       setSelectedId((current) => (current === id ? null : current));
     },
-    [annotations, remove, recordDelete],
+    [annotations, recordErase],
   );
 
   const clearableCount = useMemo(
@@ -269,13 +271,11 @@ export const useScoreAnnotator = ({
 
   const handleClearAll = useCallback(() => {
     if (!activeEditionId) return;
-    // Snapshot only what the server will actually wipe, so undo never
-    // duplicates marks that survived the clear.
-    const snapshot = annotations.filter(isCleared);
-    if (snapshot.length === 0) return;
-    clear.mutateAsync().catch(() => {});
-    recordClear(snapshot);
-  }, [activeEditionId, annotations, clear, isCleared, recordClear]);
+    // The clear names exactly what the page shows as clearable — queued marks
+    // included — so a late replay cannot take a mark drawn after it, and undo
+    // brings back exactly these.
+    recordClear(annotations.filter(isCleared));
+  }, [activeEditionId, annotations, isCleared, recordClear]);
 
   /**
    * Selecting from a REMOTE surface — the index in the drawer — where the
@@ -383,7 +383,13 @@ export const useScoreAnnotator = ({
     [annotations],
   );
 
-  const incoming = useIncomingMarks(annotations, activeEditionId, mode, userId);
+  const incoming = useIncomingMarks({
+    annotations,
+    isLoaded,
+    editionId: activeEditionId,
+    watching: mode !== "conductor",
+    userId,
+  });
 
   const handleGoToIncoming = useCallback(() => {
     if (incoming.marks) pageApi.goToPage(displayPage(incoming.marks.page));
@@ -590,63 +596,4 @@ export const useScoreAnnotator = ({
     annotationCount: annotations.length,
     pageApi,
   };
-};
-
-/**
- * Marks that appeared while this stand was open and were not written here.
- *
- * Only the reader's side is watched. In conductor mode the shared layer IS the
- * user's own hand, so announcing it back to them would be noise; a chorister,
- * meanwhile, cannot write to `shared` at all, which makes "a shared mark I had
- * not seen" an exact synonym for "the conductor just wrote this". A leader
- * sits between: they do write to `shared`, so their own rows are left out by
- * author — the draft carries their id from the moment it is drawn, which is
- * what keeps a mark they just made from being announced back to them as news.
- */
-const useIncomingMarks = (
-  annotations: readonly ScoreAnnotation[],
-  editionId: string | null,
-  mode: ScoreAnnotatorMode,
-  userId: string | null,
-): { marks: IncomingMarks | null; dismiss: () => void } => {
-  const watching = mode !== "conductor";
-  const seen = useRef<Set<string> | null>(null);
-  const [marks, setMarks] = useState<IncomingMarks | null>(null);
-
-  // A different score is a different conversation — forget both the baseline
-  // and anything still on screen from the last one.
-  useEffect(() => {
-    seen.current = null;
-    setMarks(null);
-  }, [editionId]);
-
-  useEffect(() => {
-    if (!watching || !editionId) return;
-    // Both layers the conductor writes TO this reader: what he tells the whole
-    // choir, and — for whoever is taking the evening — what he wrote for them.
-    // A cue that arrives an hour before a rehearsal somebody else is running is
-    // exactly the mark that must not land silently.
-    const incoming = annotations.filter(
-      (a) =>
-        (a.layer_name === "shared" || a.layer_name === "leader") &&
-        a.created_by !== userId,
-    );
-    // The first list to arrive is the baseline, not news: everything already on
-    // the page when the reader opened it is simply the score they asked for.
-    if (seen.current === null) {
-      seen.current = new Set(incoming.map((a) => a.id));
-      return;
-    }
-    const fresh = incoming.filter((a) => !seen.current?.has(a.id));
-    if (fresh.length === 0) return;
-    for (const mark of fresh) seen.current.add(mark.id);
-    setMarks({
-      count: fresh.length,
-      page: Math.min(...fresh.map((a) => a.page_number)),
-    });
-  }, [annotations, editionId, userId, watching]);
-
-  const dismiss = useCallback(() => setMarks(null), []);
-
-  return { marks, dismiss };
 };

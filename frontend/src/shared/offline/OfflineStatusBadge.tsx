@@ -16,6 +16,7 @@ import type { OfflineSyncStatus } from "./useOfflineSync";
 export const OfflineStatusBadge = ({
   isOnline,
   pendingCount,
+  stuckCount,
   isSyncing,
   syncNow,
 }: OfflineSyncStatus): React.JSX.Element => {
@@ -55,9 +56,13 @@ export const OfflineStatusBadge = ({
                   : t("offline.badge.offline", "Tryb offline")
                 : isSyncing
                   ? t("offline.badge.syncing", "Synchronizacja…")
-                  : t("offline.badge.pending", "{{count}} zmian czeka na synchronizację", {
-                      count: pendingCount,
-                    })}
+                  : stuckCount > 0
+                    ? t("offline.badge.stuck", "Serwer nie odpowiada · {{count}} zmian czeka", {
+                        count: pendingCount,
+                      })
+                    : t("offline.badge.pending", "{{count}} zmian czeka na synchronizację", {
+                        count: pendingCount,
+                      })}
             </Eyebrow>
 
             {isOnline && hasPending && !isSyncing && (

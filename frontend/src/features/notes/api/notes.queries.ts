@@ -1,7 +1,7 @@
 /**
  * @file notes.queries.ts
  * @description TanStack Query hooks for the private scratchpad, wired through
- * the existing offline write queue (`app/store/useOfflineStore.ts` +
+ * the existing offline write queue (`shared/offline/useOfflineStore.ts` +
  * `shared/offline/offlineClient.ts`) rather than a new one — see
  * `docs/specs/manager-notes-2026-09.md`.
  *
@@ -22,11 +22,16 @@
  */
 
 import { useCallback } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  useMutation,
+  useQuery,
+  useQueryClient,
+  type QueryClient,
+} from "@tanstack/react-query";
 
 import { RECONCILING_REFETCH } from "@/shared/api/queryPolicy";
 import { isLikelyOfflineError } from "@/shared/offline/offlineClient";
-import { useOfflineStore } from "@/app/store/useOfflineStore";
+import { useOfflineStore } from "@/shared/offline/useOfflineStore";
 import { NotesService } from "./notes.service";
 import type { Note, NoteCreateDTO } from "../types/notes.dto";
 
@@ -35,6 +40,17 @@ export const notesKeys = {
 };
 
 const NOTES_URL = "/api/notes/";
+
+/**
+ * Registered with the offline queue at boot. Both replay behaviours above mean
+ * a landed write is no promise about what the list shows, and the queue was the
+ * list's source of truth while it held these writes — so the moment it lets go,
+ * the server's answer is re-read. `refetchType: "all"`: the queue is empty by
+ * the time the reader is back at the panel, and a merely-stale cache would
+ * defer the read past that.
+ */
+export const reconcileQueuedNotes = (queryClient: QueryClient): Promise<void> =>
+  queryClient.invalidateQueries({ queryKey: notesKeys.all, refetchType: "all" });
 
 const truncateLabel = (body: string): string =>
   body.length > 40 ? `${body.slice(0, 40)}…` : body;

@@ -1,41 +1,53 @@
 /**
  * @file annotations.queries.test.tsx
- * @description The read-back that puts a singer's own pencil into the copy on
- * their device.
+ * @description The score marks' writes, read where they actually fail: in the
+ * request log and the cache, not on the screen.
  *
- * This is the fifth flow in the suite and it earns its place the same way the
- * other four do: the regression is invisible everywhere a person would look for
- * it. The stand is right, the marks are on the page, the server has them — and
- * three days later, in a basement with no signal, the score opens without them,
- * because the only thing that ever writes the durable copy is a real list GET
- * and a successful POST is not one. Neither `tsc`, nor a build, nor looking at
- * the screen can tell that apart from working; the request log can.
+ * Two families of regression live here, and both are invisible everywhere a
+ * person would look for them:
+ *   · the read-back that puts a singer's own pencil into the copy on their
+ *     device. The stand is right, the marks are on the page, the server has
+ *     them — and three days later, in a basement with no signal, the score opens
+ *     without them, because the only thing that ever writes the durable copy is
+ *     a real list GET and a successful POST is not one;
+ *   · the write rules: a refetch that lands mid-write must not eat the mark, a
+ *     refused write must take back only its own row, a mark the queue still
+ *     holds must be written through the queue, and a 502 must queue rather than
+ *     lose. Each of these once cost marks without a word on screen.
  * @module features/annotations/api
  */
 
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { act, waitFor } from "@testing-library/react";
 import { HttpResponse, http } from "msw";
+import { toast } from "sonner";
 
 import { renderHookWithPanel } from "@/test/harness";
 import { server } from "@/test/server";
 import { ANNOTATIONS_PATH } from "@/shared/offline/swProtocol";
+import { useOfflineStore } from "@/shared/offline/useOfflineStore";
 
 import {
+  annotationKeys,
   useAnnotationMutations,
   useScoreAnnotations,
 } from "./annotations.queries";
+import type { ScoreAnnotation } from "../types/annotations.dto";
 
 const LIST_URL = `*${ANNOTATIONS_PATH}`;
+const MARK_URL = `*${ANNOTATIONS_PATH}:id/`;
+const RESTORE_URL = `*${ANNOTATIONS_PATH}restore/`;
 
 /** Counts the trips to the network, which is the whole subject here. */
-const arrangeStand = (): { readonly reads: { count: number } } => {
+const arrangeStand = (
+  rows: ScoreAnnotation[] = [],
+): { readonly reads: { count: number } } => {
   const reads = { count: 0 };
 
   server.use(
     http.get(LIST_URL, () => {
       reads.count += 1;
-      return HttpResponse.json([]);
+      return HttpResponse.json(rows);
     }),
     http.post(LIST_URL, async ({ request }) =>
       HttpResponse.json(await request.json()),
@@ -53,6 +65,19 @@ const NOTE = {
   layer_name: "personal",
 } as const;
 
+const serverMark = (id: string, color = "#1F2933"): ScoreAnnotation => ({
+  id,
+  edition: "edition-1",
+  page_number: 1,
+  annotation_type: "CM",
+  payload: { x: 0.5, y: 0.5, text: "oddech", display: "pin" },
+  color,
+  layer_name: "personal",
+  created_by: "user-manager",
+  created_at: "2026-10-20T10:00:00Z",
+  updated_at: "2026-10-20T10:00:00Z",
+});
+
 const openStand = (editionId: string) =>
   renderHookWithPanel(() => ({
     marks: useScoreAnnotations(editionId),
@@ -67,7 +92,13 @@ const setOnline = (online: boolean): void => {
   });
 };
 
-afterEach(() => setOnline(true));
+const queued = () => useOfflineStore.getState().queue;
+
+afterEach(() => {
+  setOnline(true);
+  useOfflineStore.getState().reset();
+  vi.restoreAllMocks();
+});
 
 describe("markings that must survive the persisted snapshot", () => {
   it("reads the edition back from the server when the reader leaves a score they wrote on", async () => {
@@ -79,7 +110,7 @@ describe("markings that must survive the persisted snapshot", () => {
     await act(async () => {
       const draft = result.current.writer.draftAnnotation(NOTE);
       if (!draft) throw new Error("the stand was handed no edition to draw on");
-      await result.current.writer.create.mutateAsync(draft);
+      await result.current.writer.createMark(draft);
     });
 
     // Still one: the write patched the cache in place, which is what keeps the
@@ -110,7 +141,7 @@ describe("markings that must survive the persisted snapshot", () => {
     await act(async () => {
       const draft = result.current.writer.draftAnnotation(NOTE);
       if (!draft) throw new Error("the stand was handed no edition to draw on");
-      await result.current.writer.create.mutateAsync(draft);
+      await result.current.writer.createMark(draft);
     });
 
     setOnline(false);
@@ -119,5 +150,185 @@ describe("markings that must survive the persisted snapshot", () => {
     // The mark is either on the server already or in the durable queue; either
     // way the read-back is worth nothing here and would only fail.
     expect(reads.count).toBe(1);
+  });
+});
+
+describe("writing a mark", () => {
+  it("keeps a mark that a refetch dropped while its create was in the air", async () => {
+    let release: () => void = () => {};
+    const gate = new Promise<void>((resolve) => (release = resolve));
+    server.use(
+      http.get(LIST_URL, () => HttpResponse.json([])),
+      http.post(LIST_URL, async ({ request }) => {
+        const body = await request.json();
+        await gate;
+        return HttpResponse.json(body, { status: 201 });
+      }),
+    );
+    const { result, queryClient, unmount } = openStand("edition-1");
+    await waitFor(() => expect(result.current.marks.isLoaded).toBe(true));
+
+    const draft = result.current.writer.draftAnnotation(NOTE);
+    if (!draft) throw new Error("no edition");
+    let write: Promise<unknown> = Promise.resolve();
+    act(() => {
+      write = result.current.writer.createMark(draft);
+    });
+    await waitFor(() =>
+      expect(result.current.marks.annotations.map((row) => row.id)).toEqual([draft.id]),
+    );
+
+    // A list answered from before the write lands under it.
+    act(() => queryClient.setQueryData(annotationKeys.byEdition("edition-1"), []));
+    await act(async () => {
+      release();
+      await write;
+    });
+
+    await waitFor(() =>
+      expect(result.current.marks.annotations.map((row) => row.id)).toEqual([draft.id]),
+    );
+    // Leaving runs the read-back while this suite's handlers still answer it.
+    unmount();
+    await act(async () => {});
+  });
+
+  it("takes back only its own row when the server refuses it, and says why once", async () => {
+    const mine = serverMark("mine");
+    const other = serverMark("other");
+    server.use(
+      http.get(LIST_URL, () => HttpResponse.json([mine, other])),
+      http.patch(MARK_URL, () =>
+        HttpResponse.json({ detail: "reserved" }, { status: 403 }),
+      ),
+    );
+    const error = vi.spyOn(toast, "error");
+    const { result, queryClient } = openStand("edition-1");
+    await waitFor(() => expect(result.current.marks.annotations).toHaveLength(2));
+
+    let write: Promise<unknown> = Promise.resolve();
+    act(() => {
+      write = result.current.writer.updateMark("mine", { color: "#DC2626" });
+    });
+    // Meanwhile another change reaches the list — it must survive the rollback.
+    act(() =>
+      queryClient.setQueryData<ScoreAnnotation[]>(
+        annotationKeys.byEdition("edition-1"),
+        (rows) => rows?.map((row) => (row.id === "other" ? { ...row, color: "#2563EB" } : row)),
+      ),
+    );
+    await act(async () => {
+      await expect(write).rejects.toBeTruthy();
+    });
+
+    await waitFor(() =>
+      expect(
+        Object.fromEntries(
+          result.current.marks.annotations.map((row) => [row.id, row.color]),
+        ),
+      ).toEqual({ mine: "#1F2933", other: "#2563EB" }),
+    );
+    expect(error).toHaveBeenCalledTimes(1);
+    expect(error.mock.calls[0][0]).toBe(
+      "Tym kolorem pisze tylko dyrygent. Oznaczenie nie zostało zapisane.",
+    );
+    expect(queued()).toEqual([]);
+  });
+
+  it("queues a create the server answered with a 502, and an erase keeps its DELETE", async () => {
+    server.use(
+      http.get(LIST_URL, () => HttpResponse.json([])),
+      http.post(LIST_URL, () => new HttpResponse(null, { status: 502 })),
+    );
+    const { result } = openStand("edition-1");
+    await waitFor(() => expect(result.current.marks.isLoaded).toBe(true));
+
+    const draft = result.current.writer.draftAnnotation(NOTE);
+    if (!draft) throw new Error("no edition");
+    await act(async () => {
+      expect(await result.current.writer.createMark(draft)).toBe("queued");
+    });
+    await waitFor(() => expect(result.current.marks.annotations.map((row) => row.id)).toEqual([draft.id]));
+
+    // The 502 may have come after the row was stored, so the erase cannot
+    // simply withdraw the create.
+    await act(async () => {
+      expect(await result.current.writer.eraseMark(draft)).toBe("queued");
+    });
+    expect(queued().map((write) => write.method)).toEqual(["POST", "DELETE"]);
+    await waitFor(() => expect(result.current.marks.annotations).toEqual([]));
+  });
+
+  it("writes an edit of a still-queued mark through the queue, not over the network", async () => {
+    arrangeStand();
+    const { result } = openStand("edition-1");
+    await waitFor(() => expect(result.current.marks.isLoaded).toBe(true));
+
+    const draft = result.current.writer.draftAnnotation(NOTE);
+    if (!draft) throw new Error("no edition");
+    setOnline(false);
+    await act(async () => {
+      expect(await result.current.writer.createMark(draft)).toBe("queued");
+    });
+    setOnline(true);
+
+    // No PATCH handler is registered: a live write here fails the suite.
+    await act(async () => {
+      expect(
+        await result.current.writer.updateMark(draft.id, { color: "#2563EB" }),
+      ).toBe("queued");
+    });
+
+    expect(queued()).toHaveLength(1);
+    expect(queued()[0]).toMatchObject({ method: "POST", body: { color: "#2563EB" } });
+  });
+});
+
+describe("undoing an erase", () => {
+  it("cancels an erase that is still waiting unsent in the queue", async () => {
+    const existing = serverMark("existing");
+    arrangeStand([existing]);
+    const { result } = openStand("edition-1");
+    await waitFor(() => expect(result.current.marks.annotations).toHaveLength(1));
+
+    setOnline(false);
+    await act(async () => {
+      expect(await result.current.writer.eraseMark(existing)).toBe("queued");
+    });
+    await waitFor(() => expect(result.current.marks.annotations).toEqual([]));
+
+    await act(async () => {
+      expect(await result.current.writer.reviveMarks([existing])).toBe("discarded");
+    });
+    expect(queued()).toEqual([]);
+    await waitFor(() => expect(result.current.marks.annotations.map((row) => row.id)).toEqual(["existing"]));
+  });
+
+  it("restores a landed erase as the same row", async () => {
+    const existing = serverMark("existing");
+    const restored = { ...existing, updated_at: "2026-10-26T18:00:00Z" };
+    const restoreBodies: unknown[] = [];
+    arrangeStand([existing]);
+    server.use(
+      http.delete(MARK_URL, () => new HttpResponse(null, { status: 204 })),
+      http.post(RESTORE_URL, async ({ request }) => {
+        restoreBodies.push(await request.json());
+        return HttpResponse.json({ restored: [restored] });
+      }),
+    );
+    const { result, unmount } = openStand("edition-1");
+    await waitFor(() => expect(result.current.marks.annotations).toHaveLength(1));
+
+    await act(async () => {
+      expect(await result.current.writer.eraseMark(existing)).toBe("saved");
+    });
+    await act(async () => {
+      expect(await result.current.writer.reviveMarks([existing])).toBe("saved");
+    });
+
+    expect(restoreBodies).toEqual([{ ids: ["existing"] }]);
+    await waitFor(() => expect(result.current.marks.annotations).toEqual([restored]));
+    unmount();
+    await act(async () => {});
   });
 });

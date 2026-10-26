@@ -27,6 +27,12 @@ export const ANNOTATION_INKS: readonly AnnotationInk[] = [
   { value: "#1F2933", managerOnly: false },
 ] as const;
 
+/** Whether the server refuses this ink from anyone but a manager. */
+export const isReservedInk = (color: string): boolean =>
+  ANNOTATION_INKS.some(
+    (ink) => ink.managerOnly && ink.value.toLowerCase() === color.toLowerCase(),
+  );
+
 /** The swatches this writer may actually use. */
 export const inksFor = (isManager: boolean): readonly AnnotationInk[] =>
   isManager ? ANNOTATION_INKS : ANNOTATION_INKS.filter((ink) => !ink.managerOnly);

@@ -12,11 +12,12 @@
  * `flows` — jsdom, and every suite that renders the panel goes through
  * `src/test/harness.tsx`.
  *
- * ON THE SIZE OF `flows`: it covers five flows and one hook only — publishing a
- * project (which mails the whole cast and cannot be recalled), a chorister's
- * RSVP, a conductor's roll-call, account activation, the read-back that leaves a
- * singer's own markings on their device, and the microphone capture behind the
- * vocal-range screen. The rest of the panel has no component tests, and that is
+ * ON THE SIZE OF `flows`: it covers five flows and a few hooks only — publishing
+ * a project (which mails the whole cast and cannot be recalled), a chorister's
+ * RSVP, a conductor's roll-call, account activation, the score marks' writes
+ * (the read-back that leaves a singer's own markings on their device, the write
+ * rules, undo, and the "new marks" baseline), and the microphone capture behind
+ * the vocal-range screen. The rest of the panel has no component tests, and that is
  * a decision, not a gap someone forgot to close. These are the ones where a
  * regression sends mail, marks the wrong person absent, burns a single-use
  * invitation link, hands somebody blank paper at a rehearsal, or leaves a
@@ -57,6 +58,10 @@ export default defineConfig({
           environment: "jsdom",
           include: ["src/**/*.test.tsx"],
           setupFiles: ["./src/test/setup.ts"],
+          // A whole page rendered in jsdom takes one to two seconds alone, and
+          // several times that while every jsdom file boots in parallel; the
+          // default five seconds then fails a passing flow on load alone.
+          testTimeout: 15_000,
         },
       },
     ],

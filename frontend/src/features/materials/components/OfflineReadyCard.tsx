@@ -31,7 +31,7 @@ import {
   WifiOff,
 } from "lucide-react";
 
-import { useOfflineStore } from "@/app/store/useOfflineStore";
+import { useOfflineStore } from "@/shared/offline/useOfflineStore";
 import { useArtistPreview } from "@/app/providers/ArtistPreviewProvider";
 import { isServiceWorkerSupported } from "@/shared/offline/offlineClient";
 import { BottomSheet } from "@/shared/ui/composites/BottomSheet";

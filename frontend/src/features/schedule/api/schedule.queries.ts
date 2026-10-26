@@ -1,7 +1,12 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  useMutation,
+  useQuery,
+  useQueryClient,
+  type QueryClient,
+} from "@tanstack/react-query";
 
 import { projectKeys } from "@/features/projects/api/project.queries";
-import { useOfflineStore } from "@/app/store/useOfflineStore";
+import { useOfflineStore } from "@/shared/offline/useOfflineStore";
 import { useArtistPreview } from "@/app/providers/ArtistPreviewProvider";
 import { isLikelyOfflineError } from "@/shared/offline/offlineClient";
 import {
@@ -36,6 +41,13 @@ export const scheduleKeys = {
 
 /** Partial key matching every artist's dashboard cache (for optimistic patches). */
 const SCHEDULE_DASHBOARD_PREFIX = PERSONAL_READMODEL_KEYS.scheduleDashboard;
+
+/**
+ * Registered with the offline queue at boot: once a queued RSVP leaves the
+ * queue, every reader's timeline is re-read, as the live write's `onSettled` does.
+ */
+export const reconcileQueuedAttendance = (queryClient: QueryClient): Promise<void> =>
+  queryClient.invalidateQueries({ queryKey: SCHEDULE_DASHBOARD_PREFIX });
 
 /**
  * The artist's personal schedule in one server-joined call — replaces the

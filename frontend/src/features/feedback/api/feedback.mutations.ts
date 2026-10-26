@@ -12,7 +12,7 @@
 
 import { useMutation, type UseMutationResult } from "@tanstack/react-query";
 
-import { useOfflineStore } from "@/app/store/useOfflineStore";
+import { useOfflineStore } from "@/shared/offline/useOfflineStore";
 import { isLikelyOfflineError } from "@/shared/offline/offlineClient";
 import { FeedbackService, FEEDBACK_ENDPOINT } from "./feedback.service";
 import type { FeedbackReportPayload } from "../types/feedback.dto";

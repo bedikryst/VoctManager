@@ -1,73 +1,91 @@
 /**
  * @file useAnnotationHistory.ts
- * @description Undo / redo for score markup. Each edit records a reversible
- * operation; undo applies its inverse against BOTH the server and the optimistic
- * cache (re-creating a deleted mark, deleting a created one, reverting an edited
- * note). Decoupled from React Query — it takes plain create/remove/update
- * primitives, so it owns no transport. History resets when the edition changes.
+ * @description Undo / redo for score markup. Every gesture goes through here, so
+ * each step on the timeline holds the write that put the page in its state, and
+ * the next move reads that write's answer before it acts.
+ *
+ * The rules:
+ *   · a write that was confirmed, or durably queued, counts as done — an undo
+ *     made in a basement is an undo, not a failure to be retried by hand;
+ *   · a write the server refused never happened: its step leaves the timeline
+ *     (the mutation layer has already said why, once);
+ *   · erased marks come back as THEMSELVES — the same ids, authors and stacking
+ *     order — through `reviveMarks`, which cancels an erase still waiting unsent
+ *     in the queue and restores anything that may have reached the server. The
+ *     one exception is a mark the server never had: an erase that withdrew an
+ *     unsent create from the queue is undone by queuing that create again;
+ *   · steps run one after another, each waiting for its own write, so an undo
+ *     of an edit can never overtake the undo of the erase in front of it.
+ *
+ * Owns no transport: it takes the mutation layer's writers. History resets when
+ * the edition changes.
  * @module features/annotations/lib
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import type {
-  AnnotationPatch,
-  NewAnnotation,
-  ScoreAnnotation,
-} from "../types/annotations.dto";
+import { newMarkId, type MarkWrite } from "../api/annotations.queries";
+import type { AnnotationPatch, ScoreAnnotation } from "../types/annotations.dto";
 
 const HISTORY_LIMIT = 40;
 
 type HistoryOp =
   | { kind: "create"; annotation: ScoreAnnotation }
   | { kind: "delete"; annotation: ScoreAnnotation }
-  | { kind: "clear"; annotations: ScoreAnnotation[] }
+  | { kind: "clear"; annotations: readonly ScoreAnnotation[]; clearId: string }
   | { kind: "update"; id: string; before: AnnotationPatch; after: AnnotationPatch };
 
+/** One step of the timeline, and the write that put the page in its state. */
+interface Step {
+  op: HistoryOp;
+  write: Promise<MarkWrite>;
+}
+
 interface Stacks {
-  undo: HistoryOp[];
-  redo: HistoryOp[];
+  undo: Step[];
+  redo: Step[];
 }
 
 export interface HistoryDeps {
   editionId: string | null;
-  createAnnotation: (payload: NewAnnotation) => Promise<ScoreAnnotation>;
-  removeAnnotation: (id: string) => Promise<void>;
-  updateAnnotation: (id: string, patch: AnnotationPatch) => Promise<ScoreAnnotation>;
+  createMark: (annotation: ScoreAnnotation) => Promise<MarkWrite>;
+  updateMark: (id: string, patch: AnnotationPatch) => Promise<MarkWrite>;
+  eraseMark: (annotation: ScoreAnnotation) => Promise<MarkWrite>;
+  clearMarks: (
+    annotations: readonly ScoreAnnotation[],
+    clearId: string,
+  ) => Promise<MarkWrite>;
+  reviveMarks: (
+    annotations: readonly ScoreAnnotation[],
+    clearId?: string,
+  ) => Promise<MarkWrite>;
 }
 
 export interface AnnotationHistory {
-  recordCreate: (annotation: ScoreAnnotation) => void;
-  recordDelete: (annotation: ScoreAnnotation) => void;
-  recordClear: (annotations: ScoreAnnotation[]) => void;
-  recordUpdate: (id: string, before: AnnotationPatch, after: AnnotationPatch) => void;
+  create: (annotation: ScoreAnnotation) => void;
+  update: (id: string, before: AnnotationPatch, after: AnnotationPatch) => void;
+  erase: (annotation: ScoreAnnotation) => void;
+  /** Wipes exactly these marks — what the page showed as clearable. */
+  clear: (annotations: readonly ScoreAnnotation[]) => void;
   undo: () => void;
   redo: () => void;
   canUndo: boolean;
   canRedo: boolean;
 }
 
-const toNew = (a: ScoreAnnotation): NewAnnotation => ({
-  edition: a.edition,
-  page_number: a.page_number,
-  annotation_type: a.annotation_type,
-  payload: a.payload,
-  color: a.color,
-  layer_name: a.layer_name,
-});
+const cap = (steps: Step[]): Step[] =>
+  steps.length > HISTORY_LIMIT ? steps.slice(steps.length - HISTORY_LIMIT) : steps;
 
-const cap = (ops: HistoryOp[]): HistoryOp[] =>
-  ops.length > HISTORY_LIMIT ? ops.slice(ops.length - HISTORY_LIMIT) : ops;
-
-export const useAnnotationHistory = ({
-  editionId,
-  createAnnotation,
-  removeAnnotation,
-  updateAnnotation,
-}: HistoryDeps): AnnotationHistory => {
+export const useAnnotationHistory = (deps: HistoryDeps): AnnotationHistory => {
+  const { editionId } = deps;
   const [stacks, setStacks] = useState<Stacks>({ undo: [], redo: [] });
   const ref = useRef<Stacks>(stacks);
-  const busy = useRef(false);
+  // Steps run later than the render that queued them; they write through the
+  // writers of the edition that is open when they run.
+  const writers = useRef(deps);
+  writers.current = deps;
+  const chain = useRef<Promise<void>>(Promise.resolve());
+  const generation = useRef(0);
 
   const commit = useCallback((next: Stacks) => {
     ref.current = next;
@@ -76,114 +94,152 @@ export const useAnnotationHistory = ({
 
   // Forget the timeline whenever a different score opens.
   useEffect(() => {
+    generation.current += 1;
     commit({ undo: [], redo: [] });
   }, [editionId, commit]);
 
-  const pushUndo = useCallback(
-    (op: HistoryOp) => {
-      commit({ undo: cap([...ref.current.undo, op]), redo: [] });
+  /** A step whose write the server refused never happened. */
+  const forget = useCallback(
+    (step: Step) => {
+      const { undo, redo } = ref.current;
+      if (!undo.includes(step) && !redo.includes(step)) return;
+      commit({
+        undo: undo.filter((candidate) => candidate !== step),
+        redo: redo.filter((candidate) => candidate !== step),
+      });
     },
     [commit],
   );
 
-  const recordCreate = useCallback(
-    (annotation: ScoreAnnotation) => pushUndo({ kind: "create", annotation }),
-    [pushUndo],
-  );
-  const recordDelete = useCallback(
-    (annotation: ScoreAnnotation) => pushUndo({ kind: "delete", annotation }),
-    [pushUndo],
-  );
-  const recordClear = useCallback(
-    (annotations: ScoreAnnotation[]) => {
-      if (annotations.length > 0) pushUndo({ kind: "clear", annotations });
+  const track = useCallback(
+    (step: Step): Step => {
+      step.write.catch(() => forget(step));
+      return step;
     },
-    [pushUndo],
-  );
-  const recordUpdate = useCallback(
-    (id: string, before: AnnotationPatch, after: AnnotationPatch) =>
-      pushUndo({ kind: "update", id, before, after }),
-    [pushUndo],
+    [forget],
   );
 
-  // Perform the inverse of an op; return the op to push onto the opposite stack.
-  const invert = useCallback(
-    async (op: HistoryOp, direction: "undo" | "redo"): Promise<HistoryOp> => {
-      const undoing = direction === "undo";
+  const push = useCallback(
+    (op: HistoryOp, write: Promise<MarkWrite>) => {
+      const step = track({ op, write });
+      commit({ undo: cap([...ref.current.undo, step]), redo: [] });
+    },
+    [commit, track],
+  );
+
+  const create = useCallback(
+    (annotation: ScoreAnnotation) =>
+      push({ kind: "create", annotation }, writers.current.createMark(annotation)),
+    [push],
+  );
+
+  const update = useCallback(
+    (id: string, before: AnnotationPatch, after: AnnotationPatch) =>
+      push({ kind: "update", id, before, after }, writers.current.updateMark(id, after)),
+    [push],
+  );
+
+  const erase = useCallback(
+    (annotation: ScoreAnnotation) =>
+      push({ kind: "delete", annotation }, writers.current.eraseMark(annotation)),
+    [push],
+  );
+
+  const clear = useCallback(
+    (annotations: readonly ScoreAnnotation[]) => {
+      if (annotations.length === 0) return;
+      const clearId = newMarkId();
+      push(
+        { kind: "clear", annotations, clearId },
+        writers.current.clearMarks(annotations, clearId),
+      );
+    },
+    [push],
+  );
+
+  /**
+   * The write that reverses `step` (undo) or replays it (redo). `answer` is
+   * what the step's own write came to: for an erase, whether it only withdrew
+   * an unsent create.
+   */
+  const inverse = useCallback(
+    (step: Step, answer: MarkWrite, undoing: boolean): Step => {
+      const { createMark, updateMark, eraseMark, clearMarks, reviveMarks } =
+        writers.current;
+      const bringBack = (annotation: ScoreAnnotation, erased: MarkWrite) =>
+        erased === "discarded" ? createMark(annotation) : reviveMarks([annotation]);
+      const { op } = step;
       switch (op.kind) {
-        case "create": {
-          if (undoing) {
-            await removeAnnotation(op.annotation.id);
-            return op;
-          }
-          const created = await createAnnotation(toNew(op.annotation));
-          return { kind: "create", annotation: created };
-        }
-        case "delete": {
-          if (undoing) {
-            const created = await createAnnotation(toNew(op.annotation));
-            return { kind: "delete", annotation: created };
-          }
-          await removeAnnotation(op.annotation.id);
-          return op;
-        }
+        case "create":
+          return {
+            op,
+            write: undoing ? eraseMark(op.annotation) : bringBack(op.annotation, answer),
+          };
+        case "delete":
+          return {
+            op,
+            write: undoing ? bringBack(op.annotation, answer) : eraseMark(op.annotation),
+          };
         case "clear": {
-          if (undoing) {
-            const recreated = await Promise.all(
-              op.annotations.map((a) => createAnnotation(toNew(a))),
-            );
-            return { kind: "clear", annotations: recreated };
-          }
-          await Promise.all(op.annotations.map((a) => removeAnnotation(a.id)));
-          return op;
+          if (undoing) return { op, write: reviveMarks(op.annotations, op.clearId) };
+          const clearId = newMarkId();
+          return {
+            op: { ...op, clearId },
+            write: clearMarks(op.annotations, clearId),
+          };
         }
-        case "update": {
-          await updateAnnotation(op.id, undoing ? op.before : op.after);
-          return op;
-        }
+        case "update":
+          return { op, write: updateMark(op.id, undoing ? op.before : op.after) };
       }
     },
-    [createAnnotation, removeAnnotation, updateAnnotation],
+    [],
   );
 
   const step = useCallback(
     async (direction: "undo" | "redo") => {
-      if (busy.current) return;
-      const source = direction === "undo" ? ref.current.undo : ref.current.redo;
-      if (source.length === 0) return;
-      const op = source[source.length - 1];
-      busy.current = true;
+      const undoing = direction === "undo";
+      const source = undoing ? ref.current.undo : ref.current.redo;
+      const current = source[source.length - 1];
+      if (!current) return;
+      const era = generation.current;
+
+      let answer: MarkWrite;
       try {
-        const inverseOp = await invert(op, direction);
-        const current = ref.current;
-        if (direction === "undo") {
-          commit({
-            undo: current.undo.slice(0, -1),
-            redo: cap([...current.redo, inverseOp]),
-          });
-        } else {
-          commit({
-            undo: cap([...current.undo, inverseOp]),
-            redo: current.redo.slice(0, -1),
-          });
-        }
+        answer = await current.write;
       } catch {
-        // Mutation onError already rolled the cache back; leave stacks intact.
-      } finally {
-        busy.current = false;
+        return; // refused — `forget` has already taken it off the timeline
       }
+      if (era !== generation.current) return;
+      const { undo, redo } = ref.current;
+      if (!(undoing ? undo : redo).includes(current)) return;
+
+      const next = track(inverse(current, answer, undoing));
+      // The timeline moves at once; the write lands behind it.
+      commit(
+        undoing
+          ? { undo: undo.filter((s) => s !== current), redo: cap([...redo, next]) }
+          : { undo: cap([...undo, next]), redo: redo.filter((s) => s !== current) },
+      );
+      await next.write.catch(() => {});
     },
-    [commit, invert],
+    [commit, inverse, track],
   );
 
-  const undo = useCallback(() => void step("undo"), [step]);
-  const redo = useCallback(() => void step("redo"), [step]);
+  const run = useCallback(
+    (direction: "undo" | "redo") => {
+      chain.current = chain.current.then(() => step(direction));
+    },
+    [step],
+  );
+
+  const undo = useCallback(() => run("undo"), [run]);
+  const redo = useCallback(() => run("redo"), [run]);
 
   return {
-    recordCreate,
-    recordDelete,
-    recordClear,
-    recordUpdate,
+    create,
+    update,
+    erase,
+    clear,
     undo,
     redo,
     canUndo: stacks.undo.length > 0,

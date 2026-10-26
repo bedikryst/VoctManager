@@ -1,7 +1,8 @@
 /**
  * @file IncomingMarksNotice.tsx
- * @description One line, low on the page, saying the conductor just wrote
- * something — and which page it is on.
+ * @description One line, low on the page, saying new marks just arrived — and
+ * which page they are on. It names no author: a leader writing for the choir
+ * lands on the same layer as the conductor.
  *
  * The mark itself is already drawn; this is not a permission slip. It exists
  * because a singer on page two has no way of noticing a cue that landed on page

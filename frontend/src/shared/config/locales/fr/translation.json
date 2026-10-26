@@ -16,10 +16,15 @@
     "markup": "Annotation",
     "pending_hint": "Enregistré sur cet appareil. L'envoi se fera seul dès le retour du réseau.",
     "incoming": {
-      "line_one": "Le chef a ajouté une annotation · p. {{page}}",
-      "line_few": "Le chef a ajouté {{count}} annotations · p. {{page}}",
-      "line_many": "Le chef a ajouté {{count}} annotations · p. {{page}}",
-      "line_other": "Le chef a ajouté {{count}} annotations · p. {{page}}"
+      "line_one": "Nouvelle annotation · p. {{page}}",
+      "line_few": "{{count}} nouvelles annotations · p. {{page}}",
+      "line_many": "{{count}} nouvelles annotations · p. {{page}}",
+      "line_other": "{{count}} nouvelles annotations · p. {{page}}"
+    },
+    "rejected": {
+      "reserved_ink": "Seul le chef écrit dans cette couleur. L'annotation n'a pas été enregistrée.",
+      "no_access": "Vous n'avez plus accès à cette annotation. La modification n'a pas été enregistrée.",
+      "invalid": "Le serveur n'a pas accepté cette annotation. La modification n'a pas été enregistrée."
     },
     "guide": {
       "open": "Comment fonctionnent les annotations",
@@ -4331,6 +4336,11 @@
       "pending_few": "{{count}} modifications en attente de synchronisation",
       "pending_many": "{{count}} modifications en attente de synchronisation",
       "pending_other": "{{count}} modifications en attente de synchronisation",
+      "stuck": "Le serveur n'accepte pas les modifications pour l'instant · {{count}} en attente",
+      "stuck_one": "Le serveur n'accepte pas les modifications pour l'instant · {{count}} en attente",
+      "stuck_few": "Le serveur n'accepte pas les modifications pour l'instant · {{count}} en attente",
+      "stuck_many": "Le serveur n'accepte pas les modifications pour l'instant · {{count}} en attente",
+      "stuck_other": "Le serveur n'accepte pas les modifications pour l'instant · {{count}} en attente",
       "sync_now": "Synchroniser maintenant",
       "syncing": "Synchronisation…"
     },

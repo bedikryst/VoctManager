@@ -20,11 +20,13 @@ import {
   collapseClear,
   collapseCreate,
   collapseDelete,
+  collapseRestore,
   collapseUpdate,
+  isMarkOp,
   pendingMarkEntries,
 } from "./pendingMarks";
 import type { ScoreAnnotation } from "../types/annotations.dto";
-import type { QueuedWrite } from "@/app/store/useOfflineStore";
+import type { QueuedWrite } from "@/shared/offline/useOfflineStore";
 
 const EDITION = "edition-1";
 
@@ -64,12 +66,19 @@ const enqueue = (
         dedupeKey: collapsed.replace.dedupeKey,
         label: "test",
         createdAt: at,
+        attempts: 0,
+        nextAttemptAt: 0,
+        failingSince: null,
         meta: collapsed.replace.meta,
       },
     ];
   }
   return next;
 };
+
+/** The replay loop has started this many tries of the queued write. */
+const attempted = (queue: QueuedWrite[], id: string, attempts = 1): QueuedWrite[] =>
+  queue.map((write) => (write.id === id ? { ...write, attempts } : write));
 
 const entries = (queue: QueuedWrite[]) => pendingMarkEntries(queue, EDITION);
 const isPersonal = (a: ScoreAnnotation) => a.layer_name === "personal";
@@ -100,11 +109,51 @@ describe("collapsing writes to one mark", () => {
     expect(queue).toEqual([]);
   });
 
+  it("keeps a DELETE behind a create whose live request already left", () => {
+    // The reply died, not necessarily the write: the server may hold the mark.
+    let queue = enqueue([], collapseCreate(mark("m1"), { sent: true }), 1);
+    const collapsed = collapseDelete(entries(queue), EDITION, "m1");
+    queue = enqueue(queue, collapsed, 2);
+
+    expect(queue.map((write) => write.method)).toEqual(["POST", "DELETE"]);
+    expect(applyPendingMarks([], entries(queue), isPersonal)).toEqual([]);
+  });
+
+  it("keeps a DELETE behind a create the replay loop has tried", () => {
+    let queue = enqueue([], collapseCreate(mark("m1")), 1);
+    queue = attempted(queue, "q-1");
+    queue = enqueue(queue, collapseDelete(entries(queue), EDITION, "m1"), 2);
+
+    expect(queue.map((write) => write.method)).toEqual(["POST", "DELETE"]);
+  });
+
+  it("carries 'sent' through an edit folded into the create", () => {
+    let queue = enqueue([], collapseCreate(mark("m1"), { sent: true }), 1);
+    queue = enqueue(
+      queue,
+      collapseUpdate(entries(queue), EDITION, "m1", { color: "#2563EB" }),
+      2,
+    );
+    queue = enqueue(queue, collapseDelete(entries(queue), EDITION, "m1"), 3);
+
+    expect(queue.map((write) => write.method)).toEqual(["POST", "DELETE"]);
+  });
+
   it("keeps a DELETE for a mark the server already holds", () => {
     const queue = enqueue([], collapseDelete([], EDITION, "server-mark"), 1);
     expect(queue).toHaveLength(1);
     expect(queue[0].method).toBe("DELETE");
     expect(queue[0].url).toContain("server-mark");
+  });
+
+  it("never lets an erase supersede an edit queued before it", () => {
+    let queue = enqueue(
+      [],
+      collapseUpdate([], EDITION, "server-mark", { color: "#2563EB" }),
+      1,
+    );
+    queue = enqueue(queue, collapseDelete(entries(queue), EDITION, "server-mark"), 2);
+    expect(queue.map((write) => write.method)).toEqual(["PATCH", "DELETE"]);
   });
 
   it("merges successive edits rather than stacking them", () => {
@@ -155,11 +204,34 @@ describe("drawing the queue back onto the page", () => {
     expect(page).toEqual([]);
   });
 
-  it("applies a pending clear only within the reader's own scope", () => {
-    const queue = enqueue([], collapseClear(EDITION), 1);
+  it("wipes exactly the marks a pending clear names", () => {
+    const queue = enqueue([], collapseClear(EDITION, "clear-1", ["mine"]), 1);
+    const page = applyPendingMarks(
+      [mark("mine"), mark("also-mine"), mark("theirs", { layer_name: "shared" })],
+      entries(queue),
+      isPersonal,
+    );
+    expect(page.map((row) => row.id)).toEqual(["also-mine", "theirs"]);
+  });
+
+  it("falls back to the reader's scope for a clear an older build queued", () => {
+    const legacy: QueuedWrite = {
+      id: "legacy",
+      kind: "annotation",
+      method: "POST",
+      url: "/api/archive/annotations/clear/",
+      body: { edition: EDITION },
+      dedupeKey: `annotation-clear:${EDITION}`,
+      label: "test",
+      createdAt: 1,
+      attempts: 0,
+      nextAttemptAt: 0,
+      failingSince: null,
+      meta: { op: "clear", editionId: EDITION },
+    };
     const page = applyPendingMarks(
       [mark("mine"), mark("theirs", { layer_name: "shared" })],
-      entries(queue),
+      entries([legacy]),
       isPersonal,
     );
     expect(page.map((row) => row.id)).toEqual(["theirs"]);
@@ -168,11 +240,21 @@ describe("drawing the queue back onto the page", () => {
   it("respects the order a clear was made in", () => {
     // Drawn, then everything wiped, then drawn again: only the last one stands.
     let queue = enqueue([], collapseCreate(mark("before")), 1);
-    queue = enqueue(queue, collapseClear(EDITION), 2);
+    queue = enqueue(queue, collapseClear(EDITION, "clear-1", ["before"]), 2);
     queue = enqueue(queue, collapseCreate(mark("after")), 3);
 
     const page = applyPendingMarks([], entries(queue), isPersonal);
     expect(page.map((row) => row.id)).toEqual(["after"]);
+  });
+
+  it("puts restored marks back where they stood in the stack", () => {
+    const first = mark("first", { created_at: "2026-08-25T10:00:00Z" });
+    const middle = mark("middle", { created_at: "2026-08-25T11:00:00Z" });
+    const last = mark("last", { created_at: "2026-08-25T12:00:00Z" });
+    const queue = enqueue([], collapseRestore(EDITION, "restore-1", [middle]), 1);
+
+    const page = applyPendingMarks([first, last], entries(queue), isPersonal);
+    expect(page.map((row) => row.id)).toEqual(["first", "middle", "last"]);
   });
 
   it("ignores queued writes belonging to another score", () => {
@@ -183,5 +265,53 @@ describe("drawing the queue back onto the page", () => {
   it("leaves the page untouched when nothing is queued", () => {
     const rows = [mark("m1")];
     expect(applyPendingMarks(rows, [], isPersonal)).toBe(rows);
+  });
+});
+
+describe("reading a queued echo back from storage", () => {
+  it("accepts every shape this build writes", () => {
+    const writes = [
+      collapseCreate(mark("m1")),
+      collapseUpdate([], EDITION, "m1", { color: "#2563EB" }),
+      collapseDelete([], EDITION, "m1"),
+      collapseClear(EDITION, "clear-1", ["m1"]),
+      collapseRestore(EDITION, "restore-1", [mark("m1")]),
+    ];
+    for (const collapsed of writes) {
+      expect(isMarkOp(collapsed.replace?.meta)).toBe(true);
+    }
+  });
+
+  it("refuses an echo it could not draw", () => {
+    expect(isMarkOp({ op: "create", editionId: EDITION, annotationId: "m1" })).toBe(false);
+    expect(
+      isMarkOp({
+        op: "create",
+        editionId: EDITION,
+        annotationId: "m1",
+        annotation: { ...mark("m1"), payload: null },
+      }),
+    ).toBe(false);
+    expect(isMarkOp({ op: "clear", editionId: EDITION, ids: [1, 2] })).toBe(false);
+    expect(isMarkOp({ op: "restore", editionId: EDITION, annotations: [{}] })).toBe(false);
+    expect(isMarkOp({ op: "teleport", editionId: EDITION })).toBe(false);
+  });
+
+  it("keeps a damaged entry off the page instead of throwing", () => {
+    const damaged: QueuedWrite = {
+      id: "damaged",
+      kind: "annotation",
+      method: "POST",
+      url: "/api/archive/annotations/",
+      body: {},
+      dedupeKey: "annotation:m1",
+      label: "test",
+      createdAt: 1,
+      attempts: 0,
+      nextAttemptAt: 0,
+      failingSince: null,
+      meta: { op: "update", editionId: EDITION, annotationId: "m1", patch: null },
+    };
+    expect(pendingMarkEntries([damaged], EDITION)).toEqual([]);
   });
 });

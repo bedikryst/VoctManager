@@ -63,6 +63,39 @@ export const summarizeOfflineScope = (
   return { concerts: groups.length, pieces, tracks, scores };
 };
 
+/**
+ * Flattens a concert into its downloadable practice assets: every voice track
+ * (blend/minus-mine need the whole choir, not just my line) plus the primary
+ * score edition of each piece. Deduplicated by URL.
+ *
+ * `extra` is whatever had to be resolved over the network first — today the
+ * concert binder, whose URL is only knowable once the server has said which
+ * build this device is taking (see `planBinder`).
+ */
+export const collectProjectAssets = (
+  group: MaterialsDashboardGroup,
+  extra: readonly OfflineAsset[] = [],
+): OfflineAsset[] => {
+  const seen = new Set<string>();
+  const assets: OfflineAsset[] = [];
+
+  const push = (url: string | null | undefined, kind: OfflineAsset["kind"]) => {
+    const trimmed = url?.trim();
+    if (!trimmed || seen.has(trimmed)) return;
+    seen.add(trimmed);
+    assets.push({ url: trimmed, kind });
+  };
+
+  for (const item of group.program) {
+    for (const track of item.piece.tracks) push(track.audio_file, "audio");
+    const primaryScore = getPiecePdfLinks(item.piece)[0];
+    if (primaryScore) push(primaryScore.url, "score");
+  }
+  for (const asset of extra) push(asset.url, asset.kind);
+
+  return assets;
+};
+
 interface BinderPlan {
   /** Map + bytes, in that order — see below. */
   assets: OfflineAsset[];
@@ -132,7 +165,10 @@ export const downloadGroupWithMarks = async (
   queryClient: QueryClient,
 ): Promise<{ cached: number; failed: number }> => {
   const binder = await planBinder(group, queryClient);
-  const outcome = await downloadProjectForOffline(group, binder.assets);
+  const outcome = await downloadProjectForOffline(
+    group.project,
+    collectProjectAssets(group, binder.assets),
+  );
   await prefetchEditionAnnotations(queryClient, [
     ...group.program.flatMap((item) =>
       getPiecePdfLinks(item.piece)

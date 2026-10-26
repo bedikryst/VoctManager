@@ -14,6 +14,7 @@ import {
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
 
 import { AuthProvider } from "./app/providers/AuthProvider";
+import { registerOfflineReconcilers } from "./app/offline/registerOfflineReconcilers";
 import {
   createQueryPersister,
   QUERY_CACHE_BUSTER,
@@ -111,6 +112,9 @@ const renderApp = (): void => {
   </React.StrictMode>,
   );
 };
+
+// Before the first render: the shell drains the offline queue on mount.
+registerOfflineReconcilers();
 
 // Hold first paint until the active locale bundle is registered, so the opening
 // render already has its translations (no missing-key flash). A locale load

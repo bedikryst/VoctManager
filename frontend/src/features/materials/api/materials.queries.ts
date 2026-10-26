@@ -3,9 +3,14 @@
  * @description React Query hooks for the Materials domain.
  */
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  useMutation,
+  useQuery,
+  useQueryClient,
+  type QueryClient,
+} from "@tanstack/react-query";
 import { MaterialsService } from "./materials.service";
-import { useOfflineStore } from "@/app/store/useOfflineStore";
+import { useOfflineStore } from "@/shared/offline/useOfflineStore";
 import { useArtistPreview } from "@/app/providers/ArtistPreviewProvider";
 import { isLikelyOfflineError } from "@/shared/offline/offlineClient";
 import {
@@ -19,6 +24,13 @@ import type {
   MaterialsReadinessStatus,
   MaterialsStartingPitch,
 } from "../types/materials.dto";
+
+/**
+ * Registered with the offline queue at boot: once a queued readiness tap leaves
+ * the queue, the songbook is re-read, as the live tap's `onSettled` does.
+ */
+export const reconcileQueuedReadiness = (queryClient: QueryClient): Promise<void> =>
+  queryClient.invalidateQueries({ queryKey: PERSONAL_READMODEL_KEYS.materialsDashboard });
 
 export const materialsKeys = {
   dashboard: PERSONAL_READMODEL_KEYS.materialsDashboard,
