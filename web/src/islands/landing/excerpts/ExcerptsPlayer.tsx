@@ -22,8 +22,15 @@
  *  THE BAR IS PORTALLED TO <body>, and has to be. The glyph stands inside `.kd-hero`, whose
  *  `isolation: isolate` makes it a stacking context: a fixed bar left inside it would be painted
  *  in the hero's layer and every later band of the page would cover it. Leaving <main> also leaves
- *  the concert's re-toned `--candle`, which is why the page hands it down as a prop. The portal is
- *  mounted after hydration only, so the server markup holds the glyph and the `<audio>` alone.
+ *  the concert's re-toned `--candle`, which is why the page hands it down as a prop.
+ *
+ *  THE <audio> IS MADE AFTER HYDRATION, with the portal, so the server markup holds the glyph
+ *  alone. ClientRouter parses the next page with DOMParser and moves its body in later; a media
+ *  element born in that document runs its source selection where nothing can load, ends in
+ *  NETWORK_NO_SOURCE before the island listens for `error`, and current Chrome does not retry once
+ *  it stands in the page, so every press would be refused in silence until a reload. Made by
+ *  React in the page's own document, it starts clean on every arrival. (VideoPlayer's poster has
+ *  to be in the markup, so it repairs the same state with `load()` instead.)
  *
  *  NOTHING PRELOADS AND NOTHING AUTOPLAYS: `preload="none"`, and the first byte is requested by the
  *  press itself, inside its gesture, which is what iOS needs to let a sound start. A seek asked
@@ -164,6 +171,7 @@ export function ExcerptsPlayer({
 
   const joiner = UI[lang].player.ofDuration;
 
+  // Gates the portal and the <audio> alike: both are made only in the page's own document.
   useEffect(() => setHost(document.body), []);
 
   // A page may colour iOS Safari's strip under the bar by whether the bar stands (`--edge-foot`
@@ -314,7 +322,7 @@ export function ExcerptsPlayer({
   }, [announce, chapter, playing]);
 
   // Media events are the single source of truth for `playing` — the OS surface and headset keys
-  // pause the element without passing through the glyph.
+  // pause the element without passing through the glyph. Bound once `host` has made the element.
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
@@ -375,7 +383,7 @@ export function ExcerptsPlayer({
       audio.removeEventListener("ended", onEnded);
       audio.removeEventListener("error", onError);
     };
-  }, [paint, restore, stop]);
+  }, [host, paint, restore, stop]);
 
   // The page's own buttons for single works, answered wherever they stand.
   useEffect(() => {
@@ -533,7 +541,7 @@ export function ExcerptsPlayer({
           <span className="excerpts-source">{failed ? labels.unavailable : labels.source}</span>
         </span>
       </button>
-      <audio ref={audioRef} src={src} preload="none" />
+      {host && <audio ref={audioRef} src={src} preload="none" />}
       {host &&
         createPortal(
           <div
