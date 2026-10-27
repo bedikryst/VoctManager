@@ -27,6 +27,11 @@
  * stand is open — the conductor writing mid-rehearsal — because a mark that
  * lands three pages away would otherwise never be found.
  *
+ * Marks may be addressed to voices (`lib/voices`). A mark for another section
+ * is never news to this reader, and under "Mój głos + tutti" it leaves their
+ * page too. Their section is the one their seat on this music answers to, as
+ * the server tells it; a reader with none is shown everything.
+ *
  * For the conductor it carries the two gestures over the choir's marks as a
  * whole: the drawer puts an edition's marks aside and brings a set back (which
  * ends that edition's undo history), and a stand opened from a project tells its
@@ -65,6 +70,12 @@ import { useCanDraw } from "./lib/useCanDraw";
 import { useIncomingMarks } from "./lib/useIncomingMarks";
 import { bookFocusY, bookPageFor, type ScoreBook } from "./lib/scoreBook";
 import { layerOf, WRITE_LAYERS, type WriteLayer } from "./lib/layers";
+import {
+  addressesSections,
+  canonicalVoices,
+  isAddressedTo,
+  layerTakesVoices,
+} from "./lib/voices";
 import type { MarkClipboard, MarkEdit, SelectionKeys } from "./lib/selection";
 import {
   isComment,
@@ -235,13 +246,46 @@ export const useScoreAnnotator = ({
     ? (book.frames.get(pageApi.currentPage)?.edition ?? null)
     : editionId;
 
-  const { annotations, pendingCount, isLoaded, isSettled, seenAt } = useScoreAnnotations(
-    activeEditionId,
-    {
-      isCleared,
-      // Only a score on screen can show a mark the conductor is writing now.
-      live: active && !!activeEditionId,
-    },
+  const {
+    annotations: allAnnotations,
+    pendingCount,
+    isLoaded,
+    isSettled,
+    seenAt,
+    readerSections,
+  } = useScoreAnnotations(activeEditionId, {
+    isCleared,
+    // Only a score on screen can show a mark the conductor is writing now.
+    live: active && !!activeEditionId,
+  });
+
+  // "Mój głos + tutti": the marks for other sections leave the page, the
+  // drawer and the clear alike, so what the reader acts on is what they see.
+  // A reader whose seat names no section has nothing to filter by.
+  const filteringVoices = tools.voiceFilter === "mine" && readerSections !== "";
+  const annotations = useMemo(
+    () =>
+      filteringVoices
+        ? allAnnotations.filter((a) => isAddressedTo(a, readerSections, userId))
+        : allAnnotations,
+    [allAnnotations, filteringVoices, readerSections, userId],
+  );
+  // What "Odłóż uwagi" would take: every layer but the personal pencil, whatever
+  // the reader has hidden or filtered.
+  const setAsideCount = useMemo(
+    () => allAnnotations.filter((a) => layerOf(a) !== "personal").length,
+    [allAnnotations],
+  );
+  // Whether the filter has anything to do on this edition.
+  const hasVoicedMarks = useMemo(
+    () => allAnnotations.some((a) => canonicalVoices(a.voices).length > 0),
+    [allAnnotations],
+  );
+  // What is news to this reader is what is addressed to their voice, whether or
+  // not they chose to see the rest.
+  const addressedToReader = useMemo(
+    () => allAnnotations.filter((a) => addressesSections(a.voices, readerSections)),
+    [allAnnotations, readerSections],
   );
 
   const {
@@ -295,16 +339,26 @@ export const useScoreAnnotator = ({
   const annotationsRef = useRef(annotations);
   annotationsRef.current = annotations;
 
+  // Read when a mark lands, so the page's callback keeps its identity while the
+  // writer picks voices.
+  const nextVoicesRef = useRef(tools.voices);
+  nextVoicesRef.current = tools.voices;
+
   const handleCreate = useCallback(
     (partial: MarkDraft) => {
-      const draft = draftAnnotation(partial);
+      const voices = nextVoicesRef.current;
+      const addressed =
+        mode !== "personal" && voices.length > 0 && layerTakesVoices(partial.layer_name)
+          ? { ...partial, voices: [...voices] }
+          : partial;
+      const draft = draftAnnotation(addressed);
       if (!draft) return;
       // Recorded from the DRAFT, not the server's reply: the id is minted here
       // and never changes, so undo works on a mark the network has not yet
       // heard of — which is the whole point of drawing in a basement.
       recordCreate(draft);
     },
-    [draftAnnotation, recordCreate],
+    [draftAnnotation, mode, recordCreate],
   );
 
   const handleCreateMany = useCallback(
@@ -577,13 +631,13 @@ export const useScoreAnnotator = ({
    * nobody else — so it is also the only honest trigger for explaining it.
    */
   const hasLeaderMarks = useMemo(
-    () => annotations.some((a) => layerOf(a) === "leader"),
-    [annotations],
+    () => allAnnotations.some((a) => layerOf(a) === "leader"),
+    [allAnnotations],
   );
 
   const markSeen = useMarkSeen();
   const incoming = useIncomingMarks({
-    annotations,
+    annotations: addressedToReader,
     isLoaded,
     isSettled,
     editionId: activeEditionId,
@@ -678,6 +732,7 @@ export const useScoreAnnotator = ({
           canModify={canModify}
           inks={tools.inks}
           audiences={audiences}
+          voicing={mode !== "personal"}
           selectedId={selectedId}
           newIds={newIds}
           clipboard={editionClipboard}
@@ -711,6 +766,7 @@ export const useScoreAnnotator = ({
       activeEditionId,
       annotations,
       audiences,
+      mode,
       book,
       tools.inks,
       visibleLayers,
@@ -752,9 +808,12 @@ export const useScoreAnnotator = ({
         displayFocusY={displayFocusY}
         visibleLayers={visibleLayers}
         toggleLayerVisibility={tools.toggleLayerVisibility}
+        voiceFilter={readerSections !== "" && hasVoicedMarks ? tools.voiceFilter : null}
+        onVoiceFilterChange={tools.setVoiceFilter}
         mode={mode}
         onSelectMark={handleSelectMark}
         editionId={activeEditionId}
+        setAsideCount={setAsideCount}
         onMarksReplaced={resetHistory}
       />
       <IncomingMarksNotice

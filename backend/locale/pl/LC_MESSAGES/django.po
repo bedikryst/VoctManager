@@ -5989,6 +5989,21 @@ msgstr ""
 msgid "Include Conductor's Markings"
 msgstr "Dołączaj oznaczenia dyrygenta"
 
+#: archive/models.py
+msgid ""
+"Section letters (S, A, T, B) the mark is addressed to. Empty means tutti."
+msgstr ""
+"Litery sekcji (S, A, T, B), do których skierowane jest oznaczenie. Puste "
+"oznacza tutti."
+
+#: archive/models.py
+msgid "Voices"
+msgstr "Głosy"
+
+#: archive/serializers.py
+msgid "Voices must be a list of section letters: S, A, T, B."
+msgstr "Głosy muszą być listą liter sekcji: S, A, T, B."
+
 #~ msgid "Review the request"
 #~ msgstr "Rozpatrz prośbę"
 

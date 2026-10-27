@@ -2,16 +2,18 @@
  * @file useAnnotationTools.ts
  * @description Local editor state for the annotation tools — held tool, ink
  * colour, stroke weight, the shape in hand, note display mode, the selected
- * musical stamp, the target layer and which layers are visible. Component-local
- * React state (not a global store) except for the layer switches: it is
- * ephemeral UI, scoped to one open score, and dies with the viewer.
+ * musical stamp, the target layer and voices, which layers are visible and
+ * whether the reader reads only their own voice. Component-local React state
+ * (not a global store) except for the two reading switches: it is ephemeral
+ * UI, scoped to one open score, and dies with the viewer.
  *
  * What describes this device outlives the viewer (`deviceStorage`), because a
  * rehearsal gives you a bar and a half to write something down: the tool last in
  * hand and the shape it draws, the size of notes and stamps, whether the finger
- * draws, and which layers are shown. None of it is server state. The one value
- * every mounted stand reads live is which layers are shown (see
- * `hiddenLayers`); the rest is read as a stand mounts.
+ * draws, which layers are shown and whether the reader's voice filters them.
+ * None of it is server state. The two values every mounted stand reads live are
+ * the reading switches (see `hiddenLayers` and `voiceFilter`); the rest is read
+ * as a stand mounts.
  * @module features/annotations/lib
  */
 
@@ -23,6 +25,7 @@ import { DEFAULT_STAMP } from "./stamps";
 import { DEFAULT_SHAPE, isShapeKind, type ShapeKind } from "./shapes";
 import { defaultInk, inksFor, type AnnotationInk } from "./palette";
 import { useStylusPresence, readStylusSeen } from "./useStylusPresence";
+import type { VoiceFilter, VoiceSection } from "./voices";
 
 export type AnnotationTool =
   | "pointer"
@@ -75,6 +78,8 @@ const STAMP_SCALE_STORAGE_KEY = "voct.annotations.stamp_scale";
 const SHAPE_STORAGE_KEY = "voct.annotations.shape";
 /** The layers the reader HID, comma-separated: a layer that is new is shown. */
 const HIDDEN_LAYERS_STORAGE_KEY = "voct.annotations.hidden_layers";
+/** "mine" when the reader reads only their voice and tutti; anything else is everything. */
+const VOICE_FILTER_STORAGE_KEY = "voct.annotations.voice_filter";
 
 const ALL_LAYERS: readonly AnnotationLayer[] = ["shared", "conductor", "leader", "personal"];
 
@@ -105,6 +110,35 @@ const writeHiddenLayers = (next: string): void => {
   hiddenLayers = next;
   writeStored(HIDDEN_LAYERS_STORAGE_KEY, next);
   for (const listener of hiddenLayerListeners) listener();
+};
+
+/**
+ * Whether the reader reads only their own voice is the same kind of fact, and
+ * is held the same way, so a stand in the songbook opens filtered once one in
+ * the book was. Everything is the default: a mark for the tenors is still on a
+ * soprano's page until she asks for less.
+ */
+let voiceFilter: VoiceFilter | null = null;
+const voiceFilterListeners = new Set<() => void>();
+
+const readVoiceFilter = (): VoiceFilter => {
+  if (voiceFilter === null) {
+    voiceFilter = readStored(VOICE_FILTER_STORAGE_KEY) === "mine" ? "mine" : "all";
+  }
+  return voiceFilter;
+};
+
+const subscribeVoiceFilter = (listener: () => void): (() => void) => {
+  voiceFilterListeners.add(listener);
+  return () => {
+    voiceFilterListeners.delete(listener);
+  };
+};
+
+const writeVoiceFilter = (next: VoiceFilter): void => {
+  voiceFilter = next;
+  writeStored(VOICE_FILTER_STORAGE_KEY, next);
+  for (const listener of voiceFilterListeners) listener();
 };
 
 const visibilityOf = (stored: string): LayerVisibility => {
@@ -230,8 +264,18 @@ export interface AnnotationToolState {
   setStamp: (stamp: string) => void;
   layer: AnnotationLayer;
   setLayer: (layer: AnnotationLayer) => void;
+  /**
+   * The sections the NEXT mark is for; none is tutti. Held for one open stand
+   * only: a conductor who wrote for the tenors yesterday must not find today's
+   * first mark silently addressed to them.
+   */
+  voices: readonly VoiceSection[];
+  setVoices: (voices: readonly VoiceSection[]) => void;
   visibleLayers: LayerVisibility;
   toggleLayerVisibility: (layer: AnnotationLayer) => void;
+  /** What the reader is shown: their voice and tutti, or everything. */
+  voiceFilter: VoiceFilter;
+  setVoiceFilter: (filter: VoiceFilter) => void;
 }
 
 export const useAnnotationTools = (
@@ -293,6 +337,8 @@ export const useAnnotationTools = (
   const [noteDisplay, setNoteDisplay] = useState<NoteDisplay>("inline");
   const [stamp, setStamp] = useState<string>(DEFAULT_STAMP);
   const [layer, setLayer] = useState<AnnotationLayer>(initialLayer);
+  const [voices, setVoices] = useState<readonly VoiceSection[]>([]);
+  const currentVoiceFilter = useSyncExternalStore(subscribeVoiceFilter, readVoiceFilter);
   // Remembered too: a conductor previewing what the choir sees, or a singer who
   // reads without their own pencil marks, set the page up once.
   const hidden = useSyncExternalStore(subscribeHiddenLayers, readHiddenLayers);
@@ -327,7 +373,11 @@ export const useAnnotationTools = (
     setStamp,
     layer,
     setLayer,
+    voices,
+    setVoices,
     visibleLayers,
     toggleLayerVisibility,
+    voiceFilter: currentVoiceFilter,
+    setVoiceFilter: writeVoiceFilter,
   };
 };

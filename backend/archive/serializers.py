@@ -41,6 +41,7 @@ from .annotation_sizes import (
     MIN_MARK_SCALE,
 )
 from .annotation_stamps import get_stamp
+from .annotation_voices import InvalidMarkVoices, clean_mark_voices, widens
 from .dtos import PieceWriteDTO, VoiceRequirementDTO
 from .models import (
     PERSONAL_ANNOTATION_LAYER,
@@ -424,13 +425,17 @@ def _payload_word(payload: Any, key: str) -> Any:
 def _says_something_new(instance: Annotation, changes: Mapping[str, Any]) -> bool:
     """Whether an edit changes what a mark tells its reader.
 
-    A note's words, a stamp's symbol, and where the mark is addressed (its layer
-    or edition): a mark moved onto the choir's layer is new to the choir. Its
-    place, size and ink are not, so tidying a page never reads as news.
+    A note's words, a stamp's symbol, and where the mark is addressed (its layer,
+    its edition, a voice it did not reach before): a mark moved onto the choir's
+    layer is new to the choir, and a mark for the tenors opened to the basses is
+    new to the basses. Its place, size and ink are not, so tidying a page never
+    reads as news, and nor does narrowing a mark to fewer voices.
     """
     if changes.get('annotation_type', instance.annotation_type) != instance.annotation_type:
         return True
     if changes.get('layer_name', instance.layer_name) != instance.layer_name:
+        return True
+    if 'voices' in changes and widens(instance.voices, changes['voices']):
         return True
     edition = changes.get('edition')
     if edition is not None and edition.pk != instance.edition_id:
@@ -491,8 +496,8 @@ class AnnotationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Annotation
         fields = ['id', 'edition', 'page_number', 'annotation_type', 'payload',
-                  'color', 'layer_name', 'created_by', 'created_at', 'updated_at',
-                  'content_at']
+                  'color', 'layer_name', 'voices', 'created_by', 'created_at',
+                  'updated_at', 'content_at']
         read_only_fields = ['created_by', 'created_at', 'updated_at', 'content_at']
 
     def update(self, instance: Annotation, validated_data: dict[str, Any]) -> Annotation:
@@ -516,12 +521,25 @@ class AnnotationSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(_('Unsupported marking colour.'))
         return normalized
 
+    def validate_voices(self, value: Any) -> list[str]:
+        try:
+            return clean_mark_voices(value)
+        except InvalidMarkVoices as exc:
+            raise serializers.ValidationError(
+                _('Voices must be a list of section letters: S, A, T, B.')
+            ) from exc
+
     def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
         # `id` is an offline-create affordance only. On an edit it is noise at
         # best and a request to move a row onto another row's key at worst, so
         # an existing mark keeps the key it was born with.
         if self.instance is not None:
             attrs.pop('id', None)
+        # A private pencil has one reader, so it is addressed to nobody's voice;
+        # a mark moved there sheds the voices it was written for.
+        layer = attrs.get('layer_name', getattr(self.instance, 'layer_name', None))
+        if layer == PERSONAL_ANNOTATION_LAYER and ('voices' in attrs or 'layer_name' in attrs):
+            attrs['voices'] = []
         # Each rule below judges only what this write carries, so a row stored
         # before the rule (page 0, a retired stamp) can still be moved and
         # erased by its owner. A move to another edition carries its page with

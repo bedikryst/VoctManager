@@ -122,8 +122,8 @@ const copyInk = (color: string, inks: readonly AnnotationInk[]): string => {
 
 /**
  * New marks copied from `annotations` onto `page`, moved by `shift`. Each keeps
- * its kind, its payload and its audience; only the page, the place and an ink
- * the writer may not use change.
+ * its kind, its payload and its audience, voices included; only the page, the
+ * place and an ink the writer may not use change.
  */
 export const copyDrafts = (
   annotations: readonly ScoreAnnotation[],
@@ -136,6 +136,7 @@ export const copyDrafts = (
     page_number: page,
     color: copyInk(annotation.color, inks),
     layer_name: annotation.layer_name,
+    ...(annotation.voices?.length ? { voices: [...annotation.voices] } : {}),
   }));
 
 /**

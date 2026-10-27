@@ -271,6 +271,21 @@ export const AnnotationGuide = ({
         "Notatka „W ramce” wygląda jak litera orientacyjna albo numer taktu w nutach: pogrubiona, w prostokącie. Tak samo się drukuje.",
       ),
     },
+    {
+      id: "voices",
+      icon: Users,
+      title: t("annotations.guide.tools.voices_title", "Uwagi dla jednego głosu"),
+      body:
+        mode === "personal"
+          ? t(
+              "annotations.guide.tools.voices_reader_body",
+              "Dyrygent może skierować uwagę do jednej sekcji. W panelu adnotacji wybierz „Mój głos + tutti”, a zobaczysz tylko uwagi dla swojego głosu i dla wszystkich.",
+            )
+          : t(
+              "annotations.guide.tools.voices_writer_body",
+              "Przy narzędziach wybierz S, A, T albo B, a następne oznaczenie będzie dla tej sekcji. Na karcie oznaczenia zmienisz to po fakcie. Inni nadal je widzą, ale „Powiadom chór” powie tylko tym głosom, a chórzysta może czytać sam swój głos.",
+            ),
+    },
     ...(hasKeyboard
       ? [
           {

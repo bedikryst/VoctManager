@@ -13,9 +13,14 @@
  * what he had just hidden would be arguing with the control above it. Only the
  * per-layer counts stay whole — that figure is the switch's own subject.
  *
+ * Where marks are addressed to voices and the reader's seat names a section, a
+ * second switch reads only their voice and tutti. The list handed in already
+ * obeys it, counts included: the marks for other sections are a different
+ * reading of the score, not a hidden layer of it.
+ *
  * In conductor mode the drawer ends in "Odłóż uwagi" for the edition in front
  * of the reader, whose count is whole for the same reason: it says what a set
- * would take, whatever is hidden.
+ * would take, whatever is hidden or filtered.
  *
  * The drawer root carries `ANNOTATION_DRAWER_ATTR`, so the stand's Escape can
  * tell the drawer's search field from the page: Escape there leaves the field,
@@ -49,6 +54,7 @@ import {
 import { layerOf } from "../lib/layers";
 import { getStampDef } from "../lib/stamps";
 import type { LayerVisibility } from "../lib/useAnnotationTools";
+import type { VoiceFilter } from "../lib/voices";
 import type { ScoreAnnotatorMode } from "../useScoreAnnotator";
 import { SetAsideSection } from "./SetAsideSection";
 
@@ -67,6 +73,12 @@ interface IndexEntry {
 type NewEntry =
   | ({ kind: "mark" } & IndexEntry)
   | { kind: "strokes"; page: number; count: number };
+
+/** The two readings of a score addressed to voices; everything first, as the default. */
+const VOICE_FILTERS: ReadonlyArray<{ filter: VoiceFilter; labelKey: string; fallback: string }> = [
+  { filter: "all", labelKey: "annotations.panel.voices_all", fallback: "Wszystkie" },
+  { filter: "mine", labelKey: "annotations.panel.voices_mine", fallback: "Mój głos + tutti" },
+];
 
 /** Reading order: page, then down the page. */
 const byPlace = (a: IndexEntry, b: IndexEntry): number =>
@@ -95,6 +107,13 @@ interface AnnotationSidebarProps {
   displayFocusY?: (sourcePage: number, y: number) => number;
   visibleLayers: LayerVisibility;
   toggleLayerVisibility: (layer: AnnotationLayer) => void;
+  /**
+   * "Mój głos + tutti" or everything. Null hides the switch: the reader's seat
+   * names no section, or no mark on the edition is addressed to one.
+   * `annotations` already obeys it.
+   */
+  voiceFilter: VoiceFilter | null;
+  onVoiceFilterChange: (filter: VoiceFilter) => void;
   /** Decides which layer rows make sense: choir/private vs conductor/mine. */
   mode: ScoreAnnotatorMode;
   onSelectMark: (id: string, page: number) => void;
@@ -103,6 +122,8 @@ interface AnnotationSidebarProps {
    * "Odłóż uwagi" for that edition (conductor mode only).
    */
   editionId?: string | null;
+  /** What a set would take: every mark but the personal pencil, unfiltered. */
+  setAsideCount?: number;
   /** An edition's marks were put aside or brought back (see `SetAsideSection`). */
   onMarksReplaced?: (editionId: string) => void;
 }
@@ -117,9 +138,12 @@ export const AnnotationSidebar = ({
   displayFocusY = (_page, y) => y,
   visibleLayers,
   toggleLayerVisibility,
+  voiceFilter,
+  onVoiceFilterChange,
   mode,
   onSelectMark,
   editionId = null,
+  setAsideCount = 0,
   onMarksReplaced,
 }: AnnotationSidebarProps): React.JSX.Element | null => {
   const { t } = useTranslation();
@@ -218,8 +242,6 @@ export const AnnotationSidebar = ({
     for (const a of annotations) counts[layerOf(a)] += 1;
     return counts;
   }, [annotations]);
-  // What a set would take: every layer but the personal pencil, hidden or not.
-  const setAsideCount = layerCounts.shared + layerCounts.conductor + layerCounts.leader;
 
   return (
     <div className="pointer-events-none absolute inset-y-0 right-0 z-10 flex items-center">
@@ -318,6 +340,36 @@ export const AnnotationSidebar = ({
                   )}
                 </div>
               </section>
+
+              {voiceFilter && (
+                <section className="mb-4">
+                  <Eyebrow as="p" color="ink-on-inverse-muted" className="mb-2">
+                    {t("annotations.panel.voices", "Głosy")}
+                  </Eyebrow>
+                  <div
+                    className="grid grid-cols-2 gap-1"
+                    role="group"
+                    aria-label={t("annotations.panel.voices", "Głosy")}
+                  >
+                    {VOICE_FILTERS.map(({ filter, labelKey, fallback }) => (
+                      <button
+                        key={filter}
+                        type="button"
+                        onClick={() => onVoiceFilterChange(filter)}
+                        aria-pressed={voiceFilter === filter}
+                        className={cn(
+                          "rounded-lg px-2.5 py-1.5 text-xs transition-colors",
+                          voiceFilter === filter
+                            ? "bg-ink-on-inverse/20 text-ink-on-inverse"
+                            : "text-ink-on-inverse/60 hover:bg-ink-on-inverse/10",
+                        )}
+                      >
+                        {t(labelKey, fallback)}
+                      </button>
+                    ))}
+                  </div>
+                </section>
+              )}
 
               {fresh.length > 0 && (
                 <section className="mb-4">

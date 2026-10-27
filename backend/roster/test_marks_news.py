@@ -231,3 +231,54 @@ class MarksNewsTests(_MarksFixture):
             sorted(str(u.pk) for u in (self.singer_user, self.other_user, self.deputy_user)),
         )
         self.assertEqual(sent[singers], ["Dixit Dominus"])
+
+    def _make_soprano(self, user) -> None:
+        Artist.objects.filter(user=user).update(voice_type=VoiceType.SOPRANO)
+
+    def test_a_mark_for_one_voice_is_news_to_that_voice_only(self) -> None:
+        self._make_soprano(self.other_user)
+        self._mark(self.manager, SHARED_ANNOTATION_LAYER, voices=["T"])
+        self.assertEqual(self._news().json()["recipients"], 2)
+
+        response, delay = self._press()
+        self.assertEqual(response.status_code, 200, response.content)
+        delay.assert_called_once()
+        self.assertEqual(
+            sorted(delay.call_args.kwargs["recipient_ids"]),
+            sorted(str(u.pk) for u in (self.singer_user, self.deputy_user)),
+        )
+
+    def test_each_voice_hears_of_the_pieces_addressed_to_it(self) -> None:
+        self._make_soprano(self.other_user)
+        self._mark(self.manager, SHARED_ANNOTATION_LAYER, voices=["T"])
+        self._mark(self.manager, SHARED_ANNOTATION_LAYER, edition=self.second_edition, voices=["S"])
+        self._mark(self.manager, SHARED_ANNOTATION_LAYER, edition=self.second_edition, voices=["T"])
+
+        response, delay = self._press()
+        self.assertEqual(response.status_code, 200, response.content)
+        self.assertEqual(response.json()["recipients"], 3)
+        sent = {
+            tuple(sorted(call.kwargs["recipient_ids"])): [
+                piece["title"] for piece in call.kwargs["metadata"]["pieces"]
+            ]
+            for call in delay.call_args_list
+        }
+        tenors = tuple(sorted(str(u.pk) for u in (self.singer_user, self.deputy_user)))
+        self.assertEqual(sent[tenors], ["Dixit Dominus", "Laudate pueri"])
+        self.assertEqual(sent[(str(self.other_user.pk),)], ["Laudate pueri"])
+
+    def test_one_tutti_mark_makes_the_piece_news_to_everyone(self) -> None:
+        self._make_soprano(self.other_user)
+        self._mark(self.manager, SHARED_ANNOTATION_LAYER, voices=["T"])
+        self._mark(self.manager, SHARED_ANNOTATION_LAYER)
+        self.assertEqual(self._news().json()["recipients"], 3)
+
+    def test_a_mark_for_a_voice_nobody_sings_tells_nobody(self) -> None:
+        self._mark(self.manager, SHARED_ANNOTATION_LAYER, voices=["B"])
+        news = self._news().json()
+        self.assertEqual(self._piece_titles(self._news()), ["Dixit Dominus"])
+        self.assertEqual(news["recipients"], 0)
+        response, delay = self._press()
+        self.assertEqual(response.status_code, 409, response.content)
+        self.assertEqual(response.json()["code"], "nobody")
+        delay.assert_not_called()

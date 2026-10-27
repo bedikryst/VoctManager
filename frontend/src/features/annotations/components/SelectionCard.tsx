@@ -1,8 +1,8 @@
 /**
  * @file SelectionCard.tsx
  * @description What a writer can do with the marks a loop picked out: say who
- * reads them, recolour them, duplicate them, copy them to another page of this
- * piece, or throw them away. Moving them is not here: the selection's own
+ * reads them and which voices they are for, recolour them, duplicate them,
+ * copy them to another page of this piece, or throw them away. Moving them is not here: the selection's own
  * frame is what the hand drags.
  *
  * Built from the single mark's card (`MarkActionCard`) and anchored the same
@@ -26,6 +26,7 @@ import { cn } from "@/shared/lib/utils";
 import { Caption, Eyebrow, Text } from "@/shared/ui/primitives/typography";
 
 import { MarkAudiencePicker } from "./MarkAudiencePicker";
+import { MarkVoicePicker, type MarkVoices } from "./MarkVoicePicker";
 import { placeNoteCard } from "../lib/noteCardPlacement";
 import { useMeasuredHeight } from "../lib/useMeasuredHeight";
 import { layerOf, type WriteLayer } from "../lib/layers";
@@ -53,6 +54,11 @@ interface SelectionCardProps {
   /** Reaches these marks may move between; fewer than two hides the ladder. */
   audiences: readonly WriteLayer[];
   onChangeLayer: (next: WriteLayer) => void;
+  /**
+   * Which voices the selected marks are for, over those whose layer takes
+   * voices; null hides the row.
+   */
+  voices: MarkVoices | null;
   onChangeColor: (next: string) => void;
   onDuplicate: () => void;
   onCopy: () => void;
@@ -79,6 +85,7 @@ export const SelectionCard = ({
   inks,
   audiences,
   onChangeLayer,
+  voices,
   onChangeColor,
   onDuplicate,
   onCopy,
@@ -162,6 +169,12 @@ export const SelectionCard = ({
             />
           </div>
         ))}
+
+      {voices && (
+        <div className="mt-2.5">
+          <MarkVoicePicker current={voices.current} onChange={voices.onChange} surface="card" />
+        </div>
+      )}
 
       {inks.length > 1 && (
         <div className="mt-2.5 flex flex-col gap-1">

@@ -82,8 +82,10 @@ import {
   StampGlyph,
 } from "../lib/stamps";
 import { SHAPE_KINDS, type ShapeKind } from "../lib/shapes";
+import { layerTakesVoices } from "../lib/voices";
 import type { NoteDisplay } from "../types/annotations.dto";
 import type { ScoreAnnotatorMode } from "../useScoreAnnotator";
+import { MarkVoicePicker } from "./MarkVoicePicker";
 
 interface AnnotationToolbarProps extends AnnotationToolState {
   /**
@@ -285,6 +287,8 @@ export const AnnotationToolbar = ({
   setStamp,
   layer,
   setLayer,
+  voices,
+  setVoices,
   canDraw,
   annotationCount,
   clearableCount,
@@ -314,6 +318,17 @@ export const AnnotationToolbar = ({
   const showStampSize = tool === "stamp";
   // Whether the active tool has any contextual options to drop below the pill.
   const hasPanel = showSize || showInk || showNoteMode || showStamps;
+  // Voices address the next mark wherever its layer has readers who sing.
+  const voicesApply = mode !== "personal" && layerTakesVoices(layer);
+  const showVoices = showInk && voicesApply;
+  // Said on the layer pill too, so a mark about to go to the tenors only is
+  // never a surprise with the panel closed.
+  const voicesBadge =
+    voicesApply && voices.length > 0 ? (
+      <span className="rounded-full bg-ink-on-inverse/15 px-1.5 text-[10px] font-semibold tracking-wide">
+        {voices.join("")}
+      </span>
+    ) : null;
   const activeStampGroup = groupOfStamp(stamp);
   const armedStamp = getStampDef(stamp);
   /** The size sample grows with the slider, inside its 36 px tile. */
@@ -540,6 +555,7 @@ export const AnnotationToolbar = ({
           >
             <activeLayerCopy.Icon size={14} aria-hidden="true" />
             <span className="hidden sm:inline">{activeLayerCopy.short}</span>
+            {voicesBadge}
           </button>
         ) : null}
 
@@ -561,6 +577,7 @@ export const AnnotationToolbar = ({
             >
               <Users size={14} aria-hidden="true" />
               <span className="hidden sm:inline">{layerCopy.shared.short}</span>
+              {voicesBadge}
             </button>
           ) : (
             <button
@@ -791,6 +808,10 @@ export const AnnotationToolbar = ({
                 </Caption>
               )}
             </div>
+          )}
+
+          {showVoices && (
+            <MarkVoicePicker current={voices} onChange={setVoices} surface="chrome" />
           )}
 
           {showNoteMode && (

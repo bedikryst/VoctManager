@@ -6028,6 +6028,21 @@ msgstr ""
 msgid "Include Conductor's Markings"
 msgstr "Inclure les annotations du chef"
 
+#: archive/models.py
+msgid ""
+"Section letters (S, A, T, B) the mark is addressed to. Empty means tutti."
+msgstr ""
+"Lettres des pupitres (S, A, T, B) auxquels l’annotation s’adresse. Vide "
+"signifie tutti."
+
+#: archive/models.py
+msgid "Voices"
+msgstr "Pupitres"
+
+#: archive/serializers.py
+msgid "Voices must be a list of section letters: S, A, T, B."
+msgstr "Les pupitres doivent être une liste de lettres : S, A, T, B."
+
 #~ msgid "Review the request"
 #~ msgstr "Examiner la demande"
 

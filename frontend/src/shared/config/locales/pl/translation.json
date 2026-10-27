@@ -119,7 +119,10 @@
         "keys_title": "Z klawiatury",
         "keys_body": "Delete usuwa zaznaczenie, a strzałki je przesuwają (z Shiftem dalej). Ctrl+Z lub ⌘Z cofa, z Shiftem ponawia. Esc odkłada narzędzie.",
         "eraser_end_title": "Gumka w rysiku",
-        "eraser_end_body": "Jeśli Twój rysik ma gumkę na drugim końcu, odwróć go i potrzyj oznaczenie. Zniknie bez zmiany narzędzia."
+        "eraser_end_body": "Jeśli Twój rysik ma gumkę na drugim końcu, odwróć go i potrzyj oznaczenie. Zniknie bez zmiany narzędzia.",
+        "voices_title": "Uwagi dla jednego głosu",
+        "voices_reader_body": "Dyrygent może skierować uwagę do jednej sekcji. W panelu adnotacji wybierz „Mój głos + tutti”, a zobaczysz tylko uwagi dla swojego głosu i dla wszystkich.",
+        "voices_writer_body": "Przy narzędziach wybierz S, A, T albo B, a następne oznaczenie będzie dla tej sekcji. Na karcie oznaczenia zmienisz to po fakcie. Inni nadal je widzą, ale „Powiadom chór” powie tylko tym głosom, a chórzysta może czytać sam swój głos."
       }
     },
     "open_tools": "Narzędzia adnotacji",
@@ -165,7 +168,20 @@
       "page_marks_many": "{{count}} oznaczeń",
       "page_marks_other": "{{count}} oznaczeń",
       "pages": "Oznaczone strony",
-      "title": "Adnotacje"
+      "title": "Adnotacje",
+      "voices": "Głosy",
+      "voices_all": "Wszystkie",
+      "voices_mine": "Mój głos + tutti"
+    },
+    "voices": {
+      "label": "Dla głosów",
+      "tutti": "Tutti",
+      "section": {
+        "S": "Soprany",
+        "A": "Alty",
+        "T": "Tenory",
+        "B": "Basy"
+      }
     },
     "phrases": {
       "clearer": "wyraźniej",

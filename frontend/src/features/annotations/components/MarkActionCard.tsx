@@ -1,7 +1,8 @@
 /**
  * @file MarkActionCard.tsx
  * @description What a reader can do with the ink, highlight or symbol they just
- * tapped: change who reads it, change its colour, resize a symbol, throw it away.
+ * tapped: change who reads it and which voices it is for, change its colour,
+ * resize a symbol, throw it away.
  *
  * Anchored to the marking rather than docked to the toolbar, and that is the
  * whole point. The control this replaces lived in the floating tool pill at the
@@ -31,6 +32,7 @@ import { cn } from "@/shared/lib/utils";
 import { Eyebrow } from "@/shared/ui/primitives/typography";
 
 import { MarkAudiencePicker } from "./MarkAudiencePicker";
+import { MarkVoicePicker, type MarkVoices } from "./MarkVoicePicker";
 import { boundsAnchor, markBounds } from "../lib/markBounds";
 import { placeNoteCard } from "../lib/noteCardPlacement";
 import { getShapeDef, isShapeKind } from "../lib/shapes";
@@ -57,6 +59,8 @@ interface MarkActionCardProps {
   /** Reaches this marking may move between; fewer than two hides the ladder. */
   audiences: readonly WriteLayer[];
   onChangeLayer: (next: WriteLayer) => void;
+  /** Which voices the marking is for; null hides the row. */
+  voices: MarkVoices | null;
   onChangeColor: (next: string) => void;
   /** A symbol's size while its slider is held; null when nothing is held. */
   previewScale: number | null;
@@ -97,6 +101,7 @@ export const MarkActionCard = ({
   inks,
   audiences,
   onChangeLayer,
+  voices,
   onChangeColor,
   previewScale,
   onPreviewScale,
@@ -178,6 +183,12 @@ export const MarkActionCard = ({
             options={audiences}
             onChange={onChangeLayer}
           />
+        </div>
+      )}
+
+      {voices && (
+        <div className="mt-2.5">
+          <MarkVoicePicker current={voices.current} onChange={voices.onChange} surface="card" />
         </div>
       )}
 

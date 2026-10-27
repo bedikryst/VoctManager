@@ -40,7 +40,11 @@ from core.exceptions import format_pydantic_validation_errors, make_error_respon
 from core.permissions import IsManager, user_is_manager
 from core.request_utils import client_payload, request_user, truthy_flag
 from roster.permissions import led_piece_ids
-from roster.queries import artist_live_piece_ids, user_has_live_access_to_piece
+from roster.queries import (
+    artist_live_piece_ids,
+    reader_section_letters,
+    user_has_live_access_to_piece,
+)
 
 from . import services
 from .annotation_palette import is_reserved_ink
@@ -1272,7 +1276,10 @@ class AnnotationViewSet(viewsets.ModelViewSet):
 
         It also answers `seen_at`, how far this reader has looked at the edition
         (see `AnnotationReadState`), because the first tick of an open stand is
-        the moment the reader needs it.
+        the moment the reader needs it, and `reader_sections`, the section
+        letters their seat on this music answers to (see
+        `archive/annotation_voices.py`), so that whichever surface opened the
+        score, the stand knows which voice "Mój głos" means.
         """
         edition_id = _edition_param(request.query_params.get('edition'))
         stats = self.get_queryset().filter(edition_id=edition_id).aggregate(
@@ -1285,6 +1292,9 @@ class AnnotationViewSet(viewsets.ModelViewSet):
                 'count': stats['count'],
                 'latest': latest.isoformat() if latest else None,
                 'seen_at': seen_at.isoformat() if seen_at else None,
+                'reader_sections': reader_section_letters(
+                    request_user(request), edition_id,
+                ),
             },
             status=status.HTTP_200_OK,
         )

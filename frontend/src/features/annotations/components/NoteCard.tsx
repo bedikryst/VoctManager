@@ -19,6 +19,7 @@ import { cn } from "@/shared/lib/utils";
 import { FIELD_TEXT_SCALE } from "@/shared/ui/primitives/fieldShell";
 
 import { MarkAudiencePicker } from "./MarkAudiencePicker";
+import { MarkVoicePicker, type MarkVoices } from "./MarkVoicePicker";
 import { placeNoteCard } from "../lib/noteCardPlacement";
 import { appendPhrase } from "../lib/quickPhrases";
 import { useMeasuredHeight } from "../lib/useMeasuredHeight";
@@ -89,6 +90,11 @@ interface NoteCardProps {
   initialScale: number;
   showDelete: boolean;
   audience: NoteAudience | null;
+  /**
+   * Which voices an EXISTING note is for. Absent for a new one, for the reason
+   * `audience` is: the toolbar addressed the next mark already.
+   */
+  voices?: MarkVoices | null;
   onSubmit: (text: string, display: NoteDisplay, scale: number) => void;
   onCancel: () => void;
   onDelete?: () => void;
@@ -216,6 +222,7 @@ export const NoteCard = ({
   initialScale,
   showDelete,
   audience,
+  voices = null,
   onSubmit,
   onCancel,
   onDelete,
@@ -429,6 +436,13 @@ export const NoteCard = ({
               options={audience.options}
               onChange={audience.onChange}
             />
+          </div>
+        )}
+
+        {/* Which voices it is for, committed on tap like the reach above. */}
+        {voices && (
+          <div className="mt-2.5">
+            <MarkVoicePicker current={voices.current} onChange={voices.onChange} surface="card" />
           </div>
         )}
 

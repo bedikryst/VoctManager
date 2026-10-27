@@ -398,4 +398,5 @@ export const toCreateBody = (
   ...markContent(annotation),
   color: annotation.color,
   layer_name: annotation.layer_name,
+  ...(annotation.voices?.length ? { voices: [...annotation.voices] } : {}),
 });

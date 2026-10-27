@@ -21,13 +21,15 @@
  * an invisible hit band, a stamp and a note carry their own buttons, and the
  * tapped one opens the card that says who reads it. That card is anchored to
  * the marking (`MarkActionCard`, or `NoteCard` for words) — the question "who
- * sees this?" is asked about one spot of music, so it is answered there.
+ * sees this?" is asked about one spot of music, so it is answered there, and
+ * so is "which voices is it for".
  *
  * With "Zaznacz" in hand, a loop drawn round the music selects the marks in it
  * that this reader may change, and a tap adds or removes one. The selection is
  * held by the page and dies with it. Its frame is dragged to move it, and its
- * card (`SelectionCard`) recolours, readdresses, duplicates, copies or deletes
- * it; each of those is one step of the undo history. The stand's keyboard
+ * card (`SelectionCard`) recolours, readdresses (to a layer or to voices),
+ * duplicates, copies or deletes it; each of those is one step of the undo
+ * history. The stand's keyboard
  * reaches it through `selectionKeys`: the arrows nudge it, written once the
  * keys rest, and Delete removes it.
  *
@@ -102,6 +104,12 @@ import {
 } from "../lib/selection";
 import { pickRecentPhrases, QUICK_PHRASES } from "../lib/quickPhrases";
 import {
+  canonicalVoices,
+  layerTakesVoices,
+  sameVoices,
+  type VoiceSection,
+} from "../lib/voices";
+import {
   slopFor,
   surfaceModes,
   useOverlayInput,
@@ -145,6 +153,11 @@ interface AnnotationOverlayProps {
    * never learns what a "mode" is.
    */
   audiences: readonly WriteLayer[];
+  /**
+   * Whether this writer addresses marks to voices (conductor and leader), so a
+   * mark's card offers its voices. A chorister's pencil has one reader.
+   */
+  voicing: boolean;
   selectedId: string | null;
   /**
    * Marks new to this reader since their last visit. Each carries a soft gold
@@ -227,6 +240,7 @@ export const AnnotationOverlay = ({
   canModify,
   inks,
   audiences,
+  voicing,
   selectedId,
   newIds,
   clipboard,
@@ -375,6 +389,19 @@ export const AnnotationOverlay = ({
   const moveMarkLayer = (a: ScoreAnnotation, next: WriteLayer): void => {
     onUpdate(a.id, { layer_name: next }, { layer_name: a.layer_name });
   };
+
+  /** The voice row of a mark's card: offered to a writer who addresses voices,
+   *  on a mark whose layer has singing readers. */
+  const voicesFor = (a: ScoreAnnotation) =>
+    voicing && layerTakesVoices(a.layer_name)
+      ? {
+          current: canonicalVoices(a.voices),
+          onChange: (next: VoiceSection[]) => {
+            if (sameVoices(next, a.voices)) return;
+            onUpdate(a.id, { voices: next }, { voices: canonicalVoices(a.voices) });
+          },
+        }
+      : null;
 
   /**
    * A symbol's size while its slider is held, drawn on the page but not yet
@@ -808,6 +835,30 @@ export const AnnotationOverlay = ({
         })),
     );
   };
+
+  // Only the marks whose layer has singing readers take voices; a private
+  // remark caught in the same loop keeps none.
+  const voicedSelection = voicing
+    ? selection.filter((a) => layerTakesVoices(a.layer_name))
+    : [];
+  const readdressSelectionVoices = (next: VoiceSection[]): void => {
+    onUpdateMany(
+      voicedSelection
+        .filter((a) => !sameVoices(a.voices, next))
+        .map((a) => ({
+          id: a.id,
+          before: { voices: canonicalVoices(a.voices) },
+          after: { voices: next },
+        })),
+    );
+  };
+  const selectionVoices = (() => {
+    const [first, ...rest] = voicedSelection;
+    if (!first) return null;
+    return rest.every((a) => sameVoices(a.voices, first.voices))
+      ? canonicalVoices(first.voices)
+      : null;
+  })();
 
   const duplicateSelection = (): void => {
     const shift = duplicateShift(selection, width, height);
@@ -1263,6 +1314,11 @@ export const AnnotationOverlay = ({
           inks={inks}
           audiences={audiences}
           onChangeLayer={readdressSelection}
+          voices={
+            voicedSelection.length > 0
+              ? { current: selectionVoices, onChange: readdressSelectionVoices }
+              : null
+          }
           onChangeColor={recolorSelection}
           onDuplicate={duplicateSelection}
           onCopy={copySelection}
@@ -1349,6 +1405,7 @@ export const AnnotationOverlay = ({
                 options: audiences,
                 onChange: (next) => moveMarkLayer(editingNote, next),
               }}
+              voices={voicesFor(editingNote)}
               onSubmit={(text, display, scale) => {
                 onUpdate(
                   editingNote.id,
@@ -1377,6 +1434,7 @@ export const AnnotationOverlay = ({
           inks={inks}
           audiences={audiences}
           onChangeLayer={(next) => moveMarkLayer(actionMark, next)}
+          voices={voicesFor(actionMark)}
           onChangeColor={(next) =>
             onUpdate(actionMark.id, { color: next }, { color: actionMark.color })
           }

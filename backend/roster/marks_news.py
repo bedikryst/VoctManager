@@ -8,6 +8,11 @@
     "New" keys on `Annotation.content_at`, never on `updated_at`, so tidying a
     page — moving, resizing, recolouring — is not news, while a restored set is.
     Only the `shared` layer counts: it is the one written to the choir.
+
+    A mark addressed to some voices is news to those voices only
+    (`archive.annotation_voices.addresses`): a piece whose new marks are all
+    for the tenors is listed to the tenors, and to whoever answers to no
+    section, never to the sopranos.
 @module roster/marks_news
 """
 
@@ -19,10 +24,11 @@ from datetime import datetime, timedelta
 from typing import Any
 from uuid import UUID
 
-from django.db.models import Count
 from django.utils import timezone
 
+from archive.annotation_voices import addresses, mark_letters
 from archive.models import SHARED_ANNOTATION_LAYER, Annotation
+from core.voice_labels import canonical_section_letters, section_letters_of_seat
 from notifications.dtos import MarkedPieceMetadata, ScoreMarksSharedMetadata
 from notifications.models import NotificationLevel, NotificationType
 from notifications.tasks import send_bulk_notifications_task
@@ -53,6 +59,12 @@ class MarkedPiece:
     #: Instrumental in this project: a singer is not told about music they are
     #: not handed, the same rule that withholds its score.
     instrumental: bool
+    #: The section letters its new marks are addressed to, '' when any of them
+    #: is tutti — which makes the piece news to everyone.
+    sections: str = ''
+
+    def is_news_to(self, reader_letters: str) -> bool:
+        return addresses(list(self.sections), reader_letters)
 
 
 @dataclass(frozen=True)
@@ -120,7 +132,11 @@ def marked_pieces(project: Project, *, since: datetime, until: datetime) -> list
     )
     if not items:
         return []
-    counts: dict[Any, int] = dict(
+    counts: dict[Any, int] = {}
+    # Per piece: the letters its voiced marks reach, or None once one tutti
+    # mark makes it news to everyone.
+    letters: dict[Any, set[str] | None] = {}
+    rows = (
         Annotation.objects
         .filter(
             edition__piece_id__in=[item.piece_id for item in items],
@@ -131,9 +147,18 @@ def marked_pieces(project: Project, *, since: datetime, until: datetime) -> list
             content_at__lte=until,
         )
         .order_by()
-        .values_list('edition__piece_id')
-        .annotate(n=Count('id'))
+        .values_list('edition__piece_id', 'voices')
     )
+    for piece_id, voices in rows:
+        counts[piece_id] = counts.get(piece_id, 0) + 1
+        reached = letters.setdefault(piece_id, set())
+        if reached is None:
+            continue
+        mark = mark_letters(voices)
+        if mark:
+            reached.update(mark)
+        else:
+            letters[piece_id] = None
     pieces: list[MarkedPiece] = []
     seen: set[Any] = set()
     for item in items:
@@ -141,12 +166,14 @@ def marked_pieces(project: Project, *, since: datetime, until: datetime) -> list
             continue
         seen.add(item.piece_id)
         composer = item.piece.composer
+        reached = letters[item.piece_id]
         pieces.append(MarkedPiece(
             piece_id=item.piece_id,
             title=item.piece.title,
             composer_name=str(composer) if composer is not None else "",
             count=counts[item.piece_id],
             instrumental=bool(getattr(item, 'is_instrumental', False)),
+            sections=canonical_section_letters(reached) if reached is not None else '',
         ))
     return pieces
 
@@ -155,29 +182,36 @@ def _audiences(
     project: Project, sender: Any, pieces: list[MarkedPiece],
 ) -> list[tuple[list[str], list[MarkedPiece]]]:
     """Who hears about which pieces: the live cast, minus the one pressing the
-    button and the podium, split by the instrumental rule. Nobody once the
-    concert is over — the scores are no longer theirs to open."""
+    button and the podium. A singer is told of the sung pieces whose new marks
+    reach their section; a player of every piece, by the instrumental rule and
+    because a player answers to no section. One audience per distinct list of
+    pieces, so one notice says the same thing to everyone it reaches. Nobody
+    once the concert is over — the scores are no longer theirs to open."""
     if not pieces or project.status in Project.CLOSED_STATUSES:
         return []
     seats = (
         Participation.live_seats()
         .filter(project=project, artist__user__isnull=False)
         .exclude(artist__voice_type=VoiceType.CONDUCTOR)
-        .values_list('artist__user_id', 'artist__voice_type')
+        .values_list('artist__user_id', 'artist__voice_type', 'default_voice_line')
     )
     if sender is not None:
         seats = seats.exclude(artist__user=sender)
-    players: set[str] = set()
-    singers: set[str] = set()
-    for user_id, voice_type in seats:
-        (players if voice_type == VoiceType.INSTRUMENTALIST else singers).add(str(user_id))
     sung = [piece for piece in pieces if not piece.instrumental]
-    audiences: list[tuple[list[str], list[MarkedPiece]]] = []
-    if singers and sung:
-        audiences.append((sorted(singers), sung))
-    if players:
-        audiences.append((sorted(players), pieces))
-    return audiences
+    by_pieces: dict[tuple[UUID, ...], set[str]] = {}
+    for user_id, voice_type, voice_line in seats:
+        if voice_type == VoiceType.INSTRUMENTALIST:
+            told = pieces
+        else:
+            letters = section_letters_of_seat(voice_type, voice_line)
+            told = [piece for piece in sung if piece.is_news_to(letters)]
+        if told:
+            by_pieces.setdefault(tuple(piece.piece_id for piece in told), set()).add(str(user_id))
+    in_order = {piece.piece_id: piece for piece in pieces}
+    return [
+        (sorted(user_ids), [in_order[piece_id] for piece_id in key])
+        for key, user_ids in by_pieces.items()
+    ]
 
 
 def _send_notice(recipient_ids: list[str], metadata: dict[str, Any]) -> None:

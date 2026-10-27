@@ -740,6 +740,14 @@ class Annotation(SoftDeleteModel):
         help_text=_("When the conductor set this mark aside. Empty while it is on the page."),
         verbose_name=_("Set aside at"),
     )
+    # Which sections the mark is for (see archive/annotation_voices.py). A
+    # reader's filter and "Powiadom chór" read it; the layer stays the only
+    # rule of who may read the mark at all.
+    voices = models.JSONField(
+        default=list, blank=True,
+        help_text=_("Section letters (S, A, T, B) the mark is addressed to. Empty means tutti."),
+        verbose_name=_("Voices"),
+    )
 
     class Meta:
         verbose_name = _("Annotation")

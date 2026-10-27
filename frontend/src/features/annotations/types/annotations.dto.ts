@@ -94,6 +94,12 @@ export type MarkDraft = MarkContent & {
   page_number: number;
   color: string;
   layer_name: string;
+  /**
+   * The sections the mark is for (`lib/voices.ts`); none is tutti. A display
+   * filter and a notification target, never access control. Absent on rows
+   * cached or queued by a build that predates it, which read as tutti.
+   */
+  voices?: string[];
 };
 
 export type ScoreAnnotation = MarkDraft & {
@@ -134,6 +140,12 @@ export interface MarkFingerprint {
    * open, so null only for an edition that is gone.
    */
   seen_at: string | null;
+  /**
+   * The section letters this reader's seat on the music answers to ("T",
+   * "TB"), "" when they hold none. Optional: a fingerprint cached by an older
+   * build has none, and reads as "show everything".
+   */
+  reader_sections?: string;
 }
 
 /**
@@ -186,6 +198,7 @@ export interface AnnotationPatch {
   payload?: AnnotationPayload;
   color?: string;
   layer_name?: string;
+  voices?: string[];
 }
 
 /** A row with an edit applied. The kind stays, so the payload is the row's own. */

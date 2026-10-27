@@ -262,6 +262,12 @@ export interface ScoreMarks {
    * undefined until an open stand's first fingerprint answers.
    */
   seenAt: string | null | undefined;
+  /**
+   * The section letters the reader's seat on this music answers to
+   * (`MarkFingerprint.reader_sections`); "" until the first answer, and for a
+   * reader with no seat on it — both read as "show everything".
+   */
+  readerSections: string;
 }
 
 /**
@@ -285,7 +291,7 @@ export const useScoreAnnotations = (
     ...RECONCILING_REFETCH,
   });
 
-  const seenAt = useMarkFingerprintWatch(editionId, options?.live ?? false, data);
+  const fingerprint = useMarkFingerprintWatch(editionId, options?.live ?? false, data);
   useDurableMarkCatchUp(editionId);
 
   const pending = useMemo(
@@ -304,7 +310,8 @@ export const useScoreAnnotations = (
     pendingCount: pending.length,
     isLoaded,
     isSettled: isLoaded && !isFetching,
-    seenAt,
+    seenAt: fingerprint?.seen_at,
+    readerSections: fingerprint?.reader_sections ?? "",
   };
 };
 
@@ -341,13 +348,14 @@ const listSignature = (rows: readonly ScoreAnnotation[]): string => {
  * the stroke off the page under their hand. A settled write leaves the cache
  * holding the server's row, so the next tick agrees without a re-read.
  *
- * Returns the reader's `seen_at` from the latest answer, undefined before one.
+ * Returns the latest answer, undefined before one: its `seen_at` and
+ * `reader_sections` are the reader's, not the page's.
  */
 const useMarkFingerprintWatch = (
   editionId: string | null,
   live: boolean,
   rows: readonly ScoreAnnotation[] | undefined,
-): string | null | undefined => {
+): MarkFingerprint | undefined => {
   const queryClient = useQueryClient();
   const writing = useIsMutating({ mutationKey: annotationKeys.all }) > 0;
 
@@ -396,7 +404,7 @@ const useMarkFingerprintWatch = (
     });
   }, [data, dataUpdatedAt, editionId, queryClient]);
 
-  return data?.seen_at;
+  return data;
 };
 
 /** A fresh v4 id: for a mark, or for a clear or restore the queue must tell apart. */

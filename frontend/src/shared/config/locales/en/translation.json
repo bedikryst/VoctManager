@@ -111,7 +111,10 @@
         "keys_title": "From the keyboard",
         "keys_body": "Delete removes the selection and the arrow keys nudge it (further with Shift). Ctrl+Z or ⌘Z undoes, and with Shift redoes. Esc puts the tool down.",
         "eraser_end_title": "The pen's eraser",
-        "eraser_end_body": "If your pen has an eraser on its other end, turn it over and rub a marking out. It goes without a change of tool."
+        "eraser_end_body": "If your pen has an eraser on its other end, turn it over and rub a marking out. It goes without a change of tool.",
+        "voices_title": "Remarks for one voice",
+        "voices_reader_body": "The conductor can address a remark to one section. In the annotations panel choose “My voice + tutti” to see only the remarks for your voice and for everyone.",
+        "voices_writer_body": "Next to the tools, choose S, A, T or B and the next marking is for that section. You can change it afterwards on the marking's card. Everyone can still see it, but “Notify the choir” tells only those voices, and a singer can read just their own."
       }
     },
     "open_tools": "Annotation tools",
@@ -157,7 +160,20 @@
       "page_marks_many": "{{count}} marks",
       "page_marks_other": "{{count}} marks",
       "pages": "Marked pages",
-      "title": "Annotations"
+      "title": "Annotations",
+      "voices": "Voices",
+      "voices_all": "All",
+      "voices_mine": "My voice + tutti"
+    },
+    "voices": {
+      "label": "For voices",
+      "tutti": "Tutti",
+      "section": {
+        "S": "Sopranos",
+        "A": "Altos",
+        "T": "Tenors",
+        "B": "Basses"
+      }
     },
     "phrases": {
       "clearer": "clearer",

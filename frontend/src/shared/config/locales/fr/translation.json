@@ -111,7 +111,10 @@
         "keys_title": "Au clavier",
         "keys_body": "Suppr efface la sélection et les flèches la déplacent (plus loin avec Maj). Ctrl+Z ou ⌘Z annule, et avec Maj rétablit. Échap repose l’outil.",
         "eraser_end_title": "La gomme du stylet",
-        "eraser_end_body": "Si votre stylet a une gomme à l’autre bout, retournez-le et frottez l’annotation : elle disparaît sans changer d’outil."
+        "eraser_end_body": "Si votre stylet a une gomme à l’autre bout, retournez-le et frottez l’annotation : elle disparaît sans changer d’outil.",
+        "voices_title": "Remarques pour un seul pupitre",
+        "voices_reader_body": "Le chef peut adresser une remarque à un seul pupitre. Dans le panneau des annotations, choisissez « Mon pupitre + tutti » pour ne voir que les remarques pour votre voix et pour tous.",
+        "voices_writer_body": "À côté des outils, choisissez S, A, T ou B : l’annotation suivante sera pour ce pupitre. Vous pouvez le changer ensuite sur la carte de l’annotation. Tout le monde la voit encore, mais « Prévenir le chœur » ne prévient que ces pupitres, et un choriste peut ne lire que le sien."
       }
     },
     "open_tools": "Outils d'annotation",
@@ -157,7 +160,20 @@
       "page_marks_many": "{{count}} marques",
       "page_marks_other": "{{count}} marques",
       "pages": "Pages annotées",
-      "title": "Annotations"
+      "title": "Annotations",
+      "voices": "Pupitres",
+      "voices_all": "Tous",
+      "voices_mine": "Mon pupitre + tutti"
+    },
+    "voices": {
+      "label": "Pour les pupitres",
+      "tutti": "Tutti",
+      "section": {
+        "S": "Sopranos",
+        "A": "Altos",
+        "T": "Ténors",
+        "B": "Basses"
+      }
     },
     "phrases": {
       "clearer": "plus net",
