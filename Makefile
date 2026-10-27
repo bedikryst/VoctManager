@@ -89,13 +89,30 @@ deploy:
 # repeating it. Going the other way would put the VITE_* build args in the middle of
 # that guarantee. The image left behind is untagged on purpose — the `gc` at the end
 # of `deploy` reclaims it, while the cache records it wrote survive by age.
+#
+# The two builds around it keep Astro's image-encode cache in ASTRO_CACHE_DIR, a plain
+# directory no Docker prune reaches: the first refills BuildKit's cache mount from it, the
+# last adds what the build encoded (the astro-cache stages in frontend/Dockerfile say why).
+# The export lands in a scratch directory and is merged on the host, so a local exporter
+# that mirrors its destination can never empty the copy. All four lines are `-` prefixed:
+# a cache that fails to move costs a slow build, never a failed deploy.
+ASTRO_CACHE_DIR ?= $(HOME)/voct-astro-cache
+
 astro-stage:
+	-@mkdir -p "$(ASTRO_CACHE_DIR)" && rm -rf "$(ASTRO_CACHE_DIR).incoming"
+	-$(BUILD_ENV) docker build --target astro-cache-restore --build-arg ASTRO_CACHE_RUN=$$(date +%s) \
+		--build-context astro-seed="$(ASTRO_CACHE_DIR)" -f frontend/Dockerfile .
 	$(BUILD_ENV) docker build --target web-builder -f frontend/Dockerfile .
+	-$(BUILD_ENV) docker build --target astro-cache-new --build-arg ASTRO_CACHE_RUN=$$(date +%s) \
+		--build-context astro-seed="$(ASTRO_CACHE_DIR)" \
+		--output type=local,dest="$(ASTRO_CACHE_DIR).incoming" -f frontend/Dockerfile .
+	-@cp -R "$(ASTRO_CACHE_DIR).incoming/." "$(ASTRO_CACHE_DIR)/" && rm -rf "$(ASTRO_CACHE_DIR).incoming"
 
 # Manual disk reclaim, same script cron runs. `make gc DEEP=--deep` also drops
-# the BuildKit cache mounts (npm + Astro encode cache) — bigger reclaim, and on
-# this one-vCPU droplet a much slower next build: every image variant re-encodes,
-# at ~30s apiece for a 2560px AVIF. Reach for it only when disk is the emergency.
+# the BuildKit cache mounts (npm + Astro encode cache) — bigger reclaim, and the
+# next build re-downloads npm packages; the Astro mount comes back from
+# ASTRO_CACHE_DIR in astro-stage. `rm -rf ~/voct-astro-cache` is the one step
+# that does cost a full re-encode (~20 min on one vCPU).
 gc:
 	bash infra/docker-gc.sh $(DEEP)
 

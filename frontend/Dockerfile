@@ -115,8 +115,10 @@ COPY web/ ./
 #    is what spares them, not a budgeted one. A photo-changing build writes ~2 GB of fresh
 #    records, so a tight budget can drop this mount and make the NEXT such build fully cold.
 #    Symptom: image lines reading `(before: … after: …)` instead of `(reused cache entry)`.
-# Sources are 2560px proxies (web/downscale-photos.mjs), so even a genuinely cold pass is
-# minutes rather than the half-hour the 8256px camera originals cost.
+# Neither eviction has to cost a re-encode: the astro-cache stages below refill this mount
+# from a copy on the build host before the build and add its new entries to that copy after.
+# Sources are 2560px proxies (web/downscale-photos.mjs), yet a genuinely cold pass is still
+# ~20 minutes on one vCPU: ~790 variants, the AVIFs at 10–20 s apiece.
 #
 # `dist/audio` is removed in the same step. The concert recordings are in this context only so the
 # build can see which of them the host holds (a page prints its player only for an uploaded file,
@@ -124,6 +126,55 @@ COPY web/ ./
 # copy in the image would be bytes nobody can reach under the mount.
 RUN --mount=type=cache,target=/app/node_modules/.astro,sharing=locked \
     npm run build && rm -rf dist/audio
+
+
+# ==========================================
+# Astro encode cache, kept on the build host
+# ==========================================
+# The cache mount above belongs to BuildKit, and BuildKit evicts it. Its last-used time moves
+# only on a build that changed web/ — on any other build that RUN is layer-cached and never
+# mounts it — so a week without a web deploy ages it out of infra/docker-gc.sh's trim, and
+# BuildKit's own GC drops idle cache mounts on a schedule of its own.
+#
+# A plain directory on the build host is out of reach of every prune, so `make astro-stage`
+# keeps a copy there (ASTRO_CACHE_DIR) and passes it in as the `astro-seed` build context:
+#   • astro-cache-restore, before the build: copies into the mount each entry it lacks.
+#   • astro-cache-new, after the build: exports each mount entry the host copy lacks.
+# Both must run on every invocation, so the Makefile passes a fresh ASTRO_CACHE_RUN. Never
+# `--no-cache` or `--no-cache-filter` for this: an ignored-cache step is handed a fresh,
+# throwaway cache mount, so the restore would fill nothing and the harvest would read nothing.
+# With nothing to move, each takes seconds.
+# Entry names are content-addressed (see web-builder), so the copy never needs invalidating:
+# a changed photograph gets new names, and the entries of its old bytes are never read again.
+# Only `assets/` travels — the rest of node_modules/.astro is Astro's content store, which it
+# rebuilds in seconds and discards whenever the config changes.
+#
+# This empty stage answers for the context when a build does not pass one, so the compose
+# build of `runtime`, which never reaches the stages below, resolves the name locally.
+FROM scratch AS astro-seed
+
+FROM node:24-alpine AS astro-cache-restore
+ARG ASTRO_CACHE_RUN
+RUN --mount=type=cache,target=/app/node_modules/.astro,sharing=locked \
+    --mount=type=bind,from=astro-seed,target=/seed,rw \
+    cache=/app/node_modules/.astro/assets; mkdir -p "$cache"; n=0; \
+    for f in /seed/*; do \
+      if [ -f "$f" ] && [ ! -e "$cache/${f##*/}" ]; then cp -p "$f" "$cache/" && n=$((n + 1)); fi; \
+    done; \
+    echo "[astro-cache] run $ASTRO_CACHE_RUN: restored $n entries from the build host into the cache mount"
+
+FROM node:24-alpine AS astro-cache-harvest
+ARG ASTRO_CACHE_RUN
+RUN --mount=type=cache,target=/app/node_modules/.astro,sharing=locked \
+    --mount=type=bind,from=astro-seed,target=/seed,rw \
+    mkdir -p /out; n=0; \
+    for f in /app/node_modules/.astro/assets/*; do \
+      if [ -f "$f" ] && [ ! -e "/seed/${f##*/}" ]; then cp -p "$f" /out/ && n=$((n + 1)); fi; \
+    done; \
+    echo "[astro-cache] run $ASTRO_CACHE_RUN: $n new entries for the build host's copy"
+
+FROM scratch AS astro-cache-new
+COPY --from=astro-cache-harvest /out/ /
 
 
 # ==========================================

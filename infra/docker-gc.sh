@@ -113,11 +113,11 @@ if [ "$KEEP_BUILD_CACHE" -eq 1 ]; then
   log "build cache left untouched (--keep-build-cache)"
 elif [ "$DEEP" -eq 1 ]; then
   # `--all` drops BuildKit CACHE MOUNTS unconditionally — the npm download
-  # cache and Astro's image-encode cache (node_modules/.astro). The ordinary
-  # mode below never reaches them, and its pressure path only might; this
-  # reaches them always. The next build then re-encodes every image variant:
-  # 522 of them, ~30s apiece for a 2560px AVIF on one vCPU. Reach for it only
-  # when disk is the emergency and the age trim has already been tried.
+  # cache and Astro's image-encode cache (node_modules/.astro). The next build
+  # re-downloads npm packages; the Astro mount is refilled by `make astro-stage`
+  # from the build host's copy (ASTRO_CACHE_DIR), which no prune here touches.
+  # Reach for it only when disk is the emergency and the age trim has already
+  # been tried.
   log "deep prune: dropping ALL build cache including cache mounts…"
   docker builder prune -af
 else
@@ -130,15 +130,16 @@ else
   # list. Worse, most of this cache is pinned by running images and cannot be
   # reclaimed at all (see GC_KEEP), so a budget set below that floor never
   # succeeds and degenerates into "delete everything reclaimable" on every run.
-  # Either way the Astro image-encode mount (frontend/Dockerfile, web-builder)
-  # goes, and the next build re-encodes ~530 variants: half an hour on this one
-  # vCPU. The prune at the end of `make deploy` was destroying the cache the next
-  # `make deploy` needed — that self-defeating loop is why age comes first.
+  # Either way every cache record the next build wants goes with it, and age is
+  # what spares them: `until` filters on last use, so a record the latest build
+  # touched is never eligible. Growth stays bounded because records from builds
+  # older than GC_MAX_AGE do age out; a burst of deploys inside that window is
+  # exactly what the pressure path below is for.
   #
-  # `until` filters on last use, so a record the latest build touched is never
-  # eligible. Growth stays bounded because records from builds older than
-  # GC_MAX_AGE do age out; a burst of deploys inside that window is exactly what
-  # the pressure path below is for.
+  # The Astro image-encode mount is the exception age cannot protect: a build
+  # that leaves web/ alone never mounts it, so a week without a web deploy ages
+  # it out here. `make astro-stage` refills it from the build host's copy
+  # (ASTRO_CACHE_DIR), which is why losing it costs seconds, not a re-encode.
   log "trimming build cache unused for more than $GC_MAX_AGE…"
   docker builder prune -f --filter "until=$GC_MAX_AGE" || true
 
@@ -152,8 +153,8 @@ else
     log "/ at ${disk_pct}% (under ${GC_DISK_PCT}%) — build cache left warm, no budgeted prune."
   else
     log "WARNING: / at ${disk_pct}% (threshold ${GC_DISK_PCT}%) — falling back to a budgeted prune."
-    log "WARNING: this can evict the Astro image-encode cache mount. Expect the next"
-    log "WARNING: build that touches web/ to re-encode every variant (~30 min)."
+    log "WARNING: this evicts least-recently-used build cache, so the next build"
+    log "WARNING: repeats layers and downloads it would otherwise have reused."
     log "WARNING: raise GC_KEEP, or free disk outside Docker, to stop this recurring."
 
     # Docker 28 replaced `--keep-storage` with `--reserved-space`, and the two are

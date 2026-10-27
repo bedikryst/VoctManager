@@ -115,13 +115,11 @@ crontab -e
 0 4 * * *  cd $HOME/voctmanager && /usr/bin/bash infra/docker-gc.sh >> $HOME/voct-backups/prune.log 2>&1
 ```
 
-**Do NOT schedule `--deep`.** It drops the BuildKit cache MOUNTS unconditionally
-— including Astro's image-encode cache — so the next build that touches `web/`
-re-encodes every variant, ~30 minutes on one vCPU. A monthly `--deep` line used
-to sit here and bought nothing the daily run cannot: the daily run now trims by
-age and escalates to a budgeted prune on its own when `/` crosses `GC_DISK_PCT`.
-Run `make gc DEEP=--deep` by hand if disk is a genuine emergency, knowing what
-the next deploy will cost.
+**Do NOT schedule `--deep`.** It drops the BuildKit cache MOUNTS unconditionally,
+so the next build re-downloads every npm package. A monthly `--deep` line used
+to sit here and bought nothing the daily run cannot: the daily run trims by age
+and escalates to a budgeted prune on its own when `/` crosses `GC_DISK_PCT`.
+Run `make gc DEEP=--deep` by hand if disk is a genuine emergency.
 
 **The crontab is server state, and it drifts from this file.** Nothing deploys
 it: `git pull` updates the scripts, never the schedule that calls them. A
@@ -186,14 +184,27 @@ The budget survives only as an escape hatch, entered when `/` is at or above
 **Raising `GC_KEEP` is the right response to repeated pressure warnings**, not
 lowering it — on this droplet the cache is cheaper than the rebuild.
 
-Confirm the cache is actually surviving:
+### The Astro encode cache lives on the host, not in BuildKit
 
-```bash
-docker buildx du --verbose | grep -B6 -A3 'node_modules/\.astro'
-```
+Age cannot protect the Astro image-encode mount. A build that leaves `web/`
+alone hits the layer cache and never mounts it, so its last use is the last
+*web* deploy, and a week without one ages it out of the daily trim; BuildKit's
+own GC drops idle cache mounts on a schedule of its own. Re-encoding ~790
+variants then costs ~20 minutes of the one vCPU.
 
-During a build the same fact reads off the log directly: `(reused cache entry)`
-means the cache held, `(before: … after: …)` means that variant re-encoded.
+So `make astro-stage` (called by `make deploy` and `make prod`) keeps a copy in
+`~/voct-astro-cache` (`ASTRO_CACHE_DIR`), a plain directory no prune reaches: it
+refills the mount from the copy before the build and adds the new entries after.
+The deploy log shows both steps, `[astro-cache] restored N entries …` and
+`[astro-cache] N new entries …`. A non-zero *restored* count is the mount having
+been evicted, and the copy saving the re-encode.
+
+Entries are content-addressed, so the copy never needs invalidating. It grows by
+the variants of every photograph that is ever replaced; `rm -rf ~/voct-astro-cache`
+resets it, at the price of one full re-encode on the next web build.
+
+During a build, `(reused cache entry)` means the cache held and
+`(before: … after: …)` means that variant re-encoded.
 
 ## Restore drill (routine — non-destructive)
 
