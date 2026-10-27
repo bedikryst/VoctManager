@@ -206,7 +206,7 @@ def reader_marks_for_book(
     — the page map decides it later, in one place, exactly as the build does.
     """
     editions = {row["edition"] for row in music_pages(page_map) if row.get("edition")}
-    wanted = [layer for layer in layers if layer in READER_MARK_LAYERS]
+    wanted = list(dict.fromkeys(layer for layer in layers if layer in READER_MARK_LAYERS))
     if not editions or not wanted:
         return ReaderMarks(by_source={}, fingerprint="0")
     if user is None or not getattr(user, "is_authenticated", False):
@@ -219,17 +219,23 @@ def reader_marks_for_book(
             clause &= Q(created_by=user)
         scope |= clause
 
+    # A soft-deleted edition takes its marks with it, as in the reader's list.
     rows = list(
         Annotation.objects
-        .filter(scope, edition_id__in=editions, is_deleted=False, archived_at__isnull=True)
+        .filter(
+            scope, edition_id__in=editions, edition__is_deleted=False,
+            is_deleted=False, archived_at__isnull=True,
+        )
         .order_by("created_at")
     )
     if not rows:
         return ReaderMarks(by_source={}, fingerprint="0")
+    # Full precision: an edit in the same second as the copy cached before it
+    # must still name a new composition.
     latest = max(row.updated_at for row in rows)
     return ReaderMarks(
         by_source=marks_from_annotations(rows),
-        fingerprint=f"{'+'.join(sorted(wanted))}:{len(rows)}:{latest.timestamp():.0f}",
+        fingerprint=f"{'+'.join(sorted(wanted))}:{len(rows)}:{latest.isoformat()}",
         per_reader=PERSONAL_ANNOTATION_LAYER in wanted,
     )
 

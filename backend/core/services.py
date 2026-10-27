@@ -656,9 +656,11 @@ class UserPreferencesService:
                 }
                 for note in Note.objects.filter(owner=user)
             ],
-            # Marks they drew on scores, every layer, erased ones left out like
-            # the notes. Where each sits and what it says; a stroke's points
-            # are geometry, not information about the person.
+            # Marks they drew on scores, every layer. Where each sits and what
+            # it says; a stroke's points are geometry, not information about
+            # the person. Erased marks are listed too, flagged: an erase keeps
+            # the row for the undo, and access covers what is held, not what is
+            # shown.
             "score_marks": [
                 {
                     "edition": str(mark.edition_id),
@@ -673,9 +675,10 @@ class UserPreferencesService:
                         else None
                     ),
                     "created_at": mark.created_at.isoformat(),
+                    "erased": mark.is_deleted,
                 }
                 for mark in (
-                    Annotation.objects.filter(created_by=user)
+                    Annotation.all_objects.filter(created_by=user)
                     .select_related("edition__piece")
                     .order_by("created_at")
                 )

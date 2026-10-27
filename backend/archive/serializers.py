@@ -490,7 +490,13 @@ class AnnotationSerializer(serializers.ModelSerializer):
     def update(self, instance: Annotation, validated_data: dict[str, Any]) -> Annotation:
         if _says_something_new(instance, validated_data):
             validated_data['content_at'] = timezone.now()
-        return super().update(instance, validated_data)
+        # Only the columns this write carries. The instance was read when the
+        # request began, and a set-aside or a clear that lands in between must
+        # not have its `archived_at` / `is_deleted` written back from that copy.
+        for field, value in validated_data.items():
+            setattr(instance, field, value)
+        instance.save(update_fields=[*validated_data, 'updated_at'])
+        return instance
 
     def validate_color(self, value: str) -> str:
         """Only the palette's inks, in the palette's own casing. Anything else
@@ -510,10 +516,13 @@ class AnnotationSerializer(serializers.ModelSerializer):
             attrs.pop('id', None)
         # Each rule below judges only what this write carries, so a row stored
         # before the rule (page 0, a retired stamp) can still be moved and
-        # erased by its owner.
-        if 'page_number' in attrs:
+        # erased by its owner. A move to another edition carries its page with
+        # it, so the page is judged against the edition it lands on.
+        if 'page_number' in attrs or 'edition' in attrs:
+            page_number = attrs.get('page_number', getattr(self.instance, 'page_number', None))
             edition = attrs.get('edition', getattr(self.instance, 'edition', None))
-            self._check_page(attrs['page_number'], edition)
+            if page_number is not None:
+                self._check_page(page_number, edition)
         # On PATCH either field may be absent; resolve the effective pair so the
         # payload is always validated against the type it will be stored under.
         touches_shape = 'payload' in attrs or 'annotation_type' in attrs

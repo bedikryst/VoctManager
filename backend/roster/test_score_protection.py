@@ -520,6 +520,40 @@ class ReaderMarksServeTests(_ServeBase):
         self.assertEqual(len(captured), 1)
         self.assertEqual(captured[0].count("<path"), 2)
 
+    def test_a_deleted_bound_edition_takes_its_marks_off_the_copy(self) -> None:
+        self._prepare(markings=True)
+        self._mark(self.manager, layer=SHARED_ANNOTATION_LAYER)
+        self.edition.delete()
+        self.client.force_authenticate(self.manager)
+        body, captured = self._serve(f"{self.binder_url}?marks=shared")
+        self.assertEqual(captured, [])
+        self.assertEqual(body, _pdf_bytes(3))
+        self.assertEqual(
+            self.client.get(f"{self.marks_url}?layers=shared").json(),
+            {"available": False, "count": 0},
+        )
+
+    def test_an_edit_in_the_same_second_composes_a_new_copy(self) -> None:
+        self._prepare(markings=True)
+        mark = self._mark(self.manager, layer=SHARED_ANNOTATION_LAYER)
+        moment = timezone.now().replace(microsecond=100_000)
+        Annotation.objects.filter(pk=mark.pk).update(updated_at=moment)
+        self.client.force_authenticate(self.singer_user)
+        self._serve(f"{self.binder_url}?marks=shared")
+        Annotation.objects.filter(pk=mark.pk).update(
+            page_number=2, updated_at=moment.replace(microsecond=300_000),
+        )
+        _, captured = self._serve(f"{self.binder_url}?marks=shared")
+        self.assertEqual(len(captured), 1)
+
+    def test_a_layer_named_twice_is_the_same_copy(self) -> None:
+        self._prepare(markings=True)
+        self._mark(self.manager, layer=SHARED_ANNOTATION_LAYER)
+        self.client.force_authenticate(self.singer_user)
+        self._serve(f"{self.binder_url}?marks=shared")
+        _, captured = self._serve(f"{self.binder_url}?marks=shared,shared")
+        self.assertEqual(captured, [])
+
     def test_marks_are_composed_before_the_licence_watermark(self) -> None:
         self._prepare(protected=True)
         self._mark(self.singer_user)

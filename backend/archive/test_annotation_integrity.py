@@ -17,9 +17,13 @@ from __future__ import annotations
 import uuid
 from unittest.mock import patch
 
+from django.contrib import admin
 from django.contrib.auth import get_user_model
+from django.test import RequestFactory
+from django.utils import timezone
 from rest_framework.test import APITestCase
 
+from archive.admin import AnnotationInline
 from archive.models import (
     CONDUCTOR_ANNOTATION_LAYER,
     LEADER_ANNOTATION_LAYER,
@@ -31,6 +35,7 @@ from archive.models import (
     Piece,
     ScoreEdition,
 )
+from archive.serializers import AnnotationSerializer
 from archive.views import AnnotationViewSet
 from core.constants import AppRole
 from core.models import UserProfile
@@ -175,6 +180,46 @@ class EditGateTests(_MarksFixture):
         self.assertEqual(response.status_code, 200, response.content)
         mark.refresh_from_db()
         self.assertEqual(mark.edition_id, self.second_edition.pk)
+
+    def test_a_move_to_another_edition_is_judged_against_its_pages(self) -> None:
+        mark = self._mark(
+            self.singer_user, PERSONAL_ANNOTATION_LAYER,
+            edition=self.second_edition, page_number=3,
+        )
+        self.client.force_authenticate(self.singer_user)
+        response = self.client.patch(
+            f"{_ENDPOINT}{mark.pk}/", {"edition": str(self.edition.pk)}, format="json",
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("page_number", response.json()["errors"])
+        mark.refresh_from_db()
+        self.assertEqual(mark.edition_id, self.second_edition.pk)
+
+    def test_a_manager_cannot_file_another_users_mark_as_their_private_note(self) -> None:
+        mark = self._mark(self.deputy_user, SHARED_ANNOTATION_LAYER)
+        own = self._mark(self.manager, SHARED_ANNOTATION_LAYER)
+        self.client.force_authenticate(self.manager)
+        refused = self.client.patch(
+            f"{_ENDPOINT}{mark.pk}/", {"layer_name": PERSONAL_ANNOTATION_LAYER}, format="json",
+        )
+        self.assertEqual(refused.status_code, 403)
+        mark.refresh_from_db()
+        self.assertEqual(mark.layer_name, SHARED_ANNOTATION_LAYER)
+        moved = self.client.patch(
+            f"{_ENDPOINT}{own.pk}/", {"layer_name": PERSONAL_ANNOTATION_LAYER}, format="json",
+        )
+        self.assertEqual(moved.status_code, 200, moved.content)
+
+    def test_an_edit_read_before_a_set_aside_writes_back_only_its_own_columns(self) -> None:
+        mark = self._mark(self.manager, SHARED_ANNOTATION_LAYER)
+        stale = Annotation.objects.get(pk=mark.pk)
+        Annotation.objects.filter(pk=mark.pk).update(archived_at=timezone.now())
+        edit = AnnotationSerializer(stale, data={"color": "#2563EB"}, partial=True)
+        edit.is_valid(raise_exception=True)
+        edit.save()
+        mark.refresh_from_db()
+        self.assertEqual(mark.color, "#2563EB")
+        self.assertIsNotNone(mark.archived_at)
 
 
 class ClearTests(_MarksFixture):
@@ -389,6 +434,17 @@ class ReadScopeTests(_MarksFixture):
         self.assertEqual(
             self.client.post(_ENDPOINT, self._body(), format="json").status_code, 403,
         )
+
+    def test_the_editions_admin_page_shows_no_personal_marks(self) -> None:
+        shared = self._mark(self.manager, SHARED_ANNOTATION_LAYER)
+        self._mark(self.singer_user, PERSONAL_ANNOTATION_LAYER)
+        request = RequestFactory().get("/")
+        request.user = get_user_model().objects.create_superuser(
+            "root", "root@test.pl", "pw123456",
+        )
+        inline = AnnotationInline(ScoreEdition, admin.site)
+        self.assertEqual(list(inline.get_queryset(request)), [shared])
+        self.assertIn("layer_name", inline.get_readonly_fields(request))
 
 
 class SanitizerTests(_MarksFixture):

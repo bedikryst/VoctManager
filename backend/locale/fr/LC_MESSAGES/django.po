@@ -5973,6 +5973,61 @@ msgstr "Partitions"
 msgid "New marks in the scores"
 msgstr "Nouvelles annotations dans les partitions"
 
+#: backend/archive/views.py:1138
+msgid "No live access to this edition."
+msgstr "Vous n'avez pas accès à cette édition."
+
+#: backend/archive/views.py:1224
+msgid "That annotation id is already taken."
+msgstr "Cet identifiant d'annotation est déjà pris."
+
+#: backend/archive/views.py:1341
+msgid "edition not found."
+msgstr "Édition introuvable."
+
+#: backend/archive/views.py:1490
+msgid "Only a manager may set marks aside."
+msgstr "Seul un responsable peut mettre les annotations de côté."
+
+#: backend/archive/views.py:1542
+msgid "Only a manager may restore marks set aside."
+msgstr "Seul un responsable peut restaurer les annotations mises de côté."
+
+#: backend/archive/views.py:1134
+msgid "You may only modify your own annotations."
+msgstr "Vous ne pouvez modifier que vos propres annotations."
+
+#: backend/archive/views.py:1140
+msgid "Only personal-layer annotations may be written."
+msgstr "Vous ne pouvez écrire que sur votre calque personnel."
+
+#: backend/archive/views.py:1142
+msgid "That ink is reserved for the conductor."
+msgstr "Cette encre est réservée au chef."
+
+#: backend/roster/views.py:1068
+msgid "The choir could not be told just now. Try again in a moment."
+msgstr ""
+"Le chœur n'a pas pu être prévenu pour l'instant. Réessayez dans un moment."
+
+#: backend/roster/models.py:734
+msgid ""
+"Copies of the book that leave the app carry the conductor's 'shared' "
+"markings, composed onto each copy as it is downloaded. Only that layer: it "
+"is his message to the whole choir. The stored book never carries marks, and "
+"a reader's own 'personal' pencil is added only to their own copy, when they "
+"ask for it."
+msgstr ""
+"Les copies du recueil qui quittent l'application portent les annotations « "
+"shared » du chef, composées sur chaque copie au moment du téléchargement. "
+"Seulement ce calque : c'est son message à tout le chœur. Le recueil "
+"enregistré ne porte jamais d'annotations, et le crayon « personal » d'un "
+"lecteur n'est ajouté qu'à sa propre copie, quand il le demande."
+
+#: backend/roster/models.py:739
+msgid "Include Conductor's Markings"
+msgstr "Inclure les annotations du chef"
+
 #~ msgid "Review the request"
 #~ msgstr "Examiner la demande"
 

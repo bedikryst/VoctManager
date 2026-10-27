@@ -953,18 +953,33 @@ def _body_object(request: Request) -> Mapping[str, Any]:
     return data
 
 
+def _aware_moment(raw: object) -> datetime | None:
+    """An aware ISO timestamp, or None for anything else. `parse_datetime`
+    raises on a well-formed date that does not exist (30 February), and that is
+    a bad request like any other, never a 500 that holds the offline queue."""
+    if not isinstance(raw, str):
+        return None
+    try:
+        moment = parse_datetime(raw)
+    except ValueError:
+        return None
+    if moment is None or timezone.is_naive(moment):
+        return None
+    return moment
+
+
 def _seen_moment(raw: object) -> datetime:
     """A body's `at`: an aware ISO timestamp."""
-    moment = parse_datetime(raw) if isinstance(raw, str) else None
-    if moment is None or timezone.is_naive(moment):
+    moment = _aware_moment(raw)
+    if moment is None:
         raise ValidationError({'at': [_('at must be a time with its time zone.')]})
     return moment
 
 
 def _set_aside_moment(raw: object) -> datetime:
     """A body's `archived_at`: the aware moment that names a set-aside set."""
-    moment = parse_datetime(raw) if isinstance(raw, str) else None
-    if moment is None or timezone.is_naive(moment):
+    moment = _aware_moment(raw)
+    if moment is None:
         raise ValidationError(
             {'archived_at': [_('archived_at must be a time with its time zone.')]},
         )
@@ -1002,6 +1017,14 @@ class AnnotationViewSet(viewsets.ModelViewSet):
 
     def _is_manager(self) -> bool:
         return user_is_manager(request_user(self.request))
+
+    def _may_open(self, edition: ScoreEdition) -> bool:
+        """Whether this reader may open the edition at all: a manager always,
+        anyone else by the predicate every "may they read this edition" gate
+        asks."""
+        if self._is_manager():
+            return True
+        return user_has_live_access_to_piece(request_user(self.request), edition.piece_id)
 
     def get_queryset(self):
         user = request_user(self.request)
@@ -1093,7 +1116,9 @@ class AnnotationViewSet(viewsets.ModelViewSet):
         Non-managers write only their OWN marks, on the layers
         `_writable_layers` returns for this edition. Managers write every layer
         but other users' 'personal': `get_queryset` already hides those rows,
-        and `restore`, which reads past it, is refused here.
+        and `restore`, which reads past it, is refused here. Nor may a manager
+        move somebody else's mark ONTO 'personal', which would file it as that
+        person's private note.
 
         The palette's reserved ink is gated here too: crimson is how the page
         says "the conductor wrote this", and one book can carry both hands at
@@ -1103,20 +1128,20 @@ class AnnotationViewSet(viewsets.ModelViewSet):
         if self._is_manager():
             if (
                 instance is not None
-                and instance.layer_name == PERSONAL_ANNOTATION_LAYER
                 and instance.created_by_id != user.id
+                and PERSONAL_ANNOTATION_LAYER in (instance.layer_name, layer_name)
             ):
-                raise PermissionDenied('You may only modify your own annotations.')
+                raise PermissionDenied(_('You may only modify your own annotations.'))
             return
         layers = self._writable_layers(edition)
         if not layers:
-            raise PermissionDenied('No live access to this edition.')
+            raise PermissionDenied(_('No live access to this edition.'))
         if layer_name not in layers:
-            raise PermissionDenied('Only personal-layer annotations may be written.')
+            raise PermissionDenied(_('Only personal-layer annotations may be written.'))
         if color is not None and is_reserved_ink(color):
-            raise PermissionDenied('That ink is reserved for the conductor.')
+            raise PermissionDenied(_('That ink is reserved for the conductor.'))
         if instance is not None and instance.created_by_id != user.id:
-            raise PermissionDenied('You may only modify your own annotations.')
+            raise PermissionDenied(_('You may only modify your own annotations.'))
 
     def _assert_can_edit(self, instance: Annotation, changes: Mapping[str, Any]) -> None:
         """
@@ -1196,7 +1221,7 @@ class AnnotationViewSet(viewsets.ModelViewSet):
           does not move the fingerprint of every open stand.
         """
         if existing.created_by_id != request_user(self.request).id:
-            raise PermissionDenied('That annotation id is already taken.')
+            raise PermissionDenied(_('That annotation id is already taken.'))
         if existing.is_deleted:
             raise AnnotationGone(_('This mark has been erased.'))
         if existing.archived_at is not None:
@@ -1272,7 +1297,9 @@ class AnnotationViewSet(viewsets.ModelViewSet):
         existed, or ever, and everything already on the page is the score they
         asked for rather than news. Starting the pointer at this moment is what
         keeps the day this ships from showing the whole choir every mark as
-        new. None only for an edition that is gone.
+        new. None for an edition that is gone or that this reader may not open:
+        a pointer records what they read, and it would otherwise name, in their
+        data export, a piece they were never handed.
         """
         user = request_user(self.request)
         state = (
@@ -1283,7 +1310,8 @@ class AnnotationViewSet(viewsets.ModelViewSet):
         )
         if state is not None:
             return state.seen_at
-        if not ScoreEdition.objects.filter(pk=edition_id).exists():
+        edition = ScoreEdition.objects.filter(pk=edition_id).only('id', 'piece_id').first()
+        if edition is None or not self._may_open(edition):
             return None
         state, _created = AnnotationReadState.objects.get_or_create(
             user=user, edition_id=edition_id,
@@ -1301,16 +1329,20 @@ class AnnotationViewSet(viewsets.ModelViewSet):
         drew, never the device's clock: a phone set an hour fast would
         otherwise mark as seen whatever the conductor writes in that hour. The
         server's own clock caps it all the same. The pointer never moves back,
-        so the offline queue may replay these in any order.
+        so the offline queue may replay these in any order. 403 on an edition
+        the reader may not open, whose pointer would record nothing they read.
         """
         data = _body_object(request)
         edition_id = _edition_param(data.get('edition'))
         moment = min(_seen_moment(data.get('at')), timezone.now())
-        if not ScoreEdition.objects.filter(pk=edition_id).exists():
+        edition = ScoreEdition.objects.filter(pk=edition_id).only('id', 'piece_id').first()
+        if edition is None:
             return Response(
-                {'detail': 'edition not found.'},
+                {'detail': _('edition not found.')},
                 status=status.HTTP_404_NOT_FOUND,
             )
+        if not self._may_open(edition):
+            raise PermissionDenied(_('No live access to this edition.'))
         user = request_user(request)
         state, created = AnnotationReadState.objects.get_or_create(
             user=user, edition_id=edition_id, defaults={'seen_at': moment},
@@ -1364,7 +1396,7 @@ class AnnotationViewSet(viewsets.ModelViewSet):
         edition = ScoreEdition.objects.filter(pk=edition_id).only('id', 'piece_id').first()
         if edition is None:
             return Response(
-                {'detail': 'edition not found.'},
+                {'detail': _('edition not found.')},
                 status=status.HTTP_404_NOT_FOUND,
             )
         user = request_user(request)
@@ -1400,7 +1432,8 @@ class AnnotationViewSet(viewsets.ModelViewSet):
         """
         Undo for an erase or a clear: brings the named marks back with the ids,
         authors and stacking order they had, rather than as fresh copies in the
-        undoer's hand. Body: {ids}.
+        undoer's hand, and with the `content_at` they had, so undoing a
+        mistaken clear shows the choir nothing new. Body: {ids}.
 
         Each row passes the same gate a write would, so a reader restores only
         what their pencil may touch today and a manager never another user's
@@ -1454,7 +1487,7 @@ class AnnotationViewSet(viewsets.ModelViewSet):
         what he drew after it.
         """
         if not self._is_manager():
-            raise PermissionDenied('Only a manager may set marks aside.')
+            raise PermissionDenied(_('Only a manager may set marks aside.'))
         if request.method == 'GET':
             edition_id = _edition_param(request.query_params.get('edition'))
             sets = (
@@ -1478,7 +1511,7 @@ class AnnotationViewSet(viewsets.ModelViewSet):
         edition_id = _edition_param(_body_object(request).get('edition'))
         if not ScoreEdition.objects.filter(pk=edition_id).exists():
             return Response(
-                {'detail': 'edition not found.'},
+                {'detail': _('edition not found.')},
                 status=status.HTTP_404_NOT_FOUND,
             )
         moment = timezone.now()
@@ -1500,12 +1533,13 @@ class AnnotationViewSet(viewsets.ModelViewSet):
         Puts one set back on the page. Body: {edition, archived_at}, the moment
         `set_aside` listed the set under. Answers {restored}: how many came back.
 
-        Row by row through `Annotation.restore()`, which stamps `content_at`:
-        the conductor brought those cues back for this season, so to the choir
-        they are new again, in "what's new" and in "Powiadom chór" alike.
+        Row by row through `Annotation.restore(as_news=True)`, which stamps
+        `content_at`: the conductor brought those cues back for this season, so
+        to the choir they are new again, in "what's new" and in "Powiadom chór"
+        alike. The undo (`restore`) does not stamp it.
         """
         if not self._is_manager():
-            raise PermissionDenied('Only a manager may restore marks set aside.')
+            raise PermissionDenied(_('Only a manager may restore marks set aside.'))
         data = _body_object(request)
         edition_id = _edition_param(data.get('edition'))
         moment = _set_aside_moment(data.get('archived_at'))
@@ -1521,6 +1555,6 @@ class AnnotationViewSet(viewsets.ModelViewSet):
                 )
             )
             for row in rows:
-                row.restore()
+                row.restore(as_news=True)
                 restored += 1
         return Response({'restored': restored}, status=status.HTTP_200_OK)

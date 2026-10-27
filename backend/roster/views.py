@@ -19,7 +19,7 @@ from typing import Any
 from django.core.cache import cache
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import transaction
-from django.db.models import Count, Exists, OuterRef, Prefetch, Q
+from django.db.models import Count, Exists, OuterRef, Prefetch, Q, QuerySet
 from django.http import FileResponse, Http404, HttpResponse, StreamingHttpResponse
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
@@ -107,6 +107,7 @@ from .infrastructure.score_markings import apply_markings, plan_markings
 from .infrastructure.score_watermark import stamp_pdf
 from .marks_news import (
     MarksNoticeRefused,
+    MarksNoticeUndelivered,
     marks_news_payload,
     notify_choir,
     read_marks_news,
@@ -274,7 +275,9 @@ def _requested_mark_layers(
         return []
     if truthy_flag(text):
         return [PERSONAL_ANNOTATION_LAYER]
-    layers = [part.strip() for part in text.split(',') if part.strip()]
+    # De-duplicated in the order asked, so `shared,shared` names the same cached
+    # copy as `shared` instead of a fresh render under a key of its own.
+    layers = list(dict.fromkeys(part.strip() for part in text.split(',') if part.strip()))
     unknown = [layer for layer in layers if layer not in READER_MARK_LAYERS]
     if unknown:
         raise DRFValidationError({"marks": f"Unknown marking layer: {unknown[0]}."})
@@ -702,27 +705,35 @@ class ProjectViewSet(viewsets.ModelViewSet):
                     )
                 )
             )
+        return self._reader_scope(base_qs, user)
 
-        # The seat decides, not the join: being named in a project is not the
-        # same as holding a place in it. Dropping off the dashboards is what a
-        # singer sees; dropping off here is what a bookmark or a stale client
-        # gets. The subquery also keeps the census annotations above honest —
-        # they count the whole cast, and a join to one member would have needed
-        # `distinct()` to say so.
-        #
-        # A seat is not the only way in, though: whoever runs the project reaches
-        # it too, cast or not. Every project-scoped door a non-manager can open —
-        # the binder, the page map, the day sheet — resolves through this
-        # queryset, so widening it here is what lets a stand-in actually take the
-        # evening instead of meeting a 404 at each of them. Both ids come from
-        # subqueries rather than joins, so the census annotations stay honest and
-        # no `distinct()` is needed.
-        #
-        # `any`, not `materials`: this decides whether the project EXISTS for the
-        # reader, and every capability needs that much. Each door behind it still
-        # asks for its own scope, so a grant of the roll call alone reaches the
-        # attendance sheet and not the music.
-        return base_qs.filter(
+    @staticmethod
+    def _reader_scope(queryset: QuerySet[Project], user: Any) -> QuerySet[Project]:
+        """The projects that exist for this reader: every one for a manager.
+
+        The seat decides, not the join: being named in a project is not the
+        same as holding a place in it. Dropping off the dashboards is what a
+        singer sees; dropping off here is what a bookmark or a stale client
+        gets. The subquery also keeps the census annotations of `get_queryset`
+        honest — they count the whole cast, and a join to one member would have
+        needed `distinct()` to say so.
+
+        A seat is not the only way in, though: whoever runs the project reaches
+        it too, cast or not. Every project-scoped door a non-manager can open —
+        the binder, the page map, the day sheet — resolves through this scope,
+        so widening it here is what lets a stand-in actually take the evening
+        instead of meeting a 404 at each of them. Both ids come from subqueries
+        rather than joins, so the census annotations stay honest and no
+        `distinct()` is needed.
+
+        `any`, not `materials`: this decides whether the project EXISTS for the
+        reader, and every capability needs that much. Each door behind it still
+        asks for its own scope, so a grant of the roll call alone reaches the
+        attendance sheet and not the music.
+        """
+        if user_is_manager(user):
+            return queryset
+        return queryset.filter(
             Q(id__in=Participation.live_seats(artist__user=user).values('project_id'))
             | Q(id__in=led_project_ids(user, scope='any'))
         )
@@ -1014,9 +1025,16 @@ class ProjectViewSet(viewsets.ModelViewSet):
 
     def _marks_notifier_project(self) -> Project:
         """The project behind "Powiadom chór", for whoever may press it: a
-        manager, or the podium conductor of this one project."""
-        project = self.get_object()
+        manager, or the podium conductor of this one project.
+
+        A plain row behind the same reader scope as `get_queryset`, not its
+        annotated queryset: these two endpoints read nothing of the census, and
+        the stand asks for them as marks are written."""
         user = request_user(self.request)
+        project = get_object_or_404(
+            self._reader_scope(Project.objects.all(), user), pk=self.kwargs['pk'],
+        )
+        self.check_object_permissions(self.request, project)
         if not (user_is_manager(user) or user_holds_podium(user, project)):
             raise PermissionDenied(_("Only the conductor or a manager may tell the choir."))
         return project
@@ -1038,11 +1056,20 @@ class ProjectViewSet(viewsets.ModelViewSet):
         """
         Tells the live cast which pieces carry new marks: one notice each, with
         a deep link. 409 when there is nothing to say or nobody to say it to,
-        429 while the last notice is too recent.
+        429 while the last notice is too recent, 503 when the notice could not
+        be queued (the press may simply be repeated).
         """
         project = self._marks_notifier_project()
         try:
             sent = notify_choir(project, request_user(request))
+        except MarksNoticeUndelivered:
+            return Response(
+                {
+                    "detail": _("The choir could not be told just now. Try again in a moment."),
+                    "code": "unavailable",
+                },
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
         except MarksNoticeRefused as refusal:
             if refusal.reason == MarksNoticeRefused.TOO_SOON:
                 return Response(

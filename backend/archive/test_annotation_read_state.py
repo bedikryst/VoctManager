@@ -3,11 +3,13 @@
 @description What a reader is told is new on a score, and how far they have read.
 
     `content_at` moves when a mark starts saying something new to its reader:
-    drawn, restored, its words or symbol changed, or readdressed to another
-    layer. A tidy (a move, a resize, a recolour) leaves it, so rearranging a
-    page never reads as news. The read pointer starts at the first open, so the
+    drawn, brought back with its set, its words or symbol changed, or
+    readdressed to another layer. A tidy (a move, a resize, a recolour) leaves
+    it, and so does an undo, so neither rearranging a page nor taking back a
+    mistake reads as news. The read pointer starts at the first open, so the
     day this ships nobody is shown the whole score as new, and it only ever
-    moves forward, to a moment the server can vouch for.
+    moves forward, to a moment the server can vouch for, on music the reader
+    may open.
 
 @module archive/test_annotation_read_state
 """
@@ -98,16 +100,17 @@ class ContentAtTests(_MarksFixture):
         promoted = self._patch(self.manager, stroke, {"layer_name": SHARED_ANNOTATION_LAYER})
         self.assertGreater(promoted.content_at, before)
 
-    def test_a_restored_mark_is_news_again(self) -> None:
-        mark = self._aged(self._mark(self.singer_user, PERSONAL_ANNOTATION_LAYER))
+    def test_an_undone_erase_says_nothing_new(self) -> None:
+        mark = self._aged(self._mark(self.manager, SHARED_ANNOTATION_LAYER))
         before = mark.content_at
         mark.delete()
-        self.client.force_authenticate(self.singer_user)
+        self.client.force_authenticate(self.manager)
         response = self.client.post(f"{_ENDPOINT}restore/", {"ids": [str(mark.pk)]}, format="json")
         self.assertEqual(response.status_code, 200, response.content)
         mark.refresh_from_db()
         self.assertFalse(mark.is_deleted)
-        self.assertGreater(mark.content_at, before)
+        self.assertEqual(mark.content_at, before)
+        self.assertGreater(mark.updated_at, before)
 
     def test_the_backfill_dates_every_mark_from_its_creation(self) -> None:
         live = self._mark(self.manager, SHARED_ANNOTATION_LAYER)
@@ -212,3 +215,21 @@ class ReadPointerTests(_MarksFixture):
         self.edition.delete()
         response = self._seen(self.singer_user, timezone.now().isoformat())
         self.assertEqual(response.status_code, 404)
+
+    def test_a_date_that_does_not_exist_is_a_bad_request(self) -> None:
+        response = self._seen(self.singer_user, "2026-02-30T10:00:00+01:00")
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("at", response.json()["errors"])
+
+    def test_music_the_reader_may_not_open_gets_no_pointer(self) -> None:
+        answer = self._fingerprint(self.singer_user, self.foreign_edition)
+        self.assertIsNone(answer["seen_at"])
+        response = self._seen(
+            self.singer_user, timezone.now().isoformat(), self.foreign_edition,
+        )
+        self.assertEqual(response.status_code, 403)
+        self.assertFalse(AnnotationReadState.objects.filter(user=self.singer_user).exists())
+
+    def test_a_manager_opens_any_edition(self) -> None:
+        answer = self._fingerprint(self.manager, self.foreign_edition)
+        self.assertIsNotNone(answer["seen_at"])

@@ -4529,6 +4529,55 @@ msgstr ""
 msgid "New marks in the scores"
 msgstr ""
 
+#: backend/archive/views.py:1138
+msgid "No live access to this edition."
+msgstr ""
+
+#: backend/archive/views.py:1224
+msgid "That annotation id is already taken."
+msgstr ""
+
+#: backend/archive/views.py:1341
+msgid "edition not found."
+msgstr ""
+
+#: backend/archive/views.py:1490
+msgid "Only a manager may set marks aside."
+msgstr ""
+
+#: backend/archive/views.py:1542
+msgid "Only a manager may restore marks set aside."
+msgstr ""
+
+#: backend/archive/views.py:1134
+msgid "You may only modify your own annotations."
+msgstr ""
+
+#: backend/archive/views.py:1140
+msgid "Only personal-layer annotations may be written."
+msgstr ""
+
+#: backend/archive/views.py:1142
+msgid "That ink is reserved for the conductor."
+msgstr ""
+
+#: backend/roster/views.py:1068
+msgid "The choir could not be told just now. Try again in a moment."
+msgstr ""
+
+#: backend/roster/models.py:734
+msgid ""
+"Copies of the book that leave the app carry the conductor's 'shared' "
+"markings, composed onto each copy as it is downloaded. Only that layer: it "
+"is his message to the whole choir. The stored book never carries marks, and "
+"a reader's own 'personal' pencil is added only to their own copy, when they "
+"ask for it."
+msgstr ""
+
+#: backend/roster/models.py:739
+msgid "Include Conductor's Markings"
+msgstr ""
+
 #~ msgid ""
 #~ "%(artist)s is asking to be excused from a run of rehearsals. The dates are "
 #~ "below — approve or decline them in the panel."

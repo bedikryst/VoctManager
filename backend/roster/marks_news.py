@@ -13,13 +13,12 @@
 
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-from functools import partial
 from typing import Any
 from uuid import UUID
 
-from django.db import transaction
 from django.db.models import Count
 from django.utils import timezone
 
@@ -34,6 +33,8 @@ from roster.models import (
     VoiceType,
     instrumental_item_exists,
 )
+
+logger = logging.getLogger(__name__)
 
 #: The least time between two notices about one project's marks. A conductor
 #: who forgot a piece waits a few minutes; a choir is not paged per stroke.
@@ -85,6 +86,11 @@ class MarksNoticeRefused(Exception):
         super().__init__(reason)
         self.reason = reason
         self.next_allowed_at = next_allowed_at
+
+
+class MarksNoticeUndelivered(Exception):
+    """The notice could not be handed to the task queue. The stamp is back
+    where it was, so the same marks are on offer to the next press."""
 
 
 def _window_start(project: Project) -> datetime:
@@ -205,6 +211,13 @@ def notify_choir(project: Project, sender: Any) -> MarksNoticeSent:
     managers pressing at once send one notice, not two. Raises
     `MarksNoticeRefused` when there is nothing to say, nobody to say it to, or
     the last notice is too recent.
+
+    The notices are queued right after the claim, outside any transaction. If
+    the broker refuses one, the claim is undone and `MarksNoticeUndelivered`
+    raised: a closed window with nothing sent would keep those marks from ever
+    being offered again, and the cooldown would block the retry. An audience
+    queued before the failure hears the notice twice on that retry, which is
+    the lesser loss.
     """
     now = timezone.now()
     previous = project.marks_notified_at
@@ -227,21 +240,30 @@ def notify_choir(project: Project, sender: Any) -> MarksNoticeSent:
         raise MarksNoticeRefused(MarksNoticeRefused.TOO_SOON, now + MARKS_NOTICE_COOLDOWN)
     project.marks_notified_at = now
 
-    for recipient_ids, subset in audiences:
-        metadata = ScoreMarksSharedMetadata(
-            project_id=project.pk,
-            project_name=project.title,
-            event_kind=project.event_kind,
-            pieces=tuple(
-                MarkedPieceMetadata(
-                    piece_id=piece.piece_id,
-                    title=piece.title,
-                    composer_name=piece.composer_name,
-                )
-                for piece in subset
-            ),
-        ).model_dump(mode="json")
-        transaction.on_commit(partial(_send_notice, recipient_ids, metadata))
+    try:
+        for recipient_ids, subset in audiences:
+            metadata = ScoreMarksSharedMetadata(
+                project_id=project.pk,
+                project_name=project.title,
+                event_kind=project.event_kind,
+                pieces=tuple(
+                    MarkedPieceMetadata(
+                        piece_id=piece.piece_id,
+                        title=piece.title,
+                        composer_name=piece.composer_name,
+                    )
+                    for piece in subset
+                ),
+            ).model_dump(mode="json")
+            _send_notice(recipient_ids, metadata)
+    except Exception as exc:
+        logger.exception("marks_news.dispatch_failed project=%s", project.pk)
+        # Conditional, so a press that claimed the stamp since is not undone.
+        Project.objects.filter(pk=project.pk, marks_notified_at=now).update(
+            marks_notified_at=previous,
+        )
+        project.marks_notified_at = previous
+        raise MarksNoticeUndelivered() from exc
     return MarksNoticeSent(
         notified_at=now,
         recipients=sum(len(ids) for ids, _ in audiences),
@@ -274,6 +296,7 @@ __all__ = [
     "MarksNews",
     "MarksNoticeRefused",
     "MarksNoticeSent",
+    "MarksNoticeUndelivered",
     "marked_pieces",
     "marks_news_payload",
     "notify_choir",

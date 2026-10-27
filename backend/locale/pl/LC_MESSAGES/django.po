@@ -5935,6 +5935,60 @@ msgstr "Nuty"
 msgid "New marks in the scores"
 msgstr "Nowe uwagi w nutach"
 
+#: backend/archive/views.py:1138
+msgid "No live access to this edition."
+msgstr "Nie masz dostępu do tego wydania."
+
+#: backend/archive/views.py:1224
+msgid "That annotation id is already taken."
+msgstr "Ten identyfikator oznaczenia jest już zajęty."
+
+#: backend/archive/views.py:1341
+msgid "edition not found."
+msgstr "Nie ma takiego wydania."
+
+#: backend/archive/views.py:1490
+msgid "Only a manager may set marks aside."
+msgstr "Odłożyć uwagi może tylko menedżer."
+
+#: backend/archive/views.py:1542
+msgid "Only a manager may restore marks set aside."
+msgstr "Przywrócić odłożone uwagi może tylko menedżer."
+
+#: backend/archive/views.py:1134
+msgid "You may only modify your own annotations."
+msgstr "Możesz zmieniać tylko własne oznaczenia."
+
+#: backend/archive/views.py:1140
+msgid "Only personal-layer annotations may be written."
+msgstr "Możesz pisać tylko na swojej prywatnej warstwie."
+
+#: backend/archive/views.py:1142
+msgid "That ink is reserved for the conductor."
+msgstr "Ten kolor jest zarezerwowany dla dyrygenta."
+
+#: backend/roster/views.py:1068
+msgid "The choir could not be told just now. Try again in a moment."
+msgstr "Nie udało się teraz powiadomić chóru. Spróbuj za chwilę."
+
+#: backend/roster/models.py:734
+msgid ""
+"Copies of the book that leave the app carry the conductor's 'shared' "
+"markings, composed onto each copy as it is downloaded. Only that layer: it "
+"is his message to the whole choir. The stored book never carries marks, and "
+"a reader's own 'personal' pencil is added only to their own copy, when they "
+"ask for it."
+msgstr ""
+"Kopie książki, które opuszczają aplikację, niosą oznaczenia dyrygenta z "
+"warstwy „shared”, nakładane na każdą kopię w chwili pobrania. Tylko tę "
+"warstwę: to jego wiadomość do całego chóru. Zapisana książka nigdy nie "
+"zawiera oznaczeń, a własny ołówek czytelnika („personal”) trafia tylko na "
+"jego kopię, kiedy o to poprosi."
+
+#: backend/roster/models.py:739
+msgid "Include Conductor's Markings"
+msgstr "Dołączaj oznaczenia dyrygenta"
+
 #~ msgid "Review the request"
 #~ msgstr "Rozpatrz prośbę"
 

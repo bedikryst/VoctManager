@@ -98,7 +98,14 @@ class AnnotationInline(admin.TabularInline):
     model = Annotation
     extra = 0
     fields = ('page_number', 'annotation_type', 'layer_name', 'color', 'created_by')
-    readonly_fields = ('created_by',)
+    # The layer is read-only: retyping it here would move a mark between
+    # audiences behind the gate the app puts on that move.
+    readonly_fields = ('layer_name', 'created_by')
+
+    def get_queryset(self, request):
+        # The same rule as the Annotation admin below: the edition's page is no
+        # side door to a singer's personal pencil marks either.
+        return super().get_queryset(request).exclude(layer_name=PERSONAL_ANNOTATION_LAYER)
 
 
 @admin.register(ScoreEdition)

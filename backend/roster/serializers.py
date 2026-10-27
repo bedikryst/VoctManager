@@ -419,6 +419,9 @@ class ProjectSerializer(serializers.ModelSerializer):
     class Meta:
         model = Project
         fields = '__all__'
+        # Moved only by "Powiadom chór": it opens the window of marks the choir
+        # is told about next, and the notice's cooldown runs from it.
+        read_only_fields = ['marks_notified_at']
 
     def get_score_pdf(self, obj) -> str | None:
         """

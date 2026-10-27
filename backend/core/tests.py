@@ -1047,14 +1047,22 @@ class ScoreMarksExportTests(TestCase):
 
     def test_the_export_lists_live_marks_with_their_text(self) -> None:
         exported = UserPreferencesService.generate_gdpr_export(self.user, {})["score_marks"]
-        self.assertEqual(len(exported), 2)
         note = next(row for row in exported if row["type"] == AnnotationType.COMMENT)
         self.assertEqual(note["text"], "Oddech przed Deo")
         self.assertEqual(note["piece"], "Locus iste")
         self.assertEqual(note["page"], 2)
         self.assertEqual(note["layer"], PERSONAL_ANNOTATION_LAYER)
+        self.assertFalse(note["erased"])
         stamp = next(row for row in exported if row["type"] == AnnotationType.STAMP)
         self.assertIsNone(stamp["text"])
+
+    def test_the_export_lists_erased_marks_the_database_still_holds(self) -> None:
+        exported = UserPreferencesService.generate_gdpr_export(self.user, {})["score_marks"]
+        self.assertEqual(len(exported), 3)
+        erased = [row for row in exported if row["erased"]]
+        self.assertEqual(len(erased), 1)
+        self.assertEqual(erased[0]["type"], AnnotationType.FREEHAND)
+        self.assertEqual(erased[0]["layer"], PERSONAL_ANNOTATION_LAYER)
 
     def test_the_export_leaves_out_other_peoples_marks(self) -> None:
         other = User.objects.create_user(

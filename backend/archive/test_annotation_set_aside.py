@@ -159,9 +159,11 @@ class SetAsideTests(_MarksFixture):
         self.assertEqual(self._restore_set(archived_at, self.singer_user).status_code, 403)
 
     def test_a_restore_names_its_set_with_a_zoned_moment(self) -> None:
-        response = self._restore_set("2026-10-27T10:00:00")
-        self.assertEqual(response.status_code, 400)
-        self.assertIn("archived_at", response.json()["errors"])
+        for moment in ("2026-10-27T10:00:00", "2026-02-30T10:00:00+01:00"):
+            with self.subTest(moment=moment):
+                response = self._restore_set(moment)
+                self.assertEqual(response.status_code, 400)
+                self.assertIn("archived_at", response.json()["errors"])
 
     def test_the_book_neither_counts_nor_prints_a_set_aside_mark(self) -> None:
         items = list(self.project.program_items.select_related("piece"))

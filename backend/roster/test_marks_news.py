@@ -3,10 +3,11 @@
 @description "Powiadom chór": what the button offers and what a press sends.
 
     Only choir marks that said something new since the cast was last told are
-    news — a tidy is not, a restored set is. A press sends one notice per live
-    cast member, withholds instrumental items from the singers, stamps the
-    project, and cannot be repeated within the cooldown. A manager or the
-    podium conductor may press it; a singer may not.
+    news — a tidy is not, nor an undo, while a restored set is. A press sends
+    one notice per live cast member, withholds instrumental items from the
+    singers, stamps the project, and cannot be repeated within the cooldown; a
+    notice the task queue refuses leaves the stamp where it was. A manager or
+    the podium conductor may press it; a singer may not.
 
 @module roster/test_marks_news
 """
@@ -144,6 +145,41 @@ class MarksNewsTests(_MarksFixture):
         self.assertEqual(response.status_code, 409)
         self.assertEqual(response.json()["code"], "nothing_new")
         delay.assert_not_called()
+
+    def test_a_notice_the_queue_refuses_puts_the_stamp_back(self) -> None:
+        self._mark(self.manager, SHARED_ANNOTATION_LAYER)
+        self.client.force_authenticate(self.manager)
+        with patch(_TASK) as task:
+            task.delay.side_effect = ConnectionError("broker down")
+            response = self.client.post(f"{self.url}notify_marks/")
+        self.assertEqual(response.status_code, 503)
+        self.assertEqual(response.json()["code"], "unavailable")
+        self.project.refresh_from_db()
+        self.assertIsNone(self.project.marks_notified_at)
+        news = self._news().json()
+        self.assertEqual([piece["title"] for piece in news["pieces"]], ["Dixit Dominus"])
+        self.assertIsNone(news["next_allowed_at"])
+        retried, delay = self._press()
+        self.assertEqual(retried.status_code, 200, retried.content)
+        delay.assert_called_once()
+
+    def test_undoing_a_mistaken_clear_offers_the_choir_nothing(self) -> None:
+        mark = self._mark(self.manager, SHARED_ANNOTATION_LAYER)
+        told_at = timezone.now() - MARKS_NOTICE_COOLDOWN - timedelta(minutes=1)
+        self.project.marks_notified_at = told_at
+        self.project.save(update_fields=["marks_notified_at"])
+        Annotation.objects.filter(pk=mark.pk).update(content_at=told_at - timedelta(minutes=1))
+        self.client.force_authenticate(self.manager)
+        cleared = self.client.post(
+            "/api/archive/annotations/clear/",
+            {"edition": str(self.edition.pk), "ids": [str(mark.pk)]}, format="json",
+        )
+        self.assertEqual(cleared.json()["deleted"], 1)
+        undone = self.client.post(
+            "/api/archive/annotations/restore/", {"ids": [str(mark.pk)]}, format="json",
+        )
+        self.assertEqual(len(undone.json()["restored"]), 1)
+        self.assertEqual(self._news().json()["pieces"], [])
 
     def test_a_finished_concert_has_nobody_to_tell(self) -> None:
         self._mark(self.manager, SHARED_ANNOTATION_LAYER)

@@ -5,7 +5,8 @@
     file it describes, that a mark is placed on the book page its music actually
     occupies, that print translation happens (a highlighter must never print as a
     filled band), and that the stored book carries no marks at all — so drawing
-    on a score never ages it. Composing marks onto a served copy is covered in
+    on a score never ages it — with the sweep that rebuilds a book baked under
+    the older builder. Composing marks onto a served copy is covered in
     test_score_protection. WeasyPrint's native renderer is absent on host CI, so
     both render paths are stubbed and asserted on the markup they produce.
 @module roster/test_score_markings
@@ -14,11 +15,13 @@
 from __future__ import annotations
 
 import tempfile
-from io import BytesIO
+from io import BytesIO, StringIO
 from unittest import mock
 
 from django.core.files.base import ContentFile
+from django.core.management import call_command
 from django.test import SimpleTestCase, TestCase, override_settings
+from django.utils import timezone
 from pypdf import PdfReader, PdfWriter
 
 from archive.models import (
@@ -41,7 +44,7 @@ from roster.infrastructure.score_markings import (
     plan_markings,
 )
 from roster.infrastructure.score_package_builder import BuildResult
-from roster.models import ProgramItem, Project
+from roster.models import ProgramItem, Project, ScorePackage
 from roster.score_package_config import resolve_item_page_window
 from roster.score_package_markings import (
     MARKINGS_NONE,
@@ -598,6 +601,47 @@ class MarkingsStalenessTests(_Base):
             score_package_service, "BUILD_FORMAT", score_package_service.BUILD_FORMAT + 1,
         ):
             self.assertNotEqual(before, self._hash())
+
+
+class RebuildMarkedBooksCommandTests(_Base):
+    """A book baked under the old builder is rebuilt in one sweep after the deploy."""
+
+    def _book(self, title: str, **package_fields) -> ScorePackage:
+        project = Project.objects.create(title=title)
+        project.score_pdf.save("book.pdf", ContentFile(_pdf_bytes(1)), save=True)
+        package = ScorePackageService.get_or_create(project)
+        for field, value in {"include_markings": True, **package_fields}.items():
+            setattr(package, field, value)
+        package.save()
+        return package
+
+    def _run(self, *args: str) -> mock.MagicMock:
+        with (
+            mock.patch("roster.tasks.generate_score_package_task.delay") as delay,
+            self.captureOnCommitCallbacks(execute=True),
+        ):
+            call_command("rebuild_marked_score_books", *args, stdout=StringIO())
+        return delay
+
+    def test_only_generated_books_with_markings_on_are_queued(self) -> None:
+        marked = self._book("Nieszpory", status=ScorePackage.Status.READY)
+        self._book("Ręcznie", status=ScorePackage.Status.READY, is_manual_upload=True)
+        self._book("Bez znaków", status=ScorePackage.Status.READY, include_markings=False)
+        self._book(
+            "W toku", status=ScorePackage.Status.BUILDING, build_started_at=timezone.now(),
+        )
+        self.package.include_markings = True  # no file yet
+        self.package.save()
+
+        delay = self._run()
+
+        delay.assert_called_once_with(str(marked.pk))
+        marked.refresh_from_db()
+        self.assertEqual(marked.status, ScorePackage.Status.QUEUED)
+
+    def test_a_dry_run_queues_nothing(self) -> None:
+        self._book("Nieszpory", status=ScorePackage.Status.READY)
+        self._run("--dry-run").assert_not_called()
 
 
 class CockpitReadModelTests(_Base):

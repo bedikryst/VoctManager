@@ -752,14 +752,25 @@ class Annotation(SoftDeleteModel):
     def __str__(self) -> str:
         return f"{self.get_annotation_type_display()} on {self.edition} p.{self.page_number}"
 
-    def restore(self) -> None:
-        """An erased or set-aside mark coming back is news again to whoever reads it."""
+    def restore(self, *, as_news: bool = False) -> None:
+        """
+        Puts an erased or set-aside mark back on the page.
+
+        `as_news` stamps `content_at`: a set the conductor brings back for a new
+        season is news to the choir again. An undo is not. A mark put back
+        seconds after a mistaken erase says nothing it did not say before, so it
+        keeps the moment it last said something, and the choir is neither shown
+        it as new nor offered it again under "Powiadom chór".
+        """
         now = timezone.now()
         self.is_deleted = False
         self.archived_at = None
         self.updated_at = now
-        self.content_at = now
-        self.save(update_fields=['is_deleted', 'archived_at', 'updated_at', 'content_at'])
+        fields = ['is_deleted', 'archived_at', 'updated_at']
+        if as_news:
+            self.content_at = now
+            fields.append('content_at')
+        self.save(update_fields=fields)
 
 
 class AnnotationReadState(models.Model):
