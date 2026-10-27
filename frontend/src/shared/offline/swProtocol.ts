@@ -112,6 +112,10 @@ export interface EvictAssetsRequest {
   urls: string[];
 }
 
+/**
+ * The page deletes `OFFLINE_CACHES` itself and no longer sends this. The worker
+ * still honours it for a tab running an older bundle under a newer worker.
+ */
 export interface ClearOfflineRequest {
   type: "VOCT_CLEAR_OFFLINE";
 }

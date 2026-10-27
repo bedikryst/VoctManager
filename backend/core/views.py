@@ -41,7 +41,7 @@ from .exceptions import (
     make_error_response,
 )
 from .ical_service import ICalGeneratorService
-from .models import Note, UserProfile
+from .models import FeedbackReport, Note, UserProfile
 from .permissions import IsManager
 from .request_utils import client_payload, request_user
 from .serializers import (
@@ -692,6 +692,30 @@ class FeedbackReportView(generics.CreateAPIView):
     permission_classes = (IsAuthenticated,)
     throttle_classes = [ScopedRateThrottle]
     throttle_scope = 'feedback'
+
+    def create(self, request, *args, **kwargs) -> Response:
+        """Files a report once, however many times it arrives.
+
+        The client's offline queue replays a report whose reply was lost — a
+        dropped connection, a 504 from a proxy that gave up while the database
+        had already committed, a client timeout. `context.captured_at` is minted
+        on the device when the reporter writes, so the same reporter sending the
+        same text under the same capture time is that one report again: it is
+        answered with the stored row, and the maintainer is not told twice.
+        """
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        captured_at = serializer.validated_data.get('context', {}).get('captured_at')
+        if captured_at:
+            filed = FeedbackReport.objects.filter(
+                reporter=request_user(request),
+                body=serializer.validated_data['body'],
+                context__captured_at=captured_at,
+            ).first()
+            if filed is not None:
+                return Response(self.get_serializer(filed).data, status=status.HTTP_200_OK)
+        self.perform_create(serializer)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     def perform_create(self, serializer: BaseSerializer) -> None:
         report = serializer.save()

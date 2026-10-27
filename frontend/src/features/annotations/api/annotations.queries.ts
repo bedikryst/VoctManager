@@ -51,6 +51,8 @@ import {
   collapseDelete,
   collapseRestore,
   collapseUpdate,
+  isMarkOp,
+  isMarkRow,
   pendingMarkEntries,
   toCreateBody,
   touchesMarks,
@@ -106,20 +108,94 @@ interface AnnotationsOptions {
 const ALL_CLEARED = () => true;
 
 /**
+ * Only the choir's layer feeds "Powiadom chór" (the server counts `shared`
+ * exactly), so only a write touching it re-reads that count. A personal pencil
+ * stroke is news to nobody.
+ */
+const feedsChoirNews = (rows: readonly Pick<ScoreAnnotation, "layer_name">[]): boolean =>
+  rows.some((row) => row.layer_name === "shared");
+
+/**
  * Registered with the offline queue at boot. The queue was the page's source of
- * truth while it held these writes, so the moment it lets go the server's answer
- * has to be re-read — otherwise the marks blink out between the flush and the
- * next refetch.
+ * truth while it held these writes; each one's answer is already in the list
+ * (`landQueuedMark`), and once the drain is over the lists are re-read for what
+ * the answers did not say — another hand's marks, the server's own stamps.
  *
  * `refetchType: "all"`, because the reader is usually nowhere near the score
  * when signal comes back. Marking a closed stand stale only defers the read to
  * its next mount, which may well be the next rehearsal in the same basement —
  * by then the queue is empty and both the snapshot and the worker's copy would
  * predate the marks that just landed. This runs on a connection that has just
- * proved itself, over a handful of small lists.
+ * proved itself, over a handful of small lists. A "Powiadom chór" count on
+ * screen is re-read too: the marks it counts have only now reached the server.
  */
-export const reconcileQueuedMarks = (queryClient: QueryClient): Promise<void> =>
-  queryClient.invalidateQueries({ queryKey: annotationKeys.all, refetchType: "all" });
+export const reconcileQueuedMarks = async (queryClient: QueryClient): Promise<void> => {
+  await Promise.all([
+    queryClient.invalidateQueries({ queryKey: annotationKeys.all, refetchType: "all" }),
+    queryClient.invalidateQueries({ queryKey: choirMarkKeys.news }),
+  ]);
+};
+
+/**
+ * Registered with the offline queue at boot: puts a queued mark write's answer
+ * into its edition's list the moment it lands, before the write leaves the
+ * queue. Otherwise the mark is off the page from then until the reconcile after
+ * the drain — and a clear made in that gap names only the marks it can see, so
+ * the mark would survive it.
+ *
+ * Returns false for a restore the server met only in part (it skips what the
+ * reader may no longer write), so the drain reports it as refused.
+ */
+export const landQueuedMark = (
+  queryClient: QueryClient,
+  write: QueuedWrite,
+  data: unknown,
+): boolean => {
+  const meta = write.meta;
+  if (!isMarkOp(meta)) return true;
+  const edit = (change: (rows: ScoreAnnotation[]) => ScoreAnnotation[]): void => {
+    queryClient.setQueryData<ScoreAnnotation[]>(
+      annotationKeys.byEdition(meta.editionId),
+      (rows) => (rows ? change(rows) : rows),
+    );
+  };
+  const row = isMarkRow(data) ? data : null;
+  switch (meta.op) {
+    case "create":
+      if (row) edit((rows) => upsertMark(rows, row));
+      // No answer at all: the server said the mark is already gone (erased elsewhere).
+      else if (data === undefined) edit((rows) => withoutMarks(rows, new Set([meta.annotationId])));
+      return true;
+    case "update":
+      if (row) edit((rows) => upsertMark(rows, row));
+      return true;
+    case "delete":
+      edit((rows) => withoutMarks(rows, new Set([meta.annotationId])));
+      return true;
+    case "clear": {
+      const ids = meta.ids ?? clearedIds(data);
+      edit((rows) => withoutMarks(rows, new Set(ids)));
+      return true;
+    }
+    case "restore": {
+      const restored = restoredRows(data);
+      edit((rows) => restored.reduce(upsertMark, rows));
+      const back = new Set(restored.map((mark) => mark.id));
+      return meta.annotations.every((mark) => back.has(mark.id));
+    }
+  }
+};
+
+/** The ids a clear's answer lists, for a clear queued by a build that named none. */
+const clearedIds = (data: unknown): string[] => {
+  const ids = (data as { ids?: unknown } | null)?.ids;
+  return Array.isArray(ids) ? ids.filter((id): id is string => typeof id === "string") : [];
+};
+
+const restoredRows = (data: unknown): ScoreAnnotation[] => {
+  const rows = (data as { restored?: unknown } | null)?.restored;
+  return Array.isArray(rows) ? rows.filter(isMarkRow) : [];
+};
 
 /**
  * Editions this device has written to since the server last answered a full list
@@ -348,6 +424,30 @@ export type MarkWrite = "saved" | "queued" | "discarded";
 /** One id for every rejection toast, so a refused clear of forty marks says it once. */
 const REJECTION_TOAST_ID = "annotation-write-rejected";
 
+/**
+ * What a write fails with when its turn comes and the queue already holds a
+ * write to one of its marks: an earlier write on the same mark failed into the
+ * queue while this one waited. Sent live now, it would land first and be undone
+ * by that replay. It carries no response, so the replay policy reads it as
+ * retryable and the write joins the queue behind. It never left the device.
+ */
+class HeldBehindQueue extends Error {}
+
+/**
+ * Per mark id: the newest edit drawn on the page and not yet answered, and the
+ * row the server last confirmed beneath it. Writes on one edition leave one at
+ * a time, but each is drawn at once, so an edit can be drawn over an earlier
+ * write still in the air. Neither answer may paint over the newer drawing: a
+ * failure puts the confirmed row back only while its own edit is the newest,
+ * and a success under a newer edit becomes that edit's confirmed row.
+ *
+ * Keyed by a token rather than by the row object: the query cache shares
+ * structure on every write, so the row it holds is never the object an edit
+ * put there.
+ */
+const drawnEdits = new Map<string, { token: number; confirmed: ScoreAnnotation }>();
+let lastEditToken = 0;
+
 const isRetryable = (error: unknown, method: QueuedWrite["method"]): boolean =>
   classifyWriteFailure(error, method) === "retry";
 
@@ -387,6 +487,12 @@ interface ClearVariables {
   annotations: readonly ScoreAnnotation[];
 }
 
+/** An edit's place in `drawnEdits`, and the row it was drawn over. */
+interface DrawnEdit {
+  token?: number;
+  confirmed?: ScoreAnnotation;
+}
+
 /**
  * Create / update / erase / clear / restore, scoped to one edition's cache.
  *
@@ -403,6 +509,12 @@ interface ClearVariables {
  * device knows it is offline. Sent live, it could land before the queued writes
  * and then be undone by their replay — a PATCH against a create the server has
  * not had yet answers 404.
+ *
+ * Writes on one edition leave the device one at a time (a mutation `scope`),
+ * each asking again at its turn whether the queue now holds its marks. So an
+ * edit made while the create before it is in the air can never overtake it,
+ * and a clear always lands after the strokes it wipes. The optimistic patch is
+ * not held back: `onMutate` runs at once, only the request waits its turn.
  */
 export const useAnnotationMutations = (
   editionId: string | null,
@@ -443,6 +555,35 @@ export const useAnnotationMutations = (
     [pendingFor],
   );
 
+  /** The request half of every write, run when the write's turn comes. */
+  const sendUnlessHeld = useCallback(
+    async <T>(ids: readonly string[], send: () => Promise<T>): Promise<T> => {
+      if (mustQueue(ids)) throw new HeldBehindQueue();
+      return send();
+    },
+    [mustQueue],
+  );
+
+  /**
+   * Every write on this edition queues behind the one before it. `always`,
+   * because the request half decides for itself what to do without signal —
+   * the default would pause it until the network returns, out of the queue's
+   * reach.
+   */
+  const turn = useMemo(
+    () => ({
+      scope: { id: `annotations:${editionId ?? "none"}` },
+      networkMode: "always" as const,
+    }),
+    [editionId],
+  );
+
+  const rowOf = useCallback(
+    (id: string): ScoreAnnotation | undefined =>
+      queryClient.getQueryData<ScoreAnnotation[]>(key)?.find((row) => row.id === id),
+    [key, queryClient],
+  );
+
   /** Patch the cached server list in place. */
   const patchRows = useCallback(
     (edit: (rows: ScoreAnnotation[]) => ScoreAnnotation[]) => {
@@ -459,16 +600,42 @@ export const useAnnotationMutations = (
   );
 
   /**
+   * Puts the server's answer for one mark in the list — unless an edit newer
+   * than this write is drawn over it, which then sits on this answer instead
+   * (`drawnEdits`). `token` is the answered edit's own, absent for a create.
+   * `insert` is false for an edit: a mark erased while its edit was in the air
+   * stays erased.
+   */
+  const settleRow = useCallback(
+    (answer: ScoreAnnotation, token: number | undefined, insert: boolean) => {
+      const newest = drawnEdits.get(answer.id);
+      if (newest && newest.token !== token) {
+        newest.confirmed = answer;
+        return;
+      }
+      drawnEdits.delete(answer.id);
+      if (!insert && !rowOf(answer.id)) return;
+      patchRows((rows) => upsertMark(rows, answer));
+    },
+    [patchRows, rowOf],
+  );
+
+  /**
    * The server's list for this edition has moved, and only this device knows —
    * the cache was patched in place rather than re-read. Owed a read-back before
    * the reader walks away from it (see `useDurableMarkCatchUp`). A "Powiadom
-   * chór" count on screen is re-read as well, so the conductor sees the piece
-   * he has just marked join it.
+   * chór" count on screen is re-read as well when the write touched the choir's
+   * layer, so the conductor sees the piece he has just marked join it.
    */
-  const noteWrite = useCallback(() => {
-    if (editionId) unsyncedEditions.add(editionId);
-    void queryClient.invalidateQueries({ queryKey: choirMarkKeys.news });
-  }, [editionId, queryClient]);
+  const noteWrite = useCallback(
+    (rows: readonly Pick<ScoreAnnotation, "layer_name">[]) => {
+      if (editionId) unsyncedEditions.add(editionId);
+      if (feedsChoirNews(rows)) {
+        void queryClient.invalidateQueries({ queryKey: choirMarkKeys.news });
+      }
+    },
+    [editionId, queryClient],
+  );
 
   const reportRejection = useCallback(
     (error: unknown, color?: string) => {
@@ -486,8 +653,11 @@ export const useAnnotationMutations = (
 
   const { mutateAsync: createAsync } = useMutation({
     mutationKey: annotationKeys.all,
+    ...turn,
     mutationFn: (annotation: ScoreAnnotation) =>
-      AnnotationsService.create(toCreateBody(annotation)),
+      sendUnlessHeld([annotation.id], () =>
+        AnnotationsService.create(toCreateBody(annotation)),
+      ),
     onMutate: async (annotation) => {
       await holdStill();
       patchRows((rows) => upsertMark(rows, annotation));
@@ -495,25 +665,30 @@ export const useAnnotationMutations = (
     onError: (error, annotation) => {
       // Queue first, then roll back: the page never draws a frame without it.
       const retry = isRetryable(error, "POST");
-      if (retry) enqueue(collapseCreate(annotation, { sent: true }));
+      if (retry) {
+        enqueue(collapseCreate(annotation, { sent: !(error instanceof HeldBehindQueue) }));
+      }
       patchRows((rows) => withoutMarks(rows, new Set([annotation.id])));
       if (!retry) reportRejection(error, annotation.color);
     },
     onSuccess: (created) => {
-      patchRows((rows) => upsertMark(rows, created));
-      noteWrite();
+      settleRow(created, undefined, true);
+      noteWrite([created]);
     },
   });
 
   const { mutateAsync: updateAsync } = useMutation({
     mutationKey: annotationKeys.all,
+    ...turn,
     mutationFn: ({ id, patch }: { id: string; patch: AnnotationPatch }) =>
-      AnnotationsService.update(id, patch),
-    onMutate: async ({ id, patch }) => {
+      sendUnlessHeld([id], () => AnnotationsService.update(id, patch)),
+    onMutate: async ({ id, patch }): Promise<DrawnEdit> => {
       await holdStill();
-      const previous = queryClient
-        .getQueryData<ScoreAnnotation[]>(key)
-        ?.find((row) => row.id === id);
+      const current = rowOf(id);
+      if (!current) return {};
+      const confirmed = drawnEdits.get(id)?.confirmed ?? current;
+      const token = ++lastEditToken;
+      drawnEdits.set(id, { token, confirmed });
       patchRows((rows) =>
         rows.map((row) =>
           row.id === id
@@ -521,35 +696,38 @@ export const useAnnotationMutations = (
             : row,
         ),
       );
-      return { previous };
+      return { token, confirmed };
     },
     onError: (error, { id, patch }, context) => {
       const retry = isRetryable(error, "PATCH");
       if (retry && editionId) {
         enqueue(collapseUpdate(pendingFor(), editionId, id, patch));
       }
-      const previous = context?.previous;
-      if (previous) {
-        patchRows((rows) => rows.map((row) => (row.id === id ? previous : row)));
+      const newest = drawnEdits.get(id);
+      if (newest && newest.token === context?.token) {
+        drawnEdits.delete(id);
+        patchRows((rows) => rows.map((row) => (row.id === id ? newest.confirmed : row)));
       }
       if (!retry) reportRejection(error, patch.color);
     },
-    onSuccess: (updated) => {
-      patchRows((rows) => upsertMark(rows, updated));
-      noteWrite();
+    onSuccess: (updated, _variables, context) => {
+      settleRow(updated, context?.token, false);
+      noteWrite(context?.confirmed ? [updated, context.confirmed] : [updated]);
     },
   });
 
   const { mutateAsync: removeAsync } = useMutation({
     mutationKey: annotationKeys.all,
-    mutationFn: async (annotation: ScoreAnnotation) => {
-      try {
-        await AnnotationsService.remove(annotation.id);
-      } catch (error) {
-        // Already gone is what an erase asked for.
-        if (classifyWriteFailure(error, "DELETE") !== "done") throw error;
-      }
-    },
+    ...turn,
+    mutationFn: (annotation: ScoreAnnotation) =>
+      sendUnlessHeld([annotation.id], async () => {
+        try {
+          await AnnotationsService.remove(annotation.id);
+        } catch (error) {
+          // Already gone is what an erase asked for.
+          if (classifyWriteFailure(error, "DELETE") !== "done") throw error;
+        }
+      }),
     onMutate: async (annotation) => {
       await holdStill();
       patchRows((rows) => withoutMarks(rows, new Set([annotation.id])));
@@ -558,22 +736,28 @@ export const useAnnotationMutations = (
       const retry = isRetryable(error, "DELETE");
       if (retry && editionId) {
         enqueue(
-          collapseDelete(pendingFor(), editionId, annotation.id, { sent: true }),
+          collapseDelete(pendingFor(), editionId, annotation.id, {
+            sent: !(error instanceof HeldBehindQueue),
+          }),
         );
       }
       patchRows((rows) => insertMarks(rows, [annotation]));
       if (!retry) reportRejection(error);
     },
-    onSuccess: noteWrite,
+    onSuccess: (_answer, annotation) => {
+      // Again: a list read while the erase was in the air may have put it back.
+      patchRows((rows) => withoutMarks(rows, new Set([annotation.id])));
+      noteWrite([annotation]);
+    },
   });
 
   const { mutateAsync: clearAsync } = useMutation({
     mutationKey: annotationKeys.all,
-    mutationFn: ({ annotations }: ClearVariables) =>
-      AnnotationsService.clear(
-        editionId as string,
-        annotations.map((row) => row.id),
-      ),
+    ...turn,
+    mutationFn: ({ annotations }: ClearVariables) => {
+      const ids = annotations.map((row) => row.id);
+      return sendUnlessHeld(ids, () => AnnotationsService.clear(editionId as string, ids));
+    },
     onMutate: async ({ annotations }) => {
       await holdStill();
       patchRows((rows) => withoutMarks(rows, new Set(annotations.map((row) => row.id))));
@@ -586,20 +770,26 @@ export const useAnnotationMutations = (
             editionId,
             clearId,
             annotations.map((row) => row.id),
-            { sent: true },
+            { sent: !(error instanceof HeldBehindQueue) },
           ),
         );
       }
       patchRows((rows) => insertMarks(rows, annotations));
       if (!retry) reportRejection(error);
     },
-    onSuccess: noteWrite,
+    onSuccess: (_answer, { annotations }) => {
+      patchRows((rows) => withoutMarks(rows, new Set(annotations.map((row) => row.id))));
+      noteWrite(annotations);
+    },
   });
 
   const { mutateAsync: restoreAsync } = useMutation({
     mutationKey: annotationKeys.all,
-    mutationFn: (annotations: readonly ScoreAnnotation[]) =>
-      AnnotationsService.restore(annotations.map((row) => row.id)),
+    ...turn,
+    mutationFn: (annotations: readonly ScoreAnnotation[]) => {
+      const ids = annotations.map((row) => row.id);
+      return sendUnlessHeld(ids, () => AnnotationsService.restore(ids));
+    },
     onMutate: async (annotations) => {
       await holdStill();
       patchRows((rows) => insertMarks(rows, annotations));
@@ -607,7 +797,11 @@ export const useAnnotationMutations = (
     onError: (error, annotations) => {
       const retry = isRetryable(error, "POST");
       if (retry && editionId) {
-        enqueue(collapseRestore(editionId, newMarkId(), annotations, { sent: true }));
+        enqueue(
+          collapseRestore(editionId, newMarkId(), annotations, {
+            sent: !(error instanceof HeldBehindQueue),
+          }),
+        );
       }
       patchRows((rows) => withoutMarks(rows, new Set(annotations.map((row) => row.id))));
       if (!retry) reportRejection(error);
@@ -625,7 +819,7 @@ export const useAnnotationMutations = (
       if (refused.size > 0) {
         toast.error(t("annotations.rejected.no_access"), { id: REJECTION_TOAST_ID });
       }
-      noteWrite();
+      noteWrite(annotations);
     },
   });
 

@@ -49,8 +49,9 @@ export const classifyWriteFailure = (
 ): WriteFailureVerdict => {
   const status = statusOf(error);
   if (status === null) return "retry";
-  // 401 survives the token refresh only when the session is gone, and then the
-  // logout wipes the queue anyway; until that happens it is not the write's fault.
+  // 401 survives the token refresh only when the session is gone. The write is
+  // kept for the next sign-in: the same account replays it, any other account
+  // finds the queue wiped (`claimOfflineState`). It is never the write's fault.
   if (status === 401 || status === 408 || status === 429 || status >= 500) {
     return "retry";
   }

@@ -75,7 +75,8 @@ export interface PendingEntry {
 
 const isString = (value: unknown): value is string => typeof value === "string";
 
-const isMarkRow = (value: unknown): value is ScoreAnnotation => {
+/** A whole mark row, as the server answers one and the queue stores one. */
+export const isMarkRow = (value: unknown): value is ScoreAnnotation => {
   if (typeof value !== "object" || value === null) return false;
   const row = value as Record<string, unknown>;
   return (

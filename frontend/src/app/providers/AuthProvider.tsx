@@ -17,7 +17,7 @@ import { isAxiosError } from "axios";
 import { useQueryClient } from "@tanstack/react-query";
 import api, { type AuthRequestConfig } from "@/shared/api/api";
 import { clearPersistedQueryCache } from "@/shared/api/queryPersistence";
-import { clearAllOffline } from "@/shared/offline/offlineClient";
+import { claimOfflineState, clearAllOffline } from "@/shared/offline/offlineClient";
 import { changeAppLanguage } from "@/shared/config/i18n";
 import type {
   AuthProfile,
@@ -208,6 +208,24 @@ const primeSessionIdentityCache = (
   queryClient.setQueryData<UserMeDTO>(settingsKeys.data, toUserMeDTO(user));
 };
 
+/**
+ * Binds the device to the account just resolved, before `setUser` lets the
+ * shell mount and drain the offline queue. A session that ended without a
+ * logout leaves its queue, downloads and query snapshot behind; when someone
+ * else signs in next, all of it goes, so nothing of the previous account is
+ * replayed in their name or painted on their screens.
+ */
+const claimDevice = async (
+  queryClient: ReturnType<typeof useQueryClient>,
+  user: AuthUser,
+  signedIn: boolean,
+): Promise<void> => {
+  const wiped = await claimOfflineState(String(user.id), { signedIn });
+  if (!wiped) return;
+  queryClient.clear();
+  await clearPersistedQueryCache().catch(() => undefined);
+};
+
 export const AuthProvider = ({
   children,
 }: {
@@ -231,6 +249,7 @@ export const AuthProvider = ({
     const checkAuth = async () => {
       try {
         const authUser = await buildAuthUser();
+        await claimDevice(queryClient, authUser, false);
         primeSessionIdentityCache(queryClient, authUser);
         setUser(authUser);
       } catch (error: unknown) {
@@ -263,6 +282,7 @@ export const AuthProvider = ({
     try {
       await api.post("/api/token/", { email, password });
       const authUser = await buildAuthUser();
+      await claimDevice(queryClient, authUser, true);
       primeSessionIdentityCache(queryClient, authUser);
       setUser(authUser);
 
@@ -297,13 +317,14 @@ export const AuthProvider = ({
       queryClient.clear();
       // Drop every offline trace too — query snapshot, downloaded scores/audio
       // and any queued writes — so nothing leaks to the next user on a shared
-      // device. The snapshot lives in IndexedDB, whose delete only becomes
-      // durable when its transaction commits: awaited, because the navigation
-      // below would otherwise be free to tear the page down mid-transaction.
-      // A failure must still land the user on /panel/login — a stuck logout leaves
-      // them signed in, which is the worse of the two outcomes.
+      // device. The snapshot lives in IndexedDB and the downloads in Cache
+      // Storage, and neither delete is durable until it completes: awaited,
+      // because the navigation below would otherwise be free to tear the page
+      // down mid-delete. A failure must still land the user on /panel/login — a
+      // stuck logout leaves them signed in, the worse of the two outcomes.
+      // Neither call rejects.
       await clearPersistedQueryCache().catch(() => undefined);
-      void clearAllOffline();
+      await clearAllOffline();
       // The tray entries and the app-icon count are this user's too. Awaited so
       // the navigation cannot cut it short; it never throws.
       await clearPushTray();

@@ -97,6 +97,29 @@ describe("undo without signal", () => {
   });
 });
 
+describe("a press waiting its turn", () => {
+  it("undoes the step on top when it was pressed, not a stroke drawn while it waited", async () => {
+    const deps = writers("saved");
+    const { result } = mount(deps);
+    let release: (answer: MarkWrite) => void = () => {};
+
+    act(() => result.current.create(mark("a")));
+    act(() => result.current.create(mark("b")));
+    await settle();
+    deps.eraseMark.mockImplementationOnce(
+      () => new Promise<MarkWrite>((resolve) => (release = resolve)),
+    );
+    act(() => result.current.undo()); // erases b; its write hangs
+    await settle();
+    act(() => result.current.undo()); // meant for a
+    act(() => result.current.create(mark("c")));
+    await act(async () => release("saved"));
+    await settle();
+
+    expect(deps.eraseMark.mock.calls.map(([erased]) => erased.id)).toEqual(["b", "a"]);
+  });
+});
+
 describe("redo", () => {
   it("restores the same mark rather than drawing a new one", async () => {
     const deps = writers("saved");

@@ -172,17 +172,18 @@ export const useUpsertScheduleAttendance = () => {
       return { snapshot };
     },
 
-    onError: (error, { existingAttendanceId, payload }, context) => {
-      // Offline RSVP: keep the optimistic patch and queue the write. The replay
-      // re-uses the same method/URL, so an offline "create" stays a POST and an
-      // edit of a synced record stays a PATCH.
+    onError: (error, { payload }, context) => {
+      // Offline RSVP: keep the optimistic patch and queue the write. Queued as
+      // a POST whatever the live call was: the server records it by (rehearsal,
+      // participation), so a replay of a report that had already landed behind
+      // a lost reply records the same answer again, and a second offline change
+      // to a report the server has never had — whose id is the optimistic
+      // placeholder — still has somewhere to go.
       if (isLikelyOfflineError(error)) {
         useOfflineStore.getState().enqueueWrite({
           kind: "attendance",
-          method: existingAttendanceId ? "PATCH" : "POST",
-          url: existingAttendanceId
-            ? `/api/attendances/${existingAttendanceId}/`
-            : "/api/attendances/",
+          method: "POST",
+          url: "/api/attendances/",
           body: payload,
           dedupeKey: `attendance:${payload.rehearsal}`,
           label: "Obecność na próbie",

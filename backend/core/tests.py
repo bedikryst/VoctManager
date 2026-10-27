@@ -1455,6 +1455,43 @@ class FeedbackReportAPITests(APITestCase):
         self.assertEqual(response.status_code, 201)
         self.assertEqual(FeedbackReport.objects.count(), 1)
 
+    @patch("core.views.FeedbackService.notify_maintainer")
+    def test_a_replayed_report_is_filed_once(self, notify):
+        """The offline queue replays a report whose reply was lost (a 504 after
+        the commit, a client timeout). The capture time minted on the device
+        makes the replay recognisable: one row, one notification."""
+        self.client.force_authenticate(user=self.user)
+        report = {
+            "kind": "BUG",
+            "body": "Nuty się nie otwierają.",
+            "context": {"captured_at": "2026-10-27T18:04:11.532Z"},
+        }
+
+        first = self.client.post(self.url, report, format="json")
+        again = self.client.post(self.url, report, format="json")
+
+        self.assertEqual(first.status_code, 201)
+        self.assertEqual(again.status_code, 200)
+        self.assertEqual(again.data["id"], first.data["id"])
+        self.assertEqual(FeedbackReport.objects.count(), 1)
+        notify.assert_called_once()
+
+    @patch("core.views.FeedbackService.notify_maintainer")
+    def test_two_reports_sharing_a_capture_time_are_both_filed(self, _notify):
+        """Only the same text from the same reporter is a replay."""
+        self.client.force_authenticate(user=self.user)
+        other = User.objects.create_user(
+            username=str(uuid4()), email="second@voct.test", password="pw12345678",
+        )
+        context = {"captured_at": "2026-10-27T18:04:11.532Z"}
+
+        self.client.post(self.url, {"kind": "BUG", "body": "Pierwsze.", "context": context}, format="json")
+        self.client.post(self.url, {"kind": "BUG", "body": "Drugie.", "context": context}, format="json")
+        self.client.force_authenticate(user=other)
+        self.client.post(self.url, {"kind": "BUG", "body": "Pierwsze.", "context": context}, format="json")
+
+        self.assertEqual(FeedbackReport.objects.count(), 3)
+
 
 class FeedbackNotificationTests(TestCase):
     """

@@ -15,14 +15,17 @@
  *     one exception is a mark the server never had: an erase that withdrew an
  *     unsent create from the queue is undone by queuing that create again;
  *   · steps run one after another, each waiting for its own write, so an undo
- *     of an edit can never overtake the undo of the erase in front of it.
+ *     of an edit can never overtake the undo of the erase in front of it;
+ *   · a press acts on the step that was on top when it was pressed. Steps wait
+ *     on writes, so a press can run seconds later, and by then a new stroke may
+ *     be on top — the undo the reader pressed is still the one they get.
  *
  * Owns no transport: it takes the mutation layer's writers. History resets when
  * the edition changes.
  * @module features/annotations/lib
  */
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useLayoutEffect, useRef, useState } from "react";
 
 import { newMarkId, type MarkWrite } from "../api/annotations.queries";
 import type { AnnotationPatch, ScoreAnnotation } from "../types/annotations.dto";
@@ -81,22 +84,31 @@ export const useAnnotationHistory = (deps: HistoryDeps): AnnotationHistory => {
   const [stacks, setStacks] = useState<Stacks>({ undo: [], redo: [] });
   const ref = useRef<Stacks>(stacks);
   // Steps run later than the render that queued them; they write through the
-  // writers of the edition that is open when they run.
+  // writers of the edition that is open when they run. The writers and the
+  // generation change together, in the commit, so a resumed step never sees
+  // the new edition's writers under the old edition's generation.
   const writers = useRef(deps);
-  writers.current = deps;
-  const chain = useRef<Promise<void>>(Promise.resolve());
   const generation = useRef(0);
+  const openEdition = useRef(editionId);
+  const chain = useRef<Promise<void>>(Promise.resolve());
+  /** Steps a press still in the chain is bound to; the next press reaches past them. */
+  const claimed = useRef(new Set<Step>());
+  /** Presses still in the chain, per direction. */
+  const pending = useRef({ undo: 0, redo: 0 });
 
   const commit = useCallback((next: Stacks) => {
     ref.current = next;
     setStacks(next);
   }, []);
 
-  // Forget the timeline whenever a different score opens.
-  useEffect(() => {
+  useLayoutEffect(() => {
+    writers.current = deps;
+    if (openEdition.current === editionId) return;
+    // A different score is open: forget the timeline.
+    openEdition.current = editionId;
     generation.current += 1;
     commit({ undo: [], redo: [] });
-  }, [editionId, commit]);
+  });
 
   /** A step whose write the server refused never happened. */
   const forget = useCallback(
@@ -195,13 +207,17 @@ export const useAnnotationHistory = (deps: HistoryDeps): AnnotationHistory => {
     [],
   );
 
+  /**
+   * `bound` is the step the press chose; without one (see `run`) the step on
+   * top when the chain reaches this press.
+   */
   const step = useCallback(
-    async (direction: "undo" | "redo") => {
+    async (direction: "undo" | "redo", era: number, bound: Step | undefined) => {
       const undoing = direction === "undo";
+      if (era !== generation.current) return;
       const source = undoing ? ref.current.undo : ref.current.redo;
-      const current = source[source.length - 1];
+      const current = bound ?? source[source.length - 1];
       if (!current) return;
-      const era = generation.current;
 
       let answer: MarkWrite;
       try {
@@ -225,9 +241,30 @@ export const useAnnotationHistory = (deps: HistoryDeps): AnnotationHistory => {
     [commit, inverse, track],
   );
 
+  /**
+   * Binds the press to its step now. Only while a press the other way is still
+   * in the chain is there nothing to bind to: the step it will put on this
+   * stack does not exist yet, so this press takes whatever is on top when its
+   * turn comes — an undo and a redo pressed together still cancel out.
+   */
   const run = useCallback(
     (direction: "undo" | "redo") => {
-      chain.current = chain.current.then(() => step(direction));
+      const opposite = direction === "undo" ? "redo" : "undo";
+      const era = generation.current;
+      let bound: Step | undefined;
+      if (pending.current[opposite] === 0) {
+        const source = direction === "undo" ? ref.current.undo : ref.current.redo;
+        bound = [...source].reverse().find((candidate) => !claimed.current.has(candidate));
+        if (!bound) return;
+        claimed.current.add(bound);
+      }
+      pending.current[direction] += 1;
+      chain.current = chain.current
+        .then(() => step(direction, era, bound))
+        .finally(() => {
+          pending.current[direction] -= 1;
+          if (bound) claimed.current.delete(bound);
+        });
     },
     [step],
   );

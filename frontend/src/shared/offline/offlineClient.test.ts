@@ -33,16 +33,24 @@ const request = vi.hoisted(() => {
 vi.mock("@/shared/api/api", () => ({ default: { request } }));
 vi.mock("@/shared/pwa/appUpdateController", () => ({ armAppUpdateWatch: vi.fn() }));
 
-import { flushOfflineQueue, registerOfflineReconciler } from "./offlineClient";
+import {
+  claimOfflineState,
+  flushOfflineQueue,
+  registerOfflineLanding,
+  registerOfflineReconciler,
+} from "./offlineClient";
 import { GIVE_UP_AFTER_MS, RETRY_BASE_MS } from "./replayPolicy";
 import {
+  createOfflineStore,
   readQueuedWrites,
   useOfflineStore,
   type NewQueuedWrite,
 } from "./useOfflineStore";
 
 const NOW = Date.parse("2026-10-26T18:00:00Z");
+const DAY = 24 * 60 * 60_000;
 const queryClient = {} as QueryClient;
+const OWNER = "user-1";
 
 const answered = (status: number) => Object.assign(new Error(`HTTP ${status}`), {
   response: { status },
@@ -74,7 +82,80 @@ beforeEach(() => {
   vi.useFakeTimers({ toFake: ["Date"] });
   vi.setSystemTime(NOW);
   useOfflineStore.getState().reset();
+  useOfflineStore.getState().setOwner(OWNER);
   request.mockReset();
+});
+
+describe("whose queue it is", () => {
+  it("is wiped before anything is sent when a different account signs in", async () => {
+    enqueue(write("their-personal-note", { kind: "note" }));
+    useOfflineStore.getState().saveManifest({
+      projectId: "p1", title: "Requiem", assetUrls: ["/a.pdf"], assetCount: 1, failed: 0, cachedAt: NOW,
+    });
+
+    expect(await claimOfflineState("user-2", { signedIn: true })).toBe(true);
+    await flushOfflineQueue(queryClient);
+
+    expect(request).not.toHaveBeenCalled();
+    expect(queue()).toEqual([]);
+    expect(useOfflineStore.getState().manifests).toEqual({});
+    expect(useOfflineStore.getState().owner).toBe("user-2");
+  });
+
+  it("is kept, and replayed, when the same account signs in again", async () => {
+    enqueue(write("mine"));
+
+    expect(await claimOfflineState(OWNER, { signedIn: true })).toBe(false);
+    request.mockResolvedValue({});
+    await flushOfflineQueue(queryClient);
+
+    expect(sentKeys()).toEqual(["mine"]);
+  });
+
+  it("is adopted by a continuing session when no owner was recorded", async () => {
+    useOfflineStore.getState().reset();
+    enqueue(write("unstamped"));
+
+    expect(await claimOfflineState(OWNER, { signedIn: false })).toBe(false);
+    expect(queue()[0].userId).toBe(OWNER);
+  });
+
+  it("is wiped by a fresh sign-in when no owner was recorded", async () => {
+    useOfflineStore.getState().reset();
+    enqueue(write("whose"));
+
+    expect(await claimOfflineState(OWNER, { signedIn: true })).toBe(true);
+    expect(queue()).toEqual([]);
+  });
+
+  it("never sends a write stamped for another account", async () => {
+    enqueue(write("theirs"));
+    useOfflineStore.setState((state) => ({
+      queue: state.queue.map((item) => ({ ...item, userId: "user-2" })),
+    }));
+
+    await flushOfflineQueue(queryClient);
+
+    expect(request).not.toHaveBeenCalled();
+    expect(queue()).toEqual([]);
+  });
+});
+
+describe("two tabs on one storage", () => {
+  it("keeps both tabs' writes when each saves after the other", () => {
+    const first = createOfflineStore();
+    const second = createOfflineStore();
+    first.getState().reset();
+
+    first.getState().enqueueWrite(write("from-the-app"));
+    second.getState().enqueueWrite(write("from-the-tab"));
+    const landed = first.getState().queue.find((item) => item.dedupeKey === "from-the-app");
+    if (!landed) throw new Error("the first tab lost its own write");
+    first.getState().dequeueWrite(landed.id);
+
+    void second.persist.rehydrate();
+    expect(second.getState().queue.map((item) => item.dedupeKey)).toEqual(["from-the-tab"]);
+  });
 });
 
 afterEach(() => {
@@ -145,6 +226,66 @@ describe("a write the server could not take yet", () => {
     expect(summary).toEqual({ flushed: 1, rejected: 1, remaining: 0 });
     expect(sentKeys()).toEqual(["first", "second"]);
   });
+
+  it("restarts the give-up clock when the network fails it in between", async () => {
+    enqueue(write("first"));
+    request.mockRejectedValueOnce(answered(502));
+    await flushOfflineQueue(queryClient);
+
+    // Three days with no signal, then one more server error.
+    request.mockRejectedValueOnce(networkDown());
+    vi.setSystemTime(NOW + DAY);
+    await flushOfflineQueue(queryClient, { force: true });
+    expect(queue()[0].failingSince).toBeNull();
+
+    request.mockRejectedValueOnce(answered(503));
+    vi.setSystemTime(NOW + 3 * DAY);
+    await flushOfflineQueue(queryClient, { force: true });
+
+    expect(queue()).toHaveLength(1);
+    expect(queue()[0].failingSince).toBe(NOW + 3 * DAY);
+  });
+
+  it("gives up on a background write without reporting it as refused", async () => {
+    enqueue(write("seen", { kind: "annotation_seen", background: true }));
+    useOfflineStore.setState((state) => ({
+      queue: state.queue.map((item) => ({ ...item, failingSince: NOW - GIVE_UP_AFTER_MS })),
+    }));
+    request.mockRejectedValueOnce(answered(500));
+
+    expect(await flushOfflineQueue(queryClient)).toEqual({
+      flushed: 0,
+      rejected: 0,
+      remaining: 0,
+    });
+  });
+
+  it("holds only its own kind, and a background write holds nothing", async () => {
+    enqueue(
+      write("seen", { kind: "annotation_seen", background: true }),
+      write("readiness", { kind: "readiness" }),
+      write("readiness-after", { kind: "readiness" }),
+      write("mark"),
+    );
+    request
+      .mockRejectedValueOnce(answered(500))
+      .mockRejectedValueOnce(answered(500))
+      .mockResolvedValueOnce({});
+
+    const summary = await flushOfflineQueue(queryClient);
+
+    expect(sentKeys()).toEqual(["seen", "readiness", "mark"]);
+    expect(summary).toEqual({ flushed: 1, rejected: 0, remaining: 3 });
+  });
+
+  it("ends the drain on a network error, which no write behind it would get past", async () => {
+    enqueue(write("readiness", { kind: "readiness" }), write("mark"));
+    request.mockRejectedValueOnce(networkDown());
+
+    await flushOfflineQueue(queryClient);
+
+    expect(sentKeys()).toEqual(["readiness"]);
+  });
 });
 
 describe("a write the server answered for good", () => {
@@ -198,6 +339,25 @@ describe("a write the server answered for good", () => {
     request.mockRejectedValueOnce(answered(404));
 
     expect((await flushOfflineQueue(queryClient)).rejected).toBe(1);
+  });
+});
+
+describe("landing a write", () => {
+  it("hands the feature the answer before the write leaves the queue", async () => {
+    const seenInQueue: boolean[] = [];
+    registerOfflineLanding("note", (_client, landed, data) => {
+      seenInQueue.push(queue().some((item) => item.id === landed.id));
+      return (data as { whole?: boolean } | undefined)?.whole ?? true;
+    });
+    enqueue(write("whole", { kind: "note" }), write("partial", { kind: "note" }));
+    request
+      .mockResolvedValueOnce({ data: { whole: true } })
+      .mockResolvedValueOnce({ data: { whole: false } });
+
+    const summary = await flushOfflineQueue(queryClient);
+
+    expect(seenInQueue).toEqual([true, true]);
+    expect(summary).toEqual({ flushed: 1, rejected: 1, remaining: 0 });
   });
 });
 

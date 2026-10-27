@@ -24,6 +24,14 @@ import type {
 
 const projectPath = (projectId: string): string => `/api/projects/${projectId}/`;
 
+/**
+ * A mark write that has not been answered by then is treated as lost on the
+ * network and goes to the offline queue, whose replays are idempotent. Writes on
+ * one edition leave one at a time, so a request left hanging would hold every
+ * stroke behind it, and the undo waiting on them.
+ */
+const WRITE = { timeout: 20_000 } as const;
+
 export const AnnotationsService = {
   list: async (editionId: string): Promise<ScoreAnnotation[]> => {
     const response = await api.get<ScoreAnnotation[]>(ANNOTATIONS_ENDPOINT, {
@@ -51,6 +59,7 @@ export const AnnotationsService = {
     const response = await api.post<ScoreAnnotation>(
       ANNOTATIONS_ENDPOINT,
       payload,
+      WRITE,
     );
     return response.data;
   },
@@ -62,12 +71,13 @@ export const AnnotationsService = {
     const response = await api.patch<ScoreAnnotation>(
       `${ANNOTATIONS_ENDPOINT}${id}/`,
       patch,
+      WRITE,
     );
     return response.data;
   },
 
   remove: async (id: string): Promise<void> => {
-    await api.delete(`${ANNOTATIONS_ENDPOINT}${id}/`);
+    await api.delete(`${ANNOTATIONS_ENDPOINT}${id}/`, WRITE);
   },
 
   /**
@@ -81,6 +91,7 @@ export const AnnotationsService = {
     const response = await api.post<{ deleted: number; ids: string[] }>(
       `${ANNOTATIONS_ENDPOINT}clear/`,
       { edition: editionId, ids },
+      WRITE,
     );
     return response.data;
   },
@@ -90,7 +101,7 @@ export const AnnotationsService = {
    * `content_at` their device drew. The server never moves it back.
    */
   seen: async (editionId: string, at: string): Promise<void> => {
-    await api.post(MARKS_SEEN_ENDPOINT, { edition: editionId, at });
+    await api.post(MARKS_SEEN_ENDPOINT, { edition: editionId, at }, WRITE);
   },
 
   /**
@@ -102,6 +113,7 @@ export const AnnotationsService = {
     const response = await api.post<{ restored: ScoreAnnotation[] }>(
       `${ANNOTATIONS_ENDPOINT}restore/`,
       { ids },
+      WRITE,
     );
     return response.data.restored;
   },

@@ -22,13 +22,17 @@ import { act, waitFor } from "@testing-library/react";
 import { HttpResponse, http } from "msw";
 import { toast } from "sonner";
 
+import { QueryClient } from "@tanstack/react-query";
+
 import { renderHookWithPanel } from "@/test/harness";
 import { server } from "@/test/server";
+import { flushOfflineQueue, registerOfflineLanding } from "@/shared/offline/offlineClient";
 import { ANNOTATIONS_PATH } from "@/shared/offline/swProtocol";
-import { useOfflineStore } from "@/shared/offline/useOfflineStore";
+import { useOfflineStore, type QueuedWrite } from "@/shared/offline/useOfflineStore";
 
 import {
   annotationKeys,
+  landQueuedMark,
   useAnnotationMutations,
   useScoreAnnotations,
 } from "./annotations.queries";
@@ -281,6 +285,111 @@ describe("writing a mark", () => {
 
     expect(queued()).toHaveLength(1);
     expect(queued()[0]).toMatchObject({ method: "POST", body: { color: "#2563EB" } });
+  });
+
+  it("queues a second edit behind a first that failed into the queue while it waited", async () => {
+    const mine = serverMark("mine");
+    let release: () => void = () => {};
+    const gate = new Promise<void>((resolve) => (release = resolve));
+    let patches = 0;
+    server.use(
+      http.get(LIST_URL, () => HttpResponse.json([mine])),
+      http.patch(MARK_URL, async () => {
+        patches += 1;
+        await gate;
+        return new HttpResponse(null, { status: 502 });
+      }),
+    );
+    const { result } = openStand("edition-1");
+    await waitFor(() => expect(result.current.marks.annotations).toHaveLength(1));
+
+    let first: Promise<unknown> = Promise.resolve();
+    let second: Promise<unknown> = Promise.resolve();
+    act(() => {
+      first = result.current.writer.updateMark("mine", { color: "#DC2626" });
+      second = result.current.writer.updateMark("mine", { color: "#2563EB" });
+    });
+    // Both are drawn at once; only the first is on the wire.
+    await waitFor(() => expect(result.current.marks.annotations[0].color).toBe("#2563EB"));
+    expect(patches).toBe(1);
+
+    await act(async () => {
+      release();
+      expect(await first).toBe("queued");
+      expect(await second).toBe("queued");
+    });
+
+    // The second never overtook the first: one PATCH, carrying the newer colour.
+    expect(patches).toBe(1);
+    expect(queued()).toHaveLength(1);
+    expect(queued()[0]).toMatchObject({ method: "PATCH", body: { color: "#2563EB" } });
+    await waitFor(() => expect(result.current.marks.annotations[0].color).toBe("#2563EB"));
+  });
+});
+
+describe("a queued mark landing", () => {
+  it("stays drawn in every frame of the drain", async () => {
+    const answered: ScoreAnnotation[] = [];
+    server.use(
+      http.get(LIST_URL, () => HttpResponse.json(answered)),
+      http.post(LIST_URL, async ({ request }) => {
+        const body = (await request.json()) as Omit<
+          ScoreAnnotation,
+          "created_by" | "created_at" | "updated_at"
+        >;
+        const row: ScoreAnnotation = {
+          ...body,
+          created_by: "user-1",
+          created_at: "2026-10-27T10:00:00Z",
+          updated_at: "2026-10-27T10:00:00Z",
+        };
+        answered.push(row);
+        return HttpResponse.json(row, { status: 201 });
+      }),
+    );
+    registerOfflineLanding("annotation", landQueuedMark);
+    useOfflineStore.getState().setOwner("user-1");
+    const { result, queryClient, unmount } = openStand("edition-1");
+    await waitFor(() => expect(result.current.marks.isLoaded).toBe(true));
+
+    const draft = result.current.writer.draftAnnotation(NOTE);
+    if (!draft) throw new Error("no edition");
+    setOnline(false);
+    await act(async () => {
+      expect(await result.current.writer.createMark(draft)).toBe("queued");
+    });
+    setOnline(true);
+
+    // The moment the write leaves the queue, the list must already hold it.
+    const listedWhenDequeued: boolean[] = [];
+    const stop = useOfflineStore.subscribe((state) => {
+      if (state.queue.length > 0) return;
+      const rows = queryClient.getQueryData<ScoreAnnotation[]>(
+        annotationKeys.byEdition("edition-1"),
+      );
+      listedWhenDequeued.push(!!rows?.some((row) => row.id === draft.id));
+    });
+    await act(async () => {
+      await flushOfflineQueue(queryClient);
+    });
+    stop();
+
+    expect(listedWhenDequeued[0]).toBe(true);
+    expect(result.current.marks.annotations.map((row) => row.id)).toEqual([draft.id]);
+    unmount();
+    await act(async () => {});
+  });
+
+  it("reports a restore the server met only in part", () => {
+    const queryClient = new QueryClient();
+    const kept = serverMark("kept");
+    const refused = serverMark("refused");
+    const write = {
+      meta: { op: "restore", editionId: "edition-1", annotations: [kept, refused] },
+    } as unknown as QueuedWrite;
+
+    expect(landQueuedMark(queryClient, write, { restored: [kept] })).toBe(false);
+    expect(landQueuedMark(queryClient, write, { restored: [kept, refused] })).toBe(true);
   });
 });
 

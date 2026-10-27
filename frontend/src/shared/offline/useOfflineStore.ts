@@ -11,7 +11,18 @@
  *  2. The write queue — readiness taps, attendance RSVPs, feedback reports and
  *     score markings made while offline, replayed in order once the network
  *     returns. Each entry carries its own retry bookkeeping, so a write the
- *     server keeps failing backs off instead of being dropped on the first 502.
+ *     server keeps failing backs off instead of being dropped on the first 502,
+ *     and the account it was made under.
+ *
+ * Both belong to one account, `owner`. A session can end without a logout (the
+ * refresh token expires, the server answers 401, the app lands on the login
+ * form), so the queue outlives it; the next sign-in decides its fate through
+ * `claimOfflineState`.
+ *
+ * Several tabs — or the installed app beside a browser tab — share this one
+ * storage key. Every change to the persisted half starts from what storage holds
+ * now, and a write from another tab is read back as it happens, so no tab saves
+ * an older copy of the queue over a newer one.
  *
  * Domain-free: the kinds name the features that queue writes, but what a write
  * means — and which caches to re-read once it lands — stays with that feature.
@@ -97,6 +108,11 @@ export interface QueuedWrite {
    */
   failingSince: number | null;
   /**
+   * The account that made the write, stamped from `owner` as it is queued.
+   * Null only for a write read back from a build that did not stamp them.
+   */
+  userId: string | null;
+  /**
    * Bookkeeping the reader never made as a change — how far they have read a
    * score. Replayed like any write, but not counted as waiting, and neither
    * its landing nor its loss is announced: "your offline changes were synced"
@@ -113,16 +129,18 @@ export interface QueuedWrite {
   meta?: unknown;
 }
 
-/** What a feature hands the queue; the store owns identity and retry state. */
+/** What a feature hands the queue; the store owns identity, ownership and retry state. */
 export type NewQueuedWrite = Omit<
   QueuedWrite,
-  "id" | "createdAt" | "attempts" | "nextAttemptAt" | "failingSince"
+  "id" | "createdAt" | "attempts" | "nextAttemptAt" | "failingSince" | "userId"
 >;
 
 interface OfflineState {
   // ── persisted ──────────────────────────────────────────────────────────────
   manifests: Record<string, OfflineProjectManifest>;
   queue: QueuedWrite[];
+  /** The account the downloads and the queue belong to; null until one signs in. */
+  owner: string | null;
 
   // ── ephemeral (reset every load) ────────────────────────────────────────────
   progress: Record<string, OfflineDownloadProgress>;
@@ -145,9 +163,14 @@ interface OfflineState {
   ) => void;
   clearQueue: () => void;
 
-  /** Wipe everything (logout) — caches are cleared separately by the SW. */
+  /** Hand the device to `userId`; writes queued before stamping existed become theirs. */
+  setOwner: (userId: string) => void;
+
+  /** Wipe everything, owner included — the caches are cleared separately. */
   reset: () => void;
 }
+
+export const OFFLINE_STORE_KEY = "voctmanager-offline";
 
 const newId = (): string =>
   typeof crypto !== "undefined" && "randomUUID" in crypto
@@ -203,6 +226,7 @@ export const readQueuedWrites = (value: unknown): QueuedWrite[] => {
       attempts: isFiniteNumber(entry.attempts) ? entry.attempts : 0,
       nextAttemptAt: isFiniteNumber(entry.nextAttemptAt) ? entry.nextAttemptAt : 0,
       failingSince: isFiniteNumber(entry.failingSince) ? entry.failingSince : null,
+      userId: typeof entry.userId === "string" ? entry.userId : null,
       ...(entry.background === true ? { background: true } : {}),
       meta: entry.meta,
     });
@@ -213,92 +237,147 @@ export const readQueuedWrites = (value: unknown): QueuedWrite[] => {
 interface PersistedOfflineState {
   manifests: Record<string, OfflineProjectManifest>;
   queue: QueuedWrite[];
+  owner: string | null;
 }
 
-export const useOfflineStore = create<OfflineState>()(
-  persist(
-    (set) => ({
-      manifests: {},
-      queue: [],
-      progress: {},
+/**
+ * The store is built by a factory so a test can stand two of them on one
+ * storage, the way two tabs share it; the app uses the one instance below.
+ */
+export const createOfflineStore = () => {
+  const store = create<OfflineState>()(
+    persist(
+      (set, _get, api) => {
+        /**
+         * Starts a change to the persisted half from storage rather than from
+         * this tab's copy. localStorage reads synchronously, so the re-read and
+         * the write happen in one task, and a write another tab made a moment
+         * ago — before its `storage` event reached this one — is kept.
+         */
+        const change = (
+          partial:
+            | Partial<OfflineState>
+            | ((state: OfflineState) => Partial<OfflineState>),
+        ): void => {
+          void api.persist.rehydrate();
+          set(partial);
+        };
 
-      setProgress: (projectId, progress) =>
-        set((state) => ({
-          progress: { ...state.progress, [projectId]: progress },
-        })),
+        return {
+          manifests: {},
+          queue: [],
+          owner: null,
+          progress: {},
 
-      clearProgress: (projectId) =>
-        set((state) => {
-          const next = { ...state.progress };
-          delete next[projectId];
-          return { progress: next };
-        }),
+          setProgress: (projectId, progress) =>
+            set((state) => ({
+              progress: { ...state.progress, [projectId]: progress },
+            })),
 
-      saveManifest: (manifest) =>
-        set((state) => ({
-          manifests: { ...state.manifests, [manifest.projectId]: manifest },
-        })),
+          clearProgress: (projectId) =>
+            set((state) => {
+              const next = { ...state.progress };
+              delete next[projectId];
+              return { progress: next };
+            }),
 
-      removeManifest: (projectId) =>
-        set((state) => {
-          const next = { ...state.manifests };
-          delete next[projectId];
-          return { manifests: next };
-        }),
+          saveManifest: (manifest) =>
+            change((state) => ({
+              manifests: { ...state.manifests, [manifest.projectId]: manifest },
+            })),
 
-      enqueueWrite: (write) =>
-        set((state) => ({
-          queue: [
-            ...state.queue.filter((item) => item.dedupeKey !== write.dedupeKey),
-            {
-              ...write,
-              id: newId(),
-              createdAt: Date.now(),
-              attempts: 0,
-              nextAttemptAt: 0,
-              failingSince: null,
-            },
-          ],
-        })),
+          removeManifest: (projectId) =>
+            change((state) => {
+              const next = { ...state.manifests };
+              delete next[projectId];
+              return { manifests: next };
+            }),
 
-      dequeueWrite: (id) =>
-        set((state) => ({ queue: state.queue.filter((item) => item.id !== id) })),
+          enqueueWrite: (write) =>
+            change((state) => ({
+              queue: [
+                ...state.queue.filter((item) => item.dedupeKey !== write.dedupeKey),
+                {
+                  ...write,
+                  id: newId(),
+                  createdAt: Date.now(),
+                  attempts: 0,
+                  nextAttemptAt: 0,
+                  failingSince: null,
+                  userId: state.owner,
+                },
+              ],
+            })),
 
-      startAttempt: (id) =>
-        set((state) => ({
-          queue: state.queue.map((item) =>
-            item.id === id ? { ...item, attempts: item.attempts + 1 } : item,
-          ),
-        })),
+          dequeueWrite: (id) =>
+            change((state) => ({ queue: state.queue.filter((item) => item.id !== id) })),
 
-      deferWrite: (id, { nextAttemptAt, failingSince }) =>
-        set((state) => ({
-          queue: state.queue.map((item) =>
-            item.id === id ? { ...item, nextAttemptAt, failingSince } : item,
-          ),
-        })),
+          startAttempt: (id) =>
+            change((state) => ({
+              queue: state.queue.map((item) =>
+                item.id === id ? { ...item, attempts: item.attempts + 1 } : item,
+              ),
+            })),
 
-      clearQueue: () => set({ queue: [] }),
+          deferWrite: (id, { nextAttemptAt, failingSince }) =>
+            change((state) => ({
+              queue: state.queue.map((item) =>
+                item.id === id ? { ...item, nextAttemptAt, failingSince } : item,
+              ),
+            })),
 
-      reset: () => set({ manifests: {}, queue: [], progress: {} }),
-    }),
-    {
-      name: "voctmanager-offline",
-      version: 1,
-      storage: createJSONStorage(() => localStorage),
-      // Progress is live download telemetry — never restore a stale "downloading".
-      partialize: (state): PersistedOfflineState => ({
-        manifests: state.manifests,
-        queue: state.queue,
-      }),
-      merge: (persisted, current) => {
-        const stored = (persisted ?? {}) as Partial<Record<keyof PersistedOfflineState, unknown>>;
-        const manifests =
-          typeof stored.manifests === "object" && stored.manifests !== null
-            ? (stored.manifests as Record<string, OfflineProjectManifest>)
-            : current.manifests;
-        return { ...current, manifests, queue: readQueuedWrites(stored.queue) };
+          clearQueue: () => change({ queue: [] }),
+
+          setOwner: (userId) =>
+            change((state) => ({
+              owner: userId,
+              queue: state.queue.map((item) =>
+                item.userId === null ? { ...item, userId } : item,
+              ),
+            })),
+
+          reset: () => set({ manifests: {}, queue: [], owner: null, progress: {} }),
+        };
       },
-    },
-  ),
-);
+      {
+        name: OFFLINE_STORE_KEY,
+        version: 1,
+        storage: createJSONStorage(() => localStorage),
+        // Progress is live download telemetry — never restore a stale "downloading".
+        partialize: (state): PersistedOfflineState => ({
+          manifests: state.manifests,
+          queue: state.queue,
+          owner: state.owner,
+        }),
+        merge: (persisted, current) => {
+          const stored = (persisted ?? {}) as Partial<
+            Record<keyof PersistedOfflineState, unknown>
+          >;
+          const manifests =
+            typeof stored.manifests === "object" && stored.manifests !== null
+              ? (stored.manifests as Record<string, OfflineProjectManifest>)
+              : current.manifests;
+          return {
+            ...current,
+            manifests,
+            queue: readQueuedWrites(stored.queue),
+            owner: typeof stored.owner === "string" ? stored.owner : null,
+          };
+        },
+      },
+    ),
+  );
+
+  // Another tab wrote the queue (a `null` key is a cleared storage).
+  if (typeof window !== "undefined") {
+    window.addEventListener("storage", (event) => {
+      if (event.key === OFFLINE_STORE_KEY || event.key === null) {
+        void store.persist.rehydrate();
+      }
+    });
+  }
+
+  return store;
+};
+
+export const useOfflineStore = createOfflineStore();

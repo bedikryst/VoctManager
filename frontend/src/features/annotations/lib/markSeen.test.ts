@@ -18,6 +18,7 @@ const held = (editionId: string, at: string): QueuedWrite => ({
   attempts: 0,
   nextAttemptAt: 0,
   failingSince: null,
+  userId: null,
 });
 
 describe("queuedSeen", () => {

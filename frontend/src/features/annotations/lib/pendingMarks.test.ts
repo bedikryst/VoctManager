@@ -69,6 +69,7 @@ const enqueue = (
         attempts: 0,
         nextAttemptAt: 0,
         failingSince: null,
+        userId: null,
         meta: collapsed.replace.meta,
       },
     ];
@@ -227,6 +228,7 @@ describe("drawing the queue back onto the page", () => {
       attempts: 0,
       nextAttemptAt: 0,
       failingSince: null,
+      userId: null,
       meta: { op: "clear", editionId: EDITION },
     };
     const page = applyPendingMarks(
@@ -310,6 +312,7 @@ describe("reading a queued echo back from storage", () => {
       attempts: 0,
       nextAttemptAt: 0,
       failingSince: null,
+      userId: null,
       meta: { op: "update", editionId: EDITION, annotationId: "m1", patch: null },
     };
     expect(pendingMarkEntries([damaged], EDITION)).toEqual([]);
