@@ -35,6 +35,12 @@
       "offline": "Setting marks aside and bringing them back needs a connection."
     },
     "collapse_tools": "Collapse tools",
+    "families": {
+      "draw": "Draw",
+      "insert": "Insert",
+      "slot": "{{family}}: {{tool}}"
+    },
+    "more": "More",
     "draw_needs_room": "Zoom in to write",
     "ink_color": "Ink colour",
     "ink_reserved": "Red is reserved for the conductor.",

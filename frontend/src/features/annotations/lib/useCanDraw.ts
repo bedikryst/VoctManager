@@ -7,7 +7,8 @@
  * phone on its side stays below the line in either fit. A precise
  * pointer — stylus or mouse — settles it outright, because precision is the
  * only thing being measured here. Pinned/inline notes, stamps and the eraser
- * stay available everywhere (see AnnotationToolbar).
+ * stay available everywhere; below the line the toolbar's "Rysuj" slot shows
+ * dimmed and says why when tapped (see ToolFamilySlot).
  * @module features/annotations/lib
  */
 

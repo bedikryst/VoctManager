@@ -63,7 +63,8 @@ export interface DropdownMenuItemProps {
    * item's `textValue` so keyboard typeahead still matches the label only.
    */
   description?: string;
-  onSelect?: () => void;
+  /** Radix closes the menu after this runs unless it calls `event.preventDefault()`. */
+  onSelect?: (event: Event) => void;
   disabled?: boolean;
   /** Renders the item in the destructive (crimson) register. */
   destructive?: boolean;

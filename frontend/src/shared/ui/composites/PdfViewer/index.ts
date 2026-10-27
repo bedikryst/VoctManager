@@ -1,5 +1,6 @@
 export { PdfViewer } from "./PdfViewer";
 export { usePdfImmersive, usePdfCompactTriggers } from "./context";
+export { usePdfToolRail } from "./toolRail";
 /**
  * Where the viewer turns pages on a tap. Exported so an overlay that captures
  * touches of its own (an armed pen) can offer the same gesture in the same

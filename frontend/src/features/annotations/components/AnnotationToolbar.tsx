@@ -1,24 +1,29 @@
 /**
  * @file AnnotationToolbar.tsx
- * @description Markup toolbar, injected into the PDF viewer's floating control
- * pill: undo/redo, the tool set (browse · select · pen · highlighter · shapes ·
- * note · stamp · link · eraser), the shape in hand, contextual stroke weight + ink colour, what draws
- * (stylus or finger), the note
- * display mode, the musical stamp palette (one group at a time — the catalogue
- * outgrew a flat grid), the write layer, and the "how does this work" panel. In
- * conductor mode the layer cycles choir → leader → private; in leader mode it
- * steps through the reader's own pencil and the layers their grant opens (the
- * choir, "Z dyrygentem"); in personal mode
- * every mark lands on the user's own private layer (a static chip says so).
+ * @description Markup toolbar, injected into the PDF viewer's top-left slot.
+ * Three parts, each in its own glass:
+ * - the tools: collapse · undo · redo │ browse · select · Rysuj · Wstaw ·
+ *   eraser │ ⋯. "Rysuj" (pen, highlighter, shapes) and "Wstaw" (note, symbol,
+ *   jump) are family slots (see ToolFamilySlot); the guide and "Usuń
+ *   wszystkie" live behind ⋯, away from the end of the bar where a destructive
+ *   button invited a mis-tap;
+ * - the "who sees it" strip (AnnotationAudienceBar): the layer the NEXT mark
+ *   goes to, "Powiadom chór", marks waiting for the network;
+ * - the armed tool's options: its family's siblings first, then the shape in
+ *   hand, what draws (stylus or finger), stroke weight, ink, voices, the note
+ *   display mode, sizes, and the symbol palette (one group at a time).
+ *
+ * Orientation follows the screen, never the zoom (`usePdfToolRail`). On a
+ * landscape tablet or larger the tools are a vertical rail in the left margin
+ * under the strip, with the options opening to its right. Elsewhere they are a
+ * row in the top letterbox with the strip under it and the options dropping
+ * below; in personal mode the strip would hold nothing but "Moje", so that
+ * chip heads the row instead. On the narrowest phones the row cannot hold
+ * every slot, so collapse and redo move into ⋯ and what is left may wrap to a
+ * second line — nothing hides behind a scroll.
+ *
  * Each tool's tooltip names the key that arms it (`TOOL_KEYS`), and the symbol
  * palette previews every symbol in the ink in hand, on a scrap of paper.
- *
- * The layer pill arms the NEXT mark and nothing else. Moving one that already
- * exists is a different question, asked of a different subject, and it is
- * answered on a card anchored to that mark — not from a bar at the far corner
- * of a tablet.
- * Drawing tools appear once the page is rendered large enough to write on (see
- * useCanDraw); notes, stamps, eraser + browse stay on every screen.
  *
  * Collapsed, the bar is a trigger that NAMES the tool in hand — a rehearsal is
  * no place to discover that the pencil was armed all along. Whether it opens
@@ -28,7 +33,7 @@
  * @module features/annotations/components
  */
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Check,
   ChevronLeft,
@@ -40,7 +45,8 @@ import {
   Highlighter,
   HelpCircle,
   LassoSelect,
-  Lock,
+  MoreHorizontal,
+  MoreVertical,
   MousePointer2,
   MoveUpRight,
   PenLine,
@@ -54,16 +60,28 @@ import {
   Trash2,
   Type,
   Undo2,
-  ZoomIn,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 import { cn } from "@/shared/lib/utils";
-import { Caption, Eyebrow } from "@/shared/ui/primitives/typography";
+import { useMediaQuery } from "@/shared/lib/dom/useMediaQuery";
+import { Caption } from "@/shared/ui/primitives/typography";
 import { Divider } from "@/shared/ui/primitives/Divider";
-import { usePdfCompactTriggers, usePdfImmersive } from "@/shared/ui/composites/PdfViewer";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/shared/ui/composites/DropdownMenu";
+import {
+  usePdfCompactTriggers,
+  usePdfImmersive,
+  usePdfToolRail,
+} from "@/shared/ui/composites/PdfViewer";
 
 import {
+  DRAWING_TOOLS,
   MARK_SCALE_MAX,
   MARK_SCALE_MIN,
   MARK_SCALE_STEP,
@@ -73,13 +91,6 @@ import {
   type StrokeSize,
 } from "../lib/useAnnotationTools";
 import { readStored, writeStored } from "../lib/deviceStorage";
-import {
-  asWriteLayer,
-  delegateTargetCopy,
-  NEXT_WRITE_LAYER,
-  writeLayerCopy,
-  type DelegateTarget,
-} from "../lib/layers";
 import {
   getStampDef,
   groupOfStamp,
@@ -92,7 +103,22 @@ import { SHAPE_KINDS, type ShapeKind } from "../lib/shapes";
 import { layerTakesVoices } from "../lib/voices";
 import type { NoteDisplay } from "../types/annotations.dto";
 import type { DelegateLayer, ScoreAnnotatorMode } from "../useScoreAnnotator";
+import { AnnotationAudienceBar, PendingPill, PersonalLayerChip } from "./AnnotationAudienceBar";
 import { MarkVoicePicker } from "./MarkVoicePicker";
+import {
+  DRAW_FAMILY,
+  familyOf,
+  INSERT_FAMILY,
+  ToolFamilySlot,
+  useFamilyMember,
+} from "./ToolFamilySlot";
+import {
+  barChrome,
+  glassChrome,
+  panelChrome,
+  pillButton,
+  wrappingBarChrome,
+} from "./toolbarChrome";
 
 interface AnnotationToolbarProps extends AnnotationToolState {
   /**
@@ -103,13 +129,9 @@ interface AnnotationToolbarProps extends AnnotationToolState {
   delegateLayers: readonly DelegateLayer[];
   canDraw: boolean;
   annotationCount: number;
-  /** How many of the visible marks THIS user may wipe (gates the trash). */
+  /** How many of the visible marks THIS user may wipe (gates "Usuń wszystkie"). */
   clearableCount: number;
-  /**
-   * Markup writes this device is still holding for the network. Shown, because
-   * the alternative is a reader who has no way to tell "saved" from "saved
-   * somewhere I cannot see" and stops trusting the pencil.
-   */
+  /** Markup writes this device is still holding for the network. */
   pendingCount: number;
   canUndo: boolean;
   canRedo: boolean;
@@ -121,27 +143,38 @@ interface AnnotationToolbarProps extends AnnotationToolState {
   notifySlot?: React.ReactNode;
 }
 
-interface ToolDef {
+export interface ToolDef {
   id: AnnotationTool;
   icon: typeof PenLine;
   labelKey: string;
   fallback: string;
-  drawOnly: boolean;
 }
 
-/** The tool set in toolbar order; the guide lists the keys from it too. */
-export const TOOL_DEFS: ReadonlyArray<ToolDef> = [
-  { id: "pointer", icon: MousePointer2, labelKey: "annotations.tools.pointer", fallback: "Przeglądaj", drawOnly: false },
-  // Beside browse: both work with marks already on the page.
-  { id: "select", icon: LassoSelect, labelKey: "annotations.tools.select", fallback: "Zaznacz", drawOnly: false },
-  { id: "pen", icon: PenLine, labelKey: "annotations.tools.pen", fallback: "Pióro", drawOnly: true },
-  { id: "highlighter", icon: Highlighter, labelKey: "annotations.tools.highlighter", fallback: "Zakreślacz", drawOnly: true },
-  { id: "shape", icon: Shapes, labelKey: "annotations.tools.shape", fallback: "Kształty", drawOnly: true },
+const TOOL_DEF_BY_ID: Readonly<Record<AnnotationTool, ToolDef>> = {
+  pointer: { id: "pointer", icon: MousePointer2, labelKey: "annotations.tools.pointer", fallback: "Przeglądaj" },
+  select: { id: "select", icon: LassoSelect, labelKey: "annotations.tools.select", fallback: "Zaznacz" },
+  pen: { id: "pen", icon: PenLine, labelKey: "annotations.tools.pen", fallback: "Pióro" },
+  highlighter: { id: "highlighter", icon: Highlighter, labelKey: "annotations.tools.highlighter", fallback: "Zakreślacz" },
+  shape: { id: "shape", icon: Shapes, labelKey: "annotations.tools.shape", fallback: "Kształty" },
   // A speech bubble says "comment thread". This tool writes a WORD on paper.
-  { id: "note", icon: Type, labelKey: "annotations.tools.note", fallback: "Notatka", drawOnly: false },
-  { id: "stamp", icon: Stamp, labelKey: "annotations.tools.stamp", fallback: "Symbol", drawOnly: false },
-  { id: "link", icon: CornerDownRight, labelKey: "annotations.tools.link", fallback: "Skok", drawOnly: false },
-  { id: "eraser", icon: Eraser, labelKey: "annotations.tools.eraser", fallback: "Gumka", drawOnly: false },
+  note: { id: "note", icon: Type, labelKey: "annotations.tools.note", fallback: "Notatka" },
+  stamp: { id: "stamp", icon: Stamp, labelKey: "annotations.tools.stamp", fallback: "Symbol" },
+  link: { id: "link", icon: CornerDownRight, labelKey: "annotations.tools.link", fallback: "Skok" },
+  eraser: { id: "eraser", icon: Eraser, labelKey: "annotations.tools.eraser", fallback: "Gumka" },
+};
+
+/** Every tool, in the order the bar and its families show them; the guide lists the keys from it. */
+export const TOOL_DEFS: ReadonlyArray<ToolDef> = [
+  TOOL_DEF_BY_ID.pointer,
+  // Beside browse: both work with marks already on the page.
+  TOOL_DEF_BY_ID.select,
+  TOOL_DEF_BY_ID.pen,
+  TOOL_DEF_BY_ID.highlighter,
+  TOOL_DEF_BY_ID.shape,
+  TOOL_DEF_BY_ID.note,
+  TOOL_DEF_BY_ID.stamp,
+  TOOL_DEF_BY_ID.link,
+  TOOL_DEF_BY_ID.eraser,
 ];
 
 type ShapeIcon = React.ComponentType<{ size?: number }>;
@@ -199,6 +232,12 @@ const SIZES: ReadonlyArray<{ id: StrokeSize; dot: number; labelKey: string; fall
 ];
 
 /**
+ * Below Tailwind's `sm` the row cannot hold every slot even with the families
+ * folded (360 px leaves it ~216 px), so collapse and redo move into ⋯ there.
+ */
+const NARROW_ROW_QUERY = "(max-width: 39.99rem)";
+
+/**
  * Continuous size control, shared by the note and stamp panels. The sample to
  * its left grows with the value, so the size is chosen by looking at a mark
  * rather than by decoding a number.
@@ -239,21 +278,14 @@ const EXPANDED_STORAGE_KEY = "voct.annotations.toolbar_open";
 
 const readExpanded = (): boolean => readStored(EXPANDED_STORAGE_KEY) === "1";
 
-const pillButton =
-  "flex h-9 w-9 items-center justify-center rounded-full text-ink-on-inverse transition-colors";
-const ToolSeparator = () => (
-  <Divider variant="solid-dark" orientation="vertical" className="mx-1 h-4" />
-);
+/** Across the row, a short upright rule; down the rail, a short level one. */
+const ToolSeparator = ({ rail }: { rail: boolean }): React.JSX.Element =>
+  rail ? (
+    <Divider variant="solid-dark" orientation="horizontal" className="my-1 w-4" />
+  ) : (
+    <Divider variant="solid-dark" orientation="vertical" className="mx-1 h-4" />
+  );
 
-// Self-contained chrome: the toolbar owns its glass pill (PdfViewer just gives
-// it a top-left slot with a capped width), so collapsed = a clean trigger and
-// expanded = a single-row bar, without a double-pill.
-const barChrome =
-  "pointer-events-auto flex items-center rounded-full border border-line-on-inverse bg-surface-inverse/70 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-xl";
-// The active tool's contextual options drop DOWN into this panel (same glass,
-// softer corners) instead of stretching the pill off the edge of a phone.
-const panelChrome =
-  "pointer-events-auto rounded-2xl border border-line-on-inverse bg-surface-inverse/70 p-2.5 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-xl";
 /**
  * A scrap of the page under a symbol's preview, so the preview is drawn in the
  * ink it will be placed in. Pencil on the dark chrome would be invisible, and a
@@ -312,55 +344,40 @@ export const AnnotationToolbar = ({
   notifySlot,
 }: AnnotationToolbarProps): React.JSX.Element => {
   const { t } = useTranslation();
+  const isRail = usePdfToolRail();
+  const isNarrow = useMediaQuery(NARROW_ROW_QUERY);
+  const foldIntoMenu = !isRail && isNarrow;
+
+  // A drawing tool held over a page too small to write on is not in hand: the
+  // annotator coerces it to browse, and the bar has to say the same.
+  const armedTool: AnnotationTool = !canDraw && DRAWING_TOOLS.has(tool) ? "pointer" : tool;
+  const drawMember = useFamilyMember(DRAW_FAMILY, armedTool);
+  const insertMember = useFamilyMember(INSERT_FAMILY, armedTool);
+  const armedFamily = familyOf(armedTool);
+
   const showInk =
-    tool === "pen" ||
-    tool === "highlighter" ||
-    tool === "shape" ||
-    tool === "note" ||
-    tool === "stamp" ||
-    tool === "link";
-  const showSize = tool === "pen" || tool === "highlighter" || tool === "shape";
-  const showShapes = tool === "shape";
-  const showNoteMode = tool === "note";
-  const showStamps = tool === "stamp";
+    armedTool === "pen" ||
+    armedTool === "highlighter" ||
+    armedTool === "shape" ||
+    armedTool === "note" ||
+    armedTool === "stamp" ||
+    armedTool === "link";
+  const showSize = armedTool === "pen" || armedTool === "highlighter" || armedTool === "shape";
+  const showShapes = armedTool === "shape";
+  const showNoteMode = armedTool === "note";
+  const showStamps = armedTool === "stamp";
   // Text size only matters for words on the page (inline or boxed) — mirror the
   // note card.
-  const showTextSize = tool === "note" && noteDisplay !== "pin";
-  const showStampSize = tool === "stamp";
-  // Whether the active tool has any contextual options to drop below the pill.
-  const hasPanel = showSize || showInk || showNoteMode || showStamps;
+  const showTextSize = armedTool === "note" && noteDisplay !== "pin";
+  const showStampSize = armedTool === "stamp";
+  // Every family member has options, if only its siblings; the single slots have none.
+  const hasPanel = armedFamily !== null;
   // Voices address the next mark wherever its layer has readers who sing.
-  const voicesApply = mode !== "personal" && layerTakesVoices(layer);
-  const showVoices = showInk && voicesApply;
-  // Said on the layer pill too, so a mark about to go to the tenors only is
-  // never a surprise with the panel closed.
-  const voicesBadge =
-    voicesApply && voices.length > 0 ? (
-      <span className="rounded-full bg-ink-on-inverse/15 px-1.5 text-[10px] font-semibold tracking-wide">
-        {voices.join("")}
-      </span>
-    ) : null;
+  const showVoices = showInk && mode !== "personal" && layerTakesVoices(layer);
   const activeStampGroup = groupOfStamp(stamp);
   const armedStamp = getStampDef(stamp);
   /** The size sample grows with the slider, inside its 36 px tile. */
   const stampSampleBox = 10 + stampScale * 8;
-
-  // A layer set outside this cycle (an ad-hoc name from an older score) reads as
-  // the choir's, because that is the only answer that cannot quietly widen an
-  // audience: the pill then shows where the NEXT mark goes, which is the one
-  // thing it is there to say.
-  const writeLayer = asWriteLayer(layer);
-  const layerCopy = useMemo(() => writeLayerCopy(t), [t]);
-  const activeLayerCopy = layerCopy[writeLayer];
-
-  // A leader's targets are their own pencil and whatever their grant opens: the
-  // choir's page, the desk shared with the conductor, or both. A layer outside
-  // them reads as the pencil, the one target that publishes nothing.
-  const targetCopy = useMemo(() => delegateTargetCopy(t), [t]);
-  const targets: readonly DelegateTarget[] = ["personal", ...delegateLayers];
-  const target = targets.find((candidate) => candidate === layer) ?? "personal";
-  const nextTarget = targets[(targets.indexOf(target) + 1) % targets.length];
-  const activeTargetCopy = targetCopy[target];
 
   const isImmersive = usePdfImmersive();
   const compactTrigger = usePdfCompactTriggers();
@@ -381,7 +398,7 @@ export const AnnotationToolbar = ({
   }, [isImmersive]);
 
   // Two-tap confirm (avoids a modal-inside-the-PDF-modal); auto-resets so a
-  // stray first tap never leaves the toolbar armed.
+  // stray first tap never leaves the menu armed.
   const [confirmingClear, setConfirmingClear] = useState(false);
   useEffect(() => {
     if (!confirmingClear) return;
@@ -389,28 +406,10 @@ export const AnnotationToolbar = ({
     return () => window.clearTimeout(timer);
   }, [confirmingClear]);
 
-  const visibleTools = TOOL_DEFS.filter((toolDef) => canDraw || !toolDef.drawOnly);
-
-  // The bar opens collapsed, so the waiting-to-sync sign has to survive here
-  // too — this is the state a reader is actually in when they close the score
-  // in a basement and wonder whether their pencil marks made it.
-  const pendingPill = pendingCount > 0 && (
-    <span
-      title={t(
-        "annotations.pending_hint",
-        "Zapisane na tym urządzeniu. Wyślą się same, gdy wróci internet.",
-      )}
-      className="flex items-center gap-1 rounded-full bg-ethereal-gold/20 px-2 py-1 text-[10px] font-semibold text-ethereal-gold"
-    >
-      <CloudOff size={11} aria-hidden="true" />
-      {pendingCount}
-    </span>
-  );
-
   if (!expanded) {
     // The armed tool names itself on the trigger: "Pióro" on the pill is the
     // difference between reaching for the stylus and hunting for an icon.
-    const armed = visibleTools.find(({ id }) => id === tool && id !== "pointer");
+    const armed = armedTool !== "pointer" ? TOOL_DEF_BY_ID[armedTool] : undefined;
     const TriggerIcon = armed?.icon ?? SquarePen;
     const triggerLabel = armed
       ? t(armed.labelKey, armed.fallback)
@@ -464,6 +463,9 @@ export const AnnotationToolbar = ({
       );
     }
 
+    // The bar opens collapsed, so the waiting-to-sync sign has to survive here
+    // too — this is the state a reader is actually in when they close the score
+    // in a basement and wonder whether their pencil marks made it.
     return (
       <button
         type="button"
@@ -482,465 +484,524 @@ export const AnnotationToolbar = ({
             {annotationCount}
           </span>
         )}
-        {pendingPill}
+        <PendingPill count={pendingCount} />
       </button>
+    );
+  }
+
+  // In personal mode the strip would hold nothing but "Moje" (and the sync
+  // sign), so a row does without it and carries the chip at its head. The
+  // rail keeps the strip: there the chip has no row to sit in.
+  const audienceInRow = !isRail && mode === "personal" && !notifySlot;
+
+  const singleSlot = (id: AnnotationTool): React.JSX.Element => {
+    const { icon: Icon, labelKey, fallback } = TOOL_DEF_BY_ID[id];
+    const label = t(labelKey, fallback);
+    return (
+      <button
+        type="button"
+        onClick={() => setTool(id)}
+        aria-label={label}
+        aria-pressed={armedTool === id}
+        aria-keyshortcuts={TOOL_KEYS[id].toUpperCase()}
+        title={withKey(label, id)}
+        className={cn(
+          pillButton,
+          armedTool === id ? "bg-ink-on-inverse/20" : "hover:bg-ink-on-inverse/10",
+        )}
+      >
+        <Icon size={16} aria-hidden="true" />
+      </button>
+    );
+  };
+
+  const collapseButton = (
+    <button
+      type="button"
+      onClick={() => changeExpanded(false)}
+      aria-label={t("annotations.collapse_tools", "Zwiń narzędzia")}
+      title={t("annotations.collapse_tools", "Zwiń narzędzia")}
+      className={cn(pillButton, "hover:bg-ink-on-inverse/10")}
+    >
+      <ChevronLeft size={16} aria-hidden="true" />
+    </button>
+  );
+
+  const redoButton = (
+    <button
+      type="button"
+      onClick={onRedo}
+      disabled={!canRedo}
+      aria-label={t("annotations.redo", "Ponów")}
+      title={t("annotations.redo", "Ponów")}
+      className={cn(pillButton, "hover:bg-ink-on-inverse/10 disabled:opacity-30")}
+    >
+      <Redo2 size={16} aria-hidden="true" />
+    </button>
+  );
+
+  const MoreIcon = isRail ? MoreVertical : MoreHorizontal;
+  const moreMenu = (
+    <DropdownMenu
+      onOpenChange={(open) => {
+        if (!open) setConfirmingClear(false);
+      }}
+    >
+      <DropdownMenuTrigger asChild>
+        <button
+          type="button"
+          aria-label={t("annotations.more", "Więcej")}
+          title={t("annotations.more", "Więcej")}
+          className={cn(
+            pillButton,
+            "hover:bg-ink-on-inverse/10 data-[state=open]:bg-ink-on-inverse/20",
+          )}
+        >
+          <MoreIcon size={16} aria-hidden="true" />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent side={isRail ? "right" : "bottom"} align="start">
+        {foldIntoMenu && (
+          <>
+            <DropdownMenuItem icon={<Redo2 size={14} />} onSelect={onRedo} disabled={!canRedo}>
+              {t("annotations.redo", "Ponów")}
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              icon={<ChevronLeft size={14} />}
+              onSelect={() => changeExpanded(false)}
+            >
+              {t("annotations.collapse_tools", "Zwiń narzędzia")}
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+          </>
+        )}
+        <DropdownMenuItem icon={<HelpCircle size={14} />} onSelect={onOpenGuide}>
+          {t("annotations.guide.open", "Jak działają adnotacje")}
+        </DropdownMenuItem>
+        {clearableCount > 0 && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              icon={confirmingClear ? <Check size={14} /> : <Trash2 size={14} />}
+              destructive
+              onSelect={(event) => {
+                // The first tap only arms it, and the menu stays open for the
+                // second.
+                if (!confirmingClear) {
+                  event.preventDefault();
+                  setConfirmingClear(true);
+                  return;
+                }
+                setConfirmingClear(false);
+                onClearAll();
+              }}
+            >
+              {confirmingClear
+                ? t("annotations.clear_confirm", "Na pewno?")
+                : t("annotations.clear_all", "Usuń wszystkie adnotacje")}
+            </DropdownMenuItem>
+          </>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+
+  const toolBar = (
+    <div
+      className={
+        isRail
+          ? cn(
+              glassChrome,
+              "no-scrollbar flex max-h-full shrink-0 flex-col items-center gap-0.5 overflow-y-auto rounded-full p-1.5",
+            )
+          : cn(wrappingBarChrome, "max-w-full gap-0.5 p-1.5")
+      }
+    >
+      {audienceInRow && (
+        <>
+          <PersonalLayerChip compact />
+          <PendingPill count={pendingCount} />
+        </>
+      )}
+      {!foldIntoMenu && collapseButton}
+      <button
+        type="button"
+        onClick={onUndo}
+        disabled={!canUndo}
+        aria-label={t("annotations.undo", "Cofnij")}
+        title={t("annotations.undo", "Cofnij")}
+        className={cn(pillButton, "hover:bg-ink-on-inverse/10 disabled:opacity-30")}
+      >
+        <Undo2 size={16} aria-hidden="true" />
+      </button>
+      {!foldIntoMenu && redoButton}
+
+      <ToolSeparator rail={isRail} />
+
+      {singleSlot("pointer")}
+      {singleSlot("select")}
+      <ToolFamilySlot
+        family={DRAW_FAMILY}
+        member={TOOL_DEF_BY_ID[drawMember]}
+        armed={armedTool}
+        onArm={setTool}
+        available={canDraw}
+      />
+      <ToolFamilySlot
+        family={INSERT_FAMILY}
+        member={TOOL_DEF_BY_ID[insertMember]}
+        armed={armedTool}
+        onArm={setTool}
+      />
+      {singleSlot("eraser")}
+
+      <ToolSeparator rail={isRail} />
+
+      {moreMenu}
+    </div>
+  );
+
+  const audienceBar = (
+    <AnnotationAudienceBar
+      mode={mode}
+      delegateLayers={delegateLayers}
+      layer={layer}
+      setLayer={setLayer}
+      voices={voices}
+      pendingCount={pendingCount}
+      notifySlot={notifySlot}
+    />
+  );
+
+  const optionsPanel = hasPanel && (
+    <div
+      className={cn(
+        panelChrome,
+        "no-scrollbar flex flex-col gap-3",
+        isRail ? "max-h-full max-w-xs overflow-y-auto" : "max-w-full overflow-x-auto",
+      )}
+    >
+      {/* The armed family's members, so a sibling is one tap from the one in
+          hand; the slot on the bar then wears whichever was armed last. */}
+      {armedFamily && (
+        <div
+          className="flex items-center gap-1"
+          role="group"
+          aria-label={t(armedFamily.labelKey, armedFamily.fallback)}
+        >
+          {armedFamily.members.map((id) => {
+            const { icon: Icon, labelKey, fallback } = TOOL_DEF_BY_ID[id];
+            const label = t(labelKey, fallback);
+            return (
+              <button
+                key={id}
+                type="button"
+                onClick={() => setTool(id)}
+                aria-label={label}
+                aria-pressed={armedTool === id}
+                aria-keyshortcuts={TOOL_KEYS[id].toUpperCase()}
+                title={withKey(label, id)}
+                className={cn(
+                  pillButton,
+                  armedTool === id ? "bg-ink-on-inverse/20" : "hover:bg-ink-on-inverse/10",
+                )}
+              >
+                <Icon size={16} aria-hidden="true" />
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Which figure the next drag draws — the choice the tool exists for,
+          so it comes straight after the family. Circle and square are not
+          separate buttons: an oval or a box dragged nearly square snaps to one. */}
+      {showShapes && (
+        <div
+          className="flex flex-wrap items-center gap-1"
+          role="group"
+          aria-label={t("annotations.shapes.label", "Kształt")}
+        >
+          {SHAPE_KINDS.map(({ kind, labelKey, fallback }) => {
+            const Icon = SHAPE_ICONS[kind];
+            return (
+              <button
+                key={kind}
+                type="button"
+                onClick={() => setShape(kind)}
+                aria-label={t(labelKey, fallback)}
+                aria-pressed={shape === kind}
+                title={t(labelKey, fallback)}
+                className={cn(
+                  pillButton,
+                  shape === kind ? "bg-ink-on-inverse/20" : "hover:bg-ink-on-inverse/10",
+                )}
+              >
+                <Icon size={16} aria-hidden="true" />
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      {/* What draws. Auto-set from the device (a stylus turns palm rejection
+          on by itself), but always overridable — a reader whose "stylus"
+          is a rubber-tipped stick reports as a finger and would otherwise
+          be left with a pencil that draws nothing. */}
+      {showSize && (
+        <div
+          className="flex items-center gap-1"
+          role="group"
+          aria-label={t("annotations.input.group", "Czym rysujesz")}
+        >
+          {([false, true] as const).map((asFinger) => (
+            <button
+              key={String(asFinger)}
+              type="button"
+              onClick={() => setFingerDraw(asFinger)}
+              aria-pressed={fingerDraw === asFinger}
+              title={
+                asFinger
+                  ? t("annotations.input.finger_hint", "Palec rysuje. Nuty przewijasz dwoma palcami.")
+                  : t("annotations.input.stylus_hint", "Rysuje tylko rysik. Palcem przewijasz nuty.")
+              }
+              className={cn(
+                "flex h-9 items-center gap-1.5 rounded-full px-3 text-xs font-medium transition-colors",
+                "text-ink-on-inverse",
+                fingerDraw === asFinger
+                  ? "bg-ink-on-inverse/20"
+                  : "hover:bg-ink-on-inverse/10",
+              )}
+            >
+              {asFinger ? (
+                <Hand size={14} aria-hidden="true" />
+              ) : (
+                <PenTool size={14} aria-hidden="true" />
+              )}
+              {asFinger
+                ? t("annotations.input.finger", "Palec")
+                : t("annotations.input.stylus", "Rysik")}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {showSize && (
+        <div className="flex items-center gap-1">
+          {SIZES.map(({ id, dot, labelKey, fallback }) => (
+            <button
+              key={id}
+              type="button"
+              onClick={() => setSize(id)}
+              aria-label={t(labelKey, fallback)}
+              aria-pressed={size === id}
+              title={t(labelKey, fallback)}
+              className={cn(
+                "flex h-9 w-9 items-center justify-center rounded-full transition-colors",
+                size === id
+                  ? "bg-ink-on-inverse/20"
+                  : "hover:bg-ink-on-inverse/10",
+              )}
+            >
+              <span
+                className="rounded-full bg-ink-on-inverse"
+                style={{ width: dot, height: dot }}
+              />
+            </button>
+          ))}
+        </div>
+      )}
+
+      {showInk && (
+        <div className="flex flex-col gap-1.5">
+          <div
+            className="flex flex-wrap items-center gap-1.5"
+            role="group"
+            aria-label={t("annotations.ink_color", "Kolor")}
+          >
+            {inks.map(({ value, nameKey, fallback, dark }) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => setColor(value)}
+                aria-label={t(nameKey, fallback)}
+                aria-pressed={color === value}
+                title={t(nameKey, fallback)}
+                className={cn(
+                  "h-6 w-6 rounded-full transition-transform hover:scale-110",
+                  color === value
+                    ? "ring-2 ring-ink-on-inverse ring-offset-1 ring-offset-surface-inverse"
+                    : // Pencil on the dark chrome is a hole without an edge.
+                      dark
+                      ? "ring-1 ring-ink-on-inverse/70"
+                      : "ring-1 ring-ink-on-inverse/30",
+                )}
+                style={{ backgroundColor: value }}
+              />
+            ))}
+          </div>
+          {/* Said once, where the missing swatch is — the palette is short
+              enough that its absence would otherwise read as a bug. */}
+          {mode !== "conductor" && (
+            <Caption color="ink-on-inverse-muted">
+              {t(
+                "annotations.ink_reserved",
+                "Czerwony jest zarezerwowany dla dyrygenta.",
+              )}
+            </Caption>
+          )}
+        </div>
+      )}
+
+      {showVoices && (
+        <MarkVoicePicker current={voices} onChange={setVoices} surface="chrome" />
+      )}
+
+      {showNoteMode && (
+        <div className="flex items-center gap-1">
+          {NOTE_DISPLAYS.map(({ mode: displayMode, labelKey, fallback }) => (
+            <button
+              key={displayMode}
+              type="button"
+              onClick={() => setNoteDisplay(displayMode)}
+              aria-pressed={noteDisplay === displayMode}
+              className={cn(
+                "h-9 rounded-full px-3 text-xs font-medium transition-colors",
+                "text-ink-on-inverse",
+                noteDisplay === displayMode
+                  ? "bg-ink-on-inverse/20"
+                  : "hover:bg-ink-on-inverse/10",
+              )}
+            >
+              {t(labelKey, fallback)}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {showTextSize && (
+        <ScaleSlider
+          value={textScale}
+          onChange={setTextScale}
+          label={t("annotations.scale.text", "Rozmiar tekstu")}
+          sample={
+            <span
+              className="font-semibold leading-none"
+              style={{ fontSize: 8 + textScale * 8 }}
+            >
+              Aa
+            </span>
+          }
+        />
+      )}
+
+      {showStampSize && (
+        <ScaleSlider
+          value={stampScale}
+          onChange={setStampScale}
+          label={t("annotations.scale.stamp", "Rozmiar symbolu")}
+          sample={
+            armedStamp && (
+              <span className={cn(paperTile, "h-9 w-9 overflow-hidden")}>
+                <StampGlyph
+                  symbol={stamp}
+                  color={color}
+                  size={
+                    armedStamp.kind === "text"
+                      ? stampSampleBox
+                      : stampPreviewSize(armedStamp, stampSampleBox)
+                  }
+                />
+              </span>
+            )
+          }
+        />
+      )}
+
+      {showStamps && (
+        // Thirty symbols in one grid stopped fitting a phone, so the
+        // palette shows ONE group at a time. The open group is derived from
+        // the armed stamp rather than held separately — that way the symbol
+        // in hand is always the one lit up on screen — and picking a group
+        // arms its first symbol, so a tab is never a dead end. Beside the
+        // rail the groups wrap: the panel there is narrow and tall.
+        <div className="flex flex-col gap-1.5">
+          <div
+            className={cn(
+              "no-scrollbar flex gap-1",
+              isRail ? "flex-wrap" : "overflow-x-auto",
+            )}
+            role="group"
+            aria-label={t("annotations.stamp_groups.label", "Grupy symboli")}
+          >
+            {STAMP_GROUPS.map(({ group, labelKey, fallback }) => (
+              <button
+                key={group}
+                type="button"
+                onClick={() => {
+                  const first = stampsInGroup(group)[0];
+                  if (first) setStamp(first.id);
+                }}
+                aria-pressed={activeStampGroup === group}
+                className={cn(
+                  "h-8 shrink-0 rounded-full px-2.5 text-xs font-medium transition-colors",
+                  "text-ink-on-inverse",
+                  activeStampGroup === group
+                    ? "bg-ink-on-inverse/20"
+                    : "hover:bg-ink-on-inverse/10",
+                )}
+              >
+                {t(labelKey, fallback)}
+              </button>
+            ))}
+          </div>
+          <div className="grid grid-cols-5 gap-1">
+            {stampsInGroup(activeStampGroup).map((def) => (
+              <button
+                key={def.id}
+                type="button"
+                onClick={() => setStamp(def.id)}
+                aria-label={t(def.labelKey, def.fallback)}
+                aria-pressed={stamp === def.id}
+                title={t(def.labelKey, def.fallback)}
+                className={cn(
+                  paperTile,
+                  "h-9 transition-shadow",
+                  def.kind === "text" && def.glyph.length >= WIDE_STAMP_CHARS && "col-span-2",
+                  stamp === def.id
+                    ? "ring-2 ring-ethereal-gold"
+                    : "hover:ring-1 hover:ring-ethereal-gold/60",
+                )}
+              >
+                <StampGlyph symbol={def.id} color={color} size={stampPreviewSize(def, 22)} />
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
+  if (isRail) {
+    // The strip heads the margin; the rail runs down under it and stops where
+    // the viewer's slot stops (above the Kamerton), and the options open to
+    // the rail's right, still in the margin.
+    return (
+      <div className="flex h-full flex-col items-start gap-2">
+        {audienceBar}
+        <div className="flex min-h-0 flex-1 items-start gap-2">
+          {toolBar}
+          {optionsPanel}
+        </div>
+      </div>
     );
   }
 
   return (
     <div className="flex flex-col items-start gap-2">
-      {/* Main pill — deliberately ONE row: collapse · undo/redo · tools · layer
-          · trash. Contextual options never live here; they drop into the panel
-          below so nothing runs off the edge of a phone. */}
-      <div className={cn(barChrome, "no-scrollbar max-w-full gap-0.5 overflow-x-auto p-1.5")}>
-        <button
-          type="button"
-          onClick={() => changeExpanded(false)}
-          aria-label={t("annotations.collapse_tools", "Zwiń narzędzia")}
-          title={t("annotations.collapse_tools", "Zwiń narzędzia")}
-          className={cn(pillButton, "hover:bg-ink-on-inverse/10")}
-        >
-          <ChevronLeft size={16} aria-hidden="true" />
-        </button>
-        <ToolSeparator />
-        <button
-          type="button"
-          onClick={onUndo}
-          disabled={!canUndo}
-          aria-label={t("annotations.undo", "Cofnij")}
-          title={t("annotations.undo", "Cofnij")}
-          className={cn(pillButton, "hover:bg-ink-on-inverse/10 disabled:opacity-30")}
-        >
-          <Undo2 size={16} aria-hidden="true" />
-        </button>
-        <button
-          type="button"
-          onClick={onRedo}
-          disabled={!canRedo}
-          aria-label={t("annotations.redo", "Ponów")}
-          title={t("annotations.redo", "Ponów")}
-          className={cn(pillButton, "hover:bg-ink-on-inverse/10 disabled:opacity-30")}
-        >
-          <Redo2 size={16} aria-hidden="true" />
-        </button>
-
-        <ToolSeparator />
-
-        {visibleTools.map(({ id, icon: Icon, labelKey, fallback }) => (
-          <button
-            key={id}
-            type="button"
-            onClick={() => setTool(id)}
-            aria-label={t(labelKey, fallback)}
-            aria-pressed={tool === id}
-            aria-keyshortcuts={TOOL_KEYS[id].toUpperCase()}
-            title={withKey(t(labelKey, fallback), id)}
-            className={cn(
-              pillButton,
-              tool === id
-                ? "bg-ink-on-inverse/20"
-                : "hover:bg-ink-on-inverse/10",
-            )}
-          >
-            <Icon size={16} aria-hidden="true" />
-          </button>
-        ))}
-
-        {!canDraw && (
-          // The reason, spelled out: the pencil is one zoom — or one change of
-          // fit — away, and a tooltip cannot be reached on the touch screens
-          // this actually appears on.
-          <span className="ml-1 flex items-center gap-1.5 rounded-full bg-ink-on-inverse/5 px-2.5 py-1 text-ink-on-inverse/70">
-            <ZoomIn size={12} aria-hidden="true" className="shrink-0" />
-            <Eyebrow color="ink-on-inverse-muted">
-              {t("annotations.draw_needs_room", "Powiększ, by pisać")}
-            </Eyebrow>
-          </span>
-        )}
-
-        <ToolSeparator />
-        {/* Where the NEXT mark goes. Moving one that already EXISTS is a
-            different question and is asked beside the mark itself, on its own
-            card — it used to live here, one tap wide and one way only. */}
-        {mode === "conductor" ? (
-          <button
-            type="button"
-            onClick={() => setLayer(NEXT_WRITE_LAYER[writeLayer])}
-            aria-label={activeLayerCopy.label}
-            title={activeLayerCopy.hint}
-            className={cn(
-              "flex h-9 items-center gap-1.5 rounded-full px-3 text-xs font-medium transition-colors",
-              activeLayerCopy.tone,
-            )}
-          >
-            <activeLayerCopy.Icon size={14} aria-hidden="true" />
-            <span className="hidden sm:inline">{activeLayerCopy.short}</span>
-            {voicesBadge}
-          </button>
-        ) : null}
-
-        {mode === "leader" && (
-          // No ladder between a leader's targets, only a turn: one tap moves
-          // the NEXT mark to the next of them. The pill wears its target's
-          // tone, so a glance says whether the choir, the conductor, or nobody
-          // is about to see this.
-          <button
-            type="button"
-            onClick={() => setLayer(nextTarget)}
-            aria-label={activeTargetCopy.label}
-            title={activeTargetCopy.hint}
-            className={cn(
-              "flex h-9 items-center gap-1.5 rounded-full px-3 text-xs font-medium transition-colors",
-              activeTargetCopy.tone,
-              target === "personal" && "hover:bg-ink-on-inverse/20",
-            )}
-          >
-            <activeTargetCopy.Icon size={target === "personal" ? 12 : 14} aria-hidden="true" />
-            <span className="hidden sm:inline">{activeTargetCopy.short}</span>
-            {target !== "personal" && voicesBadge}
-          </button>
-        )}
-
-        {mode === "personal" && (
-          // Personal mode writes to one fixed layer — say so instead of offering
-          // a toggle that could suggest the choir might see these marks.
-          <span
-            title={t("annotations.layer.personal_hint", "Widoczne tylko dla Ciebie")}
-            className="flex h-9 items-center gap-1.5 rounded-full bg-ink-on-inverse/10 px-3 text-xs font-medium text-ink-on-inverse"
-          >
-            <Lock size={12} aria-hidden="true" />
-            <span className="hidden sm:inline">
-              {t("annotations.layer.personal_short", "Moje")}
-            </span>
-          </span>
-        )}
-
-        {pendingPill && <span className="ml-1">{pendingPill}</span>}
-
-        {notifySlot && (
-          <>
-            <ToolSeparator />
-            {notifySlot}
-          </>
-        )}
-
-        <ToolSeparator />
-        <button
-          type="button"
-          onClick={onOpenGuide}
-          aria-label={t("annotations.guide.open", "Jak działają adnotacje")}
-          title={t("annotations.guide.open", "Jak działają adnotacje")}
-          className={cn(pillButton, "hover:bg-ink-on-inverse/10")}
-        >
-          <HelpCircle size={16} aria-hidden="true" />
-        </button>
-
-        {clearableCount > 0 && (
-          <>
-            <ToolSeparator />
-            {confirmingClear ? (
-              <button
-                type="button"
-                onClick={() => {
-                  onClearAll();
-                  setConfirmingClear(false);
-                }}
-                // Crimson is the one accent that does NOT hold: on dark it takes
-                // the value of `crimson-light`. So the label on it follows the
-                // ladder — `marble` is the brightest rung on light and the
-                // darkest-but-one on dark, which is the right ink either way.
-                className="flex h-9 items-center gap-1.5 rounded-full bg-ethereal-crimson/90 px-3 text-xs font-medium text-ethereal-marble transition-colors hover:bg-ethereal-crimson"
-              >
-                <Check size={14} aria-hidden="true" />
-                <span>{t("annotations.clear_confirm", "Na pewno?")}</span>
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={() => setConfirmingClear(true)}
-                aria-label={t("annotations.clear_all", "Usuń wszystkie adnotacje")}
-                title={t("annotations.clear_all", "Usuń wszystkie adnotacje")}
-                className={cn(pillButton, "hover:bg-ethereal-crimson/30")}
-              >
-                <Trash2 size={16} aria-hidden="true" />
-              </button>
-            )}
-          </>
-        )}
-      </div>
-
-      {/* Contextual options for the active tool — drop DOWN, never sideways. */}
-      {hasPanel && (
-        <div
-          className={cn(
-            panelChrome,
-            "no-scrollbar flex max-w-[calc(100vw-9rem)] flex-col gap-3 overflow-x-auto sm:max-w-[calc(100vw-13rem)]",
-          )}
-        >
-          {/* Which figure the next drag draws — the choice the tool exists for,
-              so it heads the panel. Circle and square are not separate
-              buttons: an oval or a box dragged nearly square snaps to one. */}
-          {showShapes && (
-            <div
-              className="flex flex-wrap items-center gap-1"
-              role="group"
-              aria-label={t("annotations.shapes.label", "Kształt")}
-            >
-              {SHAPE_KINDS.map(({ kind, labelKey, fallback }) => {
-                const Icon = SHAPE_ICONS[kind];
-                return (
-                  <button
-                    key={kind}
-                    type="button"
-                    onClick={() => setShape(kind)}
-                    aria-label={t(labelKey, fallback)}
-                    aria-pressed={shape === kind}
-                    title={t(labelKey, fallback)}
-                    className={cn(
-                      pillButton,
-                      shape === kind ? "bg-ink-on-inverse/20" : "hover:bg-ink-on-inverse/10",
-                    )}
-                  >
-                    <Icon size={16} aria-hidden="true" />
-                  </button>
-                );
-              })}
-            </div>
-          )}
-
-          {/* What draws. Auto-set from the device (a stylus turns palm rejection
-              on by itself), but always overridable — a reader whose "stylus"
-              is a rubber-tipped stick reports as a finger and would otherwise
-              be left with a pencil that draws nothing. */}
-          {showSize && (
-            <div
-              className="flex items-center gap-1"
-              role="group"
-              aria-label={t("annotations.input.group", "Czym rysujesz")}
-            >
-              {([false, true] as const).map((asFinger) => (
-                <button
-                  key={String(asFinger)}
-                  type="button"
-                  onClick={() => setFingerDraw(asFinger)}
-                  aria-pressed={fingerDraw === asFinger}
-                  title={
-                    asFinger
-                      ? t("annotations.input.finger_hint", "Palec rysuje. Nuty przewijasz dwoma palcami.")
-                      : t("annotations.input.stylus_hint", "Rysuje tylko rysik. Palcem przewijasz nuty.")
-                  }
-                  className={cn(
-                    "flex h-9 items-center gap-1.5 rounded-full px-3 text-xs font-medium transition-colors",
-                    "text-ink-on-inverse",
-                    fingerDraw === asFinger
-                      ? "bg-ink-on-inverse/20"
-                      : "hover:bg-ink-on-inverse/10",
-                  )}
-                >
-                  {asFinger ? (
-                    <Hand size={14} aria-hidden="true" />
-                  ) : (
-                    <PenTool size={14} aria-hidden="true" />
-                  )}
-                  {asFinger
-                    ? t("annotations.input.finger", "Palec")
-                    : t("annotations.input.stylus", "Rysik")}
-                </button>
-              ))}
-            </div>
-          )}
-
-          {showSize && (
-            <div className="flex items-center gap-1">
-              {SIZES.map(({ id, dot, labelKey, fallback }) => (
-                <button
-                  key={id}
-                  type="button"
-                  onClick={() => setSize(id)}
-                  aria-label={t(labelKey, fallback)}
-                  aria-pressed={size === id}
-                  title={t(labelKey, fallback)}
-                  className={cn(
-                    "flex h-9 w-9 items-center justify-center rounded-full transition-colors",
-                    size === id
-                      ? "bg-ink-on-inverse/20"
-                      : "hover:bg-ink-on-inverse/10",
-                  )}
-                >
-                  <span
-                    className="rounded-full bg-ink-on-inverse"
-                    style={{ width: dot, height: dot }}
-                  />
-                </button>
-              ))}
-            </div>
-          )}
-
-          {showInk && (
-            <div className="flex flex-col gap-1.5">
-              <div
-                className="flex items-center gap-1.5"
-                role="group"
-                aria-label={t("annotations.ink_color", "Kolor")}
-              >
-                {inks.map(({ value, nameKey, fallback, dark }) => (
-                  <button
-                    key={value}
-                    type="button"
-                    onClick={() => setColor(value)}
-                    aria-label={t(nameKey, fallback)}
-                    aria-pressed={color === value}
-                    title={t(nameKey, fallback)}
-                    className={cn(
-                      "h-6 w-6 rounded-full transition-transform hover:scale-110",
-                      color === value
-                        ? "ring-2 ring-ink-on-inverse ring-offset-1 ring-offset-surface-inverse"
-                        : // Pencil on the dark chrome is a hole without an edge.
-                          dark
-                          ? "ring-1 ring-ink-on-inverse/70"
-                          : "ring-1 ring-ink-on-inverse/30",
-                    )}
-                    style={{ backgroundColor: value }}
-                  />
-                ))}
-              </div>
-              {/* Said once, where the missing swatch is — the palette is short
-                  enough that its absence would otherwise read as a bug. */}
-              {mode !== "conductor" && (
-                <Caption color="ink-on-inverse-muted">
-                  {t(
-                    "annotations.ink_reserved",
-                    "Czerwony jest zarezerwowany dla dyrygenta.",
-                  )}
-                </Caption>
-              )}
-            </div>
-          )}
-
-          {showVoices && (
-            <MarkVoicePicker current={voices} onChange={setVoices} surface="chrome" />
-          )}
-
-          {showNoteMode && (
-            <div className="flex items-center gap-1">
-              {NOTE_DISPLAYS.map(({ mode: displayMode, labelKey, fallback }) => (
-                <button
-                  key={displayMode}
-                  type="button"
-                  onClick={() => setNoteDisplay(displayMode)}
-                  aria-pressed={noteDisplay === displayMode}
-                  className={cn(
-                    "h-9 rounded-full px-3 text-xs font-medium transition-colors",
-                    "text-ink-on-inverse",
-                    noteDisplay === displayMode
-                      ? "bg-ink-on-inverse/20"
-                      : "hover:bg-ink-on-inverse/10",
-                  )}
-                >
-                  {t(labelKey, fallback)}
-                </button>
-              ))}
-            </div>
-          )}
-
-          {showTextSize && (
-            <ScaleSlider
-              value={textScale}
-              onChange={setTextScale}
-              label={t("annotations.scale.text", "Rozmiar tekstu")}
-              sample={
-                <span
-                  className="font-semibold leading-none"
-                  style={{ fontSize: 8 + textScale * 8 }}
-                >
-                  Aa
-                </span>
-              }
-            />
-          )}
-
-          {showStampSize && (
-            <ScaleSlider
-              value={stampScale}
-              onChange={setStampScale}
-              label={t("annotations.scale.stamp", "Rozmiar symbolu")}
-              sample={
-                armedStamp && (
-                  <span className={cn(paperTile, "h-9 w-9 overflow-hidden")}>
-                    <StampGlyph
-                      symbol={stamp}
-                      color={color}
-                      size={
-                        armedStamp.kind === "text"
-                          ? stampSampleBox
-                          : stampPreviewSize(armedStamp, stampSampleBox)
-                      }
-                    />
-                  </span>
-                )
-              }
-            />
-          )}
-
-          {showStamps && (
-            // Thirty symbols in one grid stopped fitting a phone, so the
-            // palette shows ONE group at a time. The open group is derived from
-            // the armed stamp rather than held separately — that way the symbol
-            // in hand is always the one lit up on screen — and picking a group
-            // arms its first symbol, so a tab is never a dead end.
-            <div className="flex flex-col gap-1.5">
-              <div
-                className="no-scrollbar flex gap-1 overflow-x-auto"
-                role="group"
-                aria-label={t("annotations.stamp_groups.label", "Grupy symboli")}
-              >
-                {STAMP_GROUPS.map(({ group, labelKey, fallback }) => (
-                  <button
-                    key={group}
-                    type="button"
-                    onClick={() => {
-                      const first = stampsInGroup(group)[0];
-                      if (first) setStamp(first.id);
-                    }}
-                    aria-pressed={activeStampGroup === group}
-                    className={cn(
-                      "h-8 shrink-0 rounded-full px-2.5 text-xs font-medium transition-colors",
-                      "text-ink-on-inverse",
-                      activeStampGroup === group
-                        ? "bg-ink-on-inverse/20"
-                        : "hover:bg-ink-on-inverse/10",
-                    )}
-                  >
-                    {t(labelKey, fallback)}
-                  </button>
-                ))}
-              </div>
-              <div className="grid grid-cols-5 gap-1">
-                {stampsInGroup(activeStampGroup).map((def) => (
-                  <button
-                    key={def.id}
-                    type="button"
-                    onClick={() => setStamp(def.id)}
-                    aria-label={t(def.labelKey, def.fallback)}
-                    aria-pressed={stamp === def.id}
-                    title={t(def.labelKey, def.fallback)}
-                    className={cn(
-                      paperTile,
-                      "h-9 transition-shadow",
-                      def.kind === "text" && def.glyph.length >= WIDE_STAMP_CHARS && "col-span-2",
-                      stamp === def.id
-                        ? "ring-2 ring-ethereal-gold"
-                        : "hover:ring-1 hover:ring-ethereal-gold/60",
-                    )}
-                  >
-                    <StampGlyph symbol={def.id} color={color} size={stampPreviewSize(def, 22)} />
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      )}
+      {toolBar}
+      {!audienceInRow && audienceBar}
+      {optionsPanel}
     </div>
   );
 };

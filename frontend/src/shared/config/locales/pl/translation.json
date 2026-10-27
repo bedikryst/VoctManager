@@ -43,6 +43,12 @@
       "offline": "Odkładanie i przywracanie uwag działa tylko z internetem."
     },
     "collapse_tools": "Zwiń narzędzia",
+    "families": {
+      "draw": "Rysuj",
+      "insert": "Wstaw",
+      "slot": "{{family}}: {{tool}}"
+    },
+    "more": "Więcej",
     "draw_needs_room": "Powiększ, by pisać",
     "ink_color": "Kolor",
     "ink_reserved": "Czerwony jest zarezerwowany dla dyrygenta.",

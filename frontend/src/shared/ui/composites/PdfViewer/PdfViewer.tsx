@@ -512,6 +512,9 @@ export const PdfViewer = ({
     const inPopper = Boolean(target?.closest?.("[data-radix-popper-content-wrapper]"));
 
     if (event.key === "Escape") {
+      // A menu open over the viewer (the annotation toolbar's ⋯) closes itself
+      // first; putting a tool down or leaving immersive is the next Escape's.
+      if (inPopper) return;
       if (claimKey?.(event)) return;
       // A field in the viewer's chrome (the annotation drawer's search) keeps
       // Escape for itself: it gives up its focus, and the score stays open.
@@ -680,14 +683,22 @@ export const PdfViewer = ({
       )}
 
       {/* Annotation tools live top-LEFT; the top-right corner is the utility
-          pill (open / share / download). The width is capped so the two can
-          never overlap on a phone, and the toolbar owns its own chrome +
-          collapse-to-trigger so it isn't always occupying the top. Kept in
-          immersive too — the score is annotatable in performance mode; the
-          toolbar starts collapsed there for a clean stage. */}
+          pill (open / share / download). As a row in the top letterbox the
+          width is capped so the two never overlap on a phone. As a rail
+          (`tool-rail:`, see toolRail.ts) the slot runs down the left margin
+          and stops above the Kamerton and the programme bar at the bottom;
+          the cap no longer applies, and an outline tab on the left edge
+          pushes it inward. The toolbar owns its own chrome + collapse-to-
+          trigger so it isn't always occupying the corner. Kept in immersive
+          too — the score is annotatable in performance mode; the toolbar
+          starts collapsed there for a clean stage. */}
       {showPdfChrome && toolbarSlot && (
         <div
-          className="pointer-events-none absolute left-3 top-4 z-20 max-w-[calc(100vw-9rem)] sm:left-6 sm:top-6 sm:max-w-[calc(100vw-13rem)]"
+          className={cn(
+            "pointer-events-none absolute left-3 top-4 z-20 max-w-[calc(100vw-9rem)] sm:left-6 sm:top-6 sm:max-w-[calc(100vw-13rem)]",
+            "tool-rail:bottom-40 tool-rail:max-w-none",
+            outline.length > 0 && "tool-rail:left-14",
+          )}
           data-pdf-gesture-exempt
         >
           {toolbarSlot}

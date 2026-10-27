@@ -35,6 +35,12 @@
       "offline": "Mettre des annotations de côté ou les restaurer nécessite une connexion."
     },
     "collapse_tools": "Réduire les outils",
+    "families": {
+      "draw": "Dessiner",
+      "insert": "Insérer",
+      "slot": "{{family}} : {{tool}}"
+    },
+    "more": "Plus",
     "draw_needs_room": "Agrandir pour écrire",
     "ink_color": "Couleur",
     "ink_reserved": "Le rouge est réservé au chef de chœur.",

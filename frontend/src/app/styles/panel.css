@@ -236,6 +236,22 @@
 @custom-variant wide-shell (@media (min-width: 60rem));
 
 /* ========================================== */
+/* SCORE TOOL RAIL                             */
+/* A landscape screen, tablet-sized and up,    */
+/* gives the annotation tools a vertical rail  */
+/* in the page's left margin; everything else  */
+/* keeps the row in the top letterbox. Read    */
+/* off the VIEWPORT, never the page margin, so */
+/* a zoom never flips the bar. The height floor */
+/* is what the rail, the "who sees it" strip   */
+/* and the Kamerton above the bottom nav need  */
+/* to stack without touching. Mirrors          */
+/* `PDF_TOOL_RAIL_QUERY` (PdfViewer/toolRail)  */
+/* — keep the two in lockstep.                 */
+/* ========================================== */
+@custom-variant tool-rail (@media (orientation: landscape) and (min-width: 60rem) and (min-height: 40rem));
+
+/* ========================================== */
 /* BASE LAYER: normalization */
 /* ========================================== */
 @layer base {

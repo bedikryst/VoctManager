@@ -585,7 +585,7 @@ export const useScoreAnnotator = ({
    * - The arrows nudge a selection a pixel, ten with Shift; with nothing
    *   selected they stay the viewer's page turns.
    * - One letter arms each tool (`TOOL_KEYS`). A pen tool on a page too small
-   *   to write on is not armed: the toolbar does not offer it there either.
+   *   to write on is not armed: the toolbar holds its slot dimmed there too.
    */
   const claimKey = useCallback(
     (event: KeyboardEvent): boolean => {
