@@ -626,6 +626,7 @@ export const AnnotationOverlay = ({
     tool,
     canEdit,
     fingerDraw,
+    seekingTarget: linkStart !== null,
     onStroke: commitStroke,
     onPreview: previewStroke,
     onTap: placeAt,
@@ -1209,7 +1210,7 @@ export const AnnotationOverlay = ({
               tabIndex={live ? 0 : -1}
               className={cn(
                 INLINE_MARK_CLASS,
-                "flex items-center gap-[0.25em] whitespace-nowrap rounded-full transition-shadow",
+                "relative flex items-center gap-[0.25em] whitespace-nowrap rounded-full transition-shadow",
                 highlighted.has(a.id) ? "ring-2 ring-ethereal-gold" : "ring-black/10",
                 erasable && "cursor-pointer hover:ring-ethereal-crimson",
               )}
@@ -1219,6 +1220,12 @@ export const AnnotationOverlay = ({
                 fontSize: inlineFontSize(width) * 0.8,
               }}
             >
+              {/* The pill is drawn at the page's scale, a dozen pixels tall
+                  on a phone; the finger's target is not. */}
+              <span
+                aria-hidden="true"
+                className="absolute left-1/2 top-1/2 h-11 min-h-full w-11 min-w-full -translate-x-1/2 -translate-y-1/2"
+              />
               <CornerDownRight size="1em" aria-hidden="true" />
               {t("annotations.link.chip", "s. {{page}}", { page: target })}
             </button>

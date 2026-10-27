@@ -48,6 +48,21 @@ export type FitMode = "auto" | "page" | "width" | "two-thirds";
 export type ResolvedFitMode = Exclude<FitMode, "auto">;
 
 /**
+ * Where the top-left tool slot may lay its tools out. `rail` lets a landscape
+ * screen of tablet size and up stack them down the page's left margin
+ * (`usePdfToolRail`); `row` keeps them in the top letterbox everywhere.
+ */
+export type PdfToolLayout = "rail" | "row";
+
+/**
+ * Which keys the viewer answers. `window` takes every key wherever focus is,
+ * as a full-screen viewer should. `viewer` is for a viewer embedded in a page
+ * of other controls: besides Escape it answers only while focus is inside it
+ * or on nothing at all.
+ */
+export type PdfKeyScope = "window" | "viewer";
+
+/**
  * Imperative page handle surfaced to callers that render an `overlaySlot`
  * needing to drive navigation (e.g. an annotation index that jumps to the page
  * a comment lives on). Re-emitted whenever the page or page-count changes.
@@ -112,6 +127,13 @@ export interface PdfViewerProps {
    * interactive content opts back in on its own surface.
    */
   overlaySlot?: ReactNode;
+  /**
+   * Layer stacked over the whole viewer and every piece of its chrome — the
+   * tool slot, the outline drawer and the bottom nav — for a panel that must
+   * cover them (a guide that dims the score). Same contract as `overlaySlot`:
+   * the container is `pointer-events-none`.
+   */
+  modalSlot?: ReactNode;
   /** Receives the live page handle (current/total + goToPage) on every change. */
   onPageApiChange?: (api: PdfPageApi) => void;
   /**
@@ -119,9 +141,17 @@ export interface PdfViewerProps {
    * shortcuts. Return true when it consumed the key: a claimed Escape keeps
    * performance mode and a wrapping dialog open, a claimed arrow turns no page.
    * Escape is offered wherever focus is; every other key only when focus is
-   * not in a field or a popover, which keep their keys.
+   * not in a field or a popover, which keep their keys, and within `keyScope`.
    */
   claimKey?: (event: KeyboardEvent) => boolean;
+  /** Which keys the viewer answers — see `PdfKeyScope`. Defaults to `window`. */
+  keyScope?: PdfKeyScope;
+  /**
+   * Whether the tool slot may become a rail. Only a host that gives the viewer
+   * the whole screen passes `rail`: in a pane a third of a window wide, a rail
+   * would sit over the clefs of a page that fills the pane. Defaults to `row`.
+   */
+  toolLayout?: PdfToolLayout;
   /**
    * When the wrapping shell floats its own control in the top-right corner
    * (e.g. a modal's close button), the utility pill drops one row so the two

@@ -26,6 +26,7 @@ import {
   type PdfViewerEvent,
   type PdfPageGeometry,
   type PdfPageApi,
+  type PdfToolLayout,
   type FitMode,
 } from "@/shared/ui/composites/PdfViewer";
 import {
@@ -76,10 +77,14 @@ export interface PdfViewerModalProps {
   renderPageOverlay?: (geometry: PdfPageGeometry) => React.ReactNode;
   /** Whole-viewer overlay (annotation index / page rail) — see PdfViewer.overlaySlot. */
   overlaySlot?: React.ReactNode;
+  /** Layer over the viewer and all its chrome (a guide) — see PdfViewer.modalSlot. */
+  modalSlot?: React.ReactNode;
   /** Receives the live page handle (current/total + goToPage) on every change. */
   onPageApiChange?: (api: PdfPageApi) => void;
   /** An interactive overlay's first claim on a key — see `PdfViewerProps.claimKey`. */
   claimKey?: (event: KeyboardEvent) => boolean;
+  /** Whether the tool slot may become a rail — see `PdfViewerProps.toolLayout`. */
+  toolLayout?: PdfToolLayout;
   /**
    * Whether the document may be exported (open/share/download). Forwarded to the
    * viewer; defaults to `true`. Set `false` for a protected, in-app-only score.
@@ -107,8 +112,10 @@ export const PdfViewerModal = ({
   toolbarSlot,
   renderPageOverlay,
   overlaySlot,
+  modalSlot,
   onPageApiChange,
   claimKey,
+  toolLayout,
   canExport = true,
   fitScope,
   preferredFit,
@@ -233,8 +240,10 @@ export const PdfViewerModal = ({
                   toolbarSlot={toolbarSlot}
                   renderPageOverlay={renderPageOverlay}
                   overlaySlot={overlaySlot}
+                  modalSlot={modalSlot}
                   onPageApiChange={onPageApiChange}
                   claimKey={claimKey}
+                  toolLayout={toolLayout}
                   reserveTopRight
                   canExport={canExport}
                   fitScope={fitScope}

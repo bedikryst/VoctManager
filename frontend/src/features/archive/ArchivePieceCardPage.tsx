@@ -743,8 +743,13 @@ export default function ArchivePieceCardPage(): React.JSX.Element {
                       toolbarSlot={annotator.toolbarSlot}
                       renderPageOverlay={annotator.renderPageOverlay}
                       overlaySlot={annotator.overlaySlot}
+                      modalSlot={annotator.modalSlot}
                       onPageApiChange={handlePageApiChange}
                       claimKey={annotator.claimKey}
+                      // A pane beside the record's form: its keys belong to
+                      // the form unless focus is on the score, and its tools
+                      // stay a row over a page that fills the pane.
+                      keyScope="viewer"
                       preferredFit={scorePdf.wholePage ? "page" : undefined}
                     />
                   </div>

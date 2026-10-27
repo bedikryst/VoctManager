@@ -3,14 +3,17 @@
  * @description Broadcasts viewer state to the slot content stacked inside it.
  * The slots stay plain `ReactNode` — they simply read these contexts from their
  * ancestor viewer when they care: the immersive (performance) state, so the
- * annotation toolbar collapses itself for a clean stage, and whether the page
- * leaves room beside it for a labelled floating trigger. Both default to
- * `false`, so slots rendered outside a viewer read "not immersive" and keep
- * their labels.
+ * annotation toolbar collapses itself for a clean stage, whether the page
+ * leaves room beside it for a labelled floating trigger, and whether the host
+ * lets the tool slot become a rail. The first two default to `false` and the
+ * layout to `row`, so slots rendered outside a viewer read "not immersive",
+ * keep their labels and lay out as a row.
  * @module shared/ui/composites/PdfViewer
  */
 
 import { createContext, useContext } from "react";
+
+import type { PdfToolLayout } from "./types";
 
 const PdfImmersiveContext = createContext(false);
 
@@ -30,3 +33,10 @@ export const PdfCompactTriggersProvider = PdfCompactTriggersContext.Provider;
  * names.
  */
 export const usePdfCompactTriggers = (): boolean => useContext(PdfCompactTriggersContext);
+
+const PdfToolLayoutContext = createContext<PdfToolLayout>("row");
+
+export const PdfToolLayoutProvider = PdfToolLayoutContext.Provider;
+
+/** The tool layout the host allows — see `PdfViewerProps.toolLayout`. */
+export const usePdfToolLayout = (): PdfToolLayout => useContext(PdfToolLayoutContext);

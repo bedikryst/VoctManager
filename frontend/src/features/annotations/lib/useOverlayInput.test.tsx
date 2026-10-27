@@ -10,7 +10,9 @@
  * the pencil could not start one; a finger re-gripping mid-pinch drawing a line;
  * and a line half-drawn when the tool or the page changed hanging on as a ghost,
  * or landing on the next page. And the cost of a line: a render of the page per
- * sample, and a pen's folded samples thrown away.
+ * sample, and a pen's folded samples thrown away. And a link waiting for where it
+ * leads, which took a finger's every tap as its target and left no way to turn
+ * to the page the target is on.
  * @module features/annotations/lib/useOverlayInput.test
  */
 
@@ -92,7 +94,7 @@ const arrangePage = () => {
   const surface = document.createElement("div");
   viewport.appendChild(surface);
 
-  const box = { left: 0, top: 0, width: 100, height: 100 } as DOMRect;
+  const box = { left: 0, top: 0, right: 100, bottom: 100, width: 100, height: 100 } as DOMRect;
   surface.getBoundingClientRect = () => box;
   viewport.getBoundingClientRect = () => box;
 
@@ -117,6 +119,7 @@ const arrangePage = () => {
 interface Hand {
   tool: AnnotationTool;
   fingerDraw: boolean;
+  seekingTarget?: boolean;
 }
 
 const mount = (initial: Partial<Hand> = {}) => {
@@ -129,13 +132,14 @@ const mount = (initial: Partial<Hand> = {}) => {
   const onTurnPage = vi.fn<OverlayInputOptions["onTurnPage"]>();
   let renders = 0;
   const view = renderHook(
-    ({ tool, fingerDraw }: Hand) => {
+    ({ tool, fingerDraw, seekingTarget = false }: Hand) => {
       renders += 1;
       return useOverlayInput({
         surfaceRef,
         tool,
         canEdit: true,
         fingerDraw,
+        seekingTarget,
         onStroke,
         onPreview,
         onTap,
@@ -152,7 +156,17 @@ const mount = (initial: Partial<Hand> = {}) => {
   ): void => handlers()[kind](pointer(page.surface, init));
   /** The line in progress as the page would draw it now; null between lines. */
   const live = (): readonly NormPoint[] | null => onPreview.mock.lastCall?.[0] ?? null;
-  return { ...view, ...page, onStroke, onTap, onErase, send, live, renders: () => renders };
+  return {
+    ...view,
+    ...page,
+    onStroke,
+    onTap,
+    onErase,
+    onTurnPage,
+    send,
+    live,
+    renders: () => renders,
+  };
 };
 
 /** What a trace that travelled reports beside its points. */
@@ -457,6 +471,58 @@ describe("the selection's loop", () => {
 
     expect(pans).toHaveBeenCalled();
     expect(onStroke).not.toHaveBeenCalled();
+  });
+});
+
+describe("a link seeking where it leads", () => {
+  const seeking = { tool: "link" as const, fingerDraw: true, seekingTarget: true };
+
+  it("turns the page on a finger's tap at either edge, and takes the target in the middle", () => {
+    const { send, onTap, onTurnPage } = mount(seeking);
+
+    act(() => send("onPointerDown", { type: "touch", x: 10, y: 40 }));
+    act(() => send("onPointerUp", { type: "touch", x: 10, y: 40 }));
+    act(() => send("onPointerDown", { type: "touch", x: 90, y: 40 }));
+    act(() => send("onPointerUp", { type: "touch", x: 90, y: 40 }));
+    expect(onTurnPage.mock.calls).toEqual([[-1], [1]]);
+    expect(onTap).not.toHaveBeenCalled();
+
+    act(() => send("onPointerDown", { type: "touch", x: 50, y: 40 }));
+    act(() => send("onPointerUp", { type: "touch", x: 50, y: 40 }));
+    expect(onTap).toHaveBeenCalledWith([0.5, 0.4]);
+  });
+
+  it("turns the page on a finger's swipe", () => {
+    const { send, onTap, onTurnPage } = mount(seeking);
+
+    act(() => send("onPointerDown", { type: "touch", x: 90, y: 50 }));
+    act(() => send("onPointerMove", { type: "touch", x: 50, y: 52 }));
+    act(() => send("onPointerUp", { type: "touch", x: 10, y: 52 }));
+
+    expect(onTurnPage).toHaveBeenCalledWith(1);
+    expect(onTap).not.toHaveBeenCalled();
+  });
+
+  it("lets a mouse or a pen place the target anywhere", () => {
+    const { send, onTap, onTurnPage } = mount(seeking);
+
+    act(() => send("onPointerDown", { type: "mouse", x: 10, y: 40 }));
+    act(() => send("onPointerUp", { type: "mouse", x: 10, y: 40 }));
+    act(() => send("onPointerDown", { type: "pen", x: 90, y: 60 }));
+    act(() => send("onPointerUp", { type: "pen", x: 90, y: 60 }));
+
+    expect(onTap.mock.calls).toEqual([[[0.1, 0.4]], [[0.9, 0.6]]]);
+    expect(onTurnPage).not.toHaveBeenCalled();
+  });
+
+  it("places the link's first end wherever a finger taps", () => {
+    const { send, onTap, onTurnPage } = mount({ ...seeking, seekingTarget: false });
+
+    act(() => send("onPointerDown", { type: "touch", x: 10, y: 40 }));
+    act(() => send("onPointerUp", { type: "touch", x: 10, y: 40 }));
+
+    expect(onTap).toHaveBeenCalledWith([0.1, 0.4]);
+    expect(onTurnPage).not.toHaveBeenCalled();
   });
 });
 

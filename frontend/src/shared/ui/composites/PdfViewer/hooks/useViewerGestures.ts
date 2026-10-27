@@ -18,12 +18,10 @@
 import { useEffect, useRef, type RefObject } from "react";
 
 import { resolveTapZone } from "../tapZone";
+import { resolveSwipeTurn } from "../swipeTurn";
 import {
   TAP_MAX_MOVEMENT_PX,
   TAP_MAX_DURATION_MS,
-  SWIPE_MIN_DISTANCE_PX,
-  SWIPE_MAX_DURATION_MS,
-  SWIPE_AXIS_RATIO,
   SWIPE_EDGE_TOLERANCE_PX,
   WHEEL_ZOOM_SENSITIVITY,
   WHEEL_COMMIT_DELAY_MS,
@@ -217,15 +215,8 @@ export const useViewerGestures = (args: UseViewerGesturesArgs): void => {
         return;
       }
 
-      if (
-        candidate.pointerType === "touch" &&
-        elapsed <= SWIPE_MAX_DURATION_MS &&
-        Math.abs(dx) >= SWIPE_MIN_DISTANCE_PX &&
-        Math.abs(dx) >= SWIPE_AXIS_RATIO * Math.abs(dy)
-      ) {
-        const delta: 1 | -1 = dx < 0 ? 1 : -1;
-        if (canTurnBySwipe(delta)) onPageDelta(delta, "swipe");
-      }
+      const delta = resolveSwipeTurn(candidate.pointerType, dx, dy, elapsed);
+      if (delta !== 0 && canTurnBySwipe(delta)) onPageDelta(delta, "swipe");
     };
 
     const handlePointerCancel = (): void => {

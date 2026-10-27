@@ -76,6 +76,12 @@ export const SWIPE_AXIS_RATIO = 1.8;
 export const SWIPE_EDGE_TOLERANCE_PX = 4;
 /** Beyond this zoom neighbour prefetch is off — canvases get memory-heavy. */
 export const PREFETCH_MAX_ZOOM = 1.5;
+/**
+ * Largest copy of the page held over it while a new zoom renders. iOS Safari
+ * leaves any canvas over 4096² pixels blank; the copy is stretched to the new
+ * size anyway, so a coarser one costs nothing the reader would see.
+ */
+export const AFTERIMAGE_MAX_PIXELS = 4096 * 4096;
 export const WHEEL_ZOOM_SENSITIVITY = 0.0022;
 /** Trailing quiet period after which a ctrl/⌘+wheel zoom preview commits. */
 export const WHEEL_COMMIT_DELAY_MS = 160;

@@ -5,12 +5,22 @@
  * instead of flashing a loader; adds edge-tap/swipe/shift+wheel/pedal-key navigation,
  * pinch and ctrl+wheel zoom with a live CSS preview, a screen wake lock and an
  * immersive performance mode (fullscreen, chrome hidden, page filling the
- * screen edge to edge). Annotation features mount through the toolbarSlot /
- * renderPageOverlay / overlaySlot seams.
+ * screen edge to edge). A zoom step holds a copy of the page over it until the
+ * new raster is drawn, so the page never blanks between sizes. Annotation
+ * features mount through the toolbarSlot / renderPageOverlay / overlaySlot /
+ * modalSlot seams.
  * @module shared/ui/composites/PdfViewer
  */
 
-import React, { startTransition, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  startTransition,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { flushSync } from "react-dom";
 import { Document, Page, pdfjs } from "react-pdf";
 import { useQuery } from "@tanstack/react-query";
@@ -38,6 +48,7 @@ import {
   PREFETCH_MAX_ZOOM,
   SCROLL_EDGE_TOLERANCE_PX,
   LABELED_TRIGGER_GUTTER_PX,
+  AFTERIMAGE_MAX_PIXELS,
 } from "./constants";
 import { planScrollTurn, readableScrollRange } from "./scrollTurn";
 import { clampValue, buildPdfFileName, classifyLoadError, createDownloadAnchor } from "./utils";
@@ -50,7 +61,11 @@ import { usePdfOutline, type OutlineCapableDocument } from "./hooks/usePdfOutlin
 import { usePrefetchedPages } from "./hooks/usePrefetchedPages";
 import { useImmersiveMode } from "./hooks/useImmersiveMode";
 import { useViewerGestures } from "./hooks/useViewerGestures";
-import { PdfCompactTriggersProvider, PdfImmersiveProvider } from "./context";
+import {
+  PdfCompactTriggersProvider,
+  PdfImmersiveProvider,
+  PdfToolLayoutProvider,
+} from "./context";
 
 pdfjs.GlobalWorkerOptions.workerSrc = new URL(
   "pdfjs-dist/build/pdf.worker.min.mjs",
@@ -78,8 +93,11 @@ export const PdfViewer = ({
   toolbarSlot,
   renderPageOverlay,
   overlaySlot,
+  modalSlot,
   onPageApiChange,
   claimKey,
+  keyScope = "window",
+  toolLayout = "row",
   reserveTopRight = false,
   canExport = true,
   fitScope,
@@ -135,10 +153,39 @@ export const PdfViewer = ({
   const overflowAllowanceRef = useRef(overflowAllowance);
   overflowAllowanceRef.current = overflowAllowance;
 
+  // The page box mounts only once react-pdf has loaded the document, a render
+  // or more after this component, so the observers below follow the node
+  // itself: an effect keyed on anything else can run while it is still absent
+  // and never look again. The ref stays for callers that read the box on demand.
+  const pageBoxRef = useRef<HTMLDivElement | null>(null);
+  const [pageBoxNode, setPageBoxNode] = useState<HTMLDivElement | null>(null);
+  const attachPageBox = useCallback((node: HTMLDivElement | null) => {
+    pageBoxRef.current = node;
+    setPageBoxNode(node);
+  }, []);
   // Live rendered-page box (CSS px), measured for the overlay seam. Observed via
   // ResizeObserver so it stays correct across zoom, page change and reflow.
-  const pageBoxRef = useRef<HTMLDivElement | null>(null);
   const [pageBox, setPageBox] = useState<{ width: number; height: number } | null>(null);
+
+  // The visible page's canvas, and a copy of it held over the page while a new
+  // zoom renders (see the afterimage effect below).
+  const visibleCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const afterimageRef = useRef<HTMLCanvasElement | null>(null);
+  /** The page the afterimage is covering, or null while it is put away. */
+  const afterimagePageRef = useRef<number | null>(null);
+  const attachAfterimage = useCallback((node: HTMLCanvasElement | null) => {
+    afterimageRef.current = node;
+    afterimagePageRef.current = null;
+  }, []);
+  const clearAfterimage = useCallback(() => {
+    afterimagePageRef.current = null;
+    const afterimage = afterimageRef.current;
+    if (!afterimage) return;
+    afterimage.style.display = "";
+    // Zero size releases the copy's memory at once.
+    afterimage.width = 0;
+    afterimage.height = 0;
+  }, []);
 
   // Transient page-position chip while performance mode hides the page nav.
   // How to turn is shown by the zones themselves (`TapZoneHints`), never said.
@@ -383,6 +430,49 @@ export const PdfViewer = ({
     parkViewport();
   }, [stablePage, parkViewport]);
 
+  // A new size empties the page's canvas: react-pdf resizes it, which wipes
+  // it, and hides it until the new raster is done, leaving white paper with
+  // the marks floating over it. So before that happens — a layout effect runs
+  // ahead of the Page's own effect that redraws — the old raster is copied
+  // onto a canvas stretched over the page box, and put away once the page
+  // reports its new render. A copy already up stays through further steps:
+  // the page under it is blank. A turned page is a raster of its own, so the
+  // copy goes with the page it was taken from.
+  const rasterKeyRef = useRef({ zoom, width: renderedPageWidth, page: stablePage });
+  useLayoutEffect(() => {
+    const previous = rasterKeyRef.current;
+    rasterKeyRef.current = { zoom, width: renderedPageWidth, page: stablePage };
+    if (stablePage !== previous.page) {
+      clearAfterimage();
+      return;
+    }
+    if (zoom === previous.zoom && renderedPageWidth === previous.width) return;
+    if (afterimagePageRef.current !== null) return;
+    const source = visibleCanvasRef.current;
+    const afterimage = afterimageRef.current;
+    // Hidden means a render is still under way: there is no whole page to copy.
+    if (!source || !afterimage || source.style.visibility === "hidden") return;
+    if (source.width === 0 || source.height === 0) return;
+    const fit = Math.min(1, Math.sqrt(AFTERIMAGE_MAX_PIXELS / (source.width * source.height)));
+    afterimage.width = Math.max(1, Math.round(source.width * fit));
+    afterimage.height = Math.max(1, Math.round(source.height * fit));
+    const context = afterimage.getContext("2d", { alpha: false });
+    if (!context) return;
+    context.drawImage(source, 0, 0, afterimage.width, afterimage.height);
+    afterimage.style.display = "block";
+    afterimagePageRef.current = stablePage;
+  }, [zoom, renderedPageWidth, stablePage, clearAfterimage]);
+
+  const handlePageRendered = useCallback((page: number) => {
+    markRendered(page);
+    if (page === afterimagePageRef.current) clearAfterimage();
+  }, [markRendered, clearAfterimage]);
+
+  const handlePageRenderError = useCallback((page: number, error: unknown) => {
+    if (page === afterimagePageRef.current) clearAfterimage();
+    flagViewerError(error);
+  }, [clearAfterimage, flagViewerError]);
+
   // A new fit is a new statement of how big the music should be, so it becomes
   // the baseline: a zoom calibrated for the old fit (or the other orientation)
   // would leave the page hanging off the side of the screen, and a kept scroll
@@ -451,7 +541,7 @@ export const PdfViewer = ({
   const [scrollEdges, setScrollEdges] = useState({ atTop: true, atBottom: true });
   useEffect(() => {
     const viewport = viewportRef.current;
-    const page = pageBoxRef.current;
+    const page = pageBoxNode;
     if (!viewport) return;
     const measure = () => {
       setIsPannableX(
@@ -485,7 +575,7 @@ export const PdfViewer = ({
       viewport.removeEventListener("scroll", measure);
       observer.disconnect();
     };
-  }, [viewportRef, blobUrl, stablePage, renderedPageWidth]);
+  }, [viewportRef, pageBoxNode, stablePage, renderedPageWidth]);
 
   // Whether a turn has anywhere to go — a page away OR a screenful away.
   const canTurnBack = currentPage > 1 || !scrollEdges.atTop;
@@ -539,6 +629,16 @@ export const PdfViewer = ({
 
     if (inField || inPopper) return;
 
+    // An embedded viewer shares the page with a form: a key pressed on one of
+    // its buttons is that control's, not a page turn or a tool.
+    if (
+      keyScope === "viewer" &&
+      target !== document.body &&
+      !(target && rootRef.current?.contains(target))
+    ) {
+      return;
+    }
+
     // An overlay's own keys (annotation tools, undo, a selection's nudge) come
     // before the page turns that share them.
     if (claimKey?.(event)) return;
@@ -567,7 +667,7 @@ export const PdfViewer = ({
     if (event.key === "-" || event.key === "_") { event.preventDefault(); changeZoom(-ZOOM_STEP); return; }
     if (event.key === "+" || event.key === "=") { event.preventDefault(); changeZoom(ZOOM_STEP); return; }
     if (event.key === "0") { event.preventDefault(); resetZoom(); }
-  }, [blobUrl, isFetchError, isImmersive, claimKey, exitImmersive, changePage, turnPage, numPages, changeZoom, resetZoom]);
+  }, [blobUrl, isFetchError, isImmersive, claimKey, keyScope, exitImmersive, changePage, turnPage, numPages, changeZoom, resetZoom]);
 
   useEffect(() => {
     if (docKey) emitEvent({ type: "open", docKey });
@@ -605,19 +705,19 @@ export const PdfViewer = ({
   // caller actually needs the overlay, so the common viewer pays nothing. Keyed
   // on whether there is an overlay, never on the render function's identity: a
   // caller's overlay is rebuilt with every change to its marks, and a fresh
-  // observer per change re-measured the page each time.
+  // observer per change re-measured the page each time. One observer per page
+  // box sees every zoom, fit and page change by itself. A new document starts
+  // with no box, so its marks are never drawn on the previous document's
+  // geometry; the fresh observer's first report supplies the new one.
   const hasPageOverlay = renderPageOverlay !== undefined;
   useEffect(() => {
-    if (!hasPageOverlay) return;
-    const el = pageBoxRef.current;
-    if (!el || typeof ResizeObserver === "undefined") return;
+    setPageBox(null);
+    if (!hasPageOverlay || !pageBoxNode || typeof ResizeObserver === "undefined") return;
     const observer = new ResizeObserver((entries) => {
       const rect = entries[0]?.contentRect;
       if (!rect || rect.width <= 0 || rect.height <= 0) return;
-      // Same box, same object: this effect re-subscribes on every page, fit
-      // and zoom change, and every fresh observer fires once on attach. Handing
-      // back a new object for an unchanged box would push that pulse through
-      // the page API and the toolbar for nothing.
+      // Same box, same object: handing back a new object for a sub-pixel
+      // wobble would push it through the page API and the toolbar for nothing.
       setPageBox((current) =>
         current &&
         Math.abs(current.width - rect.width) < 0.5 &&
@@ -626,9 +726,9 @@ export const PdfViewer = ({
           : { width: rect.width, height: rect.height },
       );
     });
-    observer.observe(el);
+    observer.observe(pageBoxNode);
     return () => observer.disconnect();
-  }, [hasPageOverlay, blobUrl, stablePage, renderedPageWidth, zoom]);
+  }, [hasPageOverlay, pageBoxNode, blobUrl]);
 
   // Free margin between the viewer's left edge and the page, where the floating
   // triggers sit. The fit, zoom and the window all move it, so it is read off
@@ -638,7 +738,7 @@ export const PdfViewer = ({
   useEffect(() => {
     const root = rootRef.current;
     const viewport = viewportRef.current;
-    const page = pageBoxRef.current;
+    const page = pageBoxNode;
     if (!root || !viewport || !page || typeof ResizeObserver === "undefined") return;
     const measure = (): void => {
       const rootRect = root.getBoundingClientRect();
@@ -651,16 +751,24 @@ export const PdfViewer = ({
     observer.observe(viewport);
     observer.observe(page);
     return () => observer.disconnect();
-  }, [viewportRef, numPages, blobUrl, stablePage, renderedPageWidth, zoom]);
+  }, [viewportRef, pageBoxNode, stablePage, renderedPageWidth, zoom]);
 
   // A phone keeps its labels: there the page letterboxes vertically and the
   // triggers sit above and below the music rather than beside it.
   const compactTriggers =
     !isCompactViewport && pageGutter !== null && pageGutter < LABELED_TRIGGER_GUTTER_PX;
 
+  // Edge-to-edge in performance mode: a rounded corner over a full-bleed page
+  // would clip actual music. Shared by the page and the afterimage over it.
+  const pageCornerClass = cn(
+    !isImmersive && "rounded-surface",
+    !isImmersive && isCompactViewport && "rounded-nested",
+  );
+
   return (
     <PdfImmersiveProvider value={isImmersive}>
     <PdfCompactTriggersProvider value={compactTriggers}>
+    <PdfToolLayoutProvider value={toolLayout}>
     <div
       ref={rootRef}
       className={cn("relative flex min-h-0 h-full w-full flex-1 flex-col overflow-hidden bg-surface-inverse text-ink-on-inverse", className)}
@@ -685,19 +793,20 @@ export const PdfViewer = ({
       {/* Annotation tools live top-LEFT; the top-right corner is the utility
           pill (open / share / download). As a row in the top letterbox the
           width is capped so the two never overlap on a phone. As a rail
-          (`tool-rail:`, see toolRail.ts) the slot runs down the left margin
-          and stops above the Kamerton and the programme bar at the bottom;
-          the cap no longer applies, and an outline tab on the left edge
-          pushes it inward. The toolbar owns its own chrome + collapse-to-
-          trigger so it isn't always occupying the corner. Kept in immersive
-          too — the score is annotatable in performance mode; the toolbar
-          starts collapsed there for a clean stage. */}
+          (`tool-rail:`, see toolRail.ts; only where the host allows it) the
+          slot runs down the left margin and stops above the Kamerton and the
+          programme bar at the bottom; the cap no longer applies, and an
+          outline tab on the left edge pushes it inward. The toolbar owns its
+          own chrome + collapse-to-trigger so it isn't always occupying the
+          corner. Kept in immersive too — the score is annotatable in
+          performance mode; the toolbar starts collapsed there for a clean
+          stage. */}
       {showPdfChrome && toolbarSlot && (
         <div
           className={cn(
             "pointer-events-none absolute left-3 top-4 z-20 max-w-[calc(100vw-9rem)] sm:left-6 sm:top-6 sm:max-w-[calc(100vw-13rem)]",
-            "tool-rail:bottom-40 tool-rail:max-w-none",
-            outline.length > 0 && "tool-rail:left-14",
+            toolLayout === "rail" && "tool-rail:bottom-40 tool-rail:max-w-none",
+            toolLayout === "rail" && outline.length > 0 && "tool-rail:left-14",
           )}
           data-pdf-gesture-exempt
         >
@@ -763,7 +872,7 @@ export const PdfViewer = ({
                     box; the target + neighbours render invisibly on top so a
                     page turn swaps two READY canvases — no loader, no flash.
                     This element is also the pinch-preview transform target. */}
-                <div ref={pageBoxRef} className="relative w-fit">
+                <div ref={attachPageBox} className="relative w-fit">
                   {pagesToRender.map((page) => {
                     const isVisible = page === stablePage;
                     return (
@@ -778,9 +887,10 @@ export const PdfViewer = ({
                           scale={zoom}
                           devicePixelRatio={devicePixelRatio}
                           canvasBackground="#ffffff"
+                          canvasRef={isVisible ? visibleCanvasRef : undefined}
                           renderAnnotationLayer
                           renderTextLayer
-                          onRenderSuccess={() => markRendered(page)}
+                          onRenderSuccess={() => handlePageRendered(page)}
                           onLoadSuccess={
                             isVisible
                               ? (loaded) => {
@@ -791,21 +901,25 @@ export const PdfViewer = ({
                               : undefined
                           }
                           onLoadError={flagViewerError}
-                          onRenderError={flagViewerError}
+                          onRenderError={(error) => handlePageRenderError(page, error)}
                           loading={isVisible
                             ? <div className="flex min-h-[12rem] items-center justify-center py-8"><EtherealLoader /></div>
                             : null}
-                          // Edge-to-edge in performance mode: a rounded corner
-                          // over a full-bleed page would clip actual music.
                           className={cn(
                             "overflow-hidden bg-white",
-                            !isImmersive && "rounded-surface shadow-glass-ethereal",
-                            !isImmersive && isCompactViewport && "rounded-nested",
+                            pageCornerClass,
+                            !isImmersive && "shadow-glass-ethereal",
                           )}
                         />
                       </div>
                     );
                   })}
+                  {/* The afterimage: shown only while a zoom step renders. */}
+                  <canvas
+                    ref={attachAfterimage}
+                    aria-hidden="true"
+                    className={cn("pointer-events-none absolute inset-0 hidden h-full w-full", pageCornerClass)}
+                  />
                   {renderPageOverlay && pageBox && (
                     // z-10 lifts the annotation surface ABOVE react-pdf's
                     // text layer (z-index 2) and annotation layer (z-index 3)
@@ -883,6 +997,15 @@ export const PdfViewer = ({
         />
       )}
 
+      {/* Modal layer (the annotation guide): above every piece of chrome, so
+          nothing behind it — the bottom nav's arrows above all — can be
+          reached while it is open. */}
+      {showPdfChrome && modalSlot && (
+        <div className="pointer-events-none absolute inset-0 z-30" data-pdf-gesture-exempt>
+          {modalSlot}
+        </div>
+      )}
+
       {/* Transient feedback chip: page position in performance mode. */}
       <AnimatePresence>
         {chip && (
@@ -905,6 +1028,7 @@ export const PdfViewer = ({
         )}
       </AnimatePresence>
     </div>
+    </PdfToolLayoutProvider>
     </PdfCompactTriggersProvider>
     </PdfImmersiveProvider>
   );

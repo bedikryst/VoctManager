@@ -37,6 +37,13 @@
  * into one event; they are unfolded here (`getCoalescedEvents`), or a quick
  * curve comes out as a polygon.
  *
+ * While a link waits for where it leads (`seekingTarget`), the page under it is
+ * often the wrong one. A finger's tap in an edge zone and its swipe then turn
+ * the page, as they do in the viewer, which never sees them on this surface;
+ * the middle of the paper takes the target. A target is a page and a height,
+ * so any spot across the middle will do. A mouse or a pen places anywhere: it
+ * aims at the sign itself, and the bar, the keys or a finger turn the page.
+ *
  * Changing tool abandons whatever the old tool had started; changing page is
  * the caller's remount (`useScoreAnnotator`'s `renderPageOverlay` keys the
  * surface by page), so nothing drawn on one page lands on the next.
@@ -46,7 +53,11 @@
 import type React from "react";
 import { useCallback, useEffect, useRef } from "react";
 
-import { resolveTapZone } from "@/shared/ui/composites/PdfViewer";
+import {
+  resolveSwipeTurn,
+  resolveTapZone,
+  type TapZone,
+} from "@/shared/ui/composites/PdfViewer";
 
 import type { NormPoint } from "../types/annotations.dto";
 import { pageFraction } from "./markBounds";
@@ -119,6 +130,11 @@ export interface OverlayInputOptions {
   /** True → a bare finger draws; false → the finger pans and only a stylus draws. */
   fingerDraw: boolean;
   /**
+   * A link's first end is placed and the next tap says where it leads: a
+   * finger's edge taps and swipes turn the page instead of placing.
+   */
+  seekingTarget: boolean;
+  /**
    * A finished drag with a tracing tool: every point as drawn, the lift
    * included. A shape hands over two points, its corners. A single point is a
    * press that never moved, and the caller decides whether that is a mark.
@@ -139,9 +155,10 @@ export interface OverlayInputOptions {
   onErase: (point: NormPoint, rub: { first: boolean }) => void;
   /**
    * A finger that pressed and lifted in a page-turn edge zone without
-   * travelling, while a pen tool held the surface. The surface is
-   * gesture-exempt, so the viewer never sees that touch; without this a reader
-   * with the pencil in hand would be stranded on one page.
+   * travelling, while a pen tool held the surface — or, while a link seeks its
+   * target, an edge tap or a swipe. The surface is gesture-exempt, so the
+   * viewer never sees those touches; without this a reader with the pencil in
+   * hand would be stranded on one page.
    */
   onTurnPage: (delta: 1 | -1) => void;
 }
@@ -186,8 +203,10 @@ interface Pan {
 /** Tap candidate for note/stamp placement, settled on pointer-up. */
 interface Tap {
   pointerId: number;
+  pointerType: string;
   x: number;
   y: number;
+  startedAt: number;
   slop: number;
   moved: boolean;
 }
@@ -196,6 +215,20 @@ interface Sample {
   clientX: number;
   clientY: number;
 }
+
+/**
+ * Which way a tap at `clientX` on the surface turns, in the viewer's own
+ * geometry. The surface covers the page, so its box is the paper.
+ */
+const edgeZoneAt = (clientX: number, surface: Element): TapZone => {
+  const viewport = surface.closest<HTMLElement>("[data-pdf-viewport]");
+  if (!viewport) return 0;
+  return resolveTapZone(
+    clientX,
+    viewport.getBoundingClientRect(),
+    surface.getBoundingClientRect(),
+  );
+};
 
 /** Every position a move reports: a pen's folded samples, or the event alone. */
 const samplesOf = (event: React.PointerEvent<HTMLElement>): readonly Sample[] => {
@@ -211,6 +244,7 @@ export const useOverlayInput = ({
   tool,
   canEdit,
   fingerDraw,
+  seekingTarget,
   onStroke,
   onPreview,
   onTap,
@@ -223,6 +257,7 @@ export const useOverlayInput = ({
   );
   const tapping = placing || stamping || linking;
   const tracing = drawing || selecting;
+  const turnsFromTaps = linking && seekingTarget;
   const strokeRef = useRef<LiveStroke | null>(null);
   const panRef = useRef<Pan | null>(null);
   const tapRef = useRef<Tap | null>(null);
@@ -349,16 +384,22 @@ export const useOverlayInput = ({
       } else if (tapping) {
         // A press that started on an existing mark belongs to that mark.
         if ((event.target as Element | null)?.closest?.(`[${MARK_ATTR}]`)) return;
+        // A swipe may leave the page before it lifts, and still turns it.
+        if (turnsFromTaps && event.pointerType === "touch") {
+          event.currentTarget.setPointerCapture(event.pointerId);
+        }
         tapRef.current = {
           pointerId: event.pointerId,
+          pointerType: event.pointerType,
           x: event.clientX,
           y: event.clientY,
+          startedAt: performance.now(),
           slop: slopFor(event.pointerType),
           moved: false,
         };
       }
     },
-    [abandonStroke, canEdit, fingerDraw, surfaceRef, tapping, toNorm, tracing],
+    [abandonStroke, canEdit, fingerDraw, surfaceRef, tapping, toNorm, tracing, turnsFromTaps],
   );
 
   const onPointerMove = useCallback<SurfacePointerHandler>(
@@ -429,12 +470,7 @@ export const useOverlayInput = ({
           event.clientY - pan.startY,
         );
         if (travelled <= TOUCH_SLOP_PX) {
-          // The surface covers the page, so its box is the paper.
-          const zone = resolveTapZone(
-            event.clientX,
-            pan.viewport.getBoundingClientRect(),
-            event.currentTarget.getBoundingClientRect(),
-          );
+          const zone = edgeZoneAt(event.clientX, event.currentTarget);
           if (zone !== 0) callbacks.current.onTurnPage(zone);
         }
         return;
@@ -442,6 +478,20 @@ export const useOverlayInput = ({
       const tap = tapRef.current;
       if (tap && tap.pointerId === event.pointerId) {
         tapRef.current = null;
+        if (turnsFromTaps && tap.pointerType === "touch") {
+          const turn = tap.moved
+            ? resolveSwipeTurn(
+                tap.pointerType,
+                event.clientX - tap.x,
+                event.clientY - tap.y,
+                performance.now() - tap.startedAt,
+              )
+            : edgeZoneAt(event.clientX, event.currentTarget);
+          if (turn !== 0) {
+            callbacks.current.onTurnPage(turn);
+            return;
+          }
+        }
         if (!tap.moved) callbacks.current.onTap(toNorm(event.clientX, event.clientY));
         return;
       }
@@ -461,7 +511,7 @@ export const useOverlayInput = ({
       abandonStroke();
       callbacks.current.onStroke(points, { tapped });
     },
-    [abandonStroke, shaping, toNorm],
+    [abandonStroke, shaping, toNorm, turnsFromTaps],
   );
 
   // Per pointer: iPadOS cancels a resting palm's touch once it sees the pencil,

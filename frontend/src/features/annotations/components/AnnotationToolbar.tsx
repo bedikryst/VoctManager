@@ -33,7 +33,7 @@
  * @module features/annotations/components
  */
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   Check,
   ChevronLeft,
@@ -397,6 +397,11 @@ export const AnnotationToolbar = ({
     else setExpanded(readExpanded());
   }, [isImmersive]);
 
+  // The guide takes focus as it opens. The closing menu would hand focus back to
+  // ⋯ a moment later, and a Space meant for the guide would reopen the menu
+  // over it; every other way out of the menu returns focus to ⋯ as usual.
+  const guideChosenRef = useRef(false);
+
   // Two-tap confirm (avoids a modal-inside-the-PDF-modal); auto-resets so a
   // stray first tap never leaves the menu armed.
   const [confirmingClear, setConfirmingClear] = useState(false);
@@ -560,7 +565,15 @@ export const AnnotationToolbar = ({
           <MoreIcon size={16} aria-hidden="true" />
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent side={isRail ? "right" : "bottom"} align="start">
+      <DropdownMenuContent
+        side={isRail ? "right" : "bottom"}
+        align="start"
+        onCloseAutoFocus={(event) => {
+          if (!guideChosenRef.current) return;
+          guideChosenRef.current = false;
+          event.preventDefault();
+        }}
+      >
         {foldIntoMenu && (
           <>
             <DropdownMenuItem icon={<Redo2 size={14} />} onSelect={onRedo} disabled={!canRedo}>
@@ -575,7 +588,13 @@ export const AnnotationToolbar = ({
             <DropdownMenuSeparator />
           </>
         )}
-        <DropdownMenuItem icon={<HelpCircle size={14} />} onSelect={onOpenGuide}>
+        <DropdownMenuItem
+          icon={<HelpCircle size={14} />}
+          onSelect={() => {
+            guideChosenRef.current = true;
+            onOpenGuide();
+          }}
+        >
           {t("annotations.guide.open", "Jak działają adnotacje")}
         </DropdownMenuItem>
         {clearableCount > 0 && (

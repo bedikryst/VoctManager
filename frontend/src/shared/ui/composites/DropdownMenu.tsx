@@ -29,6 +29,12 @@ export interface DropdownMenuContentProps {
   side?: RadixDropdown.DropdownMenuContentProps["side"];
   /** Alignment along the trigger edge. */
   align?: RadixDropdown.DropdownMenuContentProps["align"];
+  /**
+   * Runs as the closed menu hands focus back to its trigger. An item that opens
+   * a panel which takes focus itself calls `event.preventDefault()` here, or
+   * the trigger takes it back a moment later.
+   */
+  onCloseAutoFocus?: (event: Event) => void;
   className?: string;
 }
 
@@ -36,6 +42,7 @@ export const DropdownMenuContent = ({
   children,
   side = "bottom",
   align = "end",
+  onCloseAutoFocus,
   className,
 }: DropdownMenuContentProps): React.JSX.Element => (
   <RadixDropdown.Portal>
@@ -43,6 +50,7 @@ export const DropdownMenuContent = ({
       side={side}
       align={align}
       sideOffset={8}
+      onCloseAutoFocus={onCloseAutoFocus}
       className={cn(
         "z-popover min-w-56 origin-(--radix-dropdown-menu-content-transform-origin) rounded-nested border border-ethereal-incense/15 bg-ethereal-alabaster/95 p-1.5 shadow-glass-ethereal",
         "popover-motion",

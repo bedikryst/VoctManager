@@ -2,8 +2,8 @@
  * @file useScoreAnnotator.tsx
  * @description One-call binding that turns an edition id + annotator mode into
  * the slots PdfViewer needs: a `toolbarSlot`, a `renderPageOverlay` (the drawing
- * surface), an `overlaySlot` (the annotation index, the guide, the live notice)
- * and an `onPageApiChange` handler. Three modes: `conductor` (managers — write
+ * surface), an `overlaySlot` (the annotation index, the live notice), a
+ * `modalSlot` (the guide) and an `onPageApiChange` handler. Three modes: `conductor` (managers — write
  * to the choir, leader and private reaches, and may move a placed mark between
  * them), `leader` (a project leader whose grant opens a layer beside their
  * pencil — the choir's, the desk they share with the conductor, or both; the
@@ -184,6 +184,8 @@ export interface ScoreAnnotatorBindings {
   toolbarSlot: React.ReactNode;
   renderPageOverlay: (geometry: PdfPageGeometry) => React.ReactNode;
   overlaySlot: React.ReactNode;
+  /** The guide, which covers the viewer's chrome — see `PdfViewerProps.modalSlot`. */
+  modalSlot: React.ReactNode;
   onPageApiChange: (api: PdfPageApi) => void;
   /** The annotator's first claim on a key — see `PdfViewerProps.claimKey`. */
   claimKey: (event: KeyboardEvent) => boolean;
@@ -578,6 +580,11 @@ export const useScoreAnnotator = ({
    * in the app would replay annotation history against a closed viewer. The
    * viewer offers no key typed into a field, so nothing here asks again.
    *
+   * While the guide is open it takes every key: nothing behind it turns a page,
+   * moves or deletes a mark, or arms a tool. Escape closes it. The rest are
+   * claimed without `preventDefault`, so they still scroll the guide and Tab
+   * still moves through it.
+   *
    * - Ctrl/⌘+Z undoes; Ctrl/⌘+Shift+Z and Ctrl/⌘+Y redo.
    * - Delete or Backspace removes the selection, or the one mark whose card is
    *   open. A note is left out: its card is a composer, and a Backspace there
@@ -590,6 +597,7 @@ export const useScoreAnnotator = ({
   const claimKey = useCallback(
     (event: KeyboardEvent): boolean => {
       if (event.key === "Escape") return claimEscape(event);
+      if (guideOpen) return true;
       if (!active || !activeEditionId) return false;
       if (event.ctrlKey || event.metaKey) {
         if (event.altKey) return false;
@@ -641,6 +649,7 @@ export const useScoreAnnotator = ({
       canDraw,
       canModify,
       claimEscape,
+      guideOpen,
       handleDelete,
       redo,
       selectedId,
@@ -975,15 +984,18 @@ export const useScoreAnnotator = ({
         onReturn={handleReturn}
         onDismiss={dismissLinkStatus}
       />
-      <AnnotationGuide
-        isOpen={guideOpen}
-        mode={mode}
-        delegateLayers={reach}
-        hasLeaderMarks={hasLeaderMarks}
-        stylusSeen={tools.stylusSeen}
-        onClose={() => setGuideOpen(false)}
-      />
     </>
+  );
+
+  const modalSlot = (
+    <AnnotationGuide
+      isOpen={guideOpen}
+      mode={mode}
+      delegateLayers={reach}
+      hasLeaderMarks={hasLeaderMarks}
+      stylusSeen={tools.stylusSeen}
+      onClose={() => setGuideOpen(false)}
+    />
   );
 
   const notifySlot =
@@ -1018,6 +1030,7 @@ export const useScoreAnnotator = ({
     ) : null,
     renderPageOverlay,
     overlaySlot,
+    modalSlot,
     onPageApiChange,
     claimKey,
     annotationCount: annotations.length,

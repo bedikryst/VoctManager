@@ -18,9 +18,11 @@
  * is likely (a fine pointer is attached), and the pen's eraser end only on a
  * device that has seen a pen; the keys are read from the toolbar's own table.
  *
- * Rendered INSIDE the viewer's overlay rather than as a portalled sheet: the
+ * Rendered INSIDE the viewer's modal slot rather than as a portalled sheet: the
  * PDF modal and BottomSheet both sit on `z-focus-trap`, and stacking a second
- * focus trap over a full-screen one is a fight with no winner.
+ * focus trap over a full-screen one is a fight with no winner. The slot lies
+ * over the viewer's own chrome, and its keys go through the annotator's
+ * `claimKey`, which closes it on Escape and lets nothing else act behind it.
  * @module features/annotations/components
  */
 
@@ -108,22 +110,6 @@ export const AnnotationGuide = ({
     panelRef.current?.focus({ preventScroll: true });
     return () => opener?.focus({ preventScroll: true });
   }, [isOpen]);
-
-  // Escape belongs to the topmost thing on screen. The viewer is a Radix dialog
-  // listening on the document, so without claiming the key here first, dismissing
-  // this panel would slam the whole score shut — and the reader would have to
-  // find their page again to learn one fact about privacy.
-  useEffect(() => {
-    if (!isOpen) return;
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== "Escape") return;
-      event.preventDefault();
-      event.stopPropagation();
-      onClose();
-    };
-    window.addEventListener("keydown", onKeyDown, true);
-    return () => window.removeEventListener("keydown", onKeyDown, true);
-  }, [isOpen, onClose]);
 
   const leaderFact: GuideFact = {
     id: "leader",
@@ -437,7 +423,7 @@ export const AnnotationGuide = ({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.2 }}
-          // The viewer hands its overlay slot out with pointer-events off, so
+          // The viewer hands its modal slot out with pointer-events off, so
           // every layer that wants a click has to switch them back on — without
           // this the backdrop is scenery and the panel cannot be dismissed.
           // A scrim, not a surface — black on both themes.

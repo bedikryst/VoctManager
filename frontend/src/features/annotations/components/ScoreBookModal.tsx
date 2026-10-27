@@ -113,8 +113,10 @@ export const ScoreBookModal = ({
           </>
         ) : undefined
       }
+      modalSlot={hasMap ? annotator.modalSlot : undefined}
       onPageApiChange={hasMap ? annotator.onPageApiChange : undefined}
       claimKey={hasMap ? annotator.claimKey : undefined}
+      toolLayout="rail"
       fullView={fullView}
       // With a map, the file on screen is the clean book and every mark is
       // drawn live over it, so handing that file out would hand out a book
