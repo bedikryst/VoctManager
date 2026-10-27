@@ -16,9 +16,13 @@ import { ANNOTATIONS_ENDPOINT } from "../lib/pendingMarks";
 import type {
   AnnotationPatch,
   MarkFingerprint,
+  MarksNews,
   NewAnnotation,
   ScoreAnnotation,
+  SetAsideSet,
 } from "../types/annotations.dto";
+
+const projectPath = (projectId: string): string => `/api/projects/${projectId}/`;
 
 export const AnnotationsService = {
   list: async (editionId: string): Promise<ScoreAnnotation[]> => {
@@ -100,5 +104,54 @@ export const AnnotationsService = {
       { ids },
     );
     return response.data.restored;
+  },
+
+  /** The sets of marks put aside on one edition, newest first. Managers only. */
+  setAsideSets: async (editionId: string): Promise<SetAsideSet[]> => {
+    const response = await api.get<SetAsideSet[]>(`${ANNOTATIONS_ENDPOINT}set_aside/`, {
+      params: { edition: editionId },
+    });
+    return response.data;
+  },
+
+  /**
+   * Puts every live mark on the edition that is not somebody's personal pencil
+   * into one set. `archived_at` is null when there was nothing to put away.
+   */
+  setAside: async (
+    editionId: string,
+  ): Promise<{ archived_at: string | null; count: number }> => {
+    const response = await api.post<{ archived_at: string | null; count: number }>(
+      `${ANNOTATIONS_ENDPOINT}set_aside/`,
+      { edition: editionId },
+    );
+    return response.data;
+  },
+
+  /** Brings one set back; to the choir its marks are new again. */
+  restoreSet: async (editionId: string, archivedAt: string): Promise<number> => {
+    const response = await api.post<{ restored: number }>(
+      `${ANNOTATIONS_ENDPOINT}set_aside/restore/`,
+      { edition: editionId, archived_at: archivedAt },
+    );
+    return response.data.restored;
+  },
+
+  /** What "Powiadom chór" would send now. The conductor and managers only. */
+  marksNews: async (projectId: string): Promise<MarksNews> => {
+    const response = await api.get<MarksNews>(`${projectPath(projectId)}marks_news/`);
+    return response.data;
+  },
+
+  /** Tells the live cast which pieces carry new marks. */
+  notifyChoir: async (
+    projectId: string,
+  ): Promise<{ notified_at: string; recipients: number; pieces: number }> => {
+    const response = await api.post<{
+      notified_at: string;
+      recipients: number;
+      pieces: number;
+    }>(`${projectPath(projectId)}notify_marks/`);
+    return response.data;
   },
 };

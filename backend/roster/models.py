@@ -366,6 +366,16 @@ class Project(SoftDeleteModel):
             "fuse on urgent news can break through a stamp left by a calm one."
         )
     )
+    # When the choir was last told, by "Powiadom chór", that the conductor's
+    # marks moved. Never automatic: a mark is news to the choir only when the
+    # conductor says so. What the button offers next is every shared mark that
+    # said something new after this moment (the project's creation, before the
+    # first press). Also the cooldown between two presses.
+    marks_notified_at = models.DateTimeField(
+        null=True, blank=True,
+        help_text=_("When the cast was last told about new marks in the scores. Null = never."),
+        verbose_name=_("Choir told about marks at"),
+    )
     run_sheet = models.JSONField(default=list, blank=True, verbose_name=_("Run-sheet"))
 
     # --- Day-of logistics. The facts a call sheet exists to carry, and the ones

@@ -4423,6 +4423,112 @@ msgstr ""
 msgid "at must be a time with its time zone."
 msgstr ""
 
+#: archive/models.py
+msgid "Set aside at"
+msgstr ""
+
+#: archive/models.py
+msgid "When the conductor set this mark aside. Empty while it is on the page."
+msgstr ""
+
+#: archive/views.py
+msgid "archived_at must be a time with its time zone."
+msgstr ""
+
+#: archive/views.py
+msgid "This mark has been set aside."
+msgstr ""
+
+#: roster/models.py
+msgid ""
+"When the cast was last told about new marks in the scores. Null = never."
+msgstr ""
+
+#: roster/models.py
+msgid "Choir told about marks at"
+msgstr ""
+
+#: roster/views.py
+msgid "Only the conductor or a manager may tell the choir."
+msgstr ""
+
+#: roster/views.py
+msgid "The choir was told a moment ago. Try again in a few minutes."
+msgstr ""
+
+#: roster/views.py
+msgid "No marks have changed since the choir was last told."
+msgstr ""
+
+#: roster/views.py
+msgid "Nobody in the cast can receive this yet."
+msgstr ""
+
+#: notifications/models.py
+msgid "New Marks in the Scores"
+msgstr ""
+
+#: notifications/message_content.py
+msgid "your concert"
+msgstr ""
+
+#: notifications/message_content.py
+#, python-format
+msgid "New marks in the score: %(piece)s"
+msgstr ""
+
+#: notifications/message_content.py
+msgid "Read them before the next rehearsal."
+msgstr ""
+
+#: notifications/message_content.py
+#, python-format
+msgid ""
+"There are new marks for the choir in %(piece)s. Read them before the next "
+"rehearsal."
+msgstr ""
+
+#: notifications/message_content.py
+#, python-format
+msgid "New marks in %(count)d piece"
+msgid_plural "New marks in %(count)d pieces"
+msgstr[0] ""
+msgstr[1] ""
+
+#: notifications/message_content.py
+msgid ""
+"There are new marks for the choir in the pieces below. Read them before the "
+"next rehearsal."
+msgstr ""
+
+#: notifications/message_content.py
+#, python-format
+msgid "and %(count)d more"
+msgid_plural "and %(count)d more"
+msgstr[0] ""
+msgstr[1] ""
+
+#: notifications/message_content.py
+#, python-format
+msgid "New marks in the scores — %(project)s"
+msgstr ""
+
+#: notifications/message_content.py
+msgid "Scores"
+msgstr ""
+
+#: notifications/message_content.py
+msgid "Open the score"
+msgstr ""
+
+#: notifications/message_content.py
+msgid "Open the library"
+msgstr ""
+
+#: notifications/message_content.py
+msgid "New marks in the scores"
+msgstr ""
+
 #~ msgid ""
 #~ "%(artist)s is asking to be excused from a run of rehearsals. The dates are "
 #~ "below — approve or decline them in the panel."

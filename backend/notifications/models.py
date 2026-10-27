@@ -57,6 +57,9 @@ class NotificationType(models.TextChoices):
     PIECE_CASTING_ASSIGNED = 'PIECE_CASTING_ASSIGNED', _('Assigned to Piece')
     PIECE_CASTING_UPDATED = 'PIECE_CASTING_UPDATED', _('Piece Casting Changed')
     MATERIAL_UPLOADED = 'MATERIAL_UPLOADED', _('New Sheet Music or Audio Track')
+    # Sent only when the conductor presses "Powiadom chór": new marks on the
+    # choir's layer are never announced on their own.
+    SCORE_MARKS_SHARED = 'SCORE_MARKS_SHARED', _('New Marks in the Scores')
 
     # --- LOGISTICS & HR ---
     # ---  CREW_ASSIGNED = 'CREW_ASSIGNED', _('Assigned to Crew Role')

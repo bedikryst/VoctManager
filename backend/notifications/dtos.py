@@ -528,6 +528,25 @@ class MaterialUploadedMetadata(StrictDTO):
     message: str | None = None
 
 
+class MarkedPieceMetadata(StrictDTO):
+    """One piece whose choir marks are news, as names rather than prose."""
+    piece_id: UUID
+    title: str
+    composer_name: str = ""
+
+
+class ScoreMarksSharedMetadata(StrictDTO):
+    """The conductor's "Powiadom chór": which pieces of one project carry marks
+    the choir has not been told about. Per recipient, because a singer is not
+    told about an instrumental item they are not handed."""
+    project_id: UUID
+    project_name: str
+    # The Project.EventKind CODE, so the line names the concert or the Mass.
+    event_kind: str = ""
+    pieces: tuple[MarkedPieceMetadata, ...] = ()
+    message: str | None = None
+
+
 class ContractIssuedMetadata(StrictDTO):
     contract_id: UUID | None = None
     project_id: UUID | None = None
@@ -562,6 +581,7 @@ NotificationMetadataPayload = (
     | CustomAdminMessageMetadata
     | NotificationReadReceiptMetadata
     | MaterialUploadedMetadata
+    | ScoreMarksSharedMetadata
     | ContractIssuedMetadata
     | SystemAlertMetadata
 )

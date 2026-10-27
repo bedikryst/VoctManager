@@ -95,6 +95,8 @@ interface AnnotationToolbarProps extends AnnotationToolState {
   onRedo: () => void;
   onClearAll: () => void;
   onOpenGuide: () => void;
+  /** "Powiadom chór", when the stand was opened from a project its reader may tell. */
+  notifySlot?: React.ReactNode;
 }
 
 interface ToolDef {
@@ -221,6 +223,7 @@ export const AnnotationToolbar = ({
   onRedo,
   onClearAll,
   onOpenGuide,
+  notifySlot,
 }: AnnotationToolbarProps): React.JSX.Element => {
   const { t } = useTranslation();
   const showInk =
@@ -504,6 +507,13 @@ export const AnnotationToolbar = ({
         )}
 
         {pendingPill && <span className="ml-1">{pendingPill}</span>}
+
+        {notifySlot && (
+          <>
+            <ToolSeparator />
+            {notifySlot}
+          </>
+        )}
 
         <ToolSeparator />
         <button

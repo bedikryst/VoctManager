@@ -151,6 +151,10 @@ PREFERENCE_GROUPS: tuple[PreferenceGroup, ...] = (
         email=False,
         types=(
             NotificationType.MATERIAL_UPLOADED,
+            # The conductor's own "look at your scores" — one per press, never
+            # automatic, so it carries its reserve e-mail to a member without a
+            # device, unlike the material notice above it.
+            NotificationType.SCORE_MARKS_SHARED,
             NotificationType.PROJECT_REMINDER,
             NotificationType.REHEARSAL_REMINDER,
         ),

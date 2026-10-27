@@ -92,6 +92,7 @@ export const NOTIFICATION_TYPE_ICON: Partial<Record<NotificationType, LucideIcon
   CUSTOM_ADMIN_MESSAGE: Megaphone,
   // Materials & reminders — preparation and nudges
   MATERIAL_UPLOADED: FileMusic,
+  SCORE_MARKS_SHARED: PencilLine,
   PROJECT_REMINDER: CalendarClock,
   REHEARSAL_REMINDER: AlarmClock,
   // Team operations — the manager's console

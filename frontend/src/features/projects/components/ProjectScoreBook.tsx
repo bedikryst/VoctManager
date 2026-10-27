@@ -50,6 +50,12 @@ interface ProjectScoreBookProps {
    * choristers write their own private pencil over the read-only shared marks.
    */
   readonly mode?: ScoreAnnotatorMode;
+  /**
+   * Whether the reader may tell this project's choir about new marks — a
+   * manager or the podium conductor. The book's toolbar then carries
+   * "Powiadom chór".
+   */
+  readonly canNotifyChoir?: boolean;
   readonly onClose: () => void;
 }
 
@@ -59,6 +65,7 @@ export const ProjectScoreBook = ({
   isOpen,
   version = "",
   mode = "personal",
+  canNotifyChoir = false,
   onClose,
 }: ProjectScoreBookProps): React.JSX.Element => {
   const { t } = useTranslation();
@@ -116,6 +123,7 @@ export const ProjectScoreBook = ({
         id: projectId,
         hint: { title, subtitle: projectTitle, fileName },
       }}
+      notifyProjectId={canNotifyChoir ? projectId : null}
       onClose={onClose}
     />
   );

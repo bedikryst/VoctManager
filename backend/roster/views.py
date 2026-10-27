@@ -105,6 +105,12 @@ from .infrastructure.document_generator import (
 )
 from .infrastructure.score_markings import apply_markings, plan_markings
 from .infrastructure.score_watermark import stamp_pdf
+from .marks_news import (
+    MarksNoticeRefused,
+    marks_news_payload,
+    notify_choir,
+    read_marks_news,
+)
 
 # Models & Exceptions
 from .models import (
@@ -129,6 +135,7 @@ from .permissions import (
     led_project_ids,
     led_projects_q,
     live_delegate_q,
+    user_holds_podium,
     user_leads_project,
     user_may_plan,
 )
@@ -1004,6 +1011,65 @@ class ProjectViewSet(viewsets.ModelViewSet):
         planned = plan_markings(page_map or [], marks.by_source)
         count = sum(len(page_marks) for _, page_marks in planned)
         return Response({"available": count > 0, "count": count})
+
+    def _marks_notifier_project(self) -> Project:
+        """The project behind "Powiadom chór", for whoever may press it: a
+        manager, or the podium conductor of this one project."""
+        project = self.get_object()
+        user = request_user(self.request)
+        if not (user_is_manager(user) or user_holds_podium(user, project)):
+            raise PermissionDenied(_("Only the conductor or a manager may tell the choir."))
+        return project
+
+    @action(detail=True, methods=['get'], url_path='marks_news',
+            permission_classes=[permissions.IsAuthenticated])
+    def marks_news(self, request, pk=None) -> Response:
+        """
+        What "Powiadom chór" would send now: the programme's pieces carrying
+        choir marks that said something new since the cast was last told, how
+        many people would hear, and when the cooldown ends while it runs.
+        """
+        project = self._marks_notifier_project()
+        return Response(marks_news_payload(read_marks_news(project, request_user(request))))
+
+    @action(detail=True, methods=['post'], url_path='notify_marks',
+            permission_classes=[permissions.IsAuthenticated])
+    def notify_marks(self, request, pk=None) -> Response:
+        """
+        Tells the live cast which pieces carry new marks: one notice each, with
+        a deep link. 409 when there is nothing to say or nobody to say it to,
+        429 while the last notice is too recent.
+        """
+        project = self._marks_notifier_project()
+        try:
+            sent = notify_choir(project, request_user(request))
+        except MarksNoticeRefused as refusal:
+            if refusal.reason == MarksNoticeRefused.TOO_SOON:
+                return Response(
+                    {
+                        "detail": _("The choir was told a moment ago. Try again in a few minutes."),
+                        "code": refusal.reason,
+                        "next_allowed_at": (
+                            refusal.next_allowed_at.isoformat()
+                            if refusal.next_allowed_at else None
+                        ),
+                    },
+                    status=status.HTTP_429_TOO_MANY_REQUESTS,
+                )
+            detail = (
+                _("No marks have changed since the choir was last told.")
+                if refusal.reason == MarksNoticeRefused.NOTHING_NEW
+                else _("Nobody in the cast can receive this yet.")
+            )
+            return Response(
+                {"detail": detail, "code": refusal.reason},
+                status=status.HTTP_409_CONFLICT,
+            )
+        return Response({
+            "notified_at": sent.notified_at.isoformat(),
+            "recipients": sent.recipients,
+            "pieces": sent.pieces,
+        })
 
     @action(detail=True, methods=['get'], url_path='score_map',
             permission_classes=[permissions.IsAuthenticated])

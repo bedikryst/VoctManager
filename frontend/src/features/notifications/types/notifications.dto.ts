@@ -21,6 +21,7 @@ export type NotificationType =
   | "PIECE_CASTING_ASSIGNED"
   | "PIECE_CASTING_UPDATED"
   | "MATERIAL_UPLOADED"
+  | "SCORE_MARKS_SHARED"
   | "CONTRACT_ISSUED"
   | "ABSENCE_REQUESTED"
   | "ABSENCE_APPROVED"
@@ -402,6 +403,24 @@ export interface MaterialUploadedMetadata {
   composer_name?: string;
 }
 
+/** One piece named by "Powiadom chór". */
+export interface MarkedPieceMetadata {
+  piece_id: string;
+  title: string;
+  composer_name?: string;
+}
+
+/**
+ * The conductor's "Powiadom chór": the pieces of one project whose choir marks
+ * are new to this reader. Never sent on its own — only when he presses it.
+ */
+export interface ScoreMarksSharedMetadata {
+  project_id: string;
+  project_name: string;
+  event_kind?: string;
+  pieces: MarkedPieceMetadata[];
+}
+
 export interface AbsenceStatusMetadata extends EventMomentMetadata {
   rehearsal_id: string;
   project_name?: string;
@@ -528,6 +547,7 @@ export type NotificationDTO = BaseNotification &
         metadata: PieceCastingMetadata;
       }
     | { notification_type: "MATERIAL_UPLOADED"; metadata: MaterialUploadedMetadata }
+    | { notification_type: "SCORE_MARKS_SHARED"; metadata: ScoreMarksSharedMetadata }
     | {
         notification_type: "ABSENCE_APPROVED" | "ABSENCE_REJECTED";
         metadata: AbsenceStatusMetadata;

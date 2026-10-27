@@ -12,6 +12,10 @@
  * previews what the choir actually receives, so an index that went on listing
  * what he had just hidden would be arguing with the control above it. Only the
  * per-layer counts stay whole — that figure is the switch's own subject.
+ *
+ * In conductor mode the drawer ends in "Odłóż uwagi" for the edition in front
+ * of the reader, whose count is whole for the same reason: it says what a set
+ * would take, whatever is hidden.
  * @module features/annotations/components
  */
 
@@ -42,6 +46,7 @@ import { layerOf } from "../lib/layers";
 import { getStampDef } from "../lib/stamps";
 import type { LayerVisibility } from "../lib/useAnnotationTools";
 import type { ScoreAnnotatorMode } from "../useScoreAnnotator";
+import { SetAsideSection } from "./SetAsideSection";
 
 /** A note or a symbol, as the index and the "new" list name it. */
 interface IndexEntry {
@@ -83,6 +88,11 @@ interface AnnotationSidebarProps {
   /** Decides which layer rows make sense: choir/private vs conductor/mine. */
   mode: ScoreAnnotatorMode;
   onSelectMark: (id: string, page: number) => void;
+  /**
+   * The edition in front of the reader. With it, a manager's drawer ends in
+   * "Odłóż uwagi" for that edition (conductor mode only).
+   */
+  editionId?: string | null;
 }
 
 
@@ -97,6 +107,7 @@ export const AnnotationSidebar = ({
   toggleLayerVisibility,
   mode,
   onSelectMark,
+  editionId = null,
 }: AnnotationSidebarProps): React.JSX.Element | null => {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
@@ -195,6 +206,8 @@ export const AnnotationSidebar = ({
     for (const a of annotations) counts[layerOf(a)] += 1;
     return counts;
   }, [annotations]);
+  // What a set would take: every layer but the personal pencil, hidden or not.
+  const setAsideCount = layerCounts.shared + layerCounts.conductor + layerCounts.leader;
 
   return (
     <div className="pointer-events-none absolute inset-y-0 right-0 z-10 flex items-center">
@@ -400,6 +413,10 @@ export const AnnotationSidebar = ({
                   </>
                 )}
               </section>
+
+              {mode === "conductor" && editionId && (
+                <SetAsideSection editionId={editionId} count={setAsideCount} />
+              )}
             </div>
           </motion.aside>
         ) : (

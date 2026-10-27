@@ -202,6 +202,17 @@ def user_leads_project(
     )
 
 
+def user_holds_podium(user: User | None, project: Project) -> bool:
+    """Whether ``user`` is the project's named conductor (`Project.conductor`),
+    as a person and not as a rank: the podium branch of `led_projects_q`, asked
+    about one project already in hand. Reads ``project.conductor``: select it
+    with the project."""
+    if user is None:
+        return False
+    conductor = project.conductor
+    return conductor is not None and not conductor.is_deleted and conductor.user_id == user.pk
+
+
 def user_may_plan(user: User | None, rehearsal: Rehearsal) -> bool:
     """Whether ``user`` writes and sends this rehearsal's plan.
 
@@ -220,10 +231,7 @@ def user_may_plan(user: User | None, rehearsal: Rehearsal) -> bool:
         return True
     if user is None:
         return False
-    conductor = rehearsal.project.conductor
-    on_podium = (
-        conductor is not None and not conductor.is_deleted and conductor.user_id == user.pk
-    )
+    on_podium = user_holds_podium(user, rehearsal.project)
     led_by = rehearsal.led_by
     announced = led_by is not None and led_by.user_id == user.pk
     if not (on_podium or announced):

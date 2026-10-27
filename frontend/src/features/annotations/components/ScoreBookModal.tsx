@@ -54,6 +54,8 @@ export interface ScoreBookModalProps {
    * this stays free of a route import.
    */
   readonly fullView?: React.ComponentProps<typeof PdfViewerModal>["fullView"];
+  /** The book's project, when the reader may tell its choir about new marks. */
+  readonly notifyProjectId?: string | null;
   readonly onClose: () => void;
 }
 
@@ -68,6 +70,7 @@ export const ScoreBookModal = ({
   mode,
   canExport = true,
   fullView,
+  notifyProjectId = null,
   onClose,
 }: ScoreBookModalProps): React.JSX.Element => {
   const hasMap = !!book && book.frames.size > 0;
@@ -77,6 +80,7 @@ export const ScoreBookModal = ({
     editionId: null,
     mode,
     book: isOpen && hasMap ? book : null,
+    notifyProjectId,
   });
 
   return (

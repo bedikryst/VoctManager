@@ -764,9 +764,10 @@ class ScoreEditionDetailSerializer(serializers.ModelSerializer):
         # The edition read carries the conductor-facing layers only. Personal
         # pencil marks (any user's) never ride along an edition payload — they
         # are served exclusively by AnnotationViewSet, which scopes them to
-        # their owner.
+        # their owner. Marks the conductor set aside are off the page here too.
         qs = (
             obj.annotations
+            .filter(archived_at__isnull=True)
             .exclude(layer_name=PERSONAL_ANNOTATION_LAYER)
             .order_by('created_at')
         )

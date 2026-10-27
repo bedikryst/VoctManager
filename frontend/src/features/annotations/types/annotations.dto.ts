@@ -108,6 +108,36 @@ export interface MarkFingerprint {
   seen_at: string | null;
 }
 
+/**
+ * One set of marks a manager put aside on an edition ("Odłóż uwagi"), named by
+ * the moment it was put aside — the same moment restores it.
+ */
+export interface SetAsideSet {
+  archived_at: string;
+  count: number;
+}
+
+/** A programme piece whose choir marks the cast has not been told about. */
+export interface MarkedPieceNews {
+  piece_id: string;
+  title: string;
+  composer_name: string;
+  /** How many of its choir marks said something new since the last notice. */
+  count: number;
+}
+
+/** What "Powiadom chór" would send if pressed now. */
+export interface MarksNews {
+  /** The window's start: the last notice, or the project's creation. */
+  since: string;
+  notified_at: string | null;
+  /** When the cooldown after the last notice ends; null once a press is allowed. */
+  next_allowed_at: string | null;
+  /** How many people a press would reach. */
+  recipients: number;
+  pieces: MarkedPieceNews[];
+}
+
 /** Create payload — `edition` is injected by the mutation layer. */
 export interface NewAnnotation {
   edition: string;

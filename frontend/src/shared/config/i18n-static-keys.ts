@@ -66,6 +66,7 @@ export const STATIC_NOTIFICATION_TYPES = [
   t("settings.notifications.types.PIECE_CASTING_ASSIGNED", "Przypisanie do utworu"),
   t("settings.notifications.types.PIECE_CASTING_UPDATED", "Zmiana obsady utworu"),
   t("settings.notifications.types.MATERIAL_UPLOADED", "Nowe materiały do ćwiczeń"),
+  t("settings.notifications.types.SCORE_MARKS_SHARED", "Nowe uwagi w nutach"),
   t("settings.notifications.types.CONTRACT_ISSUED", "Umowa gotowa do wglądu"),
   t("settings.notifications.types.ABSENCE_REQUESTED", "Prośba o nieobecność"),
   t("settings.notifications.types.ABSENCE_APPROVED", "Nieobecność zatwierdzona"),

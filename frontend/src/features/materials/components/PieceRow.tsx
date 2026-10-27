@@ -42,6 +42,8 @@ interface PieceRowProps {
   isArchived: boolean;
   /** Conductor view: no personal readiness, so the status dot is suppressed. */
   hideReadiness?: boolean;
+  /** The reader may tell this project's choir about new marks from the stand. */
+  canNotifyChoir?: boolean;
 }
 
 export const PieceRow = ({
@@ -51,6 +53,7 @@ export const PieceRow = ({
   isEncored,
   isArchived,
   hideReadiness = false,
+  canNotifyChoir = false,
 }: PieceRowProps): React.JSX.Element => {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -297,6 +300,7 @@ export const PieceRow = ({
           fetchBlob={() => MaterialsService.fetchScoreEditionBlob(primaryPdf.id)}
           canExport={primaryPdf.canExport}
           preferredFit={primaryPdf.wholePage ? "page" : undefined}
+          notifyProjectId={canNotifyChoir ? projectId : null}
           extraOverlay={
             <RehearsalDock
               piece={piece}

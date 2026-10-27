@@ -1927,6 +1927,90 @@ def _compose_material_uploaded(ctx: MessageContext) -> MessageContent:
     )
 
 
+# More pieces than this are summed up in one "and N more" row: the e-mail is a
+# pointer to the scores, not a second table of contents.
+_MARKED_PIECES_LISTED = 8
+
+
+def _one_line(value: str) -> str:
+    """Free text made safe for a mail header: a line break there kills the send."""
+    return " ".join(value.split())
+
+
+def _compose_score_marks_shared(ctx: MessageContext) -> MessageContent:
+    m = ctx.metadata
+    project = m.get("project_name") or _("your concert")
+    pieces = [p for p in (m.get("pieces") or []) if isinstance(p, dict) and p.get("title")]
+    project_id = m.get("project_id")
+    only = pieces[0] if len(pieces) == 1 else None
+
+    if only is not None:
+        title = _("New marks in the score: %(piece)s") % {"piece": only["title"]}
+        body = _("Read them before the next rehearsal.")
+        lead = _(
+            "There are new marks for the choir in %(piece)s. Read them before the"
+            " next rehearsal."
+        ) % {"piece": only["title"]}
+        url = (
+            f"/panel/materials/{project_id}/{only['piece_id']}"
+            if project_id and only.get("piece_id")
+            else "/panel/materials"
+        )
+        cta = _("Open the score")
+    else:
+        count = len(pieces)
+        title = (
+            ngettext(
+                "New marks in %(count)d piece",
+                "New marks in %(count)d pieces",
+                count,
+            ) % {"count": count}
+            if count
+            else _("New marks in the scores")
+        )
+        body = (
+            _truncate(", ".join(str(p["title"]) for p in pieces), 120)
+            or _("Read them before the next rehearsal.")
+        )
+        lead = _(
+            "There are new marks for the choir in the pieces below. Read them"
+            " before the next rehearsal."
+        )
+        url = "/panel/materials"
+        cta = _("Open the library")
+
+    details: list[DetailRow] = [
+        _row(_event_moment_label(m.get("event_kind")), project),
+    ]
+    for piece in pieces[:_MARKED_PIECES_LISTED]:
+        composer = piece.get("composer_name")
+        details.append(
+            _row(_("Piece"), f"{piece['title']} — {composer}" if composer else piece["title"]),
+        )
+    if len(pieces) > _MARKED_PIECES_LISTED:
+        rest = len(pieces) - _MARKED_PIECES_LISTED
+        details.append(_row(
+            _("Piece"),
+            ngettext("and %(count)d more", "and %(count)d more", rest) % {"count": rest},
+        ))
+
+    return MessageContent(
+        notification_type=ctx.notification_type,
+        level=ctx.level,
+        title=title,
+        body=body,
+        url_path=url,
+        # One per project on the lock screen: a second press replaces the first.
+        tag=f"score-marks:{project_id or project}",
+        actions=(_open_action(url),),
+        subject=_("New marks in the scores — %(project)s") % {"project": _one_line(project)},
+        eyebrow=_("Scores"),
+        email_lead=lead,
+        details=tuple(details),
+        cta_label=cta,
+    )
+
+
 def _compose_contract_issued(ctx: MessageContext) -> MessageContent:
     m = ctx.metadata
     project = m.get("project_name") or _("your engagement")
@@ -2693,6 +2777,7 @@ _COMPOSERS: dict[str, _Composer] = {
     NotificationType.PIECE_CASTING_ASSIGNED: _compose_piece_casting_assigned,
     NotificationType.PIECE_CASTING_UPDATED: _compose_piece_casting_updated,
     NotificationType.MATERIAL_UPLOADED: _compose_material_uploaded,
+    NotificationType.SCORE_MARKS_SHARED: _compose_score_marks_shared,
     NotificationType.CONTRACT_ISSUED: _compose_contract_issued,
     NotificationType.ABSENCE_REQUESTED: _compose_absence_requested,
     NotificationType.ABSENCE_APPROVED: _compose_absence_approved,

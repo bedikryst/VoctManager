@@ -961,6 +961,16 @@ def _seen_moment(raw: object) -> datetime:
     return moment
 
 
+def _set_aside_moment(raw: object) -> datetime:
+    """A body's `archived_at`: the aware moment that names a set-aside set."""
+    moment = parse_datetime(raw) if isinstance(raw, str) else None
+    if moment is None or timezone.is_naive(moment):
+        raise ValidationError(
+            {'archived_at': [_('archived_at must be a time with its time zone.')]},
+        )
+    return moment
+
+
 def _mark_ids(raw: object) -> list[uuid.UUID]:
     """A body's `ids`: a list of mark ids, bounded."""
     if not isinstance(raw, list):
@@ -996,11 +1006,12 @@ class AnnotationViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         user = request_user(self.request)
         # A soft-deleted edition takes its marks with it: they are neither
-        # listed nor fingerprinted, and so not writable either.
+        # listed nor fingerprinted, and so not writable either. A set-aside
+        # mark is off the page the same way until the conductor restores it.
         base = (
             Annotation.objects
             .select_related('edition')
-            .filter(is_deleted=False, edition__is_deleted=False)
+            .filter(is_deleted=False, edition__is_deleted=False, archived_at__isnull=True)
             .order_by('created_at')
         )
         own_personal = Q(layer_name=PERSONAL_ANNOTATION_LAYER, created_by=user)
@@ -1176,6 +1187,8 @@ class AnnotationViewSet(viewsets.ModelViewSet):
           into another person's mark.
         * An erased row: 410. The queue replays an erase right behind its
           create, and un-deleting here would bring back a mark the reader wiped.
+          A set-aside row is answered the same way: the conductor took it off
+          the page, and a late replay must not put it back on a device.
         * The author's own live row: the replayed body is applied as an edit,
           through the edit's gate. The client folds offline edits into the
           unsent create, so a later arrival can carry a newer body than the one
@@ -1186,6 +1199,8 @@ class AnnotationViewSet(viewsets.ModelViewSet):
             raise PermissionDenied('That annotation id is already taken.')
         if existing.is_deleted:
             raise AnnotationGone(_('This mark has been erased.'))
+        if existing.archived_at is not None:
+            raise AnnotationGone(_('This mark has been set aside.'))
         edit = self.get_serializer(existing, data=self.request.data, partial=True)
         edit.is_valid(raise_exception=True)
         self._assert_can_edit(existing, edit.validated_data)
@@ -1353,7 +1368,9 @@ class AnnotationViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_404_NOT_FOUND,
             )
         user = request_user(request)
-        qs = Annotation.objects.filter(edition_id=edition_id, is_deleted=False)
+        qs = Annotation.objects.filter(
+            edition_id=edition_id, is_deleted=False, archived_at__isnull=True,
+        )
         if self._is_manager():
             if layer:
                 qs = qs.filter(layer_name=layer)
@@ -1390,7 +1407,8 @@ class AnnotationViewSet(viewsets.ModelViewSet):
         personal mark. Idempotent: a live row the caller may write is answered
         as it stands, and an id the server never had is skipped (an erase that
         only ever lived in the offline queue). Marks on a deleted edition stay
-        gone with it.
+        gone with it, and a set-aside mark comes back only with its whole set
+        (`set_aside_restore`), never one by one through an undo.
 
         Answers {restored: [rows]}.
         """
@@ -1398,7 +1416,7 @@ class AnnotationViewSet(viewsets.ModelViewSet):
         rows = (
             Annotation.all_objects
             .select_related('edition')
-            .filter(pk__in=ids, edition__is_deleted=False)
+            .filter(pk__in=ids, edition__is_deleted=False, archived_at__isnull=True)
             .order_by('created_at')
         )
         restored: list[Annotation] = []
@@ -1416,3 +1434,93 @@ class AnnotationViewSet(viewsets.ModelViewSet):
             {'restored': self.get_serializer(restored, many=True).data},
             status=status.HTTP_200_OK,
         )
+
+    @action(detail=False, methods=['get', 'post'], url_path='set_aside')
+    def set_aside(self, request):
+        """
+        "Odłóż uwagi" on one edition, for managers: a piece back for a new
+        season brings last season's marks with its edition, and the conductor
+        puts them away without erasing them.
+
+        GET ?edition= lists the sets put aside on it, newest first:
+        [{archived_at, count}]. POST {edition} puts every live mark on it that
+        is not somebody's 'personal' — the choir's, his own and the leader's —
+        into one set, and answers {archived_at, count}; `archived_at` is null
+        when there was nothing to put away. A singer's own pencil is never
+        touched: it is theirs, not the season's.
+
+        Not replayed from the offline queue: it is a gesture made over the
+        drawer with the stand in front of him, and a late replay would put away
+        what he drew after it.
+        """
+        if not self._is_manager():
+            raise PermissionDenied('Only a manager may set marks aside.')
+        if request.method == 'GET':
+            edition_id = _edition_param(request.query_params.get('edition'))
+            sets = (
+                Annotation.objects
+                .filter(
+                    edition_id=edition_id,
+                    edition__is_deleted=False,
+                    archived_at__isnull=False,
+                )
+                .values('archived_at')
+                .annotate(count=Count('id'))
+                .order_by('-archived_at')
+            )
+            return Response(
+                [
+                    {'archived_at': row['archived_at'].isoformat(), 'count': row['count']}
+                    for row in sets
+                ],
+                status=status.HTTP_200_OK,
+            )
+        edition_id = _edition_param(_body_object(request).get('edition'))
+        if not ScoreEdition.objects.filter(pk=edition_id).exists():
+            return Response(
+                {'detail': 'edition not found.'},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        moment = timezone.now()
+        # `updated_at` moves with it, so every open stand's fingerprint moves too.
+        count = (
+            Annotation.objects
+            .filter(edition_id=edition_id, archived_at__isnull=True)
+            .exclude(layer_name=PERSONAL_ANNOTATION_LAYER)
+            .update(archived_at=moment, updated_at=moment)
+        )
+        return Response(
+            {'archived_at': moment.isoformat() if count else None, 'count': count},
+            status=status.HTTP_200_OK,
+        )
+
+    @action(detail=False, methods=['post'], url_path='set_aside/restore')
+    def set_aside_restore(self, request):
+        """
+        Puts one set back on the page. Body: {edition, archived_at}, the moment
+        `set_aside` listed the set under. Answers {restored}: how many came back.
+
+        Row by row through `Annotation.restore()`, which stamps `content_at`:
+        the conductor brought those cues back for this season, so to the choir
+        they are new again, in "what's new" and in "Powiadom chór" alike.
+        """
+        if not self._is_manager():
+            raise PermissionDenied('Only a manager may restore marks set aside.')
+        data = _body_object(request)
+        edition_id = _edition_param(data.get('edition'))
+        moment = _set_aside_moment(data.get('archived_at'))
+        restored = 0
+        with transaction.atomic():
+            rows = (
+                Annotation.objects
+                .select_for_update(of=('self',))
+                .filter(
+                    edition_id=edition_id,
+                    edition__is_deleted=False,
+                    archived_at=moment,
+                )
+            )
+            for row in rows:
+                row.restore()
+                restored += 1
+        return Response({'restored': restored}, status=status.HTTP_200_OK)

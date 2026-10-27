@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 
 import { ProjectScoreBook } from "@/features/projects/components/ProjectScoreBook";
-import { scoreAnnotatorModeFor } from "@/features/annotations";
+import { NotifyChoirButton, scoreAnnotatorModeFor } from "@/features/annotations";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { isManager } from "@/shared/auth/rbac";
 import { CompletionRing } from "@/shared/ui/composites/CompletionRing";
@@ -59,6 +59,10 @@ export const ProjectMaterialGroup = ({
   // has one and keeps the ring, and only rows that reach here without one (the
   // podium, a delegation on a programme the reader is not cast in) lose it.
   const hasNoSeat = group.participationId === null;
+  // "Powiadom chór" is the conductor's: a manager, or the podium of this one
+  // project. Not a stand-in — the choir hears of new marks from whoever is
+  // answerable for them. Nothing to tell once the concert is behind it.
+  const canNotifyChoir = !isArchived && (isManager(user) || group.isConducting);
 
   return (
     <div className={`space-y-4 ${isArchived ? "opacity-70" : "opacity-100"}`}>
@@ -209,9 +213,14 @@ export const ProjectMaterialGroup = ({
                 group.program.length > 0 &&
                 group.program.every((item) => item.piece.may_mark_for_choir),
             })}
+            canNotifyChoir={canNotifyChoir}
             onClose={() => setBookOpen(false)}
           />
         </>
+      )}
+
+      {canNotifyChoir && hasProgram && (
+        <NotifyChoirButton projectId={group.project.id} surface="page" />
       )}
 
       <div className="flex flex-col gap-3">
@@ -224,6 +233,7 @@ export const ProjectMaterialGroup = ({
             isEncored={item.is_encore}
             isArchived={isArchived}
             hideReadiness={hasNoSeat}
+            canNotifyChoir={canNotifyChoir}
           />
         ))}
       </div>

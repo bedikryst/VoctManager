@@ -668,6 +668,20 @@ const describe = (
         context: m.composer_name || undefined,
       };
     }
+    case "SCORE_MARKS_SHARED": {
+      // One piece is named in the sentence; several are counted there and
+      // named in the detail line, which the row clamps.
+      const m = notification.metadata;
+      const pieces = m.pieces ?? [];
+      const only = pieces.length === 1 ? pieces[0] : undefined;
+      return {
+        sentence: only
+          ? t("notifications.row.score_marks_one", { piece: only.title })
+          : t("notifications.row.score_marks_many", { count: pieces.length }),
+        context: m.project_name,
+        detail: only ? undefined : pieces.map((piece) => piece.title).join(", "),
+      };
+    }
     case "ABSENCE_APPROVED":
     case "ABSENCE_REJECTED": {
       // The verdict is the sentence, so the eyebrow is only the category. The
@@ -949,6 +963,10 @@ const resolveVisual = (
       return { icon: UserMinus, accent: "neutral" };
     case "MATERIAL_UPLOADED":
       return { icon: Headphones, accent: "amethyst" };
+    case "SCORE_MARKS_SHARED":
+      // Amethyst with the other content on the scores; the pen says it is the
+      // conductor's hand on them rather than a new file.
+      return { icon: PencilLine, accent: "amethyst" };
     case "PIECE_CASTING_ASSIGNED":
     case "PIECE_CASTING_UPDATED":
       return { icon: Music, accent: "amethyst" };
@@ -1100,6 +1118,15 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
     }
     if (type === "MATERIAL_UPLOADED") {
       return navigate(isAdmin ? "/panel/archive-management" : "/panel/materials");
+    }
+    if (notification.notification_type === "SCORE_MARKS_SHARED") {
+      // One piece opens that piece; several open the songbook. Mirrors the push
+      // and the e-mail, for a manager in the cast as for anyone else.
+      const { project_id: projectId, pieces = [] } = notification.metadata;
+      const only = pieces.length === 1 ? pieces[0] : undefined;
+      return navigate(
+        only && projectId ? `/panel/materials/${projectId}/${only.piece_id}` : "/panel/materials",
+      );
     }
     if (
       isAdmin &&

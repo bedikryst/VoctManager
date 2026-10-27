@@ -48,6 +48,8 @@ export interface ScoreStandModalProps {
    * reader's habit in charge.
    */
   readonly preferredFit?: FitMode;
+  /** The project the score was opened from, when the reader may tell its choir. */
+  readonly notifyProjectId?: string | null;
   readonly onClose: () => void;
 }
 
@@ -62,11 +64,17 @@ export const ScoreStandModal = ({
   extraOverlay,
   canExport = true,
   preferredFit,
+  notifyProjectId = null,
   onClose,
 }: ScoreStandModalProps): React.JSX.Element => {
   // A closed stand stays mounted under the page that owns it; it must not poll
   // or take Ctrl+Z from that page while nothing of it is on screen.
-  const annotator = useScoreAnnotator({ editionId, mode, active: isOpen });
+  const annotator = useScoreAnnotator({
+    editionId,
+    mode,
+    active: isOpen,
+    notifyProjectId,
+  });
 
   return (
     <PdfViewerModal

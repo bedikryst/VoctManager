@@ -26,6 +26,7 @@ import {
   Users,
 } from "lucide-react";
 
+import { NotifyChoirButton } from "@/features/annotations";
 import { toastApiError } from "@/shared/api/errors";
 import { cn } from "@/shared/lib/utils";
 import { AUDIENCE_LANGUAGES, type AudienceLanguage } from "@/shared/types";
@@ -468,6 +469,12 @@ export function ScorePackagePanel({
                 ))}
               </div>
             )}
+
+            {/* The marks travel with the editions, not with this file, so the
+                choir hears of them here whether or not the book is rebuilt. */}
+            <div className="border-t border-hairline pt-4">
+              <NotifyChoirButton projectId={projectId} surface="page" />
+            </div>
 
             {busy && (
               <Caption color="muted">

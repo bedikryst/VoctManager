@@ -729,6 +729,17 @@ class Annotation(SoftDeleteModel):
         ),
         verbose_name=_("Content changed at"),
     )
+    # "Odłóż uwagi": a piece returning next season brings its marks back with
+    # the edition, and the conductor sets last season's aside rather than
+    # erasing them. Every mark set aside in one gesture shares this moment, so
+    # the moment is also the name of the set it is restored by. A set-aside
+    # mark is out of every reader's view, the book and the print alike, but it
+    # is not erased: it keeps its id, author and stacking order for the restore.
+    archived_at = models.DateTimeField(
+        null=True, blank=True, db_index=True,
+        help_text=_("When the conductor set this mark aside. Empty while it is on the page."),
+        verbose_name=_("Set aside at"),
+    )
 
     class Meta:
         verbose_name = _("Annotation")
@@ -742,12 +753,13 @@ class Annotation(SoftDeleteModel):
         return f"{self.get_annotation_type_display()} on {self.edition} p.{self.page_number}"
 
     def restore(self) -> None:
-        """An erased mark coming back is news again to whoever reads it."""
+        """An erased or set-aside mark coming back is news again to whoever reads it."""
         now = timezone.now()
         self.is_deleted = False
+        self.archived_at = None
         self.updated_at = now
         self.content_at = now
-        self.save(update_fields=['is_deleted', 'updated_at', 'content_at'])
+        self.save(update_fields=['is_deleted', 'archived_at', 'updated_at', 'content_at'])
 
 
 class AnnotationReadState(models.Model):

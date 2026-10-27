@@ -5829,6 +5829,112 @@ msgstr "Wydanie"
 msgid "at must be a time with its time zone."
 msgstr "Parametr at musi być czasem ze strefą czasową."
 
+#: archive/models.py
+msgid "Set aside at"
+msgstr "Odłożono"
+
+#: archive/models.py
+msgid "When the conductor set this mark aside. Empty while it is on the page."
+msgstr "Kiedy dyrygent odłożył tę uwagę. Puste, dopóki jest w nutach."
+
+#: archive/views.py
+msgid "archived_at must be a time with its time zone."
+msgstr "archived_at musi być czasem ze strefą czasową."
+
+#: archive/views.py
+msgid "This mark has been set aside."
+msgstr "Ta uwaga została odłożona."
+
+#: roster/models.py
+msgid ""
+"When the cast was last told about new marks in the scores. Null = never."
+msgstr ""
+"Kiedy obsada ostatnio dostała powiadomienie o nowych uwagach w nutach. Puste"
+" = nigdy."
+
+#: roster/models.py
+msgid "Choir told about marks at"
+msgstr "Chór powiadomiony o uwagach"
+
+#: roster/views.py
+msgid "Only the conductor or a manager may tell the choir."
+msgstr "Powiadomić chór może tylko dyrygent albo menedżer."
+
+#: roster/views.py
+msgid "The choir was told a moment ago. Try again in a few minutes."
+msgstr "Chór dostał powiadomienie przed chwilą. Spróbuj za kilka minut."
+
+#: roster/views.py
+msgid "No marks have changed since the choir was last told."
+msgstr "Od ostatniego powiadomienia chóru żadna uwaga się nie zmieniła."
+
+#: roster/views.py
+msgid "Nobody in the cast can receive this yet."
+msgstr "Nikt z obsady nie może jeszcze dostać tego powiadomienia."
+
+#: notifications/models.py
+msgid "New Marks in the Scores"
+msgstr "Nowe uwagi w nutach"
+
+#: notifications/message_content.py
+msgid "your concert"
+msgstr "Twój koncert"
+
+#: notifications/message_content.py
+#, python-format
+msgid "New marks in the score: %(piece)s"
+msgstr "Nowe uwagi w nutach: %(piece)s"
+
+#: notifications/message_content.py
+msgid "Read them before the next rehearsal."
+msgstr "Przeczytaj je przed następną próbą."
+
+#: notifications/message_content.py
+#, python-format
+msgid ""
+"There are new marks for the choir in %(piece)s. Read them before the next "
+"rehearsal."
+msgstr ""
+"W nutach utworu %(piece)s są nowe uwagi dla chóru. Przeczytaj je przed "
+"następną próbą."
+
+#: notifications/message_content.py
+#, python-format
+msgid "New marks in %(count)d piece"
+msgid_plural "New marks in %(count)d pieces"
+msgstr[0] "Nowe uwagi w %(count)d utworze"
+msgstr[1] "Nowe uwagi w %(count)d utworach"
+msgstr[2] "Nowe uwagi w %(count)d utworach"
+
+#: notifications/message_content.py
+msgid ""
+"There are new marks for the choir in the pieces below. Read them before the "
+"next rehearsal."
+msgstr ""
+"W nutach utworów poniżej są nowe uwagi dla chóru. Przeczytaj je przed "
+"następną próbą."
+
+#: notifications/message_content.py
+#, python-format
+msgid "and %(count)d more"
+msgid_plural "and %(count)d more"
+msgstr[0] "i jeszcze %(count)d"
+msgstr[1] "i jeszcze %(count)d"
+msgstr[2] "i jeszcze %(count)d"
+
+#: notifications/message_content.py
+#, python-format
+msgid "New marks in the scores — %(project)s"
+msgstr "Nowe uwagi w nutach — %(project)s"
+
+#: notifications/message_content.py
+msgid "Scores"
+msgstr "Nuty"
+
+#: notifications/message_content.py
+msgid "New marks in the scores"
+msgstr "Nowe uwagi w nutach"
+
 #~ msgid "Review the request"
 #~ msgstr "Rozpatrz prośbę"
 

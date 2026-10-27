@@ -278,6 +278,14 @@ def _samples(*, is_manager: bool, zone_name: str) -> dict[str, tuple[_Sample, ..
             "material_kind": "recording",
             "composer_name": _COMPOSER,
         }),),
+        NotificationType.SCORE_MARKS_SHARED: (_Sample(NotificationType.SCORE_MARKS_SHARED, {
+            "project_id": _PROJECT_ID,
+            "project_name": project,
+            "event_kind": "CONCERT",
+            "pieces": [
+                {"piece_id": _PIECE_ID, "title": _PIECE, "composer_name": _COMPOSER},
+            ],
+        }),),
         NotificationType.PROJECT_REMINDER: (_Sample(NotificationType.PROJECT_REMINDER, {
             "project_id": _PROJECT_ID,
             "project_name": project,

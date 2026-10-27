@@ -14,6 +14,7 @@ export { ScoreStandModal } from "./components/ScoreStandModal";
 export type { ScoreStandModalProps } from "./components/ScoreStandModal";
 export { ScoreBookModal } from "./components/ScoreBookModal";
 export type { ScoreBookModalProps } from "./components/ScoreBookModal";
+export { NotifyChoirButton } from "./components/NotifyChoirButton";
 export { buildScoreBook, EMPTY_SCORE_BOOK } from "./lib/scoreBook";
 export type { BookItem, BookPageFrame, ScoreBook } from "./lib/scoreBook";
 export { prefetchEditionAnnotations } from "./api/annotations.prefetch";

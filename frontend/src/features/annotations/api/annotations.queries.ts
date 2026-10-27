@@ -40,6 +40,7 @@ import {
 } from "@/shared/offline/useOfflineStore";
 
 import { AnnotationsService } from "./annotations.service";
+import { choirMarkKeys } from "./choirMarkKeys";
 import { insertMarks, upsertMark, withoutMarks } from "../lib/markRows";
 import { queuedSeen, timeOf } from "../lib/markSeen";
 import { isReservedInk } from "../lib/palette";
@@ -460,11 +461,14 @@ export const useAnnotationMutations = (
   /**
    * The server's list for this edition has moved, and only this device knows —
    * the cache was patched in place rather than re-read. Owed a read-back before
-   * the reader walks away from it (see `useDurableMarkCatchUp`).
+   * the reader walks away from it (see `useDurableMarkCatchUp`). A "Powiadom
+   * chór" count on screen is re-read as well, so the conductor sees the piece
+   * he has just marked join it.
    */
   const noteWrite = useCallback(() => {
     if (editionId) unsyncedEditions.add(editionId);
-  }, [editionId]);
+    void queryClient.invalidateQueries({ queryKey: choirMarkKeys.news });
+  }, [editionId, queryClient]);
 
   const reportRejection = useCallback(
     (error: unknown, color?: string) => {

@@ -22,6 +22,10 @@
  * dismissible line sums them up on open and announces what arrives while the
  * stand is open — the conductor writing mid-rehearsal — because a mark that
  * lands three pages away would otherwise never be found.
+ *
+ * For the conductor it carries the two gestures over the choir's marks as a
+ * whole: the drawer puts an edition's marks aside and brings a set back, and a
+ * stand opened from a project tells its choir about new marks from the toolbar.
  * @module features/annotations
  */
 
@@ -38,6 +42,7 @@ import { AnnotationToolbar } from "./components/AnnotationToolbar";
 import { AnnotationSidebar } from "./components/AnnotationSidebar";
 import { AnnotationGuide } from "./components/AnnotationGuide";
 import { IncomingMarksNotice } from "./components/IncomingMarksNotice";
+import { NotifyChoirButton } from "./components/NotifyChoirButton";
 import {
   useAnnotationMutations,
   useMarkSeen,
@@ -111,6 +116,12 @@ export interface UseScoreAnnotatorOptions {
    * undo shortcut is bound. Defaults to true.
    */
   active?: boolean;
+  /**
+   * The project this stand was opened from, passed only when the reader may
+   * tell its choir about new marks (a manager or the podium conductor). The
+   * toolbar then carries "Powiadom chór" for it.
+   */
+  notifyProjectId?: string | null;
 }
 
 export interface ScoreAnnotatorBindings {
@@ -132,6 +143,7 @@ export const useScoreAnnotator = ({
   mode,
   book = null,
   active = true,
+  notifyProjectId = null,
 }: UseScoreAnnotatorOptions): ScoreAnnotatorBindings => {
   const isConductor = mode === "conductor";
   const isLeader = mode === "leader";
@@ -589,6 +601,7 @@ export const useScoreAnnotator = ({
         toggleLayerVisibility={tools.toggleLayerVisibility}
         mode={mode}
         onSelectMark={handleSelectMark}
+        editionId={activeEditionId}
       />
       <IncomingMarksNotice
         count={incoming.notice?.count ?? 0}
@@ -625,6 +638,11 @@ export const useScoreAnnotator = ({
         onRedo={redo}
         onClearAll={handleClearAll}
         onOpenGuide={() => setGuideOpen(true)}
+        notifySlot={
+          notifyProjectId && active ? (
+            <NotifyChoirButton projectId={notifyProjectId} surface="chrome" />
+          ) : undefined
+        }
       />
     ) : null,
     renderPageOverlay,

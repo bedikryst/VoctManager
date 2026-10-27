@@ -75,6 +75,7 @@ def compute_program_markings(items: list[ProgramItem]) -> dict[Any, ItemMarkings
         return {}
 
     piece_ids = {item.piece_id for item in items}
+    # Marks the conductor set aside print nowhere, so they warn about nothing.
     rows = (
         Annotation.objects
         .filter(
@@ -82,6 +83,7 @@ def compute_program_markings(items: list[ProgramItem]) -> dict[Any, ItemMarkings
             edition__is_deleted=False,
             layer_name=SHARED_ANNOTATION_LAYER,
             is_deleted=False,
+            archived_at__isnull=True,
         )
         .values_list("edition_id", "edition__piece_id", "page_number")
     )
@@ -219,7 +221,7 @@ def reader_marks_for_book(
 
     rows = list(
         Annotation.objects
-        .filter(scope, edition_id__in=editions, is_deleted=False)
+        .filter(scope, edition_id__in=editions, is_deleted=False, archived_at__isnull=True)
         .order_by("created_at")
     )
     if not rows:
