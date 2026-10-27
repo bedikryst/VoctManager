@@ -31,6 +31,14 @@ import {
 
 const SW_URL = "/sw.js";
 
+/**
+ * The manifest's scope, and it must stay inside it. Chrome on Android credits a
+ * notification to the installed app — its icon in the tray, its count on the
+ * launcher — only when the worker that shows it is registered within the app's
+ * scope; a worker at "/" posts every push as Chrome itself.
+ */
+const SW_SCOPE = "/panel";
+
 export const isServiceWorkerSupported = (): boolean =>
   typeof navigator !== "undefined" && "serviceWorker" in navigator;
 
@@ -44,7 +52,7 @@ export const isServiceWorkerSupported = (): boolean =>
 const ensureRegistration = async (): Promise<ServiceWorkerRegistration | null> => {
   if (!isServiceWorkerSupported() || !window.isSecureContext) return null;
   try {
-    const registration = await navigator.serviceWorker.register(SW_URL, { scope: "/" });
+    const registration = await navigator.serviceWorker.register(SW_URL, { scope: SW_SCOPE });
     armAppUpdateWatch(registration);
     return registration;
   } catch (error) {
@@ -55,24 +63,100 @@ const ensureRegistration = async (): Promise<ServiceWorkerRegistration | null> =
   }
 };
 
-/** Registers the SW on app load so offline works regardless of push consent. */
-export const registerOfflineServiceWorker = async (): Promise<void> => {
-  await ensureRegistration();
+/**
+ * Resolves once the registration has an active worker, or null if its first
+ * install fails. A fresh install precaches the whole shell before it activates.
+ */
+const whenActive = (
+  registration: ServiceWorkerRegistration,
+): Promise<ServiceWorkerRegistration | null> =>
+  new Promise((resolve) => {
+    if (registration.active) {
+      resolve(registration);
+      return;
+    }
+    const worker = registration.installing ?? registration.waiting;
+    if (!worker) {
+      resolve(null);
+      return;
+    }
+    const onStateChange = (): void => {
+      if (!registration.active && worker.state !== "redundant") return;
+      worker.removeEventListener("statechange", onStateChange);
+      resolve(registration.active ? registration : null);
+    };
+    worker.addEventListener("statechange", onStateChange);
+  });
+
+/**
+ * The app's registration once its worker is active: push subscribes against an
+ * active worker only, and downloads are messaged to it. Deliberately not
+ * `navigator.serviceWorker.ready`, which settles once per page on whichever
+ * registration controlled it first — on a device still holding the worker at
+ * "/", that is the old one. Null wherever service workers are unavailable.
+ */
+export const getActiveServiceWorkerRegistration =
+  async (): Promise<ServiceWorkerRegistration | null> => {
+    const registration = await ensureRegistration();
+    return registration ? whenActive(registration) : null;
+  };
+
+/**
+ * The registration this app held at "/" before every route moved under
+ * `/panel`, on a device that has not given it up yet. Push subscriptions made
+ * then are bound to it.
+ */
+export const getRootServiceWorkerRegistration =
+  async (): Promise<ServiceWorkerRegistration | null> => {
+    if (!isServiceWorkerSupported()) return null;
+    try {
+      return (await navigator.serviceWorker.getRegistration("/")) ?? null;
+    } catch {
+      return null;
+    }
+  };
+
+/**
+ * Unregisters the root worker and deletes the precache it filled. Workbox
+ * suffixes a precache name with its registration's scope, and nothing else
+ * would ever delete this one.
+ */
+export const retireRootServiceWorker = async (
+  root: ServiceWorkerRegistration,
+): Promise<void> => {
+  const scope = root.scope;
+  if (!(await root.unregister())) return;
+  const names = await caches.keys();
+  await Promise.all(
+    names
+      .filter((name) => name.includes("-precache-") && name.endsWith(scope))
+      .map((name) => caches.delete(name)),
+  );
 };
 
 /**
- * The registration, for callers that need the object itself (push subscribes
- * against `registration.pushManager`). Resolves to null wherever service workers
- * are unavailable — every caller must handle that rather than assume.
+ * Registers the SW on app load so offline works regardless of push consent, and
+ * retires the root worker once this one is active, so the device is never left
+ * without a worker that boots the app offline. A root worker holding a push
+ * subscription is left for the push feature, which moves the subscription first.
  */
-export const getServiceWorkerRegistration =
-  async (): Promise<ServiceWorkerRegistration | null> => ensureRegistration();
+export const registerOfflineServiceWorker = async (): Promise<void> => {
+  if (!(await getActiveServiceWorkerRegistration())) return;
+  const root = await getRootServiceWorkerRegistration();
+  if (!root) return;
+  try {
+    // `pushManager` is absent where the browser has no Push API (iOS outside the
+    // installed app).
+    const subscription = "pushManager" in root ? await root.pushManager.getSubscription() : null;
+    if (!subscription) await retireRootServiceWorker(root);
+  } catch {
+    /* The root worker stays; the next session tries again. */
+  }
+};
 
 const getActiveWorker = async (): Promise<ServiceWorker | null> => {
-  if (!isServiceWorkerSupported()) return null;
   try {
-    const registration = await navigator.serviceWorker.ready;
-    return registration.active;
+    return (await getActiveServiceWorkerRegistration())?.active ?? null;
   } catch {
     return null;
   }

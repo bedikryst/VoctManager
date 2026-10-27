@@ -9,10 +9,17 @@
  * settings tab keeps showing push as ON. Posting the subscription once per
  * session repairs the row (the endpoint is an update_or_create) instead of
  * waiting for the member to guess that toggling push off and on again is the
- * cure.
+ * cure. The same pass moves a subscription still bound to the app's old worker
+ * at "/" onto the one at `/panel`.
  * @module notifications/lib/pushDeviceSync
  */
-import { registerPushDevice } from "../api/devices";
+import {
+  getActiveServiceWorkerRegistration,
+  getRootServiceWorkerRegistration,
+  retireRootServiceWorker,
+} from "@/shared/offline/offlineClient";
+
+import { registerPushDevice, unregisterPushDevice } from "../api/devices";
 import type { WebPushSubscribeDTO } from "../types/notifications.dto";
 
 /**
@@ -52,6 +59,46 @@ export const toSubscribeDTO = (subscription: PushSubscription): WebPushSubscribe
 };
 
 /**
+ * Moves a subscription made on the worker the app once registered at "/" onto
+ * `registration`, then retires the old worker. Chrome on Android shows a push
+ * from the "/" worker as Chrome's own — its icon in the tray, no count on the
+ * app's launcher icon — because the installed app's scope is `/panel`.
+ *
+ * The new subscription reaches the server before the old one is let go, so a
+ * failure at any step leaves the member reachable, at worst twice over until
+ * the next session finishes the move. Resolves to the moved subscription, or
+ * null when there was nothing to move or the move failed.
+ */
+const handOverRootSubscription = async (
+  registration: ServiceWorkerRegistration,
+): Promise<PushSubscription | null> => {
+  const root = await getRootServiceWorkerRegistration();
+  const legacy = root ? await root.pushManager.getSubscription() : null;
+  if (!root || !legacy) return null;
+
+  const subscription =
+    (await registration.pushManager.getSubscription()) ??
+    (await registration.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: legacy.options.applicationServerKey,
+    }));
+  const payload = toSubscribeDTO(subscription);
+  if (!payload) return null;
+
+  await registerPushDevice(payload);
+  syncedEndpoints.add(payload.endpoint);
+  // Best effort: once unsubscribed, the old endpoint is refused by the push
+  // service and the server deactivates the row on its next send.
+  await unregisterPushDevice(legacy.endpoint).catch(() => undefined);
+  await legacy.unsubscribe();
+  await retireRootServiceWorker(root);
+  return subscription;
+};
+
+/** One move per page session; the shell and the settings tab both sync. */
+let handover: Promise<PushSubscription | null> | null = null;
+
+/**
  * Reads this browser's subscription and, the first time it is seen in a session,
  * re-registers it. Returns the subscription so callers can derive their own
  * "is this device subscribed" state from the same read. Never throws: an absent
@@ -62,8 +109,10 @@ export const syncPushDevice = async (): Promise<PushSubscription | null> => {
 
   let subscription: PushSubscription | null = null;
   try {
-    const registration = await navigator.serviceWorker.ready;
-    subscription = await registration.pushManager.getSubscription();
+    const registration = await getActiveServiceWorkerRegistration();
+    if (!registration) return null;
+    handover ??= handOverRootSubscription(registration).catch(() => null);
+    subscription = (await handover) ?? (await registration.pushManager.getSubscription());
   } catch {
     return null;
   }

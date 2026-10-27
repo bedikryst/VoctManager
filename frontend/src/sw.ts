@@ -25,11 +25,8 @@
 /// <reference lib="webworker" />
 /// <reference types="vite/client" />
 
-import {
-  precacheAndRoute,
-  cleanupOutdatedCaches,
-  createHandlerBoundToURL,
-} from "workbox-precaching";
+import { cacheNames } from "workbox-core";
+import { precacheAndRoute, createHandlerBoundToURL } from "workbox-precaching";
 import { NavigationRoute, registerRoute } from "workbox-routing";
 import { CacheFirst, NetworkFirst } from "workbox-strategies";
 import { ExpirationPlugin } from "workbox-expiration";
@@ -151,7 +148,27 @@ const ICON = /Android/u.test(self.navigator.userAgent)
 // empty string disables the mapping (and is type-valid, unlike null). App
 // navigations are handled explicitly by the allowlisted NavigationRoute below.
 precacheAndRoute(self.__WB_MANIFEST, { directoryIndex: "" });
-cleanupOutdatedCaches();
+
+// Drops this worker's precaches from older Workbox versions. Workbox's own
+// `cleanupOutdatedCaches` finds them by the scope as a SUBSTRING, so the worker
+// a device may still hold at "/" (until the app retires it) would also delete
+// the precache of the one at "/panel". Every precache name ends in its scope.
+self.addEventListener("activate", (event) => {
+  event.waitUntil(
+    caches.keys().then((names) =>
+      Promise.all(
+        names
+          .filter(
+            (name) =>
+              name.includes("-precache-") &&
+              name.endsWith(self.registration.scope) &&
+              name !== cacheNames.precache,
+          )
+          .map((name) => caches.delete(name)),
+      ),
+    ),
+  );
+});
 
 const isSameOrigin = (url: URL): boolean => url.origin === self.location.origin;
 
@@ -334,8 +351,9 @@ registerRoute(
 );
 
 // Boot offline: serve the precached APP shell for navigations to the panel SPA.
-// ALLOWLIST (not denylist) is critical — this SW is registered at scope "/", but
-// the marketing site (Astro) lives at "/", "/o-nas", "/koncerty"… on the SAME
+// ALLOWLIST (not denylist) is critical — the app registers this SW at `/panel`,
+// but a device may still hold the copy it registered at "/" before, and the
+// marketing site (Astro) lives at "/", "/o-nas", "/koncerty"… on the SAME
 // origin. A denylist would make the app shell hijack those public pages. Every
 // SPA route lives under `/panel` — the auth flows, the document viewer and the
 // copy desk included — which is also the manifest's scope and the one prefix

@@ -117,7 +117,7 @@ const isSupported = (): boolean =>
 const currentRegistration = async (): Promise<ServiceWorkerRegistration | null> => {
   if (!isSupported()) return null;
   try {
-    return (await navigator.serviceWorker.getRegistration("/")) ?? null;
+    return (await navigator.serviceWorker.getRegistration()) ?? null;
   } catch {
     return null;
   }

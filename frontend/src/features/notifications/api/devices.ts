@@ -22,6 +22,10 @@ export const registerPushDevice = async (payload: WebPushSubscribeDTO): Promise<
   await api.post("/api/notifications/devices/", payload);
 };
 
+export const unregisterPushDevice = async (endpoint: string): Promise<void> => {
+  await api.delete(`/api/notifications/devices/${encodeURIComponent(endpoint)}/`);
+};
+
 /**
  * How many of the member's devices can take a push right now. Permission is
  * granted per browser, so this is what lets a device without a subscription
@@ -56,9 +60,7 @@ export const useRegisterPushDevice = () => {
 export const useUnregisterPushDevice = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (endpoint: string) => {
-      await api.delete(`/api/notifications/devices/${encodeURIComponent(endpoint)}/`);
-    },
+    mutationFn: unregisterPushDevice,
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: PUSH_DEVICE_SUMMARY_KEY });
       invalidateDeliveryPreview(queryClient);
