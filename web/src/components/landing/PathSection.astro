@@ -10,7 +10,8 @@
  *  accordion by scripts/landing.ts (same `.path-card-detail` hook so the JS contract holds).
  *
  *  THREE SOURCES MEET IN ONE ROW, and the split is the point. `data/landing/paths` carries the
- *  structure (the numbering, the year, the video files); `landing.yaml` carries this register's
+ *  structure (the numbering, the year, the video files); the evening's excerpts reel ("Posłuchaj")
+ *  comes with the concert itself, the same reel and bar its own page plays; `landing.yaml` carries this register's
  *  own editorial layer (tag, place line, lead, credit) through the copy desk; and the TITLE and
  *  the programme come from `concerts.yaml` through the concert overlay (the programme by way of
  *  `lib/programmeLine`), because an evening names itself once and every surface reads that name.
@@ -25,13 +26,18 @@
  */
 import { getCollection } from "astro:content";
 import { PATHS, ROMAN } from "../../data/landing/paths";
+import { candleFrom } from "../../lib/candle";
 import { upcomingStation } from "../../lib/cycle";
 import { longMoment } from "../../lib/dates";
 import { concertKey, overlayValue } from "../../lib/copyOverlay";
+import { concertExcerpts } from "../../lib/excerpts";
+import { bleedPair } from "../../lib/photos";
 import { programmeLine } from "../../lib/programmeLine";
 import { localizePath, type Locale } from "../../i18n/config";
+import { CONCERT } from "../../i18n/content/koncert";
 import type { LandingChrome, LandingCopy } from "../../i18n/content/landing";
 import { NUNTIUS } from "../../i18n/content/nuntius";
+import ExcerptsGlyph from "../ExcerptsGlyph.astro";
 import NoticeSignup from "../NoticeSignup.astro";
 
 interface Props {
@@ -50,6 +56,7 @@ const { copy, chrome, announceLabel, lang } = Astro.props;
 // each card's repertoire from it by concert id, so there is no second copy to drift.
 const concerts = await getCollection("concerts");
 const byId = new Map(concerts.map((c) => [c.id, c.data] as const));
+const concertUi = CONCERT[lang];
 /** The evening that is announced, if one is — which decides which of the register's two closings
     stands. Read from the corpus, not from this register's own list: the register holds what has
     SOUNDED and an announced evening is by definition not in it, so the list can never see the
@@ -62,23 +69,38 @@ const nuntius = NUNTIUS[lang];
 // One row per evening, with its three sources joined. A structural entry whose editorial copy has
 // been removed is loud rather than blank: the row would otherwise print a numeral, a year and
 // nothing else, and nothing in the build would say why.
-const entries = PATHS.map((path, i) => {
-  const words = copy.entries.find((entry) => entry.id === path.concertId);
-  if (!words) throw new Error(`[path] no register copy for the evening "${path.concertId}".`);
-  return {
-    ...path,
-    ...words,
-    roman: ROMAN[i],
-    title:
-      overlayValue(concertKey(path.concertId, "title"), lang) ??
-      byId.get(path.concertId)?.title ??
-      "",
-    program: (byId.get(path.concertId)?.program ?? []).map((p, i) => ({
-      ...programmeLine(path.concertId, i, p, lang),
-      bis: p.bis,
-    })),
-  };
-});
+const entries = await Promise.all(
+  PATHS.map(async (path, i) => {
+    const words = copy.entries.find((entry) => entry.id === path.concertId);
+    if (!words) throw new Error(`[path] no register copy for the evening "${path.concertId}".`);
+    const concert = concerts.find((c) => c.id === path.concertId);
+    // The reel and its bar exactly as the concert's own page builds them (artwork, candle), so a
+    // reader who starts it here and one who starts it there hear and see one player.
+    const excerpts = concert
+      ? await concertExcerpts(concert, lang, bleedPair(concert.data.heroImg ?? concert.data.bg).desktop)
+      : undefined;
+    return {
+      ...path,
+      ...words,
+      roman: ROMAN[i],
+      title:
+        overlayValue(concertKey(path.concertId, "title"), lang) ??
+        byId.get(path.concertId)?.title ??
+        "",
+      program: (byId.get(path.concertId)?.program ?? []).map((p, i) => ({
+        ...programmeLine(path.concertId, i, p, lang),
+        bis: p.bis,
+      })),
+      excerpts,
+      candle: concert ? candleFrom(concert.data.accent) : undefined,
+    };
+  }),
+);
+// ONE REEL ON THIS PAGE. The player joins the site's sound etiquette under a single id, so a second
+// reel would not silence the first, and both bars would stand on the same edge of the viewport.
+if (entries.filter((entry) => entry.excerpts).length > 1) {
+  throw new Error("[path] more than one evening carries an excerpts reel; the landing mounts one.");
+}
 
 /** The register's closing when an evening IS announced — the counterpart of the open card below,
     and the reason this is not simply "the card stands down". The card carried the gold hairline
@@ -183,6 +205,23 @@ const ahead = upcoming
                     <span class="path-entry-video-glyph" aria-hidden="true">▸</span>
                     {copy.videoLabel}
                   </button>
+                )}
+                {/* The concert page's own words for it ("Posłuchaj" / "Wstrzymaj"): one control,
+                    one name on every surface that offers it. */}
+                {entry.excerpts && entry.candle && (
+                  <ExcerptsGlyph
+                    excerpts={entry.excerpts}
+                    labels={concertUi.excerpts}
+                    lang={lang}
+                    candle={entry.candle}
+                    title={entry.title}
+                    line={{
+                      className: "path-entry-video",
+                      markClassName: "path-entry-video-glyph",
+                      listen: concertUi.program.listen,
+                      pause: concertUi.program.listenPause,
+                    }}
+                  />
                 )}
                 <details class="path-card-detail path-entry-detail">
                   <summary>

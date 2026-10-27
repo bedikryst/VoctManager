@@ -7,12 +7,12 @@
  *  (lib/audio). The props come from `lib/excerpts` `concertExcerpts`, so a page prints this only
  *  when that returned a reel. Where it stands, what wraps it and how it is dressed are the page's:
  *  the page imports `styles/excerpts.css` itself, so the sheet keeps its place in that page's
- *  cascade.
+ *  cascade, and a page that wants the glyph as a line of its own text passes `line`.
  * @module components/ExcerptsGlyph
  */
 import type { Locale } from "../i18n/config";
 import type { ConcertChrome } from "../i18n/content/koncert";
-import { ExcerptsPlayer } from "../islands/landing/excerpts/ExcerptsPlayer";
+import { ExcerptsPlayer, type ExcerptsLine } from "../islands/landing/excerpts/ExcerptsPlayer";
 import type { ConcertExcerpts } from "../lib/excerpts";
 
 interface Props {
@@ -23,9 +23,11 @@ interface Props {
   candle: string;
   /** The concert's title, as the system's media controls name the reel. */
   title: string;
+  /** The glyph as one line of the host's text instead of the hero's disc. */
+  line?: ExcerptsLine;
 }
 
-const { excerpts, labels, lang, candle, title } = Astro.props;
+const { excerpts, labels, lang, candle, title, line } = Astro.props;
 ---
 
 <ExcerptsPlayer
@@ -38,4 +40,5 @@ const { excerpts, labels, lang, candle, title } = Astro.props;
   candle={candle}
   title={title}
   artwork={excerpts.artwork}
+  line={line}
 />

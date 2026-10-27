@@ -124,7 +124,8 @@
    that does not know `scripting` skips the query and keeps the button, which is right for every
    reader who has scripts on. */
 @media (scripting: none) {
-  .excerpts-glyph {
+  .excerpts-glyph,
+  .excerpts-line {
     display: none;
   }
 }

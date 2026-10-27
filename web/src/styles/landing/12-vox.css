@@ -58,7 +58,9 @@
     margin-top: clamp(6px, 1vw, 12px);
   }
 
-  /* ── Path register: fragment link ── */
+  /* ── Path register: fragment link ──
+     Also the dress of an evening's excerpts reel ("Posłuchaj", ExcerptsPlayer's `line`), so the
+     register's two ways to hear an evening read as one kind of control. */
   .path-entry-video {
     display: inline-flex;
     align-items: center;
@@ -84,14 +86,27 @@
       border-color 0.35s var(--ease);
   }
 
-  .path-entry-video:hover {
+  .path-entry-video:not(:disabled):hover {
     color: var(--ink);
     border-color: var(--candle);
+  }
+
+  /* The reel's file did not answer. */
+  .path-entry-video:disabled {
+    cursor: default;
+    opacity: 0.45;
   }
 
   .path-entry-video-glyph {
     color: var(--candle);
     font-size: 9px;
+  }
+
+  /* The reel's play / pause mark is drawn, not set: a pause has no glyph in this face. */
+  .path-entry-video-glyph svg {
+    display: block;
+    width: 10px;
+    height: 10px;
   }
 
   /* ── Projection room (lightbox) — player chrome tones come from .vplayer--dark ── */

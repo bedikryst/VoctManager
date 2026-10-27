@@ -12,6 +12,11 @@
  *  slider with VideoPlayer's keymap (arrows ±5 s, Page ±30 s, Home / End) and its
  *  `data-cursor="seek"`, so over it the site cursor becomes the caret and the timestamp.
  *
+ *  THE GLYPH HAS A SECOND DRESS: one line of text in its host's own register (`line`), for a
+ *  surface where the control stands among an entry's words rather than on a photograph — the
+ *  landing's register, beside "Zobacz fragment". It is the same control, the reel's toggle, and its
+ *  visible words are its accessible name, so the label voice control matches is the one on screen.
+ *
  *  A PAGE MAY START THE REEL AT A WORK. Any `button[data-excerpt-at]` in the document (the concert
  *  programme prints one beside each work the reel holds) plays from that offset — or pauses and
  *  resumes, when its work is the one already in the bar. The island answers by delegation and
@@ -68,6 +73,15 @@ export interface ExcerptChapter {
   readonly work: string;
 }
 
+/** The glyph drawn as one line of its host's text: the host's classes on the button and on the
+    play / pause mark before the words, and the words at rest and while the reel sounds. */
+export interface ExcerptsLine {
+  readonly className: string;
+  readonly markClassName: string;
+  readonly listen: string;
+  readonly pause: string;
+}
+
 interface ExcerptsPlayerProps {
   readonly src: string;
   /** The file's length in seconds, from the corpus: printed before any byte has loaded. */
@@ -82,6 +96,8 @@ interface ExcerptsPlayerProps {
   /** The concert's title and hero still, for the OS media surface (lock screen, headset keys). */
   readonly title: string;
   readonly artwork?: string;
+  /** Omitted, the glyph is the hero's disc with the running time and two lines. */
+  readonly line?: ExcerptsLine;
 }
 
 type StyleVars = React.CSSProperties & Record<`--${string}`, string | number>;
@@ -140,6 +156,7 @@ export function ExcerptsPlayer({
   candle,
   title,
   artwork,
+  line,
 }: ExcerptsPlayerProps): React.JSX.Element {
   const [host, setHost] = useState<HTMLElement | null>(null);
   const [active, setActive] = useState(false);
@@ -524,23 +541,40 @@ export function ExcerptsPlayer({
 
   return (
     <Typo locale={lang}>
-      <button
-        ref={glyphRef}
-        type="button"
-        className={`excerpts-glyph${playing ? " is-playing" : ""}${failed ? " is-failed" : ""}`}
-        aria-label={playing ? labels.pause : labels.play}
-        aria-disabled={failed || undefined}
-        onClick={toggle}
-      >
-        <span className="excerpts-disc" aria-hidden="true">
-          {playing ? PAUSE_ICON : PLAY_ICON}
-        </span>
-        <span className="excerpts-total">{formatTime(duration)}</span>
-        <span className="excerpts-text">
-          <span className="excerpts-title">{labels.title}</span>
-          <span className="excerpts-source">{failed ? labels.unavailable : labels.source}</span>
-        </span>
-      </button>
+      {line ? (
+        // Disabled once the file has failed, as the programme's per-work buttons are: a line has no
+        // second line to say why, and a press that does nothing is worse than one that cannot be made.
+        <button
+          ref={glyphRef}
+          type="button"
+          className={`${line.className} excerpts-line${playing ? " is-playing" : ""}`}
+          disabled={failed}
+          onClick={toggle}
+        >
+          <span className={line.markClassName} aria-hidden="true">
+            {playing ? PAUSE_ICON : PLAY_ICON}
+          </span>
+          {playing ? line.pause : line.listen}
+        </button>
+      ) : (
+        <button
+          ref={glyphRef}
+          type="button"
+          className={`excerpts-glyph${playing ? " is-playing" : ""}${failed ? " is-failed" : ""}`}
+          aria-label={playing ? labels.pause : labels.play}
+          aria-disabled={failed || undefined}
+          onClick={toggle}
+        >
+          <span className="excerpts-disc" aria-hidden="true">
+            {playing ? PAUSE_ICON : PLAY_ICON}
+          </span>
+          <span className="excerpts-total">{formatTime(duration)}</span>
+          <span className="excerpts-text">
+            <span className="excerpts-title">{labels.title}</span>
+            <span className="excerpts-source">{failed ? labels.unavailable : labels.source}</span>
+          </span>
+        </button>
+      )}
       {host && <audio ref={audioRef} src={src} preload="none" />}
       {host &&
         createPortal(
