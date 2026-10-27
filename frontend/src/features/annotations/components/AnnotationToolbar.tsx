@@ -9,6 +9,8 @@
  * conductor mode the layer cycles choir → leader → private; in leader mode it
  * toggles between the reader's own pencil and the choir; in personal mode
  * every mark lands on the user's own private layer (a static chip says so).
+ * Each tool's tooltip names the key that arms it (`TOOL_KEYS`), and the symbol
+ * palette previews every symbol in the ink in hand, on a scrap of paper.
  *
  * The layer pill arms the NEXT mark and nothing else. Moving one that already
  * exists is a different question, asked of a different subject, and it is
@@ -64,14 +66,23 @@ import {
   MARK_SCALE_MAX,
   MARK_SCALE_MIN,
   MARK_SCALE_STEP,
+  TOOL_KEYS,
   type AnnotationTool,
   type AnnotationToolState,
   type StrokeSize,
 } from "../lib/useAnnotationTools";
 import { readStored, writeStored } from "../lib/deviceStorage";
 import { asWriteLayer, NEXT_WRITE_LAYER, writeLayerCopy } from "../lib/layers";
-import { groupOfStamp, STAMP_GROUPS, stampsInGroup, StampGlyph } from "../lib/stamps";
+import {
+  getStampDef,
+  groupOfStamp,
+  STAMP_GROUPS,
+  stampPreviewSize,
+  stampsInGroup,
+  StampGlyph,
+} from "../lib/stamps";
 import { SHAPE_KINDS, type ShapeKind } from "../lib/shapes";
+import type { NoteDisplay } from "../types/annotations.dto";
 import type { ScoreAnnotatorMode } from "../useScoreAnnotator";
 
 interface AnnotationToolbarProps extends AnnotationToolState {
@@ -108,7 +119,8 @@ interface ToolDef {
   drawOnly: boolean;
 }
 
-const TOOLS: ReadonlyArray<ToolDef> = [
+/** The tool set in toolbar order; the guide lists the keys from it too. */
+export const TOOL_DEFS: ReadonlyArray<ToolDef> = [
   { id: "pointer", icon: MousePointer2, labelKey: "annotations.tools.pointer", fallback: "Przeglądaj", drawOnly: false },
   // Beside browse: both work with marks already on the page.
   { id: "select", icon: LassoSelect, labelKey: "annotations.tools.select", fallback: "Zaznacz", drawOnly: false },
@@ -121,14 +133,53 @@ const TOOLS: ReadonlyArray<ToolDef> = [
   { id: "eraser", icon: Eraser, labelKey: "annotations.tools.eraser", fallback: "Gumka", drawOnly: false },
 ];
 
+type ShapeIcon = React.ComponentType<{ size?: number }>;
+
+/** The icon set has no hairpin, slur or bracket; these are drawn on its grid. */
+const drawnShapeIcon = (d: string): ShapeIcon => {
+  const DrawnShapeIcon = ({ size = 24 }: { size?: number }): React.JSX.Element => (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d={d} />
+    </svg>
+  );
+  return DrawnShapeIcon;
+};
+
 /** The line is drawn slanted: it rules itself level or plumb only near those
  *  angles, and a free diagonal is how a note gets crossed out. */
-const SHAPE_ICONS: Record<ShapeKind, typeof PenLine> = {
+const SHAPE_ICONS: Record<ShapeKind, ShapeIcon> = {
   ellipse: Circle,
   rect: RectangleHorizontal,
   line: Slash,
   arrow: MoveUpRight,
+  cresc: drawnShapeIcon("M21 6 L3 12 L21 18"),
+  dim: drawnShapeIcon("M3 6 L21 12 L3 18"),
+  slur: drawnShapeIcon("M3 16 Q12 4 21 16"),
+  bracket: drawnShapeIcon("M3 15 L3 8 L21 8 L21 15"),
 };
+
+const NOTE_DISPLAYS: ReadonlyArray<{ mode: NoteDisplay; labelKey: string; fallback: string }> = [
+  { mode: "inline", labelKey: "annotations.note.inline", fallback: "Na nucie" },
+  { mode: "box", labelKey: "annotations.note.box", fallback: "W ramce" },
+  { mode: "pin", labelKey: "annotations.note.pin", fallback: "Pinezka" },
+];
+
+/** A tool's name with the key that arms it, for its tooltip. */
+const withKey = (label: string, tool: AnnotationTool): string =>
+  `${label} (${TOOL_KEYS[tool].toUpperCase()})`;
+
+/** Words this long take two cells of the stamp grid, or they spill into the next. */
+const WIDE_STAMP_CHARS = 8;
 
 const SIZES: ReadonlyArray<{ id: StrokeSize; dot: number; labelKey: string; fallback: string }> = [
   { id: "fine", dot: 5, labelKey: "annotations.size.fine", fallback: "Cienka" },
@@ -192,6 +243,13 @@ const barChrome =
 // softer corners) instead of stretching the pill off the edge of a phone.
 const panelChrome =
   "pointer-events-auto rounded-2xl border border-line-on-inverse bg-surface-inverse/70 p-2.5 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-xl";
+/**
+ * A scrap of the page under a symbol's preview, so the preview is drawn in the
+ * ink it will be placed in. Pencil on the dark chrome would be invisible, and a
+ * preview in some other colour is a preview of a different mark. White in both
+ * themes, because the page is.
+ */
+const paperTile = "flex items-center justify-center rounded-lg bg-white/90";
 
 /**
  * The same pill with no pencil in it, for a page that belongs to no edition —
@@ -250,12 +308,16 @@ export const AnnotationToolbar = ({
   const showShapes = tool === "shape";
   const showNoteMode = tool === "note";
   const showStamps = tool === "stamp";
-  // Text size only matters for on-score (inline) notes — mirror the note card.
-  const showTextSize = tool === "note" && noteDisplay === "inline";
+  // Text size only matters for words on the page (inline or boxed) — mirror the
+  // note card.
+  const showTextSize = tool === "note" && noteDisplay !== "pin";
   const showStampSize = tool === "stamp";
   // Whether the active tool has any contextual options to drop below the pill.
   const hasPanel = showSize || showInk || showNoteMode || showStamps;
   const activeStampGroup = groupOfStamp(stamp);
+  const armedStamp = getStampDef(stamp);
+  /** The size sample grows with the slider, inside its 36 px tile. */
+  const stampSampleBox = 10 + stampScale * 8;
 
   // A layer set outside this cycle (an ad-hoc name from an older score) reads as
   // the choir's, because that is the only answer that cannot quietly widen an
@@ -292,7 +354,7 @@ export const AnnotationToolbar = ({
     return () => window.clearTimeout(timer);
   }, [confirmingClear]);
 
-  const visibleTools = TOOLS.filter((toolDef) => canDraw || !toolDef.drawOnly);
+  const visibleTools = TOOL_DEFS.filter((toolDef) => canDraw || !toolDef.drawOnly);
 
   // The bar opens collapsed, so the waiting-to-sync sign has to survive here
   // too — this is the state a reader is actually in when they close the score
@@ -318,6 +380,14 @@ export const AnnotationToolbar = ({
     const triggerLabel = armed
       ? t(armed.labelKey, armed.fallback)
       : t("annotations.markup", "Adnotacje");
+    // A screen reader hears the button's name, not the label drawn on it, so
+    // the name has to carry the armed tool too.
+    const triggerName = armed
+      ? t("annotations.open_tools_armed", {
+          tool: triggerLabel,
+          defaultValue: "Narzędzia adnotacji: {{tool}}",
+        })
+      : t("annotations.open_tools", "Narzędzia adnotacji");
 
     if (compactTrigger) {
       // Folded beside a page that leaves no margin: the icon and the gold ring
@@ -328,7 +398,7 @@ export const AnnotationToolbar = ({
         <button
           type="button"
           onClick={() => changeExpanded(true)}
-          aria-label={t("annotations.open_tools", "Narzędzia adnotacji")}
+          aria-label={triggerName}
           title={triggerLabel}
           className={cn(
             barChrome,
@@ -363,7 +433,7 @@ export const AnnotationToolbar = ({
       <button
         type="button"
         onClick={() => changeExpanded(true)}
-        aria-label={t("annotations.open_tools", "Narzędzia adnotacji")}
+        aria-label={triggerName}
         className={cn(
           barChrome,
           "h-11 gap-1.5 px-3.5 text-ink-on-inverse transition-colors hover:bg-surface-inverse/85",
@@ -428,7 +498,8 @@ export const AnnotationToolbar = ({
             onClick={() => setTool(id)}
             aria-label={t(labelKey, fallback)}
             aria-pressed={tool === id}
-            title={t(labelKey, fallback)}
+            aria-keyshortcuts={TOOL_KEYS[id].toUpperCase()}
+            title={withKey(t(labelKey, fallback), id)}
             className={cn(
               pillButton,
               tool === id
@@ -587,7 +658,7 @@ export const AnnotationToolbar = ({
               buttons: an oval or a box dragged nearly square snaps to one. */}
           {showShapes && (
             <div
-              className="flex items-center gap-1"
+              className="flex flex-wrap items-center gap-1"
               role="group"
               aria-label={t("annotations.shapes.label", "Kształt")}
             >
@@ -683,20 +754,27 @@ export const AnnotationToolbar = ({
 
           {showInk && (
             <div className="flex flex-col gap-1.5">
-              <div className="flex items-center gap-1.5">
-                {inks.map(({ value }) => (
+              <div
+                className="flex items-center gap-1.5"
+                role="group"
+                aria-label={t("annotations.ink_color", "Kolor")}
+              >
+                {inks.map(({ value, nameKey, fallback, dark }) => (
                   <button
                     key={value}
                     type="button"
                     onClick={() => setColor(value)}
-                    aria-label={t("annotations.ink_color", "Kolor")}
+                    aria-label={t(nameKey, fallback)}
                     aria-pressed={color === value}
-                    title={t("annotations.ink_color", "Kolor")}
+                    title={t(nameKey, fallback)}
                     className={cn(
                       "h-6 w-6 rounded-full transition-transform hover:scale-110",
                       color === value
                         ? "ring-2 ring-ink-on-inverse ring-offset-1 ring-offset-surface-inverse"
-                        : "ring-1 ring-ink-on-inverse/30",
+                        : // Pencil on the dark chrome is a hole without an edge.
+                          dark
+                          ? "ring-1 ring-ink-on-inverse/70"
+                          : "ring-1 ring-ink-on-inverse/30",
                     )}
                     style={{ backgroundColor: value }}
                   />
@@ -717,7 +795,7 @@ export const AnnotationToolbar = ({
 
           {showNoteMode && (
             <div className="flex items-center gap-1">
-              {(["inline", "pin"] as const).map((displayMode) => (
+              {NOTE_DISPLAYS.map(({ mode: displayMode, labelKey, fallback }) => (
                 <button
                   key={displayMode}
                   type="button"
@@ -731,9 +809,7 @@ export const AnnotationToolbar = ({
                       : "hover:bg-ink-on-inverse/10",
                   )}
                 >
-                  {displayMode === "inline"
-                    ? t("annotations.note.inline", "Na nucie")
-                    : t("annotations.note.pin", "Pinezka")}
+                  {t(labelKey, fallback)}
                 </button>
               ))}
             </div>
@@ -761,7 +837,19 @@ export const AnnotationToolbar = ({
               onChange={setStampScale}
               label={t("annotations.scale.stamp", "Rozmiar symbolu")}
               sample={
-                <StampGlyph symbol={stamp} color="#F4F1EA" size={10 + stampScale * 8} />
+                armedStamp && (
+                  <span className={cn(paperTile, "h-9 w-9 overflow-hidden")}>
+                    <StampGlyph
+                      symbol={stamp}
+                      color={color}
+                      size={
+                        armedStamp.kind === "text"
+                          ? stampSampleBox
+                          : stampPreviewSize(armedStamp, stampSampleBox)
+                      }
+                    />
+                  </span>
+                )
               }
             />
           )}
@@ -809,17 +897,15 @@ export const AnnotationToolbar = ({
                     aria-pressed={stamp === def.id}
                     title={t(def.labelKey, def.fallback)}
                     className={cn(
-                      "flex h-9 items-center justify-center rounded-xl transition-colors",
+                      paperTile,
+                      "h-9 transition-shadow",
+                      def.kind === "text" && def.glyph.length >= WIDE_STAMP_CHARS && "col-span-2",
                       stamp === def.id
-                        ? "bg-ink-on-inverse/20"
-                        : "hover:bg-ink-on-inverse/10",
+                        ? "ring-2 ring-ethereal-gold"
+                        : "hover:ring-1 hover:ring-ethereal-gold/60",
                     )}
                   >
-                    <StampGlyph
-                      symbol={def.id}
-                      color="#F4F1EA"
-                      size={def.kind === "text" ? 15 : 22}
-                    />
+                    <StampGlyph symbol={def.id} color={color} size={stampPreviewSize(def, 22)} />
                   </button>
                 ))}
               </div>

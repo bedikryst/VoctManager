@@ -18,9 +18,14 @@
  * which got there first. The selection's loop is traced, and routed, exactly
  * like ink.
  *
- * Only the primary button writes or places. A right-click and a pen's eraser
- * end are not ink. Points accumulate in a ref, so a move handler never reads a
- * list a render ago, and the point the pointer lifted at is part of the line.
+ * Only the primary button writes or places. A right-click is nothing, and a
+ * pen's eraser end is not ink: pressed to the page it erases what it passes
+ * (`onErase`) for as long as it is held, whatever tool is armed — the way the
+ * other end of a pencil works. A surface that lets touches through (browse, the
+ * eraser itself) never sees it.
+ *
+ * Points accumulate in a ref, so a move handler never reads a list a render
+ * ago, and the point the pointer lifted at is part of the line.
  * A line in progress is never React state: every sample goes to `onPreview`,
  * which draws it outside the render, and the page re-renders once, when the
  * finished line becomes a mark.
@@ -65,6 +70,10 @@ export const slopFor = (pointerType: string): number =>
 
 /** Moves shorter than this, in screen pixels, are jitter, kept out of payloads. */
 const MIN_STEP_PX = 2;
+
+/** A pen's eraser end, as `button` reports it pressing and `buttons` holding it. */
+const PEN_ERASER_BUTTON = 5;
+const PEN_ERASER_BUTTONS = 32;
 
 /** What the armed tool makes of a press on blank paper. */
 export interface SurfaceModes {
@@ -120,6 +129,11 @@ export interface OverlayInputOptions {
   onPreview: (points: readonly NormPoint[] | null) => void;
   /** A tap on blank paper while a note or a stamp is armed. */
   onTap: (point: NormPoint) => void;
+  /**
+   * Where a pen's eraser end is on the page while pressed: once where it
+   * lands (`first`), then on every move until it lifts.
+   */
+  onErase: (point: NormPoint, rub: { first: boolean }) => void;
   /**
    * A finger that pressed and lifted in a page-turn edge zone without
    * travelling, while a pen tool held the surface. The surface is
@@ -197,6 +211,7 @@ export const useOverlayInput = ({
   onStroke,
   onPreview,
   onTap,
+  onErase,
   onTurnPage,
 }: OverlayInputOptions): OverlayInput => {
   const { drawing, shaping, selecting, placing, stamping } = surfaceModes(tool, canEdit);
@@ -204,13 +219,15 @@ export const useOverlayInput = ({
   const strokeRef = useRef<LiveStroke | null>(null);
   const panRef = useRef<Pan | null>(null);
   const tapRef = useRef<Tap | null>(null);
+  /** The pen whose eraser end is pressed to the page, by pointer id. */
+  const rubRef = useRef<number | null>(null);
   /** Touches down on this surface, by pointer id. */
   const touchesRef = useRef(new Set<number>());
 
   // Read at the moment a gesture ends, never as a reason to rebuild the
   // handlers: the overlay hands in fresh closures on every render.
-  const callbacks = useRef({ onStroke, onPreview, onTap, onTurnPage });
-  callbacks.current = { onStroke, onPreview, onTap, onTurnPage };
+  const callbacks = useRef({ onStroke, onPreview, onTap, onErase, onTurnPage });
+  callbacks.current = { onStroke, onPreview, onTap, onErase, onTurnPage };
 
   const toNorm = useCallback(
     (clientX: number, clientY: number): NormPoint => {
@@ -241,6 +258,7 @@ export const useOverlayInput = ({
     () => () => {
       panRef.current = null;
       tapRef.current = null;
+      rubRef.current = null;
       abandonStroke();
     },
     [tool, abandonStroke],
@@ -248,6 +266,19 @@ export const useOverlayInput = ({
 
   const onPointerDown = useCallback<SurfacePointerHandler>(
     (event) => {
+      if (
+        canEdit &&
+        event.pointerType === "pen" &&
+        event.button === PEN_ERASER_BUTTON
+      ) {
+        // The pen turned over: nothing it started with the writing end goes on.
+        abandonStroke();
+        tapRef.current = null;
+        event.currentTarget.setPointerCapture(event.pointerId);
+        rubRef.current = event.pointerId;
+        callbacks.current.onErase(toNorm(event.clientX, event.clientY), { first: true });
+        return;
+      }
       if (event.button !== 0) return;
       // Counted whatever the tool, so the count is true when a pen tool is
       // picked up mid-gesture. A primary touch is the first of its interaction
@@ -320,11 +351,21 @@ export const useOverlayInput = ({
         };
       }
     },
-    [abandonStroke, fingerDraw, placing, stamping, surfaceRef, toNorm, tracing],
+    [abandonStroke, canEdit, fingerDraw, placing, stamping, surfaceRef, toNorm, tracing],
   );
 
   const onPointerMove = useCallback<SurfacePointerHandler>(
     (event) => {
+      if (rubRef.current === event.pointerId) {
+        // Held only while the eraser end is still pressed; a pen lifted to a
+        // hover keeps reporting moves.
+        if ((event.buttons & PEN_ERASER_BUTTONS) === 0) {
+          rubRef.current = null;
+          return;
+        }
+        callbacks.current.onErase(toNorm(event.clientX, event.clientY), { first: false });
+        return;
+      }
       const pan = panRef.current;
       if (pan && pan.pointerId === event.pointerId) {
         pan.viewport.scrollLeft -= event.clientX - pan.lastX;
@@ -367,6 +408,10 @@ export const useOverlayInput = ({
   const onPointerUp = useCallback<SurfacePointerHandler>(
     (event) => {
       touchesRef.current.delete(event.pointerId);
+      if (rubRef.current === event.pointerId) {
+        rubRef.current = null;
+        return;
+      }
       const pan = panRef.current;
       if (pan && pan.pointerId === event.pointerId) {
         panRef.current = null;
@@ -417,6 +462,7 @@ export const useOverlayInput = ({
   const onPointerCancel = useCallback<SurfacePointerHandler>(
     (event) => {
       touchesRef.current.delete(event.pointerId);
+      if (rubRef.current === event.pointerId) rubRef.current = null;
       if (panRef.current?.pointerId === event.pointerId) panRef.current = null;
       if (tapRef.current?.pointerId === event.pointerId) tapRef.current = null;
       if (strokeRef.current?.pointerId === event.pointerId) abandonStroke();

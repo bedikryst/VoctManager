@@ -115,10 +115,13 @@ export interface PdfViewerProps {
   /** Receives the live page handle (current/total + goToPage) on every change. */
   onPageApiChange?: (api: PdfPageApi) => void;
   /**
-   * Gives an overlay the first claim on Escape. Return true when it consumed
-   * the key, so performance mode and a wrapping dialog stay open.
+   * Gives an overlay the first claim on a key, before the viewer's own
+   * shortcuts. Return true when it consumed the key: a claimed Escape keeps
+   * performance mode and a wrapping dialog open, a claimed arrow turns no page.
+   * Escape is offered wherever focus is; every other key only when focus is
+   * not in a field or a popover, which keep their keys.
    */
-  onEscapeKeyDown?: (event: KeyboardEvent) => boolean;
+  claimKey?: (event: KeyboardEvent) => boolean;
   /**
    * When the wrapping shell floats its own control in the top-right corner
    * (e.g. a modal's close button), the utility pill drops one row so the two

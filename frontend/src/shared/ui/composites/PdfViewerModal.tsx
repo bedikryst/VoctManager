@@ -78,8 +78,8 @@ export interface PdfViewerModalProps {
   overlaySlot?: React.ReactNode;
   /** Receives the live page handle (current/total + goToPage) on every change. */
   onPageApiChange?: (api: PdfPageApi) => void;
-  /** Optional Escape handling supplied by an interactive viewer overlay. */
-  onEscapeKeyDown?: (event: KeyboardEvent) => boolean;
+  /** An interactive overlay's first claim on a key — see `PdfViewerProps.claimKey`. */
+  claimKey?: (event: KeyboardEvent) => boolean;
   /**
    * Whether the document may be exported (open/share/download). Forwarded to the
    * viewer; defaults to `true`. Set `false` for a protected, in-app-only score.
@@ -108,7 +108,7 @@ export const PdfViewerModal = ({
   renderPageOverlay,
   overlaySlot,
   onPageApiChange,
-  onEscapeKeyDown,
+  claimKey,
   canExport = true,
   fitScope,
   preferredFit,
@@ -139,8 +139,8 @@ export const PdfViewerModal = ({
   // Escape first: an overlay that claims Escape winds down its own state, and
   // only an unclaimed back closes the document. A watcher that has fired is
   // spent, so a claimed back arms the next one.
-  const escapeRef = useRef(onEscapeKeyDown);
-  escapeRef.current = onEscapeKeyDown;
+  const escapeRef = useRef(claimKey);
+  escapeRef.current = claimKey;
   const [backArmed, setBackArmed] = useState(0);
   useEffect(() => {
     if (!isOpen) return;
@@ -234,7 +234,7 @@ export const PdfViewerModal = ({
                   renderPageOverlay={renderPageOverlay}
                   overlaySlot={overlaySlot}
                   onPageApiChange={onPageApiChange}
-                  onEscapeKeyDown={onEscapeKeyDown}
+                  claimKey={claimKey}
                   reserveTopRight
                   canExport={canExport}
                   fitScope={fitScope}

@@ -499,3 +499,25 @@ class SanitizerTests(_MarksFixture):
         )
         self.assertEqual(response.status_code, 201, response.content)
         self.assertEqual(response.json()["payload"]["width"], 0.021)
+
+    def test_ink_keeps_a_known_shape_name_and_drops_any_other(self) -> None:
+        hairpin = {"paths": [[[0.1, 0.5], [0.4, 0.48]], [[0.1, 0.5], [0.4, 0.52]]], "width": 0.004}
+        kept = self._post(payload={**hairpin, "shape": "cresc"})
+        self.assertEqual(kept.status_code, 201, kept.content)
+        self.assertEqual(kept.json()["payload"]["shape"], "cresc")
+        dropped = self._post(payload={**hairpin, "shape": "<script>"})
+        self.assertEqual(dropped.status_code, 201, dropped.content)
+        self.assertNotIn("shape", dropped.json()["payload"])
+        # A highlighter has no shape tool behind it.
+        band = self._post(
+            annotation_type=AnnotationType.HIGHLIGHT, payload={**hairpin, "shape": "cresc"},
+        )
+        self.assertNotIn("shape", band.json()["payload"])
+
+    def test_a_note_may_be_boxed(self) -> None:
+        response = self._post(
+            annotation_type=AnnotationType.COMMENT,
+            payload={"x": 0.5, "y": 0.1, "text": "B", "display": "box"},
+        )
+        self.assertEqual(response.status_code, 201, response.content)
+        self.assertEqual(response.json()["payload"]["display"], "box")

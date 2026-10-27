@@ -346,6 +346,13 @@ class PrintTranslationTests(SimpleTestCase):
         # Paper has no tap target — a pin that printed only a dot would say nothing.
         self.assertIn("Ciszej!", markup)
 
+    def test_a_boxed_note_prints_framed_in_its_own_ink(self) -> None:
+        markup = self._page(PrintMark(
+            "CM", {"x": 0.5, "y": 0.1, "text": "B", "display": "box"}, "#2563EB", False,
+        ))
+        self.assertIn('class="note box"', markup)
+        self.assertIn("border-color:#2563EB", markup)
+
     def test_text_is_escaped(self) -> None:
         markup = self._page(PrintMark(
             "CM", {"x": 0.5, "y": 0.5, "text": "<b>forte</b>", "display": "inline"},
@@ -700,3 +707,17 @@ class StampParityTests(SimpleTestCase):
         ids |= set(re.findall(r'dynamic\("([a-z_]+)"\)', source))
         ids |= set(re.findall(r'word\("([a-z_]+)"', source))
         self.assertEqual(ids, {stamp.id for stamp in STAMPS})
+
+    def test_the_sanitizer_keeps_every_shape_the_editor_draws(self) -> None:
+        # A shape name the server drops is a hairpin its card calls "a line".
+        import re
+        from pathlib import Path
+
+        from archive.serializers import _INK_SHAPES
+
+        tsx = (
+            Path(__file__).resolve().parents[2]
+            / "frontend" / "src" / "features" / "annotations" / "lib" / "shapes.ts"
+        )
+        kinds = set(re.findall(r'kind:\s*"([a-z_]+)"', tsx.read_text(encoding="utf-8")))
+        self.assertEqual(kinds, set(_INK_SHAPES))

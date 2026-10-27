@@ -2,9 +2,10 @@
  * @file stamps.tsx
  * @description The musical stamp catalogue — the choir-markup vocabulary a
  * pencil would write on paper: breath and its refusal, articulation, dynamics
- * and hairpins, the navigation signs, tempo words, and the cues a conductor
- * gives with a look. Text stamps render in a bold italic serif (the engraving
- * convention for dynamics); geometric symbols are tiny inline SVGs so nothing
+ * and hairpins, the navigation signs, tempo and expression words, and the cues
+ * a conductor gives with a look, the reminder accidentals among them. Text
+ * stamps render in a bold italic serif (the engraving convention for dynamics);
+ * geometric symbols, the accidentals included, are tiny inline SVGs so nothing
  * depends on a music font being installed. Sizes are fractions of the page
  * width, matching the normalized coordinate model.
  *
@@ -64,7 +65,7 @@ const dynamic = (mark: string): TextStampDef => ({
   sizeFraction: 0.03,
 });
 
-/** A tempo/expression word, set the way an engraver sets one. */
+/** A tempo or expression word, set the way an engraver sets one. */
 const word = (id: string, glyph: string, fallback: string): TextStampDef => ({
   id,
   group: "tempo",
@@ -180,12 +181,16 @@ export const STAMPS: ReadonlyArray<StampDef> = [
   },
 
   // --- Dynamics -------------------------------------------------------------
+  dynamic("ppp"),
   dynamic("pp"),
   dynamic("p"),
   dynamic("mp"),
   dynamic("mf"),
   dynamic("f"),
   dynamic("ff"),
+  dynamic("fff"),
+  dynamic("sfz"),
+  dynamic("fp"),
   {
     id: "cresc",
     group: "dynamics",
@@ -257,12 +262,33 @@ export const STAMPS: ReadonlyArray<StampDef> = [
     fallback: "Dal segno",
     sizeFraction: 0.028,
   },
+  {
+    id: "fine",
+    group: "navigation",
+    kind: "text",
+    glyph: "Fine",
+    labelKey: "annotations.stamps.fine",
+    fallback: "Fine",
+    sizeFraction: 0.028,
+  },
+  {
+    id: "to_coda",
+    group: "navigation",
+    kind: "text",
+    glyph: "To Coda",
+    labelKey: "annotations.stamps.to_coda",
+    fallback: "To Coda",
+    sizeFraction: 0.028,
+  },
 
-  // --- Tempo ----------------------------------------------------------------
+  // --- Tempo and expression ---------------------------------------------------
   word("rit", "rit.", "Ritardando"),
   word("accel", "accel.", "Accelerando"),
   word("atempo", "a tempo", "A tempo"),
   word("subito", "sub.", "Subito"),
+  word("poco", "poco a poco", "Poco a poco"),
+  word("molto", "molto", "Molto"),
+  word("bocca_chiusa", "bocca chiusa", "Bocca chiusa"),
 
   // --- Cues: what the conductor asks for without stopping --------------------
   {
@@ -299,6 +325,38 @@ export const STAMPS: ReadonlyArray<StampDef> = [
     viewBox: "0 0 12 18",
     paths: ["M6 1 L6 16", "M1.5 11 L6 16 L10.5 11"],
   },
+  // The reminder accidental a singer pencils in before the note they keep
+  // missing. Drawn, not typed: the serif the text stamps use has no ♯ ♭ ♮.
+  {
+    id: "sharp",
+    group: "cues",
+    kind: "svg",
+    labelKey: "annotations.stamps.sharp",
+    fallback: "Krzyżyk",
+    sizeFraction: 0.016,
+    viewBox: "0 0 14 22",
+    paths: ["M5 2.5 L5 20.5", "M9 1.5 L9 19.5", "M1.5 9 L12.5 6", "M1.5 16 L12.5 13"],
+  },
+  {
+    id: "flat",
+    group: "cues",
+    kind: "svg",
+    labelKey: "annotations.stamps.flat",
+    fallback: "Bemol",
+    sizeFraction: 0.0115,
+    viewBox: "0 0 10 22",
+    paths: ["M2.5 1.5 L2.5 20.5", "M2.5 20.5 C 6.5 18, 9 15.5, 8 13 C 7 10.5, 4 11.5, 2.5 13.5"],
+  },
+  {
+    id: "natural",
+    group: "cues",
+    kind: "svg",
+    labelKey: "annotations.stamps.natural",
+    fallback: "Kasownik",
+    sizeFraction: 0.0125,
+    viewBox: "0 0 11 22",
+    paths: ["M2.5 1.5 L2.5 16", "M8.5 6 L8.5 20.5", "M2.5 8.5 L8.5 6.5", "M2.5 16 L8.5 14"],
+  },
 ];
 
 export const DEFAULT_STAMP = "breath";
@@ -327,7 +385,7 @@ export const STAMP_GROUPS: ReadonlyArray<StampGroupDef> = [
     labelKey: "annotations.stamp_groups.navigation",
     fallback: "Nawigacja",
   },
-  { group: "tempo", labelKey: "annotations.stamp_groups.tempo", fallback: "Tempo" },
+  { group: "tempo", labelKey: "annotations.stamp_groups.tempo", fallback: "Tempo i wyraz" },
   { group: "cues", labelKey: "annotations.stamp_groups.cues", fallback: "Wskazówki" },
 ];
 
@@ -346,6 +404,21 @@ export const stampsInGroup = (group: StampGroupId): StampDef[] =>
  */
 export const groupOfStamp = (symbol: string): StampGroupId =>
   getStampDef(symbol)?.group ?? "breath";
+
+/** Height / width of an SVG stamp's box; a text stamp answers 1. */
+const stampAspect = (def: StampDef): number => {
+  if (def.kind === "text") return 1;
+  const parts = def.viewBox.split(" ").map(Number);
+  return (parts[3] ?? 1) / (parts[2] ?? 1);
+};
+
+/**
+ * The `size` that fits a stamp's preview inside a square of `box` px. An SVG
+ * stamp is sized by its width, so a tall one (a flat, a cut-off) is narrowed
+ * until its height fits too.
+ */
+export const stampPreviewSize = (def: StampDef, box: number): number =>
+  def.kind === "text" ? box * 0.68 : Math.min(box, box / stampAspect(def));
 
 interface StampGlyphProps {
   symbol: string;
@@ -389,12 +462,10 @@ export const StampGlyph = ({
     );
   }
 
-  const parts = def.viewBox.split(" ").map(Number);
-  const aspect = (parts[3] ?? 1) / (parts[2] ?? 1);
   return (
     <svg
       width={size}
-      height={size * aspect}
+      height={size * stampAspect(def)}
       viewBox={def.viewBox}
       aria-hidden="true"
       className={className}

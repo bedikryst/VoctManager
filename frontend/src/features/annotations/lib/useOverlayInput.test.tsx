@@ -45,6 +45,8 @@ interface PointerInit {
   id?: number;
   type?: "mouse" | "pen" | "touch";
   button?: number;
+  /** What is held down during a move: 1 the writing end, 32 a pen's eraser end. */
+  buttons?: number;
   /**
    * The browser's own count: false for a touch that lands while another touch
    * is down anywhere on the screen.
@@ -59,12 +61,13 @@ interface PointerInit {
 /** The fields the router reads, on the element React would hand it. */
 const pointer = (
   target: HTMLElement,
-  { id = 1, type = "pen", button = 0, primary = true, x, y, folded }: PointerInit,
+  { id = 1, type = "pen", button = 0, buttons = 1, primary = true, x, y, folded }: PointerInit,
 ): React.PointerEvent<HTMLElement> =>
   ({
     pointerId: id,
     pointerType: type,
     button,
+    buttons,
     isPrimary: primary,
     clientX: x,
     clientY: y,
@@ -122,6 +125,7 @@ const mount = (initial: Partial<Hand> = {}) => {
   const onStroke = vi.fn<OverlayInputOptions["onStroke"]>();
   const onPreview = vi.fn<OverlayInputOptions["onPreview"]>();
   const onTap = vi.fn<OverlayInputOptions["onTap"]>();
+  const onErase = vi.fn<OverlayInputOptions["onErase"]>();
   const onTurnPage = vi.fn<OverlayInputOptions["onTurnPage"]>();
   let renders = 0;
   const view = renderHook(
@@ -135,6 +139,7 @@ const mount = (initial: Partial<Hand> = {}) => {
         onStroke,
         onPreview,
         onTap,
+        onErase,
         onTurnPage,
       });
     },
@@ -147,7 +152,7 @@ const mount = (initial: Partial<Hand> = {}) => {
   ): void => handlers()[kind](pointer(page.surface, init));
   /** The line in progress as the page would draw it now; null between lines. */
   const live = (): readonly NormPoint[] | null => onPreview.mock.lastCall?.[0] ?? null;
-  return { ...view, ...page, onStroke, onTap, send, live, renders: () => renders };
+  return { ...view, ...page, onStroke, onTap, onErase, send, live, renders: () => renders };
 };
 
 /** What a trace that travelled reports beside its points. */
@@ -171,6 +176,24 @@ describe("only the primary button writes", () => {
 
     act(() => send("onPointerDown", { x: 10, y: 10 }));
     expect(live()).toEqual([[0.1, 0.1]]);
+  });
+
+  it("rubs out with a pen's eraser end for as long as it is pressed, whatever tool is armed", () => {
+    const { send, onErase, onTap, onStroke } = mount({ tool: "stamp" });
+
+    act(() => send("onPointerDown", { type: "pen", button: 5, buttons: 32, x: 10, y: 10 }));
+    act(() => send("onPointerMove", { type: "pen", button: -1, buttons: 32, x: 20, y: 10 }));
+    // Lifted to a hover: the pen still reports where it is.
+    act(() => send("onPointerMove", { type: "pen", button: -1, buttons: 0, x: 30, y: 10 }));
+    act(() => send("onPointerMove", { type: "pen", button: -1, buttons: 0, x: 40, y: 10 }));
+    act(() => send("onPointerUp", { type: "pen", button: 5, buttons: 0, x: 40, y: 10 }));
+
+    expect(onErase.mock.calls).toEqual([
+      [[0.1, 0.1], { first: true }],
+      [[0.2, 0.1], { first: false }],
+    ]);
+    expect(onTap).not.toHaveBeenCalled();
+    expect(onStroke).not.toHaveBeenCalled();
   });
 
   it("places nothing on a right-click", () => {

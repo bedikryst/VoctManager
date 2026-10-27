@@ -744,7 +744,7 @@ export default function ArchivePieceCardPage(): React.JSX.Element {
                       renderPageOverlay={annotator.renderPageOverlay}
                       overlaySlot={annotator.overlaySlot}
                       onPageApiChange={handlePageApiChange}
-                      onEscapeKeyDown={annotator.onEscapeKeyDown}
+                      claimKey={annotator.claimKey}
                       preferredFit={scorePdf.wholePage ? "page" : undefined}
                     />
                   </div>

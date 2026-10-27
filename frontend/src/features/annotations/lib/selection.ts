@@ -3,7 +3,7 @@
  * @description What the selection card does to the marks it holds, as data:
  * where a moved selection may go, what a moved mark's payload becomes, and what
  * a copy of a mark is. The overlay sends the results through the ordinary
- * per-mark writes.
+ * per-mark writes. The keyboard reaches the selection through `SelectionKeys`.
  *
  * A selection moves as one piece. Each point is never clamped on its own: a
  * slur dragged into the margin would fold flat against the page edge. The shift
@@ -40,6 +40,14 @@ export interface MarkClipboard {
   editionId: string;
   page: number;
   marks: readonly ScoreAnnotation[];
+}
+
+/** What the stand's keyboard may do to the selection on screen. */
+export interface SelectionKeys {
+  /** Delete or Backspace: the marks go, as one step. */
+  remove: () => void;
+  /** An arrow key: move the marks by this many screen pixels. */
+  nudge: (dxPx: number, dyPx: number) => void;
 }
 
 /** A shift of the page, 0..1 per axis. */

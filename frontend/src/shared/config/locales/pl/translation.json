@@ -107,6 +107,19 @@
         "offline_body": "Możesz przygotować oznaczenia bez zasięgu. Czekają na urządzeniu i wysyłają się same po powrocie sieci — również po zamknięciu aplikacji.",
         "reach_title": "Kto zobaczy Twoje oznaczenie",
         "reach_body": "Każde oznaczenie ma jeden zasięg, a zasięgi zawierają się w sobie. Zmienisz go po fakcie: dotknij oznaczenia na nutach i wybierz, kto ma je widzieć. Przełącznik przy narzędziach decyduje tylko o NASTĘPNYM."
+      },
+      "tools": {
+        "title": "Narzędzia",
+        "select_title": "Zaznacz kilka naraz",
+        "select_body": "Narzędziem Zaznacz obwiedź oznaczenia pętlą albo dotykaj ich po kolei. Ramkę przeciągasz, żeby je przesunąć, a na karcie zmienisz im kolor, powielisz je, skopiujesz na inną stronę tego utworu albo usuniesz. Każdą z tych zmian cofa jedno „Cofnij”.",
+        "shapes_title": "Widełki, łuk i klamra",
+        "shapes_body": "Wybierz je w Kształtach i przeciągnij od początku do końca frazy. Od lewej do prawej łuk wygina się w górę, a klamra ma haczyki w dół, tak jak nad pięciolinią. Od prawej do lewej oba się odwracają.",
+        "box_title": "Litery orientacyjne i numery taktów",
+        "box_body": "Notatka „W ramce” wygląda jak litera orientacyjna albo numer taktu w nutach: pogrubiona, w prostokącie. Tak samo się drukuje.",
+        "keys_title": "Z klawiatury",
+        "keys_body": "Delete usuwa zaznaczenie, a strzałki je przesuwają (z Shiftem dalej). Ctrl+Z lub ⌘Z cofa, z Shiftem ponawia. Esc odkłada narzędzie.",
+        "eraser_end_title": "Gumka w rysiku",
+        "eraser_end_body": "Jeśli Twój rysik ma gumkę na drugim końcu, odwróć go i potrzyj oznaczenie. Zniknie bez zmiany narzędzia."
       }
     },
     "open_tools": "Narzędzia adnotacji",
@@ -131,7 +144,8 @@
       "delete": "Usuń notatkę",
       "inline": "Na nucie",
       "pin": "Pinezka",
-      "text_label": "Treść notatki"
+      "text_label": "Treść notatki",
+      "box": "W ramce"
     },
     "panel": {
       "layers": "Widoczność warstw",
@@ -184,7 +198,7 @@
       "dynamics": "Dynamika",
       "label": "Grupy symboli",
       "navigation": "Nawigacja",
-      "tempo": "Tempo"
+      "tempo": "Tempo i wyraz"
     },
     "stamps": {
       "accel": "Accelerando",
@@ -215,7 +229,19 @@
       "staccato": "Staccato",
       "subito": "Subito (nagle)",
       "tenuto": "Tenuto",
-      "watch": "Patrz na dyrygenta"
+      "watch": "Patrz na dyrygenta",
+      "ppp": "Dynamika ppp",
+      "fff": "Dynamika fff",
+      "sfz": "Sforzando (sfz)",
+      "fp": "Forte-piano (fp)",
+      "fine": "Fine (koniec)",
+      "to_coda": "To Coda (skok do cody)",
+      "poco": "Poco a poco (stopniowo)",
+      "molto": "Molto (bardzo)",
+      "bocca_chiusa": "Bocca chiusa (zamknięte usta)",
+      "sharp": "Krzyżyk",
+      "flat": "Bemol",
+      "natural": "Kasownik"
     },
     "tools": {
       "eraser": "Gumka",
@@ -232,7 +258,11 @@
       "ellipse": "Owal lub koło",
       "label": "Kształt",
       "line": "Linia",
-      "rect": "Prostokąt lub kwadrat"
+      "rect": "Prostokąt lub kwadrat",
+      "cresc": "Widełki crescendo",
+      "dim": "Widełki diminuendo",
+      "slur": "Łuk frazy",
+      "bracket": "Klamra"
     },
     "mark": {
       "audience": "Kto to widzi",
@@ -240,7 +270,15 @@
       "kind": {
         "freehand": "Kreska",
         "highlight": "Zakreślenie",
-        "stamp": "Symbol"
+        "stamp": "Symbol",
+        "ellipse": "Owal",
+        "rect": "Prostokąt",
+        "line": "Linia",
+        "arrow": "Strzałka",
+        "cresc": "Crescendo",
+        "dim": "Diminuendo",
+        "slur": "Łuk",
+        "bracket": "Klamra"
       }
     },
     "selection": {
@@ -255,6 +293,14 @@
       "delete": "Usuń zaznaczone",
       "duplicate": "Powiel",
       "paste": "Wklej ({{n}})"
+    },
+    "open_tools_armed": "Narzędzia adnotacji: {{tool}}",
+    "inks": {
+      "crimson": "Czerwony",
+      "blue": "Niebieski",
+      "green": "Zielony",
+      "amber": "Bursztynowy",
+      "graphite": "Grafitowy"
     }
   },
   "archive": {

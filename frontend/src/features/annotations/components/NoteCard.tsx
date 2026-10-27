@@ -42,7 +42,25 @@ export const inlineFontSize = (pageWidth: number): number =>
  */
 export const INLINE_MARK_CLASS =
   "whitespace-pre-wrap break-words rounded-md px-1.5 py-0.5 text-center font-semibold leading-snug shadow-sm ring-1";
+/**
+ * A boxed note — a rehearsal letter, a bar number — framed in its own ink
+ * (`border-current`, the button's colour being the note's), square-cornered
+ * and bold, the way an engraver sets one. No resting ring: the frame is the
+ * mark, and a second outline would read as a double box.
+ */
+export const BOX_MARK_CLASS =
+  "whitespace-pre-wrap break-words rounded-sm border-2 border-current px-1.5 py-0.5 text-center font-bold leading-snug";
 export const INLINE_MARK_BACKGROUND = "rgba(255,255,255,0.82)";
+
+/** The notes whose words sit on the page itself, centred on their anchor. */
+export const isOnPageDisplay = (display: NoteDisplay | undefined): boolean =>
+  display === "inline" || display === "box";
+
+const DISPLAY_MODES: ReadonlyArray<{ mode: NoteDisplay; labelKey: string; fallback: string }> = [
+  { mode: "inline", labelKey: "annotations.note.inline", fallback: "Na nucie" },
+  { mode: "box", labelKey: "annotations.note.box", fallback: "W ramce" },
+  { mode: "pin", labelKey: "annotations.note.pin", fallback: "Pinezka" },
+];
 
 /**
  * Moving an EXISTING note to another audience. Absent for a note that does not
@@ -211,7 +229,7 @@ export const NoteCard = ({
   const markRef = useRef<HTMLDivElement | null>(null);
   const editorRef = useRef<HTMLDivElement | null>(null);
 
-  const inline = display === "inline";
+  const inline = isOnPageDisplay(display);
   const markFontSize = inlineFontSize(width) * scale;
 
   const cardHeight = useMeasuredHeight(cardRef, NOTE_CARD_ESTIMATED_HEIGHT);
@@ -276,8 +294,10 @@ export const NoteCard = ({
             onSubmit={submit}
             onCancel={onCancel}
             className={cn(
-              INLINE_MARK_CLASS,
-              "outline-none ring-black/10 focus:ring-2 focus:ring-ethereal-gold",
+              display === "box"
+                ? cn(BOX_MARK_CLASS, "focus:ring-2")
+                : cn(INLINE_MARK_CLASS, "ring-black/10 focus:ring-2"),
+              "outline-none focus:ring-ethereal-gold",
               // Something to tap while the mark is still empty.
               text.length === 0 && "min-w-14",
             )}
@@ -364,13 +384,14 @@ export const NoteCard = ({
           </div>
         )}
 
-        {/* Inline vs pin display picker. */}
+        {/* On the page, in a box, or behind a pin. */}
         <div className="mt-2 flex items-center gap-1">
-          {(["inline", "pin"] as const).map((mode) => (
+          {DISPLAY_MODES.map(({ mode, labelKey, fallback }) => (
             <button
               key={mode}
               type="button"
               onClick={() => setDisplay(mode)}
+              aria-pressed={display === mode}
               className={cn(
                 "flex-1 rounded-md px-2 py-1 text-[11px] font-medium transition-colors",
                 display === mode
@@ -378,15 +399,13 @@ export const NoteCard = ({
                   : "bg-ethereal-parchment/60 text-ethereal-graphite hover:bg-ethereal-parchment",
               )}
             >
-              {mode === "inline"
-                ? t("annotations.note.inline", "Na nucie")
-                : t("annotations.note.pin", "Pinezka")}
+              {t(labelKey, fallback)}
             </button>
           ))}
         </div>
 
-        {/* Text size — only meaningful for on-score (inline) text; what it
-            drives is the mark itself, up on the page. */}
+        {/* Text size — only meaningful for words on the page (inline or
+            boxed); what it drives is the mark itself, up on the page. */}
         {inline && (
           <input
             type="range"

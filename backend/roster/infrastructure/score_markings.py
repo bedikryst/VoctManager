@@ -105,6 +105,9 @@ _ANCHOR_WIDTH_PT = 240.0
 _CHIP_MAX_WIDTH_PT = 200.0   # .note max-width — where a long comment wraps
 _CHIP_LINE_HEIGHT = 1.15     # .note line-height
 _CHIP_FRAME_PT = 1.8         # .note padding (0.5pt) + border (0.4pt), both edges
+# A boxed note — a rehearsal letter, a bar number — is framed in its own ink,
+# the way an engraver boxes one, and set upright rather than as an aside.
+_BOX_FRAME_PT = 3.6          # .note.box padding (1pt) + border (0.8pt), both edges
 # Gentium Plus averages a little under half an em per character in running text.
 # Only a comment long enough to wrap uses this, and the worst case is half a line
 # of drift on a mark that is an aside anyway.
@@ -323,13 +326,13 @@ def _anchor_html(anchor: tuple[float, float], height: float, body: str) -> str:
     )
 
 
-def _note_chip_height(text: str, size: float) -> float:
+def _note_chip_height(text: str, size: float, frame: float = _CHIP_FRAME_PT) -> float:
     """How tall the note chip will print, derived from the CSS above rather than
     measured: a single-line chip — nearly every one — is exact, and a comment long
     enough to wrap is estimated from the average advance width."""
     per_line = max(1.0, _CHIP_MAX_WIDTH_PT / (size * _AVG_ADVANCE_EM))
     lines = max(1, ceil(len(text) / per_line))
-    return lines * _CHIP_LINE_HEIGHT * size + _CHIP_FRAME_PT
+    return lines * _CHIP_LINE_HEIGHT * size + frame
 
 
 def _render_text_stamp(mark: PrintMark, box: PlacedBox) -> str:
@@ -360,7 +363,15 @@ def _render_comment(mark: PrintMark, box: PlacedBox) -> str:
     fill, alpha = _ink(mark.color)
     base = min(_NOTE_MAX_PT, max(_NOTE_MIN_PT, box[2] * _NOTE_SIZE_FRACTION))
     size = base * _scale(mark.payload)
-    if mark.payload.get("display") != "inline":
+    display = mark.payload.get("display")
+    if display == "box":
+        # Bold whatever the layer: a rehearsal letter is read across the room.
+        chip = (
+            f'<span class="note box" style="font-size:{size:.2f}pt;color:{fill};'
+            f'border-color:{fill};opacity:{alpha:.3f}">{escape(text)}</span>'
+        )
+        return _anchor_html(anchor, _note_chip_height(text, size, _BOX_FRAME_PT), chip)
+    if display != "inline":
         size *= _PIN_SIZE_FACTOR
     weight = "700" if mark.heavy else "600"
     chip = (
@@ -412,6 +423,8 @@ def _overlay_html(pages: Sequence[Sequence[tuple[PrintMark, PlacedBox]]]) -> str
         f" display: inline-block; max-width: {_CHIP_MAX_WIDTH_PT}pt;"
         " padding: 0.5pt 2pt; background: #ffffff;"
         " border: 0.4pt solid rgba(0,0,0,0.25); border-radius: 2pt; }"
+        ".note.box { padding: 1pt 2.5pt; border-width: 0.8pt; border-radius: 0;"
+        " font-weight: 700; }"
         f".dyn {{ font-family: {BOOK_FONT_STACK}; font-style: italic;"
         " line-height: 1; display: inline-block; }"
         "</style></head><body>"

@@ -33,6 +33,7 @@ import { Eyebrow } from "@/shared/ui/primitives/typography";
 import { MarkAudiencePicker } from "./MarkAudiencePicker";
 import { boundsAnchor, markBounds } from "../lib/markBounds";
 import { placeNoteCard } from "../lib/noteCardPlacement";
+import { getShapeDef, isShapeKind } from "../lib/shapes";
 import { getStampDef, StampGlyph } from "../lib/stamps";
 import { useMeasuredHeight } from "../lib/useMeasuredHeight";
 import { layerOf, type WriteLayer } from "../lib/layers";
@@ -43,7 +44,7 @@ import {
   MARK_SCALE_MIN,
   MARK_SCALE_STEP,
 } from "../lib/useAnnotationTools";
-import { isStamp, isStroke, type ScoreAnnotation } from "../types/annotations.dto";
+import { isFreehand, isStamp, isStroke, type ScoreAnnotation } from "../types/annotations.dto";
 
 interface MarkActionCardProps {
   /** The marking this card is about — never a text note. */
@@ -72,7 +73,10 @@ const CARD_ESTIMATED_HEIGHT = 150;
 /** Air between the marking and the card talking about it. */
 const CARD_CLEARANCE = 12;
 
-/** What this marking is called, so the card says what it is acting on. */
+/**
+ * What this marking is called, so the card says what it is acting on. Ink the
+ * shape tool drew carries the shape's name, so a hairpin is not "a line".
+ */
 const kindLabelKey = (annotation: ScoreAnnotation): [string, string] => {
   if (annotation.annotation_type === "HL") {
     return ["annotations.mark.kind.highlight", "Zakreślenie"];
@@ -80,6 +84,9 @@ const kindLabelKey = (annotation: ScoreAnnotation): [string, string] => {
   if (annotation.annotation_type === "ST") {
     return ["annotations.mark.kind.stamp", "Symbol"];
   }
+  const shape = isFreehand(annotation) ? annotation.payload.shape : undefined;
+  const def = isShapeKind(shape) ? getShapeDef(shape) : undefined;
+  if (def) return [def.markKey, def.markFallback];
   return ["annotations.mark.kind.freehand", "Kreska"];
 };
 
@@ -180,12 +187,13 @@ export const MarkActionCard = ({
             {t("annotations.ink_color", "Kolor")}
           </Eyebrow>
           <div className="flex items-center gap-1.5">
-            {inks.map(({ value }) => (
+            {inks.map(({ value, nameKey, fallback }) => (
               <button
                 key={value}
                 type="button"
                 onClick={() => onChangeColor(value)}
-                aria-label={t("annotations.ink_color", "Kolor")}
+                aria-label={t(nameKey, fallback)}
+                title={t(nameKey, fallback)}
                 aria-pressed={annotation.color === value}
                 className={cn(
                   "h-6 w-6 rounded-full transition-transform hover:scale-110",

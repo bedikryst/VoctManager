@@ -25,8 +25,12 @@ export type AnnotationKind = "FH" | "CM" | "HL" | "ST";
  */
 export type AnnotationLayer = "shared" | "conductor" | "leader" | "personal";
 
-/** How a text note renders: a clickable `pin`, or the words drawn `inline` on the page. */
-export type NoteDisplay = "pin" | "inline";
+/**
+ * How a text note renders: a clickable `pin`, the words drawn `inline` on the
+ * page, or the words framed in a `box` — a rehearsal letter or a bar number,
+ * set the way an engraver sets one.
+ */
+export type NoteDisplay = "pin" | "inline" | "box";
 
 /** A single freehand point in normalized page space (0..1, 0..1). */
 export type NormPoint = readonly [number, number];
@@ -39,11 +43,17 @@ export type NormPoint = readonly [number, number];
 export interface FreehandPayload {
   paths: NormPoint[][];
   width: number;
+  /**
+   * The shape tool's name for this ink (`ShapeKind`), so a card can call a
+   * hairpin a hairpin. Descriptive only: nothing draws from it, print ignores
+   * it, and a name this build does not know reads as plain ink.
+   */
+  shape?: string;
 }
 
 /**
- * Text note anchored at a normalized point; `display` chooses pin vs inline.
- * `scale` multiplies the base font size (missing ⇒ 1, legacy notes).
+ * Text note anchored at a normalized point; `display` chooses pin, inline or
+ * box. `scale` multiplies the base font size (missing ⇒ 1, legacy notes).
  */
 export interface CommentPayload {
   x: number;

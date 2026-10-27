@@ -1,8 +1,9 @@
 /**
  * @file shapes.test.ts
- * @description Pins the two promises the shape tool rests on: every straight
- * edge is a two-point path (the only kind both renderers draw straight), and
- * snapping is judged in pixels on a page that is not square.
+ * @description Pins the promises the shape tool rests on: every straight edge
+ * is a two-point path (the only kind both renderers draw straight), snapping is
+ * judged in pixels on a page that is not square, and the direction of a drag
+ * decides which side of the stave a slur or a bracket sits on.
  * @module features/annotations/lib
  */
 
@@ -67,6 +68,54 @@ describe("buildShapePaths", () => {
       expect(path).toHaveLength(2);
       expect(path[1]).toEqual(tip);
     }
+  });
+
+  it("opens a crescendo at its end and a diminuendo at its start, from one closed point", () => {
+    const [up, down] = buildShapePaths("cresc", [0.1, 0.5], [0.5, 0.5], W, H);
+    expect(up).toHaveLength(2);
+    expect(down).toHaveLength(2);
+    expect(up[0]).toEqual(down[0]);
+    expect(up[0][0]).toBeCloseTo(0.1, 6);
+    expect(up[0][1]).toBeCloseTo(0.5, 6);
+    expect(up[1][0]).toBeCloseTo(0.5, 6);
+    expect(Math.abs(up[1][1] - down[1][1]) * H).toBeGreaterThan(5);
+
+    const [left, right] = buildShapePaths("dim", [0.1, 0.5], [0.5, 0.5], W, H);
+    expect(left[0]).toEqual(right[0]);
+    expect(left[0][0]).toBeCloseTo(0.5, 6);
+    expect(left[1][0]).toBeCloseTo(0.1, 6);
+  });
+
+  it("keeps a short hairpin narrower than its length", () => {
+    const [up, down] = buildShapePaths("cresc", [0.1, 0.5], [0.1 + 20 / W, 0.5], W, H);
+    expect(Math.abs(up[1][1] - down[1][1]) * H).toBeLessThan(20 * 0.35 + 1e-6);
+  });
+
+  it("bows a slur up when drawn left to right, and down when drawn right to left", () => {
+    const [over] = buildShapePaths("slur", [0.1, 0.5], [0.5, 0.5], W, H);
+    const [under] = buildShapePaths("slur", [0.5, 0.5], [0.1, 0.5], W, H);
+    const middle = Math.floor(over.length / 2);
+    expect(over[0][0]).toBeCloseTo(0.1, 6);
+    expect(over[0][1]).toBeCloseTo(0.5, 6);
+    expect(over[over.length - 1][0]).toBeCloseTo(0.5, 6);
+    expect(over[middle][1]).toBeLessThan(0.5);
+    expect(under[middle][1]).toBeGreaterThan(0.5);
+  });
+
+  it("hooks a bracket toward the music below when drawn left to right", () => {
+    const paths = buildShapePaths("bracket", [0.1, 0.3], [0.5, 0.3], W, H);
+    expect(paths).toHaveLength(3);
+    for (const path of paths) expect(path).toHaveLength(2);
+    const [hook, span, tail] = paths;
+    expect(hook[1]).toEqual(span[0]);
+    expect(span[1]).toEqual(tail[0]);
+    expect(hook[0][1]).toBeGreaterThan(0.3);
+    expect(tail[1][1]).toBeGreaterThan(0.3);
+  });
+
+  it("rules a nearly level hairpin level, like a line", () => {
+    const [up, down] = buildShapePaths("cresc", [0.1, 0.5], [0.1 + 200 / W, 0.5 + 4 / H], W, H);
+    expect((up[1][1] + down[1][1]) / 2).toBeCloseTo(0.5, 6);
   });
 
   it("keeps every point on the page", () => {

@@ -13,6 +13,10 @@
  * create/update/delete, undo/redo history, keyboard shortcuts and the lifetime
  * of the selection — so callers stay a few lines thin.
  *
+ * Every key reaches it through the viewer (`claimKey`), ahead of the viewer's
+ * own shortcuts: the arrows that turn a page also nudge a selection, and the
+ * selection has to win.
+ *
  * Selection and the active tool are bounded here rather than in the overlay,
  * because the reader can leave either one from outside the drawing surface:
  * they erase a mark, turn the page, or press Escape.
@@ -38,6 +42,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { useAuth } from "@/app/providers/AuthProvider";
+import { isEditableTarget } from "@/shared/lib/dom/editableTarget";
 import type {
   PdfPageApi,
   PdfPageGeometry,
@@ -54,17 +59,18 @@ import {
   useMarkSeen,
   useScoreAnnotations,
 } from "./api/annotations.queries";
-import { useAnnotationTools } from "./lib/useAnnotationTools";
+import { TOOL_KEYS, useAnnotationTools, type AnnotationTool } from "./lib/useAnnotationTools";
 import { useAnnotationHistory } from "./lib/useAnnotationHistory";
 import { useCanDraw } from "./lib/useCanDraw";
 import { useIncomingMarks } from "./lib/useIncomingMarks";
 import { bookFocusY, bookPageFor, type ScoreBook } from "./lib/scoreBook";
 import { layerOf, WRITE_LAYERS, type WriteLayer } from "./lib/layers";
-import type { MarkClipboard, MarkEdit } from "./lib/selection";
-import type {
-  AnnotationPatch,
-  MarkDraft,
-  ScoreAnnotation,
+import type { MarkClipboard, MarkEdit, SelectionKeys } from "./lib/selection";
+import {
+  isComment,
+  type AnnotationPatch,
+  type MarkDraft,
+  type ScoreAnnotation,
 } from "./types/annotations.dto";
 
 export type ScoreAnnotatorMode = "conductor" | "leader" | "personal";
@@ -136,14 +142,34 @@ export interface ScoreAnnotatorBindings {
   renderPageOverlay: (geometry: PdfPageGeometry) => React.ReactNode;
   overlaySlot: React.ReactNode;
   onPageApiChange: (api: PdfPageApi) => void;
-  onEscapeKeyDown: (event: KeyboardEvent) => boolean;
+  /** The annotator's first claim on a key — see `PdfViewerProps.claimKey`. */
+  claimKey: (event: KeyboardEvent) => boolean;
   annotationCount: number;
   /** The live page handle, for chrome outside the annotator (a programme bar). */
   pageApi: PdfPageApi;
 }
 
 /** Tools that need a stylus/precision surface — coerced away on phones. */
-const PRECISION_TOOLS = new Set(["pen", "highlighter", "shape"]);
+const PRECISION_TOOLS: ReadonlySet<AnnotationTool> = new Set<AnnotationTool>([
+  "pen",
+  "highlighter",
+  "shape",
+]);
+
+const TOOL_BY_KEY: ReadonlyMap<string, AnnotationTool> = new Map(
+  (Object.entries(TOOL_KEYS) as [AnnotationTool, string][]).map(([tool, key]) => [key, tool]),
+);
+
+/** Which way each arrow key nudges a selection. */
+const NUDGE_DIRECTIONS: Readonly<Record<string, readonly [number, number]>> = {
+  ArrowLeft: [-1, 0],
+  ArrowRight: [1, 0],
+  ArrowUp: [0, -1],
+  ArrowDown: [0, 1],
+};
+/** A nudge, in screen pixels: one for the fine adjustment, ten with Shift. */
+const NUDGE_STEP_PX = 1;
+const NUDGE_LONG_STEP_PX = 10;
 
 export const useScoreAnnotator = ({
   editionId,
@@ -398,7 +424,7 @@ export const useScoreAnnotator = ({
    * field, not to the pen or the selection. The key goes on to the viewer,
    * which takes the field's focus away and keeps the score open.
    */
-  const onEscapeKeyDown = useCallback(
+  const claimEscape = useCallback(
     (event: KeyboardEvent): boolean => {
       if (guideOpen) {
         event.preventDefault();
@@ -407,10 +433,7 @@ export const useScoreAnnotator = ({
         return true;
       }
       const target = event.target instanceof HTMLElement ? event.target : null;
-      if (
-        target?.closest(`[${ANNOTATION_DRAWER_ATTR}]`) &&
-        (target.isContentEditable || ["INPUT", "TEXTAREA"].includes(target.tagName))
-      ) {
+      if (target?.closest(`[${ANNOTATION_DRAWER_ATTR}]`) && isEditableTarget(target)) {
         return false;
       }
       if (selectedId === null && activeTool === "pointer") return false;
@@ -421,6 +444,86 @@ export const useScoreAnnotator = ({
       return true;
     },
     [activeTool, guideOpen, selectedId, setActiveTool],
+  );
+
+  /** The page that selected last puts its selection here (see `SelectionKeys`). */
+  const selectionKeysRef = useRef<SelectionKeys | null>(null);
+
+  /**
+   * Every key the viewer offers, before its own shortcuts take it. Besides
+   * Escape, only while a score is on screen — otherwise a stray Ctrl+Z anywhere
+   * in the app would replay annotation history against a closed viewer. The
+   * viewer offers no key typed into a field, so nothing here asks again.
+   *
+   * - Ctrl/⌘+Z undoes; Ctrl/⌘+Shift+Z and Ctrl/⌘+Y redo.
+   * - Delete or Backspace removes the selection, or the one mark whose card is
+   *   open. A note is left out: its card is a composer, and a Backspace there
+   *   that missed the words would throw the note away.
+   * - The arrows nudge a selection a pixel, ten with Shift; with nothing
+   *   selected they stay the viewer's page turns.
+   * - One letter arms each tool (`TOOL_KEYS`). A pen tool on a page too small
+   *   to write on is not armed: the toolbar does not offer it there either.
+   */
+  const claimKey = useCallback(
+    (event: KeyboardEvent): boolean => {
+      if (event.key === "Escape") return claimEscape(event);
+      if (!active || !activeEditionId) return false;
+      if (event.ctrlKey || event.metaKey) {
+        if (event.altKey) return false;
+        const key = event.key.toLowerCase();
+        if (key === "z" && !event.shiftKey) {
+          event.preventDefault();
+          undo();
+          return true;
+        }
+        if ((key === "z" && event.shiftKey) || key === "y") {
+          event.preventDefault();
+          redo();
+          return true;
+        }
+        return false;
+      }
+      if (event.altKey) return false;
+      const selection = selectionKeysRef.current;
+      if (event.key === "Delete" || event.key === "Backspace") {
+        if (selection) {
+          event.preventDefault();
+          selection.remove();
+          return true;
+        }
+        const target = annotationsRef.current.find((a) => a.id === selectedId);
+        if (!target || isComment(target) || !canModify(target)) return false;
+        event.preventDefault();
+        handleDelete(target.id);
+        return true;
+      }
+      const direction = NUDGE_DIRECTIONS[event.key];
+      if (direction) {
+        if (!selection) return false;
+        const step = event.shiftKey ? NUDGE_LONG_STEP_PX : NUDGE_STEP_PX;
+        event.preventDefault();
+        selection.nudge(direction[0] * step, direction[1] * step);
+        return true;
+      }
+      if (event.shiftKey || event.repeat) return false;
+      const next = TOOL_BY_KEY.get(event.key.toLowerCase());
+      if (!next || (!canDraw && PRECISION_TOOLS.has(next))) return false;
+      event.preventDefault();
+      setActiveTool(next);
+      return true;
+    },
+    [
+      active,
+      activeEditionId,
+      canDraw,
+      canModify,
+      claimEscape,
+      handleDelete,
+      redo,
+      selectedId,
+      setActiveTool,
+      undo,
+    ],
   );
 
   /**
@@ -501,33 +604,6 @@ export const useScoreAnnotator = ({
     if (first !== undefined) pageApi.goToPage(displayPage(first));
     incoming.dismiss();
   }, [displayPage, incoming, pageApi]);
-
-  // Keyboard: undo / redo, ignoring text inputs. Only while a score is on
-  // screen — otherwise a stray Ctrl+Z anywhere in the app would replay
-  // annotation history against a closed viewer.
-  useEffect(() => {
-    if (!active || !activeEditionId) return;
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (!(event.ctrlKey || event.metaKey)) return;
-      const target = event.target as HTMLElement | null;
-      if (
-        target?.isContentEditable ||
-        ["INPUT", "TEXTAREA", "SELECT"].includes(target?.tagName ?? "")
-      ) {
-        return;
-      }
-      const key = event.key.toLowerCase();
-      if (key === "z" && !event.shiftKey) {
-        event.preventDefault();
-        undo();
-      } else if ((key === "z" && event.shiftKey) || key === "y") {
-        event.preventDefault();
-        redo();
-      }
-    };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [active, activeEditionId, undo, redo]);
 
   const {
     tool,
@@ -613,6 +689,7 @@ export const useScoreAnnotator = ({
           onDelete={handleDelete}
           onDeleteMany={handleDeleteMany}
           onCopy={handleCopy}
+          selectionKeys={selectionKeysRef}
         />
       );
       if (!frame) return surface;
@@ -692,6 +769,7 @@ export const useScoreAnnotator = ({
         isOpen={guideOpen}
         mode={mode}
         hasLeaderMarks={hasLeaderMarks}
+        stylusSeen={tools.stylusSeen}
         onClose={() => setGuideOpen(false)}
       />
     </>
@@ -729,7 +807,7 @@ export const useScoreAnnotator = ({
     renderPageOverlay,
     overlaySlot,
     onPageApiChange,
-    onEscapeKeyDown,
+    claimKey,
     annotationCount: annotations.length,
     pageApi,
   };

@@ -106,7 +106,7 @@ export const ScoreBookModal = ({
         ) : undefined
       }
       onPageApiChange={hasMap ? annotator.onPageApiChange : undefined}
-      onEscapeKeyDown={hasMap ? annotator.onEscapeKeyDown : undefined}
+      claimKey={hasMap ? annotator.claimKey : undefined}
       fullView={fullView}
       // With a map, the file on screen is the clean book and every mark is
       // drawn live over it, so handing that file out would hand out a book

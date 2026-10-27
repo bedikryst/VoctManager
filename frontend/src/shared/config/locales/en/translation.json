@@ -99,6 +99,19 @@
         "offline_body": "You can prepare markings with no connection. They wait on your device and send themselves once the network returns — including after you close the app.",
         "reach_title": "Who will see this marking",
         "reach_body": "Every marking has one reach, and the reaches nest inside one another. You can change it afterwards: tap the marking on the score and choose who should see it. The toggle beside the tools only decides where the NEXT one goes."
+      },
+      "tools": {
+        "title": "Tools",
+        "select_title": "Select several at once",
+        "select_body": "With Select, draw a loop round the markings or tap them one by one. Drag the frame to move them; on the card you can recolour them, duplicate them, copy them to another page of this piece or delete them. One Undo takes back each of these.",
+        "shapes_title": "Hairpins, slur and bracket",
+        "shapes_body": "Pick them under Shapes and drag from the start of the phrase to its end. Drawn left to right, the slur bows upward and the bracket's hooks point down, as above a stave; drawn right to left, both turn over.",
+        "box_title": "Rehearsal letters and bar numbers",
+        "box_body": "A “Boxed” note looks like a rehearsal letter or a bar number in the score: bold, in a rectangle. It prints the same way.",
+        "keys_title": "From the keyboard",
+        "keys_body": "Delete removes the selection and the arrow keys nudge it (further with Shift). Ctrl+Z or ⌘Z undoes, and with Shift redoes. Esc puts the tool down.",
+        "eraser_end_title": "The pen's eraser",
+        "eraser_end_body": "If your pen has an eraser on its other end, turn it over and rub a marking out. It goes without a change of tool."
       }
     },
     "open_tools": "Annotation tools",
@@ -123,7 +136,8 @@
       "delete": "Delete note",
       "inline": "On score",
       "pin": "Pin",
-      "text_label": "Note text"
+      "text_label": "Note text",
+      "box": "Boxed"
     },
     "panel": {
       "layers": "Layer visibility",
@@ -176,7 +190,7 @@
       "dynamics": "Dynamics",
       "label": "Symbol groups",
       "navigation": "Navigation",
-      "tempo": "Tempo"
+      "tempo": "Tempo & expression"
     },
     "stamps": {
       "accel": "Accelerando",
@@ -207,7 +221,19 @@
       "staccato": "Staccato",
       "subito": "Subito (suddenly)",
       "tenuto": "Tenuto",
-      "watch": "Watch the conductor"
+      "watch": "Watch the conductor",
+      "ppp": "Dynamic ppp",
+      "fff": "Dynamic fff",
+      "sfz": "Sforzando (sfz)",
+      "fp": "Forte-piano (fp)",
+      "fine": "Fine (the end)",
+      "to_coda": "To Coda (jump to the coda)",
+      "poco": "Poco a poco (little by little)",
+      "molto": "Molto (very)",
+      "bocca_chiusa": "Bocca chiusa (closed mouth)",
+      "sharp": "Sharp sign",
+      "flat": "Flat sign",
+      "natural": "Natural sign"
     },
     "tools": {
       "eraser": "Erase",
@@ -224,7 +250,11 @@
       "ellipse": "Oval or circle",
       "label": "Shape",
       "line": "Line",
-      "rect": "Rectangle or square"
+      "rect": "Rectangle or square",
+      "cresc": "Crescendo hairpin",
+      "dim": "Diminuendo hairpin",
+      "slur": "Slur or phrase mark",
+      "bracket": "Bracket"
     },
     "mark": {
       "audience": "Who sees this",
@@ -232,7 +262,15 @@
       "kind": {
         "freehand": "Ink",
         "highlight": "Highlight",
-        "stamp": "Symbol"
+        "stamp": "Symbol",
+        "ellipse": "Oval",
+        "rect": "Rectangle",
+        "line": "Line",
+        "arrow": "Arrow",
+        "cresc": "Crescendo",
+        "dim": "Diminuendo",
+        "slur": "Slur",
+        "bracket": "Bracket"
       }
     },
     "selection": {
@@ -247,6 +285,14 @@
       "delete": "Delete selected",
       "duplicate": "Duplicate",
       "paste": "Paste ({{n}})"
+    },
+    "open_tools_armed": "Annotation tools: {{tool}}",
+    "inks": {
+      "crimson": "Red",
+      "blue": "Blue",
+      "green": "Green",
+      "amber": "Amber",
+      "graphite": "Graphite"
     }
   },
   "archive": {

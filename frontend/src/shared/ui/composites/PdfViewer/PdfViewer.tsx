@@ -21,6 +21,7 @@ import { FileWarning, WifiOff } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 import { cn } from "@/shared/lib/utils";
+import { isEditableTarget } from "@/shared/lib/dom/editableTarget";
 import { useWakeLock } from "@/shared/lib/hardware/useWakeLock";
 import { Button } from "@/shared/ui/primitives/Button";
 import { Text } from "@/shared/ui/primitives/typography";
@@ -78,7 +79,7 @@ export const PdfViewer = ({
   renderPageOverlay,
   overlaySlot,
   onPageApiChange,
-  onEscapeKeyDown,
+  claimKey,
   reserveTopRight = false,
   canExport = true,
   fitScope,
@@ -507,13 +508,11 @@ export const PdfViewer = ({
     if (!blobUrl || isFetchError) return;
 
     const target = event.target as HTMLElement | null;
-    const inField =
-      target?.isContentEditable ||
-      ["INPUT", "TEXTAREA", "SELECT"].includes(target?.tagName || "");
+    const inField = isEditableTarget(event.target);
     const inPopper = Boolean(target?.closest?.("[data-radix-popper-content-wrapper]"));
 
     if (event.key === "Escape") {
-      if (onEscapeKeyDown?.(event)) return;
+      if (claimKey?.(event)) return;
       // A field in the viewer's chrome (the annotation drawer's search) keeps
       // Escape for itself: it gives up its focus, and the score stays open.
       // Capture phase + stopPropagation, so a wrapping Radix dialog never sees
@@ -537,8 +536,12 @@ export const PdfViewer = ({
 
     if (inField || inPopper) return;
 
+    // An overlay's own keys (annotation tools, undo, a selection's nudge) come
+    // before the page turns that share them.
+    if (claimKey?.(event)) return;
+
     // Plain keys only — ctrl/⌘/alt combos belong to the browser and to
-    // feature shortcuts (annotation undo/redo). Shift stays: Shift+Space.
+    // feature shortcuts. Shift stays: Shift+Space.
     if (event.ctrlKey || event.metaKey || event.altKey) return;
 
     const isSpace = event.key === " ";
@@ -561,7 +564,7 @@ export const PdfViewer = ({
     if (event.key === "-" || event.key === "_") { event.preventDefault(); changeZoom(-ZOOM_STEP); return; }
     if (event.key === "+" || event.key === "=") { event.preventDefault(); changeZoom(ZOOM_STEP); return; }
     if (event.key === "0") { event.preventDefault(); resetZoom(); }
-  }, [blobUrl, isFetchError, isImmersive, onEscapeKeyDown, exitImmersive, changePage, turnPage, numPages, changeZoom, resetZoom]);
+  }, [blobUrl, isFetchError, isImmersive, claimKey, exitImmersive, changePage, turnPage, numPages, changeZoom, resetZoom]);
 
   useEffect(() => {
     if (docKey) emitEvent({ type: "open", docKey });

@@ -35,6 +35,12 @@
         "ring-black/10"
       ]
     },
+    "features/annotations/components/AnnotationToolbar.tsx": {
+      "reason": "Paper-side, same exception as AnnotationOverlay: each symbol in the palette is previewed on a scrap of the white page, in the ink it will be placed in, because pencil on the dark chrome would not show. The chrome around the scraps rides the ladder.",
+      "allow": [
+        "bg-white/90"
+      ]
+    },
     "features/settings/components/AppTab.tsx": {
       "reason": "The install QR needs a light quiet zone or a scanner cannot read it.",
       "allow": [

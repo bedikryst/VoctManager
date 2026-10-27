@@ -394,7 +394,15 @@ _MAX_PATHS = 256
 _MAX_POINTS_PER_PATH = 8000
 _MAX_TEXT_LEN = 2000
 _MAX_STROKE_WIDTH = 0.2  # fraction of page width
-_NOTE_DISPLAY_MODES = ('pin', 'inline')
+# `box` is a rehearsal letter or a bar number: the words framed, as engraved.
+_NOTE_DISPLAY_MODES = ('pin', 'inline', 'box')
+# The shape tool's names for the ink it draws (`ShapeKind` in the editor's
+# `lib/shapes.ts`). Descriptive only: a card names a hairpin by it, and print
+# draws the paths and ignores it, so a name not on this list is dropped, never
+# refused.
+_INK_SHAPES = frozenset({
+    'ellipse', 'rect', 'line', 'arrow', 'cresc', 'dim', 'slur', 'bracket',
+})
 # The stored row as a whole, measured as compact JSON. The per-stroke caps above
 # still let one row reach megabytes; a pen line held for a minute is about a
 # tenth of this.
@@ -559,7 +567,11 @@ class AnnotationSerializer(serializers.ModelSerializer):
                 {'payload': _('Payload must be an object.')}
             )
         if atype == AnnotationType.FREEHAND:
-            return self._clean_strokes(payload, default_width=DEFAULT_PEN_WIDTH)
+            cleaned = self._clean_strokes(payload, default_width=DEFAULT_PEN_WIDTH)
+            shape = payload.get('shape')
+            if isinstance(shape, str) and shape in _INK_SHAPES:
+                cleaned['shape'] = shape
+            return cleaned
         if atype == AnnotationType.HIGHLIGHT:
             return self._clean_strokes(payload, default_width=DEFAULT_HIGHLIGHT_WIDTH)
         if atype == AnnotationType.COMMENT:

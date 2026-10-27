@@ -99,6 +99,19 @@
         "offline_body": "Vous pouvez préparer vos annotations sans connexion. Elles attendent sur l'appareil et s'envoient seules au retour du réseau — y compris après la fermeture de l'application.",
         "reach_title": "Qui verra cette annotation",
         "reach_body": "Chaque annotation a un seul niveau de visibilité, et ces niveaux s’emboîtent. Vous pouvez le changer après coup : touchez l’annotation sur la partition et choisissez qui doit la voir. Le sélecteur près des outils ne décide que de la PROCHAINE."
+      },
+      "tools": {
+        "title": "Outils",
+        "select_title": "Sélectionner plusieurs à la fois",
+        "select_body": "Avec l’outil Sélection, entourez les annotations d’une boucle ou touchez-les une à une. Faites glisser le cadre pour les déplacer ; sur la carte, vous pouvez changer leur couleur, les dupliquer, les copier sur une autre page de cette œuvre ou les supprimer. Un seul « Annuler » défait chacune de ces actions.",
+        "shapes_title": "Soufflets, liaison et crochet",
+        "shapes_body": "Choisissez-les dans Formes et faites glisser du début à la fin de la phrase. De gauche à droite, la liaison se courbe vers le haut et le crochet a ses extrémités vers le bas, comme au-dessus d’une portée ; de droite à gauche, les deux se retournent.",
+        "box_title": "Lettres de repère et numéros de mesure",
+        "box_body": "Une note « Encadré » ressemble à une lettre de repère ou à un numéro de mesure dans la partition : en gras, dans un rectangle. Elle s’imprime de la même façon.",
+        "keys_title": "Au clavier",
+        "keys_body": "Suppr efface la sélection et les flèches la déplacent (plus loin avec Maj). Ctrl+Z ou ⌘Z annule, et avec Maj rétablit. Échap repose l’outil.",
+        "eraser_end_title": "La gomme du stylet",
+        "eraser_end_body": "Si votre stylet a une gomme à l’autre bout, retournez-le et frottez l’annotation : elle disparaît sans changer d’outil."
       }
     },
     "open_tools": "Outils d'annotation",
@@ -123,7 +136,8 @@
       "delete": "Supprimer la note",
       "inline": "Sur la partition",
       "pin": "Épingle",
-      "text_label": "Texte de la note"
+      "text_label": "Texte de la note",
+      "box": "Encadré"
     },
     "panel": {
       "layers": "Visibilité des calques",
@@ -176,7 +190,7 @@
       "dynamics": "Nuances",
       "label": "Groupes de symboles",
       "navigation": "Navigation",
-      "tempo": "Tempo"
+      "tempo": "Tempo et expression"
     },
     "stamps": {
       "accel": "Accelerando",
@@ -207,7 +221,19 @@
       "staccato": "Staccato",
       "subito": "Subito (soudain)",
       "tenuto": "Tenuto",
-      "watch": "Regarder le chef"
+      "watch": "Regarder le chef",
+      "ppp": "Nuance ppp",
+      "fff": "Nuance fff",
+      "sfz": "Sforzando (sfz)",
+      "fp": "Forte-piano (fp)",
+      "fine": "Fine (fin)",
+      "to_coda": "To Coda (aller à la coda)",
+      "poco": "Poco a poco (peu à peu)",
+      "molto": "Molto (beaucoup)",
+      "bocca_chiusa": "Bocca chiusa (bouche fermée)",
+      "sharp": "Dièse",
+      "flat": "Bémol",
+      "natural": "Bécarre"
     },
     "tools": {
       "eraser": "Gomme",
@@ -224,7 +250,11 @@
       "ellipse": "Ovale ou cercle",
       "label": "Forme",
       "line": "Ligne",
-      "rect": "Rectangle ou carré"
+      "rect": "Rectangle ou carré",
+      "cresc": "Soufflet de crescendo",
+      "dim": "Soufflet de diminuendo",
+      "slur": "Liaison ou phrasé",
+      "bracket": "Crochet"
     },
     "mark": {
       "audience": "Qui le voit",
@@ -232,7 +262,15 @@
       "kind": {
         "freehand": "Trait",
         "highlight": "Surlignage",
-        "stamp": "Symbole"
+        "stamp": "Symbole",
+        "ellipse": "Ovale",
+        "rect": "Rectangle",
+        "line": "Ligne",
+        "arrow": "Flèche",
+        "cresc": "Crescendo",
+        "dim": "Diminuendo",
+        "slur": "Liaison",
+        "bracket": "Crochet"
       }
     },
     "selection": {
@@ -247,6 +285,14 @@
       "delete": "Supprimer la sélection",
       "duplicate": "Dupliquer",
       "paste": "Coller ({{n}})"
+    },
+    "open_tools_armed": "Outils d'annotation : {{tool}}",
+    "inks": {
+      "crimson": "Rouge",
+      "blue": "Bleu",
+      "green": "Vert",
+      "amber": "Ambre",
+      "graphite": "Graphite"
     }
   },
   "archive": {

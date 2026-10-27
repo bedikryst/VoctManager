@@ -1,8 +1,8 @@
 /**
  * @file AnnotationOverlay.tsx
  * @description The drawing surface stacked over a single rendered PDF page.
- * Renders highlighter + ink strokes, musical stamps, inline text and pinned
- * notes and — when editing is allowed — captures pen / highlighter / shape /
+ * Renders highlighter + ink strokes, musical stamps, inline and boxed words and
+ * pinned notes and — when editing is allowed — captures pen / highlighter / shape /
  * note / stamp / eraser / selection input and inline note editing. A shape is a
  * drag from corner to corner that lands as ordinary ink (see `lib/shapes`), so
  * from the moment it is placed it is a stroke like any other. All coordinates
@@ -27,7 +27,11 @@
  * that this reader may change, and a tap adds or removes one. The selection is
  * held by the page and dies with it. Its frame is dragged to move it, and its
  * card (`SelectionCard`) recolours, readdresses, duplicates, copies or deletes
- * it; each of those is one step of the undo history.
+ * it; each of those is one step of the undo history. The stand's keyboard
+ * reaches it through `selectionKeys`: the arrows nudge it, written once the
+ * keys rest, and Delete removes it.
+ *
+ * A pen's eraser end rubs out the marks it passes, whatever tool is in hand.
  * @module features/annotations/components
  */
 
@@ -52,9 +56,11 @@ import {
   strokeWidthPx,
 } from "./MarkLayer";
 import {
+  BOX_MARK_CLASS,
   INLINE_MARK_BACKGROUND,
   INLINE_MARK_CLASS,
   inlineFontSize,
+  isOnPageDisplay,
   NoteCard,
 } from "./NoteCard";
 import { SelectionCard, type PageFrame } from "./SelectionCard";
@@ -92,6 +98,7 @@ import {
   type MarkClipboard,
   type MarkEdit,
   type PageShift,
+  type SelectionKeys,
 } from "../lib/selection";
 import { pickRecentPhrases, QUICK_PHRASES } from "../lib/quickPhrases";
 import {
@@ -158,6 +165,12 @@ interface AnnotationOverlayProps {
   /** Several marks thrown away by one gesture. */
   onDeleteMany: (marks: readonly ScoreAnnotation[]) => void;
   onCopy: (marks: readonly ScoreAnnotation[], page: number) => void;
+  /**
+   * Where this page puts its selection within reach of the stand's keyboard
+   * while it holds one: Delete removes it, the arrows nudge it. The page that
+   * selected last holds the keys.
+   */
+  selectionKeys: React.RefObject<SelectionKeys | null>;
 }
 
 const clamp01 = (value: number): number => Math.min(1, Math.max(0, value));
@@ -170,6 +183,13 @@ const PLACED_TAP_REACH_PX = 4;
 /** Air between the selection's frame and the marks it holds. */
 const FRAME_PAD_PX = 6;
 
+/**
+ * How long the arrow keys must rest before a nudge is written. A held key
+ * repeats thirty times a second; each repeat writing every mark would be a
+ * request per mark per repeat, and an undo step for each.
+ */
+const NUDGE_SETTLE_MS = 400;
+
 /** A selection drag: the rows it picked up, and the shift it has reached. */
 interface SelectionDrag {
   pointerId: number;
@@ -179,6 +199,13 @@ interface SelectionDrag {
   rows: readonly ScoreAnnotation[];
   moved: boolean;
   shift: PageShift;
+}
+
+/** Arrow-key nudges not yet written: the rows they move, how far, and the rest timer. */
+interface SelectionNudge {
+  rows: readonly ScoreAnnotation[];
+  shift: PageShift;
+  timer: number;
 }
 
 export const AnnotationOverlay = ({
@@ -211,6 +238,7 @@ export const AnnotationOverlay = ({
   onDelete,
   onDeleteMany,
   onCopy,
+  selectionKeys,
 }: AnnotationOverlayProps): React.JSX.Element => {
   const { t } = useTranslation();
   const { width, height, pageNumber } = geometry;
@@ -277,6 +305,7 @@ export const AnnotationOverlay = ({
    */
   const [carried, setCarried] = useState<ReadonlyMap<string, ScoreAnnotation> | null>(null);
   const selectionDragRef = useRef<SelectionDrag | null>(null);
+  const nudgeRef = useRef<SelectionNudge | null>(null);
   const isCarried = (a: ScoreAnnotation): boolean => carried?.get(a.id) === a;
 
   const setCarry = (dx: number, dy: number): void => {
@@ -287,9 +316,10 @@ export const AnnotationOverlay = ({
 
   // Once no row is still the one the drag picked up, the drag is over for good:
   // a refused move puts back the very row it started from, and that row must
-  // then be drawn where it is, not where the hand left it.
+  // then be drawn where it is, not where the hand left it. A keyboard nudge
+  // carries the rows the same way.
   useLayoutEffect(() => {
-    if (!carried || selectionDragRef.current) return;
+    if (!carried || selectionDragRef.current || nudgeRef.current) return;
     const current = new Map(pageAnnotations.map((a) => [a.id, a]));
     for (const [id, row] of carried) {
       if (current.get(id) === row) return;
@@ -470,7 +500,7 @@ export const AnnotationOverlay = ({
       onCreate({
         page_number: pageNumber,
         annotation_type: "FH",
-        payload: { paths, width: strokeFraction("pen", size) },
+        payload: { paths, width: strokeFraction("pen", size), shape },
         color,
         layer_name: layer,
       });
@@ -518,6 +548,21 @@ export const AnnotationOverlay = ({
     [],
   );
 
+  /**
+   * The pen's eraser end rubbing over the page: every mark it passes that this
+   * reader may change goes, once, whatever tool is in hand. Remembered per rub,
+   * because the mark is still on the page until the erase renders, and an undo
+   * brings back the very same id.
+   */
+  const rubbedRef = useRef<Set<string>>(new Set());
+  const rubAt = (point: NormPoint, { first }: { first: boolean }): void => {
+    if (first) rubbedRef.current = new Set();
+    const hit = markAt(point);
+    if (!hit || rubbedRef.current.has(hit.id)) return;
+    rubbedRef.current.add(hit.id);
+    onDelete(hit.id);
+  };
+
   const { surfaceHandlers } = useOverlayInput({
     surfaceRef,
     tool,
@@ -526,6 +571,7 @@ export const AnnotationOverlay = ({
     onStroke: commitStroke,
     onPreview: previewStroke,
     onTap: placeAt,
+    onErase: rubAt,
     onTurnPage,
   });
 
@@ -608,10 +654,92 @@ export const AnnotationOverlay = ({
     setCarry(0, 0);
   };
 
+  /** Write a move of these rows as one step: one request per mark, one undo. */
+  const writeMove = (rows: readonly ScoreAnnotation[], shift: PageShift): void => {
+    onUpdateMany(
+      rows.map((a) => ({
+        id: a.id,
+        before: { payload: a.payload },
+        after: { payload: shiftedContent(a, shift).payload },
+      })),
+    );
+  };
+
+  /** Write the nudge the arrow keys have built up. The rows stay carried until
+   *  their moved selves arrive, as after a drag. */
+  const settleNudge = (): void => {
+    const nudge = nudgeRef.current;
+    if (!nudge) return;
+    nudgeRef.current = null;
+    window.clearTimeout(nudge.timer);
+    if (nudge.shift.dx === 0 && nudge.shift.dy === 0) {
+      cancelSelectionDrag();
+      return;
+    }
+    writeMove(nudge.rows, nudge.shift);
+  };
+
+  /** An arrow key: carry the selection a step, and write it once the keys rest. */
+  const nudgeSelection = (dxPx: number, dyPx: number): void => {
+    if (selection.length === 0 || selectionDragRef.current || width <= 0 || height <= 0) return;
+    let nudge = nudgeRef.current;
+    if (!nudge) {
+      nudge = { rows: selection, shift: { dx: 0, dy: 0 }, timer: 0 };
+      nudgeRef.current = nudge;
+      setCarry(0, 0);
+      setCarried(new Map(selection.map((a) => [a.id, a])));
+    }
+    window.clearTimeout(nudge.timer);
+    nudge.shift = clampShift(nudge.rows, {
+      dx: nudge.shift.dx + dxPx / width,
+      dy: nudge.shift.dy + dyPx / height,
+    });
+    setCarry(nudge.shift.dx * width, nudge.shift.dy * height);
+    nudge.timer = window.setTimeout(() => keyActions.current.settleNudge(), NUDGE_SETTLE_MS);
+  };
+
+  /** Delete or Backspace: a nudge still waiting is dropped with the marks. */
+  const removeSelection = (): void => {
+    const nudge = nudgeRef.current;
+    if (nudge) {
+      nudgeRef.current = null;
+      window.clearTimeout(nudge.timer);
+      cancelSelectionDrag();
+    }
+    deleteSelection();
+  };
+
+  // The keys reach this page's selection through a handle that never changes
+  // and reads the newest of these when a key lands.
+  const keyActions = useRef({ settleNudge, nudgeSelection, removeSelection });
+  keyActions.current = { settleNudge, nudgeSelection, removeSelection };
+  const hasSelection = selection.length > 0;
+  useEffect(() => {
+    if (!hasSelection) return;
+    const handle: SelectionKeys = {
+      remove: () => keyActions.current.removeSelection(),
+      nudge: (dx, dy) => keyActions.current.nudgeSelection(dx, dy),
+    };
+    selectionKeys.current = handle;
+    return () => {
+      if (selectionKeys.current === handle) selectionKeys.current = null;
+    };
+  }, [hasSelection, selectionKeys]);
+  // A nudge still settling when the page goes is written, not lost.
+  useEffect(() => {
+    const actions = keyActions;
+    return () => actions.current.settleNudge();
+  }, []);
+
   const beginSelectionDrag = (event: React.PointerEvent<HTMLDivElement>): void => {
     // Never the start of a loop, whatever happens next.
     event.stopPropagation();
     if (event.button !== 0) return;
+    if (nudgeRef.current) {
+      // The keys moved it last: write that first, and let this press go.
+      settleNudge();
+      return;
+    }
     if (selectionDragRef.current) {
       // A second pointer: a pinch is starting, not a drag.
       cancelSelectionDrag();
@@ -658,13 +786,7 @@ export const AnnotationOverlay = ({
       return;
     }
     // The rows stay carried until their moved selves arrive.
-    onUpdateMany(
-      drag.rows.map((a) => ({
-        id: a.id,
-        before: { payload: a.payload },
-        after: { payload: shiftedContent(a, drag.shift).payload },
-      })),
-    );
+    writeMove(drag.rows, drag.shift);
   };
 
   const recolorSelection = (next: string): void => {
@@ -977,7 +1099,8 @@ export const AnnotationOverlay = ({
       {pageAnnotations.filter(isComment).map((a) => {
         if (a.id === editingNote?.id) return null;
         const payload = a.payload;
-        const inline = payload.display === "inline";
+        const inline = isOnPageDisplay(payload.display);
+        const boxed = payload.display === "box";
         const isPrivate = isPrivateLayer(a);
         const modifiable = canModify(a);
         const draggable = arranging && modifiable;
@@ -1024,13 +1147,13 @@ export const AnnotationOverlay = ({
                 aria-label={payload.text}
                 aria-pressed={selected}
                 className={cn(
-                  INLINE_MARK_CLASS,
+                  boxed ? BOX_MARK_CLASS : INLINE_MARK_CLASS,
                   "relative transition-shadow",
                   // The ring colour is named, never left to default: this
                   // button sets `color` to the note's own ink below, and
                   // Tailwind's default ring is `currentColor` — so an unnamed
                   // ring would outline the mark in its own colour.
-                  selected ? "ring-2 ring-ethereal-gold" : "ring-black/10",
+                  selected ? "ring-2 ring-ethereal-gold" : !boxed && "ring-black/10",
                   erasing && modifiable && "cursor-pointer hover:ring-ethereal-crimson",
                   draggable && "touch-none",
                 )}
@@ -1216,7 +1339,9 @@ export const AnnotationOverlay = ({
               color={editingNote.color}
               phrases={quickPhrases}
               initialText={payload.text}
-              initialDisplay={payload.display === "inline" ? "inline" : "pin"}
+              initialDisplay={
+                payload.display === "inline" || payload.display === "box" ? payload.display : "pin"
+              }
               initialScale={clampMarkScale(payload.scale)}
               showDelete
               audience={{

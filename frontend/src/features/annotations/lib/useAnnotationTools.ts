@@ -51,6 +51,23 @@ export const TRACING_TOOLS: ReadonlySet<AnnotationTool> = new Set<AnnotationTool
   "select",
 ]);
 
+/**
+ * One plain key per tool, named in each tool's tooltip and in the guide. Taken
+ * from the drawing programs a conductor may already know (V move, L lasso,
+ * R rectangle, T text) and otherwise from the English name, because the Polish
+ * names collide in pairs (Symbol and Kształty, Zaznacz and Zakreślacz).
+ */
+export const TOOL_KEYS: Readonly<Record<AnnotationTool, string>> = {
+  pointer: "v",
+  select: "l",
+  pen: "p",
+  highlighter: "h",
+  shape: "r",
+  note: "t",
+  stamp: "s",
+  eraser: "e",
+};
+
 const TOOL_STORAGE_KEY = "voct.annotations.tool";
 const FINGER_DRAW_STORAGE_KEY = "voct.annotations.finger_draw";
 const TEXT_SCALE_STORAGE_KEY = "voct.annotations.text_scale";

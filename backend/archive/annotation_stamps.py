@@ -2,7 +2,8 @@
 @file annotation_stamps.py
 @description Server-side mirror of the musical stamp catalogue — the choir-markup
     vocabulary (breath and its refusal, articulation, dynamics, the navigation
-    signs, tempo words and the conductor's cues) that `payload.symbol` names. The
+    signs, tempo and expression words, and the conductor's cues with the
+    reminder accidentals) that `payload.symbol` names. The
     editor's catalogue lives in
     ``frontend/src/features/annotations/lib/stamps.tsx``; this is the same
     vocabulary in the language the print overlay speaks, so a symbol the choir
@@ -107,12 +108,16 @@ STAMPS: tuple[StampDef, ...] = (
         paths=("M2 3 L14 3",),
     ),
     # Dynamics.
+    _dynamic("ppp"),
     _dynamic("pp"),
     _dynamic("p"),
     _dynamic("mp"),
     _dynamic("mf"),
     _dynamic("f"),
     _dynamic("ff"),
+    _dynamic("fff"),
+    _dynamic("sfz"),
+    _dynamic("fp"),
     StampDef(
         id="cresc", size_fraction=0.06,
         view_box="0 0 48 16",
@@ -145,11 +150,16 @@ STAMPS: tuple[StampDef, ...] = (
     ),
     StampDef(id="dc", glyph="D.C.", size_fraction=0.028),
     StampDef(id="ds", glyph="D.S.", size_fraction=0.028),
-    # Tempo.
+    StampDef(id="fine", glyph="Fine", size_fraction=0.028),
+    StampDef(id="to_coda", glyph="To Coda", size_fraction=0.028),
+    # Tempo and expression.
     _word("rit", "rit."),
     _word("accel", "accel."),
     _word("atempo", "a tempo"),
     _word("subito", "sub."),
+    _word("poco", "poco a poco"),
+    _word("molto", "molto"),
+    _word("bocca_chiusa", "bocca chiusa"),
     # Cues.
     StampDef(
         id="watch", size_fraction=0.045,
@@ -169,6 +179,25 @@ STAMPS: tuple[StampDef, ...] = (
         id="lower", size_fraction=0.028,
         view_box="0 0 12 18",
         paths=("M6 1 L6 16", "M1.5 11 L6 16 L10.5 11"),
+    ),
+    # Reminder accidentals, drawn: the book's serif has no sharp, flat or natural.
+    StampDef(
+        id="sharp", size_fraction=0.016,
+        view_box="0 0 14 22",
+        paths=("M5 2.5 L5 20.5", "M9 1.5 L9 19.5", "M1.5 9 L12.5 6", "M1.5 16 L12.5 13"),
+    ),
+    StampDef(
+        id="flat", size_fraction=0.0115,
+        view_box="0 0 10 22",
+        paths=(
+            "M2.5 1.5 L2.5 20.5",
+            "M2.5 20.5 C 6.5 18, 9 15.5, 8 13 C 7 10.5, 4 11.5, 2.5 13.5",
+        ),
+    ),
+    StampDef(
+        id="natural", size_fraction=0.0125,
+        view_box="0 0 11 22",
+        paths=("M2.5 1.5 L2.5 16", "M8.5 6 L8.5 20.5", "M2.5 8.5 L8.5 6.5", "M2.5 16 L8.5 14"),
     ),
 )
 

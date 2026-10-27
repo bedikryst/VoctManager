@@ -169,14 +169,15 @@ export const SelectionCard = ({
             {t("annotations.ink_color", "Kolor")}
           </Eyebrow>
           <div className="flex items-center gap-1.5">
-            {inks.map(({ value }) => {
+            {inks.map(({ value, nameKey, fallback }) => {
               const active = commonInk !== null && sameInk(commonInk, value);
               return (
                 <button
                   key={value}
                   type="button"
                   onClick={() => onChangeColor(value)}
-                  aria-label={t("annotations.ink_color", "Kolor")}
+                  aria-label={t(nameKey, fallback)}
+                  title={t(nameKey, fallback)}
                   aria-pressed={active}
                   className={cn(
                     "h-6 w-6 rounded-full transition-transform hover:scale-110",

@@ -13,20 +13,30 @@
  * fact. That ladder is rendered from the same table the per-mark picker reads,
  * so the help and the control can never describe the layers differently.
  *
+ * Below the facts, the tools that do not explain themselves: the selection, the
+ * musical shapes and the boxed note. The keys are listed only where a keyboard
+ * is likely (a fine pointer is attached), and the pen's eraser end only on a
+ * device that has seen a pen; the keys are read from the toolbar's own table.
+ *
  * Rendered INSIDE the viewer's overlay rather than as a portalled sheet: the
  * PDF modal and BottomSheet both sit on `z-focus-trap`, and stacking a second
  * focus trap over a full-screen one is a fight with no winner.
  * @module features/annotations/components
  */
 
-import React, { useEffect } from "react";
+import React, { useEffect, useId, useRef } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   BookOpen,
   CloudOff,
+  Eraser,
   Eye,
   FolderClosed,
+  Hash,
+  Keyboard,
+  LassoSelect,
   Lock,
+  Music,
   UserCheck,
   Users,
   X,
@@ -34,10 +44,13 @@ import {
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
+import { useMediaQuery } from "@/shared/lib/dom/useMediaQuery";
 import { cn } from "@/shared/lib/utils";
-import { Caption, Heading, Text } from "@/shared/ui/primitives/typography";
+import { Caption, Eyebrow, Heading, Text } from "@/shared/ui/primitives/typography";
 
+import { TOOL_DEFS } from "./AnnotationToolbar";
 import { WRITE_LAYERS, writeLayerCopy } from "../lib/layers";
+import { TOOL_KEYS } from "../lib/useAnnotationTools";
 import type { ScoreAnnotatorMode } from "../useScoreAnnotator";
 
 interface AnnotationGuideProps {
@@ -50,6 +63,8 @@ interface AnnotationGuideProps {
    * describe something they will never see.
    */
   hasLeaderMarks: boolean;
+  /** Whether a pen has ever touched this device — the eraser end is a pen's. */
+  stylusSeen: boolean;
   onClose: () => void;
 }
 
@@ -64,16 +79,31 @@ interface GuideFact {
   accent?: boolean;
   /** Renders the three reaches under the body, widest first. */
   rungs?: boolean;
+  /** Renders each tool's key under the body. */
+  keys?: boolean;
 }
 
 export const AnnotationGuide = ({
   isOpen,
   mode,
   hasLeaderMarks,
+  stylusSeen,
   onClose,
 }: AnnotationGuideProps): React.JSX.Element => {
   const { t } = useTranslation();
   const layerCopy = writeLayerCopy(t);
+  const titleId = useId();
+  const panelRef = useRef<HTMLDivElement | null>(null);
+  const hasKeyboard = useMediaQuery("(any-pointer: fine)");
+
+  // The panel takes focus when it opens, so a keyboard or a screen reader is
+  // in it rather than behind it, and hands focus back to whatever opened it.
+  useEffect(() => {
+    if (!isOpen) return;
+    const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    panelRef.current?.focus({ preventScroll: true });
+    return () => opener?.focus({ preventScroll: true });
+  }, [isOpen]);
 
   // Escape belongs to the topmost thing on screen. The viewer is a Radix dialog
   // listening on the document, so without claiming the key here first, dismissing
@@ -213,6 +243,141 @@ export const AnnotationGuide = ({
           },
         ];
 
+  const toolFacts: GuideFact[] = [
+    {
+      id: "select",
+      icon: LassoSelect,
+      title: t("annotations.guide.tools.select_title", "Zaznacz kilka naraz"),
+      body: t(
+        "annotations.guide.tools.select_body",
+        "Narzędziem Zaznacz obwiedź oznaczenia pętlą albo dotykaj ich po kolei. Ramkę przeciągasz, żeby je przesunąć, a na karcie zmienisz im kolor, powielisz je, skopiujesz na inną stronę tego utworu albo usuniesz. Każdą z tych zmian cofa jedno „Cofnij”.",
+      ),
+    },
+    {
+      id: "shapes",
+      icon: Music,
+      title: t("annotations.guide.tools.shapes_title", "Widełki, łuk i klamra"),
+      body: t(
+        "annotations.guide.tools.shapes_body",
+        "Wybierz je w Kształtach i przeciągnij od początku do końca frazy. Od lewej do prawej łuk wygina się w górę, a klamra ma haczyki w dół, tak jak nad pięciolinią. Od prawej do lewej oba się odwracają.",
+      ),
+    },
+    {
+      id: "box",
+      icon: Hash,
+      title: t("annotations.guide.tools.box_title", "Litery orientacyjne i numery taktów"),
+      body: t(
+        "annotations.guide.tools.box_body",
+        "Notatka „W ramce” wygląda jak litera orientacyjna albo numer taktu w nutach: pogrubiona, w prostokącie. Tak samo się drukuje.",
+      ),
+    },
+    ...(hasKeyboard
+      ? [
+          {
+            id: "keys",
+            icon: Keyboard,
+            keys: true,
+            title: t("annotations.guide.tools.keys_title", "Z klawiatury"),
+            body: t(
+              "annotations.guide.tools.keys_body",
+              "Delete usuwa zaznaczenie, a strzałki je przesuwają (z Shiftem dalej). Ctrl+Z lub ⌘Z cofa, z Shiftem ponawia. Esc odkłada narzędzie.",
+            ),
+          },
+        ]
+      : []),
+    ...(stylusSeen
+      ? [
+          {
+            id: "eraser_end",
+            icon: Eraser,
+            title: t("annotations.guide.tools.eraser_end_title", "Gumka w rysiku"),
+            body: t(
+              "annotations.guide.tools.eraser_end_body",
+              "Jeśli Twój rysik ma gumkę na drugim końcu, odwróć go i potrzyj oznaczenie. Zniknie bez zmiany narzędzia.",
+            ),
+          },
+        ]
+      : []),
+  ];
+
+  const renderFact = (fact: GuideFact): React.JSX.Element => (
+    <li key={fact.id} className="flex items-start gap-3">
+      <span
+        className={
+          fact.accent
+            ? "mt-0.5 shrink-0 rounded-full bg-ethereal-gold/20 p-2 text-ethereal-gold"
+            : "mt-0.5 shrink-0 rounded-full bg-ink-on-inverse/5 p-2 text-ink-on-inverse/70"
+        }
+      >
+        <fact.icon size={16} aria-hidden="true" />
+      </span>
+      <div className="min-w-0">
+        <Text as="p" weight="semibold" color="ink-on-inverse">
+          {fact.title}
+        </Text>
+        <Text as="p" size="sm" color="ink-on-inverse-muted" className="mt-0.5">
+          {fact.body}
+        </Text>
+        {/* The ladder itself, widest reach first and read from the
+            same table as the picker on a mark — so the help cannot
+            drift from the control it describes. */}
+        {fact.rungs && (
+          <ul className="mt-2.5 flex flex-col gap-1.5">
+            {WRITE_LAYERS.map((rung) => {
+              const { Icon, short, hint, tone } = layerCopy[rung];
+              return (
+                <li
+                  key={rung}
+                  className="flex items-start gap-2.5 rounded-nested bg-ink-on-inverse/5 px-2.5 py-2"
+                >
+                  <span
+                    className={cn(
+                      "mt-px flex h-6 w-6 shrink-0 items-center justify-center rounded-full",
+                      tone,
+                    )}
+                  >
+                    <Icon size={13} aria-hidden="true" />
+                  </span>
+                  <span className="min-w-0">
+                    <Text
+                      as="span"
+                      size="sm"
+                      weight="semibold"
+                      color="ink-on-inverse"
+                      className="block"
+                    >
+                      {short}
+                    </Text>
+                    <Caption color="ink-on-inverse-muted" className="block">
+                      {hint}
+                    </Caption>
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+        {/* One key per tool, from the toolbar's own table. */}
+        {fact.keys && (
+          <ul className="mt-2.5 grid grid-cols-2 gap-x-4 gap-y-1.5">
+            {TOOL_DEFS.map(({ id, labelKey, fallback }) => (
+              <li key={id} className="flex items-center gap-2">
+                <Caption
+                  as="kbd"
+                  color="ink-on-inverse"
+                  className="flex h-6 min-w-6 items-center justify-center rounded-md border border-line-on-inverse bg-ink-on-inverse/10 px-1.5 font-semibold"
+                >
+                  {TOOL_KEYS[id].toUpperCase()}
+                </Caption>
+                <Caption color="ink-on-inverse-muted">{t(labelKey, fallback)}</Caption>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </li>
+  );
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -233,14 +398,17 @@ export const AnnotationGuide = ({
             animate={{ opacity: 1, transform: "translateY(0px)" }}
             exit={{ opacity: 0, transform: "translateY(16px)" }}
             transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+            ref={panelRef}
             role="dialog"
             aria-modal="false"
+            aria-labelledby={titleId}
+            tabIndex={-1}
             onClick={(event) => event.stopPropagation()}
-            className="no-scrollbar flex max-h-full w-full max-w-lg flex-col overflow-y-auto rounded-3xl border border-line-on-inverse bg-surface-inverse/95 shadow-[0_8px_32px_rgba(0,0,0,0.5)]"
+            className="no-scrollbar flex max-h-full w-full max-w-lg flex-col overflow-y-auto rounded-3xl border border-line-on-inverse bg-surface-inverse/95 shadow-[0_8px_32px_rgba(0,0,0,0.5)] outline-none"
           >
             <header className="flex items-start justify-between gap-3 border-b border-line-on-inverse px-5 py-4">
               <div className="min-w-0">
-                <Heading as="h2" size="md" color="ink-on-inverse">
+                <Heading as="h2" id={titleId} size="md" color="ink-on-inverse">
                   {mode === "conductor"
                     ? t("annotations.guide.conductor.title", "Trzy zasięgi oznaczeń")
                     : mode === "leader"
@@ -274,68 +442,15 @@ export const AnnotationGuide = ({
               </button>
             </header>
 
-            <ul className="flex flex-col gap-4 px-5 py-5">
-              {facts.map((fact) => (
-                <li key={fact.id} className="flex items-start gap-3">
-                  <span
-                    className={
-                      fact.accent
-                        ? "mt-0.5 shrink-0 rounded-full bg-ethereal-gold/20 p-2 text-ethereal-gold"
-                        : "mt-0.5 shrink-0 rounded-full bg-ink-on-inverse/5 p-2 text-ink-on-inverse/70"
-                    }
-                  >
-                    <fact.icon size={16} aria-hidden="true" />
-                  </span>
-                  <div className="min-w-0">
-                    <Text as="p" weight="semibold" color="ink-on-inverse">
-                      {fact.title}
-                    </Text>
-                    <Text as="p" size="sm" color="ink-on-inverse-muted" className="mt-0.5">
-                      {fact.body}
-                    </Text>
-                    {/* The ladder itself, widest reach first and read from the
-                        same table as the picker on a mark — so the help cannot
-                        drift from the control it describes. */}
-                    {fact.rungs && (
-                      <ul className="mt-2.5 flex flex-col gap-1.5">
-                        {WRITE_LAYERS.map((rung) => {
-                          const { Icon, short, hint, tone } = layerCopy[rung];
-                          return (
-                            <li
-                              key={rung}
-                              className="flex items-start gap-2.5 rounded-nested bg-ink-on-inverse/5 px-2.5 py-2"
-                            >
-                              <span
-                                className={cn(
-                                  "mt-px flex h-6 w-6 shrink-0 items-center justify-center rounded-full",
-                                  tone,
-                                )}
-                              >
-                                <Icon size={13} aria-hidden="true" />
-                              </span>
-                              <span className="min-w-0">
-                                <Text
-                                  as="span"
-                                  size="sm"
-                                  weight="semibold"
-                                  color="ink-on-inverse"
-                                  className="block"
-                                >
-                                  {short}
-                                </Text>
-                                <Caption color="ink-on-inverse-muted" className="block">
-                                  {hint}
-                                </Caption>
-                              </span>
-                            </li>
-                          );
-                        })}
-                      </ul>
-                    )}
-                  </div>
-                </li>
-              ))}
-            </ul>
+            <ul className="flex flex-col gap-4 px-5 py-5">{facts.map(renderFact)}</ul>
+
+            {/* The tools that do not explain themselves. */}
+            <section className="border-t border-line-on-inverse px-5 py-5">
+              <Eyebrow as="h3" color="ink-on-inverse-muted">
+                {t("annotations.guide.tools.title", "Narzędzia")}
+              </Eyebrow>
+              <ul className="mt-3 flex flex-col gap-4">{toolFacts.map(renderFact)}</ul>
+            </section>
           </motion.div>
         </motion.div>
       )}
