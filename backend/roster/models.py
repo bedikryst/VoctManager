@@ -24,7 +24,7 @@ from django.utils.translation import gettext_lazy as _
 from django.utils.translation import pgettext_lazy
 
 from core.constants import VoiceLine
-from core.models import SoftDeleteModel
+from core.models import SoftDeleteModel, UserProfile
 from core.voice_labels import (
     SECTION_LETTERS,
     canonical_section_letters,
@@ -269,6 +269,28 @@ class Artist(SoftDeleteModel):
         if user is None:
             return ""
         return getattr(getattr(user, "profile", None), "first_name_vocative", "") or ""
+
+    @property
+    def salutation(self) -> str:
+        """Grammatical form of address for greetings, owned by `UserProfile` and
+        read through for the same reason as the vocative. NEUTRAL, the default
+        that assumes nothing, for a detached row or an account without a profile."""
+        user = self.user
+        if user is None:
+            return UserProfile.Salutation.NEUTRAL
+        stored = getattr(getattr(user, "profile", None), "salutation", "")
+        return stored or UserProfile.Salutation.NEUTRAL
+
+    @property
+    def language(self) -> str:
+        """Language everything sent to this member is written in, owned by
+        `UserProfile`. The profile's own default for a detached row or an
+        account without a profile."""
+        user = self.user
+        if user is None:
+            return UserProfile.LanguageChoices.POLISH
+        stored = getattr(getattr(user, "profile", None), "language", "")
+        return stored or UserProfile.LanguageChoices.POLISH
 
 
 class Project(SoftDeleteModel):

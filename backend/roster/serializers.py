@@ -18,6 +18,7 @@ from rest_framework import serializers
 from rest_framework.validators import UniqueTogetherValidator
 
 from archive.services.voice_scope import voice_scope
+from core.models import UserProfile
 from core.permissions import user_is_manager
 from core.serializers import UserProfileSerializer
 from core.voice_labels import voice_line_label
@@ -160,6 +161,15 @@ class ArtistDetailedSerializer(ArtistBasicSerializer):
     first_name_vocative = serializers.CharField(
         required=False, allow_blank=True, max_length=150
     )
+    # The account profile's two communication preferences, read through like
+    # the vocative. The manager sets them until the member activates;
+    # `ArtistHRService.update_artist` routes the write and refuses a change after.
+    salutation = serializers.ChoiceField(
+        choices=UserProfile.Salutation.choices, required=False
+    )
+    language = serializers.ChoiceField(
+        choices=UserProfile.LanguageChoices.choices, required=False
+    )
 
     class Meta:
         model = Artist
@@ -173,6 +183,9 @@ class ArtistDetailedSerializer(ArtistBasicSerializer):
             # PII / contact
             'first_name', 'last_name', 'first_name_vocative',
             'email', 'phone_number', 'avatar_thumb_url',
+
+            # Communication preferences (account profile)
+            'salutation', 'language',
 
             # Musical capability
             'voice_type', 'voice_type_display', 'instrument',

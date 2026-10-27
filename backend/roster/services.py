@@ -88,6 +88,7 @@ from .dtos import (
 from .exceptions import (
     ActivatedArtistMergeException,
     ActivatedEmailChangeException,
+    ActivatedPreferenceChangeException,
     ActivationResendException,
     ArtistEmailConflictException,
     ArtistMergeException,
@@ -419,12 +420,14 @@ class ArtistHRService:
           their greetings and their e-mails keep the old name indefinitely.
         - **the vocative** belongs to the account's profile, for the same reason
           plus one more: managers and crew are greeted too and have no row here.
+        - **the language and the form of address** belong to the profile too, and
+          to the manager only until activation (`_rewrite_preferences`).
         - **the e-mail** is the sign-in identity, routed through `_rewrite_email`,
           which owns both sides and re-issues the dead invitation link.
 
-        The first two are applied to the account and then projected back onto this
-        row in the same transaction, so the archival snapshot this row exists to be
-        stays current right up to the moment the account is detached.
+        Names are applied to the account and then projected back onto this row in
+        the same transaction, so the archival snapshot this row exists to be stays
+        current right up to the moment the account is detached.
         """
         data = dict(changes)
         new_email = data.pop('email', None)
@@ -432,9 +435,15 @@ class ArtistHRService:
         names = {
             field: data.pop(field) for field in ('first_name', 'last_name') if field in data
         }
+        preferences = {
+            field: data.pop(field) for field in ('salutation', 'language') if field in data
+        }
 
         with transaction.atomic():
             ArtistHRService._rewrite_account_names(artist, names, vocative)
+            # Before the e-mail: an address correction re-issues the invitation,
+            # and it has to go out in the language set in the same edit.
+            ArtistHRService._rewrite_preferences(artist, preferences)
 
             if data:
                 for field, value in data.items():
@@ -490,6 +499,42 @@ class ArtistHRService:
             else:
                 profile.first_name_vocative = vocative
                 profile.save(update_fields=['first_name_vocative', 'updated_at'])
+
+    @staticmethod
+    def _rewrite_preferences(artist: Artist, preferences: Mapping[str, str]) -> None:
+        """Writes the manager's language and form of address to the account profile.
+
+        Until activation the manager is the only one who can set them: the
+        invitation goes out in that language, and a member added without an
+        address never signs in to choose. Past activation they are the member's
+        own, set in their settings, so a changed value is refused rather than
+        written over theirs. A value equal to the stored one is not a change and
+        passes. A detached row has no account and nothing addressed to it, so
+        there is nothing to write.
+        """
+        user = artist.user
+        if user is None or not preferences:
+            return
+
+        profile = getattr(user, 'profile', None)
+        changed = {
+            field: value
+            for field, value in preferences.items()
+            if profile is None or getattr(profile, field) != value
+        }
+        if not changed:
+            return
+        if user.has_usable_password():
+            raise ActivatedPreferenceChangeException()
+
+        # Through the instance attached to `user`, as with the vocative: the
+        # response reads these back off that cached profile.
+        if profile is None:
+            UserProfile.objects.create(user=user, **changed)
+            return
+        for field, value in changed.items():
+            setattr(profile, field, value)
+        profile.save(update_fields=[*changed, 'updated_at'])
 
     @staticmethod
     def _rewrite_email(artist: Artist, raw_email: str) -> None:

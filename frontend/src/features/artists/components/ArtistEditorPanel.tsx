@@ -9,7 +9,7 @@
  * @module features/artists/components/ArtistEditorPanel
  */
 
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
@@ -107,6 +107,10 @@ export default function ArtistEditorPanel({
   // server refuses to move it from here. Lock the field rather than let a
   // manager type a change that can only come back rejected.
   const isEmailLocked = Boolean(artist?.id && artist.account_activated);
+  // The language and the form of address pass to the member at the same
+  // moment: until then only the manager can set them, after it the member
+  // does, in their own settings.
+  const arePreferencesLocked = isEmailLocked;
   const isCreating = !artist?.id;
 
   const firstNameValue = useWatch({ control: form.control, name: "first_name" });
@@ -139,9 +143,15 @@ export default function ArtistEditorPanel({
     (field) => errors[field]?.message,
   ).find((message) => message !== undefined);
 
-  // Suggest the form of address from the voice part when creating (manager can
-  // still override). Never runs on edit — that field is disabled there.
   const { setValue, clearErrors, trigger } = form;
+
+  // While adding someone, choosing the voice suggests the form of address —
+  // until the manager picks one by hand. The field sits above the voice, so a
+  // choice made there first must survive the voice chosen after it.
+  const salutationPickedByHand = useRef(false);
+  useEffect(() => {
+    if (isOpen) salutationPickedByHand.current = false;
+  }, [isOpen]);
 
   /** Writes the four notes into the form, never the record. After a refused
    *  save the check reruns, so the problem line follows the notes. */
@@ -151,11 +161,6 @@ export default function ArtistEditorPanel({
     }
     if (isSubmitted) void trigger([...ASSESSED_FIELDS]);
   };
-  useEffect(() => {
-    if (!artist && voiceValue) {
-      setValue("salutation", voiceToSalutation(voiceValue));
-    }
-  }, [artist, voiceValue, setValue]);
 
   const handleCloseRequest = useCallback(() => {
     if (isDirty) {
@@ -409,7 +414,7 @@ export default function ArtistEditorPanel({
                               name={field.name}
                               value={field.value ?? ""}
                               onValueChange={field.onChange}
-                              disabled={isSubmitting || !!artist?.id}
+                              disabled={isSubmitting || arePreferencesLocked}
                               error={errorText(errors.language?.message)}
                               options={[
                                 { value: "pl", label: "Polski" },
@@ -419,7 +424,7 @@ export default function ArtistEditorPanel({
                             />
                           )}
                         />
-                        {artist?.id && (
+                        {arePreferencesLocked && (
                           <FieldHint>
                             {t(
                               "artists.editor.language_edit_disabled",
@@ -437,11 +442,14 @@ export default function ArtistEditorPanel({
                               label={t("common.salutation.label", "Forma zwrotu")}
                               name={field.name}
                               value={field.value ?? ""}
-                              onValueChange={field.onChange}
-                              disabled={isSubmitting || !!artist?.id}
-                              // Both prefs are disabled on edit, so a rejection
-                              // here is unreachable by the user and used to stop
-                              // the submit with nothing on screen to explain it.
+                              onValueChange={(value) => {
+                                salutationPickedByHand.current = true;
+                                field.onChange(value);
+                              }}
+                              disabled={isSubmitting || arePreferencesLocked}
+                              // Shown even while the field is locked: a
+                              // rejection here stops the submit, and nothing
+                              // else on screen would say why.
                               error={errorText(errors.salutation?.message)}
                               options={[
                                 {
@@ -461,15 +469,20 @@ export default function ArtistEditorPanel({
                           )}
                         />
                         <FieldHint>
-                          {artist?.id
+                          {arePreferencesLocked
                             ? t(
                                 "artists.editor.salutation_edit_disabled",
                                 "Forma zwrotu jest zarządzana przez członka w ustawieniach konta.",
                               )
-                            : t(
-                                "artists.editor.salutation_hint",
-                                "Tylko dla powitań. Podpowiadane na podstawie głosu.",
-                              )}
+                            : isCreating
+                              ? t(
+                                  "artists.editor.salutation_hint",
+                                  "Tylko do powitań (np. „Droga”, „Drogi”). Podpowiadana na podstawie głosu, dopóki nie wybierzesz jej ręcznie.",
+                                )
+                              : t(
+                                  "artists.editor.salutation_hint_pending",
+                                  "Tylko do powitań. Do aktywacji konta możesz ją tu poprawić, potem zmienia ją już tylko sam członek.",
+                                )}
                         </FieldHint>
                       </div>
                     </div>
@@ -488,7 +501,12 @@ export default function ArtistEditorPanel({
                           label={t("artists.editor.voice_type", "Rodzaj Głosu *")}
                           name={field.name}
                           value={field.value ?? ""}
-                          onValueChange={field.onChange}
+                          onValueChange={(value) => {
+                            field.onChange(value);
+                            if (isCreating && !salutationPickedByHand.current) {
+                              setValue("salutation", voiceToSalutation(value));
+                            }
+                          }}
                           // Until the dictionary lands the field says it is
                           // waiting, rather than offering one placeholder voice
                           // that would be submitted verbatim.

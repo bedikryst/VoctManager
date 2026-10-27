@@ -120,6 +120,11 @@ export interface Artist extends BaseModel {
   // nothing the app sends reaches them.
   email?: string;
   phone_number?: string;
+  // The account profile's form of address and message language. Manager-only
+  // (detailed serializer); the manager may change them until the member
+  // activates, after which they are set in the member's own settings.
+  salutation?: "F" | "M" | "N";
+  language?: "pl" | "en" | "fr";
   voice_type: VoiceType;
   voice_type_display?: string;
   /** What a player plays ("Organy"); always empty for a singer or conductor. */

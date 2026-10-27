@@ -19,7 +19,6 @@ import {
 } from "../api/artist.queries";
 import {
   artistFormSchema,
-  voiceToSalutation,
   type ArtistFormValues,
   type ArtistCreateDTO,
   type AssessedRangeValues,
@@ -31,6 +30,16 @@ const assessedValuesOf = (artist: Artist | null): AssessedRangeValues => ({
   assessed_tessitura_high: artist?.assessed_tessitura_high ?? null,
   assessed_extreme_low: artist?.assessed_extreme_low ?? null,
   assessed_extreme_high: artist?.assessed_extreme_high ?? null,
+});
+
+type PreferenceValues = Pick<ArtistFormValues, "language" | "salutation">;
+
+/** The member's stored language and form of address; the profile's own
+ *  defaults for someone new. The form opens on neutral rather than on what
+ *  the preselected voice would suggest: nobody has chosen that voice yet. */
+const preferencesOf = (artist: Artist | null): PreferenceValues => ({
+  language: artist?.language ?? "pl",
+  salutation: artist?.salutation ?? "N",
 });
 
 export const useArtistForm = (
@@ -74,10 +83,7 @@ export const useArtistForm = (
         ? String(artist.sight_reading_skill)
         : "",
       ...assessedValuesOf(artist),
-      language: "pl",
-      salutation: artist
-        ? "N"
-        : voiceToSalutation(voiceTypes.length > 0 ? voiceTypes[0].value : "SOP"),
+      ...preferencesOf(artist),
     },
   });
 
@@ -101,8 +107,7 @@ export const useArtistForm = (
           ? String(artist.sight_reading_skill)
           : "",
         ...assessedValuesOf(artist),
-        language: "pl",
-        salutation: "N",
+        ...preferencesOf(artist),
       });
     } else {
       form.reset({
@@ -117,10 +122,7 @@ export const useArtistForm = (
         is_active: true,
         sight_reading_skill: "",
         ...assessedValuesOf(null),
-        language: "pl",
-        salutation: voiceToSalutation(
-          voiceTypes.length > 0 ? voiceTypes[0].value : "SOP",
-        ),
+        ...preferencesOf(null),
       });
     }
   }, [isOpen, artist, defaultNames, voiceTypes, form]);
@@ -162,12 +164,18 @@ export const useArtistForm = (
 
     try {
       if (artist?.id) {
-        // language + salutation are profile-level prefs, set at creation and then
-        // owned by the member in their own settings — not editable per-artist here.
+        // The two profile preferences travel only when the manager changed
+        // what the form was opened with. Past activation the server refuses a
+        // change, and a value nobody touched must not overwrite the member's.
         const { language, salutation, ...updatePayload } = basePayload;
+        const shown = preferencesOf(artist);
         await updateMutation.mutateAsync({
           id: artist.id,
-          data: updatePayload,
+          data: {
+            ...updatePayload,
+            ...(language !== shown.language ? { language } : {}),
+            ...(salutation !== shown.salutation ? { salutation } : {}),
+          },
         });
 
         // Platform access is lifecycle state, not a profile field: only

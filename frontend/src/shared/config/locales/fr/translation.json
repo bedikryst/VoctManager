@@ -1236,7 +1236,8 @@
       "unsaved_title": "Vous avez des modifications non enregistrées !",
       "voice_type": "Type de voix *",
       "salutation_edit_disabled": "La forme d’adresse est gérée par le membre dans les réglages de son compte.",
-      "salutation_hint": "Pour les salutations uniquement (Chère/Cher…). Suggérée d’après le pupitre."
+      "salutation_hint": "Pour les salutations uniquement (Chère/Cher…). Suggérée d’après le pupitre, tant que vous ne la choisissez pas vous-même.",
+      "salutation_hint_pending": "Pour les salutations uniquement. Vous pouvez la corriger ici jusqu’à l’activation du compte ; ensuite, seul le membre peut la modifier."
     },
     "filters": {
       "all": "Tous",
@@ -3293,6 +3294,10 @@
       "artist_email_locked": {
         "title": "L'adresse de connexion appartient à son titulaire",
         "detail": "Ce membre a déjà activé son compte — lui seul peut modifier son adresse de connexion, dans ses paramètres."
+      },
+      "artist_preferences_locked": {
+        "title": "Ces réglages appartiennent au titulaire du compte",
+        "detail": "Ce membre a déjà activé son compte — lui seul peut désormais modifier sa langue et sa forme d’adresse, dans ses paramètres."
       },
       "expired_reset_link": {
         "title": "Lien expiré",

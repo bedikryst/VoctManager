@@ -8738,6 +8738,89 @@ class ArtistNameOwnershipTests(APITestCase):
         self.assertEqual(self.artist.first_name_vocative, "")
 
 
+class ArtistPreferenceOwnershipTests(APITestCase):
+    """
+    Cover for the language and the form of address on the roster form.
+
+    Both live on the account profile. The manager reads them back, so a wrong
+    choice made when adding somebody is visible, and corrects them until the
+    member activates; from then on they are the member's, and a roster edit
+    must not write over what the member chose in their own settings.
+    """
+
+    @patch(EMAIL_TASK)
+    def setUp(self, _enqueue_mock) -> None:
+        dto = ArtistCreateDTO(
+            first_name="Ada", last_name="Lovelace",
+            email="ada-prefs@example.com", voice_type="SOP",
+            language="pl", salutation="F",
+        )
+        with self.captureOnCommitCallbacks(execute=True):
+            self.artist = ArtistHRService.provision_artist(dto)
+        assert self.artist.user is not None
+        self.user = self.artist.user
+
+        User = get_user_model()
+        self.manager = User.objects.create_user(
+            username="mgr-prefs", email="mgr-prefs@test.pl", password="pw123456"
+        )
+        UserProfile.objects.create(user=self.manager, role=AppRole.MANAGER)
+        self.client.force_authenticate(user=self.manager)
+
+    def _url(self) -> str:
+        return f"/api/artists/{self.artist.id}/"
+
+    def _activate(self) -> None:
+        self.user.set_password("activated-pw")
+        self.user.save(update_fields=["password"])
+
+    def test_detail_reports_the_stored_preferences(self):
+        response = self.client.get(self._url())
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["salutation"], "F")
+        self.assertEqual(response.data["language"], "pl")
+
+    def test_manager_corrects_them_before_activation(self):
+        response = self.client.patch(
+            self._url(), {"salutation": "M", "language": "fr"}, format="json"
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["salutation"], "M")
+        self.assertEqual(response.data["language"], "fr")
+        self.user.profile.refresh_from_db()
+        self.assertEqual(self.user.profile.salutation, "M")
+        self.assertEqual(self.user.profile.language, "fr")
+
+    def test_an_activated_member_keeps_their_own_choice(self):
+        self._activate()
+
+        response = self.client.patch(self._url(), {"salutation": "N"}, format="json")
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data["error_code"], "artist_preferences_locked")
+        self.user.profile.refresh_from_db()
+        self.assertEqual(self.user.profile.salutation, "F")
+
+    def test_an_unchanged_value_is_not_a_change(self):
+        self._activate()
+
+        response = self.client.patch(
+            self._url(), {"salutation": "F", "last_name": "King"}, format="json"
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["last_name"], "King")
+
+    def test_an_unknown_form_of_address_is_refused(self):
+        response = self.client.patch(self._url(), {"salutation": "X"}, format="json")
+
+        self.assertEqual(response.status_code, 400)
+        self.user.profile.refresh_from_db()
+        self.assertEqual(self.user.profile.salutation, "F")
+
+
 class ArtistEmailChangeTests(APITestCase):
     """
     Cover for a roster e-mail edit reaching the sign-in identity. Writing the

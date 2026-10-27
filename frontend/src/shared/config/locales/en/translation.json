@@ -1227,7 +1227,8 @@
       "unsaved_title": "You have unsaved changes!",
       "voice_type": "Voice Type *",
       "salutation_edit_disabled": "The form of address is managed by the member in their account settings.",
-      "salutation_hint": "For greetings only (e.g. Dear…). Suggested from the voice part."
+      "salutation_hint": "For greetings only (e.g. Dear…). Suggested from the voice part until you pick one yourself.",
+      "salutation_hint_pending": "For greetings only. You can correct it here until the account is activated; after that only the member can change it."
     },
     "filters": {
       "all": "All",
@@ -3284,6 +3285,10 @@
       "artist_email_locked": {
         "title": "Sign-in address belongs to its owner",
         "detail": "This member has activated their account — only they can change the sign-in address, in their own settings."
+      },
+      "artist_preferences_locked": {
+        "title": "These settings belong to the account owner",
+        "detail": "This member has activated their account — only they can now change their language and form of address, in their own settings."
       },
       "expired_reset_link": {
         "title": "Link expired",

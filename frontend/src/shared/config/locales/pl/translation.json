@@ -1262,7 +1262,8 @@
       "unsaved_title": "Masz niezapisane zmiany!",
       "voice_type": "Rodzaj Głosu *",
       "salutation_edit_disabled": "Forma zwrotu jest zarządzana przez członka w ustawieniach konta.",
-      "salutation_hint": "Tylko dla powitań (np. „Droga”/„Drogi”). Podpowiadane na podstawie głosu."
+      "salutation_hint": "Tylko do powitań (np. „Droga”, „Drogi”). Podpowiadana na podstawie głosu, dopóki nie wybierzesz jej ręcznie.",
+      "salutation_hint_pending": "Tylko do powitań. Do aktywacji konta możesz ją tu poprawić, potem zmienia ją już tylko sam członek."
     },
     "filters": {
       "all": "Tutti",
@@ -3319,6 +3320,10 @@
       "artist_email_locked": {
         "title": "Adres logowania należy do właściciela konta",
         "detail": "Ten członek aktywował już konto — adres logowania może zmienić tylko on sam, w swoich ustawieniach."
+      },
+      "artist_preferences_locked": {
+        "title": "Ustawienia należą do właściciela konta",
+        "detail": "Ten członek aktywował już konto — język i formę zwrotu zmienia teraz tylko on sam, w swoich ustawieniach."
       },
       "expired_reset_link": {
         "title": "Link wygasł",

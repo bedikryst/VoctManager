@@ -45,6 +45,19 @@ class ActivatedEmailChangeException(RosterDomainException):
         "only be changed by them, in their own settings."
     )
 
+class ActivatedPreferenceChangeException(RosterDomainException):
+    """Raised when a manager tries to change the language or the form of address
+    of a member who has already activated. Until then the manager is the only one
+    who can set them: the invitation is written in that language, and a member
+    added without an address never signs in to choose. Past activation they are
+    the member's own choices, made in their settings, and a roster edit would
+    overwrite them without the member knowing."""
+    code = "artist_preferences_locked"
+    default_message = (
+        "This member has activated their account, so their language and form of "
+        "address can only be changed by them, in their own settings."
+    )
+
 class ArtistMergeException(RosterDomainException):
     """Raised when two roster rows cannot be folded into one.
 

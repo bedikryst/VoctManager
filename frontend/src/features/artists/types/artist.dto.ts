@@ -132,14 +132,15 @@ export const artistFormSchema = z
 export type ArtistFormValues = z.infer<typeof artistFormSchema>;
 
 /**
- * Smart default for the grammatical form of address, suggested from the voice
- * part (women's voices → feminine, men's → masculine, conductor → neutral).
- * Only a PREFILL — the manager confirms/corrects it; it is never inferred silently.
+ * The form of address a voice part suggests (women's voices → feminine, men's →
+ * masculine, conductor and players → neutral). Applied only when the manager
+ * picks the voice while adding someone, and only until they pick the form of
+ * address by hand; the form opens on neutral, which assumes nothing.
  */
 export const voiceToSalutation = (voice: string): "F" | "M" | "N" => {
   if (["SOP", "MEZ", "ALT"].includes(voice)) return "F";
   if (["TEN", "BAR", "BAS", "CT"].includes(voice)) return "M";
-  return "N"; // DIR / conductor / unknown
+  return "N";
 };
 
 export interface ArtistCreateDTO {
