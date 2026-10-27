@@ -795,8 +795,13 @@ export const useAnnotationMutations = (
       patchRows((rows) => insertMarks(rows, annotations));
       if (!retry) reportRejection(error);
     },
-    onSuccess: (_answer, { annotations }) => {
-      patchRows((rows) => withoutMarks(rows, new Set(annotations.map((row) => row.id))));
+    onSuccess: (answer, { annotations }) => {
+      // The answer names what the server erased. A mark it kept goes back on
+      // the page now: left off, it would look deleted until the next read
+      // brought it back, after the undo had already recorded it gone.
+      const wiped = new Set(answer.ids);
+      const kept = annotations.filter((row) => !wiped.has(row.id));
+      patchRows((rows) => insertMarks(withoutMarks(rows, wiped), kept));
       noteWrite(annotations);
     },
   });

@@ -1390,6 +1390,10 @@ class AnnotationViewSet(viewsets.ModelViewSet):
         mark the user wiped. Without `ids` the wipe stays unbounded, for clients
         that predate it.
 
+        A manager's `ids` also reach his OWN 'personal' marks: they are named
+        one by one (a selection's "Usuń"), so nothing is taken that he did not
+        point at. The unbounded wipe still leaves his pencil alone.
+
         Body: {edition, layer_name?, ids?}. Answers {deleted, ids}: how many
         marks went and which, so an undo can hand the same list to `restore`.
         """
@@ -1416,8 +1420,12 @@ class AnnotationViewSet(viewsets.ModelViewSet):
                 qs = qs.filter(layer_name=layer)
                 if layer == PERSONAL_ANNOTATION_LAYER:
                     qs = qs.filter(created_by=user)
-            else:
+            elif bound_ids is None:
                 qs = qs.exclude(layer_name=PERSONAL_ANNOTATION_LAYER)
+            else:
+                qs = qs.exclude(
+                    Q(layer_name=PERSONAL_ANNOTATION_LAYER) & ~Q(created_by=user),
+                )
         else:
             layers = self._writable_layers(edition)
             if layer:

@@ -130,6 +130,7 @@ const mount = (initial: Partial<Hand> = {}) => {
   const onTap = vi.fn<OverlayInputOptions["onTap"]>();
   const onErase = vi.fn<OverlayInputOptions["onErase"]>();
   const onTurnPage = vi.fn<OverlayInputOptions["onTurnPage"]>();
+  const onSecondTouch = vi.fn<OverlayInputOptions["onSecondTouch"]>();
   let renders = 0;
   const view = renderHook(
     ({ tool, fingerDraw, seekingTarget = false }: Hand) => {
@@ -145,6 +146,7 @@ const mount = (initial: Partial<Hand> = {}) => {
         onTap,
         onErase,
         onTurnPage,
+        onSecondTouch,
       });
     },
     { initialProps: { tool: "pen", fingerDraw: false, ...initial } },
@@ -154,6 +156,9 @@ const mount = (initial: Partial<Hand> = {}) => {
     kind: keyof OverlayInput["surfaceHandlers"],
     init: PointerInit,
   ): void => handlers()[kind](pointer(page.surface, init));
+  /** A press on the selection's frame, which keeps it from the surface. */
+  const pressHandle = (init: PointerInit): boolean =>
+    view.result.current.handleTouches.down(pointer(page.surface, init));
   /** The line in progress as the page would draw it now; null between lines. */
   const live = (): readonly NormPoint[] | null => onPreview.mock.lastCall?.[0] ?? null;
   return {
@@ -163,7 +168,9 @@ const mount = (initial: Partial<Hand> = {}) => {
     onTap,
     onErase,
     onTurnPage,
+    onSecondTouch,
     send,
+    pressHandle,
     live,
     renders: () => renders,
   };
@@ -435,6 +442,23 @@ describe("a pinch", () => {
       [0.2, 0.2],
       [0.4, 0.4],
     ], MOVED);
+  });
+
+  it("counts a finger on the selection's frame, so a pinch begun there is one", () => {
+    const { send, pressHandle, onSecondTouch, live } = mount({ tool: "select", fingerDraw: true });
+
+    expect(pressHandle({ id: 1, type: "touch", x: 40, y: 40 })).toBe(false);
+    act(() => send("onPointerDown", { id: 2, type: "touch", primary: false, x: 70, y: 70 }));
+    expect(onSecondTouch).toHaveBeenCalledOnce();
+    expect(live()).toBeNull();
+  });
+
+  it("tells the frame a press of its own is the pinch's second finger", () => {
+    const { send, pressHandle, onSecondTouch } = mount({ tool: "select", fingerDraw: true });
+
+    act(() => send("onPointerDown", { id: 1, type: "touch", x: 70, y: 70 }));
+    expect(onSecondTouch).not.toHaveBeenCalled();
+    expect(pressHandle({ id: 2, type: "touch", primary: false, x: 40, y: 40 })).toBe(true);
   });
 });
 

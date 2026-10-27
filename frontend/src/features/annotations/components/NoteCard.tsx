@@ -275,6 +275,13 @@ export const NoteCard = ({
     gapBelow,
   });
 
+  // A switch between display modes leaves focus on its button, and on the
+  // inline ↔ box switch the editor stays mounted and never takes it back by
+  // itself. The words take it, so the next key typed goes into the note.
+  useLayoutEffect(() => {
+    if (editorRef.current) focusAtEnd(editorRef.current);
+  }, [display]);
+
   const label = t("annotations.note.text_label", "Treść notatki");
   /** Write a phrase into the mark and hand the caret back after it. */
   const takePhrase = (phrase: string): void => {
@@ -357,6 +364,7 @@ export const NoteCard = ({
 
       <div
         ref={cardRef}
+        data-annotation-card
         // The card is CONTROLS, not the mark: it rides the ladder like the rest
         // of the chrome, so on a dark theme it reads as a panel over the page
         // rather than a second sheet of paper. Only the mark itself — drawn in

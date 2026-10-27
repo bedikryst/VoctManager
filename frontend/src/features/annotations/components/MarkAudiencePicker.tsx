@@ -10,6 +10,9 @@
  * that are not ("the choir but not the stand-in") name an audience the access
  * rules cannot produce.
  *
+ * A marking on the writer's own pencil (`personal`) stands on no rung, so none
+ * is lit for it and every rung is a deliberate change.
+ *
  * Widest reach first, so reading down the list is narrowing it. Only the chosen
  * rung spells out who that is: three permanent explanations would make the card
  * taller than the music it sits on, and the one that matters is the one in force.
@@ -28,13 +31,14 @@ import {
 } from "@/shared/ui/primitives/accents";
 import { Caption, Eyebrow, Text } from "@/shared/ui/primitives/typography";
 
-import { asWriteLayer, writeLayerCopy, type WriteLayer } from "../lib/layers";
+import { isWriteLayer, writeLayerCopy, type WriteLayer } from "../lib/layers";
 import type { AnnotationLayer } from "../types/annotations.dto";
 
 interface MarkAudiencePickerProps {
   /**
-   * The reach this marking has now. Null for a selection whose marks reach
-   * different audiences: no rung is lit, and a tap gives them all one.
+   * The reach this marking has now, as `layerOf` folds it. Null for a selection
+   * whose marks reach different audiences: no rung is lit, and a tap gives them
+   * all one. `personal` lights no rung either (see below).
    */
   current: AnnotationLayer | null;
   /** The reaches it may be moved between; fewer than two renders nothing. */
@@ -51,9 +55,11 @@ export const MarkAudiencePicker = ({
   if (options.length < 2) return null;
 
   const copy = writeLayerCopy(t);
-  // A marking carrying an ad-hoc layer name folds onto the choir's rung, the
-  // same way it is drawn — so a single marking always has exactly one rung lit.
-  const active = current === null ? null : asWriteLayer(current);
+  // A rung is lit only when the marking stands on it. The writer's own pencil
+  // is no rung: folded onto the choir's, "Chór" would read as the reach already
+  // in force, and the tap on it that publishes a private mark would look like
+  // a tap that changes nothing.
+  const active = current !== null && isWriteLayer(current) ? current : null;
 
   return (
     <div className="flex flex-col gap-1">
@@ -104,12 +110,14 @@ export const MarkAudiencePicker = ({
       {/* The consequence of the rung in force, in words. A picker whose labels
           are three nouns asks the reader to already know the access model. */}
       <Caption color="muted" className="block">
-        {active === null
+        {current === null
           ? t(
               "annotations.selection.audience_mixed",
               "Zaznaczone oznaczenia mają różnych odbiorców. Wybierz, kto ma widzieć wszystkie.",
             )
-          : copy[active].hint}
+          : active === null
+            ? t("annotations.layer.personal_hint", "Widoczne tylko dla Ciebie")
+            : copy[active].hint}
       </Caption>
     </div>
   );

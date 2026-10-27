@@ -95,6 +95,11 @@ describe("a selection moved", () => {
     expect(duplicateShift([row("edge", { annotation_type: "ST", payload: { x: 1, y: 1, symbol: "breath" } })], 1000, 1000))
       .toEqual({ dx: 0, dy: 0 });
   });
+
+  it("fans repeated pastes out a step each, until the page edge holds them", () => {
+    expect(duplicateShift([slur], 1000, 1000, 3).dx).toBeCloseTo(0.048);
+    expect(duplicateShift([slur], 1000, 1000, 20).dx).toBeCloseTo(0.1);
+  });
 });
 
 describe("a copy", () => {

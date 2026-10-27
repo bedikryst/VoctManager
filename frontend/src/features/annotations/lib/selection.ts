@@ -46,8 +46,18 @@ export interface MarkClipboard {
 export interface SelectionKeys {
   /** Delete or Backspace: the marks go, as one step. */
   remove: () => void;
-  /** An arrow key: move the marks by this many screen pixels. */
-  nudge: (dxPx: number, dyPx: number) => void;
+  /**
+   * An arrow key: move the marks by this many screen pixels. False when the
+   * arrows are not the selection's (performance mode, where they come from a
+   * page-turn pedal): the key then goes on to turn the page.
+   */
+  nudge: (dxPx: number, dyPx: number) => boolean;
+  /**
+   * Write now a nudge still waiting for the keys to rest. Undo, redo and a
+   * change of tool call this first, so the nudge is a step of its own before
+   * they act, never one pushed after them.
+   */
+  flush: () => void;
 }
 
 /** A shift of the page, 0..1 per axis. */
@@ -150,15 +160,18 @@ export const copyDrafts = (
   }));
 
 /**
- * Where duplicates go: a step down and to the right, so they read at once as a
- * second set, and held on the page when the originals touch its edge.
+ * Where duplicates go: `steps` steps down and to the right, so they read at
+ * once as a second set, and held on the page when the originals touch its
+ * edge. A paste repeated on one page takes a step more each time, so the
+ * copies fan out instead of landing on top of each other.
  */
 export const duplicateShift = (
   annotations: readonly ScoreAnnotation[],
   width: number,
   height: number,
+  steps = 1,
 ): PageShift =>
   clampShift(annotations, {
-    dx: width > 0 ? DUPLICATE_OFFSET_PX / width : 0,
-    dy: height > 0 ? DUPLICATE_OFFSET_PX / height : 0,
+    dx: width > 0 ? (DUPLICATE_OFFSET_PX * steps) / width : 0,
+    dy: height > 0 ? (DUPLICATE_OFFSET_PX * steps) / height : 0,
   });

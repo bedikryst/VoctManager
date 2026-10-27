@@ -9,9 +9,12 @@
  * props, which change between strokes and never during one. The path's `d` is
  * never a prop, so a render of this layer cannot paint over the frame loop.
  *
- * A finished line is cleared on the next frame rather than at once: by then
- * the mark that replaces it has been drawn by the page, and the reader never
- * sees the gap between the two.
+ * A line that became a mark is HELD as drawn until the page draws that mark
+ * (`hold`, then `release` from a layout effect, before paint), because the mark
+ * arrives a beat later than the lift: the write goes through the query cache
+ * asynchronously. Clearing on the next frame left a blink between the two. A
+ * held line the page never draws (its layer hidden) goes after `HOLD_LIMIT_MS`.
+ * A line that became nothing (a pinch took it, a loop) clears on the next frame.
  * @module features/annotations/components
  */
 
@@ -24,7 +27,14 @@ import { buildShapePaths, type ShapeKind } from "../lib/shapes";
 export interface LiveStrokeHandle {
   /** The line as it stands now, or null once it has ended. */
   draw: (points: readonly NormPoint[] | null) => void;
+  /** The line just finished, kept on screen as drawn until `release`. */
+  hold: (points: readonly NormPoint[]) => void;
+  /** Takes a held line off at once: the page has drawn its mark. */
+  release: () => void;
 }
+
+/** How long a held line waits for its mark before it goes anyway. */
+const HOLD_LIMIT_MS = 1000;
 
 /** How the line in progress is drawn: ink, a marker, or a selection's loop. */
 export type LiveStrokeLook = "ink" | "highlight" | "loop";
@@ -74,6 +84,7 @@ export const LiveStrokeLayer = ({
   const pathRef = useRef<SVGPathElement | null>(null);
   const pending = useRef<readonly NormPoint[] | null>(null);
   const frame = useRef<number | null>(null);
+  const holdTimer = useRef<number | null>(null);
   // Read when the frame paints: the page may be resized between two samples.
   const geometry = useRef<Geometry>({ width, height, look, shape });
   geometry.current = { width, height, look, shape };
@@ -84,23 +95,47 @@ export const LiveStrokeLayer = ({
     pathRef.current?.setAttribute("d", points ? livePath(points, geometry.current) : "");
   }, []);
 
+  const stopWaiting = useCallback(() => {
+    if (frame.current !== null) window.cancelAnimationFrame(frame.current);
+    frame.current = null;
+    if (holdTimer.current !== null) window.clearTimeout(holdTimer.current);
+    holdTimer.current = null;
+  }, []);
+
   useImperativeHandle(
     ref,
     () => ({
       draw: (points) => {
+        if (holdTimer.current !== null) {
+          window.clearTimeout(holdTimer.current);
+          holdTimer.current = null;
+        }
         pending.current = points;
         if (frame.current === null) frame.current = window.requestAnimationFrame(paint);
       },
+      hold: (points) => {
+        stopWaiting();
+        pending.current = points;
+        paint();
+        holdTimer.current = window.setTimeout(() => {
+          holdTimer.current = null;
+          pending.current = null;
+          paint();
+        }, HOLD_LIMIT_MS);
+      },
+      release: () => {
+        // Only a line still held: once the next one has begun, it is that
+        // line on screen, not this one.
+        if (holdTimer.current === null) return;
+        stopWaiting();
+        pending.current = null;
+        paint();
+      },
     }),
-    [paint],
+    [paint, stopWaiting],
   );
 
-  useEffect(
-    () => () => {
-      if (frame.current !== null) window.cancelAnimationFrame(frame.current);
-    },
-    [],
-  );
+  useEffect(() => stopWaiting, [stopWaiting]);
 
   const loop = look === "loop";
   const highlight = look === "highlight";

@@ -273,6 +273,25 @@ class ClearTests(_MarksFixture):
         self.assertTrue(self._live(shared))
         self.assertTrue(self._live(leader))
 
+    def test_a_managers_ids_take_his_own_pencil_and_no_one_elses(self) -> None:
+        own = self._mark(self.manager, PERSONAL_ANNOTATION_LAYER)
+        cue = self._mark(self.manager, CONDUCTOR_ANNOTATION_LAYER)
+        singers = self._mark(self.singer_user, PERSONAL_ANNOTATION_LAYER)
+        self.client.force_authenticate(self.manager)
+
+        response = self._clear(ids=[str(own.pk), str(cue.pk), str(singers.pk)])
+        self.assertEqual(response.json()["deleted"], 2)
+        self.assertEqual(set(response.json()["ids"]), {str(own.pk), str(cue.pk)})
+        self.assertFalse(self._live(own))
+        self.assertTrue(self._live(singers))
+
+    def test_a_managers_unbounded_clear_leaves_his_pencil(self) -> None:
+        own = self._mark(self.manager, PERSONAL_ANNOTATION_LAYER)
+        cue = self._mark(self.manager, CONDUCTOR_ANNOTATION_LAYER)
+        self.client.force_authenticate(self.manager)
+        self.assertEqual(self._clear().json()["ids"], [str(cue.pk)])
+        self.assertTrue(self._live(own))
+
     def test_a_reader_who_lost_the_music_clears_nothing(self) -> None:
         mark = self._mark(self.singer_user, PERSONAL_ANNOTATION_LAYER)
         self.project.status = Project.Status.COMPLETED

@@ -31,7 +31,10 @@
  * duplicates, copies or deletes it; each of those is one step of the undo
  * history. The stand's keyboard
  * reaches it through `selectionKeys`: the arrows nudge it, written once the
- * keys rest, and Delete removes it.
+ * keys rest (or at once, before an undo, a redo or a change of tool), and
+ * Delete removes it. In performance mode the arrows are a pedal's page turns
+ * and leave it alone. A drag of the frame ends with the selection: a tool put
+ * down mid-drag drops the carry rather than leaving the marks drawn displaced.
  *
  * A pen's eraser end rubs out the marks it passes, whatever tool is in hand.
  *
@@ -47,7 +50,7 @@ import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 
 import { cn } from "@/shared/lib/utils";
-import type { PdfPageGeometry } from "@/shared/ui/composites/PdfViewer";
+import { usePdfImmersive, type PdfPageGeometry } from "@/shared/ui/composites/PdfViewer";
 import { Text } from "@/shared/ui/primitives/typography";
 
 import { LiveStrokeLayer, type LiveStrokeHandle } from "./LiveStrokeLayer";
@@ -174,7 +177,8 @@ interface AnnotationOverlayProps {
   /** Marks copied from this edition and not yet pasted; null when there are none. */
   clipboard: MarkClipboard | null;
   onSelect: (id: string | null) => void;
-  onCreate: (draft: MarkDraft) => void;
+  /** A new mark; answers its id, or null when nothing was written. */
+  onCreate: (draft: MarkDraft) => string | null;
   /** Several new marks from one gesture; answers their ids. */
   onCreateMany: (drafts: readonly MarkDraft[]) => string[];
   onUpdate: (id: string, after: AnnotationPatch, before: AnnotationPatch) => void;
@@ -284,6 +288,7 @@ export const AnnotationOverlay = ({
   displayPage,
 }: AnnotationOverlayProps): React.JSX.Element => {
   const { t } = useTranslation();
+  const immersive = usePdfImmersive();
   const { width, height, pageNumber } = geometry;
   const surfaceRef = useRef<HTMLDivElement | null>(null);
   const liveRef = useRef<LiveStrokeHandle | null>(null);
@@ -300,6 +305,16 @@ export const AnnotationOverlay = ({
     [annotations, pageNumber, visibleLayers],
   );
   const pageStrokes = useMemo(() => pageAnnotations.filter(isStroke), [pageAnnotations]);
+
+  // The line just lifted stays on screen as drawn until its mark is among the
+  // marks (see `LiveStrokeLayer`); then it goes in the same commit, before paint.
+  const heldStrokeRef = useRef<string | null>(null);
+  useLayoutEffect(() => {
+    const held = heldStrokeRef.current;
+    if (held === null || !annotations.some((a) => a.id === held)) return;
+    heldStrokeRef.current = null;
+    liveRef.current?.release();
+  }, [annotations]);
 
   // A shape's "stroke" holds two points only — where the drag began and where
   // it is now — and the figure is rebuilt from them on every move.
@@ -351,11 +366,24 @@ export const AnnotationOverlay = ({
   const nudgeRef = useRef<SelectionNudge | null>(null);
   const isCarried = (a: ScoreAnnotation): boolean => carried?.get(a.id) === a;
 
-  const setCarry = (dx: number, dy: number): void => {
+  const setCarry = useCallback((dx: number, dy: number): void => {
     const style = surfaceRef.current?.style;
     style?.setProperty(CARRY_X, `${dx}px`);
     style?.setProperty(CARRY_Y, `${dy}px`);
-  };
+  }, []);
+
+  const cancelSelectionDrag = useCallback((): void => {
+    selectionDragRef.current = null;
+    setCarried(null);
+    setCarry(0, 0);
+  }, [setCarry]);
+
+  // A drag outlives its selection only by accident: Escape or a tool key puts
+  // the tool down and the frame goes with it, so the lift never reaches it.
+  // The marks are put back where they are.
+  useLayoutEffect(() => {
+    if (selection.length === 0 && selectionDragRef.current) cancelSelectionDrag();
+  }, [cancelSelectionDrag, selection]);
 
   // Once no row is still the one the drag picked up, the drag is over for good:
   // a refused move puts back the very row it started from, and that row must
@@ -550,29 +578,38 @@ export const AnnotationOverlay = ({
       return;
     }
     if (points.length < 2) return;
+    const holdUntilDrawn = (id: string | null): void => {
+      if (id === null) return;
+      heldStrokeRef.current = id;
+      liveRef.current?.hold(points);
+    };
     if (shaping) {
       const paths = buildShapePaths(shape, points[0], points[1], width, height);
       if (paths.length === 0) return;
-      onCreate({
-        page_number: pageNumber,
-        annotation_type: "FH",
-        payload: { paths, width: strokeFraction("pen", size), shape },
-        color,
-        layer_name: layer,
-      });
+      holdUntilDrawn(
+        onCreate({
+          page_number: pageNumber,
+          annotation_type: "FH",
+          payload: { paths, width: strokeFraction("pen", size), shape },
+          color,
+          layer_name: layer,
+        }),
+      );
       return;
     }
     const isHl = tool === "highlighter";
-    onCreate({
-      page_number: pageNumber,
-      annotation_type: isHl ? "HL" : "FH",
-      payload: {
-        paths: [points],
-        width: strokeFraction(isHl ? "highlighter" : "pen", size),
-      },
-      color,
-      layer_name: layer,
-    });
+    holdUntilDrawn(
+      onCreate({
+        page_number: pageNumber,
+        annotation_type: isHl ? "HL" : "FH",
+        payload: {
+          paths: [points],
+          width: strokeFraction(isHl ? "highlighter" : "pen", size),
+        },
+        color,
+        layer_name: layer,
+      }),
+    );
   };
 
   /** A tap on blank paper with a note, a stamp or a link in hand. */
@@ -621,7 +658,7 @@ export const AnnotationOverlay = ({
     onDelete(hit.id);
   };
 
-  const { surfaceHandlers } = useOverlayInput({
+  const { surfaceHandlers, handleTouches } = useOverlayInput({
     surfaceRef,
     tool,
     canEdit,
@@ -632,6 +669,10 @@ export const AnnotationOverlay = ({
     onTap: placeAt,
     onErase: rubAt,
     onTurnPage,
+    // A pinch's second finger: the frame's drag lets go of the marks.
+    onSecondTouch: () => {
+      if (selectionDragRef.current) cancelSelectionDrag();
+    },
   });
 
   // --- The selection's frame: drag to move, tap to add or remove ---------------
@@ -707,12 +748,6 @@ export const AnnotationOverlay = ({
   }, [height, selection, width]);
   const frameCarried = carried !== null && selection.some(isCarried);
 
-  const cancelSelectionDrag = (): void => {
-    selectionDragRef.current = null;
-    setCarried(null);
-    setCarry(0, 0);
-  };
-
   /** Write a move of these rows as one step: one request per mark, one undo. */
   const writeMove = (rows: readonly ScoreAnnotation[], shift: PageShift): void => {
     onUpdateMany(
@@ -738,9 +773,15 @@ export const AnnotationOverlay = ({
     writeMove(nudge.rows, nudge.shift);
   };
 
-  /** An arrow key: carry the selection a step, and write it once the keys rest. */
-  const nudgeSelection = (dxPx: number, dyPx: number): void => {
-    if (selection.length === 0 || selectionDragRef.current || width <= 0 || height <= 0) return;
+  /**
+   * An arrow key: carry the selection a step, and write it once the keys rest.
+   * False in performance mode, where arrows come from a page-turn pedal.
+   */
+  const nudgeSelection = (dxPx: number, dyPx: number): boolean => {
+    if (immersive) return false;
+    if (selection.length === 0 || selectionDragRef.current || width <= 0 || height <= 0) {
+      return true;
+    }
     let nudge = nudgeRef.current;
     if (!nudge) {
       nudge = { rows: selection, shift: { dx: 0, dy: 0 }, timer: 0 };
@@ -755,6 +796,7 @@ export const AnnotationOverlay = ({
     });
     setCarry(nudge.shift.dx * width, nudge.shift.dy * height);
     nudge.timer = window.setTimeout(() => keyActions.current.settleNudge(), NUDGE_SETTLE_MS);
+    return true;
   };
 
   /** Delete or Backspace: a nudge still waiting is dropped with the marks. */
@@ -775,31 +817,34 @@ export const AnnotationOverlay = ({
   const hasSelection = selection.length > 0;
   useEffect(() => {
     if (!hasSelection) return;
+    const actions = keyActions;
     const handle: SelectionKeys = {
-      remove: () => keyActions.current.removeSelection(),
-      nudge: (dx, dy) => keyActions.current.nudgeSelection(dx, dy),
+      remove: () => actions.current.removeSelection(),
+      nudge: (dx, dy) => actions.current.nudgeSelection(dx, dy),
+      flush: () => actions.current.settleNudge(),
     };
     selectionKeys.current = handle;
     return () => {
       if (selectionKeys.current === handle) selectionKeys.current = null;
+      // The handle that flushes a waiting nudge goes with the selection, so
+      // the nudge is written now: an undo pressed in the next moment would
+      // otherwise take back the step before it. So does a page that goes.
+      actions.current.settleNudge();
     };
   }, [hasSelection, selectionKeys]);
-  // A nudge still settling when the page goes is written, not lost.
-  useEffect(() => {
-    const actions = keyActions;
-    return () => actions.current.settleNudge();
-  }, []);
 
   const beginSelectionDrag = (event: React.PointerEvent<HTMLDivElement>): void => {
-    // Never the start of a loop, whatever happens next.
+    // Never the start of a loop, whatever happens next — so the surface never
+    // sees this press, and the touch is counted for it.
     event.stopPropagation();
     if (event.button !== 0) return;
+    const othersDown = handleTouches.down(event);
     if (nudgeRef.current) {
       // The keys moved it last: write that first, and let this press go.
       settleNudge();
       return;
     }
-    if (selectionDragRef.current) {
+    if (othersDown || selectionDragRef.current) {
       // A second pointer: a pinch is starting, not a drag.
       cancelSelectionDrag();
       return;
@@ -832,6 +877,7 @@ export const AnnotationOverlay = ({
   };
 
   const endSelectionDrag = (event: React.PointerEvent<HTMLDivElement>): void => {
+    handleTouches.up(event.pointerId);
     const drag = selectionDragRef.current;
     if (!drag || drag.pointerId !== event.pointerId) return;
     selectionDragRef.current = null;
@@ -913,13 +959,24 @@ export const AnnotationOverlay = ({
     setPicked(NO_IDS);
   };
 
-  /** Copies land where they were on their own page; on that same page, a step off. */
+  /** How many times this page has pasted the clipboard it holds now. */
+  const pastesRef = useRef<{ clipboard: MarkClipboard | null; count: number }>({
+    clipboard: null,
+    count: 0,
+  });
+
+  /**
+   * Copies land where they were on their own page; on that same page, a step
+   * off. Each further paste of the same copies here lands a step further, so a
+   * second set is never hidden under the first.
+   */
   const pasteHere = (): void => {
     if (!clipboard) return;
+    const earlier = pastesRef.current.clipboard === clipboard ? pastesRef.current.count : 0;
+    pastesRef.current = { clipboard, count: earlier + 1 };
+    const steps = earlier + (clipboard.page === pageNumber ? 1 : 0);
     const shift =
-      clipboard.page === pageNumber
-        ? duplicateShift(clipboard.marks, width, height)
-        : { dx: 0, dy: 0 };
+      steps > 0 ? duplicateShift(clipboard.marks, width, height, steps) : { dx: 0, dy: 0 };
     setPicked(new Set(onCreateMany(copyDrafts(clipboard.marks, pageNumber, shift, inks))));
   };
 
@@ -1405,7 +1462,16 @@ export const AnnotationOverlay = ({
           onPointerDown={beginSelectionDrag}
           onPointerMove={moveSelectionDrag}
           onPointerUp={endSelectionDrag}
-          onPointerCancel={cancelSelectionDrag}
+          onPointerCancel={(event) => {
+            handleTouches.up(event.pointerId);
+            cancelSelectionDrag();
+          }}
+          // Capture taken away without a lift leaves no pointerup to end the
+          // drag. After a normal lift the drag is already over and this does
+          // nothing. (A frame unmounted mid-drag is the effect's above.)
+          onLostPointerCapture={(event) => {
+            if (selectionDragRef.current?.pointerId === event.pointerId) cancelSelectionDrag();
+          }}
         />
       )}
 

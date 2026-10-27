@@ -11,14 +11,16 @@
  *
  * The audience ladder is offered for a selection that keeps to one audience,
  * or that holds no private marks. A loop drawn round a busy passage also takes
- * the conductor's private remarks lying in it, and a single tap that sent the
- * whole selection to the choir would publish them — the one gesture the
- * per-mark ladder exists to keep out of reach. Such a selection says why the
- * ladder is missing instead.
+ * the conductor's private remarks lying in it, and the assistant's replies on
+ * the leader's layer, and a single tap that sent the whole selection to the
+ * choir would publish them — the one gesture the per-mark ladder exists to
+ * keep out of reach. Such a selection says why the ladder is missing instead.
+ * A selection of the writer's own pencil marks gets the ladder with no rung
+ * lit (see `MarkAudiencePicker`).
  * @module features/annotations/components
  */
 
-import React, { useRef } from "react";
+import React, { useId, useRef } from "react";
 import { Copy, CopyPlus, Trash2, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
@@ -29,9 +31,9 @@ import { MarkAudiencePicker } from "./MarkAudiencePicker";
 import { MarkVoicePicker, type MarkVoices } from "./MarkVoicePicker";
 import { placeNoteCard } from "../lib/noteCardPlacement";
 import { useMeasuredHeight } from "../lib/useMeasuredHeight";
-import { layerOf, type WriteLayer } from "../lib/layers";
+import { isPrivateLayer, layerOf, type WriteLayer } from "../lib/layers";
 import type { AnnotationInk } from "../lib/palette";
-import type { AnnotationLayer, ScoreAnnotation } from "../types/annotations.dto";
+import type { ScoreAnnotation } from "../types/annotations.dto";
 
 /** A box on the page, in rendered pixels. */
 export interface PageFrame {
@@ -72,9 +74,6 @@ const CARD_ESTIMATED_HEIGHT = 170;
 /** Air between the selection and the card talking about it. */
 const CARD_CLEARANCE = 12;
 
-/** Layers addressed to nobody but their writer, or to one stand-in. */
-const PRIVATE_LAYERS: ReadonlySet<AnnotationLayer> = new Set(["conductor", "personal"]);
-
 const sameInk = (a: string, b: string): boolean => a.toLowerCase() === b.toLowerCase();
 
 export const SelectionCard = ({
@@ -95,11 +94,11 @@ export const SelectionCard = ({
   const { t } = useTranslation();
   const cardRef = useRef<HTMLDivElement | null>(null);
   const cardHeight = useMeasuredHeight(cardRef, CARD_ESTIMATED_HEIGHT);
+  const countId = useId();
 
   const layers = new Set(marks.map(layerOf));
   const commonLayer = layers.size === 1 ? [...layers][0] : null;
-  const mixesPrivate =
-    layers.size > 1 && [...layers].some((layer) => PRIVATE_LAYERS.has(layer));
+  const mixesPrivate = layers.size > 1 && marks.some(isPrivateLayer);
   const commonInk = marks.every((mark) => sameInk(mark.color, marks[0].color))
     ? marks[0].color
     : null;
@@ -125,6 +124,11 @@ export const SelectionCard = ({
     <div
       ref={cardRef}
       data-annotation-mark
+      data-annotation-card
+      // Named by its count, so a screen reader entering the card hears what it
+      // acts on before the controls.
+      role="dialog"
+      aria-labelledby={countId}
       // Controls, not a marking: this rides the theme ladder like the rest of
       // the chrome, while the ink it acts on stays paper-side on a white page.
       className="absolute z-20 -translate-x-1/2 rounded-nested border border-hairline-strong bg-ethereal-marble p-2.5 shadow-glass-ethereal"
@@ -139,7 +143,7 @@ export const SelectionCard = ({
       onPointerDown={(event) => event.stopPropagation()}
     >
       <div className="flex items-center justify-between gap-2">
-        <Eyebrow as="p" size="overline-sm" color="muted">
+        <Eyebrow as="p" id={countId} size="overline-sm" color="muted">
           {t("annotations.selection.count", { count: marks.length })}
         </Eyebrow>
         <button

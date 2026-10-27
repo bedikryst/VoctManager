@@ -16,7 +16,8 @@
  *
  * Every key reaches it through the viewer (`claimKey`), ahead of the viewer's
  * own shortcuts: the arrows that turn a page also nudge a selection, and the
- * selection has to win.
+ * selection has to win — except in performance mode, where they come from a
+ * page-turn pedal.
  *
  * Selection and the active tool are bounded here rather than in the overlay,
  * because the reader can leave either one from outside the drawing surface:
@@ -74,6 +75,7 @@ import { TOOL_KEYS, useAnnotationTools, type AnnotationTool } from "./lib/useAnn
 import { useAnnotationHistory } from "./lib/useAnnotationHistory";
 import { useCanDraw } from "./lib/useCanDraw";
 import { useIncomingMarks } from "./lib/useIncomingMarks";
+import { CARD_ATTR } from "./lib/useOverlayInput";
 import { bookFocusY, bookPageFor, type ScoreBook } from "./lib/scoreBook";
 import { layerOf, WRITE_LAYERS, type WriteLayer } from "./lib/layers";
 import {
@@ -250,7 +252,18 @@ export const useScoreAnnotator = ({
     isConductor,
   );
   const activeTool = tools.tool;
-  const setActiveTool = tools.setTool;
+  const setTool = tools.setTool;
+  /** The page that selected last puts its selection here (see `SelectionKeys`). */
+  const selectionKeysRef = useRef<SelectionKeys | null>(null);
+  // Every change of tool, from the bar, a key or Escape. A nudge still
+  // settling is written first, for the reason `undo` gives.
+  const setActiveTool = useCallback(
+    (next: AnnotationTool) => {
+      selectionKeysRef.current?.flush();
+      setTool(next);
+    },
+    [setTool],
+  );
   // Which of the VISIBLE marks this user may erase / edit. The server already
   // scopes reads (a chorister receives shared + own personal; a manager never
   // receives other users' personal), so layer membership is enough — except
@@ -374,6 +387,13 @@ export const useScoreAnnotator = ({
     stylusSeen: tools.stylusSeen,
   });
 
+  // Coerce precision tools back to browse while the page is too small to write
+  // on — a pen held over a thumbnail would only produce marks nobody can place.
+  const effectiveTool = useMemo(() => {
+    if (!canDraw && PRECISION_TOOLS.has(activeTool)) return "pointer" as const;
+    return activeTool;
+  }, [activeTool, canDraw]);
+
   // Every gesture goes through the history, so each step holds the write it
   // made and an undo can act on what that write came to.
   const history = useAnnotationHistory({
@@ -385,8 +405,8 @@ export const useScoreAnnotator = ({
     reviveMarks,
   });
   const {
-    undo,
-    redo,
+    undo: undoStep,
+    redo: redoStep,
     create: recordCreate,
     update: recordUpdate,
     erase: recordErase,
@@ -394,6 +414,22 @@ export const useScoreAnnotator = ({
     group: recordGroup,
     reset: resetHistory,
   } = history;
+
+  /**
+   * Undo and redo write a nudge still settling first (`SelectionKeys.flush`),
+   * so it is a step of its own beneath them. Written after them, it would land
+   * late: an undo would take back the step before the nudge, and the nudge,
+   * holding rows read before the undo, would write to a mark the undo had just
+   * removed and empty the redo stack.
+   */
+  const undo = useCallback(() => {
+    selectionKeysRef.current?.flush();
+    undoStep();
+  }, [undoStep]);
+  const redo = useCallback(() => {
+    selectionKeysRef.current?.flush();
+    redoStep();
+  }, [redoStep]);
 
   // Reset transient editor state when a different score opens — in the binder
   // that is also a page turn into the next piece, which is right: a note
@@ -416,18 +452,19 @@ export const useScoreAnnotator = ({
   nextVoicesRef.current = tools.voices;
 
   const handleCreate = useCallback(
-    (partial: MarkDraft) => {
+    (partial: MarkDraft): string | null => {
       const voices = nextVoicesRef.current;
       const addressed =
         mode !== "personal" && voices.length > 0 && layerTakesVoices(partial.layer_name)
           ? { ...partial, voices: [...voices] }
           : partial;
       const draft = draftAnnotation(addressed);
-      if (!draft) return;
+      if (!draft) return null;
       // Recorded from the DRAFT, not the server's reply: the id is minted here
       // and never changes, so undo works on a mark the network has not yet
       // heard of — which is the whole point of drawing in a basement.
       recordCreate(draft);
+      return draft.id;
     },
     [draftAnnotation, mode, recordCreate],
   );
@@ -513,9 +550,9 @@ export const useScoreAnnotator = ({
   const handleSelectMark = useCallback(
     (id: string) => {
       setSelectedId(id);
-      tools.setTool("pointer");
+      setActiveTool("pointer");
     },
-    [tools],
+    [setActiveTool],
   );
 
   /**
@@ -548,6 +585,10 @@ export const useScoreAnnotator = ({
    * The drawer's search field is the exception: the reader is talking to the
    * field, not to the pen or the selection. The key goes on to the viewer,
    * which takes the field's focus away and keeps the score open.
+   *
+   * A pen held while the page is too small to write on is shown as browse,
+   * and Escape reads it as browse: the first Escape is the one the reader
+   * sees, never one spent on a tool the bar does not show.
    */
   const claimEscape = useCallback(
     (event: KeyboardEvent): boolean => {
@@ -561,18 +602,15 @@ export const useScoreAnnotator = ({
       if (target?.closest(`[${ANNOTATION_DRAWER_ATTR}]`) && isEditableTarget(target)) {
         return false;
       }
-      if (selectedId === null && activeTool === "pointer") return false;
+      if (selectedId === null && effectiveTool === "pointer") return false;
       if (selectedId !== null) setSelectedId(null);
       if (activeTool !== "pointer") setActiveTool("pointer");
       event.preventDefault();
       event.stopPropagation();
       return true;
     },
-    [activeTool, guideOpen, selectedId, setActiveTool],
+    [activeTool, effectiveTool, guideOpen, selectedId, setActiveTool],
   );
-
-  /** The page that selected last puts its selection here (see `SelectionKeys`). */
-  const selectionKeysRef = useRef<SelectionKeys | null>(null);
 
   /**
    * Every key the viewer offers, before its own shortcuts take it. Besides
@@ -590,9 +628,11 @@ export const useScoreAnnotator = ({
    *   open. A note is left out: its card is a composer, and a Backspace there
    *   that missed the words would throw the note away.
    * - The arrows nudge a selection a pixel, ten with Shift; with nothing
-   *   selected they stay the viewer's page turns.
+   *   selected, and always in performance mode (where a page-turn pedal sends
+   *   them), they stay the viewer's page turns.
    * - One letter arms each tool (`TOOL_KEYS`). A pen tool on a page too small
    *   to write on is not armed: the toolbar holds its slot dimmed there too.
+   *   Nor is any tool while a card beside a mark holds focus (`CARD_ATTR`).
    */
   const claimKey = useCallback(
     (event: KeyboardEvent): boolean => {
@@ -632,11 +672,14 @@ export const useScoreAnnotator = ({
       if (direction) {
         if (!selection) return false;
         const step = event.shiftKey ? NUDGE_LONG_STEP_PX : NUDGE_STEP_PX;
+        if (!selection.nudge(direction[0] * step, direction[1] * step)) return false;
         event.preventDefault();
-        selection.nudge(direction[0] * step, direction[1] * step);
         return true;
       }
       if (event.shiftKey || event.repeat) return false;
+      if (event.target instanceof Element && event.target.closest(`[${CARD_ATTR}]`)) {
+        return false;
+      }
       const next = TOOL_BY_KEY.get(event.key.toLowerCase());
       if (!next || (!canDraw && PRECISION_TOOLS.has(next))) return false;
       event.preventDefault();
@@ -805,7 +848,6 @@ export const useScoreAnnotator = ({
   }, [activeTool, linkStart, setActiveTool]);
 
   const {
-    tool,
     color,
     size,
     textScale,
@@ -817,13 +859,6 @@ export const useScoreAnnotator = ({
     visibleLayers,
     fingerDraw,
   } = tools;
-
-  // Coerce precision tools back to browse while the page is too small to write
-  // on — a pen held over a thumbnail would only produce marks nobody can place.
-  const effectiveTool = useMemo(() => {
-    if (!canDraw && PRECISION_TOOLS.has(tool)) return "pointer" as const;
-    return tool;
-  }, [canDraw, tool]);
 
   // Read through a ref: the overlay only needs it at the moment a finger lifts,
   // and the page handle is replaced whenever the page or its width moves — a
@@ -1011,6 +1046,7 @@ export const useScoreAnnotator = ({
     toolbarSlot: activeEditionId ? (
       <AnnotationToolbar
         {...tools}
+        setTool={setActiveTool}
         mode={mode}
         delegateLayers={reach}
         canDraw={canDraw}

@@ -16,7 +16,9 @@
  * the glass, so it neither pans, nor draws, nor ends the line — and a pen that
  * lands on a touch's line takes the page from it: that touch was the palm,
  * which got there first. The selection's loop is traced, and routed, exactly
- * like ink.
+ * like ink. The selection's frame keeps its presses from the surface, so it
+ * counts its touches here (`handleTouches`): a pinch begun with one finger on
+ * it is still a pinch, and the frame lets go of the marks (`onSecondTouch`).
  *
  * Only the primary button writes or places. A right-click is nothing, and a
  * pen's eraser end is not ink: pressed to the page it erases what it passes
@@ -51,7 +53,7 @@
  */
 
 import type React from "react";
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 
 import {
   resolveSwipeTurn,
@@ -66,6 +68,14 @@ import { DRAWING_TOOLS, type AnnotationTool } from "./useAnnotationTools";
 /** Marks the wrappers around placed marks, so the surface below never treats a
  *  press on an existing mark as a request to place a new one. */
 export const MARK_ATTR = "data-annotation-mark";
+
+/**
+ * Marks the cards beside a mark (its actions, a note's composer, a
+ * selection's), so the stand's tool keys leave alone a card that holds focus:
+ * a letter typed after tapping one of its buttons would put the tool down, and
+ * the composer or the selection with it.
+ */
+export const CARD_ATTR = "data-annotation-card";
 
 /** Pointer drift beyond this many px stops being a tap and becomes a drag/pan. */
 const MOUSE_SLOP_PX = 6;
@@ -161,9 +171,27 @@ export interface OverlayInputOptions {
    * hand would be stranded on one page.
    */
   onTurnPage: (delta: 1 | -1) => void;
+  /**
+   * A touch landed on the page while another was already down, on the surface
+   * or on a handle counted through `handleTouches`: a pinch is starting, and
+   * whatever a finger was carrying is let go.
+   */
+  onSecondTouch: () => void;
 }
 
 type SurfacePointerHandler = (event: React.PointerEvent<HTMLElement>) => void;
+
+/**
+ * Touches on a handle that keeps its presses from the surface (the selection's
+ * frame), counted with the surface's own, so a pinch begun on the handle is
+ * seen as one by both.
+ */
+export interface HandleTouches {
+  /** A press on the handle. True when another touch was already down. */
+  down: (event: React.PointerEvent<Element>) => boolean;
+  /** A lift or a cancel on the handle. */
+  up: (pointerId: number) => void;
+}
 
 export interface OverlayInput {
   surfaceHandlers: {
@@ -173,6 +201,7 @@ export interface OverlayInput {
     onPointerCancel: SurfacePointerHandler;
     onPointerLeave: SurfacePointerHandler;
   };
+  handleTouches: HandleTouches;
 }
 
 interface LiveStroke {
@@ -250,6 +279,7 @@ export const useOverlayInput = ({
   onTap,
   onErase,
   onTurnPage,
+  onSecondTouch,
 }: OverlayInputOptions): OverlayInput => {
   const { drawing, shaping, selecting, placing, stamping, linking } = surfaceModes(
     tool,
@@ -268,8 +298,32 @@ export const useOverlayInput = ({
 
   // Read at the moment a gesture ends, never as a reason to rebuild the
   // handlers: the overlay hands in fresh closures on every render.
-  const callbacks = useRef({ onStroke, onPreview, onTap, onErase, onTurnPage });
-  callbacks.current = { onStroke, onPreview, onTap, onErase, onTurnPage };
+  const callbacks = useRef({ onStroke, onPreview, onTap, onErase, onTurnPage, onSecondTouch });
+  callbacks.current = { onStroke, onPreview, onTap, onErase, onTurnPage, onSecondTouch };
+
+  /**
+   * Counts a press if it is a touch, and answers whether another touch was
+   * already down. A primary touch is the first of its interaction anywhere on
+   * the screen, so nothing counted before it can still be down: an id whose
+   * lift landed elsewhere is forgotten there.
+   */
+  const countTouch = useCallback((event: React.PointerEvent<Element>): boolean => {
+    if (event.pointerType !== "touch") return false;
+    if (event.isPrimary) touchesRef.current.clear();
+    const othersDown = touchesRef.current.size > 0;
+    touchesRef.current.add(event.pointerId);
+    return othersDown;
+  }, []);
+
+  const handleTouches = useMemo<HandleTouches>(
+    () => ({
+      down: countTouch,
+      up: (pointerId) => {
+        touchesRef.current.delete(pointerId);
+      },
+    }),
+    [countTouch],
+  );
 
   const toNorm = useCallback(
     (clientX: number, clientY: number): NormPoint => {
@@ -323,15 +377,9 @@ export const useOverlayInput = ({
       }
       if (event.button !== 0) return;
       // Counted whatever the tool, so the count is true when a pen tool is
-      // picked up mid-gesture. A primary touch is the first of its interaction
-      // anywhere on the screen, so nothing counted before it can still be down:
-      // an id whose lift landed elsewhere is forgotten there.
-      let othersDown = false;
-      if (event.pointerType === "touch") {
-        if (event.isPrimary) touchesRef.current.clear();
-        othersDown = touchesRef.current.size > 0;
-        touchesRef.current.add(event.pointerId);
-      }
+      // picked up mid-gesture.
+      const othersDown = countTouch(event);
+      if (othersDown) callbacks.current.onSecondTouch();
       if (tracing) {
         const live = strokeRef.current;
         if (live && live.pointerId !== event.pointerId) {
@@ -399,7 +447,7 @@ export const useOverlayInput = ({
         };
       }
     },
-    [abandonStroke, canEdit, fingerDraw, surfaceRef, tapping, toNorm, tracing, turnsFromTaps],
+    [abandonStroke, canEdit, countTouch, fingerDraw, surfaceRef, tapping, toNorm, tracing, turnsFromTaps],
   );
 
   const onPointerMove = useCallback<SurfacePointerHandler>(
@@ -543,5 +591,6 @@ export const useOverlayInput = ({
       onPointerCancel,
       onPointerLeave,
     },
+    handleTouches,
   };
 };

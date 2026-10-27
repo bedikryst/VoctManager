@@ -149,6 +149,7 @@ export const MarkActionCard = ({
     <div
       ref={cardRef}
       data-annotation-mark
+      data-annotation-card
       // Controls, not a marking: this rides the theme ladder like the rest of
       // the chrome, while the ink it acts on stays paper-side on a white page.
       className="absolute z-20 -translate-x-1/2 rounded-nested border border-hairline-strong bg-ethereal-marble p-2.5 shadow-glass-ethereal"
