@@ -37,7 +37,6 @@ const videoUrl = (file: string): string => `/video/${file}`;
 export const VIDEO_ASSETS = {
   "landing-modal": videoUrl("landing-modal.21190d6c.mp4"),
   "landing-wolanie": videoUrl("landing-wolanie.be25b0a5.mp4"),
-  "landing-aeternam": videoUrl("landing-aeternam.66c36c7c.mp4"),
 } as const;
 
 export type VideoAssetKey = keyof typeof VIDEO_ASSETS;
@@ -57,7 +56,6 @@ export type VideoAssetKey = keyof typeof VIDEO_ASSETS;
 export const VIDEO_ASSETS_AV1: Record<VideoAssetKey, string> = {
   "landing-modal": videoUrl("landing-modal.av1.be588b53.mp4"),
   "landing-wolanie": videoUrl("landing-wolanie.av1.573bcfb9.mp4"),
-  "landing-aeternam": videoUrl("landing-aeternam.av1.256b72ca.mp4"),
 };
 
 /**

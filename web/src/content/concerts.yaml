@@ -2150,11 +2150,6 @@
     - { label: Relacja prasowa ↗, href: "https://krakow.gosc.pl/doc/9466268.Niedzica-Koncert-dedykowany-Strefie-Gazy" }
     - { label: Onet / KAI ↗, href: "https://www.onet.pl/informacje/kai/muzyczna-modlitwa-w-niedzicy-koncert-dla-strefy-gazy/l3pn8kc,30bc1058" }
   hasPage: true
-  video:
-    asset: landing-aeternam
-    caption: 'Fragment koncertu „Aeternam — Epitafium dla Gazy” · VoctEnsemble 2025'
-    note: "C. Shaw — and the swallow (Psalm 84) · zapis z nawy · dźwięk na żywo"
-    portrait: true
   # Both evenings free entry, confirmed by the owner (2026-09-24).
   dates:
     - date: "2025-09-14"

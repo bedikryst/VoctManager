@@ -310,11 +310,6 @@ export const PATHS: readonly Path[] = [
     // the gilt were blown to paper white. The derived 0.90 was right all along; at it the panel
     // measures 11.1% and p99 = 0.815, and the gold reads as gold rather than as highlight.
     frameLift: 0.9,
-    video: {
-      src: videoAsset("landing-aeternam"),
-      srcAv1: videoAssetAv1("landing-aeternam"),
-      portrait: true,
-    },
   },
   {
     slug: "pochwala-stworzenia",

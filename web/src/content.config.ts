@@ -316,7 +316,7 @@ const concerts = defineCollection({
         it); `note` is the honest provenance line — which work, whose recording. */
     video: z
       .object({
-        asset: z.enum(["landing-modal", "landing-wolanie", "landing-aeternam"]),
+        asset: z.enum(["landing-modal", "landing-wolanie"]),
         caption: z.string().optional(),
         note: z.string().optional(),
         poster: z.string().optional(),
