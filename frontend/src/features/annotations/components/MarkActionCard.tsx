@@ -43,13 +43,7 @@ import {
   MARK_SCALE_MIN,
   MARK_SCALE_STEP,
 } from "../lib/useAnnotationTools";
-import {
-  isFreehand,
-  isHighlight,
-  isStamp,
-  type ScoreAnnotation,
-  type StampPayload,
-} from "../types/annotations.dto";
+import { isStamp, isStroke, type ScoreAnnotation } from "../types/annotations.dto";
 
 interface MarkActionCardProps {
   /** The marking this card is about — never a text note. */
@@ -110,7 +104,7 @@ export const MarkActionCard = ({
   const bounds = markBounds(annotation);
   if (!bounds) return null;
 
-  const stamp = isStamp(annotation) ? (annotation.payload as StampPayload) : null;
+  const stamp = isStamp(annotation) ? annotation.payload : null;
   const stampDef = stamp ? getStampDef(stamp.symbol) : null;
   // The card is placed from the STORED size: following the preview would slide
   // the slider out from under the thumb that is dragging it.
@@ -120,10 +114,7 @@ export const MarkActionCard = ({
   // How far the marking's own ink reaches from the anchor, so the card clears
   // the whole drawing rather than its centre point. A stroke reaches half its
   // bounding box plus half its own width; a symbol reaches half its glyph.
-  const strokeReach =
-    isFreehand(annotation) || isHighlight(annotation)
-      ? (annotation.payload.width * width) / 2
-      : 0;
+  const strokeReach = isStroke(annotation) ? (annotation.payload.width * width) / 2 : 0;
   const glyphReach = stampDef ? (stampDef.sizeFraction * width * scale) / 2 : 0;
   const reach =
     ((bounds.maxY - bounds.minY) * height) / 2 +

@@ -1,8 +1,8 @@
 /**
  * @file AnnotationToolbar.tsx
  * @description Markup toolbar, injected into the PDF viewer's floating control
- * pill: undo/redo, the tool set (pen · highlighter · shapes · note · stamp ·
- * eraser), the shape in hand, contextual stroke weight + ink colour, what draws
+ * pill: undo/redo, the tool set (browse · select · pen · highlighter · shapes ·
+ * note · stamp · eraser), the shape in hand, contextual stroke weight + ink colour, what draws
  * (stylus or finger), the note
  * display mode, the musical stamp palette (one group at a time — the catalogue
  * outgrew a flat grid), the write layer, and the "how does this work" panel. In
@@ -35,6 +35,7 @@ import {
   Hand,
   Highlighter,
   HelpCircle,
+  LassoSelect,
   Lock,
   MousePointer2,
   MoveUpRight,
@@ -109,6 +110,8 @@ interface ToolDef {
 
 const TOOLS: ReadonlyArray<ToolDef> = [
   { id: "pointer", icon: MousePointer2, labelKey: "annotations.tools.pointer", fallback: "Przeglądaj", drawOnly: false },
+  // Beside browse: both work with marks already on the page.
+  { id: "select", icon: LassoSelect, labelKey: "annotations.tools.select", fallback: "Zaznacz", drawOnly: false },
   { id: "pen", icon: PenLine, labelKey: "annotations.tools.pen", fallback: "Pióro", drawOnly: true },
   { id: "highlighter", icon: Highlighter, labelKey: "annotations.tools.highlighter", fallback: "Zakreślacz", drawOnly: true },
   { id: "shape", icon: Shapes, labelKey: "annotations.tools.shape", fallback: "Kształty", drawOnly: true },

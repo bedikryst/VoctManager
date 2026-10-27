@@ -1,6 +1,7 @@
 /**
  * @file MarkAudiencePicker.tsx
- * @description Who reads one marking, chosen after it was made.
+ * @description Who reads one marking, or a selection of them, chosen after it
+ * was made.
  *
  * The three reaches are NESTED, not parallel — the choir's marks arrive at
  * whoever runs the rehearsal and at the managers too, and the leader's arrive at
@@ -31,8 +32,11 @@ import { asWriteLayer, writeLayerCopy, type WriteLayer } from "../lib/layers";
 import type { AnnotationLayer } from "../types/annotations.dto";
 
 interface MarkAudiencePickerProps {
-  /** The reach this marking has now. */
-  current: AnnotationLayer;
+  /**
+   * The reach this marking has now. Null for a selection whose marks reach
+   * different audiences: no rung is lit, and a tap gives them all one.
+   */
+  current: AnnotationLayer | null;
   /** The reaches it may be moved between; fewer than two renders nothing. */
   options: readonly WriteLayer[];
   onChange: (next: WriteLayer) => void;
@@ -48,8 +52,8 @@ export const MarkAudiencePicker = ({
 
   const copy = writeLayerCopy(t);
   // A marking carrying an ad-hoc layer name folds onto the choir's rung, the
-  // same way it is drawn — so the ladder always has exactly one rung lit.
-  const active = asWriteLayer(current);
+  // same way it is drawn — so a single marking always has exactly one rung lit.
+  const active = current === null ? null : asWriteLayer(current);
 
   return (
     <div className="flex flex-col gap-1">
@@ -100,7 +104,12 @@ export const MarkAudiencePicker = ({
       {/* The consequence of the rung in force, in words. A picker whose labels
           are three nouns asks the reader to already know the access model. */}
       <Caption color="muted" className="block">
-        {copy[active].hint}
+        {active === null
+          ? t(
+              "annotations.selection.audience_mixed",
+              "Zaznaczone oznaczenia mają różnych odbiorców. Wybierz, kto ma widzieć wszystkie.",
+            )
+          : copy[active].hint}
       </Caption>
     </div>
   );

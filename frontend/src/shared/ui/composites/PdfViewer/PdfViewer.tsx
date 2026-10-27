@@ -596,18 +596,22 @@ export const PdfViewer = ({
   }, [handleKeyboardShortcuts]);
 
   // Measure the rendered page box for the overlay seam. Only wired when a
-  // caller actually needs the overlay, so the common viewer pays nothing.
+  // caller actually needs the overlay, so the common viewer pays nothing. Keyed
+  // on whether there is an overlay, never on the render function's identity: a
+  // caller's overlay is rebuilt with every change to its marks, and a fresh
+  // observer per change re-measured the page each time.
+  const hasPageOverlay = renderPageOverlay !== undefined;
   useEffect(() => {
-    if (!renderPageOverlay) return;
+    if (!hasPageOverlay) return;
     const el = pageBoxRef.current;
     if (!el || typeof ResizeObserver === "undefined") return;
     const observer = new ResizeObserver((entries) => {
       const rect = entries[0]?.contentRect;
       if (!rect || rect.width <= 0 || rect.height <= 0) return;
-      // Same box, same object: this effect re-subscribes whenever the overlay
-      // is rebuilt, and every fresh observer fires once on attach. Handing back
-      // a new object for an unchanged box would push that pulse through the
-      // page API and the toolbar for nothing.
+      // Same box, same object: this effect re-subscribes on every page, fit
+      // and zoom change, and every fresh observer fires once on attach. Handing
+      // back a new object for an unchanged box would push that pulse through
+      // the page API and the toolbar for nothing.
       setPageBox((current) =>
         current &&
         Math.abs(current.width - rect.width) < 0.5 &&
@@ -618,7 +622,7 @@ export const PdfViewer = ({
     });
     observer.observe(el);
     return () => observer.disconnect();
-  }, [renderPageOverlay, blobUrl, stablePage, renderedPageWidth, zoom]);
+  }, [hasPageOverlay, blobUrl, stablePage, renderedPageWidth, zoom]);
 
   // Free margin between the viewer's left edge and the page, where the floating
   // triggers sit. The fit, zoom and the window all move it, so it is read off

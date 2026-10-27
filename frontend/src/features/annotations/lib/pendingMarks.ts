@@ -27,10 +27,12 @@ import type { QueuedWrite } from "@/shared/offline/useOfflineStore";
 import { ANNOTATIONS_PATH } from "@/shared/offline/swProtocol";
 
 import { insertMarks } from "./markRows";
-import type {
-  AnnotationPatch,
-  NewAnnotation,
-  ScoreAnnotation,
+import {
+  markContent,
+  withPatch,
+  type AnnotationPatch,
+  type NewAnnotation,
+  type ScoreAnnotation,
 } from "../types/annotations.dto";
 
 /**
@@ -205,7 +207,7 @@ export const applyPendingMarks = (
         break;
       case "update":
         next = next.map((row) =>
-          row.id === meta.annotationId ? { ...row, ...meta.patch } : row,
+          row.id === meta.annotationId ? withPatch(row, meta.patch) : row,
         );
         break;
       case "delete":
@@ -296,7 +298,7 @@ export const collapseUpdate = (
   const create = findCreate(entries, annotationId);
   if (create) {
     return collapseCreate(
-      { ...create.meta.annotation, ...patch },
+      withPatch(create.meta.annotation, patch),
       { sent: wasSent(create) },
     );
   }
@@ -393,8 +395,7 @@ export const toCreateBody = (
   id: annotation.id,
   edition: annotation.edition,
   page_number: annotation.page_number,
-  annotation_type: annotation.annotation_type,
-  payload: annotation.payload,
+  ...markContent(annotation),
   color: annotation.color,
   layer_name: annotation.layer_name,
 });

@@ -17,7 +17,7 @@ const fmt = (value: number): string => value.toFixed(2);
  * segments for 1–2 points, where smoothing is meaningless.
  */
 export const buildSmoothPath = (
-  points: NormPoint[],
+  points: readonly NormPoint[],
   width: number,
   height: number,
 ): string => {

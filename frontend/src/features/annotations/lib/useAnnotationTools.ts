@@ -31,13 +31,24 @@ export type AnnotationTool =
   | "shape"
   | "note"
   | "stamp"
-  | "eraser";
+  | "eraser"
+  | "select";
 
 /** Tools that put ink on the page under a moving pointer. */
 export const DRAWING_TOOLS: ReadonlySet<AnnotationTool> = new Set<AnnotationTool>([
   "pen",
   "highlighter",
   "shape",
+]);
+
+/**
+ * Tools whose drag traces a line: the drawing tools, and the selection's loop.
+ * Each owns every touch while armed, so the finger is routed the same way for
+ * all of them.
+ */
+export const TRACING_TOOLS: ReadonlySet<AnnotationTool> = new Set<AnnotationTool>([
+  ...DRAWING_TOOLS,
+  "select",
 ]);
 
 const TOOL_STORAGE_KEY = "voct.annotations.tool";
@@ -96,7 +107,8 @@ const isAnnotationTool = (value: string | null): value is AnnotationTool =>
   value === "shape" ||
   value === "note" ||
   value === "stamp" ||
-  value === "eraser";
+  value === "eraser" ||
+  value === "select";
 
 /**
  * Size multiplier for a placed mark (text note / musical stamp), 1 = base size.
@@ -221,7 +233,8 @@ export const useAnnotationTools = (
     // A remembered pencil is a gift where the finger still pans and only the
     // stylus writes. Where the finger draws it would hijack the first scroll,
     // so that device always opens in browse — one tap from the pen either way.
-    return DRAWING_TOOLS.has(stored) && resolveFingerDraw(readStylusSeen())
+    // The selection's loop owns the finger the same way.
+    return TRACING_TOOLS.has(stored) && resolveFingerDraw(readStylusSeen())
       ? "pointer"
       : stored;
   });

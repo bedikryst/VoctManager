@@ -215,6 +215,7 @@
       "note": "Note",
       "pen": "Pen",
       "pointer": "Browse",
+      "select": "Select",
       "shape": "Shapes",
       "stamp": "Symbol"
     },
@@ -233,6 +234,19 @@
         "highlight": "Highlight",
         "stamp": "Symbol"
       }
+    },
+    "selection": {
+      "audience_mixed": "The selected marks reach different people. Choose who should see all of them.",
+      "audience_private_mixed": "The selection holds private marks and marks others can see. Select them separately to change who sees them.",
+      "copied": "Copied. Open another page of this piece and paste them with the Select tool.",
+      "copy": "Copy",
+      "count_one": "{{count}} mark selected",
+      "count_few": "{{count}} marks selected",
+      "count_many": "{{count}} marks selected",
+      "count_other": "{{count}} marks selected",
+      "delete": "Delete selected",
+      "duplicate": "Duplicate",
+      "paste": "Paste ({{n}})"
     }
   },
   "archive": {

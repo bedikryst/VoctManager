@@ -30,19 +30,22 @@ import type { QueuedWrite } from "@/shared/offline/useOfflineStore";
 
 const EDITION = "edition-1";
 
-const mark = (id: string, overrides: Partial<ScoreAnnotation> = {}): ScoreAnnotation => ({
-  id,
-  edition: EDITION,
-  page_number: 1,
-  annotation_type: "CM",
-  payload: { x: 0.5, y: 0.5, text: "oddech", display: "pin" },
-  color: "#1F2933",
-  layer_name: "personal",
-  created_by: null,
-  created_at: "2026-08-25T10:00:00Z",
-  updated_at: "2026-08-25T10:00:00Z",
-  ...overrides,
-});
+// Overrides may swap the kind without its payload, or break the payload on
+// purpose, so the fixture is asserted to be a row rather than built as one.
+const mark = (id: string, overrides: Partial<ScoreAnnotation> = {}): ScoreAnnotation =>
+  ({
+    id,
+    edition: EDITION,
+    page_number: 1,
+    annotation_type: "CM",
+    payload: { x: 0.5, y: 0.5, text: "oddech", display: "pin" },
+    color: "#1F2933",
+    layer_name: "personal",
+    created_by: null,
+    created_at: "2026-08-25T10:00:00Z",
+    updated_at: "2026-08-25T10:00:00Z",
+    ...overrides,
+  }) as ScoreAnnotation;
 
 /** Replays a collapse decision against a queue, the way the store would. */
 const enqueue = (

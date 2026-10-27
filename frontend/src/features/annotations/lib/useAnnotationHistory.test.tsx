@@ -6,7 +6,8 @@
  * The failures this guards were all silent: an undo made without signal that
  * drew a copy of the mark under a new id every time it was pressed; an erase
  * undone as a fresh mark in the undoer's hand, its author and place in the
- * stack lost; and one refused write wedging the whole timeline behind it.
+ * stack lost; and one refused write wedging the whole timeline behind it. And a
+ * gesture over a selection taking as many undos as it touched marks.
  * @module features/annotations/lib/useAnnotationHistory.test
  */
 
@@ -205,6 +206,83 @@ describe("one step at a time", () => {
     await act(async () => finishRevive("saved"));
     await settle();
     expect(deps.updateMark).toHaveBeenLastCalledWith(target.id, { color: "#1F2933" });
+  });
+});
+
+describe("one gesture over many marks", () => {
+  it("is undone in one step, last part first, and redone in one", async () => {
+    const deps = writers("saved");
+    const { result } = mount(deps);
+
+    act(() =>
+      result.current.group([
+        { kind: "update", id: "a", before: { color: "#1F2933" }, after: { color: "#2563EB" } },
+        { kind: "update", id: "b", before: { color: "#15803D" }, after: { color: "#2563EB" } },
+      ]),
+    );
+    await settle();
+    act(() => result.current.undo());
+    await settle();
+
+    expect(deps.updateMark.mock.calls.slice(2)).toEqual([
+      ["b", { color: "#15803D" }],
+      ["a", { color: "#1F2933" }],
+    ]);
+    expect(result.current.canUndo).toBe(false);
+
+    act(() => result.current.redo());
+    await settle();
+    expect(deps.updateMark.mock.calls.slice(4)).toEqual([
+      ["a", { color: "#2563EB" }],
+      ["b", { color: "#2563EB" }],
+    ]);
+    expect(result.current.canUndo).toBe(true);
+  });
+
+  it("brings duplicates back as themselves after their undo", async () => {
+    const deps = writers("saved");
+    const { result } = mount(deps);
+    const copies = [mark("c1"), mark("c2")];
+
+    act(() => result.current.group(copies.map((annotation) => ({ kind: "create", annotation }))));
+    act(() => result.current.undo());
+    act(() => result.current.redo());
+    await settle();
+
+    expect(deps.eraseMark.mock.calls.map(([erased]) => erased.id)).toEqual(["c2", "c1"]);
+    expect(deps.reviveMarks.mock.calls.map(([revived]) => revived[0].id)).toEqual([
+      "c1",
+      "c2",
+    ]);
+    expect(deps.createMark).toHaveBeenCalledTimes(2);
+  });
+
+  it("undoes only the parts that landed, and leaves when none did", async () => {
+    const deps = writers("saved");
+    deps.updateMark.mockImplementationOnce(refused);
+    const { result } = mount(deps);
+
+    act(() =>
+      result.current.group([
+        { kind: "update", id: "a", before: { color: "#1F2933" }, after: { color: "#2563EB" } },
+        { kind: "update", id: "b", before: { color: "#15803D" }, after: { color: "#2563EB" } },
+      ]),
+    );
+    await settle();
+    act(() => result.current.undo());
+    await settle();
+    expect(deps.updateMark).toHaveBeenLastCalledWith("b", { color: "#15803D" });
+    expect(deps.updateMark).toHaveBeenCalledTimes(3);
+
+    deps.createMark.mockImplementation(refused);
+    act(() =>
+      result.current.group([
+        { kind: "create", annotation: mark("x") },
+        { kind: "create", annotation: mark("y") },
+      ]),
+    );
+    await settle();
+    expect(result.current.canUndo).toBe(false);
   });
 });
 

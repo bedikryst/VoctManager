@@ -6,7 +6,7 @@
  *
  * Routing follows `fingerDraw`. On a stylus device the finger PANS the score
  * (a manual scroll of the viewer viewport, because the surface owns every touch
- * while a pen tool is armed) and only pen or mouse draw. On a device with no
+ * while a tracing tool is armed) and only pen or mouse draw. On a device with no
  * stylus the finger draws, because reserving it for panning would leave the
  * reader unable to write at all. Two fingers are never a stroke: a second
  * pointer abandons the line in progress and hands the gesture to the viewer's
@@ -15,11 +15,23 @@
  * the exception to that rule — while one is live, a touch is the hand resting on
  * the glass, so it neither pans, nor draws, nor ends the line — and a pen that
  * lands on a touch's line takes the page from it: that touch was the palm,
- * which got there first.
+ * which got there first. The selection's loop is traced, and routed, exactly
+ * like ink.
  *
  * Only the primary button writes or places. A right-click and a pen's eraser
  * end are not ink. Points accumulate in a ref, so a move handler never reads a
  * list a render ago, and the point the pointer lifted at is part of the line.
+ * A line in progress is never React state: every sample goes to `onPreview`,
+ * which draws it outside the render, and the page re-renders once, when the
+ * finished line becomes a mark.
+ *
+ * A point is kept once the pointer has travelled `MIN_STEP_PX` on the SCREEN
+ * since the last one, so a line holds the same density across zoom levels and
+ * along both axes of a page that is taller than it is wide. A pen reports far
+ * more often than the screen paints, and the browser folds the extra samples
+ * into one event; they are unfolded here (`getCoalescedEvents`), or a quick
+ * curve comes out as a polygon.
+ *
  * Changing tool abandons whatever the old tool had started; changing page is
  * the caller's remount (`useScoreAnnotator`'s `renderPageOverlay` keys the
  * surface by page), so nothing drawn on one page lands on the next.
@@ -27,11 +39,12 @@
  */
 
 import type React from "react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef } from "react";
 
 import { resolveTapZone } from "@/shared/ui/composites/PdfViewer";
 
 import type { NormPoint } from "../types/annotations.dto";
+import { pageFraction } from "./markBounds";
 import { DRAWING_TOOLS, type AnnotationTool } from "./useAnnotationTools";
 
 /** Marks the wrappers around placed marks, so the surface below never treats a
@@ -50,10 +63,8 @@ const TOUCH_SLOP_PX = 14;
 export const slopFor = (pointerType: string): number =>
   pointerType === "mouse" ? MOUSE_SLOP_PX : TOUCH_SLOP_PX;
 
-/** Moves shorter than this (in page fractions) are jitter, kept out of payloads. */
-const MIN_STEP = 0.0025;
-
-const clamp01 = (value: number): number => Math.min(1, Math.max(0, value));
+/** Moves shorter than this, in screen pixels, are jitter, kept out of payloads. */
+const MIN_STEP_PX = 2;
 
 /** What the armed tool makes of a press on blank paper. */
 export interface SurfaceModes {
@@ -61,6 +72,8 @@ export interface SurfaceModes {
   drawing: boolean;
   /** The drag is a shape: only where it began and where it is now count. */
   shaping: boolean;
+  /** A drag draws a loop round marks to select them; a tap picks one. */
+  selecting: boolean;
   placing: boolean;
   stamping: boolean;
   erasing: boolean;
@@ -73,11 +86,18 @@ export const surfaceModes = (
 ): SurfaceModes => ({
   drawing: canEdit && DRAWING_TOOLS.has(tool),
   shaping: canEdit && tool === "shape",
+  selecting: canEdit && tool === "select",
   placing: canEdit && tool === "note",
   stamping: canEdit && tool === "stamp",
   erasing: canEdit && tool === "eraser",
   browsing: tool === "pointer",
 });
+
+/** How a finished trace was made, beyond its points. */
+export interface TraceGesture {
+  /** The pointer never left the tap slop: a tap, whatever the points say. */
+  tapped: boolean;
+}
 
 export interface OverlayInputOptions {
   /** The surface covering the page; its box is the 0..1 frame of every point. */
@@ -87,11 +107,17 @@ export interface OverlayInputOptions {
   /** True → a bare finger draws; false → the finger pans and only a stylus draws. */
   fingerDraw: boolean;
   /**
-   * A finished drag with a drawing tool: every point as drawn, the lift
+   * A finished drag with a tracing tool: every point as drawn, the lift
    * included. A shape hands over two points, its corners. A single point is a
    * press that never moved, and the caller decides whether that is a mark.
    */
-  onStroke: (points: NormPoint[]) => void;
+  onStroke: (points: NormPoint[], gesture: TraceGesture) => void;
+  /**
+   * The line in progress, on every sample that changed it, and null once it
+   * ends or is abandoned. The list is this hook's own and keeps growing: read
+   * it, never keep it.
+   */
+  onPreview: (points: readonly NormPoint[] | null) => void;
   /** A tap on blank paper while a note or a stamp is armed. */
   onTap: (point: NormPoint) => void;
   /**
@@ -106,8 +132,6 @@ export interface OverlayInputOptions {
 type SurfacePointerHandler = (event: React.PointerEvent<HTMLElement>) => void;
 
 export interface OverlayInput {
-  /** The line in progress, for the live preview; null between strokes. */
-  stroke: NormPoint[] | null;
   surfaceHandlers: {
     onPointerDown: SurfacePointerHandler;
     onPointerMove: SurfacePointerHandler;
@@ -123,6 +147,13 @@ interface LiveStroke {
   points: NormPoint[];
   /** Where the pointer is captured, so an abandoned line can let it go. */
   element: Element;
+  startX: number;
+  startY: number;
+  /** Screen position of the last point kept. */
+  lastX: number;
+  lastY: number;
+  /** Still within the tap slop of where it landed. */
+  tapped: boolean;
 }
 
 /** Finger-pan session while a pen tool is armed (stylus-first routing). */
@@ -144,17 +175,32 @@ interface Tap {
   moved: boolean;
 }
 
+interface Sample {
+  clientX: number;
+  clientY: number;
+}
+
+/** Every position a move reports: a pen's folded samples, or the event alone. */
+const samplesOf = (event: React.PointerEvent<HTMLElement>): readonly Sample[] => {
+  if (event.pointerType !== "pen") return [event];
+  const native: PointerEvent | undefined = event.nativeEvent;
+  const folded =
+    typeof native?.getCoalescedEvents === "function" ? native.getCoalescedEvents() : [];
+  return folded.length > 0 ? folded : [event];
+};
+
 export const useOverlayInput = ({
   surfaceRef,
   tool,
   canEdit,
   fingerDraw,
   onStroke,
+  onPreview,
   onTap,
   onTurnPage,
 }: OverlayInputOptions): OverlayInput => {
-  const { drawing, shaping, placing, stamping } = surfaceModes(tool, canEdit);
-  const [stroke, setStroke] = useState<NormPoint[] | null>(null);
+  const { drawing, shaping, selecting, placing, stamping } = surfaceModes(tool, canEdit);
+  const tracing = drawing || selecting;
   const strokeRef = useRef<LiveStroke | null>(null);
   const panRef = useRef<Pan | null>(null);
   const tapRef = useRef<Tap | null>(null);
@@ -163,16 +209,16 @@ export const useOverlayInput = ({
 
   // Read at the moment a gesture ends, never as a reason to rebuild the
   // handlers: the overlay hands in fresh closures on every render.
-  const callbacks = useRef({ onStroke, onTap, onTurnPage });
-  callbacks.current = { onStroke, onTap, onTurnPage };
+  const callbacks = useRef({ onStroke, onPreview, onTap, onTurnPage });
+  callbacks.current = { onStroke, onPreview, onTap, onTurnPage };
 
   const toNorm = useCallback(
     (clientX: number, clientY: number): NormPoint => {
       const rect = surfaceRef.current?.getBoundingClientRect();
       if (!rect || rect.width === 0 || rect.height === 0) return [0, 0];
       return [
-        clamp01((clientX - rect.left) / rect.width),
-        clamp01((clientY - rect.top) / rect.height),
+        pageFraction((clientX - rect.left) / rect.width),
+        pageFraction((clientY - rect.top) / rect.height),
       ];
     },
     [surfaceRef],
@@ -181,8 +227,9 @@ export const useOverlayInput = ({
   const abandonStroke = useCallback(() => {
     const live = strokeRef.current;
     strokeRef.current = null;
-    setStroke(null);
-    if (live?.element.hasPointerCapture(live.pointerId)) {
+    if (!live) return;
+    callbacks.current.onPreview(null);
+    if (live.element.hasPointerCapture(live.pointerId)) {
       live.element.releasePointerCapture(live.pointerId);
     }
   }, []);
@@ -212,7 +259,7 @@ export const useOverlayInput = ({
         othersDown = touchesRef.current.size > 0;
         touchesRef.current.add(event.pointerId);
       }
-      if (drawing) {
+      if (tracing) {
         const live = strokeRef.current;
         if (live && live.pointerId !== event.pointerId) {
           if (live.pointerType === "pen" && event.pointerType === "touch") return;
@@ -254,8 +301,13 @@ export const useOverlayInput = ({
           pointerType: event.pointerType,
           points: [start],
           element: event.currentTarget,
+          startX: event.clientX,
+          startY: event.clientY,
+          lastX: event.clientX,
+          lastY: event.clientY,
+          tapped: true,
         };
-        setStroke([start]);
+        callbacks.current.onPreview(strokeRef.current.points);
       } else if (placing || stamping) {
         // A press that started on an existing mark belongs to that mark.
         if ((event.target as Element | null)?.closest?.(`[${MARK_ATTR}]`)) return;
@@ -268,7 +320,7 @@ export const useOverlayInput = ({
         };
       }
     },
-    [abandonStroke, drawing, fingerDraw, placing, stamping, surfaceRef, toNorm],
+    [abandonStroke, fingerDraw, placing, stamping, surfaceRef, toNorm, tracing],
   );
 
   const onPointerMove = useCallback<SurfacePointerHandler>(
@@ -290,15 +342,24 @@ export const useOverlayInput = ({
       }
       const live = strokeRef.current;
       if (!live || live.pointerId !== event.pointerId) return;
-      const next = toNorm(event.clientX, event.clientY);
-      if (shaping) {
-        live.points = [live.points[0], next];
-      } else {
-        const last = live.points[live.points.length - 1];
-        if (Math.hypot(next[0] - last[0], next[1] - last[1]) < MIN_STEP) return;
-        live.points = [...live.points, next];
+      const slop = slopFor(live.pointerType);
+      let changed = false;
+      for (const { clientX, clientY } of samplesOf(event)) {
+        if (live.tapped && Math.hypot(clientX - live.startX, clientY - live.startY) > slop) {
+          live.tapped = false;
+        }
+        if (shaping) {
+          live.points = [live.points[0], toNorm(clientX, clientY)];
+          changed = true;
+          continue;
+        }
+        if (Math.hypot(clientX - live.lastX, clientY - live.lastY) < MIN_STEP_PX) continue;
+        live.points.push(toNorm(clientX, clientY));
+        live.lastX = clientX;
+        live.lastY = clientY;
+        changed = true;
       }
-      setStroke(live.points);
+      if (changed) callbacks.current.onPreview(live.points);
     },
     [shaping, toNorm],
   );
@@ -339,10 +400,14 @@ export const useOverlayInput = ({
       const points = shaping
         ? [live.points[0], lift]
         : lift[0] === last[0] && lift[1] === last[1]
-          ? live.points
+          ? [...live.points]
           : [...live.points, lift];
+      const tapped =
+        live.tapped &&
+        Math.hypot(event.clientX - live.startX, event.clientY - live.startY) <=
+          slopFor(live.pointerType);
       abandonStroke();
-      callbacks.current.onStroke(points);
+      callbacks.current.onStroke(points, { tapped });
     },
     [abandonStroke, shaping, toNorm],
   );
@@ -368,7 +433,6 @@ export const useOverlayInput = ({
   }, []);
 
   return {
-    stroke,
     surfaceHandlers: {
       onPointerDown,
       onPointerMove,

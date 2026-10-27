@@ -27,23 +27,23 @@ const SEEN = "2026-10-26T12:00:00Z";
 const BEFORE = "2026-10-26T10:00:00Z";
 const AFTER = "2026-10-26T14:00:00Z";
 
-const mark = (
-  id: string,
-  overrides: Partial<ScoreAnnotation> = {},
-): ScoreAnnotation => ({
-  id,
-  edition: "edition-1",
-  page_number: 4,
-  annotation_type: "CM",
-  payload: { x: 0.5, y: 0.5, text: "piano", display: "pin" },
-  color: "#DC2626",
-  layer_name: "shared",
-  created_by: "user-manager",
-  created_at: BEFORE,
-  updated_at: BEFORE,
-  content_at: BEFORE,
-  ...overrides,
-});
+// Overrides may swap the kind without its payload, so the fixture is asserted
+// to be a row rather than built as one.
+const mark = (id: string, overrides: Partial<ScoreAnnotation> = {}): ScoreAnnotation =>
+  ({
+    id,
+    edition: "edition-1",
+    page_number: 4,
+    annotation_type: "CM",
+    payload: { x: 0.5, y: 0.5, text: "piano", display: "pin" },
+    color: "#DC2626",
+    layer_name: "shared",
+    created_by: "user-manager",
+    created_at: BEFORE,
+    updated_at: BEFORE,
+    content_at: BEFORE,
+    ...overrides,
+  }) as ScoreAnnotation;
 
 const ALL_SHOWN: LayerVisibility = {
   shared: true,

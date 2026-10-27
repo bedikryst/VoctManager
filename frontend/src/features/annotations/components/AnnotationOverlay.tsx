@@ -3,52 +3,74 @@
  * @description The drawing surface stacked over a single rendered PDF page.
  * Renders highlighter + ink strokes, musical stamps, inline text and pinned
  * notes and — when editing is allowed — captures pen / highlighter / shape /
- * note / stamp / eraser input and inline note editing. A shape is a drag from
- * corner to corner that lands as ordinary ink (see `lib/shapes`), so from the
- * moment it is placed it is a stroke like any other. All coordinates are normalized
- * (0..1) to the page box so a marking holds its musical position across zoom
- * and devices. Which pointer draws, pans or taps — palm rejection, pinch, the
- * edge-zone page turn — is decided in `lib/useOverlayInput`; this file renders
- * and turns finished gestures into marks.
+ * note / stamp / eraser / selection input and inline note editing. A shape is a
+ * drag from corner to corner that lands as ordinary ink (see `lib/shapes`), so
+ * from the moment it is placed it is a stroke like any other. All coordinates
+ * are normalized (0..1) to the page box so a marking holds its musical position
+ * across zoom and devices. Which pointer draws, pans or taps — palm rejection,
+ * pinch, the edge-zone page turn — is decided in `lib/useOverlayInput`; this file
+ * turns finished gestures into marks.
  * Which existing marks may be erased/edited is decided by the `canModify`
  * predicate — a chorister touches only their personal layer.
+ *
+ * Three layers draw the page: the finished strokes (`MarkLayer`, memoised and
+ * untouched while a line is drawn), the line in progress (`LiveStrokeLayer`,
+ * painted per frame outside React), and the placed marks and cards below.
  *
  * EVERY kind of marking answers to a tap, not only the notes: a stroke carries
  * an invisible hit band, a stamp and a note carry their own buttons, and the
  * tapped one opens the card that says who reads it. That card is anchored to
  * the marking (`MarkActionCard`, or `NoteCard` for words) — the question "who
  * sees this?" is asked about one spot of music, so it is answered there.
+ *
+ * With "Zaznacz" in hand, a loop drawn round the music selects the marks in it
+ * that this reader may change, and a tap adds or removes one. The selection is
+ * held by the page and dies with it. Its frame is dragged to move it, and its
+ * card (`SelectionCard`) recolours, readdresses, duplicates, copies or deletes
+ * it; each of those is one step of the undo history.
  * @module features/annotations/components
  */
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Lock, Pin } from "lucide-react";
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { ClipboardPaste, Lock, Pin } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 
 import { cn } from "@/shared/lib/utils";
 import type { PdfPageGeometry } from "@/shared/ui/composites/PdfViewer";
+import { Text } from "@/shared/ui/primitives/typography";
 
+import { LiveStrokeLayer, type LiveStrokeHandle } from "./LiveStrokeLayer";
 import { MarkActionCard } from "./MarkActionCard";
+import {
+  CARRY_TRANSFORM,
+  CARRY_X,
+  CARRY_Y,
+  HIGHLIGHT_OPACITY,
+  MarkLayer,
+  STROKE_HIT_MIN_WIDTH,
+  strokeWidthPx,
+} from "./MarkLayer";
 import {
   INLINE_MARK_BACKGROUND,
   INLINE_MARK_CLASS,
   inlineFontSize,
   NoteCard,
 } from "./NoteCard";
+import { SelectionCard, type PageFrame } from "./SelectionCard";
 import {
   isComment,
-  isFreehand,
-  isHighlight,
   isStamp,
+  isStroke,
   type AnnotationLayer,
   type AnnotationPatch,
   type CommentPayload,
-  type FreehandPayload,
-  type NewAnnotation,
+  type MarkDraft,
   type NoteDisplay,
   type NormPoint,
   type ScoreAnnotation,
   type StampPayload,
+  type StrokeMark,
 } from "../types/annotations.dto";
 import {
   clampMarkScale,
@@ -60,10 +82,24 @@ import {
 import { isPrivateLayer, layerOf, type WriteLayer } from "../lib/layers";
 import type { AnnotationInk } from "../lib/palette";
 import { getStampDef, StampGlyph } from "../lib/stamps";
-import { buildSmoothPath } from "../lib/smoothing";
 import { buildShapePaths, type ShapeKind } from "../lib/shapes";
+import { distanceToStroke, isInLoop, markBounds, strokeBounds } from "../lib/markBounds";
+import {
+  clampShift,
+  copyDrafts,
+  duplicateShift,
+  shiftedContent,
+  type MarkClipboard,
+  type MarkEdit,
+  type PageShift,
+} from "../lib/selection";
 import { pickRecentPhrases, QUICK_PHRASES } from "../lib/quickPhrases";
-import { slopFor, surfaceModes, useOverlayInput } from "../lib/useOverlayInput";
+import {
+  slopFor,
+  surfaceModes,
+  useOverlayInput,
+  type TraceGesture,
+} from "../lib/useOverlayInput";
 
 interface AnnotationOverlayProps {
   geometry: PdfPageGeometry;
@@ -109,34 +145,41 @@ interface AnnotationOverlayProps {
    * selection's, so "new" and "this one" stay two different things.
    */
   newIds: ReadonlySet<string>;
+  /** Marks copied from this edition and not yet pasted; null when there are none. */
+  clipboard: MarkClipboard | null;
   onSelect: (id: string | null) => void;
-  onCreate: (annotation: Omit<NewAnnotation, "edition">) => void;
+  onCreate: (draft: MarkDraft) => void;
+  /** Several new marks from one gesture; answers their ids. */
+  onCreateMany: (drafts: readonly MarkDraft[]) => string[];
   onUpdate: (id: string, after: AnnotationPatch, before: AnnotationPatch) => void;
+  /** Edits to several marks from one gesture. */
+  onUpdateMany: (edits: readonly MarkEdit[]) => void;
   onDelete: (id: string) => void;
+  /** Several marks thrown away by one gesture. */
+  onDeleteMany: (marks: readonly ScoreAnnotation[]) => void;
+  onCopy: (marks: readonly ScoreAnnotation[], page: number) => void;
 }
 
 const clamp01 = (value: number): number => Math.min(1, Math.max(0, value));
 
-const HIGHLIGHT_OPACITY = 0.42;
-/**
- * The invisible band that makes a stroke touchable. A hairline pen line has to
- * grow to something a thumb can find; a bold highlighter must NOT grow past its
- * own paint, because this band is also where text selection stops passing
- * through to the page under it.
- */
-const STROKE_HIT_MIN_WIDTH = 16;
-const STROKE_HIT_MAX_WIDTH = 28;
-/** How far the selection wash spreads beyond the ink it traces, each side. */
-const SELECTION_HALO_PX = 5;
-/** The "new since your last visit" wash: wider than the selection, and fainter. */
-const NEW_HALO_PX = 8;
-const NEW_HALO_OPACITY = 0.22;
+const NO_IDS: ReadonlySet<string> = new Set();
+/** Names a placed mark's wrapper by its id (`data-mark-id`), so a tap can be matched to it. */
+const MARK_ID_ATTR = "data-mark-id";
+/** Slack round a placed mark a selection tap still counts as on it. */
+const PLACED_TAP_REACH_PX = 4;
+/** Air between the selection's frame and the marks it holds. */
+const FRAME_PAD_PX = 6;
 
-/** Ink and highlighter share a payload and every rule below that draws one. */
-const isStrokeMark = (
-  a: ScoreAnnotation,
-): a is ScoreAnnotation & { payload: FreehandPayload } =>
-  isFreehand(a) || isHighlight(a);
+/** A selection drag: the rows it picked up, and the shift it has reached. */
+interface SelectionDrag {
+  pointerId: number;
+  startX: number;
+  startY: number;
+  slop: number;
+  rows: readonly ScoreAnnotation[];
+  moved: boolean;
+  shift: PageShift;
+}
 
 export const AnnotationOverlay = ({
   geometry,
@@ -159,21 +202,25 @@ export const AnnotationOverlay = ({
   audiences,
   selectedId,
   newIds,
+  clipboard,
   onSelect,
   onCreate,
+  onCreateMany,
   onUpdate,
+  onUpdateMany,
   onDelete,
+  onDeleteMany,
+  onCopy,
 }: AnnotationOverlayProps): React.JSX.Element => {
   const { t } = useTranslation();
   const { width, height, pageNumber } = geometry;
   const surfaceRef = useRef<HTMLDivElement | null>(null);
+  const liveRef = useRef<LiveStrokeHandle | null>(null);
   const [pendingNote, setPendingNote] = useState<{ x: number; y: number } | null>(null);
   // A composer opened under one tool closes when the tool changes: an anchor
   // left open under the pen would take the next tap on the page as its own.
   useEffect(() => () => setPendingNote(null), [tool]);
 
-  // Memoised because a stroke in progress re-renders this component on every
-  // sampled point, and the list below is walked five more times per render.
   const pageAnnotations = useMemo(
     () =>
       annotations.filter(
@@ -181,14 +228,14 @@ export const AnnotationOverlay = ({
       ),
     [annotations, pageNumber, visibleLayers],
   );
+  const pageStrokes = useMemo(() => pageAnnotations.filter(isStroke), [pageAnnotations]);
 
   // A shape's "stroke" holds two points only — where the drag began and where
   // it is now — and the figure is rebuilt from them on every move.
-  const { drawing, shaping, placing, stamping, erasing, browsing } = surfaceModes(
-    tool,
-    canEdit,
-  );
-  const surfaceInteractive = drawing || placing || stamping;
+  const { drawing, shaping, selecting, placing, stamping, erasing, browsing } =
+    surfaceModes(tool, canEdit);
+  const tracing = drawing || selecting;
+  const surfaceInteractive = tracing || placing || stamping;
   /**
    * Modes in which an EXISTING mark answers to a touch — tap to open, drag to
    * move. The note tool belongs here: with the pencil for words in hand, a tap
@@ -204,6 +251,51 @@ export const AnnotationOverlay = ({
    * a highlighted bar is the commonest gesture there is.
    */
   const strokesInteractive = browsing || erasing;
+
+  // --- The selection ("Zaznacz") ----------------------------------------------
+  // Ids, not rows: a mark edited by the selection's own card is a new row, and
+  // it stays selected. Only marks this reader may change are ever in it.
+  const [picked, setPicked] = useState<ReadonlySet<string>>(NO_IDS);
+  useEffect(() => () => setPicked(NO_IDS), [tool]);
+  const selection = useMemo(
+    () =>
+      selecting ? pageAnnotations.filter((a) => picked.has(a.id) && canModify(a)) : [],
+    [canModify, pageAnnotations, picked, selecting],
+  );
+  const selectionIds = useMemo(() => new Set(selection.map((a) => a.id)), [selection]);
+  const singleId = useMemo(
+    () => (selectedId === null ? NO_IDS : new Set([selectedId])),
+    [selectedId],
+  );
+  /** What is drawn as selected: the selection's marks, or the one card's mark. */
+  const highlighted = selecting ? selectionIds : singleId;
+
+  /**
+   * The rows a selection drag picked up. A carried row is drawn shifted by the
+   * surface's carry properties; it stops being carried the moment the moved
+   * row replaces it, so the mark never flicks back to where it was.
+   */
+  const [carried, setCarried] = useState<ReadonlyMap<string, ScoreAnnotation> | null>(null);
+  const selectionDragRef = useRef<SelectionDrag | null>(null);
+  const isCarried = (a: ScoreAnnotation): boolean => carried?.get(a.id) === a;
+
+  const setCarry = (dx: number, dy: number): void => {
+    const style = surfaceRef.current?.style;
+    style?.setProperty(CARRY_X, `${dx}px`);
+    style?.setProperty(CARRY_Y, `${dy}px`);
+  };
+
+  // Once no row is still the one the drag picked up, the drag is over for good:
+  // a refused move puts back the very row it started from, and that row must
+  // then be drawn where it is, not where the hand left it.
+  useLayoutEffect(() => {
+    if (!carried || selectionDragRef.current) return;
+    const current = new Map(pageAnnotations.map((a) => [a.id, a]));
+    for (const [id, row] of carried) {
+      if (current.get(id) === row) return;
+    }
+    setCarried(null);
+  }, [carried, pageAnnotations]);
 
   // Words this writer would otherwise type again tonight: their own short notes
   // on this edition (newest first), then the standing presets. The history is
@@ -224,9 +316,7 @@ export const AnnotationOverlay = ({
   // copies of one comment on one spot is the reader seeing double.
   const editingNote =
     canEdit && arranging && !pendingNote
-      ? pageAnnotations.find(
-          (a) => a.id === selectedId && isComment(a) && canModify(a),
-        )
+      ? pageAnnotations.filter(isComment).find((a) => a.id === selectedId && canModify(a))
       : undefined;
 
   // The mark whose action card is open. Notes are excluded because a selected
@@ -247,9 +337,10 @@ export const AnnotationOverlay = ({
    * time somebody is asked. Without this the first delegation means redrawing
    * the page; with it, it means a tap per cue.
    *
-   * Per mark and never in bulk: the private layer is where he writes about the
-   * singers, and "move everything" would be the one gesture that hands those
-   * remarks to one of them.
+   * Per mark here. A selection can be readdressed too, but its card refuses
+   * when the loop has taken private remarks alongside marks for others (see
+   * `SelectionCard`): a loop round a passage must not be the gesture that
+   * hands those remarks to one of the singers.
    */
   const moveMarkLayer = (a: ScoreAnnotation, next: WriteLayer): void => {
     onUpdate(a.id, { layer_name: next }, { layer_name: a.layer_name });
@@ -280,7 +371,7 @@ export const AnnotationOverlay = ({
     if (!scaleDraft || scaleDraft.committed || !actionMark || !isStamp(actionMark)) {
       return;
     }
-    const current = actionMark.payload as StampPayload;
+    const current = actionMark.payload;
     if (clampMarkScale(current.scale) === scaleDraft.scale) {
       setScaleDraft(null);
       return;
@@ -293,8 +384,85 @@ export const AnnotationOverlay = ({
     setScaleDraft({ ...scaleDraft, committed: actionMark });
   };
 
+  const toNorm = (clientX: number, clientY: number): NormPoint => {
+    const rect = surfaceRef.current?.getBoundingClientRect();
+    if (!rect || rect.width === 0 || rect.height === 0) return [0, 0];
+    return [
+      clamp01((clientX - rect.left) / rect.width),
+      clamp01((clientY - rect.top) / rect.height),
+    ];
+  };
+
+  /**
+   * The mark this reader may change under a tap, topmost first: a placed mark
+   * (measured on screen, where its glyph or words actually sit), then the pen
+   * stroke nearest the point, then the highlighter.
+   */
+  const markAt = ([x, y]: NormPoint): ScoreAnnotation | undefined => {
+    const candidates = pageAnnotations.filter((a) => canModify(a));
+    const byId = new Map(candidates.map((a) => [a.id, a]));
+    const surface = surfaceRef.current;
+    if (surface) {
+      const box = surface.getBoundingClientRect();
+      const cx = box.left + x * box.width;
+      const cy = box.top + y * box.height;
+      const placed = Array.from(surface.querySelectorAll<HTMLElement>(`[${MARK_ID_ATTR}]`))
+        .reverse()
+        .find((element) => {
+          if (!byId.has(element.getAttribute(MARK_ID_ATTR) ?? "")) return false;
+          const r = element.getBoundingClientRect();
+          return (
+            cx >= r.left - PLACED_TAP_REACH_PX &&
+            cx <= r.right + PLACED_TAP_REACH_PX &&
+            cy >= r.top - PLACED_TAP_REACH_PX &&
+            cy <= r.bottom + PLACED_TAP_REACH_PX
+          );
+        });
+      const hit = placed ? byId.get(placed.getAttribute(MARK_ID_ATTR) ?? "") : undefined;
+      if (hit) return hit;
+    }
+    let best: { mark: StrokeMark; distance: number; pen: boolean } | null = null;
+    for (const mark of candidates) {
+      if (!isStroke(mark)) continue;
+      const distance = distanceToStroke(mark.payload.paths, [x, y], width, height);
+      const reach = Math.max(strokeWidthPx(mark, width), STROKE_HIT_MIN_WIDTH) / 2;
+      if (distance > reach) continue;
+      const pen = mark.annotation_type === "FH";
+      if (!best || (pen && !best.pen) || (pen === best.pen && distance < best.distance)) {
+        best = { mark, distance, pen };
+      }
+    }
+    return best?.mark;
+  };
+
+  /** A tap with "Zaznacz": add the mark under it, or take it out; blank paper clears. */
+  const toggleAt = (point: NormPoint): void => {
+    const hit = markAt(point);
+    setPicked((current) => {
+      if (!hit) return NO_IDS;
+      const next = new Set(current);
+      if (next.has(hit.id)) next.delete(hit.id);
+      else next.add(hit.id);
+      return next;
+    });
+  };
+
   /** A finished drag with a drawing tool becomes ink — or a shape, as ink. */
-  const commitStroke = (points: NormPoint[]): void => {
+  const commitStroke = (points: NormPoint[], { tapped }: TraceGesture): void => {
+    if (selecting) {
+      if (tapped) {
+        toggleAt(points[0]);
+        return;
+      }
+      setPicked(
+        new Set(
+          pageAnnotations
+            .filter((a) => canModify(a) && isInLoop(a, points))
+            .map((a) => a.id),
+        ),
+      );
+      return;
+    }
     if (points.length < 2) return;
     if (shaping) {
       const paths = buildShapePaths(shape, points[0], points[1], width, height);
@@ -345,15 +513,210 @@ export const AnnotationOverlay = ({
     }
   };
 
-  const { stroke, surfaceHandlers } = useOverlayInput({
+  const previewStroke = useCallback(
+    (points: readonly NormPoint[] | null) => liveRef.current?.draw(points),
+    [],
+  );
+
+  const { surfaceHandlers } = useOverlayInput({
     surfaceRef,
     tool,
     canEdit,
     fingerDraw,
     onStroke: commitStroke,
+    onPreview: previewStroke,
     onTap: placeAt,
     onTurnPage,
   });
+
+  // --- The selection's frame: drag to move, tap to add or remove ---------------
+  const [frame, setFrame] = useState<PageFrame | null>(null);
+  useLayoutEffect(() => {
+    const surface = surfaceRef.current;
+    if (selection.length === 0 || !surface) {
+      setFrame(null);
+      return;
+    }
+    const box = surface.getBoundingClientRect();
+    // The surface may be drawn scaled (the viewer's live zoom preview); the
+    // frame is placed in the page's own pixels.
+    const sx = box.width > 0 ? width / box.width : 1;
+    const sy = box.height > 0 ? height / box.height : 1;
+    const placedById = new Map(
+      Array.from(surface.querySelectorAll<HTMLElement>(`[${MARK_ID_ATTR}]`), (element) => [
+        element.getAttribute(MARK_ID_ATTR) ?? "",
+        element,
+      ]),
+    );
+    let left = Infinity;
+    let top = Infinity;
+    let right = -Infinity;
+    let bottom = -Infinity;
+    const grow = (l: number, t: number, r: number, b: number) => {
+      left = Math.min(left, l);
+      top = Math.min(top, t);
+      right = Math.max(right, r);
+      bottom = Math.max(bottom, b);
+    };
+    for (const mark of selection) {
+      if (isStroke(mark)) {
+        const bounds = strokeBounds(mark.payload.paths);
+        if (!bounds) continue;
+        const half = strokeWidthPx(mark, width) / 2;
+        grow(
+          bounds.minX * width - half,
+          bounds.minY * height - half,
+          bounds.maxX * width + half,
+          bounds.maxY * height + half,
+        );
+        continue;
+      }
+      const element = placedById.get(mark.id);
+      if (element) {
+        const r = element.getBoundingClientRect();
+        grow(
+          (r.left - box.left) * sx,
+          (r.top - box.top) * sy,
+          (r.right - box.left) * sx,
+          (r.bottom - box.top) * sy,
+        );
+        continue;
+      }
+      const bounds = markBounds(mark);
+      if (bounds) {
+        grow(bounds.minX * width, bounds.minY * height, bounds.maxX * width, bounds.maxY * height);
+      }
+    }
+    if (left === Infinity) {
+      setFrame(null);
+      return;
+    }
+    const frameLeft = Math.max(0, left - FRAME_PAD_PX);
+    const frameTop = Math.max(0, top - FRAME_PAD_PX);
+    setFrame({
+      left: frameLeft,
+      top: frameTop,
+      width: Math.min(width, right + FRAME_PAD_PX) - frameLeft,
+      height: Math.min(height, bottom + FRAME_PAD_PX) - frameTop,
+    });
+  }, [height, selection, width]);
+  const frameCarried = carried !== null && selection.some(isCarried);
+
+  const cancelSelectionDrag = (): void => {
+    selectionDragRef.current = null;
+    setCarried(null);
+    setCarry(0, 0);
+  };
+
+  const beginSelectionDrag = (event: React.PointerEvent<HTMLDivElement>): void => {
+    // Never the start of a loop, whatever happens next.
+    event.stopPropagation();
+    if (event.button !== 0) return;
+    if (selectionDragRef.current) {
+      // A second pointer: a pinch is starting, not a drag.
+      cancelSelectionDrag();
+      return;
+    }
+    event.currentTarget.setPointerCapture(event.pointerId);
+    setCarry(0, 0);
+    selectionDragRef.current = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      slop: slopFor(event.pointerType),
+      rows: selection,
+      moved: false,
+      shift: { dx: 0, dy: 0 },
+    };
+    setCarried(new Map(selection.map((a) => [a.id, a])));
+  };
+
+  const moveSelectionDrag = (event: React.PointerEvent<HTMLDivElement>): void => {
+    const drag = selectionDragRef.current;
+    if (!drag || drag.pointerId !== event.pointerId) return;
+    const box = surfaceRef.current?.getBoundingClientRect();
+    if (!box || box.width === 0 || box.height === 0) return;
+    const dx = event.clientX - drag.startX;
+    const dy = event.clientY - drag.startY;
+    if (!drag.moved && Math.hypot(dx, dy) <= drag.slop) return;
+    drag.moved = true;
+    drag.shift = clampShift(drag.rows, { dx: dx / box.width, dy: dy / box.height });
+    setCarry(drag.shift.dx * width, drag.shift.dy * height);
+  };
+
+  const endSelectionDrag = (event: React.PointerEvent<HTMLDivElement>): void => {
+    const drag = selectionDragRef.current;
+    if (!drag || drag.pointerId !== event.pointerId) return;
+    selectionDragRef.current = null;
+    if (!drag.moved) {
+      cancelSelectionDrag();
+      toggleAt(toNorm(event.clientX, event.clientY));
+      return;
+    }
+    if (drag.shift.dx === 0 && drag.shift.dy === 0) {
+      cancelSelectionDrag();
+      return;
+    }
+    // The rows stay carried until their moved selves arrive.
+    onUpdateMany(
+      drag.rows.map((a) => ({
+        id: a.id,
+        before: { payload: a.payload },
+        after: { payload: shiftedContent(a, drag.shift).payload },
+      })),
+    );
+  };
+
+  const recolorSelection = (next: string): void => {
+    onUpdateMany(
+      selection
+        .filter((a) => a.color.toLowerCase() !== next.toLowerCase())
+        .map((a) => ({ id: a.id, before: { color: a.color }, after: { color: next } })),
+    );
+  };
+
+  const readdressSelection = (next: WriteLayer): void => {
+    onUpdateMany(
+      selection
+        .filter((a) => a.layer_name !== next)
+        .map((a) => ({
+          id: a.id,
+          before: { layer_name: a.layer_name },
+          after: { layer_name: next },
+        })),
+    );
+  };
+
+  const duplicateSelection = (): void => {
+    const shift = duplicateShift(selection, width, height);
+    setPicked(new Set(onCreateMany(copyDrafts(selection, pageNumber, shift, inks))));
+  };
+
+  const copySelection = (): void => {
+    onCopy(selection, pageNumber);
+    toast.success(
+      t(
+        "annotations.selection.copied",
+        "Skopiowane. Otwórz inną stronę tego utworu i wklej je narzędziem Zaznacz.",
+      ),
+      { id: "annotation-selection-copied" },
+    );
+  };
+
+  const deleteSelection = (): void => {
+    onDeleteMany(selection);
+    setPicked(NO_IDS);
+  };
+
+  /** Copies land where they were on their own page; on that same page, a step off. */
+  const pasteHere = (): void => {
+    if (!clipboard) return;
+    const shift =
+      clipboard.page === pageNumber
+        ? duplicateShift(clipboard.marks, width, height)
+        : { dx: 0, dy: 0 };
+    setPicked(new Set(onCreateMany(copyDrafts(clipboard.marks, pageNumber, shift, inks))));
+  };
 
   // --- Reposition an existing stamp / note (browse mode, own marks only) -----
   // A press within TAP_SLOP_PX stays a tap (select / open the note editor, run
@@ -443,20 +806,6 @@ export const AnnotationOverlay = ({
     return false;
   }, []);
 
-  const livePreviewWidth = drawing
-    ? strokeFraction(tool === "highlighter" ? "highlighter" : "pen", size) * width
-    : 0;
-  // The shape preview is the figure that will be stored, snapping included, so
-  // what lifts off the page is exactly what was on it a moment before.
-  const livePreviewPath =
-    !stroke || stroke.length < 2
-      ? ""
-      : shaping
-        ? buildShapePaths(shape, stroke[0], stroke[stroke.length - 1], width, height)
-            .map((path) => buildSmoothPath(path, width, height))
-            .join(" ")
-        : buildSmoothPath(stroke, width, height);
-
   /** A tap on any existing mark: rub it out, or open the card about it. */
   const handleMarkActivate = (a: ScoreAnnotation) => {
     if (erasing) {
@@ -466,98 +815,18 @@ export const AnnotationOverlay = ({
     onSelect(selectedId === a.id ? null : a.id);
   };
 
-  const renderStroke = (a: ScoreAnnotation & { payload: { paths: NormPoint[][]; width: number } }) => {
-    const highlight = a.annotation_type === "HL";
-    const d = a.payload.paths.map((p) => buildSmoothPath(p, width, height)).join(" ");
-    const strokeWidthPx = Math.max(highlight ? 4 : 1.5, a.payload.width * width);
-    // The hit band is offered only on marks this reader may act on, which is
-    // also what bounds its cost: a chorister reading the conductor's highlight
-    // over the lyrics keeps full text selection under it.
-    const touchable = strokesInteractive && canModify(a);
-    return (
-      <g key={a.id}>
-        <path
-          d={d}
-          fill="none"
-          stroke={a.color}
-          strokeWidth={strokeWidthPx}
-          strokeLinecap={highlight ? "butt" : "round"}
-          strokeLinejoin="round"
-          style={{
-            opacity: highlight ? HIGHLIGHT_OPACITY : 1,
-            mixBlendMode: highlight ? "multiply" : "normal",
-            pointerEvents: "none",
-          }}
-        />
-        {touchable && (
-          // Invisible band, wide enough to find with a thumb. It must stay a
-          // <path> and never become a <button>: the viewer's pinch gate walks
-          // `closest("button, …, [data-pdf-pinch-through]")` and honours the
-          // attribute on whatever it lands on, so a button here would stop two
-          // fingers zooming the score wherever ink had been drawn.
-          <path
-            d={d}
-            fill="none"
-            stroke="transparent"
-            strokeWidth={Math.min(
-              STROKE_HIT_MAX_WIDTH,
-              Math.max(strokeWidthPx, STROKE_HIT_MIN_WIDTH),
-            )}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            style={{ pointerEvents: "stroke", cursor: "pointer" }}
-            // Selection rides the CLICK: a touch that scrolled the viewport has
-            // its click suppressed by the browser, so panning over ink is still
-            // panning. Erasing stays on the press, where rubbing belongs.
-            onClick={() => handleMarkActivate(a)}
-            onPointerDown={(e) => {
-              if (!erasing) return;
-              e.stopPropagation();
-              // A touch (and a stylus) is IMPLICITLY captured to the element it
-              // landed on, so every later `pointerenter` would be delivered
-              // here and the rub below would only ever erase this one line.
-              // Letting the capture go is what makes the gesture reach the rest
-              // of the scribble.
-              if (e.currentTarget.hasPointerCapture(e.pointerId)) {
-                e.currentTarget.releasePointerCapture(e.pointerId);
-              }
-              onDelete(a.id);
-            }}
-            // Rubbing out a scribble is one gesture, not one tap per line.
-            onPointerEnter={(e) => {
-              if (!erasing || e.buttons === 0) return;
-              onDelete(a.id);
-            }}
-          />
-        )}
-      </g>
-    );
-  };
-
-  /** A gold wash traced around a stroke. Drawn over the finished ink rather
-   *  than under it: a highlighter composites with `multiply`, so a halo beneath
-   *  one would be multiplied INTO the marker and read as a mark of its own. */
-  const renderStrokeHalo = (
-    a: ScoreAnnotation & { payload: { paths: NormPoint[][]; width: number } },
-    { spread, opacity, key }: { spread: number; opacity: number; key: string },
-  ) => {
-    const highlight = a.annotation_type === "HL";
-    const d = a.payload.paths.map((p) => buildSmoothPath(p, width, height)).join(" ");
-    const strokeWidthPx = Math.max(highlight ? 4 : 1.5, a.payload.width * width);
-    return (
-      <path
-        key={`${key}-${a.id}`}
-        className="stroke-ethereal-gold"
-        d={d}
-        fill="none"
-        strokeWidth={strokeWidthPx + spread * 2}
-        strokeOpacity={opacity}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        style={{ mixBlendMode: "normal", pointerEvents: "none" }}
-      />
-    );
-  };
+  // The memoised stroke layer is handed callbacks that never change, which
+  // read the newest of these when a stroke is touched.
+  const strokeActions = useRef({ handleMarkActivate, canModify, onDelete });
+  strokeActions.current = { handleMarkActivate, canModify, onDelete };
+  const activateStroke = useCallback(
+    (a: ScoreAnnotation) => strokeActions.current.handleMarkActivate(a),
+    [],
+  );
+  const eraseStroke = useCallback((a: ScoreAnnotation) => {
+    const { canModify: mayModify, onDelete: erase } = strokeActions.current;
+    if (mayModify(a)) erase(a.id);
+  }, []);
 
   /** The same wash behind a placed mark (a stamp, a note), past its box. The
    *  marker's wrapper is translated, so it is a stacking context of its own and
@@ -573,6 +842,24 @@ export const AnnotationOverlay = ({
       />
     );
 
+  /** Where a placed mark is drawn: on its anchor, moved by a drag in progress. */
+  const markerTransform = (a: ScoreAnnotation, offset: { dx: number; dy: number } | null) =>
+    offset
+      ? `translate(-50%, -50%) translate(${offset.dx}px, ${offset.dy}px)`
+      : isCarried(a)
+        ? `translate(-50%, -50%) ${CARRY_TRANSFORM}`
+        : "translate(-50%, -50%)";
+
+  const liveLook = selecting ? "loop" : tool === "highlighter" ? "highlight" : "ink";
+  const liveWidth = drawing
+    ? Math.max(
+        tool === "highlighter" ? 4 : 1.5,
+        strokeFraction(tool === "highlighter" ? "highlighter" : "pen", size) * width,
+      )
+    : 1.5;
+  const showPaste =
+    selecting && clipboard !== null && clipboard.marks.length > 0 && selection.length === 0;
+
   return (
     // Drawing capture lives on this HTML div (not the SVG): an <svg> with
     // pointer-events:auto only fires on PAINTED areas, so pointerdown on the
@@ -581,104 +868,71 @@ export const AnnotationOverlay = ({
       ref={surfaceRef}
       className={cn(
         "absolute inset-0",
-        drawing && "cursor-crosshair",
+        tracing && "cursor-crosshair",
         (placing || stamping) && "cursor-copy",
       )}
       style={{
         width,
         height,
         pointerEvents: surfaceInteractive ? "auto" : "none",
-        // Pen tools own every touch (finger pan is re-implemented manually);
+        // Tracing tools own every touch (finger pan is re-implemented manually);
         // tap-to-place tools leave panning to the browser. The eraser's surface
         // stays click-through, but touch-action reaches the hit bands inside
         // it, so rubbing over ink erases instead of scrolling the score.
         touchAction:
-          drawing || erasing ? "none" : surfaceInteractive ? "pan-x pan-y" : undefined,
+          tracing || erasing ? "none" : surfaceInteractive ? "pan-x pan-y" : undefined,
       }}
       {...surfaceHandlers}
     >
-      <svg
+      <MarkLayer
+        strokes={pageStrokes}
         width={width}
         height={height}
-        viewBox={`0 0 ${width} ${height}`}
-        className="absolute inset-0"
-        // Never a hit target itself. `pointer-events: none` on an ancestor does
-        // NOT stop a descendant that switches them back on, so the hit bands
-        // below opt in one at a time — the same arrangement the note markers
-        // already use inside this surface. Leaving the root "auto" while an
-        // eraser was armed turned the whole page rectangle into a target and
-        // swallowed text selection across all of it.
-        style={{ pointerEvents: "none" }}
-      >
-        {/* Highlighter first (under the ink), then opaque pen strokes. */}
-        {pageAnnotations.filter(isHighlight).map(renderStroke)}
-        {pageAnnotations.filter(isFreehand).map(renderStroke)}
+        interactive={strokesInteractive}
+        erasing={erasing}
+        canModify={canModify}
+        selected={highlighted}
+        newIds={newIds}
+        carried={carried}
+        onActivate={activateStroke}
+        onErase={eraseStroke}
+      />
 
-        {/* New marks, then the selection last of all, so both wash over
-            finished ink and the selection reads over the newness. */}
-        {newIds.size > 0 &&
-          pageAnnotations
-            .filter((a) => newIds.has(a.id))
-            .filter(isStrokeMark)
-            .map((a) =>
-              renderStrokeHalo(a, {
-                spread: NEW_HALO_PX,
-                opacity: NEW_HALO_OPACITY,
-                key: "new",
-              }),
-            )}
-        {selectedId !== null &&
-          pageAnnotations
-            .filter((a) => a.id === selectedId)
-            .filter(isStrokeMark)
-            .map((a) =>
-              renderStrokeHalo(a, {
-                spread: SELECTION_HALO_PX,
-                opacity: 0.45,
-                key: "halo",
-              }),
-            )}
-
-        {livePreviewPath && (
-          <path
-            d={livePreviewPath}
-            fill="none"
-            stroke={color}
-            strokeWidth={Math.max(tool === "highlighter" ? 4 : 1.5, livePreviewWidth)}
-            strokeLinecap={tool === "highlighter" ? "butt" : "round"}
-            strokeLinejoin="round"
-            style={{
-              pointerEvents: "none",
-              opacity: tool === "highlighter" ? HIGHLIGHT_OPACITY : 0.85,
-              mixBlendMode: tool === "highlighter" ? "multiply" : "normal",
-            }}
-          />
-        )}
-      </svg>
+      {tracing && (
+        <LiveStrokeLayer
+          ref={liveRef}
+          width={width}
+          height={height}
+          look={liveLook}
+          color={color}
+          strokeWidth={liveWidth}
+          shape={shaping ? shape : null}
+          highlightOpacity={HIGHLIGHT_OPACITY}
+        />
+      )}
 
       {/* Musical stamps — pure display until the eraser targets an erasable one,
           or browse mode lets the owner drag it. */}
       {pageAnnotations.filter(isStamp).map((a) => {
-        const payload = a.payload as StampPayload;
+        const payload = a.payload;
         const def = getStampDef(payload.symbol);
         if (!def) return null;
         const erasable = erasing && canModify(a);
         const modifiable = canModify(a);
         const draggable = arranging && modifiable;
         const offset = dragOffset?.id === a.id ? dragOffset : null;
-        const selected = selectedId === a.id;
+        const selected = highlighted.has(a.id);
         const scale = scaleDraft?.id === a.id ? scaleDraft.scale : payload.scale;
         return (
           <div
             key={a.id}
             data-annotation-mark
+            data-mark-id={a.id}
             className="absolute"
             style={{
               left: payload.x * width,
               top: payload.y * height,
-              transform: offset
-                ? `translate(-50%, -50%) translate(${offset.dx}px, ${offset.dy}px)`
-                : "translate(-50%, -50%)",
+              transform: markerTransform(a, offset),
               pointerEvents: marksInteractive && modifiable ? "auto" : "none",
             }}
           >
@@ -722,12 +976,13 @@ export const AnnotationOverlay = ({
       {/* Notes: inline text drawn on the page, or clickable pins. */}
       {pageAnnotations.filter(isComment).map((a) => {
         if (a.id === editingNote?.id) return null;
-        const payload = a.payload as CommentPayload;
+        const payload = a.payload;
         const inline = payload.display === "inline";
         const isPrivate = isPrivateLayer(a);
         const modifiable = canModify(a);
         const draggable = arranging && modifiable;
         const offset = dragOffset?.id === a.id ? dragOffset : null;
+        const selected = highlighted.has(a.id);
         const left = payload.x * width;
         const top = payload.y * height;
         // Tap selects / opens the editor; a drag repositions the note and its
@@ -750,13 +1005,12 @@ export const AnnotationOverlay = ({
           <div
             key={a.id}
             data-annotation-mark
+            data-mark-id={a.id}
             className="absolute"
             style={{
               left,
               top,
-              transform: offset
-                ? `translate(-50%, -50%) translate(${offset.dx}px, ${offset.dy}px)`
-                : "translate(-50%, -50%)",
+              transform: markerTransform(a, offset),
               pointerEvents: marksInteractive ? "auto" : "none",
               maxWidth: inline ? width * 0.5 : undefined,
             }}
@@ -768,7 +1022,7 @@ export const AnnotationOverlay = ({
                 onClick={onMarkerClick}
                 {...dragHandlers}
                 aria-label={payload.text}
-                aria-pressed={selectedId === a.id}
+                aria-pressed={selected}
                 className={cn(
                   INLINE_MARK_CLASS,
                   "relative transition-shadow",
@@ -776,7 +1030,7 @@ export const AnnotationOverlay = ({
                   // button sets `color` to the note's own ink below, and
                   // Tailwind's default ring is `currentColor` — so an unnamed
                   // ring would outline the mark in its own colour.
-                  selectedId === a.id ? "ring-2 ring-ethereal-gold" : "ring-black/10",
+                  selected ? "ring-2 ring-ethereal-gold" : "ring-black/10",
                   erasing && modifiable && "cursor-pointer hover:ring-ethereal-crimson",
                   draggable && "touch-none",
                 )}
@@ -813,7 +1067,7 @@ export const AnnotationOverlay = ({
               <button
                 type="button"
                 aria-label={payload.text}
-                aria-pressed={selectedId === a.id}
+                aria-pressed={selected}
                 onClick={onMarkerClick}
                 {...dragHandlers}
                 className={cn(
@@ -822,7 +1076,7 @@ export const AnnotationOverlay = ({
                   // resting rim is a light hairline against the page — the two
                   // have to differ in HUE, because a difference in opacity
                   // alone is a selection state nobody can see.
-                  selectedId === a.id ? "ring-ethereal-gold" : "ring-white/80",
+                  selected ? "ring-ethereal-gold" : "ring-white/80",
                   draggable && "touch-none",
                 )}
                 style={{
@@ -853,6 +1107,70 @@ export const AnnotationOverlay = ({
           </div>
         );
       })}
+
+      {/* The selection's frame: the handle that moves it. A press inside it is
+          a drag or a tap on a mark, never the start of a new loop. */}
+      {selecting && frame && (
+        <div
+          aria-hidden="true"
+          data-annotation-mark
+          className="absolute touch-none rounded-sm border border-dashed border-ethereal-gold"
+          style={{
+            left: frame.left,
+            top: frame.top,
+            width: frame.width,
+            height: frame.height,
+            pointerEvents: "auto",
+            cursor: frameCarried ? "grabbing" : "move",
+            transform: frameCarried ? CARRY_TRANSFORM : undefined,
+          }}
+          onPointerDown={beginSelectionDrag}
+          onPointerMove={moveSelectionDrag}
+          onPointerUp={endSelectionDrag}
+          onPointerCancel={cancelSelectionDrag}
+        />
+      )}
+
+      {selecting && frame && !frameCarried && selection.length > 0 && (
+        <SelectionCard
+          marks={selection}
+          frame={frame}
+          width={width}
+          height={height}
+          inks={inks}
+          audiences={audiences}
+          onChangeLayer={readdressSelection}
+          onChangeColor={recolorSelection}
+          onDuplicate={duplicateSelection}
+          onCopy={copySelection}
+          onDelete={deleteSelection}
+          onClose={() => setPicked(NO_IDS)}
+        />
+      )}
+
+      {/* Marks copied from another page wait here, on any page of the piece. */}
+      {showPaste && (
+        <div
+          data-annotation-mark
+          className="absolute left-1/2 top-3 z-20 -translate-x-1/2"
+          style={{ pointerEvents: "auto" }}
+          onPointerDown={(event) => event.stopPropagation()}
+        >
+          <button
+            type="button"
+            onClick={pasteHere}
+            className="flex items-center gap-1.5 rounded-full border border-hairline-strong bg-ethereal-marble px-3 py-1.5 text-ethereal-ink shadow-glass-ethereal transition-colors hover:text-ethereal-gold"
+          >
+            <ClipboardPaste size={15} aria-hidden="true" />
+            <Text as="span" size="sm" color="inherit">
+              {t("annotations.selection.paste", {
+                n: clipboard.marks.length,
+                defaultValue: "Wklej ({{n}})",
+              })}
+            </Text>
+          </button>
+        </div>
+      )}
 
       {/* Pending new-note composer. */}
       {pendingNote && canEdit && (
@@ -886,7 +1204,7 @@ export const AnnotationOverlay = ({
       {/* Edit composer for a selected note the user is allowed to modify. */}
       {editingNote &&
         (() => {
-          const payload = editingNote.payload as CommentPayload;
+          const payload = editingNote.payload;
           return (
             <NoteCard
               // Selecting another note while this one is open must hand the

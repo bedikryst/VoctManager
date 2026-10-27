@@ -215,6 +215,7 @@
       "note": "Note",
       "pen": "Stylo",
       "pointer": "Parcourir",
+      "select": "Sélection",
       "shape": "Formes",
       "stamp": "Symbole"
     },
@@ -233,6 +234,19 @@
         "highlight": "Surlignage",
         "stamp": "Symbole"
       }
+    },
+    "selection": {
+      "audience_mixed": "Les annotations sélectionnées ont des destinataires différents. Choisissez qui doit les voir toutes.",
+      "audience_private_mixed": "La sélection réunit des annotations privées et des annotations visibles par d’autres. Sélectionnez-les séparément pour changer qui les voit.",
+      "copied": "Copié. Ouvrez une autre page de cette œuvre et collez avec l’outil Sélection.",
+      "copy": "Copier",
+      "count_one": "{{count}} annotation sélectionnée",
+      "count_few": "{{count}} annotations sélectionnées",
+      "count_many": "{{count}} annotations sélectionnées",
+      "count_other": "{{count}} annotations sélectionnées",
+      "delete": "Supprimer la sélection",
+      "duplicate": "Dupliquer",
+      "paste": "Coller ({{n}})"
     }
   },
   "archive": {

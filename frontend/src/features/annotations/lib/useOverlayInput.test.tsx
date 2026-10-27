@@ -9,7 +9,8 @@
  * ending the pencil's line or panning the page under it, or owning the page so
  * the pencil could not start one; a finger re-gripping mid-pinch drawing a line;
  * and a line half-drawn when the tool or the page changed hanging on as a ghost,
- * or landing on the next page.
+ * or landing on the next page. And the cost of a line: a render of the page per
+ * sample, and a pen's folded samples thrown away.
  * @module features/annotations/lib/useOverlayInput.test
  */
 
@@ -30,6 +31,7 @@ import {
 } from "./useOverlayInput";
 import type { AnnotationTool } from "./useAnnotationTools";
 import { useScoreAnnotator } from "../useScoreAnnotator";
+import type { NormPoint } from "../types/annotations.dto";
 
 // The annotator's toolbar reaches the viewer's module, which loads pdf.js, and
 // pdf.js needs a DOMMatrix that jsdom does not have. Nothing here renders a page.
@@ -50,12 +52,14 @@ interface PointerInit {
   primary?: boolean;
   x: number;
   y: number;
+  /** The samples the browser folded into this move, the event's own last. */
+  folded?: ReadonlyArray<{ x: number; y: number }>;
 }
 
 /** The fields the router reads, on the element React would hand it. */
 const pointer = (
   target: HTMLElement,
-  { id = 1, type = "pen", button = 0, primary = true, x, y }: PointerInit,
+  { id = 1, type = "pen", button = 0, primary = true, x, y, folded }: PointerInit,
 ): React.PointerEvent<HTMLElement> =>
   ({
     pointerId: id,
@@ -66,6 +70,12 @@ const pointer = (
     clientY: y,
     currentTarget: target,
     target,
+    nativeEvent: folded
+      ? {
+          getCoalescedEvents: () =>
+            folded.map((sample) => ({ clientX: sample.x, clientY: sample.y })),
+        }
+      : undefined,
   }) as unknown as React.PointerEvent<HTMLElement>;
 
 /**
@@ -110,19 +120,24 @@ const mount = (initial: Partial<Hand> = {}) => {
   const page = arrangePage();
   const surfaceRef = { current: page.surface };
   const onStroke = vi.fn<OverlayInputOptions["onStroke"]>();
+  const onPreview = vi.fn<OverlayInputOptions["onPreview"]>();
   const onTap = vi.fn<OverlayInputOptions["onTap"]>();
   const onTurnPage = vi.fn<OverlayInputOptions["onTurnPage"]>();
+  let renders = 0;
   const view = renderHook(
-    ({ tool, fingerDraw }: Hand) =>
-      useOverlayInput({
+    ({ tool, fingerDraw }: Hand) => {
+      renders += 1;
+      return useOverlayInput({
         surfaceRef,
         tool,
         canEdit: true,
         fingerDraw,
         onStroke,
+        onPreview,
         onTap,
         onTurnPage,
-      }),
+      });
+    },
     { initialProps: { tool: "pen", fingerDraw: false, ...initial } },
   );
   const handlers = () => view.result.current.surfaceHandlers;
@@ -130,8 +145,13 @@ const mount = (initial: Partial<Hand> = {}) => {
     kind: keyof OverlayInput["surfaceHandlers"],
     init: PointerInit,
   ): void => handlers()[kind](pointer(page.surface, init));
-  return { ...view, ...page, onStroke, onTap, send };
+  /** The line in progress as the page would draw it now; null between lines. */
+  const live = (): readonly NormPoint[] | null => onPreview.mock.lastCall?.[0] ?? null;
+  return { ...view, ...page, onStroke, onTap, send, live, renders: () => renders };
 };
+
+/** What a trace that travelled reports beside its points. */
+const MOVED = { tapped: false };
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -139,18 +159,18 @@ afterEach(() => {
 
 describe("only the primary button writes", () => {
   it("lays down no ink for a right-click or a pen's eraser end", () => {
-    const { result, send, onStroke } = mount();
+    const { live, send, onStroke } = mount();
 
     act(() => send("onPointerDown", { type: "mouse", button: 2, x: 10, y: 10 }));
     act(() => send("onPointerUp", { type: "mouse", button: 2, x: 60, y: 60 }));
     act(() => send("onPointerDown", { type: "pen", button: 5, x: 10, y: 10 }));
     act(() => send("onPointerUp", { type: "pen", button: 5, x: 60, y: 60 }));
 
-    expect(result.current.stroke).toBeNull();
+    expect(live()).toBeNull();
     expect(onStroke).not.toHaveBeenCalled();
 
     act(() => send("onPointerDown", { x: 10, y: 10 }));
-    expect(result.current.stroke).toEqual([[0.1, 0.1]]);
+    expect(live()).toEqual([[0.1, 0.1]]);
   });
 
   it("places nothing on a right-click", () => {
@@ -184,7 +204,72 @@ describe("a finished stroke", () => {
       [0.3, 0.3],
       [0.5, 0.5],
       [0.7, 0.7],
+    ], MOVED);
+  });
+
+  it("draws a line in progress without rendering the page", () => {
+    const { send, live, renders } = mount();
+
+    act(() => send("onPointerDown", { x: 10, y: 10 }));
+    const before = renders();
+    act(() => {
+      send("onPointerMove", { x: 30, y: 30 });
+      send("onPointerMove", { x: 50, y: 50 });
+    });
+
+    expect(renders()).toBe(before);
+    expect(live()).toEqual([
+      [0.1, 0.1],
+      [0.3, 0.3],
+      [0.5, 0.5],
     ]);
+  });
+
+  it("keeps the samples a pen's move folded together", () => {
+    const { send, onStroke } = mount();
+
+    act(() => send("onPointerDown", { x: 10, y: 10 }));
+    act(() =>
+      send("onPointerMove", {
+        x: 40,
+        y: 40,
+        folded: [
+          { x: 20, y: 20 },
+          { x: 30, y: 30 },
+          { x: 40, y: 40 },
+        ],
+      }),
+    );
+    act(() => send("onPointerUp", { x: 40, y: 40 }));
+
+    expect(onStroke).toHaveBeenCalledWith(
+      [
+        [0.1, 0.1],
+        [0.2, 0.2],
+        [0.3, 0.3],
+        [0.4, 0.4],
+      ],
+      MOVED,
+    );
+  });
+
+  it("measures the step between points on the screen", () => {
+    const { send, onStroke } = mount();
+
+    act(() => send("onPointerDown", { x: 10, y: 10 }));
+    // One screen pixel is jitter; the lift is still where the line ends.
+    act(() => send("onPointerMove", { x: 11, y: 10 }));
+    act(() => send("onPointerMove", { x: 30, y: 10 }));
+    act(() => send("onPointerUp", { x: 31, y: 10 }));
+
+    expect(onStroke).toHaveBeenCalledWith(
+      [
+        [0.1, 0.1],
+        [0.3, 0.1],
+        [0.31, 0.1],
+      ],
+      MOVED,
+    );
   });
 
   it("hands over a shape as its two corners, the second where the pen lifted", () => {
@@ -197,7 +282,7 @@ describe("a finished stroke", () => {
     expect(onStroke).toHaveBeenCalledWith([
       [0.1, 0.1],
       [0.6, 0.8],
-    ]);
+    ], MOVED);
   });
 });
 
@@ -218,7 +303,7 @@ describe("palm rejection", () => {
       [0.1, 0.1],
       [0.3, 0.3],
       [0.4, 0.4],
-    ]);
+    ], MOVED);
   });
 
   it("stops a palm that landed first from panning once the pencil writes", () => {
@@ -236,19 +321,19 @@ describe("palm rejection", () => {
   });
 
   it("still hands a finger's line to the pinch when a second finger lands", () => {
-    const { result, send, onStroke } = mount({ fingerDraw: true });
+    const { live, send, onStroke } = mount({ fingerDraw: true });
 
     act(() => send("onPointerDown", { id: 1, type: "touch", x: 10, y: 10 }));
     act(() => send("onPointerMove", { id: 1, type: "touch", x: 30, y: 30 }));
     act(() => send("onPointerDown", { id: 2, type: "touch", primary: false, x: 60, y: 60 }));
     act(() => send("onPointerUp", { id: 1, type: "touch", x: 40, y: 40 }));
 
-    expect(result.current.stroke).toBeNull();
+    expect(live()).toBeNull();
     expect(onStroke).not.toHaveBeenCalled();
   });
 
   it("lets the pen take the page from a palm that landed first, with finger drawing on", () => {
-    const { result, send, onStroke } = mount({ fingerDraw: true });
+    const { live, send, onStroke } = mount({ fingerDraw: true });
 
     act(() => send("onPointerDown", { id: 2, type: "touch", x: 50, y: 50 }));
     act(() => send("onPointerMove", { id: 2, type: "touch", x: 60, y: 60 }));
@@ -256,7 +341,7 @@ describe("palm rejection", () => {
     act(() => send("onPointerMove", { id: 2, type: "touch", x: 70, y: 70 }));
     act(() => send("onPointerMove", { id: 1, x: 30, y: 30 }));
     act(() => send("onPointerUp", { id: 2, type: "touch", x: 70, y: 70 }));
-    expect(result.current.stroke).toEqual([
+    expect(live()).toEqual([
       [0.1, 0.1],
       [0.3, 0.3],
     ]);
@@ -266,13 +351,13 @@ describe("palm rejection", () => {
       [0.1, 0.1],
       [0.3, 0.3],
       [0.4, 0.4],
-    ]);
+    ], MOVED);
   });
 });
 
 describe("a pinch", () => {
   it("draws nothing for a third finger, or for a finger that re-grips while one is down", () => {
-    const { result, send, onStroke } = mount({ fingerDraw: true });
+    const { live, send, onStroke } = mount({ fingerDraw: true });
 
     act(() => send("onPointerDown", { id: 1, type: "touch", x: 10, y: 10 }));
     act(() => send("onPointerDown", { id: 2, type: "touch", primary: false, x: 60, y: 60 }));
@@ -284,7 +369,7 @@ describe("a pinch", () => {
     act(() => send("onPointerUp", { id: 1, type: "touch", x: 10, y: 10 }));
     act(() => send("onPointerDown", { id: 4, type: "touch", primary: false, x: 20, y: 20 }));
     act(() => send("onPointerMove", { id: 4, type: "touch", x: 50, y: 50 }));
-    expect(result.current.stroke).toBeNull();
+    expect(live()).toBeNull();
     act(() => send("onPointerUp", { id: 4, type: "touch", x: 50, y: 50 }));
     act(() => send("onPointerUp", { id: 2, type: "touch", x: 60, y: 60 }));
 
@@ -296,7 +381,7 @@ describe("a pinch", () => {
     expect(onStroke).toHaveBeenCalledExactlyOnceWith([
       [0.1, 0.1],
       [0.3, 0.3],
-    ]);
+    ], MOVED);
   });
 
   it("forgets a finger whose lift it never saw once a first touch lands again", () => {
@@ -312,19 +397,55 @@ describe("a pinch", () => {
     expect(onStroke).toHaveBeenCalledExactlyOnceWith([
       [0.2, 0.2],
       [0.4, 0.4],
-    ]);
+    ], MOVED);
+  });
+});
+
+describe("the selection's loop", () => {
+  it("is traced like ink, and says when the pointer never left its tap", () => {
+    const { send, onStroke } = mount({ tool: "select" });
+
+    act(() => send("onPointerDown", { x: 20, y: 20 }));
+    act(() => send("onPointerMove", { x: 25, y: 22 }));
+    act(() => send("onPointerUp", { x: 24, y: 21 }));
+    expect(onStroke).toHaveBeenLastCalledWith(expect.any(Array), { tapped: true });
+
+    act(() => send("onPointerDown", { x: 20, y: 20 }));
+    act(() => send("onPointerMove", { x: 60, y: 20 }));
+    act(() => send("onPointerMove", { x: 60, y: 60 }));
+    act(() => send("onPointerUp", { x: 20, y: 60 }));
+    expect(onStroke).toHaveBeenLastCalledWith(
+      [
+        [0.2, 0.2],
+        [0.6, 0.2],
+        [0.6, 0.6],
+        [0.2, 0.6],
+      ],
+      MOVED,
+    );
+  });
+
+  it("leaves the finger to pan on a stylus device", () => {
+    const { send, onStroke, pans } = mount({ tool: "select" });
+
+    act(() => send("onPointerDown", { id: 2, type: "touch", x: 50, y: 50 }));
+    act(() => send("onPointerMove", { id: 2, type: "touch", x: 70, y: 70 }));
+    act(() => send("onPointerUp", { id: 2, type: "touch", x: 70, y: 70 }));
+
+    expect(pans).toHaveBeenCalled();
+    expect(onStroke).not.toHaveBeenCalled();
   });
 });
 
 describe("a change of tool or page", () => {
   it("drops a line in progress when the pen is put down for another tool", () => {
-    const { result, rerender, send, onStroke, captured } = mount();
+    const { live, rerender, send, onStroke, captured } = mount();
 
     act(() => send("onPointerDown", { x: 10, y: 10 }));
     act(() => send("onPointerMove", { x: 30, y: 30 }));
     rerender({ tool: "eraser", fingerDraw: false });
 
-    expect(result.current.stroke).toBeNull();
+    expect(live()).toBeNull();
     expect(captured.size).toBe(0);
 
     act(() => send("onPointerUp", { x: 40, y: 40 }));

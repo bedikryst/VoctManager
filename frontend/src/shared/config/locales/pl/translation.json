@@ -223,6 +223,7 @@
       "note": "Notatka",
       "pen": "Pióro",
       "pointer": "Przeglądaj",
+      "select": "Zaznacz",
       "shape": "Kształty",
       "stamp": "Symbol"
     },
@@ -241,6 +242,19 @@
         "highlight": "Zakreślenie",
         "stamp": "Symbol"
       }
+    },
+    "selection": {
+      "audience_mixed": "Zaznaczone oznaczenia mają różnych odbiorców. Wybierz, kto ma widzieć wszystkie.",
+      "audience_private_mixed": "W zaznaczeniu są prywatne oznaczenia i oznaczenia widoczne dla innych. Żeby zmienić odbiorców, zaznacz je osobno.",
+      "copied": "Skopiowane. Otwórz inną stronę tego utworu i wklej je narzędziem Zaznacz.",
+      "copy": "Kopiuj",
+      "count_one": "Zaznaczono {{count}} oznaczenie",
+      "count_few": "Zaznaczono {{count}} oznaczenia",
+      "count_many": "Zaznaczono {{count}} oznaczeń",
+      "count_other": "Zaznaczono {{count}} oznaczeń",
+      "delete": "Usuń zaznaczone",
+      "duplicate": "Powiel",
+      "paste": "Wklej ({{n}})"
     }
   },
   "archive": {

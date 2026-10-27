@@ -28,6 +28,10 @@
  * ends that edition's undo history), and a stand opened from a project tells its
  * choir about new marks from the toolbar — in the concert book from its title
  * page too, where there is nothing to draw on.
+ *
+ * The selection itself belongs to the page, but what it copies is held here,
+ * per edition: it is pasted on another page of the same piece, and in the book
+ * a walk through the next piece and back finds it still waiting.
  * @module features/annotations
  */
 
@@ -56,9 +60,10 @@ import { useCanDraw } from "./lib/useCanDraw";
 import { useIncomingMarks } from "./lib/useIncomingMarks";
 import { bookFocusY, bookPageFor, type ScoreBook } from "./lib/scoreBook";
 import { layerOf, WRITE_LAYERS, type WriteLayer } from "./lib/layers";
+import type { MarkClipboard, MarkEdit } from "./lib/selection";
 import type {
   AnnotationPatch,
-  NewAnnotation,
+  MarkDraft,
   ScoreAnnotation,
 } from "./types/annotations.dto";
 
@@ -247,6 +252,7 @@ export const useScoreAnnotator = ({
     update: recordUpdate,
     erase: recordErase,
     clear: recordClear,
+    group: recordGroup,
     reset: resetHistory,
   } = history;
 
@@ -258,8 +264,13 @@ export const useScoreAnnotator = ({
     setGuideOpen(false);
   }, [activeEditionId]);
 
+  // The page's callbacks keep one identity while the marks change under them:
+  // the erase reads the list when it runs, not when it was made.
+  const annotationsRef = useRef(annotations);
+  annotationsRef.current = annotations;
+
   const handleCreate = useCallback(
-    (partial: Omit<NewAnnotation, "edition">) => {
+    (partial: MarkDraft) => {
       const draft = draftAnnotation(partial);
       if (!draft) return;
       // Recorded from the DRAFT, not the server's reply: the id is minted here
@@ -270,6 +281,18 @@ export const useScoreAnnotator = ({
     [draftAnnotation, recordCreate],
   );
 
+  const handleCreateMany = useCallback(
+    (partials: readonly MarkDraft[]): string[] => {
+      const drafts = partials.flatMap((partial) => {
+        const draft = draftAnnotation(partial);
+        return draft ? [draft] : [];
+      });
+      recordGroup(drafts.map((annotation) => ({ kind: "create", annotation })));
+      return drafts.map((draft) => draft.id);
+    },
+    [draftAnnotation, recordGroup],
+  );
+
   const handleUpdate = useCallback(
     (id: string, after: AnnotationPatch, before: AnnotationPatch) => {
       recordUpdate(id, before, after);
@@ -277,16 +300,44 @@ export const useScoreAnnotator = ({
     [recordUpdate],
   );
 
+  const handleUpdateMany = useCallback(
+    (edits: readonly MarkEdit[]) => {
+      recordGroup(edits.map(({ id, before, after }) => ({ kind: "update", id, before, after })));
+    },
+    [recordGroup],
+  );
+
   const handleDelete = useCallback(
     (id: string) => {
-      const target = annotations.find((a) => a.id === id);
+      const target = annotationsRef.current.find((a) => a.id === id);
       if (target) recordErase(target);
       // Wherever the erase came from — the card, the eraser, an undo — a mark
       // that is gone cannot stay selected, or its card outlives it.
       setSelectedId((current) => (current === id ? null : current));
     },
-    [annotations, recordErase],
+    [recordErase],
   );
+
+  // One request that names exactly these marks, undone as themselves — the
+  // same write the trash makes, bounded to the selection.
+  const handleDeleteMany = useCallback(
+    (marks: readonly ScoreAnnotation[]) => {
+      recordClear(marks);
+      setSelectedId((current) => (marks.some((a) => a.id === current) ? null : current));
+    },
+    [recordClear],
+  );
+
+  const [clipboard, setClipboard] = useState<MarkClipboard | null>(null);
+  const handleCopy = useCallback(
+    (marks: readonly ScoreAnnotation[], page: number) => {
+      if (!activeEditionId || marks.length === 0) return;
+      setClipboard({ editionId: activeEditionId, page, marks });
+    },
+    [activeEditionId],
+  );
+  // Marks are pasted into the piece they were copied from, and nowhere else.
+  const editionClipboard = clipboard?.editionId === activeEditionId ? clipboard : null;
 
   const clearableCount = useMemo(
     () => annotations.filter(isCleared).length,
@@ -553,10 +604,15 @@ export const useScoreAnnotator = ({
           audiences={audiences}
           selectedId={selectedId}
           newIds={newIds}
+          clipboard={editionClipboard}
           onSelect={setSelectedId}
           onCreate={handleCreate}
+          onCreateMany={handleCreateMany}
           onUpdate={handleUpdate}
+          onUpdateMany={handleUpdateMany}
           onDelete={handleDelete}
+          onDeleteMany={handleDeleteMany}
+          onCopy={handleCopy}
         />
       );
       if (!frame) return surface;
@@ -594,10 +650,15 @@ export const useScoreAnnotator = ({
       canModify,
       selectedId,
       newIds,
+      editionClipboard,
       turnPage,
       handleCreate,
+      handleCreateMany,
       handleUpdate,
+      handleUpdateMany,
       handleDelete,
+      handleDeleteMany,
+      handleCopy,
     ],
   );
 

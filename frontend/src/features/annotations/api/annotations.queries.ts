@@ -59,11 +59,12 @@ import {
   wasSent,
   type CollapsedWrite,
 } from "../lib/pendingMarks";
-import type {
-  AnnotationPatch,
-  MarkFingerprint,
-  NewAnnotation,
-  ScoreAnnotation,
+import {
+  withPatch,
+  type AnnotationPatch,
+  type MarkDraft,
+  type MarkFingerprint,
+  type ScoreAnnotation,
 } from "../types/annotations.dto";
 
 export const annotationKeys = {
@@ -701,7 +702,7 @@ export const useAnnotationMutations = (
       patchRows((rows) =>
         rows.map((row) =>
           row.id === id
-            ? { ...row, ...patch, updated_at: new Date().toISOString() }
+            ? { ...withPatch(row, patch), updated_at: new Date().toISOString() }
             : row,
         ),
       );
@@ -954,7 +955,7 @@ export const useAnnotationMutations = (
 
   /** Mint the identity a new mark will keep on every device, forever. */
   const draftAnnotation = useCallback(
-    (partial: Omit<NewAnnotation, "edition">): ScoreAnnotation | null => {
+    (partial: MarkDraft): ScoreAnnotation | null => {
       if (!editionId) return null;
       const now = new Date().toISOString();
       return {

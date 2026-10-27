@@ -64,20 +64,31 @@ export interface StampPayload {
   scale?: number;
 }
 
-export type AnnotationPayload =
-  | FreehandPayload
-  | CommentPayload
-  | StampPayload
-  | Record<string, unknown>;
+export type AnnotationPayload = FreehandPayload | CommentPayload | StampPayload;
 
-export interface ScoreAnnotation {
-  id: string;
-  edition: string;
+/**
+ * A mark's kind and the payload that kind carries, as one discriminated pair:
+ * narrowing on `annotation_type` types the payload with it. The server
+ * validates each payload against its kind, so a row read back always matches;
+ * the guards below still check the shape, because a row cached or queued by an
+ * older build is read back as it was stored.
+ */
+export type MarkContent =
+  | { annotation_type: "FH"; payload: FreehandPayload }
+  | { annotation_type: "HL"; payload: FreehandPayload }
+  | { annotation_type: "CM"; payload: CommentPayload }
+  | { annotation_type: "ST"; payload: StampPayload };
+
+/** What a writer decides about a new mark; the edition and the identity come later. */
+export type MarkDraft = MarkContent & {
   page_number: number;
-  annotation_type: AnnotationKind;
-  payload: AnnotationPayload;
   color: string;
   layer_name: string;
+};
+
+export type ScoreAnnotation = MarkDraft & {
+  id: string;
+  edition: string;
   created_by: string | null;
   created_at: string;
   updated_at: string;
@@ -88,7 +99,14 @@ export interface ScoreAnnotation {
    * build that predates it; such a row is never new.
    */
   content_at?: string;
-}
+};
+
+export type FreehandMark = ScoreAnnotation & { annotation_type: "FH" };
+export type HighlightMark = ScoreAnnotation & { annotation_type: "HL" };
+export type CommentMark = ScoreAnnotation & { annotation_type: "CM" };
+export type StampMark = ScoreAnnotation & { annotation_type: "ST" };
+/** Ink and highlighter: one payload, and every rule that draws or moves one. */
+export type StrokeMark = FreehandMark | HighlightMark;
 
 /**
  * What the score stand polls while it is open: how many marks this reader may
@@ -147,42 +165,47 @@ export interface MarksNews {
 }
 
 /** Create payload — `edition` is injected by the mutation layer. */
-export interface NewAnnotation {
-  edition: string;
-  page_number: number;
-  annotation_type: AnnotationKind;
-  payload: AnnotationPayload;
-  color: string;
-  layer_name: string;
-}
+export type NewAnnotation = MarkDraft & { edition: string };
 
-/** Patchable subset for editing an existing marking (note text / display / layer). */
+/**
+ * Patchable subset for editing an existing marking (note text / display / layer).
+ * A payload in a patch is always of the mark's own kind: no edit changes what a
+ * mark is, and the server refuses a payload of another kind.
+ */
 export interface AnnotationPatch {
   payload?: AnnotationPayload;
   color?: string;
   layer_name?: string;
 }
 
-export const isFreehand = (
-  a: ScoreAnnotation,
-): a is ScoreAnnotation & { payload: FreehandPayload } =>
-  a.annotation_type === "FH" &&
-  Array.isArray((a.payload as FreehandPayload)?.paths);
+/** A row with an edit applied. The kind stays, so the payload is the row's own. */
+export const withPatch = (row: ScoreAnnotation, patch: AnnotationPatch): ScoreAnnotation =>
+  ({ ...row, ...patch }) as ScoreAnnotation;
 
-export const isHighlight = (
-  a: ScoreAnnotation,
-): a is ScoreAnnotation & { payload: FreehandPayload } =>
-  a.annotation_type === "HL" &&
-  Array.isArray((a.payload as FreehandPayload)?.paths);
+/** A mark's kind and payload, carried together onto a new body. */
+export const markContent = (a: MarkContent): MarkContent => {
+  switch (a.annotation_type) {
+    case "FH":
+    case "HL":
+      return { annotation_type: a.annotation_type, payload: a.payload };
+    case "CM":
+      return { annotation_type: "CM", payload: a.payload };
+    case "ST":
+      return { annotation_type: "ST", payload: a.payload };
+  }
+};
 
-export const isComment = (
-  a: ScoreAnnotation,
-): a is ScoreAnnotation & { payload: CommentPayload } =>
-  a.annotation_type === "CM" &&
-  typeof (a.payload as CommentPayload)?.text === "string";
+export const isFreehand = (a: ScoreAnnotation): a is FreehandMark =>
+  a.annotation_type === "FH" && Array.isArray(a.payload?.paths);
 
-export const isStamp = (
-  a: ScoreAnnotation,
-): a is ScoreAnnotation & { payload: StampPayload } =>
-  a.annotation_type === "ST" &&
-  typeof (a.payload as StampPayload)?.symbol === "string";
+export const isHighlight = (a: ScoreAnnotation): a is HighlightMark =>
+  a.annotation_type === "HL" && Array.isArray(a.payload?.paths);
+
+export const isStroke = (a: ScoreAnnotation): a is StrokeMark =>
+  isFreehand(a) || isHighlight(a);
+
+export const isComment = (a: ScoreAnnotation): a is CommentMark =>
+  a.annotation_type === "CM" && typeof a.payload?.text === "string";
+
+export const isStamp = (a: ScoreAnnotation): a is StampMark =>
+  a.annotation_type === "ST" && typeof a.payload?.symbol === "string";

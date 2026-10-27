@@ -18,7 +18,12 @@
  *     of an edit can never overtake the undo of the erase in front of it;
  *   · a press acts on the step that was on top when it was pressed. Steps wait
  *     on writes, so a press can run seconds later, and by then a new stroke may
- *     be on top — the undo the reader pressed is still the one they get.
+ *     be on top — the undo the reader pressed is still the one they get;
+ *   · one gesture over many marks (a selection moved, recoloured, duplicated)
+ *     is one step, a `group`, whose parts are ordinary per-mark writes. A part
+ *     the server refused never happened, like any refused write: the undo
+ *     reverses the parts that landed, and the step leaves the timeline only
+ *     when every part was refused.
  *
  * Owns no transport: it takes the mutation layer's writers. History resets when
  * the edition changes, and when the caller says the edition's marks were
@@ -34,17 +39,34 @@ import type { AnnotationPatch, ScoreAnnotation } from "../types/annotations.dto"
 
 const HISTORY_LIMIT = 40;
 
-type HistoryOp =
+/** A write on one mark, which a group gathers. */
+export type MarkOp =
   | { kind: "create"; annotation: ScoreAnnotation }
   | { kind: "delete"; annotation: ScoreAnnotation }
-  | { kind: "clear"; annotations: readonly ScoreAnnotation[]; clearId: string }
   | { kind: "update"; id: string; before: AnnotationPatch; after: AnnotationPatch };
 
+type HistoryOp =
+  | MarkOp
+  | { kind: "clear"; annotations: readonly ScoreAnnotation[]; clearId: string }
+  | { kind: "group"; parts: readonly Step<MarkOp>[] };
+
 /** One step of the timeline, and the write that put the page in its state. */
-interface Step {
-  op: HistoryOp;
+interface Step<Op extends HistoryOp = HistoryOp> {
+  op: Op;
   write: Promise<MarkWrite>;
 }
+
+/**
+ * A group's write: done once every part has settled, refused only when every
+ * part was. What it resolves to says nothing — each part keeps its own answer.
+ */
+const settleParts = async (parts: readonly Step[]): Promise<MarkWrite> => {
+  const answers = await Promise.allSettled(parts.map((part) => part.write));
+  if (answers.every((answer) => answer.status === "rejected")) {
+    throw new Error("every part of the group was refused");
+  }
+  return "saved";
+};
 
 interface Stacks {
   undo: Step[];
@@ -72,6 +94,8 @@ export interface AnnotationHistory {
   erase: (annotation: ScoreAnnotation) => void;
   /** Wipes exactly these marks — what the page showed as clearable. */
   clear: (annotations: readonly ScoreAnnotation[]) => void;
+  /** Several writes made by one gesture, undone and redone as one. */
+  group: (ops: readonly MarkOp[]) => void;
   undo: () => void;
   redo: () => void;
   /** Forgets the timeline, if it is this edition's; presses still waiting do nothing. */
@@ -173,29 +197,68 @@ export const useAnnotationHistory = (deps: HistoryDeps): AnnotationHistory => {
     [push],
   );
 
+  const group = useCallback(
+    (ops: readonly MarkOp[]) => {
+      const { createMark, updateMark, eraseMark } = writers.current;
+      const parts = ops.map((op): Step<MarkOp> => {
+        switch (op.kind) {
+          case "create":
+            return { op, write: createMark(op.annotation) };
+          case "delete":
+            return { op, write: eraseMark(op.annotation) };
+          case "update":
+            return { op, write: updateMark(op.id, op.after) };
+        }
+      });
+      if (parts.length === 0) return;
+      if (parts.length === 1) {
+        push(parts[0].op, parts[0].write);
+        return;
+      }
+      push({ kind: "group", parts }, settleParts(parts));
+    },
+    [push],
+  );
+
   /**
    * The write that reverses `step` (undo) or replays it (redo). `answer` is
    * what the step's own write came to: for an erase, whether it only withdrew
-   * an unsent create.
+   * an unsent create. A group is reversed part by part, last part first, from
+   * each part's own answer (`parts`); a part that was refused is left out.
    */
   const inverse = useCallback(
-    (step: Step, answer: MarkWrite, undoing: boolean): Step => {
+    (
+      step: Step,
+      answer: MarkWrite,
+      undoing: boolean,
+      parts: readonly PromiseSettledResult<MarkWrite>[],
+    ): Step => {
       const { createMark, updateMark, eraseMark, clearMarks, reviveMarks } =
         writers.current;
       const bringBack = (annotation: ScoreAnnotation, erased: MarkWrite) =>
         erased === "discarded" ? createMark(annotation) : reviveMarks([annotation]);
+      const invertMark = (op: MarkOp, answered: MarkWrite): Step<MarkOp> => {
+        switch (op.kind) {
+          case "create":
+            return {
+              op,
+              write: undoing ? eraseMark(op.annotation) : bringBack(op.annotation, answered),
+            };
+          case "delete":
+            return {
+              op,
+              write: undoing ? bringBack(op.annotation, answered) : eraseMark(op.annotation),
+            };
+          case "update":
+            return { op, write: updateMark(op.id, undoing ? op.before : op.after) };
+        }
+      };
       const { op } = step;
       switch (op.kind) {
         case "create":
-          return {
-            op,
-            write: undoing ? eraseMark(op.annotation) : bringBack(op.annotation, answer),
-          };
         case "delete":
-          return {
-            op,
-            write: undoing ? bringBack(op.annotation, answer) : eraseMark(op.annotation),
-          };
+        case "update":
+          return invertMark(op, answer);
         case "clear": {
           if (undoing) return { op, write: reviveMarks(op.annotations, op.clearId) };
           const clearId = newMarkId();
@@ -204,8 +267,15 @@ export const useAnnotationHistory = (deps: HistoryDeps): AnnotationHistory => {
             write: clearMarks(op.annotations, clearId),
           };
         }
-        case "update":
-          return { op, write: updateMark(op.id, undoing ? op.before : op.after) };
+        case "group": {
+          const next = op.parts
+            .map((part, index) => ({ part, settled: parts[index] }))
+            .reverse()
+            .flatMap(({ part, settled }) =>
+              settled?.status === "fulfilled" ? [invertMark(part.op, settled.value)] : [],
+            );
+          return { op: { kind: "group", parts: next }, write: settleParts(next) };
+        }
       }
     },
     [],
@@ -229,11 +299,17 @@ export const useAnnotationHistory = (deps: HistoryDeps): AnnotationHistory => {
       } catch {
         return; // refused — `forget` has already taken it off the timeline
       }
+      // Settled already, with the group's own write; read here, so the checks
+      // below run after the last await.
+      const parts =
+        current.op.kind === "group"
+          ? await Promise.allSettled(current.op.parts.map((part) => part.write))
+          : [];
       if (era !== generation.current) return;
       const { undo, redo } = ref.current;
       if (!(undoing ? undo : redo).includes(current)) return;
 
-      const next = track(inverse(current, answer, undoing));
+      const next = track(inverse(current, answer, undoing, parts));
       // The timeline moves at once; the write lands behind it.
       commit(
         undoing
@@ -291,6 +367,7 @@ export const useAnnotationHistory = (deps: HistoryDeps): AnnotationHistory => {
     update,
     erase,
     clear,
+    group,
     undo,
     redo,
     reset,

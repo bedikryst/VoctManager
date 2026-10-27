@@ -334,10 +334,8 @@ describe("a queued mark landing", () => {
     server.use(
       http.get(LIST_URL, () => HttpResponse.json(answered)),
       http.post(LIST_URL, async ({ request }) => {
-        const body = (await request.json()) as Omit<
-          ScoreAnnotation,
-          "created_by" | "created_at" | "updated_at"
-        >;
+        // A create body: the row less its author and stamps, set below.
+        const body = (await request.json()) as ScoreAnnotation;
         const row: ScoreAnnotation = {
           ...body,
           created_by: "user-1",
