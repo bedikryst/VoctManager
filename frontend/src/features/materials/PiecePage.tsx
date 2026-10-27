@@ -43,7 +43,7 @@ import {
 } from "@/app/providers/ArtistPreviewProvider";
 import { INERT_SURFACE } from "@/shared/ui/primitives/inertSurface";
 import { isManager } from "@/shared/auth/rbac";
-import { ScoreStandModal, scoreAnnotatorModeFor } from "@/features/annotations";
+import { ScoreStandModal, scoreStandAccessFor } from "@/features/annotations";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { StatePanel } from "@/shared/ui/composites/StatePanel";
 import { SegmentedTabs } from "@/shared/ui/composites/SegmentedTabs";
@@ -700,9 +700,10 @@ export default function PiecePage({
         <ScoreStandModal
           isOpen={openEdition !== null}
           editionId={openEdition?.id ?? null}
-          mode={scoreAnnotatorModeFor({
+          {...scoreStandAccessFor({
             isManager: isManager(user),
             mayMarkForChoir: piece.may_mark_for_choir,
+            mayMarkWithConductor: piece.may_mark_with_conductor === true,
           })}
           title={piece.title}
           subtitle={openEdition?.label ?? composerName}

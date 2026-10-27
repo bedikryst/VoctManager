@@ -18,7 +18,11 @@ import React from "react";
 import type { FitMode } from "@/shared/ui/composites/PdfViewer";
 import { PdfViewerModal } from "@/shared/ui/composites/PdfViewerModal";
 
-import { useScoreAnnotator, type ScoreAnnotatorMode } from "../useScoreAnnotator";
+import {
+  useScoreAnnotator,
+  type DelegateLayer,
+  type ScoreAnnotatorMode,
+} from "../useScoreAnnotator";
 
 export interface ScoreStandModalProps {
   readonly isOpen: boolean;
@@ -30,10 +34,12 @@ export interface ScoreStandModalProps {
   readonly subtitle?: string;
   readonly fileName?: string;
   /**
-   * conductor → managers draw the shared/conductor layers; personal →
-   * choristers get their own private pencil layer over the read-only shared marks.
+   * conductor → managers draw the shared/conductor layers; leader → a project
+   * leader also writes the layers in `delegateLayers`; personal → choristers
+   * get their own private pencil layer over the read-only shared marks.
    */
   readonly mode: ScoreAnnotatorMode;
+  readonly delegateLayers?: readonly DelegateLayer[];
   /** Layer stacked under the annotation index — materials slots RehearsalDock here. */
   readonly extraOverlay?: React.ReactNode;
   /**
@@ -61,6 +67,7 @@ export const ScoreStandModal = ({
   subtitle,
   fileName,
   mode,
+  delegateLayers,
   extraOverlay,
   canExport = true,
   preferredFit,
@@ -72,6 +79,7 @@ export const ScoreStandModal = ({
   const annotator = useScoreAnnotator({
     editionId,
     mode,
+    delegateLayers,
     active: isOpen,
     notifyProjectId,
   });

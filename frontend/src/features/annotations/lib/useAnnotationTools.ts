@@ -35,7 +35,8 @@ export type AnnotationTool =
   | "note"
   | "stamp"
   | "eraser"
-  | "select";
+  | "select"
+  | "link";
 
 /** Tools that put ink on the page under a moving pointer. */
 export const DRAWING_TOOLS: ReadonlySet<AnnotationTool> = new Set<AnnotationTool>([
@@ -58,7 +59,8 @@ export const TRACING_TOOLS: ReadonlySet<AnnotationTool> = new Set<AnnotationTool
  * One plain key per tool, named in each tool's tooltip and in the guide. Taken
  * from the drawing programs a conductor may already know (V move, L lasso,
  * R rectangle, T text) and otherwise from the English name, because the Polish
- * names collide in pairs (Symbol and Kształty, Zaznacz and Zakreślacz).
+ * names collide in pairs (Symbol and Kształty, Zaznacz and Zakreślacz). The
+ * link takes J, for jump: L is the lasso's.
  */
 export const TOOL_KEYS: Readonly<Record<AnnotationTool, string>> = {
   pointer: "v",
@@ -69,6 +71,7 @@ export const TOOL_KEYS: Readonly<Record<AnnotationTool, string>> = {
   note: "t",
   stamp: "s",
   eraser: "e",
+  link: "j",
 };
 
 const TOOL_STORAGE_KEY = "voct.annotations.tool";
@@ -159,7 +162,8 @@ const isAnnotationTool = (value: string | null): value is AnnotationTool =>
   value === "note" ||
   value === "stamp" ||
   value === "eraser" ||
-  value === "select";
+  value === "select" ||
+  value === "link";
 
 /**
  * Size multiplier for a placed mark (text note / musical stamp), 1 = base size.

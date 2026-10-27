@@ -12,7 +12,7 @@
  */
 
 import type { TFunction } from "i18next";
-import { Users, UserCheck, UserCog } from "lucide-react";
+import { Lock, Users, UserCheck, UserCog } from "lucide-react";
 
 import type { EtherealAccent } from "@/shared/ui/primitives/accents";
 
@@ -135,3 +135,36 @@ export const writeLayerCopy = (t: TFunction): Record<WriteLayer, WriteLayerCopy>
     tone: "bg-ink-on-inverse/10 text-ink-on-inverse",
   },
 });
+
+/** Where a leader's NEXT mark may go: their own pencil, or a layer their grant opens. */
+export type DelegateTarget = "personal" | "shared" | "leader";
+
+/**
+ * How a leader's targets name themselves. The `leader` layer is the row the
+ * conductor calls "Prowadzący", named here from the other side of the desk:
+ * what the assistant has to know before writing is that the conductor reads it.
+ */
+export const delegateTargetCopy = (t: TFunction): Record<DelegateTarget, WriteLayerCopy> => {
+  const rungs = writeLayerCopy(t);
+  const personalHint = t("annotations.layer.personal_hint", "Widoczne tylko dla Ciebie");
+  return {
+    personal: {
+      Icon: Lock,
+      label: personalHint,
+      short: t("annotations.layer.personal_short", "Moje"),
+      hint: personalHint,
+      accent: "graphite",
+      tone: "bg-ink-on-inverse/10 text-ink-on-inverse",
+    },
+    shared: rungs.shared,
+    leader: {
+      ...rungs.leader,
+      label: t("annotations.layer.with_conductor", "Z dyrygentem: widzi to tylko on i Ty"),
+      short: t("annotations.layer.with_conductor_short", "Z dyrygentem"),
+      hint: t(
+        "annotations.layer.with_conductor_hint",
+        "Widzisz to Ty i dyrygent. Chór — nie.",
+      ),
+    },
+  };
+};

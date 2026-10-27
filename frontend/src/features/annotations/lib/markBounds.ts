@@ -5,7 +5,7 @@
  * rather than on top of it — and which markings a hand has picked out: the ones
  * a loop drawn round the music takes, and the one under a tap.
  *
- * A note and a stamp are anchored points and answer this trivially. A stroke
+ * A note, a stamp and a jump link are anchored points and answer this trivially. A stroke
  * does not: it is a run of coordinates with no centre of its own, and the only
  * honest anchor is the middle of what it covers. Without that, a card about a
  * crescendo hairpin drawn across half a system would open at the hairpin's
@@ -15,11 +15,18 @@
 
 import {
   isComment,
+  isLink,
   isStamp,
   isStroke,
   type NormPoint,
   type ScoreAnnotation,
 } from "../types/annotations.dto";
+
+/** Where a note, a stamp or a jump link sits; null for a stroke. */
+const anchorOf = (annotation: ScoreAnnotation): NormPoint | null =>
+  isStamp(annotation) || isComment(annotation) || isLink(annotation)
+    ? [annotation.payload.x, annotation.payload.y]
+    : null;
 
 /** A marking's extent, 0..1 against the page box. */
 export interface MarkBounds {
@@ -64,11 +71,10 @@ export const strokeBounds = (
  */
 export const markBounds = (annotation: ScoreAnnotation): MarkBounds | null => {
   if (isStroke(annotation)) return strokeBounds(annotation.payload.paths);
-  if (isStamp(annotation) || isComment(annotation)) {
-    const { x, y } = annotation.payload;
-    return { minX: x, minY: y, maxX: x, maxY: y };
-  }
-  return null;
+  const anchor = anchorOf(annotation);
+  if (!anchor) return null;
+  const [x, y] = anchor;
+  return { minX: x, minY: y, maxX: x, maxY: y };
 };
 
 /** The box round several markings; null when none of them has one. */
@@ -131,10 +137,8 @@ export const isInLoop = (
     }
     return total > 0 && inside * 2 > total;
   }
-  if (isStamp(annotation) || isComment(annotation)) {
-    return pointInLoop([annotation.payload.x, annotation.payload.y], loop);
-  }
-  return false;
+  const anchor = anchorOf(annotation);
+  return anchor !== null && pointInLoop(anchor, loop);
 };
 
 /**

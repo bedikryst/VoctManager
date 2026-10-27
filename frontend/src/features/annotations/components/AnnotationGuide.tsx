@@ -14,7 +14,7 @@
  * so the help and the control can never describe the layers differently.
  *
  * Below the facts, the tools that do not explain themselves: the selection, the
- * musical shapes and the boxed note. The keys are listed only where a keyboard
+ * musical shapes, the boxed note and the jump link. The keys are listed only where a keyboard
  * is likely (a fine pointer is attached), and the pen's eraser end only on a
  * device that has seen a pen; the keys are read from the toolbar's own table.
  *
@@ -29,6 +29,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import {
   BookOpen,
   CloudOff,
+  CornerDownRight,
   Eraser,
   Eye,
   FolderClosed,
@@ -51,11 +52,13 @@ import { Caption, Eyebrow, Heading, Text } from "@/shared/ui/primitives/typograp
 import { TOOL_DEFS } from "./AnnotationToolbar";
 import { WRITE_LAYERS, writeLayerCopy } from "../lib/layers";
 import { TOOL_KEYS } from "../lib/useAnnotationTools";
-import type { ScoreAnnotatorMode } from "../useScoreAnnotator";
+import type { DelegateLayer, ScoreAnnotatorMode } from "../useScoreAnnotator";
 
 interface AnnotationGuideProps {
   isOpen: boolean;
   mode: ScoreAnnotatorMode;
+  /** In `leader` mode, the layers the grant opens beside the reader's pencil. */
+  delegateLayers: readonly DelegateLayer[];
   /**
    * Whether this reader actually holds cues written for whoever runs a
    * rehearsal. Their presence IS the permission, so it is also the only honest
@@ -86,6 +89,7 @@ interface GuideFact {
 export const AnnotationGuide = ({
   isOpen,
   mode,
+  delegateLayers,
   hasLeaderMarks,
   stylusSeen,
   onClose,
@@ -133,19 +137,42 @@ export const AnnotationGuide = ({
 
   // The lead fact is the one that differs between a singer and a leader: for
   // a singer everything they write is theirs alone; for a leader the toolbar
-  // toggle decides whether the next mark is theirs or the whole choir's, and
-  // saying "only yours" there would be the wrong promise.
+  // toggle decides whether the next mark is theirs, the whole choir's or the
+  // conductor's too, and saying "only yours" there would be the wrong promise.
+  // It names exactly the targets their grant opens.
+  const forChoir = delegateLayers.includes("shared");
+  const withConductor = delegateLayers.includes("leader");
+  const leaderLead: Pick<GuideFact, "title" | "body"> =
+    forChoir && withConductor
+      ? {
+          title: t("annotations.guide.leader.both_title", "Moje, dla chóru albo z dyrygentem"),
+          body: t(
+            "annotations.guide.leader.both_body",
+            "Przełącznik przy narzędziach decyduje, gdzie trafi NASTĘPNE oznaczenie: „Moje” widzisz tylko Ty, „Chór” zobaczy każdy, kto śpiewa ten utwór, a „Z dyrygentem” tylko dyrygent i Ty. Zmienić i skasować możesz tylko własne oznaczenia — te od dyrygenta zostają jego.",
+          ),
+        }
+      : withConductor
+        ? {
+            title: t("annotations.guide.leader.conductor_title", "Moje albo z dyrygentem"),
+            body: t(
+              "annotations.guide.leader.conductor_body",
+              "Przełącznik przy narzędziach decyduje, gdzie trafi NASTĘPNE oznaczenie: „Moje” widzisz tylko Ty, „Z dyrygentem” zobaczy też dyrygent, ale nikt z chóru. Tak odpowiadasz na jego wskazówki tam, gdzie je zapisał. Zmienić i skasować możesz tylko własne oznaczenia.",
+            ),
+          }
+        : {
+            title: t("annotations.guide.leader.choir_title", "Moje albo dla chóru"),
+            body: t(
+              "annotations.guide.leader.choir_body",
+              "Przełącznik przy narzędziach decyduje, gdzie trafi NASTĘPNE oznaczenie: „Moje” widzisz tylko Ty, „Chór” zobaczy każdy, kto śpiewa ten utwór. Zmienić i skasować możesz tylko własne oznaczenia — te od dyrygenta zostają jego.",
+            ),
+          };
   const leadFact: GuideFact =
     mode === "leader"
       ? {
           id: "choir",
-          icon: Users,
+          icon: forChoir ? Users : UserCheck,
           accent: true,
-          title: t("annotations.guide.leader.choir_title", "Moje albo dla chóru"),
-          body: t(
-            "annotations.guide.leader.choir_body",
-            "Przełącznik przy narzędziach decyduje, gdzie trafi NASTĘPNE oznaczenie: „Moje” widzisz tylko Ty, „Chór” zobaczy każdy, kto śpiewa ten utwór. Zmienić i skasować możesz tylko własne oznaczenia — te od dyrygenta zostają jego.",
-          ),
+          ...leaderLead,
         }
       : {
           id: "private",
@@ -269,6 +296,15 @@ export const AnnotationGuide = ({
       body: t(
         "annotations.guide.tools.box_body",
         "Notatka „W ramce” wygląda jak litera orientacyjna albo numer taktu w nutach: pogrubiona, w prostokącie. Tak samo się drukuje.",
+      ),
+    },
+    {
+      id: "link",
+      icon: CornerDownRight,
+      title: t("annotations.guide.tools.link_title", "Skok w inne miejsce"),
+      body: t(
+        "annotations.guide.tools.link_body",
+        "Narzędziem Skok dotknij miejsca, z którego się skacze, np. przy D.S., potem przewróć na stronę, do której prowadzi, i dotknij celu. Dotknięcie strzałki przenosi tam, a „Wróć” z powrotem. Usuniesz go gumką. Do druku skok nie trafia.",
       ),
     },
     {

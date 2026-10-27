@@ -6043,6 +6043,10 @@ msgstr "Pupitres"
 msgid "Voices must be a list of section letters: S, A, T, B."
 msgstr "Les pupitres doivent être une liste de lettres : S, A, T, B."
 
+#: backend/archive/serializers.py:700
+msgid "A jump link requires a target page."
+msgstr "Un lien de saut doit indiquer une page cible."
+
 #~ msgid "Review the request"
 #~ msgstr "Examiner la demande"
 

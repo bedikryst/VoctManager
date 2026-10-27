@@ -5,11 +5,12 @@
  * surface), an `overlaySlot` (the annotation index, the guide, the live notice)
  * and an `onPageApiChange` handler. Three modes: `conductor` (managers — write
  * to the choir, leader and private reaches, and may move a placed mark between
- * them), `leader` (a project leader whose grant opens the choir's layer — the
- * next mark goes to their own pencil or to the choir, and only their own rows
- * are theirs to touch on either) and `personal` (everyone else — every mark
- * lands on the user's own private layer; what the conductor wrote stays
- * read-only). Owns tool state, the per-edition cache, optimistic
+ * them), `leader` (a project leader whose grant opens a layer beside their
+ * pencil — the choir's, the desk they share with the conductor, or both; the
+ * next mark goes to one of them, and only their own rows are theirs to touch on
+ * any) and `personal` (everyone else — every mark lands on the user's own
+ * private layer; what the conductor wrote stays read-only). Owns tool state,
+ * the per-edition cache, optimistic
  * create/update/delete, undo/redo history, keyboard shortcuts and the lifetime
  * of the selection — so callers stay a few lines thin.
  *
@@ -41,6 +42,10 @@
  * The selection itself belongs to the page, but what it copies is held here,
  * per edition: it is pasted on another page of the same piece, and in the book
  * a walk through the next piece and back finds it still waiting.
+ *
+ * A jump link is placed with two taps, and the first is held here rather than
+ * by a page, because the second lands where the D.S. leads, pages away. Every
+ * reader follows a link with a tap, and the stand then offers the way back.
  * @module features/annotations
  */
 
@@ -53,7 +58,8 @@ import type {
   PdfPageGeometry,
 } from "@/shared/ui/composites/PdfViewer";
 
-import { AnnotationOverlay } from "./components/AnnotationOverlay";
+import { AnnotationOverlay, type LinkStart } from "./components/AnnotationOverlay";
+import { LinkStatusChip, type LinkStatus } from "./components/LinkStatusChip";
 import { AnnotationToolbar, BareToolbar } from "./components/AnnotationToolbar";
 import { ANNOTATION_DRAWER_ATTR, AnnotationSidebar } from "./components/AnnotationSidebar";
 import { AnnotationGuide } from "./components/AnnotationGuide";
@@ -80,28 +86,52 @@ import type { MarkClipboard, MarkEdit, SelectionKeys } from "./lib/selection";
 import {
   isComment,
   type AnnotationPatch,
+  type LinkMark,
   type MarkDraft,
+  type NormPoint,
   type ScoreAnnotation,
 } from "./types/annotations.dto";
 
 export type ScoreAnnotatorMode = "conductor" | "leader" | "personal";
 
 /**
- * Which stand a reader gets on one piece. The role decides first — a manager
- * writes everywhere regardless of any grant — and only then the per-piece fact
- * the songbook carries (`MaterialsPiece.may_mark_for_choir`). Every mount that
- * opens a score for a non-manager goes through this so the three surfaces
+ * A layer a leader's grant opens beside their own pencil: the choir's
+ * (`choir_marks`), or the desk they share with the conductor (`marks`).
+ */
+export type DelegateLayer = "shared" | "leader";
+
+/** Which stand a reader gets on one piece, and what their pencil reaches there. */
+export interface ScoreStandAccess {
+  mode: ScoreAnnotatorMode;
+  delegateLayers: readonly DelegateLayer[];
+}
+
+const NO_DELEGATE_LAYERS: readonly DelegateLayer[] = [];
+
+/**
+ * The role decides first — a manager writes everywhere regardless of any
+ * grant — and only then the per-piece facts the songbook carries
+ * (`MaterialsPiece.may_mark_for_choir`, `may_mark_with_conductor`). Every mount
+ * that opens a score for a non-manager goes through this so the three surfaces
  * (piece row, piece page, concert book) cannot disagree about one pencil.
  */
-export const scoreAnnotatorModeFor = ({
+export const scoreStandAccessFor = ({
   isManager,
   mayMarkForChoir,
+  mayMarkWithConductor,
 }: {
   isManager: boolean;
   mayMarkForChoir: boolean;
-}): ScoreAnnotatorMode => {
-  if (isManager) return "conductor";
-  return mayMarkForChoir ? "leader" : "personal";
+  mayMarkWithConductor: boolean;
+}): ScoreStandAccess => {
+  if (isManager) return { mode: "conductor", delegateLayers: NO_DELEGATE_LAYERS };
+  const delegateLayers: DelegateLayer[] = [];
+  if (mayMarkForChoir) delegateLayers.push("shared");
+  if (mayMarkWithConductor) delegateLayers.push("leader");
+  return {
+    mode: delegateLayers.length > 0 ? "leader" : "personal",
+    delegateLayers,
+  };
 };
 
 export interface UseScoreAnnotatorOptions {
@@ -114,11 +144,11 @@ export interface UseScoreAnnotatorOptions {
   /**
    * conductor → managers: draw on the shared/leader/conductor layers, clear
    *             wipes all three.
-   * leader    → a project leader whose grant carries `choir_marks` on this
-   *             piece: the next mark goes to their own pencil or to the choir
-   *             (a toggle, not a ladder), and on both layers only THEIR rows
-   *             are theirs to move or erase — the conductor's shared marks stay
-   *             his, and his leader cues stay read-only as ever.
+   * leader    → a project leader whose grant opens `delegateLayers` on this
+   *             piece: the next mark goes to their own pencil or to one of
+   *             those (a choice, not a ladder), and on every layer only THEIR
+   *             rows are theirs to move or erase — the conductor's marks stay
+   *             his, his cues on the shared desk included.
    * personal  → everyone else: write only their own private layer
    *             (server-scoped); the conductor's shared markings are visible but
    *             read-only, and so are his leader cues for whoever was handed the
@@ -126,6 +156,8 @@ export interface UseScoreAnnotatorOptions {
    *             a stand-in reads the conductor's hand, they do not write in it.
    */
   mode: ScoreAnnotatorMode;
+  /** In `leader` mode, the layers the grant opens; ignored in the others. */
+  delegateLayers?: readonly DelegateLayer[];
   /**
    * The concert binder's map. Present → the document on screen is the book, and
    * each page is one edition's page placed inside a rectangle. Writes still land
@@ -181,16 +213,33 @@ const NUDGE_DIRECTIONS: Readonly<Record<string, readonly [number, number]>> = {
 /** A nudge, in screen pixels: one for the fine adjustment, ten with Shift. */
 const NUDGE_STEP_PX = 1;
 const NUDGE_LONG_STEP_PX = 10;
+/**
+ * How near the first end of a link a second tap counts as a tap on it, in page
+ * widths: about a fingertip on a phone held upright.
+ */
+const LINK_UNDO_REACH = 0.03;
 
 export const useScoreAnnotator = ({
   editionId,
   mode,
+  delegateLayers = NO_DELEGATE_LAYERS,
   book = null,
   active = true,
   notifyProjectId = null,
 }: UseScoreAnnotatorOptions): ScoreAnnotatorBindings => {
   const isConductor = mode === "conductor";
   const isLeader = mode === "leader";
+  // Two flags rather than the caller's list, so a list rebuilt on every render
+  // of the page that opened the stand does not rebuild every callback below.
+  const writesShared = isLeader && delegateLayers.includes("shared");
+  const writesLeader = isLeader && delegateLayers.includes("leader");
+  const reach = useMemo<readonly DelegateLayer[]>(
+    () => [
+      ...(writesShared ? (["shared"] as const) : []),
+      ...(writesLeader ? (["leader"] as const) : []),
+    ],
+    [writesLeader, writesShared],
+  );
   const { user } = useAuth();
   // Normalised once: the wire's `created_by` is the user's UUID as a string.
   const userId = user ? String(user.id) : null;
@@ -203,22 +252,28 @@ export const useScoreAnnotator = ({
   // Which of the VISIBLE marks this user may erase / edit. The server already
   // scopes reads (a chorister receives shared + own personal; a manager never
   // receives other users' personal), so layer membership is enough — except
-  // for a leader, whose shared marks sit on the same layer as the conductor's:
-  // there the row's author is the only thing that tells the two hands apart,
-  // which is exactly the rule the server applies to their writes.
+  // for a leader, whose marks on the choir's layer and on the shared desk sit
+  // beside the conductor's: there the row's author is the only thing that
+  // tells the two hands apart, which is exactly the rule the server applies to
+  // their writes.
   const canModify = useCallback(
     (a: ScoreAnnotation) => {
       if (isConductor) return true;
       if (a.layer_name === "personal") return true;
-      return isLeader && a.layer_name === "shared" && a.created_by === userId;
+      if (a.created_by !== userId) return false;
+      return (
+        (writesShared && a.layer_name === "shared") ||
+        (writesLeader && a.layer_name === "leader")
+      );
     },
-    [isConductor, isLeader, userId],
+    [isConductor, userId, writesLeader, writesShared],
   );
 
   // Clear mirrors the server rule: managers wipe every layer that is not
-  // somebody's personal — the leader cues included, since those are their own
-  // markings coming back — while everyone else wipes only their own marks: the
-  // pencil layer, plus (for a leader) what they themselves put on the choir's.
+  // somebody's personal — the leader layer included, the assistant's answers
+  // with it — while everyone else wipes only their own marks: the pencil
+  // layer, plus (for a leader) what they themselves put on the layers their
+  // grant opens.
   const isCleared = useCallback(
     (a: ScoreAnnotation) =>
       isConductor ? a.layer_name !== "personal" : canModify(a),
@@ -227,6 +282,18 @@ export const useScoreAnnotator = ({
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [guideOpen, setGuideOpen] = useState(false);
+  const [linkStart, setLinkStart] = useState<LinkStart | null>(null);
+  // The first end of a link belongs to the tool: put it down, and the half
+  // placed link goes with it.
+  useEffect(() => {
+    if (activeTool !== "link") setLinkStart(null);
+  }, [activeTool]);
+  /** Where the last followed link was tapped, as the document open numbers it. */
+  const [returnTo, setReturnTo] = useState<{ page: number; y: number } | null>(null);
+  // A closed stand stays mounted; the way back belongs to the visit it was made in.
+  useEffect(() => {
+    if (!active) setReturnTo(null);
+  }, [active]);
   const [pageApi, setPageApi] = useState<PdfPageApi>({
     currentPage: 1,
     numPages: null,
@@ -329,9 +396,11 @@ export const useScoreAnnotator = ({
   // Reset transient editor state when a different score opens — in the binder
   // that is also a page turn into the next piece, which is right: a note
   // selected in the Kyrie is not a note selected in the Gloria.
+  // A link half placed in one piece cannot lead into another, either.
   useEffect(() => {
     setSelectedId(null);
     setGuideOpen(false);
+    setLinkStart(null);
   }, [activeEditionId]);
 
   // The page's callbacks keep one identity while the marks change under them:
@@ -659,6 +728,73 @@ export const useScoreAnnotator = ({
     incoming.dismiss();
   }, [displayPage, incoming, pageApi]);
 
+  // Read through refs by the page's link callbacks: both move with every page
+  // turn, and the pages need not be drawn again for it.
+  const pageApiRef = useRef(pageApi);
+  pageApiRef.current = pageApi;
+  const displayRef = useRef({ displayPage, displayFocusY });
+  displayRef.current = { displayPage, displayFocusY };
+  const linkPage = useCallback((page: number) => displayRef.current.displayPage(page), []);
+
+  /**
+   * A tap with the link tool. The first sets where the link sits; the second,
+   * on any page of the same piece, where it leads, and writes it. A second tap
+   * back on the first end puts the link down unplaced.
+   */
+  const handleLinkTap = useCallback(
+    (page: number, [x, y]: NormPoint) => {
+      if (!linkStart) {
+        setLinkStart({ page, x, y });
+        return;
+      }
+      setLinkStart(null);
+      if (page === linkStart.page && Math.hypot(x - linkStart.x, y - linkStart.y) < LINK_UNDO_REACH) {
+        return;
+      }
+      handleCreate({
+        page_number: linkStart.page,
+        annotation_type: "LK",
+        payload: { x: linkStart.x, y: linkStart.y, target_page: page, target_y: y },
+        color: tools.color,
+        layer_name: tools.layer,
+      });
+    },
+    [handleCreate, linkStart, tools.color, tools.layer],
+  );
+
+  const handleFollowLink = useCallback((mark: LinkMark) => {
+    const { displayPage: pageOf, displayFocusY: focusOf } = displayRef.current;
+    setReturnTo({
+      page: pageOf(mark.page_number),
+      y: focusOf(mark.page_number, mark.payload.y),
+    });
+    pageApiRef.current.goToPage(
+      pageOf(mark.payload.target_page),
+      focusOf(mark.payload.target_page, mark.payload.target_y),
+    );
+  }, []);
+
+  const handleReturn = useCallback(() => {
+    if (returnTo) pageApiRef.current.goToPage(returnTo.page, returnTo.y);
+    setReturnTo(null);
+  }, [returnTo]);
+
+  const linkStatus: LinkStatus | null =
+    activeTool === "link" && activeEditionId
+      ? { kind: "placing", step: linkStart ? "to" : "from" }
+      : returnTo
+        ? { kind: "return", page: returnTo.page }
+        : null;
+
+  const dismissLinkStatus = useCallback(() => {
+    if (activeTool === "link") {
+      if (linkStart) setLinkStart(null);
+      else setActiveTool("pointer");
+      return;
+    }
+    setReturnTo(null);
+  }, [activeTool, linkStart, setActiveTool]);
+
   const {
     tool,
     color,
@@ -745,6 +881,10 @@ export const useScoreAnnotator = ({
           onDeleteMany={handleDeleteMany}
           onCopy={handleCopy}
           selectionKeys={selectionKeysRef}
+          linkStart={linkStart}
+          onLinkTap={handleLinkTap}
+          onFollowLink={handleFollowLink}
+          displayPage={linkPage}
         />
       );
       if (!frame) return surface;
@@ -792,6 +932,10 @@ export const useScoreAnnotator = ({
       handleDelete,
       handleDeleteMany,
       handleCopy,
+      linkStart,
+      handleLinkTap,
+      handleFollowLink,
+      linkPage,
     ],
   );
 
@@ -811,6 +955,7 @@ export const useScoreAnnotator = ({
         voiceFilter={readerSections !== "" && hasVoicedMarks ? tools.voiceFilter : null}
         onVoiceFilterChange={tools.setVoiceFilter}
         mode={mode}
+        writesLeader={writesLeader}
         onSelectMark={handleSelectMark}
         editionId={activeEditionId}
         setAsideCount={setAsideCount}
@@ -824,9 +969,16 @@ export const useScoreAnnotator = ({
         onGoToPage={handleGoToIncoming}
         onDismiss={incoming.dismiss}
       />
+      <LinkStatusChip
+        status={linkStatus}
+        lifted={!!book}
+        onReturn={handleReturn}
+        onDismiss={dismissLinkStatus}
+      />
       <AnnotationGuide
         isOpen={guideOpen}
         mode={mode}
+        delegateLayers={reach}
         hasLeaderMarks={hasLeaderMarks}
         stylusSeen={tools.stylusSeen}
         onClose={() => setGuideOpen(false)}
@@ -848,6 +1000,7 @@ export const useScoreAnnotator = ({
       <AnnotationToolbar
         {...tools}
         mode={mode}
+        delegateLayers={reach}
         canDraw={canDraw}
         annotationCount={annotations.length}
         clearableCount={clearableCount}

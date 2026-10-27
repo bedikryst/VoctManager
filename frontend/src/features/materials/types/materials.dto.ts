@@ -206,6 +206,12 @@ export interface MaterialsPiece {
    */
   may_mark_for_choir: boolean;
   /**
+   * The same, for the `leader` layer: the desk shared with the conductor, which
+   * the `can_see_leader_marks` scope opens for the leader's own marks. Absent on
+   * a songbook cached before the field existed, which reads as false.
+   */
+  may_mark_with_conductor?: boolean;
+  /**
    * The item is cast on instrumentalists only in this project — the organ
    * voluntary, not a choir piece. A fact about the item, shown to every reader
    * as a badge; derived from the casting board, so it flips live as the

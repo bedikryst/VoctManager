@@ -104,6 +104,16 @@ export const shiftedContent = (
           y: pageFraction(annotation.payload.y + dy),
         },
       };
+    // A link moves where it sits, never where it leads.
+    case "LK":
+      return {
+        annotation_type: "LK",
+        payload: {
+          ...annotation.payload,
+          x: pageFraction(annotation.payload.x + dx),
+          y: pageFraction(annotation.payload.y + dy),
+        },
+      };
     default:
       return annotation;
   }

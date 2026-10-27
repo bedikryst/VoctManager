@@ -2,12 +2,13 @@
  * @file AnnotationToolbar.tsx
  * @description Markup toolbar, injected into the PDF viewer's floating control
  * pill: undo/redo, the tool set (browse · select · pen · highlighter · shapes ·
- * note · stamp · eraser), the shape in hand, contextual stroke weight + ink colour, what draws
+ * note · stamp · link · eraser), the shape in hand, contextual stroke weight + ink colour, what draws
  * (stylus or finger), the note
  * display mode, the musical stamp palette (one group at a time — the catalogue
  * outgrew a flat grid), the write layer, and the "how does this work" panel. In
  * conductor mode the layer cycles choir → leader → private; in leader mode it
- * toggles between the reader's own pencil and the choir; in personal mode
+ * steps through the reader's own pencil and the layers their grant opens (the
+ * choir, "Z dyrygentem"); in personal mode
  * every mark lands on the user's own private layer (a static chip says so).
  * Each tool's tooltip names the key that arms it (`TOOL_KEYS`), and the symbol
  * palette previews every symbol in the ink in hand, on a scrap of paper.
@@ -33,6 +34,7 @@ import {
   ChevronLeft,
   Circle,
   CloudOff,
+  CornerDownRight,
   Eraser,
   Hand,
   Highlighter,
@@ -52,7 +54,6 @@ import {
   Trash2,
   Type,
   Undo2,
-  Users,
   ZoomIn,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -72,7 +73,13 @@ import {
   type StrokeSize,
 } from "../lib/useAnnotationTools";
 import { readStored, writeStored } from "../lib/deviceStorage";
-import { asWriteLayer, NEXT_WRITE_LAYER, writeLayerCopy } from "../lib/layers";
+import {
+  asWriteLayer,
+  delegateTargetCopy,
+  NEXT_WRITE_LAYER,
+  writeLayerCopy,
+  type DelegateTarget,
+} from "../lib/layers";
 import {
   getStampDef,
   groupOfStamp,
@@ -84,15 +91,16 @@ import {
 import { SHAPE_KINDS, type ShapeKind } from "../lib/shapes";
 import { layerTakesVoices } from "../lib/voices";
 import type { NoteDisplay } from "../types/annotations.dto";
-import type { ScoreAnnotatorMode } from "../useScoreAnnotator";
+import type { DelegateLayer, ScoreAnnotatorMode } from "../useScoreAnnotator";
 import { MarkVoicePicker } from "./MarkVoicePicker";
 
 interface AnnotationToolbarProps extends AnnotationToolState {
   /**
-   * conductor → choir/leader/private layer cycle; leader → own pencil ⇄ choir
-   * toggle; personal → fixed private layer.
+   * conductor → choir/leader/private layer cycle; leader → own pencil and the
+   * layers in `delegateLayers`, in turn; personal → fixed private layer.
    */
   mode: ScoreAnnotatorMode;
+  delegateLayers: readonly DelegateLayer[];
   canDraw: boolean;
   annotationCount: number;
   /** How many of the visible marks THIS user may wipe (gates the trash). */
@@ -132,6 +140,7 @@ export const TOOL_DEFS: ReadonlyArray<ToolDef> = [
   // A speech bubble says "comment thread". This tool writes a WORD on paper.
   { id: "note", icon: Type, labelKey: "annotations.tools.note", fallback: "Notatka", drawOnly: false },
   { id: "stamp", icon: Stamp, labelKey: "annotations.tools.stamp", fallback: "Symbol", drawOnly: false },
+  { id: "link", icon: CornerDownRight, labelKey: "annotations.tools.link", fallback: "Skok", drawOnly: false },
   { id: "eraser", icon: Eraser, labelKey: "annotations.tools.eraser", fallback: "Gumka", drawOnly: false },
 ];
 
@@ -266,6 +275,7 @@ export const BareToolbar = ({
 
 export const AnnotationToolbar = ({
   mode,
+  delegateLayers,
   tool,
   setTool,
   fingerDraw,
@@ -307,7 +317,8 @@ export const AnnotationToolbar = ({
     tool === "highlighter" ||
     tool === "shape" ||
     tool === "note" ||
-    tool === "stamp";
+    tool === "stamp" ||
+    tool === "link";
   const showSize = tool === "pen" || tool === "highlighter" || tool === "shape";
   const showShapes = tool === "shape";
   const showNoteMode = tool === "note";
@@ -341,6 +352,15 @@ export const AnnotationToolbar = ({
   const writeLayer = asWriteLayer(layer);
   const layerCopy = useMemo(() => writeLayerCopy(t), [t]);
   const activeLayerCopy = layerCopy[writeLayer];
+
+  // A leader's targets are their own pencil and whatever their grant opens: the
+  // choir's page, the desk shared with the conductor, or both. A layer outside
+  // them reads as the pencil, the one target that publishes nothing.
+  const targetCopy = useMemo(() => delegateTargetCopy(t), [t]);
+  const targets: readonly DelegateTarget[] = ["personal", ...delegateLayers];
+  const target = targets.find((candidate) => candidate === layer) ?? "personal";
+  const nextTarget = targets[(targets.indexOf(target) + 1) % targets.length];
+  const activeTargetCopy = targetCopy[target];
 
   const isImmersive = usePdfImmersive();
   const compactTrigger = usePdfCompactTriggers();
@@ -559,40 +579,27 @@ export const AnnotationToolbar = ({
           </button>
         ) : null}
 
-        {mode === "leader" &&
-          // A leader has two places to write and no ladder between them: their
-          // own pencil, or the choir's page. One tap flips the NEXT mark; the
-          // pill wears the choir's tone only while the choir is the target, so
-          // a glance says whether the whole ensemble is about to see this.
-          (layer === "shared" ? (
-            <button
-              type="button"
-              onClick={() => setLayer("personal")}
-              aria-label={layerCopy.shared.label}
-              title={layerCopy.shared.hint}
-              className={cn(
-                "flex h-9 items-center gap-1.5 rounded-full px-3 text-xs font-medium transition-colors",
-                layerCopy.shared.tone,
-              )}
-            >
-              <Users size={14} aria-hidden="true" />
-              <span className="hidden sm:inline">{layerCopy.shared.short}</span>
-              {voicesBadge}
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={() => setLayer("shared")}
-              aria-label={t("annotations.layer.personal_hint", "Widoczne tylko dla Ciebie")}
-              title={t("annotations.layer.personal_hint", "Widoczne tylko dla Ciebie")}
-              className="flex h-9 items-center gap-1.5 rounded-full bg-ink-on-inverse/10 px-3 text-xs font-medium text-ink-on-inverse transition-colors hover:bg-ink-on-inverse/20"
-            >
-              <Lock size={12} aria-hidden="true" />
-              <span className="hidden sm:inline">
-                {t("annotations.layer.personal_short", "Moje")}
-              </span>
-            </button>
-          ))}
+        {mode === "leader" && (
+          // No ladder between a leader's targets, only a turn: one tap moves
+          // the NEXT mark to the next of them. The pill wears its target's
+          // tone, so a glance says whether the choir, the conductor, or nobody
+          // is about to see this.
+          <button
+            type="button"
+            onClick={() => setLayer(nextTarget)}
+            aria-label={activeTargetCopy.label}
+            title={activeTargetCopy.hint}
+            className={cn(
+              "flex h-9 items-center gap-1.5 rounded-full px-3 text-xs font-medium transition-colors",
+              activeTargetCopy.tone,
+              target === "personal" && "hover:bg-ink-on-inverse/20",
+            )}
+          >
+            <activeTargetCopy.Icon size={target === "personal" ? 12 : 14} aria-hidden="true" />
+            <span className="hidden sm:inline">{activeTargetCopy.short}</span>
+            {target !== "personal" && voicesBadge}
+          </button>
+        )}
 
         {mode === "personal" && (
           // Personal mode writes to one fixed layer — say so instead of offering

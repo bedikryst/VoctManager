@@ -909,12 +909,11 @@ class ScoreEditionViewSet(viewsets.ModelViewSet):
 #   * choristers/crew   → read 'shared' + full CRUD on their OWN 'personal'
 #                         marks, only on editions whose piece they still have
 #                         live access to.
-#   * rehearsal leaders → the above, plus READ of 'leader' on the music of the
-#                         projects they run. Read and nothing more: a mark on
-#                         that layer is the conductor's, and a stand-in adding
-#                         to it would be writing in his hand. Their own thoughts
-#                         go on 'personal', like everyone else's — unless the
-#                         grant carries `choir_marks`, which opens 'shared' for
+#   * rehearsal leaders → the above, plus 'leader' on the music of the projects
+#                         they run: the desk they share with the conductor. They
+#                         read his cues there and write their OWN marks back to
+#                         him; his rows stay his, as on every layer. A grant
+#                         that carries `choir_marks` also opens 'shared' for
 #                         their OWN marks on that project's music.
 #
 # Why 'leader' is a layer of its own and not a switch over 'conductor': that
@@ -1077,16 +1076,16 @@ class AnnotationViewSet(viewsets.ModelViewSet):
         what a reader's pencil reaches.
 
         Their 'personal' layer, plus 'shared' where a delegation's `choir_marks`
-        scope opens it on this music. Nothing at all without live access to the
-        edition, by the union predicate (a seat in the cast OR running the
-        project), so a stand-in rehearsing a programme they do not sing in still
-        keeps their own pencil.
+        scope opens it on this music, plus 'leader' where the `marks` scope
+        does: the scope that hands them the conductor's cues lets them answer
+        on the same layer. Nothing at all without live access to the edition,
+        by the union predicate (a seat in the cast OR running the project), so a
+        stand-in rehearsing a programme they do not sing in still keeps their
+        own pencil.
 
-        A rehearsal leader stays a non-manager here. The widened read scope lets
-        them FIND a leader-layer mark, and this set is what refuses the write: a
-        403, the honest answer, since the mark is not hidden from them, it is
-        simply not theirs to move. A mark the conductor put on 'shared' stays
-        his because the gate's own-row rule does not care which layer.
+        The conductor's own rows on 'leader' and 'shared' stay his: the gate's
+        own-row rule does not care which layer, so a stand-in who can FIND one
+        of his marks is answered 403 when they try to move it.
 
         Memoised per request, because `restore` asks once per row.
         """
@@ -1097,14 +1096,13 @@ class AnnotationViewSet(viewsets.ModelViewSet):
         piece_id = edition.piece_id
         if piece_id is None or not user_has_live_access_to_piece(user, piece_id):
             layers: frozenset[str] = frozenset()
-        elif (
-            led_piece_ids(user, scope='choir_marks')
-            .filter(piece_id=piece_id)
-            .exists()
-        ):
-            layers = frozenset({PERSONAL_ANNOTATION_LAYER, SHARED_ANNOTATION_LAYER})
         else:
-            layers = frozenset({PERSONAL_ANNOTATION_LAYER})
+            granted = {PERSONAL_ANNOTATION_LAYER}
+            if led_piece_ids(user, scope='choir_marks').filter(piece_id=piece_id).exists():
+                granted.add(SHARED_ANNOTATION_LAYER)
+            if led_piece_ids(user, scope='marks').filter(piece_id=piece_id).exists():
+                granted.add(LEADER_ANNOTATION_LAYER)
+            layers = frozenset(granted)
         self._writable_by_edition[edition.pk] = layers
         return layers
 
@@ -1378,8 +1376,8 @@ class AnnotationViewSet(viewsets.ModelViewSet):
         manager's own markings back carries no such risk, so the trash takes
         them with the rest. Pass `layer_name` to narrow ('personal' narrows to
         their own marks). Non-managers wipe only their OWN marks on the layers
-        `_writable_layers` gives them — the personal layer, plus 'shared' where
-        the `choir_marks` scope opens it — so "clear everything" reaches exactly
+        `_writable_layers` gives them — the personal layer, plus 'shared' and
+        'leader' where their grant opens them — so "clear everything" reaches exactly
         what their pencil could; `layer_name` narrows that to one of them. The
         conductor's shared marks are never theirs.
 

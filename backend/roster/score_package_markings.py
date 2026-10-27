@@ -36,6 +36,7 @@ from archive.models import (
     PERSONAL_ANNOTATION_LAYER,
     SHARED_ANNOTATION_LAYER,
     Annotation,
+    AnnotationType,
 )
 from roster.infrastructure.score_markings import PrintMark, marks_from_annotations
 from roster.models import ProgramItem
@@ -75,7 +76,8 @@ def compute_program_markings(items: list[ProgramItem]) -> dict[Any, ItemMarkings
         return {}
 
     piece_ids = {item.piece_id for item in items}
-    # Marks the conductor set aside print nowhere, so they warn about nothing.
+    # Marks the conductor set aside print nowhere, so they warn about nothing;
+    # nor does a jump link, which never prints.
     rows = (
         Annotation.objects
         .filter(
@@ -85,6 +87,7 @@ def compute_program_markings(items: list[ProgramItem]) -> dict[Any, ItemMarkings
             is_deleted=False,
             archived_at__isnull=True,
         )
+        .exclude(annotation_type=AnnotationType.LINK)
         .values_list("edition_id", "edition__piece_id", "page_number")
     )
 
@@ -220,12 +223,15 @@ def reader_marks_for_book(
         scope |= clause
 
     # A soft-deleted edition takes its marks with it, as in the reader's list.
+    # A jump link prints nothing, so it neither composes a copy nor moves the
+    # cache key of one.
     rows = list(
         Annotation.objects
         .filter(
             scope, edition_id__in=editions, edition__is_deleted=False,
             is_deleted=False, archived_at__isnull=True,
         )
+        .exclude(annotation_type=AnnotationType.LINK)
         .order_by("created_at")
     )
     if not rows:

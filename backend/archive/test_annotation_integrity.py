@@ -521,3 +521,38 @@ class SanitizerTests(_MarksFixture):
         )
         self.assertEqual(response.status_code, 201, response.content)
         self.assertEqual(response.json()["payload"]["display"], "box")
+
+    def _link(self, **payload):
+        return self._post(
+            annotation_type=AnnotationType.LINK, page_number=2,
+            payload={"x": 0.9, "y": 0.95, "target_page": 1, "target_y": 0.3, **payload},
+        )
+
+    def test_a_jump_link_is_stored_as_where_it_sits_and_where_it_goes(self) -> None:
+        response = self._link(x=1.4, target_y=-2, stray="drop me")
+        self.assertEqual(response.status_code, 201, response.content)
+        self.assertEqual(
+            response.json()["payload"],
+            {"x": 1.0, "y": 0.95, "target_page": 1, "target_y": 0.0},
+        )
+
+    def test_a_jump_link_lands_on_a_page_of_its_own_edition(self) -> None:
+        self.assertEqual(self._link(target_page=0).status_code, 400)
+        self.assertEqual(self._link(target_page=3).status_code, 400)
+        self.assertEqual(self._link(target_page="1").status_code, 400)
+        self.assertEqual(self._link(target_page=True).status_code, 400)
+        self.assertEqual(self._link(target_page=2.0).status_code, 201)
+
+    def test_retargeting_a_jump_link_is_news_and_moving_it_is_not(self) -> None:
+        link = self._link().json()
+        stamped = link["content_at"]
+        moved = self.client.patch(
+            f"{_ENDPOINT}{link['id']}/",
+            {"payload": {**link["payload"], "x": 0.5}}, format="json",
+        )
+        self.assertEqual(moved.json()["content_at"], stamped)
+        retargeted = self.client.patch(
+            f"{_ENDPOINT}{link['id']}/",
+            {"payload": {**link["payload"], "target_page": 2}}, format="json",
+        )
+        self.assertNotEqual(retargeted.json()["content_at"], stamped)

@@ -501,6 +501,16 @@ class AnnotationGroupingTests(_Base):
         marks = marks_from_annotations(Annotation.objects.all())[(str(edition.pk), 1)]
         self.assertEqual(sorted(m.heavy for m in marks), [False, True])
 
+    def test_a_jump_link_never_reaches_paper(self) -> None:
+        edition = self._add_edition(pages=2)
+        self._mark(edition, page=1)
+        self._mark(
+            edition, page=2, atype=AnnotationType.LINK,
+            payload={"x": 0.8, "y": 0.9, "target_page": 1, "target_y": 0.2},
+        )
+        grouped = marks_from_annotations(Annotation.objects.all())
+        self.assertEqual(list(grouped), [(str(edition.pk), 1)])
+
 
 # ---------------------------------------------------------------------------
 # Stage 3 — the census (the cockpit's warnings) and staleness
@@ -538,6 +548,16 @@ class MarkingsCensusTests(_Base):
         edition = self._add_edition(pages=2)
         self._mark(edition, page=1, layer=LEADER_ANNOTATION_LAYER)
         self._mark(edition, page=1, layer=CONDUCTOR_ANNOTATION_LAYER)
+        census = compute_program_markings([self.item])[self.item.pk]
+        self.assertEqual(census.inside, 0)
+        self.assertEqual(markings_status(census, enabled=True), MARKINGS_NONE)
+
+    def test_a_jump_link_is_not_a_mark_the_book_carries(self) -> None:
+        edition = self._add_edition(pages=2)
+        self._mark(
+            edition, page=2, atype=AnnotationType.LINK,
+            payload={"x": 0.8, "y": 0.9, "target_page": 1, "target_y": 0.2},
+        )
         census = compute_program_markings([self.item])[self.item.pk]
         self.assertEqual(census.inside, 0)
         self.assertEqual(markings_status(census, enabled=True), MARKINGS_NONE)

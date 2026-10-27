@@ -209,12 +209,10 @@ class DelegateMarkVisibilityTests(APITestCase):
             LEADER_ANNOTATION_LAYER, self._layers_visible_to(self.deputy_user),
         )
 
-    # --- read, and only read --------------------------------------------------
+    # --- the desk shared with the conductor -----------------------------------
 
-    def test_a_delegate_may_not_write_on_the_leader_layer(self) -> None:
-        self._grant()
-        self.client.force_authenticate(self.deputy_user)
-        response = self.client.post(
+    def _post_leader_mark(self, color: str = _PENCIL):
+        return self.client.post(
             _ENDPOINT,
             {
                 "edition": str(self.edition.pk),
@@ -222,15 +220,72 @@ class DelegateMarkVisibilityTests(APITestCase):
                 "annotation_type": AnnotationType.FREEHAND,
                 "payload": {"paths": [[[0.1, 0.1], [0.2, 0.2]]], "width": 0.004},
                 "layer_name": LEADER_ANNOTATION_LAYER,
-                "color": _PENCIL,
+                "color": color,
             },
             format="json",
         )
-        self.assertEqual(response.status_code, 403)
 
-    def test_a_delegate_may_not_edit_a_leader_mark_they_can_now_see(self) -> None:
-        # The widened read scope makes the row reachable by id; the write guard
-        # is what still refuses it — a 403, not the 404 it used to be.
+    def test_the_marks_scope_lets_a_delegate_write_back_on_the_leader_layer(self) -> None:
+        self._grant()
+        self.client.force_authenticate(self.deputy_user)
+        response = self._post_leader_mark()
+        self.assertEqual(response.status_code, 201, response.content)
+        self.assertEqual(response.json()["layer_name"], LEADER_ANNOTATION_LAYER)
+        # The conductor reads what she wrote; the choir does not.
+        self.assertIn(LEADER_ANNOTATION_LAYER, self._layers_visible_to(self.manager))
+        self.assertEqual(
+            self._layers_visible_to(self.singer_user), {SHARED_ANNOTATION_LAYER},
+        )
+
+    def test_a_delegate_edits_and_erases_their_own_leader_mark(self) -> None:
+        self._grant()
+        self.client.force_authenticate(self.deputy_user)
+        mark_id = self._post_leader_mark().json()["id"]
+        edited = self.client.patch(
+            f"{_ENDPOINT}{mark_id}/",
+            {"payload": {"paths": [[[0.3, 0.3], [0.4, 0.4]]], "width": 0.004}},
+            format="json",
+        )
+        self.assertEqual(edited.status_code, 200, edited.content)
+        erased = self.client.delete(f"{_ENDPOINT}{mark_id}/")
+        self.assertEqual(erased.status_code, 204)
+
+    def test_the_conductor_s_ink_stays_his_on_the_leader_layer(self) -> None:
+        self._grant()
+        self.client.force_authenticate(self.deputy_user)
+        self.assertEqual(self._post_leader_mark(color="#DC2626").status_code, 403)
+
+    def test_without_the_marks_scope_the_leader_layer_stays_closed(self) -> None:
+        self._grant(can_see_leader_marks=False)
+        self.client.force_authenticate(self.deputy_user)
+        self.assertEqual(self._post_leader_mark().status_code, 403)
+
+    def test_an_expired_grant_takes_the_leader_pencil_back(self) -> None:
+        grant = self._grant()
+        self.client.force_authenticate(self.deputy_user)
+        mark_id = self._post_leader_mark().json()["id"]
+        grant.expires_at = timezone.now() - timedelta(minutes=1)
+        grant.save(update_fields=["expires_at"])
+        self.assertEqual(self._post_leader_mark().status_code, 403)
+        # Their row is out of reach with the layer: not even its author moves it.
+        response = self.client.delete(f"{_ENDPOINT}{mark_id}/")
+        self.assertIn(response.status_code, (403, 404))
+        self.assertTrue(Annotation.objects.filter(pk=mark_id).exists())
+
+    def test_clearing_takes_their_own_leader_marks_and_never_the_conductor_s(self) -> None:
+        self._grant()
+        self.client.force_authenticate(self.deputy_user)
+        own_id = self._post_leader_mark().json()["id"]
+        response = self.client.post(
+            f"{_ENDPOINT}clear/", {"edition": str(self.edition.pk)}, format="json",
+        )
+        self.assertEqual(response.json()["deleted"], 1)
+        self.assertFalse(Annotation.objects.filter(pk=own_id).exists())
+        self.assertTrue(Annotation.objects.filter(pk=self.leader_mark.pk).exists())
+
+    def test_a_delegate_may_not_edit_the_conductor_s_leader_mark(self) -> None:
+        # The layer is open to them and the row is reachable by id; the own-row
+        # rule is what still refuses it.
         self._grant()
         self.client.force_authenticate(self.deputy_user)
         response = self.client.patch(
@@ -295,22 +350,10 @@ class DelegateMarkVisibilityTests(APITestCase):
         )
         self.assertEqual(response.status_code, 403)
 
-    def test_choir_marks_do_not_open_the_leader_layer(self) -> None:
-        self._grant(can_mark_for_choir=True)
+    def test_choir_marks_alone_do_not_open_the_leader_layer(self) -> None:
+        self._grant(can_mark_for_choir=True, can_see_leader_marks=False)
         self.client.force_authenticate(self.deputy_user)
-        response = self.client.post(
-            _ENDPOINT,
-            {
-                "edition": str(self.edition.pk),
-                "page_number": 1,
-                "annotation_type": AnnotationType.FREEHAND,
-                "payload": {"paths": [[[0.1, 0.1], [0.2, 0.2]]], "width": 0.004},
-                "layer_name": LEADER_ANNOTATION_LAYER,
-                "color": _PENCIL,
-            },
-            format="json",
-        )
-        self.assertEqual(response.status_code, 403)
+        self.assertEqual(self._post_leader_mark().status_code, 403)
 
     def test_clearing_the_page_still_only_reaches_their_own_marks(self) -> None:
         self._grant()
@@ -371,10 +414,22 @@ class DelegateMarkVisibilityTests(APITestCase):
         grant.save(update_fields=["can_see_leader_marks"])
         self.assertEqual(self._fingerprint_count(), 1)
 
-    def _songbook_choir_flag(self) -> bool:
+    def _songbook_piece(self) -> dict:
         rows = self.client.get("/api/participations/materials-dashboard/").json()
         row = next(r for r in rows if r["project"]["id"] == str(self.project.pk))
-        return row["program"][0]["piece"]["may_mark_for_choir"]
+        return row["program"][0]["piece"]
+
+    def _songbook_choir_flag(self) -> bool:
+        return self._songbook_piece()["may_mark_for_choir"]
+
+    def test_the_songbook_says_when_the_pencil_reaches_the_conductor(self) -> None:
+        self.client.force_authenticate(self.deputy_user)
+        self.assertFalse(self._songbook_piece()["may_mark_with_conductor"])
+        grant = self._grant()
+        self.assertTrue(self._songbook_piece()["may_mark_with_conductor"])
+        grant.can_see_leader_marks = False
+        grant.save(update_fields=["can_see_leader_marks"])
+        self.assertFalse(self._songbook_piece()["may_mark_with_conductor"])
 
     def test_the_songbook_says_where_the_choir_pill_may_aim(self) -> None:
         # The flag follows the scope, not the grant: the stand arms its choir

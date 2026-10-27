@@ -85,6 +85,8 @@ export interface SurfaceModes {
   selecting: boolean;
   placing: boolean;
   stamping: boolean;
+  /** A tap sets one end of a jump link: where it sits, then where it leads. */
+  linking: boolean;
   erasing: boolean;
   browsing: boolean;
 }
@@ -98,6 +100,7 @@ export const surfaceModes = (
   selecting: canEdit && tool === "select",
   placing: canEdit && tool === "note",
   stamping: canEdit && tool === "stamp",
+  linking: canEdit && tool === "link",
   erasing: canEdit && tool === "eraser",
   browsing: tool === "pointer",
 });
@@ -127,7 +130,7 @@ export interface OverlayInputOptions {
    * it, never keep it.
    */
   onPreview: (points: readonly NormPoint[] | null) => void;
-  /** A tap on blank paper while a note or a stamp is armed. */
+  /** A tap on blank paper while a note, a stamp or a link is armed. */
   onTap: (point: NormPoint) => void;
   /**
    * Where a pen's eraser end is on the page while pressed: once where it
@@ -214,7 +217,11 @@ export const useOverlayInput = ({
   onErase,
   onTurnPage,
 }: OverlayInputOptions): OverlayInput => {
-  const { drawing, shaping, selecting, placing, stamping } = surfaceModes(tool, canEdit);
+  const { drawing, shaping, selecting, placing, stamping, linking } = surfaceModes(
+    tool,
+    canEdit,
+  );
+  const tapping = placing || stamping || linking;
   const tracing = drawing || selecting;
   const strokeRef = useRef<LiveStroke | null>(null);
   const panRef = useRef<Pan | null>(null);
@@ -339,7 +346,7 @@ export const useOverlayInput = ({
           tapped: true,
         };
         callbacks.current.onPreview(strokeRef.current.points);
-      } else if (placing || stamping) {
+      } else if (tapping) {
         // A press that started on an existing mark belongs to that mark.
         if ((event.target as Element | null)?.closest?.(`[${MARK_ATTR}]`)) return;
         tapRef.current = {
@@ -351,7 +358,7 @@ export const useOverlayInput = ({
         };
       }
     },
-    [abandonStroke, canEdit, fingerDraw, placing, stamping, surfaceRef, toNorm, tracing],
+    [abandonStroke, canEdit, fingerDraw, surfaceRef, tapping, toNorm, tracing],
   );
 
   const onPointerMove = useCallback<SurfacePointerHandler>(

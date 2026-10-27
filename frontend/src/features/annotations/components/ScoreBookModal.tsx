@@ -22,7 +22,11 @@ import React from "react";
 
 import { PdfViewerModal } from "@/shared/ui/composites/PdfViewerModal";
 
-import { useScoreAnnotator, type ScoreAnnotatorMode } from "../useScoreAnnotator";
+import {
+  useScoreAnnotator,
+  type DelegateLayer,
+  type ScoreAnnotatorMode,
+} from "../useScoreAnnotator";
 import type { ScoreBook } from "../lib/scoreBook";
 import { ScoreProgramBar } from "./ScoreProgramBar";
 
@@ -41,6 +45,8 @@ export interface ScoreBookModalProps {
   readonly subtitle?: string;
   readonly fileName?: string;
   readonly mode: ScoreAnnotatorMode;
+  /** In `leader` mode, the layers the grant opens on every piece of the book. */
+  readonly delegateLayers?: readonly DelegateLayer[];
   /**
    * Whether the binder may leave the app; false → in-app only. Honoured only
    * for a book with no map: with the pencil in it, the export controls are
@@ -68,6 +74,7 @@ export const ScoreBookModal = ({
   subtitle,
   fileName,
   mode,
+  delegateLayers,
   canExport = true,
   fullView,
   notifyProjectId = null,
@@ -79,6 +86,7 @@ export const ScoreBookModal = ({
     // page in front of the reader, so there is no single id to name here.
     editionId: null,
     mode,
+    delegateLayers,
     book: isOpen && hasMap ? book : null,
     notifyProjectId,
   });

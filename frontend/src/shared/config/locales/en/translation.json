@@ -70,7 +70,11 @@
         "title": "Two reaches for your marks",
         "lede": "What stays with you, and what the whole choir will see.",
         "choir_title": "Mine, or for the choir",
-        "choir_body": "The switch beside the tools decides where the NEXT mark goes: \"Mine\" is seen by you alone, \"Choir\" by everyone singing this piece. You can change or erase only your own marks — the conductor's stay his."
+        "choir_body": "The switch beside the tools decides where the NEXT mark goes: \"Mine\" is seen by you alone, \"Choir\" by everyone singing this piece. You can change or erase only your own marks — the conductor's stay his.",
+        "both_title": "Mine, for the choir, or with the conductor",
+        "both_body": "The switch beside the tools decides where the NEXT mark goes: \"Mine\" is seen by you alone, \"Choir\" by everyone singing this piece, and \"With conductor\" by the conductor and you only. You can change or erase only your own marks.",
+        "conductor_title": "Mine, or with the conductor",
+        "conductor_body": "The switch beside the tools decides where the NEXT mark goes: \"Mine\" is seen by you alone, \"With conductor\" by the conductor too, and by nobody in the choir. That is how you answer the conductor's cues where they were written. You can change or erase only your own marks."
       },
       "personal": {
         "title": "Your own marks",
@@ -108,6 +112,8 @@
         "shapes_body": "Pick them under Shapes and drag from the start of the phrase to its end. Drawn left to right, the slur bows upward and the bracket's hooks point down, as above a stave; drawn right to left, both turn over.",
         "box_title": "Rehearsal letters and bar numbers",
         "box_body": "A “Boxed” note looks like a rehearsal letter or a bar number in the score: bold, in a rectangle. It prints the same way.",
+        "link_title": "A jump to another place",
+        "link_body": "With Jump, tap where the jump starts (at a D.S., say), then turn to the page it leads to and tap the target. Tapping the arrow takes you there, and \"Back\" brings you back. The eraser removes it. A jump never goes to print.",
         "keys_title": "From the keyboard",
         "keys_body": "Delete removes the selection and the arrow keys nudge it (further with Shift). Ctrl+Z or ⌘Z undoes, and with Shift redoes. Esc puts the tool down.",
         "eraser_end_title": "The pen's eraser",
@@ -122,6 +128,9 @@
     "undo": "Undo",
     "layer": {
       "for_leader_short": "For the lead",
+      "with_conductor": "With the conductor: only the conductor and you see it",
+      "with_conductor_short": "With conductor",
+      "with_conductor_hint": "You and the conductor see this. Not the choir.",
       "from_conductor_short": "Conductor",
       "leader": "For whoever runs the rehearsal",
       "leader_hint": "Whoever you hand the rehearsal to, and the managers. Not the choir.",
@@ -134,6 +143,15 @@
       "shared": "Visible to the choir",
       "shared_hint": "Everyone in the choir singing this piece",
       "shared_short": "Choir"
+    },
+    "link": {
+      "chip": "p. {{page}}",
+      "follow": "Go to p. {{page}}",
+      "entry": "Jump to p. {{page}}",
+      "placing_from": "Tap where the jump starts, at a D.S. for instance.",
+      "placing_to": "Now tap where the jump leads. You can turn the page first.",
+      "return": "Back to p. {{page}}",
+      "cancel": "Cancel the jump"
     },
     "note": {
       "delete": "Delete note",
@@ -259,7 +277,8 @@
       "pointer": "Browse",
       "select": "Select",
       "shape": "Shapes",
-      "stamp": "Symbol"
+      "stamp": "Symbol",
+      "link": "Jump"
     },
     "shapes": {
       "arrow": "Arrow",
@@ -4429,7 +4448,7 @@
       "asked_lede_OTHER": "From now on you are the assistant conductor for this event.",
       "opens": "What this opens",
       "scope_marks": "The conductor's markings",
-      "scope_marks_body": "On this project's music you will see the cues the conductor wrote for whoever runs the rehearsal. Nobody else in the choir sees them.",
+      "scope_marks_body": "On this project's music you will see the cues the conductor wrote for whoever runs the rehearsal, and you can answer them in the same place by choosing “With conductor” beside the tools. Nobody else in the choir sees them.",
       "scope_roll_call": "Attendance",
       "scope_roll_call_body": "You can take the roll call at this project's rehearsals — for other singers too.",
       "scope_materials": "Materials",
@@ -4570,7 +4589,7 @@
       },
       "scope": {
         "marks": "Sees your notes for whoever runs the rehearsal",
-        "marks_hint": "The “For the lead” layer only. Your private notes stay private.",
+        "marks_hint": "The “For the lead” layer only, where they can also write back to you. Your private notes stay private.",
         "roll_call": "Takes the roll call",
         "roll_call_hint": "May mark the whole choir, not only themselves.",
         "materials": "Opens the project's materials",

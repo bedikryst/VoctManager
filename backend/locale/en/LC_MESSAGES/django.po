@@ -4591,6 +4591,10 @@ msgstr ""
 msgid "Voices must be a list of section letters: S, A, T, B."
 msgstr ""
 
+#: backend/archive/serializers.py:700
+msgid "A jump link requires a target page."
+msgstr ""
+
 #~ msgid ""
 #~ "%(artist)s is asking to be excused from a run of rehearsals. The dates are "
 #~ "below — approve or decline them in the panel."

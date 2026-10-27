@@ -25,7 +25,7 @@ import {
   isMarkOp,
   pendingMarkEntries,
 } from "./pendingMarks";
-import type { ScoreAnnotation } from "../types/annotations.dto";
+import { isLink, type ScoreAnnotation } from "../types/annotations.dto";
 import type { QueuedWrite } from "@/shared/offline/useOfflineStore";
 
 const EDITION = "edition-1";
@@ -285,6 +285,16 @@ describe("reading a queued echo back from storage", () => {
     for (const collapsed of writes) {
       expect(isMarkOp(collapsed.replace?.meta)).toBe(true);
     }
+  });
+
+  it("lets a jump link drawn offline back onto the page", () => {
+    const link = mark("m1", {
+      annotation_type: "LK",
+      payload: { x: 0.9, y: 0.95, target_page: 1, target_y: 0.2 },
+    });
+    expect(isMarkOp(collapseCreate(link).replace?.meta)).toBe(true);
+    expect(isMarkOp(collapseRestore(EDITION, "restore-1", [link]).replace?.meta)).toBe(true);
+    expect(isLink(link)).toBe(true);
   });
 
   it("refuses an echo it could not draw", () => {

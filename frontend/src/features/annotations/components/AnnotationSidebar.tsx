@@ -47,6 +47,7 @@ import { Eyebrow, Text } from "@/shared/ui/primitives/typography";
 
 import {
   isComment,
+  isLink,
   isStamp,
   type AnnotationLayer,
   type ScoreAnnotation,
@@ -116,6 +117,8 @@ interface AnnotationSidebarProps {
   onVoiceFilterChange: (filter: VoiceFilter) => void;
   /** Decides which layer rows make sense: choir/private vs conductor/mine. */
   mode: ScoreAnnotatorMode;
+  /** A leader who writes back to the conductor on the `leader` layer. */
+  writesLeader: boolean;
   onSelectMark: (id: string, page: number) => void;
   /**
    * The edition in front of the reader. With it, a manager's drawer ends in
@@ -141,6 +144,7 @@ export const AnnotationSidebar = ({
   voiceFilter,
   onVoiceFilterChange,
   mode,
+  writesLeader,
   onSelectMark,
   editionId = null,
   setAsideCount = 0,
@@ -162,7 +166,10 @@ export const AnnotationSidebar = ({
     [annotations, visibleLayers],
   );
 
-  /** Notes by their words, symbols by their names. Strokes have neither. */
+  /**
+   * Notes by their words, symbols by their names, jump links by where they
+   * lead. Strokes have none of these.
+   */
   const toEntry = useCallback(
     (mark: ScoreAnnotation): IndexEntry | null => {
       if (isComment(mark)) {
@@ -173,9 +180,15 @@ export const AnnotationSidebar = ({
         const label = def ? t(def.labelKey, def.fallback) : mark.payload.symbol;
         return { mark, label, y: mark.payload.y };
       }
+      if (isLink(mark)) {
+        const label = t("annotations.link.entry", "Skok na s. {{page}}", {
+          page: displayPage(mark.payload.target_page),
+        });
+        return { mark, label, y: mark.payload.y };
+      }
       return null;
     },
-    [t],
+    [displayPage, t],
   );
 
   const index = useMemo(
@@ -317,13 +330,15 @@ export const AnnotationSidebar = ({
                       {/* Only whoever was handed the evening ever receives these
                           rows, so their presence IS the permission — offering the
                           switch to a singer who has none would name a layer that
-                          means nothing to them. */}
-                      {layerCounts.leader > 0 && (
+                          means nothing to them. A leader who writes back on it
+                          gets it from the start, named as the desk it is. */}
+                      {(writesLeader || layerCounts.leader > 0) && (
                         <LayerToggle
-                          label={t(
-                            "annotations.layer.for_leader_short",
-                            "Dla prowadzącego",
-                          )}
+                          label={
+                            writesLeader
+                              ? t("annotations.layer.with_conductor_short", "Z dyrygentem")
+                              : t("annotations.layer.for_leader_short", "Dla prowadzącego")
+                          }
                           count={layerCounts.leader}
                           visible={visibleLayers.leader}
                           onToggle={() => toggleLayerVisibility("leader")}

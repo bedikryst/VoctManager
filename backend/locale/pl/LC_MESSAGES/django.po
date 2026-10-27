@@ -6004,6 +6004,10 @@ msgstr "Głosy"
 msgid "Voices must be a list of section letters: S, A, T, B."
 msgstr "Głosy muszą być listą liter sekcji: S, A, T, B."
 
+#: backend/archive/serializers.py:700
+msgid "A jump link requires a target page."
+msgstr "Link skoku musi wskazywać stronę docelową."
+
 #~ msgid "Review the request"
 #~ msgstr "Rozpatrz prośbę"
 

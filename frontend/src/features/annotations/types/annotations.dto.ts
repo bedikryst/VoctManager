@@ -8,8 +8,11 @@
  * @module features/annotations/types
  */
 
-/** Backend `Annotation.annotation_type` codes. FH ink · HL highlighter · CM note · ST musical stamp. */
-export type AnnotationKind = "FH" | "CM" | "HL" | "ST";
+/**
+ * Backend `Annotation.annotation_type` codes. FH ink · HL highlighter · CM note ·
+ * ST musical stamp · LK jump link.
+ */
+export type AnnotationKind = "FH" | "CM" | "HL" | "ST" | "LK";
 
 /**
  * `shared` markings are pushed to every chorister cast in a live project that
@@ -74,7 +77,20 @@ export interface StampPayload {
   scale?: number;
 }
 
-export type AnnotationPayload = FreehandPayload | CommentPayload | StampPayload;
+/**
+ * A jump (LK) placed at a normalized point: a tap on it turns the stand to
+ * `target_page` of the same edition, at `target_y` on that page — a D.S., a
+ * coda, a repeat across a turn. It moves the stand and says nothing on paper,
+ * so print never draws it.
+ */
+export interface LinkPayload {
+  x: number;
+  y: number;
+  target_page: number;
+  target_y: number;
+}
+
+export type AnnotationPayload = FreehandPayload | CommentPayload | StampPayload | LinkPayload;
 
 /**
  * A mark's kind and the payload that kind carries, as one discriminated pair:
@@ -87,7 +103,8 @@ export type MarkContent =
   | { annotation_type: "FH"; payload: FreehandPayload }
   | { annotation_type: "HL"; payload: FreehandPayload }
   | { annotation_type: "CM"; payload: CommentPayload }
-  | { annotation_type: "ST"; payload: StampPayload };
+  | { annotation_type: "ST"; payload: StampPayload }
+  | { annotation_type: "LK"; payload: LinkPayload };
 
 /** What a writer decides about a new mark; the edition and the identity come later. */
 export type MarkDraft = MarkContent & {
@@ -121,6 +138,7 @@ export type FreehandMark = ScoreAnnotation & { annotation_type: "FH" };
 export type HighlightMark = ScoreAnnotation & { annotation_type: "HL" };
 export type CommentMark = ScoreAnnotation & { annotation_type: "CM" };
 export type StampMark = ScoreAnnotation & { annotation_type: "ST" };
+export type LinkMark = ScoreAnnotation & { annotation_type: "LK" };
 /** Ink and highlighter: one payload, and every rule that draws or moves one. */
 export type StrokeMark = FreehandMark | HighlightMark;
 
@@ -215,6 +233,8 @@ export const markContent = (a: MarkContent): MarkContent => {
       return { annotation_type: "CM", payload: a.payload };
     case "ST":
       return { annotation_type: "ST", payload: a.payload };
+    case "LK":
+      return { annotation_type: "LK", payload: a.payload };
   }
 };
 
@@ -232,3 +252,9 @@ export const isComment = (a: ScoreAnnotation): a is CommentMark =>
 
 export const isStamp = (a: ScoreAnnotation): a is StampMark =>
   a.annotation_type === "ST" && typeof a.payload?.symbol === "string";
+
+export const isLink = (a: ScoreAnnotation): a is LinkMark =>
+  a.annotation_type === "LK" &&
+  typeof a.payload?.target_page === "number" &&
+  typeof a.payload.x === "number" &&
+  typeof a.payload.y === "number";

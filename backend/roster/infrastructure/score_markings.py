@@ -64,6 +64,9 @@ _HIGHLIGHT = "HL"
 _COMMENT = "CM"
 _FREEHAND = "FH"
 _STAMP = "ST"
+# A jump link moves the stand; on paper there is nothing to tap, so it never
+# reaches a printed page.
+_LINK = "LK"
 
 # Layers whose ink is the conductor speaking — to the choir, to himself, or to
 # whoever takes an evening in his place. They print heavier so they remain
@@ -133,7 +136,7 @@ def marks_from_annotations(annotations: Iterable[Any]) -> dict[tuple[str, int], 
     grouped: dict[tuple[str, int], list[PrintMark]] = {}
     for annotation in annotations:
         payload = annotation.payload
-        if not isinstance(payload, dict):
+        if not isinstance(payload, dict) or annotation.annotation_type == _LINK:
             continue
         key = (str(annotation.edition_id), int(annotation.page_number))
         grouped.setdefault(key, []).append(PrintMark(

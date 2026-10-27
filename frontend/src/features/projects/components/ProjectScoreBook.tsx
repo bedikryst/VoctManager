@@ -24,6 +24,7 @@ import {
   buildScoreBook,
   EMPTY_SCORE_BOOK,
   ScoreBookModal,
+  type DelegateLayer,
   type ScoreAnnotatorMode,
   type ScoreBook,
 } from "@/features/annotations";
@@ -46,10 +47,11 @@ interface ProjectScoreBookProps {
   readonly version?: string;
   /**
    * conductor → managers draw the shared/conductor layers; leader → a project
-   * leader whose grant opens the choir's layer on this programme; personal →
+   * leader whose grant opens `delegateLayers` on this programme; personal →
    * choristers write their own private pencil over the read-only shared marks.
    */
   readonly mode?: ScoreAnnotatorMode;
+  readonly delegateLayers?: readonly DelegateLayer[];
   /**
    * Whether the reader may tell this project's choir about new marks — a
    * manager or the podium conductor. The book's toolbar then carries
@@ -65,6 +67,7 @@ export const ProjectScoreBook = ({
   isOpen,
   version = "",
   mode = "personal",
+  delegateLayers,
   canNotifyChoir = false,
   onClose,
 }: ProjectScoreBookProps): React.JSX.Element => {
@@ -118,6 +121,7 @@ export const ProjectScoreBook = ({
       subtitle={projectTitle}
       fileName={fileName}
       mode={mode}
+      delegateLayers={delegateLayers}
       fullView={{
         type: "project-score",
         id: projectId,

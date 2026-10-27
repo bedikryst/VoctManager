@@ -22,7 +22,7 @@ import {
 
 import { ProjectScoreBook } from "@/features/projects/components/ProjectScoreBook";
 import { isClosedProjectStatus } from "@/features/projects/constants/projectDomain";
-import { NotifyChoirButton, scoreAnnotatorModeFor } from "@/features/annotations";
+import { NotifyChoirButton, scoreStandAccessFor } from "@/features/annotations";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { useArtistPreview } from "@/app/providers/ArtistPreviewProvider";
 import { isManager } from "@/shared/auth/rbac";
@@ -231,15 +231,18 @@ export const ProjectMaterialGroup = ({
               // The pencil follows the ROLE, not the podium. Standing in front of
               // the choir — whether as the named conductor or as a stand-in — does
               // not make someone a manager. The one exception is a leader whose
-              // grant opens the choir's layer, and the book is one stand over the
-              // whole programme, so it is armed only when EVERY piece in it is
-              // theirs to mark for the choir — a pill the server would refuse on
-              // half the pages reads as the app losing marks.
-              mode={scoreAnnotatorModeFor({
+              // grant opens a layer, and the book is one stand over the whole
+              // programme, so each layer is armed only when EVERY piece in it is
+              // theirs to write there — a pill the server would refuse on half
+              // the pages reads as the app losing marks.
+              {...scoreStandAccessFor({
                 isManager: isManager(user),
                 mayMarkForChoir:
                   group.program.length > 0 &&
                   group.program.every((item) => item.piece.may_mark_for_choir),
+                mayMarkWithConductor:
+                  group.program.length > 0 &&
+                  group.program.every((item) => item.piece.may_mark_with_conductor === true),
               })}
               canNotifyChoir={canNotifyChoir}
               onClose={() => setBookOpen(false)}

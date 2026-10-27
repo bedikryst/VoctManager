@@ -19,7 +19,7 @@ import {
 import { INERT_SURFACE } from "@/shared/ui/primitives/inertSurface";
 import { isManager } from "@/shared/auth/rbac";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
-import { ScoreStandModal, scoreAnnotatorModeFor } from "@/features/annotations";
+import { ScoreStandModal, scoreStandAccessFor } from "@/features/annotations";
 import { Eyebrow, Heading, Text } from "@/shared/ui/primitives/typography";
 import { getPiecePdfLinks } from "@/features/archive/constants/piecePdfs";
 import { cn } from "@/shared/lib/utils";
@@ -290,9 +290,10 @@ export const PieceRow = ({
         <ScoreStandModal
           isOpen={isScoreOpen}
           editionId={isScoreOpen ? primaryPdf.id : null}
-          mode={scoreAnnotatorModeFor({
+          {...scoreStandAccessFor({
             isManager: isManager(user),
             mayMarkForChoir: piece.may_mark_for_choir,
+            mayMarkWithConductor: piece.may_mark_with_conductor === true,
           })}
           title={piece.title}
           subtitle={primaryPdf.label}

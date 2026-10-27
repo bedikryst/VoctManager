@@ -34,11 +34,15 @@
  * keys rest, and Delete removes it.
  *
  * A pen's eraser end rubs out the marks it passes, whatever tool is in hand.
+ *
+ * A jump link is the one mark a tap does not open: while browsing, a tap
+ * follows it. It is placed with two taps through `onLinkTap`, whose first end
+ * the stand holds across page turns (`linkStart`).
  * @module features/annotations/components
  */
 
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { ClipboardPaste, Lock, Pin } from "lucide-react";
+import { ClipboardPaste, CornerDownRight, Lock, Pin } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 
@@ -68,11 +72,13 @@ import {
 import { SelectionCard, type PageFrame } from "./SelectionCard";
 import {
   isComment,
+  isLink,
   isStamp,
   isStroke,
   type AnnotationLayer,
   type AnnotationPatch,
   type CommentPayload,
+  type LinkMark,
   type MarkDraft,
   type NoteDisplay,
   type NormPoint,
@@ -184,6 +190,25 @@ interface AnnotationOverlayProps {
    * selected last holds the keys.
    */
   selectionKeys: React.RefObject<SelectionKeys | null>;
+  /**
+   * The first end of a jump link being placed, on whichever page it was
+   * tapped. It outlives this page on purpose: the second tap is usually pages
+   * away, where the D.S. leads.
+   */
+  linkStart: LinkStart | null;
+  /** A tap with the link tool, on this page (the edition's page number). */
+  onLinkTap: (page: number, point: NormPoint) => void;
+  /** A reader's tap on a placed link. */
+  onFollowLink: (mark: LinkMark) => void;
+  /** The page number a link's target is shown as, in the document open. */
+  displayPage: (sourcePage: number) => number;
+}
+
+/** Where a jump link being placed sits, until its target is tapped. */
+export interface LinkStart {
+  page: number;
+  x: number;
+  y: number;
 }
 
 const clamp01 = (value: number): number => Math.min(1, Math.max(0, value));
@@ -253,6 +278,10 @@ export const AnnotationOverlay = ({
   onDeleteMany,
   onCopy,
   selectionKeys,
+  linkStart,
+  onLinkTap,
+  onFollowLink,
+  displayPage,
 }: AnnotationOverlayProps): React.JSX.Element => {
   const { t } = useTranslation();
   const { width, height, pageNumber } = geometry;
@@ -274,10 +303,10 @@ export const AnnotationOverlay = ({
 
   // A shape's "stroke" holds two points only — where the drag began and where
   // it is now — and the figure is rebuilt from them on every move.
-  const { drawing, shaping, selecting, placing, stamping, erasing, browsing } =
+  const { drawing, shaping, selecting, placing, stamping, linking, erasing, browsing } =
     surfaceModes(tool, canEdit);
   const tracing = drawing || selecting;
-  const surfaceInteractive = tracing || placing || stamping;
+  const surfaceInteractive = tracing || placing || stamping || linking;
   /**
    * Modes in which an EXISTING mark answers to a touch — tap to open, drag to
    * move. The note tool belongs here: with the pencil for words in hand, a tap
@@ -546,7 +575,7 @@ export const AnnotationOverlay = ({
     });
   };
 
-  /** A tap on blank paper with a note or a stamp in hand. */
+  /** A tap on blank paper with a note, a stamp or a link in hand. */
   const placeAt = ([x, y]: NormPoint): void => {
     // An open composer (or a selected mark) owns the next tap on the page: it
     // closes, nothing is placed. Placing on that same tap would drop a mark
@@ -556,7 +585,9 @@ export const AnnotationOverlay = ({
       onSelect(null);
       return;
     }
-    if (stamping) {
+    if (linking) {
+      onLinkTap(pageNumber, [x, y]);
+    } else if (stamping) {
       onCreate({
         page_number: pageNumber,
         annotation_type: "ST",
@@ -1042,7 +1073,7 @@ export const AnnotationOverlay = ({
       className={cn(
         "absolute inset-0",
         tracing && "cursor-crosshair",
-        (placing || stamping) && "cursor-copy",
+        (placing || stamping || linking) && "cursor-copy",
       )}
       style={{
         width,
@@ -1145,6 +1176,72 @@ export const AnnotationOverlay = ({
           </div>
         );
       })}
+
+      {/* Jump links. Every reader follows one with a tap while browsing; its
+          owner rubs it out with the eraser and moves it with "Zaznacz". It
+          never opens a card: a tap on a link means "take me there". */}
+      {pageAnnotations.filter(isLink).map((a) => {
+        const payload = a.payload;
+        const erasable = erasing && canModify(a);
+        const live = browsing || erasable;
+        const target = displayPage(payload.target_page);
+        return (
+          <div
+            key={a.id}
+            data-annotation-mark
+            data-mark-id={a.id}
+            className="absolute"
+            style={{
+              left: payload.x * width,
+              top: payload.y * height,
+              transform: markerTransform(a, null),
+              pointerEvents: live ? "auto" : "none",
+            }}
+          >
+            {markerHalo(a, "rounded-full")}
+            <button
+              type="button"
+              data-pdf-pinch-through
+              onClick={() => (erasing ? onDelete(a.id) : onFollowLink(a))}
+              aria-label={t("annotations.link.follow", "Przejdź na s. {{page}}", {
+                page: target,
+              })}
+              tabIndex={live ? 0 : -1}
+              className={cn(
+                INLINE_MARK_CLASS,
+                "flex items-center gap-1 whitespace-nowrap rounded-full transition-shadow",
+                highlighted.has(a.id) ? "ring-2 ring-ethereal-gold" : "ring-black/10",
+                erasable && "cursor-pointer hover:ring-ethereal-crimson",
+              )}
+              style={{
+                color: a.color,
+                backgroundColor: INLINE_MARK_BACKGROUND,
+                fontSize: inlineFontSize(width) * 0.8,
+              }}
+            >
+              <CornerDownRight size="1em" aria-hidden="true" />
+              {t("annotations.link.chip", "s. {{page}}", { page: target })}
+            </button>
+          </div>
+        );
+      })}
+
+      {/* The first end of a link being placed, until its target is tapped. */}
+      {linking && linkStart?.page === pageNumber && (
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute flex h-7 w-7 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-2 border-dashed"
+          style={{
+            left: linkStart.x * width,
+            top: linkStart.y * height,
+            color,
+            borderColor: color,
+            backgroundColor: INLINE_MARK_BACKGROUND,
+          }}
+        >
+          <CornerDownRight size={14} />
+        </div>
+      )}
 
       {/* Notes: inline text drawn on the page, or clickable pins. */}
       {pageAnnotations.filter(isComment).map((a) => {

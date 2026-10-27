@@ -658,6 +658,9 @@ class AnnotationType(models.TextChoices):
     COMMENT   = 'CM', _('Text Comment')
     FREEHAND  = 'FH', _('Freehand Pen')
     STAMP     = 'ST', _('Stamp / Symbol')
+    # A jump the reader taps (D.S., a coda, a repeat across a turn). It moves the
+    # stand and says nothing on paper, so print and the cockpit's census skip it.
+    LINK      = 'LK', _('Jump link')
 
 
 # Well-known annotation layers. `layer_name` stays a free CharField (ad-hoc
@@ -697,7 +700,7 @@ class Annotation(SoftDeleteModel):
             "Shape varies by annotation_type, validated + sanitized server-side: "
             "FH/HL store {paths:[[[x,y],...]], width} (normalized 0..1, width as a "
             "fraction of page width); CM stores {x, y, text, display:'pin'|'inline'}; "
-            "ST stores {x, y, symbol}."
+            "ST stores {x, y, symbol}; LK stores {x, y, target_page, target_y}."
         ),
         verbose_name=_("Payload"),
     )

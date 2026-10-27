@@ -259,6 +259,10 @@ class PieceMaterialsSerializer(serializers.Serializer):
       choir_marks_piece_ids set[uuid.UUID] — pieces on which this reader's leader
                         grant opens the choir's 'shared' marking layer (absent →
                         none); emitted as `may_mark_for_choir` per piece
+      leader_marks_piece_ids set[uuid.UUID] — pieces on which the `marks` scope
+                        opens the 'leader' layer, the desk shared with the
+                        conductor (absent → none); emitted as
+                        `may_mark_with_conductor` per piece
       reader_sees_instrumental bool — whether an instrumental item's editions
                         and tracks reach this reader (absent → False): a player,
                         or whoever runs the evening through the materials door
@@ -270,6 +274,7 @@ class PieceMaterialsSerializer(serializers.Serializer):
         my_readiness_map: dict[uuid.UUID, str] | None = self.context.get('my_readiness_map', {})
         bound_edition_id: uuid.UUID | None = self.context.get('bound_edition_id')
         choir_marks_piece_ids: set[uuid.UUID] = self.context.get('choir_marks_piece_ids', set())
+        leader_marks_piece_ids: set[uuid.UUID] = self.context.get('leader_marks_piece_ids', set())
         child_context: dict[str, Any] = {
             'artist_id': self.context.get('artist_id'),
             'request': self.context.get('request'),
@@ -384,6 +389,9 @@ class PieceMaterialsSerializer(serializers.Serializer):
             # music — a leader's opt-in scope, never a manager's standing power
             # (the client already knows a manager writes everywhere).
             'may_mark_for_choir': piece.pk in choir_marks_piece_ids,
+            # Whether it reaches the 'leader' layer, to write back to the
+            # conductor. Same rule: a leader's scope, never a manager's power.
+            'may_mark_with_conductor': piece.pk in leader_marks_piece_ids,
         }
 
 
@@ -489,6 +497,7 @@ class ParticipationMaterialsSerializer(serializers.Serializer):
             'request': self.context.get('request'),
             'liturgy': _liturgy_map(ordered_program),
             'choir_marks_piece_ids': self.context.get('choir_marks_piece_ids', set()),
+            'leader_marks_piece_ids': self.context.get('leader_marks_piece_ids', set()),
             'materials_locked': materials_locked,
             'reader_sees_instrumental': reader_sees_instrumental,
         }
@@ -577,6 +586,7 @@ class LedProjectMaterialsSerializer(serializers.Serializer):
             'request': self.context.get('request'),
             'liturgy': _liturgy_map(ordered_program),
             'choir_marks_piece_ids': self.context.get('choir_marks_piece_ids', set()),
+            'leader_marks_piece_ids': self.context.get('leader_marks_piece_ids', set()),
             # Same lifecycle gate as singers: scores + tracks are withheld once
             # the concert is over (they remain reachable through the manager
             # surfaces, which re-check access on every request).

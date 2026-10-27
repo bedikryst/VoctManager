@@ -49,6 +49,18 @@ const breath = row("breath", {
 });
 
 describe("a selection moved", () => {
+  it("moves where a jump link sits and never where it leads", () => {
+    const link = row("ds", {
+      annotation_type: "LK",
+      payload: { x: 0.9, y: 0.9, target_page: 1, target_y: 0.3 },
+    });
+    expect(clampShift([link], { dx: 0.5, dy: 0 }).dx).toBeCloseTo(0.1);
+    expect(shiftedContent(link, { dx: -0.4, dy: -0.1 })).toEqual({
+      annotation_type: "LK",
+      payload: { x: 0.5, y: 0.8, target_page: 1, target_y: 0.3 },
+    });
+  });
+
   it("stops whole where its outermost mark meets the page edge", () => {
     const shift = clampShift([slur, breath], { dx: 0.3, dy: -0.5 });
     expect(shift.dx).toBeCloseTo(0.1);

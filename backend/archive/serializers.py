@@ -415,6 +415,7 @@ _MAX_PAYLOAD_BYTES = 256 * 1024
 _CONTENT_KEYS: dict[str, str] = {
     AnnotationType.COMMENT: 'text',
     AnnotationType.STAMP: 'symbol',
+    AnnotationType.LINK: 'target_page',
 }
 
 
@@ -558,7 +559,9 @@ class AnnotationSerializer(serializers.ModelSerializer):
             'annotation_type', getattr(self.instance, 'annotation_type', None)
         )
         payload = attrs.get('payload', getattr(self.instance, 'payload', None))
-        cleaned = self._clean_payload(atype, payload)
+        cleaned = self._clean_payload(
+            atype, payload, attrs.get('edition', getattr(self.instance, 'edition', None)),
+        )
         if len(json.dumps(cleaned, separators=(',', ':'))) > _MAX_PAYLOAD_BYTES:
             raise serializers.ValidationError(
                 {'payload': _('This marking is too large to store.')}
@@ -579,7 +582,9 @@ class AnnotationSerializer(serializers.ModelSerializer):
                 {'page_number': _('This edition has no such page.')}
             )
 
-    def _clean_payload(self, atype: str | None, payload: Any) -> dict[str, Any]:
+    def _clean_payload(
+        self, atype: str | None, payload: Any, edition: ScoreEdition | None,
+    ) -> dict[str, Any]:
         if not isinstance(payload, Mapping):
             raise serializers.ValidationError(
                 {'payload': _('Payload must be an object.')}
@@ -596,6 +601,8 @@ class AnnotationSerializer(serializers.ModelSerializer):
             return self._clean_comment(payload)
         if atype == AnnotationType.STAMP:
             return self._clean_stamp(payload)
+        if atype == AnnotationType.LINK:
+            return self._clean_link(payload, edition)
         raise serializers.ValidationError(
             {'annotation_type': _('Unsupported annotation type.')}
         )
@@ -675,6 +682,31 @@ class AnnotationSerializer(serializers.ModelSerializer):
             'y': _clamp01(payload.get('y')),
             'symbol': symbol,
             'scale': _clamp_scale(payload.get('scale', 1.0)),
+        }
+
+    def _clean_link(
+        self, payload: Mapping[str, Any], edition: ScoreEdition | None,
+    ) -> dict[str, Any]:
+        """A jump from where it sits to a page of the same edition, at a height
+        on that page. The target is judged like a mark's own page: from 1, and
+        no further than the edition's last page once ingestion has counted
+        them."""
+        target = payload.get('target_page')
+        if isinstance(target, float) and target.is_integer():
+            target = int(target)
+        if not isinstance(target, int) or isinstance(target, bool):
+            raise serializers.ValidationError(
+                {'payload': _('A jump link requires a target page.')}
+            )
+        if target < 1 or (edition is not None and edition.page_count and target > edition.page_count):
+            raise serializers.ValidationError(
+                {'payload': _('This edition has no such page.')}
+            )
+        return {
+            'x': _clamp01(payload.get('x')),
+            'y': _clamp01(payload.get('y')),
+            'target_page': target,
+            'target_y': _clamp01(payload.get('target_y', 0.0)),
         }
 
     def _stored_symbol(self) -> str | None:

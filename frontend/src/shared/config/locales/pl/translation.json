@@ -78,7 +78,11 @@
         "title": "Dwa zasięgi Twoich oznaczeń",
         "lede": "Co zostaje przy Tobie, a co zobaczy cały chór.",
         "choir_title": "Moje albo dla chóru",
-        "choir_body": "Przełącznik przy narzędziach decyduje, gdzie trafi NASTĘPNE oznaczenie: „Moje” widzisz tylko Ty, „Chór” zobaczy każdy, kto śpiewa ten utwór. Zmienić i skasować możesz tylko własne oznaczenia — te od dyrygenta zostają jego."
+        "choir_body": "Przełącznik przy narzędziach decyduje, gdzie trafi NASTĘPNE oznaczenie: „Moje” widzisz tylko Ty, „Chór” zobaczy każdy, kto śpiewa ten utwór. Zmienić i skasować możesz tylko własne oznaczenia — te od dyrygenta zostają jego.",
+        "both_title": "Moje, dla chóru albo z dyrygentem",
+        "both_body": "Przełącznik przy narzędziach decyduje, gdzie trafi NASTĘPNE oznaczenie: „Moje” widzisz tylko Ty, „Chór” zobaczy każdy, kto śpiewa ten utwór, a „Z dyrygentem” tylko dyrygent i Ty. Zmienić i skasować możesz tylko własne oznaczenia — te od dyrygenta zostają jego.",
+        "conductor_title": "Moje albo z dyrygentem",
+        "conductor_body": "Przełącznik przy narzędziach decyduje, gdzie trafi NASTĘPNE oznaczenie: „Moje” widzisz tylko Ty, „Z dyrygentem” zobaczy też dyrygent, ale nikt z chóru. Tak odpowiadasz na jego wskazówki tam, gdzie je zapisał. Zmienić i skasować możesz tylko własne oznaczenia."
       },
       "personal": {
         "title": "Twoje ślady na nutach",
@@ -116,6 +120,8 @@
         "shapes_body": "Wybierz je w Kształtach i przeciągnij od początku do końca frazy. Od lewej do prawej łuk wygina się w górę, a klamra ma haczyki w dół, tak jak nad pięciolinią. Od prawej do lewej oba się odwracają.",
         "box_title": "Litery orientacyjne i numery taktów",
         "box_body": "Notatka „W ramce” wygląda jak litera orientacyjna albo numer taktu w nutach: pogrubiona, w prostokącie. Tak samo się drukuje.",
+        "link_title": "Skok w inne miejsce",
+        "link_body": "Narzędziem Skok dotknij miejsca, z którego się skacze, np. przy D.S., potem przewróć na stronę, do której prowadzi, i dotknij celu. Dotknięcie strzałki przenosi tam, a „Wróć” z powrotem. Usuniesz go gumką. Do druku skok nie trafia.",
         "keys_title": "Z klawiatury",
         "keys_body": "Delete usuwa zaznaczenie, a strzałki je przesuwają (z Shiftem dalej). Ctrl+Z lub ⌘Z cofa, z Shiftem ponawia. Esc odkłada narzędzie.",
         "eraser_end_title": "Gumka w rysiku",
@@ -130,6 +136,9 @@
     "undo": "Cofnij",
     "layer": {
       "for_leader_short": "Dla prowadzącego",
+      "with_conductor": "Z dyrygentem: widzi to tylko on i Ty",
+      "with_conductor_short": "Z dyrygentem",
+      "with_conductor_hint": "Widzisz to Ty i dyrygent. Chór — nie.",
       "from_conductor_short": "Dyrygent",
       "leader": "Dla prowadzącego próbę",
       "leader_hint": "Osoba, której powierzysz prowadzenie próby, i menedżerowie. Chór — nie.",
@@ -142,6 +151,15 @@
       "shared": "Widoczne dla chóru",
       "shared_hint": "Widzi cały chór śpiewający ten utwór",
       "shared_short": "Chór"
+    },
+    "link": {
+      "chip": "s. {{page}}",
+      "follow": "Przejdź na s. {{page}}",
+      "entry": "Skok na s. {{page}}",
+      "placing_from": "Dotknij miejsca, z którego się skacze, np. przy D.S.",
+      "placing_to": "Teraz dotknij miejsca, do którego prowadzi skok. Możesz przewrócić stronę.",
+      "return": "Wróć na s. {{page}}",
+      "cancel": "Anuluj skok"
     },
     "note": {
       "delete": "Usuń notatkę",
@@ -267,7 +285,8 @@
       "pointer": "Przeglądaj",
       "select": "Zaznacz",
       "shape": "Kształty",
-      "stamp": "Symbol"
+      "stamp": "Symbol",
+      "link": "Skok"
     },
     "shapes": {
       "arrow": "Strzałka",
@@ -4519,7 +4538,7 @@
       "asked_lede_OTHER": "Od teraz masz rolę asystenta dyrygenta w tym wydarzeniu.",
       "opens": "Co to otwiera",
       "scope_marks": "Oznaczenia dyrygenta",
-      "scope_marks_body": "Na nutach tego projektu zobaczysz wskazówki, które dyrygent zapisał dla prowadzącego próbę. Nikt inny w chórze ich nie widzi.",
+      "scope_marks_body": "Na nutach tego projektu zobaczysz wskazówki, które dyrygent zapisał dla prowadzącego próbę, i odpowiesz na nie w tym samym miejscu, wybierając „Z dyrygentem” przy narzędziach. Nikt inny w chórze ich nie widzi.",
       "scope_roll_call": "Obecność",
       "scope_roll_call_body": "Odhaczysz obecność na próbach tego projektu — także za innych śpiewaków.",
       "scope_materials": "Materiały",
@@ -4660,7 +4679,7 @@
       },
       "scope": {
         "marks": "Widzi Twoje notatki dla prowadzącego",
-        "marks_hint": "Tylko warstwa „Dla prowadzącego”. Twoje prywatne notatki zostają prywatne.",
+        "marks_hint": "Tylko warstwa „Dla prowadzącego”, na której ta osoba może Ci też odpowiadać. Twoje prywatne notatki zostają prywatne.",
         "roll_call": "Sprawdza obecność na próbie",
         "roll_call_hint": "Może odhaczyć cały chór, nie tylko siebie.",
         "materials": "Otwiera materiały projektu",

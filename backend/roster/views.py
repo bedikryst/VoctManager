@@ -1803,6 +1803,11 @@ class ParticipationViewSet(viewsets.ModelViewSet):
             'choir_marks_piece_ids': set(
                 led_piece_ids(target.user, scope='choir_marks')
             ),
+            # The same, for the desk shared with the conductor ('leader'),
+            # which the `marks` scope opens.
+            'leader_marks_piece_ids': set(
+                led_piece_ids(target.user, scope='marks')
+            ),
         }
         sung = ParticipationMaterialsSerializer(
             get_artist_materials_queryset(

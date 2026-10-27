@@ -4,10 +4,12 @@
  * @module features/annotations
  */
 
-export { scoreAnnotatorModeFor, useScoreAnnotator } from "./useScoreAnnotator";
+export { scoreStandAccessFor, useScoreAnnotator } from "./useScoreAnnotator";
 export type {
+  DelegateLayer,
   ScoreAnnotatorBindings,
   ScoreAnnotatorMode,
+  ScoreStandAccess,
   UseScoreAnnotatorOptions,
 } from "./useScoreAnnotator";
 export { ScoreStandModal } from "./components/ScoreStandModal";
