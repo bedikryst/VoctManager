@@ -81,6 +81,13 @@ export interface ScoreAnnotation {
   created_by: string | null;
   created_at: string;
   updated_at: string;
+  /**
+   * When the mark last said something new — drawn, restored, its words or
+   * symbol changed, or readdressed. A move, resize or recolour leaves it. What
+   * a reader is told is new keys on this. Absent on rows cached or queued by a
+   * build that predates it; such a row is never new.
+   */
+  content_at?: string;
 }
 
 /**
@@ -93,6 +100,12 @@ export interface MarkFingerprint {
   count: number;
   /** ISO timestamp, or null when the edition carries no marks at all. */
   latest: string | null;
+  /**
+   * How far this reader has looked at the edition's marks: anything whose
+   * `content_at` is later is new to them. The server starts it at the first
+   * open, so null only for an edition that is gone.
+   */
+  seen_at: string | null;
 }
 
 /** Create payload — `edition` is injected by the mutation layer. */

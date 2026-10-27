@@ -39,9 +39,16 @@ export interface OfflineSyncStatus {
 export const useOfflineSync = (): OfflineSyncStatus => {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
-  const pendingCount = useOfflineStore((state) => state.queue.length);
+  // Background writes still keep the drain timer running, but the reader is
+  // only told about changes they made.
+  const queuedCount = useOfflineStore((state) => state.queue.length);
+  const pendingCount = useOfflineStore(
+    (state) => state.queue.filter((write) => !write.background).length,
+  );
   const stuckCount = useOfflineStore(
-    (state) => state.queue.filter((write) => write.failingSince !== null).length,
+    (state) =>
+      state.queue.filter((write) => !write.background && write.failingSince !== null)
+        .length,
   );
 
   const [isOnline, setIsOnline] = useState<boolean>(() =>
@@ -101,12 +108,12 @@ export const useOfflineSync = (): OfflineSyncStatus => {
     };
   }, [flush]);
 
-  const hasPending = pendingCount > 0;
+  const hasQueued = queuedCount > 0;
   useEffect(() => {
-    if (!hasPending || !isOnline) return;
+    if (!hasQueued || !isOnline) return;
     const timer = window.setInterval(() => void flush(), RETRY_TICK_MS);
     return () => window.clearInterval(timer);
-  }, [flush, hasPending, isOnline]);
+  }, [flush, hasQueued, isOnline]);
 
   const syncNow = useCallback(() => void flush(true), [flush]);
 

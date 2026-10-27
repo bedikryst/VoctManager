@@ -16,7 +16,12 @@ from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from django.utils.translation import gettext as _
 from django.utils.translation import override
 
-from archive.models import PERSONAL_ANNOTATION_LAYER, Annotation, AnnotationType
+from archive.models import (
+    PERSONAL_ANNOTATION_LAYER,
+    Annotation,
+    AnnotationReadState,
+    AnnotationType,
+)
 from notifications.email_service import EmailType
 
 # Notifications
@@ -512,6 +517,9 @@ class UserIdentityService:
             Annotation.all_objects.filter(
                 created_by=user, layer_name=PERSONAL_ANNOTATION_LAYER,
             ).hard_delete()
+            # ...and how far they had read each score, which is a record of
+            # their behaviour and nobody else's material.
+            AnnotationReadState.objects.filter(user=user).delete()
 
             # 3b. Finance records are deliberately NOT erased. A fee, a payment and
             #     a contract are accounting records: the Accounting Act (art. 74)
@@ -670,6 +678,20 @@ class UserPreferencesService:
                     Annotation.objects.filter(created_by=user)
                     .select_related("edition__piece")
                     .order_by("created_at")
+                )
+            ],
+            # How far they had looked at the marks on each score, which is what
+            # decides the "new since your last visit" line.
+            "score_marks_seen": [
+                {
+                    "edition": str(state.edition_id),
+                    "piece": state.edition.piece.title if state.edition.piece else "",
+                    "seen_at": state.seen_at.isoformat(),
+                }
+                for state in (
+                    AnnotationReadState.objects.filter(user=user)
+                    .select_related("edition__piece")
+                    .order_by("seen_at")
                 )
             ],
         }

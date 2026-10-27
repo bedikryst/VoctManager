@@ -6,15 +6,17 @@
  * state (not a global store): it is ephemeral UI, scoped to one open score, and
  * dies with the viewer.
  *
- * Two things outlive the viewer, in localStorage, because a rehearsal gives you
- * a bar and a half to write something down: which tool was last in hand, and
- * whether the finger draws. Neither is server state — they describe this device.
+ * What describes this device outlives the viewer (`deviceStorage`), because a
+ * rehearsal gives you a bar and a half to write something down: the tool last in
+ * hand and the shape it draws, the size of notes and stamps, whether the finger
+ * draws, and which layers are shown. None of it is server state.
  * @module features/annotations/lib
  */
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import type { AnnotationLayer, NoteDisplay } from "../types/annotations.dto";
+import { readStored, writeStored } from "./deviceStorage";
 import { DEFAULT_STAMP } from "./stamps";
 import { DEFAULT_SHAPE, isShapeKind, type ShapeKind } from "./shapes";
 import { defaultInk, inksFor, type AnnotationInk } from "./palette";
@@ -41,23 +43,19 @@ const FINGER_DRAW_STORAGE_KEY = "voct.annotations.finger_draw";
 const TEXT_SCALE_STORAGE_KEY = "voct.annotations.text_scale";
 const STAMP_SCALE_STORAGE_KEY = "voct.annotations.stamp_scale";
 const SHAPE_STORAGE_KEY = "voct.annotations.shape";
+/** The layers the reader HID, comma-separated: a layer that is new is shown. */
+const HIDDEN_LAYERS_STORAGE_KEY = "voct.annotations.hidden_layers";
 
-const readStored = (key: string): string | null => {
-  if (typeof window === "undefined") return null;
-  try {
-    return window.localStorage.getItem(key);
-  } catch {
-    return null;
-  }
-};
+const ALL_LAYERS: readonly AnnotationLayer[] = ["shared", "conductor", "leader", "personal"];
 
-const writeStored = (key: string, value: string): void => {
-  if (typeof window === "undefined") return;
-  try {
-    window.localStorage.setItem(key, value);
-  } catch {
-    // Private-mode / storage-disabled: the choice still holds for the session.
-  }
+const readVisibleLayers = (): LayerVisibility => {
+  const hidden = new Set((readStored(HIDDEN_LAYERS_STORAGE_KEY) ?? "").split(","));
+  return {
+    shared: !hidden.has("shared"),
+    conductor: !hidden.has("conductor"),
+    leader: !hidden.has("leader"),
+    personal: !hidden.has("personal"),
+  };
 };
 
 const isAnnotationTool = (value: string | null): value is AnnotationTool =>
@@ -234,18 +232,19 @@ export const useAnnotationTools = (
   const [noteDisplay, setNoteDisplay] = useState<NoteDisplay>("inline");
   const [stamp, setStamp] = useState<string>(DEFAULT_STAMP);
   const [layer, setLayer] = useState<AnnotationLayer>(initialLayer);
-  const [visibleLayers, setVisibleLayers] = useState<LayerVisibility>({
-    shared: true,
-    conductor: true,
-    leader: true,
-    personal: true,
-  });
+  // Remembered too: a conductor previewing what the choir sees, or a singer who
+  // reads without their own pencil marks, set the page up once.
+  const [visibleLayers, setVisibleLayers] = useState<LayerVisibility>(readVisibleLayers);
 
   const toggleLayerVisibility = useCallback((target: AnnotationLayer) => {
-    setVisibleLayers((current) => ({
-      ...current,
-      [target]: !current[target],
-    }));
+    setVisibleLayers((current) => {
+      const next = { ...current, [target]: !current[target] };
+      writeStored(
+        HIDDEN_LAYERS_STORAGE_KEY,
+        ALL_LAYERS.filter((layer) => !next[layer]).join(","),
+      );
+      return next;
+    });
   }, []);
 
   return {

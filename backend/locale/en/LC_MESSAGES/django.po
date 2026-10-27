@@ -4385,6 +4385,44 @@ msgstr ""
 msgid "Unknown stamp symbol."
 msgstr ""
 
+#: backend/archive/models.py
+msgid ""
+"When this mark last said something new: created, restored, its words or "
+"symbol changed, or it was moved to another layer or edition."
+msgstr ""
+
+#: backend/archive/models.py
+msgid "Content changed at"
+msgstr ""
+
+#: backend/archive/models.py
+msgid "Marks that changed after this moment are new to this reader."
+msgstr ""
+
+#: backend/archive/models.py
+msgid "Seen up to"
+msgstr ""
+
+#: backend/archive/models.py
+msgid "Annotation read state"
+msgstr ""
+
+#: backend/archive/models.py
+msgid "Annotation read states"
+msgstr ""
+
+#: backend/archive/models.py
+msgid "User"
+msgstr ""
+
+#: backend/archive/models.py
+msgid "Edition"
+msgstr ""
+
+#: backend/archive/views.py
+msgid "at must be a time with its time zone."
+msgstr ""
+
 #~ msgid ""
 #~ "%(artist)s is asking to be excused from a run of rehearsals. The dates are "
 #~ "below — approve or decline them in the panel."

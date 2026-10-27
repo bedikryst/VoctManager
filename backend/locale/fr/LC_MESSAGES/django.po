@@ -5824,6 +5824,49 @@ msgstr "Cette édition ne comporte pas cette page."
 msgid "Unknown stamp symbol."
 msgstr "Symbole inconnu."
 
+#: backend/archive/models.py
+msgid ""
+"When this mark last said something new: created, restored, its words or "
+"symbol changed, or it was moved to another layer or edition."
+msgstr ""
+"Dernière fois que l’annotation a dit quelque chose de nouveau : créée, "
+"restaurée, son texte ou son symbole modifié, ou déplacée vers un autre "
+"calque ou une autre édition."
+
+#: backend/archive/models.py
+msgid "Content changed at"
+msgstr "Contenu modifié le"
+
+#: backend/archive/models.py
+msgid "Marks that changed after this moment are new to this reader."
+msgstr ""
+"Les annotations modifiées après ce moment sont nouvelles pour cette "
+"personne."
+
+#: backend/archive/models.py
+msgid "Seen up to"
+msgstr "Lu jusqu’au"
+
+#: backend/archive/models.py
+msgid "Annotation read state"
+msgstr "État de lecture des annotations"
+
+#: backend/archive/models.py
+msgid "Annotation read states"
+msgstr "États de lecture des annotations"
+
+#: backend/archive/models.py
+msgid "User"
+msgstr "Utilisateur"
+
+#: backend/archive/models.py
+msgid "Edition"
+msgstr "Édition"
+
+#: backend/archive/views.py
+msgid "at must be a time with its time zone."
+msgstr "Le paramètre at doit être une heure avec son fuseau horaire."
+
 #~ msgid "Review the request"
 #~ msgstr "Examiner la demande"
 

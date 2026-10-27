@@ -52,6 +52,7 @@ export type OfflineWriteKind =
   | "attendance"
   | "feedback"
   | "annotation"
+  | "annotation_seen"
   | "note";
 
 /** A deferred mutation captured while offline, replayed verbatim on reconnect. */
@@ -95,6 +96,13 @@ export interface QueuedWrite {
    * the write being dropped.
    */
   failingSince: number | null;
+  /**
+   * Bookkeeping the reader never made as a change — how far they have read a
+   * score. Replayed like any write, but not counted as waiting, and neither
+   * its landing nor its loss is announced: "your offline changes were synced"
+   * after merely closing a score would be a sentence about nothing.
+   */
+  background?: boolean;
   /**
    * Domain-shaped echo of the write, for a feature that must SHOW the queue's
    * effect before the server has seen it. A readiness tap can wait — the score
@@ -152,6 +160,7 @@ const WRITE_KINDS: ReadonlySet<unknown> = new Set([
   "attendance",
   "feedback",
   "annotation",
+  "annotation_seen",
   "note",
 ]);
 
@@ -194,6 +203,7 @@ export const readQueuedWrites = (value: unknown): QueuedWrite[] => {
       attempts: isFiniteNumber(entry.attempts) ? entry.attempts : 0,
       nextAttemptAt: isFiniteNumber(entry.nextAttemptAt) ? entry.nextAttemptAt : 0,
       failingSince: isFiniteNumber(entry.failingSince) ? entry.failingSince : null,
+      ...(entry.background === true ? { background: true } : {}),
       meta: entry.meta,
     });
   }

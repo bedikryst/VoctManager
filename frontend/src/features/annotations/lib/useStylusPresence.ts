@@ -16,16 +16,11 @@
 
 import { useEffect, useState } from "react";
 
+import { readStored, writeStored } from "./deviceStorage";
+
 const STORAGE_KEY = "voct.annotations.stylus_seen";
 
-export const readStylusSeen = (): boolean => {
-  if (typeof window === "undefined") return false;
-  try {
-    return window.localStorage.getItem(STORAGE_KEY) === "1";
-  } catch {
-    return false;
-  }
-};
+export const readStylusSeen = (): boolean => readStored(STORAGE_KEY) === "1";
 
 export const useStylusPresence = (): boolean => {
   const [seen, setSeen] = useState<boolean>(readStylusSeen);
@@ -35,11 +30,7 @@ export const useStylusPresence = (): boolean => {
     const onPointerDown = (event: PointerEvent): void => {
       if (event.pointerType !== "pen") return;
       setSeen(true);
-      try {
-        window.localStorage.setItem(STORAGE_KEY, "1");
-      } catch {
-        // Private-mode / storage-disabled: detection still holds for the session.
-      }
+      writeStored(STORAGE_KEY, "1");
     };
     // Capture, so a stylus is recognised even where the target stops the event.
     window.addEventListener("pointerdown", onPointerDown, true);

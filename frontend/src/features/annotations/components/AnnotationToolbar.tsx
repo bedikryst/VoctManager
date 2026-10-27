@@ -67,6 +67,7 @@ import {
   type AnnotationToolState,
   type StrokeSize,
 } from "../lib/useAnnotationTools";
+import { readStored, writeStored } from "../lib/deviceStorage";
 import { asWriteLayer, NEXT_WRITE_LAYER, writeLayerCopy } from "../lib/layers";
 import { groupOfStamp, STAMP_GROUPS, stampsInGroup, StampGlyph } from "../lib/stamps";
 import { SHAPE_KINDS, type ShapeKind } from "../lib/shapes";
@@ -169,14 +170,7 @@ const ScaleSlider = ({
 
 const EXPANDED_STORAGE_KEY = "voct.annotations.toolbar_open";
 
-const readExpanded = (): boolean => {
-  if (typeof window === "undefined") return false;
-  try {
-    return window.localStorage.getItem(EXPANDED_STORAGE_KEY) === "1";
-  } catch {
-    return false;
-  }
-};
+const readExpanded = (): boolean => readStored(EXPANDED_STORAGE_KEY) === "1";
 
 const pillButton =
   "flex h-9 w-9 items-center justify-center rounded-full text-ink-on-inverse transition-colors";
@@ -263,11 +257,7 @@ export const AnnotationToolbar = ({
   const [expanded, setExpanded] = useState<boolean>(readExpanded);
   const changeExpanded = (next: boolean): void => {
     setExpanded(next);
-    try {
-      window.localStorage.setItem(EXPANDED_STORAGE_KEY, next ? "1" : "0");
-    } catch {
-      // Private-mode / storage-disabled: the bar still works for the session.
-    }
+    writeStored(EXPANDED_STORAGE_KEY, next ? "1" : "0");
   };
   // If it was opened then the viewer went immersive, clear the stage — without
   // recording it, so leaving performance mode restores the reader's own choice.

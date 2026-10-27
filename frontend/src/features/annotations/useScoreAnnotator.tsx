@@ -17,9 +17,10 @@
  * because the reader can leave either one from outside the drawing surface:
  * they erase a mark, turn the page, or press Escape.
  *
- * While the stand is open it also watches for markings that arrived from
- * elsewhere — the conductor writing mid-rehearsal. They are drawn silently, and
- * announced by one dismissible line that offers the page, because a mark that
+ * For a reader it also keeps track of what is new: marks written for them since
+ * their last visit carry a halo and a "Nowe" list in the drawer, and one
+ * dismissible line sums them up on open and announces what arrives while the
+ * stand is open — the conductor writing mid-rehearsal — because a mark that
  * lands three pages away would otherwise never be found.
  * @module features/annotations
  */
@@ -39,6 +40,7 @@ import { AnnotationGuide } from "./components/AnnotationGuide";
 import { IncomingMarksNotice } from "./components/IncomingMarksNotice";
 import {
   useAnnotationMutations,
+  useMarkSeen,
   useScoreAnnotations,
 } from "./api/annotations.queries";
 import { useAnnotationTools } from "./lib/useAnnotationTools";
@@ -188,7 +190,7 @@ export const useScoreAnnotator = ({
     ? (book.frames.get(pageApi.currentPage)?.edition ?? null)
     : editionId;
 
-  const { annotations, pendingCount, isLoaded } = useScoreAnnotations(
+  const { annotations, pendingCount, isLoaded, isSettled, seenAt } = useScoreAnnotations(
     activeEditionId,
     {
       isCleared,
@@ -399,16 +401,26 @@ export const useScoreAnnotator = ({
     [annotations],
   );
 
+  const markSeen = useMarkSeen();
   const incoming = useIncomingMarks({
     annotations,
     isLoaded,
+    isSettled,
     editionId: activeEditionId,
-    watching: mode !== "conductor",
+    // A closed stand is a reader who left: the hook sends their pointer then.
+    watching: mode !== "conductor" && active,
     userId,
+    seenAt,
+    onSeen: markSeen,
   });
+  const newIds = useMemo(
+    () => new Set(incoming.newMarks.map((mark) => mark.id)),
+    [incoming.newMarks],
+  );
 
   const handleGoToIncoming = useCallback(() => {
-    if (incoming.marks) pageApi.goToPage(displayPage(incoming.marks.page));
+    const first = incoming.notice?.pages[0];
+    if (first !== undefined) pageApi.goToPage(displayPage(first));
     incoming.dismiss();
   }, [displayPage, incoming, pageApi]);
 
@@ -513,6 +525,7 @@ export const useScoreAnnotator = ({
           inks={tools.inks}
           audiences={audiences}
           selectedId={selectedId}
+          newIds={newIds}
           onSelect={setSelectedId}
           onCreate={handleCreate}
           onUpdate={handleUpdate}
@@ -553,6 +566,7 @@ export const useScoreAnnotator = ({
       fingerDraw,
       canModify,
       selectedId,
+      newIds,
       turnPage,
       handleCreate,
       handleUpdate,
@@ -566,6 +580,7 @@ export const useScoreAnnotator = ({
     <>
       <AnnotationSidebar
         annotations={annotations}
+        newMarks={incoming.newMarks}
         currentPage={pageApi.currentPage}
         goToPage={pageApi.goToPage}
         displayPage={displayPage}
@@ -576,8 +591,9 @@ export const useScoreAnnotator = ({
         onSelectMark={handleSelectMark}
       />
       <IncomingMarksNotice
-        count={incoming.marks?.count ?? 0}
-        page={displayPage(incoming.marks?.page ?? 1)}
+        count={incoming.notice?.count ?? 0}
+        pages={(incoming.notice?.pages ?? []).map(displayPage)}
+        kind={incoming.notice?.kind ?? "live"}
         lifted={!!book}
         onGoToPage={handleGoToIncoming}
         onDismiss={incoming.dismiss}

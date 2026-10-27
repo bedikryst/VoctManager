@@ -1,13 +1,16 @@
 /**
  * @file IncomingMarksNotice.tsx
- * @description One line, low on the page, saying new marks just arrived — and
- * which page they are on. It names no author: a leader writing for the choir
- * lands on the same layer as the conductor.
+ * @description One line, low on the page, saying what is new on the score — and
+ * which pages it is on. On open it sums up what changed since the reader's last
+ * visit; while the stand is open it announces marks as they arrive. It names no
+ * author: a leader writing for the choir lands on the same layer as the
+ * conductor.
  *
- * The mark itself is already drawn; this is not a permission slip. It exists
- * because a singer on page two has no way of noticing a cue that landed on page
- * five, and because a rehearsal is the worst possible moment for a dialog. So:
- * no backdrop, no focus steal, nothing to answer, and it retires on its own.
+ * The marks themselves are already drawn; this is not a permission slip. It
+ * exists because a singer on page two has no way of noticing a cue that landed
+ * on page five, and because a rehearsal is the worst possible moment for a
+ * dialog. So: no backdrop, no focus steal, nothing to answer, and it retires on
+ * its own.
  * @module features/annotations/components
  */
 
@@ -22,32 +25,42 @@ import { Text } from "@/shared/ui/primitives/typography";
 /** Long enough to read mid-phrase, short enough to stop being furniture. */
 const LINGER_MS = 9000;
 
+/** Pages named in the line; the sidebar's "Nowe" list carries the rest. */
+const MAX_PAGES_NAMED = 4;
+
 interface IncomingMarksNoticeProps {
   /** 0 keeps the notice off screen entirely. */
   count: number;
-  page: number;
+  /** Pages the marks are on, ascending, as the reader sees them numbered. */
+  pages: readonly number[];
+  /** `since`: what changed while the reader was away. `live`: what just arrived. */
+  kind: "since" | "live";
   /** The concert binder floats its programme bar on this same centre line. */
   lifted?: boolean;
+  /** Goes to the first of `pages`. */
   onGoToPage: () => void;
   onDismiss: () => void;
 }
 
 export const IncomingMarksNotice = ({
   count,
-  page,
+  pages,
+  kind,
   lifted = false,
   onGoToPage,
   onDismiss,
 }: IncomingMarksNoticeProps): React.JSX.Element => {
   const { t } = useTranslation();
+  const named = pages.slice(0, MAX_PAGES_NAMED).join(", ");
+  const pageList = pages.length > MAX_PAGES_NAMED ? `${named}…` : named;
 
   useEffect(() => {
     if (count === 0) return;
     const timer = window.setTimeout(onDismiss, LINGER_MS);
     return () => window.clearTimeout(timer);
-    // `page` is in the deps so a second arrival restarts the clock rather than
-    // inheriting the tail of the first one's.
-  }, [count, page, onDismiss]);
+    // The pages and kind are in the deps so a second arrival restarts the clock
+    // rather than inheriting the tail of the first one's.
+  }, [count, pageList, kind, onDismiss]);
 
   return (
     // Lifted clear of the viewer's own transient chip (bottom-8, z-30), which
@@ -55,19 +68,19 @@ export const IncomingMarksNotice = ({
     // and clear of the programme bar too, wherever that is on screen.
     <div
       className={cn(
-        "pointer-events-none absolute inset-x-0 bottom-0 z-10 flex justify-center",
+        "pointer-events-none absolute inset-x-0 bottom-0 z-10 flex justify-center px-4",
         lifted ? "pb-40 sm:pb-44" : "pb-20",
       )}
     >
       <AnimatePresence>
         {count > 0 && (
           <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 12 }}
+            initial={{ opacity: 0, transform: "translateY(12px)" }}
+            animate={{ opacity: 1, transform: "translateY(0px)" }}
+            exit={{ opacity: 0, transform: "translateY(12px)" }}
             transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
             role="status"
-            className="pointer-events-auto flex items-center gap-1 rounded-full border border-ethereal-gold/40 bg-surface-inverse/85 py-1.5 pl-3.5 pr-1.5 shadow-[0_8px_32px_rgba(0,0,0,0.45)] backdrop-blur-xl"
+            className="pointer-events-auto flex min-w-0 max-w-full items-center gap-1 rounded-full border border-ethereal-gold/40 bg-surface-inverse/85 py-1.5 pl-3.5 pr-1.5 shadow-[0_8px_32px_rgba(0,0,0,0.45)] backdrop-blur-xl"
           >
             <PencilLine
               size={15}
@@ -77,19 +90,21 @@ export const IncomingMarksNotice = ({
             <button
               type="button"
               onClick={onGoToPage}
-              className="rounded-full px-1.5 py-1 transition-colors hover:bg-ink-on-inverse/10"
+              className="min-w-0 rounded-full px-1.5 py-1 text-left transition-colors hover:bg-ink-on-inverse/10"
             >
               {/* Counted, so the key carries every Polish plural form — there is
                   no honest single wording for "1 oznaczenie" and "5 oznaczeń". */}
-              <Text as="span" size="sm" color="ink-on-inverse" className="leading-none">
-                {t("annotations.incoming.line", { count, page })}
+              <Text as="span" size="sm" color="ink-on-inverse" className="leading-snug">
+                {kind === "since"
+                  ? t("annotations.incoming.since", { count, pages: pageList })
+                  : t("annotations.incoming.line", { count, page: pages[0] ?? 1 })}
               </Text>
             </button>
             <button
               type="button"
               onClick={onDismiss}
               aria-label={t("common.close_aria", "Zamknij")}
-              className="rounded-full p-1.5 text-ink-on-inverse/60 transition-colors hover:bg-ink-on-inverse/10 hover:text-ink-on-inverse"
+              className="shrink-0 rounded-full p-1.5 text-ink-on-inverse/60 transition-colors hover:bg-ink-on-inverse/10 hover:text-ink-on-inverse"
             >
               <X size={14} aria-hidden="true" />
             </button>

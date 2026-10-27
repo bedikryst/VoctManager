@@ -16,6 +16,7 @@ Standards: SaaS 2026, RFC 7807 (Global Exception Handling), Aggregate Roots.
 import logging
 import uuid
 from collections.abc import Mapping
+from datetime import datetime
 from typing import Any
 
 from django.core.cache import cache
@@ -23,6 +24,8 @@ from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import IntegrityError, transaction
 from django.db.models import Count, Max, Q
 from django.http import Http404
+from django.utils import timezone
+from django.utils.dateparse import parse_datetime
 from django.utils.translation import gettext as _
 from django_filters.rest_framework import DjangoFilterBackend
 from pydantic import ValidationError as PydanticValidationError
@@ -48,6 +51,7 @@ from .models import (
     PERSONAL_ANNOTATION_LAYER,
     SHARED_ANNOTATION_LAYER,
     Annotation,
+    AnnotationReadState,
     Composer,
     IngestionStatus,
     Movement,
@@ -949,6 +953,14 @@ def _body_object(request: Request) -> Mapping[str, Any]:
     return data
 
 
+def _seen_moment(raw: object) -> datetime:
+    """A body's `at`: an aware ISO timestamp."""
+    moment = parse_datetime(raw) if isinstance(raw, str) else None
+    if moment is None or timezone.is_naive(moment):
+        raise ValidationError({'at': [_('at must be a time with its time zone.')]})
+    return moment
+
+
 def _mark_ids(raw: object) -> list[uuid.UUID]:
     """A body's `ids`: a list of mark ids, bounded."""
     if not isinstance(raw, list):
@@ -1217,17 +1229,85 @@ class AnnotationViewSet(viewsets.ModelViewSet):
 
         A soft delete leaves the row out of the count, and every write bumps
         `updated_at`, so the pair moves on create, edit, erase and clear alike.
+
+        It also answers `seen_at`, how far this reader has looked at the edition
+        (see `AnnotationReadState`), because the first tick of an open stand is
+        the moment the reader needs it.
         """
         edition_id = _edition_param(request.query_params.get('edition'))
         stats = self.get_queryset().filter(edition_id=edition_id).aggregate(
             count=Count('id'), latest=Max('updated_at'),
         )
         latest = stats['latest']
+        seen_at = self._read_pointer(edition_id)
         return Response(
             {
                 'count': stats['count'],
                 'latest': latest.isoformat() if latest else None,
+                'seen_at': seen_at.isoformat() if seen_at else None,
             },
+            status=status.HTTP_200_OK,
+        )
+
+    def _read_pointer(self, edition_id: uuid.UUID) -> datetime | None:
+        """
+        This reader's `seen_at` on the edition, written now if they have none.
+
+        A missing pointer means this is their first open since the feature
+        existed, or ever, and everything already on the page is the score they
+        asked for rather than news. Starting the pointer at this moment is what
+        keeps the day this ships from showing the whole choir every mark as
+        new. None only for an edition that is gone.
+        """
+        user = request_user(self.request)
+        state = (
+            AnnotationReadState.objects
+            .filter(user=user, edition_id=edition_id)
+            .only('seen_at')
+            .first()
+        )
+        if state is not None:
+            return state.seen_at
+        if not ScoreEdition.objects.filter(pk=edition_id).exists():
+            return None
+        state, _created = AnnotationReadState.objects.get_or_create(
+            user=user, edition_id=edition_id,
+            defaults={'seen_at': timezone.now()},
+        )
+        return state.seen_at
+
+    @action(detail=False, methods=['post'], url_path='seen')
+    def seen(self, request):
+        """
+        Moves this reader's pointer on one edition forward, as they leave it.
+        Body: {edition, at}. Answers {edition, seen_at}.
+
+        `at` is the newest `content_at` among the marks the reader's device
+        drew, never the device's clock: a phone set an hour fast would
+        otherwise mark as seen whatever the conductor writes in that hour. The
+        server's own clock caps it all the same. The pointer never moves back,
+        so the offline queue may replay these in any order.
+        """
+        data = _body_object(request)
+        edition_id = _edition_param(data.get('edition'))
+        moment = min(_seen_moment(data.get('at')), timezone.now())
+        if not ScoreEdition.objects.filter(pk=edition_id).exists():
+            return Response(
+                {'detail': 'edition not found.'},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        user = request_user(request)
+        state, created = AnnotationReadState.objects.get_or_create(
+            user=user, edition_id=edition_id, defaults={'seen_at': moment},
+        )
+        if not created and moment > state.seen_at:
+            # Conditional, so two devices leaving at once keep the later answer.
+            AnnotationReadState.objects.filter(
+                pk=state.pk, seen_at__lt=moment,
+            ).update(seen_at=moment)
+            state.refresh_from_db(fields=['seen_at'])
+        return Response(
+            {'edition': str(edition_id), 'seen_at': state.seen_at.isoformat()},
             status=status.HTTP_200_OK,
         )
 

@@ -103,6 +103,12 @@ interface AnnotationOverlayProps {
    */
   audiences: readonly WriteLayer[];
   selectedId: string | null;
+  /**
+   * Marks new to this reader since their last visit. Each carries a soft gold
+   * halo for as long as the stand is open — wider and fainter than the
+   * selection's, so "new" and "this one" stay two different things.
+   */
+  newIds: ReadonlySet<string>;
   onSelect: (id: string | null) => void;
   onCreate: (annotation: Omit<NewAnnotation, "edition">) => void;
   onUpdate: (id: string, after: AnnotationPatch, before: AnnotationPatch) => void;
@@ -122,6 +128,9 @@ const STROKE_HIT_MIN_WIDTH = 16;
 const STROKE_HIT_MAX_WIDTH = 28;
 /** How far the selection wash spreads beyond the ink it traces, each side. */
 const SELECTION_HALO_PX = 5;
+/** The "new since your last visit" wash: wider than the selection, and fainter. */
+const NEW_HALO_PX = 8;
+const NEW_HALO_OPACITY = 0.22;
 
 /** Ink and highlighter share a payload and every rule below that draws one. */
 const isStrokeMark = (
@@ -149,6 +158,7 @@ export const AnnotationOverlay = ({
   inks,
   audiences,
   selectedId,
+  newIds,
   onSelect,
   onCreate,
   onUpdate,
@@ -524,29 +534,44 @@ export const AnnotationOverlay = ({
     );
   };
 
-  /** The wash that says "this one". Drawn over the finished ink rather than
-   *  under it: a highlighter composites with `multiply`, so a halo beneath one
-   *  would be multiplied INTO the marker and read as a mark of its own. */
-  const renderSelectionHalo = (
+  /** A gold wash traced around a stroke. Drawn over the finished ink rather
+   *  than under it: a highlighter composites with `multiply`, so a halo beneath
+   *  one would be multiplied INTO the marker and read as a mark of its own. */
+  const renderStrokeHalo = (
     a: ScoreAnnotation & { payload: { paths: NormPoint[][]; width: number } },
+    { spread, opacity, key }: { spread: number; opacity: number; key: string },
   ) => {
     const highlight = a.annotation_type === "HL";
     const d = a.payload.paths.map((p) => buildSmoothPath(p, width, height)).join(" ");
     const strokeWidthPx = Math.max(highlight ? 4 : 1.5, a.payload.width * width);
     return (
       <path
-        key={`halo-${a.id}`}
+        key={`${key}-${a.id}`}
         className="stroke-ethereal-gold"
         d={d}
         fill="none"
-        strokeWidth={strokeWidthPx + SELECTION_HALO_PX * 2}
-        strokeOpacity={0.45}
+        strokeWidth={strokeWidthPx + spread * 2}
+        strokeOpacity={opacity}
         strokeLinecap="round"
         strokeLinejoin="round"
         style={{ mixBlendMode: "normal", pointerEvents: "none" }}
       />
     );
   };
+
+  /** The same wash behind a placed mark (a stamp, a note), past its box. The
+   *  marker's wrapper is translated, so it is a stacking context of its own and
+   *  `-z-10` puts the wash under the mark without leaving the page. */
+  const markerHalo = (a: ScoreAnnotation, rounded: string) =>
+    newIds.has(a.id) && (
+      <span
+        aria-hidden="true"
+        className={cn(
+          "pointer-events-none absolute -inset-2 -z-10 bg-ethereal-gold/25",
+          rounded,
+        )}
+      />
+    );
 
   return (
     // Drawing capture lives on this HTML div (not the SVG): an <svg> with
@@ -589,12 +614,30 @@ export const AnnotationOverlay = ({
         {pageAnnotations.filter(isHighlight).map(renderStroke)}
         {pageAnnotations.filter(isFreehand).map(renderStroke)}
 
-        {/* Selection last of all, so it washes over finished ink. */}
+        {/* New marks, then the selection last of all, so both wash over
+            finished ink and the selection reads over the newness. */}
+        {newIds.size > 0 &&
+          pageAnnotations
+            .filter((a) => newIds.has(a.id))
+            .filter(isStrokeMark)
+            .map((a) =>
+              renderStrokeHalo(a, {
+                spread: NEW_HALO_PX,
+                opacity: NEW_HALO_OPACITY,
+                key: "new",
+              }),
+            )}
         {selectedId !== null &&
           pageAnnotations
             .filter((a) => a.id === selectedId)
             .filter(isStrokeMark)
-            .map(renderSelectionHalo)}
+            .map((a) =>
+              renderStrokeHalo(a, {
+                spread: SELECTION_HALO_PX,
+                opacity: 0.45,
+                key: "halo",
+              }),
+            )}
 
         {livePreviewPath && (
           <path
@@ -639,6 +682,7 @@ export const AnnotationOverlay = ({
               pointerEvents: marksInteractive && modifiable ? "auto" : "none",
             }}
           >
+            {markerHalo(a, "rounded-xl")}
             <button
               type="button"
               // The viewer's pinch gate stops at the nearest button and reads
@@ -717,6 +761,7 @@ export const AnnotationOverlay = ({
               maxWidth: inline ? width * 0.5 : undefined,
             }}
           >
+            {markerHalo(a, inline ? "rounded-xl" : "rounded-full")}
             {inline ? (
               <button
                 type="button"

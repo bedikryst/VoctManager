@@ -33,6 +33,7 @@ from archive.models import (
     PERSONAL_ANNOTATION_LAYER,
     SHARED_ANNOTATION_LAYER,
     Annotation,
+    AnnotationReadState,
     AnnotationType,
     Composer,
     Piece,
@@ -987,6 +988,21 @@ class AccountErasureTests(TestCase):
         )
         self.assertTrue(Annotation.objects.filter(pk=marks.shared.pk).exists())
 
+    @patch(EMAIL_TASK)
+    def test_erasure_removes_how_far_they_read_each_score(self, _enqueue_mock):
+        from .dtos import UserAccountDeletionDTO
+
+        marks = _ScoreMarks(self.user)
+        AnnotationReadState.objects.create(
+            user=self.user, edition=marks.edition, seen_at=timezone.now(),
+        )
+        with self.captureOnCommitCallbacks(execute=True):
+            UserIdentityService.process_account_soft_deletion(
+                self.user, UserAccountDeletionDTO(current_password="pw12345678"),
+            )
+
+        self.assertFalse(AnnotationReadState.objects.filter(user=self.user).exists())
+
 
 class _ScoreMarks:
     """One person's marks on one score: a personal note, a personal mark they
@@ -1046,6 +1062,21 @@ class ScoreMarksExportTests(TestCase):
         )
         exported = UserPreferencesService.generate_gdpr_export(other, {})["score_marks"]
         self.assertEqual(exported, [])
+
+    def test_the_export_lists_how_far_they_read_each_score(self) -> None:
+        seen_at = timezone.now()
+        AnnotationReadState.objects.create(
+            user=self.user, edition=self.marks.edition, seen_at=seen_at,
+        )
+        exported = UserPreferencesService.generate_gdpr_export(self.user, {})["score_marks_seen"]
+        self.assertEqual(
+            exported,
+            [{
+                "edition": str(self.marks.edition.pk),
+                "piece": "Locus iste",
+                "seen_at": seen_at.isoformat(),
+            }],
+        )
 
 
 class AccountEmailAuditCommandTests(TestCase):

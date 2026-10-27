@@ -17,6 +17,7 @@ from django.contrib.contenttypes.fields import GenericForeignKey
 from django.core.exceptions import ValidationError
 from django.core.validators import FileExtensionValidator
 from django.db import models
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 from core.constants import VoiceLine
@@ -717,6 +718,17 @@ class Annotation(SoftDeleteModel):
         null=True, blank=True, related_name='+',
         verbose_name=_("Created By"),
     )
+    # What a reader is told is new keys on this, never on `updated_at`: moving,
+    # resizing or recolouring a mark says nothing new, and a tidy that nudges
+    # forty marks would otherwise light up all forty on every stand.
+    content_at = models.DateTimeField(
+        default=timezone.now,
+        help_text=_(
+            "When this mark last said something new: created, restored, its "
+            "words or symbol changed, or it was moved to another layer or edition."
+        ),
+        verbose_name=_("Content changed at"),
+    )
 
     class Meta:
         verbose_name = _("Annotation")
@@ -728,6 +740,54 @@ class Annotation(SoftDeleteModel):
 
     def __str__(self) -> str:
         return f"{self.get_annotation_type_display()} on {self.edition} p.{self.page_number}"
+
+    def restore(self) -> None:
+        """An erased mark coming back is news again to whoever reads it."""
+        now = timezone.now()
+        self.is_deleted = False
+        self.updated_at = now
+        self.content_at = now
+        self.save(update_fields=['is_deleted', 'updated_at', 'content_at'])
+
+
+class AnnotationReadState(models.Model):
+    """
+    How far one reader has looked at the marks on one edition: every mark whose
+    `content_at` is later than `seen_at` is new to them.
+
+    No row means nothing is new. The first open writes one, so a reader meets
+    marks that existed before that open as the score they asked for, not as a
+    list of news. `seen_at` only moves forward, and only to a `content_at` the
+    reader's device rendered, so a phone's wrong clock cannot hide a mark.
+
+    A plain model, not a SoftDeleteModel: a read pointer has no history worth
+    keeping, and account erasure deletes these rows outright.
+    """
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
+        related_name='annotation_read_states',
+        verbose_name=_("User"),
+    )
+    edition = models.ForeignKey(
+        ScoreEdition, on_delete=models.CASCADE, related_name='read_states',
+        verbose_name=_("Edition"),
+    )
+    seen_at = models.DateTimeField(
+        help_text=_("Marks that changed after this moment are new to this reader."),
+        verbose_name=_("Seen up to"),
+    )
+
+    class Meta:
+        verbose_name = _("Annotation read state")
+        verbose_name_plural = _("Annotation read states")
+        constraints = [
+            models.UniqueConstraint(
+                fields=['user', 'edition'], name='unique_annotation_read_state',
+            ),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.user_id} read {self.edition_id} up to {self.seen_at:%Y-%m-%d %H:%M}"
 
 
 class ProgramNote(SoftDeleteModel):

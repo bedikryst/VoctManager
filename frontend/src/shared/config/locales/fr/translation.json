@@ -16,11 +16,16 @@
     "markup": "Annotation",
     "pending_hint": "Enregistré sur cet appareil. L'envoi se fera seul dès le retour du réseau.",
     "queue_label": "Annotation de partition",
+    "queue_seen_label": "Annotations de partition lues",
     "incoming": {
       "line_one": "Nouvelle annotation · p. {{page}}",
       "line_few": "{{count}} nouvelles annotations · p. {{page}}",
       "line_many": "{{count}} nouvelles annotations · p. {{page}}",
-      "line_other": "{{count}} nouvelles annotations · p. {{page}}"
+      "line_other": "{{count}} nouvelles annotations · p. {{page}}",
+      "since_one": "Depuis votre dernière visite : {{count}} nouvelle · p. {{pages}}",
+      "since_few": "Depuis votre dernière visite : {{count}} nouvelles · p. {{pages}}",
+      "since_many": "Depuis votre dernière visite : {{count}} nouvelles · p. {{pages}}",
+      "since_other": "Depuis votre dernière visite : {{count}} nouvelles · p. {{pages}}"
     },
     "rejected": {
       "reserved_ink": "Seul le chef écrit dans cette couleur. L'annotation n'a pas été enregistrée.",
@@ -90,9 +95,16 @@
     },
     "panel": {
       "layers": "Visibilité des calques",
-      "no_notes": "Aucune note de texte.",
-      "notes": "Notes",
+      "new": "Nouveautés",
+      "new_strokes_one": "{{count}} annotation à main levée",
+      "new_strokes_few": "{{count}} annotations à main levée",
+      "new_strokes_many": "{{count}} annotations à main levée",
+      "new_strokes_other": "{{count}} annotations à main levée",
+      "no_match": "Aucun résultat.",
+      "no_notes": "Aucune note ni symbole.",
+      "notes": "Notes et symboles",
       "open": "Afficher les annotations",
+      "search": "Rechercher dans les notes",
       "page": "p. {{page}}",
       "page_marks_one": "{{count}} marque",
       "page_marks_few": "{{count}} marques",

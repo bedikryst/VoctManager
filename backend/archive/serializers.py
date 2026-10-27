@@ -25,6 +25,7 @@ from typing import Any, cast
 from uuid import UUID
 
 from django.urls import reverse
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from pydantic import ValidationError as PydanticValidationError
 from rest_framework import serializers
@@ -400,6 +401,40 @@ _NOTE_DISPLAY_MODES = ('pin', 'inline')
 _MAX_PAYLOAD_BYTES = 256 * 1024
 
 
+#: The payload field that carries what a placed mark SAYS, per type. Strokes
+#: have none: a redrawn line is a move.
+_CONTENT_KEYS: dict[str, str] = {
+    AnnotationType.COMMENT: 'text',
+    AnnotationType.STAMP: 'symbol',
+}
+
+
+def _payload_word(payload: Any, key: str) -> Any:
+    return payload.get(key) if isinstance(payload, Mapping) else None
+
+
+def _says_something_new(instance: Annotation, changes: Mapping[str, Any]) -> bool:
+    """Whether an edit changes what a mark tells its reader.
+
+    A note's words, a stamp's symbol, and where the mark is addressed (its layer
+    or edition): a mark moved onto the choir's layer is new to the choir. Its
+    place, size and ink are not, so tidying a page never reads as news.
+    """
+    if changes.get('annotation_type', instance.annotation_type) != instance.annotation_type:
+        return True
+    if changes.get('layer_name', instance.layer_name) != instance.layer_name:
+        return True
+    edition = changes.get('edition')
+    if edition is not None and edition.pk != instance.edition_id:
+        return True
+    if 'payload' not in changes:
+        return False
+    key = _CONTENT_KEYS.get(instance.annotation_type)
+    if key is None:
+        return False
+    return _payload_word(changes['payload'], key) != _payload_word(instance.payload, key)
+
+
 def _clamp01(value: Any) -> float:
     """Coerce to float and clamp into the normalized page box [0, 1]."""
     try:
@@ -448,8 +483,14 @@ class AnnotationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Annotation
         fields = ['id', 'edition', 'page_number', 'annotation_type', 'payload',
-                  'color', 'layer_name', 'created_by', 'created_at', 'updated_at']
-        read_only_fields = ['created_by', 'created_at', 'updated_at']
+                  'color', 'layer_name', 'created_by', 'created_at', 'updated_at',
+                  'content_at']
+        read_only_fields = ['created_by', 'created_at', 'updated_at', 'content_at']
+
+    def update(self, instance: Annotation, validated_data: dict[str, Any]) -> Annotation:
+        if _says_something_new(instance, validated_data):
+            validated_data['content_at'] = timezone.now()
+        return super().update(instance, validated_data)
 
     def validate_color(self, value: str) -> str:
         """Only the palette's inks, in the palette's own casing. Anything else

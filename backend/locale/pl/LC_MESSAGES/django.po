@@ -5788,6 +5788,47 @@ msgstr "To wydanie nie ma takiej strony."
 msgid "Unknown stamp symbol."
 msgstr "Nieznany symbol."
 
+#: backend/archive/models.py
+msgid ""
+"When this mark last said something new: created, restored, its words or "
+"symbol changed, or it was moved to another layer or edition."
+msgstr ""
+"Kiedy oznaczenie ostatnio powiedziało coś nowego: powstało, zostało "
+"przywrócone, zmieniła się jego treść lub symbol albo przeniesiono je na inną"
+" warstwę lub do innego wydania."
+
+#: backend/archive/models.py
+msgid "Content changed at"
+msgstr "Treść zmieniona"
+
+#: backend/archive/models.py
+msgid "Marks that changed after this moment are new to this reader."
+msgstr "Oznaczenia zmienione po tej chwili są dla tej osoby nowe."
+
+#: backend/archive/models.py
+msgid "Seen up to"
+msgstr "Przeczytane do"
+
+#: backend/archive/models.py
+msgid "Annotation read state"
+msgstr "Stan odczytu oznaczeń"
+
+#: backend/archive/models.py
+msgid "Annotation read states"
+msgstr "Stany odczytu oznaczeń"
+
+#: backend/archive/models.py
+msgid "User"
+msgstr "Użytkownik"
+
+#: backend/archive/models.py
+msgid "Edition"
+msgstr "Wydanie"
+
+#: backend/archive/views.py
+msgid "at must be a time with its time zone."
+msgstr "Parametr at musi być czasem ze strefą czasową."
+
 #~ msgid "Review the request"
 #~ msgstr "Rozpatrz prośbę"
 

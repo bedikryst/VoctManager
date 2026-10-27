@@ -11,6 +11,7 @@
  */
 
 import api from "@/shared/api/api";
+import { MARKS_SEEN_ENDPOINT } from "../lib/markSeen";
 import { ANNOTATIONS_ENDPOINT } from "../lib/pendingMarks";
 import type {
   AnnotationPatch,
@@ -78,6 +79,14 @@ export const AnnotationsService = {
       { edition: editionId, ids },
     );
     return response.data;
+  },
+
+  /**
+   * Moves this reader's pointer on one edition forward to `at`, the newest
+   * `content_at` their device drew. The server never moves it back.
+   */
+  seen: async (editionId: string, at: string): Promise<void> => {
+    await api.post(MARKS_SEEN_ENDPOINT, { edition: editionId, at });
   },
 
   /**

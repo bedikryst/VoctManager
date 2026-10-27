@@ -2,10 +2,11 @@
  * @file AnnotationSidebar.tsx
  * @description Collapsible right-edge drawer stacked over the whole viewer (via
  * PdfViewer.overlaySlot). A map of the markup you can't see at a glance on a
- * long score: layer visibility toggles, the pages that carry marks, and a
- * jump-to index of every note. In conductor mode the layers are choir, leader
- * and private; in personal mode they are the conductor's shared markings, the
- * cues he wrote for whoever runs the evening, and the user's own pencil marks.
+ * long score: layer visibility toggles, what is new since the reader's last
+ * visit, the pages that carry marks, and a searchable jump-to index of every
+ * note and symbol. In conductor mode the layers are choir, leader and private;
+ * in personal mode they are the conductor's shared markings, the cues he wrote
+ * for whoever runs the evening, and the user's own pencil marks.
  *
  * Everything below the toggles obeys them. Hiding a layer is how a conductor
  * previews what the choir actually receives, so an index that went on listing
@@ -14,7 +15,7 @@
  * @module features/annotations/components
  */
 
-import React, { useMemo, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   Eye,
@@ -22,25 +23,47 @@ import {
   ListTree,
   Lock,
   PanelRightOpen,
+  Search,
   X,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
+import { foldDiacritics } from "@/shared/lib/text";
 import { cn } from "@/shared/lib/utils";
 import { Eyebrow, Text } from "@/shared/ui/primitives/typography";
 
 import {
   isComment,
+  isStamp,
   type AnnotationLayer,
-  type CommentPayload,
   type ScoreAnnotation,
 } from "../types/annotations.dto";
 import { layerOf } from "../lib/layers";
+import { getStampDef } from "../lib/stamps";
 import type { LayerVisibility } from "../lib/useAnnotationTools";
 import type { ScoreAnnotatorMode } from "../useScoreAnnotator";
 
+/** A note or a symbol, as the index and the "new" list name it. */
+interface IndexEntry {
+  mark: ScoreAnnotation;
+  label: string;
+  /** Normalized height on the edition's page, so a jump lands on it. */
+  y: number;
+}
+
+/** One row of the "new" list: a named mark, or the strokes on one page. */
+type NewEntry =
+  | ({ kind: "mark" } & IndexEntry)
+  | { kind: "strokes"; page: number; count: number };
+
+/** Reading order: page, then down the page. */
+const byPlace = (a: IndexEntry, b: IndexEntry): number =>
+  a.mark.page_number - b.mark.page_number || a.y - b.y;
+
 interface AnnotationSidebarProps {
   annotations: ScoreAnnotation[];
+  /** Marks new to this reader since their last visit (see `useIncomingMarks`). */
+  newMarks: readonly ScoreAnnotation[];
   currentPage: number;
   /** `focusY` is the mark's own normalized y, so the jump lands ON it. */
   goToPage: (page: number, focusY?: number) => void;
@@ -65,6 +88,7 @@ interface AnnotationSidebarProps {
 
 export const AnnotationSidebar = ({
   annotations,
+  newMarks,
   currentPage,
   goToPage,
   displayPage = (page) => page,
@@ -76,6 +100,7 @@ export const AnnotationSidebar = ({
 }: AnnotationSidebarProps): React.JSX.Element | null => {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
 
   /**
    * The map describes what is ON THE PAGE, so it obeys the switches directly
@@ -89,17 +114,70 @@ export const AnnotationSidebar = ({
     [annotations, visibleLayers],
   );
 
-  const notes = useMemo(
+  /** Notes by their words, symbols by their names. Strokes have neither. */
+  const toEntry = useCallback(
+    (mark: ScoreAnnotation): IndexEntry | null => {
+      if (isComment(mark)) {
+        return { mark, label: mark.payload.text, y: mark.payload.y };
+      }
+      if (isStamp(mark)) {
+        const def = getStampDef(mark.payload.symbol);
+        const label = def ? t(def.labelKey, def.fallback) : mark.payload.symbol;
+        return { mark, label, y: mark.payload.y };
+      }
+      return null;
+    },
+    [t],
+  );
+
+  const index = useMemo(
     () =>
       visible
-        .filter(isComment)
-        .sort(
-          (a, b) =>
-            a.page_number - b.page_number ||
-            (a.payload as CommentPayload).y - (b.payload as CommentPayload).y,
-        ),
-    [visible],
+        .map(toEntry)
+        .filter((entry): entry is IndexEntry => entry !== null)
+        .sort(byPlace),
+    [toEntry, visible],
   );
+
+  const needle = foldDiacritics(query.trim());
+  const found = useMemo(
+    () =>
+      needle ? index.filter((entry) => foldDiacritics(entry.label).includes(needle)) : index,
+    [index, needle],
+  );
+
+  /** Named marks by name; strokes, which say nothing in words, by page. */
+  const fresh = useMemo<NewEntry[]>(() => {
+    const shown = newMarks.filter((a) => visibleLayers[layerOf(a)]);
+    const named: NewEntry[] = shown
+      .map(toEntry)
+      .filter((entry): entry is IndexEntry => entry !== null)
+      .sort(byPlace)
+      .map((entry) => ({ kind: "mark", ...entry }));
+    const strokesPerPage = new Map<number, number>();
+    for (const mark of shown) {
+      if (toEntry(mark)) continue;
+      strokesPerPage.set(mark.page_number, (strokesPerPage.get(mark.page_number) ?? 0) + 1);
+    }
+    const strokes: NewEntry[] = [...strokesPerPage].map(([page, count]) => ({
+      kind: "strokes",
+      page,
+      count,
+    }));
+    const pageOf = (entry: NewEntry): number =>
+      entry.kind === "mark" ? entry.mark.page_number : entry.page;
+    return [...named, ...strokes].sort((a, b) => pageOf(a) - pageOf(b));
+  }, [newMarks, toEntry, visibleLayers]);
+
+  /**
+   * Lands ON the mark, not just its page: on a fit that shows half a page at a
+   * time, "go to page 7" can land a screen above the thing that was clicked. A
+   * note is also selected, because its card is where its words can be read.
+   */
+  const jumpTo = ({ mark, y }: IndexEntry): void => {
+    goToPage(displayPage(mark.page_number), displayFocusY(mark.page_number, y));
+    if (isComment(mark)) onSelectMark(mark.id, mark.page_number);
+  };
 
   const annotatedPages = useMemo(() => {
     const counts = new Map<number, number>();
@@ -124,9 +202,9 @@ export const AnnotationSidebar = ({
         {open ? (
           <motion.aside
             key="panel"
-            initial={{ x: 40, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            exit={{ x: 40, opacity: 0 }}
+            initial={{ transform: "translateX(40px)", opacity: 0 }}
+            animate={{ transform: "translateX(0px)", opacity: 1 }}
+            exit={{ transform: "translateX(40px)", opacity: 0 }}
             transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
             className="pointer-events-auto m-3 flex max-h-[calc(100%-7rem)] w-72 flex-col overflow-hidden rounded-3xl border border-line-on-inverse bg-surface-inverse/85 text-ink-on-inverse shadow-[0_8px_32px_rgba(0,0,0,0.45)] backdrop-blur-xl"
           >
@@ -215,6 +293,37 @@ export const AnnotationSidebar = ({
                 </div>
               </section>
 
+              {fresh.length > 0 && (
+                <section className="mb-4">
+                  <Eyebrow as="p" className="mb-2 text-ethereal-gold">
+                    {t("annotations.panel.new", "Nowe")}
+                  </Eyebrow>
+                  <ul className="flex flex-col gap-1">
+                    {fresh.map((entry) =>
+                      entry.kind === "mark" ? (
+                        <li key={entry.mark.id}>
+                          <EntryButton
+                            dot="bg-ethereal-gold"
+                            label={entry.label}
+                            page={displayPage(entry.mark.page_number)}
+                            onClick={() => jumpTo(entry)}
+                          />
+                        </li>
+                      ) : (
+                        <li key={`strokes-${entry.page}`}>
+                          <EntryButton
+                            dot="bg-ethereal-gold"
+                            label={t("annotations.panel.new_strokes", { count: entry.count })}
+                            page={displayPage(entry.page)}
+                            onClick={() => goToPage(displayPage(entry.page))}
+                          />
+                        </li>
+                      ),
+                    )}
+                  </ul>
+                </section>
+              )}
+
               {annotatedPages.length > 0 && (
                 <section className="mb-4">
                   <Eyebrow as="p" color="ink-on-inverse-muted" className="mb-2">
@@ -244,56 +353,51 @@ export const AnnotationSidebar = ({
 
               <section>
                 <Eyebrow as="p" color="ink-on-inverse-muted" className="mb-2">
-                  {t("annotations.panel.notes", "Notatki")}
+                  {t("annotations.panel.notes", "Notatki i symbole")}
                 </Eyebrow>
-                {notes.length === 0 ? (
+                {index.length === 0 ? (
                   <p className="text-xs text-ink-on-inverse/50">
-                    {t("annotations.panel.no_notes", "Brak notatek tekstowych.")}
+                    {t("annotations.panel.no_notes", "Brak notatek i symboli.")}
                   </p>
                 ) : (
-                  <ul className="flex flex-col gap-1">
-                    {notes.map((note) => {
-                      const payload = note.payload as CommentPayload;
-                      return (
-                        <li key={note.id}>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              // The note's own y, not just its page: on a fit
-                              // that shows half a page at a time, "go to page 7"
-                              // can land a screen above the thing that was
-                              // clicked.
-                              goToPage(
-                                displayPage(note.page_number),
-                                displayFocusY(note.page_number, payload.y),
-                              );
-                              onSelectMark(note.id, note.page_number);
-                            }}
-                            className="flex w-full items-start gap-2 rounded-lg px-2 py-1.5 text-left transition-colors hover:bg-ink-on-inverse/10"
-                          >
-                            <span
-                              className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full"
-                              style={{ backgroundColor: note.color }}
-                              aria-hidden="true"
+                  <>
+                    <label className="mb-2 flex items-center gap-2 rounded-lg bg-ink-on-inverse/10 px-2.5 focus-within:ring-1 focus-within:ring-ethereal-gold/60">
+                      <Search
+                        size={13}
+                        aria-hidden="true"
+                        className="shrink-0 text-ink-on-inverse/50"
+                      />
+                      {/* 16px on phones: anything smaller and iOS zooms the
+                          whole score in on focus. */}
+                      <input
+                        type="search"
+                        value={query}
+                        onChange={(event) => setQuery(event.target.value)}
+                        placeholder={t("annotations.panel.search", "Szukaj w notatkach")}
+                        aria-label={t("annotations.panel.search", "Szukaj w notatkach")}
+                        className="min-w-0 flex-1 bg-transparent py-1.5 text-base text-ink-on-inverse placeholder:text-ink-on-inverse/40 focus:outline-none sm:text-xs"
+                      />
+                    </label>
+                    {found.length === 0 ? (
+                      <p className="text-xs text-ink-on-inverse/50">
+                        {t("annotations.panel.no_match", "Nic nie pasuje.")}
+                      </p>
+                    ) : (
+                      <ul className="flex flex-col gap-1">
+                        {found.map((entry) => (
+                          <li key={entry.mark.id}>
+                            <EntryButton
+                              color={entry.mark.color}
+                              label={entry.label}
+                              page={displayPage(entry.mark.page_number)}
+                              isPrivate={layerOf(entry.mark) !== "shared"}
+                              onClick={() => jumpTo(entry)}
                             />
-                            <span className="min-w-0 flex-1">
-                              <span className="block truncate text-xs text-ink-on-inverse">
-                                {payload.text}
-                              </span>
-                              <span className="mt-0.5 flex items-center gap-1 text-[10px] text-ink-on-inverse/50">
-                                {t("annotations.panel.page", "s. {{page}}", {
-                                  page: displayPage(note.page_number),
-                                })}
-                                {layerOf(note) !== "shared" && (
-                                  <Lock size={9} aria-hidden="true" />
-                                )}
-                              </span>
-                            </span>
-                          </button>
-                        </li>
-                      );
-                    })}
-                  </ul>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </>
                 )}
               </section>
             </div>
@@ -302,9 +406,9 @@ export const AnnotationSidebar = ({
           <motion.button
             key="tab"
             type="button"
-            initial={{ x: 20, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            exit={{ x: 20, opacity: 0 }}
+            initial={{ transform: "translateX(20px)", opacity: 0 }}
+            animate={{ transform: "translateX(0px)", opacity: 1 }}
+            exit={{ transform: "translateX(20px)", opacity: 0 }}
             transition={{ duration: 0.2 }}
             onClick={() => setOpen(true)}
             aria-label={t("annotations.panel.open", "Pokaż adnotacje")}
@@ -322,6 +426,48 @@ export const AnnotationSidebar = ({
         )}
       </AnimatePresence>
     </div>
+  );
+};
+
+interface EntryButtonProps {
+  label: string;
+  page: number;
+  onClick: () => void;
+  /** The mark's own ink, for the dot. */
+  color?: string;
+  /** A class for the dot instead, where the row says "new" rather than "this ink". */
+  dot?: string;
+  isPrivate?: boolean;
+}
+
+const EntryButton = ({
+  label,
+  page,
+  onClick,
+  color,
+  dot,
+  isPrivate = false,
+}: EntryButtonProps): React.JSX.Element => {
+  const { t } = useTranslation();
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="flex w-full items-start gap-2 rounded-lg px-2 py-1.5 text-left transition-colors hover:bg-ink-on-inverse/10"
+    >
+      <span
+        className={cn("mt-1 h-2.5 w-2.5 shrink-0 rounded-full", dot)}
+        style={color ? { backgroundColor: color } : undefined}
+        aria-hidden="true"
+      />
+      <span className="min-w-0 flex-1">
+        <span className="block truncate text-xs text-ink-on-inverse">{label}</span>
+        <span className="mt-0.5 flex items-center gap-1 text-[10px] text-ink-on-inverse/50">
+          {t("annotations.panel.page", "s. {{page}}", { page })}
+          {isPrivate && <Lock size={9} aria-hidden="true" />}
+        </span>
+      </span>
+    </button>
   );
 };
 

@@ -387,6 +387,9 @@ export const flushOfflineQueue = async (
   let flushed = 0;
   let rejected = 0;
   const settledKinds = new Set<OfflineWriteKind>();
+  // A background write settles like any other, but the summary only counts
+  // what the reader would recognise as their own change.
+  const counted = (write: QueuedWrite): number => (write.background ? 0 : 1);
 
   for (const write of queue) {
     if (!force && write.nextAttemptAt > Date.now()) break;
@@ -397,20 +400,20 @@ export const flushOfflineQueue = async (
     try {
       await replayWrite(write);
       store().dequeueWrite(write.id);
-      flushed += 1;
+      flushed += counted(write);
       settledKinds.add(write.kind);
       continue;
     } catch (error) {
       const verdict = classifyWriteFailure(error, write.method);
       if (verdict === "done") {
         store().dequeueWrite(write.id);
-        flushed += 1;
+        flushed += counted(write);
         settledKinds.add(write.kind);
         continue;
       }
       if (verdict === "reject") {
         store().dequeueWrite(write.id);
-        rejected += 1;
+        rejected += counted(write);
         settledKinds.add(write.kind);
         continue;
       }

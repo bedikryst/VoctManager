@@ -47,9 +47,9 @@ export const PdfOutlineDrawer = ({
         {open ? (
           <motion.aside
             key="panel"
-            initial={{ x: -40, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            exit={{ x: -40, opacity: 0 }}
+            initial={{ transform: "translateX(-40px)", opacity: 0 }}
+            animate={{ transform: "translateX(0px)", opacity: 1 }}
+            exit={{ transform: "translateX(-40px)", opacity: 0 }}
             transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
             className="pointer-events-auto m-3 flex max-h-[calc(100%-7rem)] w-72 flex-col overflow-hidden rounded-surface border border-line-on-inverse bg-surface-inverse/85 text-ink-on-inverse shadow-[0_8px_32px_rgba(0,0,0,0.45)] backdrop-blur-xl"
           >
@@ -110,9 +110,9 @@ export const PdfOutlineDrawer = ({
           <motion.button
             key="tab"
             type="button"
-            initial={{ x: -20, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            exit={{ x: -20, opacity: 0 }}
+            initial={{ transform: "translateX(-20px)", opacity: 0 }}
+            animate={{ transform: "translateX(0px)", opacity: 1 }}
+            exit={{ transform: "translateX(-20px)", opacity: 0 }}
             transition={{ duration: 0.2 }}
             onClick={() => setOpen(true)}
             aria-label={t("pdf_viewer.outline_open", "Pokaż spis treści")}

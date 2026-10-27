@@ -157,6 +157,20 @@ describe("a write the server answered for good", () => {
     expect(summary).toEqual({ flushed: 1, rejected: 1, remaining: 0 });
   });
 
+  it("settles a background write without counting it either way", async () => {
+    enqueue(
+      write("seen", { kind: "annotation_seen", background: true }),
+      write("seen-gone", { kind: "annotation_seen", background: true }),
+    );
+    request.mockResolvedValueOnce({}).mockRejectedValueOnce(answered(404));
+
+    expect(await flushOfflineQueue(queryClient)).toEqual({
+      flushed: 0,
+      rejected: 0,
+      remaining: 0,
+    });
+  });
+
   it("counts a 410 on a replayed create as done, not refused", async () => {
     enqueue(write("erased-elsewhere"));
     request.mockRejectedValueOnce(answered(410));
@@ -216,5 +230,15 @@ describe("reading the queue back from storage", () => {
       expect.objectContaining({ id: "a", attempts: 0, nextAttemptAt: 0, failingSince: null }),
     ]);
     expect(readQueuedWrites(null)).toEqual([]);
+  });
+
+  it("keeps a background write in the background after a reload", () => {
+    const [restored] = readQueuedWrites([
+      {
+        id: "s", kind: "annotation_seen", method: "POST", url: "/x/seen/",
+        dedupeKey: "k", label: "", createdAt: 1, background: true,
+      },
+    ]);
+    expect(restored).toMatchObject({ kind: "annotation_seen", background: true });
   });
 });

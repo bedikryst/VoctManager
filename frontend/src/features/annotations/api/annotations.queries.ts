@@ -41,6 +41,7 @@ import {
 
 import { AnnotationsService } from "./annotations.service";
 import { insertMarks, upsertMark, withoutMarks } from "../lib/markRows";
+import { queuedSeen, timeOf } from "../lib/markSeen";
 import { isReservedInk } from "../lib/palette";
 import {
   applyPendingMarks,
@@ -171,6 +172,18 @@ export interface ScoreMarks {
    * `annotations` holds only the queue's echo, which is not the score's state.
    */
   isLoaded: boolean;
+  /**
+   * Loaded, and no newer list on its way. A list restored from the device's
+   * snapshot is loaded long before it is settled: summing up what changed
+   * since the last visit from it would announce the marks it lacks a second
+   * time, as arrivals, the moment the network answers.
+   */
+  isSettled: boolean;
+  /**
+   * How far this reader has read the edition (`MarkFingerprint.seen_at`):
+   * undefined until an open stand's first fingerprint answers.
+   */
+  seenAt: string | null | undefined;
 }
 
 /**
@@ -184,7 +197,7 @@ export const useScoreAnnotations = (
   const isCleared = options?.isCleared ?? ALL_CLEARED;
   const queue = useOfflineStore((state) => state.queue);
 
-  const { data, isSuccess } = useQuery({
+  const { data, isSuccess, isFetching } = useQuery({
     queryKey: annotationKeys.byEdition(editionId ?? "none"),
     queryFn: () => AnnotationsService.list(editionId as string),
     enabled: !!editionId,
@@ -194,7 +207,7 @@ export const useScoreAnnotations = (
     ...RECONCILING_REFETCH,
   });
 
-  useMarkFingerprintWatch(editionId, options?.live ?? false, data);
+  const seenAt = useMarkFingerprintWatch(editionId, options?.live ?? false, data);
   useDurableMarkCatchUp(editionId);
 
   const pending = useMemo(
@@ -207,17 +220,14 @@ export const useScoreAnnotations = (
     [data, pending, isCleared],
   );
 
+  const isLoaded = !!editionId && isSuccess;
   return {
     annotations,
     pendingCount: pending.length,
-    isLoaded: !!editionId && isSuccess,
+    isLoaded,
+    isSettled: isLoaded && !isFetching,
+    seenAt,
   };
-};
-
-const timeOf = (iso: string | null): number | null => {
-  if (!iso) return null;
-  const time = Date.parse(iso);
-  return Number.isNaN(time) ? null : time;
 };
 
 /**
@@ -252,12 +262,14 @@ const listSignature = (rows: readonly ScoreAnnotation[]): string => {
  * refetch landing between the optimistic patch and the server's reply would take
  * the stroke off the page under their hand. A settled write leaves the cache
  * holding the server's row, so the next tick agrees without a re-read.
+ *
+ * Returns the reader's `seen_at` from the latest answer, undefined before one.
  */
 const useMarkFingerprintWatch = (
   editionId: string | null,
   live: boolean,
   rows: readonly ScoreAnnotation[] | undefined,
-): void => {
+): string | null | undefined => {
   const queryClient = useQueryClient();
   const writing = useIsMutating({ mutationKey: annotationKeys.all }) > 0;
 
@@ -305,6 +317,8 @@ const useMarkFingerprintWatch = (
       queryKey: annotationKeys.byEdition(editionId),
     });
   }, [data, dataUpdatedAt, editionId, queryClient]);
+
+  return data?.seen_at;
 };
 
 /** A fresh v4 id: for a mark, or for a clear or restore the queue must tell apart. */
@@ -338,6 +352,34 @@ const isRetryable = (error: unknown, method: QueuedWrite["method"]): boolean =>
 
 const isOffline = (): boolean =>
   typeof navigator !== "undefined" && navigator.onLine === false;
+
+/**
+ * Moves the reader's pointer on an edition they are leaving. Sent live; a
+ * failure the queue can carry is queued as background bookkeeping, and any other
+ * is let go. A pointer left behind shows a few marks as new once more, which is
+ * the safe direction to be wrong in.
+ */
+export const useMarkSeen = (): ((editionId: string, at: string) => void) => {
+  const { t } = useTranslation();
+  return useCallback(
+    (editionId: string, at: string) => {
+      const enqueue = (): void => {
+        const store = useOfflineStore.getState();
+        store.enqueueWrite(
+          queuedSeen(store.queue, editionId, at, t("annotations.queue_seen_label")),
+        );
+      };
+      if (isOffline()) {
+        enqueue();
+        return;
+      }
+      AnnotationsService.seen(editionId, at).catch((error: unknown) => {
+        if (isRetryable(error, "POST")) enqueue();
+      });
+    },
+    [t],
+  );
+};
 
 interface ClearVariables {
   clearId: string;

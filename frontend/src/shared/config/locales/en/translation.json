@@ -16,11 +16,16 @@
     "markup": "Markup",
     "pending_hint": "Saved on this device. It will send itself once you are back online.",
     "queue_label": "Score marking",
+    "queue_seen_label": "Score markings read",
     "incoming": {
       "line_one": "New marking · p. {{page}}",
       "line_few": "{{count}} new markings · p. {{page}}",
       "line_many": "{{count}} new markings · p. {{page}}",
-      "line_other": "{{count}} new markings · p. {{page}}"
+      "line_other": "{{count}} new markings · p. {{page}}",
+      "since_one": "Since your last visit: {{count}} new · p. {{pages}}",
+      "since_few": "Since your last visit: {{count}} new · p. {{pages}}",
+      "since_many": "Since your last visit: {{count}} new · p. {{pages}}",
+      "since_other": "Since your last visit: {{count}} new · p. {{pages}}"
     },
     "rejected": {
       "reserved_ink": "Only the conductor writes in this colour. The marking was not saved.",
@@ -90,9 +95,16 @@
     },
     "panel": {
       "layers": "Layer visibility",
-      "no_notes": "No text notes.",
-      "notes": "Notes",
+      "new": "New",
+      "new_strokes_one": "{{count}} freehand marking",
+      "new_strokes_few": "{{count}} freehand markings",
+      "new_strokes_many": "{{count}} freehand markings",
+      "new_strokes_other": "{{count}} freehand markings",
+      "no_match": "Nothing matches.",
+      "no_notes": "No notes or symbols.",
+      "notes": "Notes and symbols",
       "open": "Show annotations",
+      "search": "Search notes",
       "page": "p. {{page}}",
       "page_marks_one": "{{count}} mark",
       "page_marks_few": "{{count}} marks",

@@ -44,9 +44,7 @@ export const ScoreProgramBar = ({
   const anchorRef = useRef<HTMLDivElement | null>(null);
 
   // Dismissal on a press anywhere else, in capture phase so the viewer's
-  // gesture layer cannot swallow it first. A full-bleed backdrop element is not
-  // an option here: this pill carries `backdrop-blur`, which makes it the
-  // containing block for any `position: fixed` child.
+  // gesture layer cannot swallow it first.
   useEffect(() => {
     if (!isListOpen) return;
     const onPointerDown = (event: PointerEvent) => {
@@ -82,7 +80,7 @@ export const ScoreProgramBar = ({
     <div className="pointer-events-none absolute inset-x-0 bottom-24 z-10 flex justify-center px-4 sm:bottom-28">
       <div
         ref={anchorRef}
-        className="pointer-events-auto relative flex max-w-full items-center gap-1 rounded-full border border-line-on-inverse bg-surface-inverse/90 p-1.5 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-md"
+        className="pointer-events-auto relative flex max-w-full items-center gap-1 rounded-full border border-line-on-inverse bg-surface-inverse/90 p-1.5 shadow-[0_8px_32px_rgba(0,0,0,0.4)]"
         data-pdf-gesture-exempt
       >
         <Button
@@ -144,11 +142,13 @@ export const ScoreProgramBar = ({
         <AnimatePresence>
           {isListOpen && (
             <motion.div
-              initial={{ opacity: 0, y: 6 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 6 }}
+              // The centring travels inside the animated string: a Tailwind
+              // translate class would be overwritten by it.
+              initial={{ opacity: 0, transform: "translateX(-50%) translateY(6px)" }}
+              animate={{ opacity: 1, transform: "translateX(-50%) translateY(0px)" }}
+              exit={{ opacity: 0, transform: "translateX(-50%) translateY(6px)" }}
               transition={{ duration: 0.16, ease: [0.16, 1, 0.3, 1] }}
-              className="absolute bottom-full left-1/2 mb-3 flex max-h-[50vh] w-72 max-w-[calc(100vw-2rem)] -translate-x-1/2 flex-col overflow-hidden rounded-surface border border-line-on-inverse bg-surface-inverse/95 shadow-[0_8px_32px_rgba(0,0,0,0.5)] backdrop-blur-xl"
+              className="absolute bottom-full left-1/2 mb-3 flex max-h-[50vh] w-72 max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-surface border border-line-on-inverse bg-surface-inverse/95 shadow-[0_8px_32px_rgba(0,0,0,0.5)]"
             >
               <div className="shrink-0 border-b border-line-on-inverse px-3 py-2">
                 <Eyebrow color="ink-on-inverse-muted">

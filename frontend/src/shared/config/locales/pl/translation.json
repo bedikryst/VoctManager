@@ -16,11 +16,16 @@
     "markup": "Adnotacje",
     "pending_hint": "Zapisane na tym urządzeniu. Wyślą się same, gdy wróci internet.",
     "queue_label": "Oznaczenie na nutach",
+    "queue_seen_label": "Przeczytane oznaczenia na nutach",
     "incoming": {
       "line_one": "Nowe oznaczenie · s. {{page}}",
       "line_few": "{{count}} nowe oznaczenia · s. {{page}}",
       "line_many": "{{count}} nowych oznaczeń · s. {{page}}",
-      "line_other": "{{count}} nowych oznaczeń · s. {{page}}"
+      "line_other": "{{count}} nowych oznaczeń · s. {{page}}",
+      "since_one": "Od Twojej ostatniej wizyty: {{count}} nowe · s. {{pages}}",
+      "since_few": "Od Twojej ostatniej wizyty: {{count}} nowe · s. {{pages}}",
+      "since_many": "Od Twojej ostatniej wizyty: {{count}} nowych · s. {{pages}}",
+      "since_other": "Od Twojej ostatniej wizyty: {{count}} nowych · s. {{pages}}"
     },
     "rejected": {
       "reserved_ink": "Tym kolorem pisze tylko dyrygent. Oznaczenie nie zostało zapisane.",
@@ -90,9 +95,16 @@
     },
     "panel": {
       "layers": "Widoczność warstw",
-      "no_notes": "Brak notatek tekstowych.",
-      "notes": "Notatki",
+      "new": "Nowe",
+      "new_strokes_one": "{{count}} oznaczenie odręczne",
+      "new_strokes_few": "{{count}} oznaczenia odręczne",
+      "new_strokes_many": "{{count}} oznaczeń odręcznych",
+      "new_strokes_other": "{{count}} oznaczeń odręcznych",
+      "no_match": "Nic nie pasuje.",
+      "no_notes": "Brak notatek i symboli.",
+      "notes": "Notatki i symbole",
       "open": "Pokaż adnotacje",
+      "search": "Szukaj w notatkach",
       "page": "s. {{page}}",
       "page_marks_one": "{{count}} oznaczenie",
       "page_marks_few": "{{count}} oznaczenia",
