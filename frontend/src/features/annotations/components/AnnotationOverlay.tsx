@@ -1209,7 +1209,7 @@ export const AnnotationOverlay = ({
               tabIndex={live ? 0 : -1}
               className={cn(
                 INLINE_MARK_CLASS,
-                "flex items-center gap-1 whitespace-nowrap rounded-full transition-shadow",
+                "flex items-center gap-[0.25em] whitespace-nowrap rounded-full transition-shadow",
                 highlighted.has(a.id) ? "ring-2 ring-ethereal-gold" : "ring-black/10",
                 erasable && "cursor-pointer hover:ring-ethereal-crimson",
               )}

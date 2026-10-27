@@ -32,25 +32,36 @@ import {
 import type { WriteLayer } from "../lib/layers";
 import type { AnnotationLayer, NoteDisplay } from "../types/annotations.dto";
 
-/** Base font size of an on-score word, before the note's own scale multiplier. */
-export const inlineFontSize = (pageWidth: number): number =>
-  Math.min(22, Math.max(11, pageWidth * 0.026));
+/**
+ * Base font size of an on-score word, before the note's own scale multiplier:
+ * a fixed fraction of the page, with no floor or ceiling. A note is part of the
+ * page, so it has to cover the same music at every zoom and on every screen —
+ * a clamped size grows or shrinks against the staves, and a word placed
+ * between two systems on a tablet lands on one of them on a phone. A reader
+ * who cannot read it zooms, as they would for the engraving beside it.
+ * Print uses the same fraction (`_NOTE_SIZE_FRACTION` in score_markings.py).
+ */
+export const inlineFontSize = (pageWidth: number): number => pageWidth * 0.026;
 
 /**
  * The on-score word's own box, shared by the composer and the placed mark so
  * that what is written is what stays: same padding, weight, wash and line
- * breaks. Rings are left to each, because selection and focus differ.
+ * breaks. Padding and corners are in em for the reason the font is a page
+ * fraction — a fixed pixel inset would change where a long note wraps, and so
+ * how many staves it covers, from one zoom to the next. Rings are left to
+ * each, because selection and focus differ, and they are drawn outside the box.
  */
 export const INLINE_MARK_CLASS =
-  "whitespace-pre-wrap break-words rounded-md px-1.5 py-0.5 text-center font-semibold leading-snug shadow-sm ring-1";
+  "whitespace-pre-wrap break-words rounded-[0.35em] px-[0.35em] py-[0.12em] text-center font-semibold leading-snug shadow-sm ring-1";
 /**
  * A boxed note — a rehearsal letter, a bar number — framed in its own ink
  * (`border-current`, the button's colour being the note's), square-cornered
  * and bold, the way an engraver sets one. No resting ring: the frame is the
- * mark, and a second outline would read as a double box.
+ * mark, and a second outline would read as a double box. The frame is in em
+ * like the padding, so the box keeps its proportions at every zoom.
  */
 export const BOX_MARK_CLASS =
-  "whitespace-pre-wrap break-words rounded-sm border-2 border-current px-1.5 py-0.5 text-center font-bold leading-snug";
+  "whitespace-pre-wrap break-words rounded-[0.25em] border-[length:0.12em] border-current px-[0.35em] py-[0.12em] text-center font-bold leading-snug";
 export const INLINE_MARK_BACKGROUND = "rgba(255,255,255,0.82)";
 
 /** The notes whose words sit on the page itself, centred on their anchor. */
