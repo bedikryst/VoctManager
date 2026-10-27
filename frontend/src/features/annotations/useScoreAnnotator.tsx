@@ -24,8 +24,10 @@
  * lands three pages away would otherwise never be found.
  *
  * For the conductor it carries the two gestures over the choir's marks as a
- * whole: the drawer puts an edition's marks aside and brings a set back, and a
- * stand opened from a project tells its choir about new marks from the toolbar.
+ * whole: the drawer puts an edition's marks aside and brings a set back (which
+ * ends that edition's undo history), and a stand opened from a project tells its
+ * choir about new marks from the toolbar — in the concert book from its title
+ * page too, where there is nothing to draw on.
  * @module features/annotations
  */
 
@@ -38,8 +40,8 @@ import type {
 } from "@/shared/ui/composites/PdfViewer";
 
 import { AnnotationOverlay } from "./components/AnnotationOverlay";
-import { AnnotationToolbar } from "./components/AnnotationToolbar";
-import { AnnotationSidebar } from "./components/AnnotationSidebar";
+import { AnnotationToolbar, BareToolbar } from "./components/AnnotationToolbar";
+import { ANNOTATION_DRAWER_ATTR, AnnotationSidebar } from "./components/AnnotationSidebar";
 import { AnnotationGuide } from "./components/AnnotationGuide";
 import { IncomingMarksNotice } from "./components/IncomingMarksNotice";
 import { NotifyChoirButton } from "./components/NotifyChoirButton";
@@ -245,6 +247,7 @@ export const useScoreAnnotator = ({
     update: recordUpdate,
     erase: recordErase,
     clear: recordClear,
+    reset: resetHistory,
   } = history;
 
   // Reset transient editor state when a different score opens — in the binder
@@ -339,6 +342,10 @@ export const useScoreAnnotator = ({
    * tool) and dropping the selection closes an edited one, so there is nothing
    * left for the composer's own handler to do; letting the key travel on would
    * hand it to the dialog, which closes the score.
+   *
+   * The drawer's search field is the exception: the reader is talking to the
+   * field, not to the pen or the selection. The key goes on to the viewer,
+   * which takes the field's focus away and keeps the score open.
    */
   const onEscapeKeyDown = useCallback(
     (event: KeyboardEvent): boolean => {
@@ -347,6 +354,13 @@ export const useScoreAnnotator = ({
         event.stopPropagation();
         setGuideOpen(false);
         return true;
+      }
+      const target = event.target instanceof HTMLElement ? event.target : null;
+      if (
+        target?.closest(`[${ANNOTATION_DRAWER_ATTR}]`) &&
+        (target.isContentEditable || ["INPUT", "TEXTAREA"].includes(target.tagName))
+      ) {
+        return false;
       }
       if (selectedId === null && activeTool === "pointer") return false;
       if (selectedId !== null) setSelectedId(null);
@@ -422,6 +436,7 @@ export const useScoreAnnotator = ({
     // A closed stand is a reader who left: the hook sends their pointer then.
     watching: mode !== "conductor" && active,
     userId,
+    visibleLayers: tools.visibleLayers,
     seenAt,
     onSeen: markSeen,
   });
@@ -602,6 +617,7 @@ export const useScoreAnnotator = ({
         mode={mode}
         onSelectMark={handleSelectMark}
         editionId={activeEditionId}
+        onMarksReplaced={resetHistory}
       />
       <IncomingMarksNotice
         count={incoming.notice?.count ?? 0}
@@ -620,10 +636,16 @@ export const useScoreAnnotator = ({
     </>
   );
 
+  const notifySlot =
+    notifyProjectId && active ? (
+      <NotifyChoirButton projectId={notifyProjectId} surface="chrome" />
+    ) : undefined;
+
   return {
     // No edition under the current page means no pencil: on the binder's title
     // page or a divider card there is nothing a mark could belong to, and a
     // toolbar offering to draw there would be offering to lose the drawing.
+    // The project's own button stays, since the book opens on exactly such a page.
     toolbarSlot: activeEditionId ? (
       <AnnotationToolbar
         {...tools}
@@ -638,12 +660,10 @@ export const useScoreAnnotator = ({
         onRedo={redo}
         onClearAll={handleClearAll}
         onOpenGuide={() => setGuideOpen(true)}
-        notifySlot={
-          notifyProjectId && active ? (
-            <NotifyChoirButton projectId={notifyProjectId} surface="chrome" />
-          ) : undefined
-        }
+        notifySlot={notifySlot}
       />
+    ) : notifySlot ? (
+      <BareToolbar>{notifySlot}</BareToolbar>
     ) : null,
     renderPageOverlay,
     overlaySlot,

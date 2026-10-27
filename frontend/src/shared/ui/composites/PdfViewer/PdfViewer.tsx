@@ -506,8 +506,25 @@ export const PdfViewer = ({
   const handleKeyboardShortcuts = useCallback((event: KeyboardEvent) => {
     if (!blobUrl || isFetchError) return;
 
+    const target = event.target as HTMLElement | null;
+    const inField =
+      target?.isContentEditable ||
+      ["INPUT", "TEXTAREA", "SELECT"].includes(target?.tagName || "");
+    const inPopper = Boolean(target?.closest?.("[data-radix-popper-content-wrapper]"));
+
     if (event.key === "Escape") {
       if (onEscapeKeyDown?.(event)) return;
+      // A field in the viewer's chrome (the annotation drawer's search) keeps
+      // Escape for itself: it gives up its focus, and the score stays open.
+      // Capture phase + stopPropagation, so a wrapping Radix dialog never sees
+      // it. Only the viewer's own fields: this listener is on the window, and a
+      // dialog's field elsewhere on the page, or a popover's, closes its own.
+      if (inField && !inPopper && rootRef.current?.contains(target)) {
+        event.preventDefault();
+        event.stopPropagation();
+        target?.blur();
+        return;
+      }
       if (isImmersive) {
         // Capture phase + stopPropagation so Esc leaves immersive without also
         // closing a wrapping Radix dialog.
@@ -518,14 +535,7 @@ export const PdfViewer = ({
       return;
     }
 
-    const target = event.target as HTMLElement | null;
-    if (
-      target?.isContentEditable ||
-      ["INPUT", "TEXTAREA", "SELECT"].includes(target?.tagName || "") ||
-      target?.closest?.("[data-radix-popper-content-wrapper]")
-    ) {
-      return;
-    }
+    if (inField || inPopper) return;
 
     // Plain keys only — ctrl/⌘/alt combos belong to the browser and to
     // feature shortcuts (annotation undo/redo). Shift stays: Shift+Space.

@@ -457,20 +457,29 @@ const isOffline = (): boolean =>
 /**
  * Moves the reader's pointer on an edition they are leaving. Sent live; a
  * failure the queue can carry is queued as background bookkeeping, and any other
- * is let go. A pointer left behind shows a few marks as new once more, which is
- * the safe direction to be wrong in.
+ * is let go — a 403 for an edition the reader may no longer open among them. A
+ * pointer left behind shows a few marks as new once more, which is the safe
+ * direction to be wrong in.
+ *
+ * `durable` skips the live send: the app is going to the background and may
+ * never run again in this life, while the persisted queue outlives it and
+ * drains on the next foreground.
  */
-export const useMarkSeen = (): ((editionId: string, at: string) => void) => {
+export const useMarkSeen = (): ((
+  editionId: string,
+  at: string,
+  durable?: boolean,
+) => void) => {
   const { t } = useTranslation();
   return useCallback(
-    (editionId: string, at: string) => {
+    (editionId: string, at: string, durable = false) => {
       const enqueue = (): void => {
         const store = useOfflineStore.getState();
         store.enqueueWrite(
           queuedSeen(store.queue, editionId, at, t("annotations.queue_seen_label")),
         );
       };
-      if (isOffline()) {
+      if (durable || isOffline()) {
         enqueue();
         return;
       }

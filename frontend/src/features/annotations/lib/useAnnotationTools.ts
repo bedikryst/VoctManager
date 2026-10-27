@@ -2,18 +2,20 @@
  * @file useAnnotationTools.ts
  * @description Local editor state for the annotation tools — held tool, ink
  * colour, stroke weight, the shape in hand, note display mode, the selected
- * musical stamp, the target layer and which layers are visible. Deliberately component-local React
- * state (not a global store): it is ephemeral UI, scoped to one open score, and
- * dies with the viewer.
+ * musical stamp, the target layer and which layers are visible. Component-local
+ * React state (not a global store) except for the layer switches: it is
+ * ephemeral UI, scoped to one open score, and dies with the viewer.
  *
  * What describes this device outlives the viewer (`deviceStorage`), because a
  * rehearsal gives you a bar and a half to write something down: the tool last in
  * hand and the shape it draws, the size of notes and stamps, whether the finger
- * draws, and which layers are shown. None of it is server state.
+ * draws, and which layers are shown. None of it is server state. The one value
+ * every mounted stand reads live is which layers are shown (see
+ * `hiddenLayers`); the rest is read as a stand mounts.
  * @module features/annotations/lib
  */
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react";
 
 import type { AnnotationLayer, NoteDisplay } from "../types/annotations.dto";
 import { readStored, writeStored } from "./deviceStorage";
@@ -48,8 +50,37 @@ const HIDDEN_LAYERS_STORAGE_KEY = "voct.annotations.hidden_layers";
 
 const ALL_LAYERS: readonly AnnotationLayer[] = ["shared", "conductor", "leader", "personal"];
 
-const readVisibleLayers = (): LayerVisibility => {
-  const hidden = new Set((readStored(HIDDEN_LAYERS_STORAGE_KEY) ?? "").split(","));
+/**
+ * Which layers are hidden is one fact per device, not one per open score. A
+ * songbook mounts a stand for every row, each holding its own tools, so a
+ * switch flipped in one has to reach the others while they sit closed — or the
+ * next score opens showing what the reader just hid. Held here, read through
+ * `useSyncExternalStore`, and copied to storage for the next visit; with
+ * storage unavailable the choice still holds for the session.
+ */
+let hiddenLayers: string | null = null;
+const hiddenLayerListeners = new Set<() => void>();
+
+const readHiddenLayers = (): string => {
+  if (hiddenLayers === null) hiddenLayers = readStored(HIDDEN_LAYERS_STORAGE_KEY) ?? "";
+  return hiddenLayers;
+};
+
+const subscribeHiddenLayers = (listener: () => void): (() => void) => {
+  hiddenLayerListeners.add(listener);
+  return () => {
+    hiddenLayerListeners.delete(listener);
+  };
+};
+
+const writeHiddenLayers = (next: string): void => {
+  hiddenLayers = next;
+  writeStored(HIDDEN_LAYERS_STORAGE_KEY, next);
+  for (const listener of hiddenLayerListeners) listener();
+};
+
+const visibilityOf = (stored: string): LayerVisibility => {
+  const hidden = new Set(stored.split(","));
   return {
     shared: !hidden.has("shared"),
     conductor: !hidden.has("conductor"),
@@ -234,17 +265,13 @@ export const useAnnotationTools = (
   const [layer, setLayer] = useState<AnnotationLayer>(initialLayer);
   // Remembered too: a conductor previewing what the choir sees, or a singer who
   // reads without their own pencil marks, set the page up once.
-  const [visibleLayers, setVisibleLayers] = useState<LayerVisibility>(readVisibleLayers);
+  const hidden = useSyncExternalStore(subscribeHiddenLayers, readHiddenLayers);
+  const visibleLayers = useMemo(() => visibilityOf(hidden), [hidden]);
 
   const toggleLayerVisibility = useCallback((target: AnnotationLayer) => {
-    setVisibleLayers((current) => {
-      const next = { ...current, [target]: !current[target] };
-      writeStored(
-        HIDDEN_LAYERS_STORAGE_KEY,
-        ALL_LAYERS.filter((layer) => !next[layer]).join(","),
-      );
-      return next;
-    });
+    const current = visibilityOf(readHiddenLayers());
+    const next = { ...current, [target]: !current[target] };
+    writeHiddenLayers(ALL_LAYERS.filter((layer) => !next[layer]).join(","));
   }, []);
 
   return {

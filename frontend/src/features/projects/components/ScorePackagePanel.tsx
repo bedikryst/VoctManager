@@ -75,6 +75,8 @@ import { TogglePill } from "./TogglePill";
 interface ScorePackagePanelProps {
   projectId: string;
   projectTitle?: string;
+  /** False once the project is over or called off: there is no cast to tell. */
+  canNotifyChoir?: boolean;
 }
 
 type DensityId = ScorePackageConfig["density_mode"];
@@ -121,6 +123,7 @@ const needsAttention = (item: ScorePackageItem): boolean =>
 export function ScorePackagePanel({
   projectId,
   projectTitle,
+  canNotifyChoir = true,
 }: ScorePackagePanelProps): React.JSX.Element {
   const { t, i18n } = useTranslation();
   const queryClient = useQueryClient();
@@ -472,9 +475,11 @@ export function ScorePackagePanel({
 
             {/* The marks travel with the editions, not with this file, so the
                 choir hears of them here whether or not the book is rebuilt. */}
-            <div className="border-t border-hairline pt-4">
-              <NotifyChoirButton projectId={projectId} surface="page" />
-            </div>
+            {canNotifyChoir && (
+              <div className="border-t border-hairline pt-4">
+                <NotifyChoirButton projectId={projectId} surface="page" />
+              </div>
+            )}
 
             {busy && (
               <Caption color="muted">

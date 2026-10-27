@@ -207,3 +207,35 @@ describe("one step at a time", () => {
     expect(deps.updateMark).toHaveBeenLastCalledWith(target.id, { color: "#1F2933" });
   });
 });
+
+describe("marks put aside", () => {
+  it("ends the timeline, and a press already waiting does nothing", async () => {
+    const deps = writers("saved");
+    let finishCreate: (answer: MarkWrite) => void = () => {};
+    deps.createMark.mockImplementationOnce(
+      () => new Promise<MarkWrite>((resolve) => (finishCreate = resolve)),
+    );
+    const { result } = mount(deps);
+
+    act(() => result.current.create(mark("m1")));
+    act(() => result.current.undo()); // waits on the create
+    act(() => result.current.reset(EDITION));
+    await act(async () => finishCreate("saved"));
+    await settle();
+
+    expect(result.current.canUndo).toBe(false);
+    expect(result.current.canRedo).toBe(false);
+    // The row is archived now: an erase would answer 404.
+    expect(deps.eraseMark).not.toHaveBeenCalled();
+  });
+
+  it("leaves another edition's timeline alone", () => {
+    const deps = writers("saved");
+    const { result } = mount(deps);
+
+    act(() => result.current.create(mark("m1")));
+    act(() => result.current.reset("edition-other"));
+
+    expect(result.current.canUndo).toBe(true);
+  });
+});

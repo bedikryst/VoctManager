@@ -7,13 +7,19 @@
  * page shown before the list arrived), and on the day "what's new" ships nobody
  * may be shown the whole score as new. New is `content_at` against the reader's
  * `seen_at`, summed up once from a settled list, then announced as it arrives.
+ *
+ * And the pointer's two ways of going wrong: moving for an edition nothing was
+ * measured against (opened offline, closed before the fingerprint answered,
+ * turned past in the book), which swallows news unseen; and never moving at all
+ * when the app is swiped away, which shows the same news again.
  * @module features/annotations/lib/useIncomingMarks.test
  */
 
-import { describe, expect, it, vi } from "vitest";
-import { renderHook } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { act, renderHook } from "@testing-library/react";
 
 import { useIncomingMarks } from "./useIncomingMarks";
+import type { LayerVisibility } from "./useAnnotationTools";
 import type { ScoreAnnotation } from "../types/annotations.dto";
 
 const READER = "user-artist";
@@ -39,6 +45,13 @@ const mark = (
   ...overrides,
 });
 
+const ALL_SHOWN: LayerVisibility = {
+  shared: true,
+  conductor: true,
+  leader: true,
+  personal: true,
+};
+
 interface Props {
   annotations: ScoreAnnotation[];
   isLoaded?: boolean;
@@ -46,6 +59,7 @@ interface Props {
   seenAt?: string | null;
   editionId?: string;
   watching?: boolean;
+  visibleLayers?: LayerVisibility;
 }
 
 const watch = (initial: Props, onSeen = vi.fn()) => {
@@ -57,6 +71,7 @@ const watch = (initial: Props, onSeen = vi.fn()) => {
       seenAt,
       editionId = "edition-1",
       watching = true,
+      visibleLayers = ALL_SHOWN,
     }: Props) =>
       useIncomingMarks({
         annotations,
@@ -65,6 +80,7 @@ const watch = (initial: Props, onSeen = vi.fn()) => {
         editionId,
         watching,
         userId: READER,
+        visibleLayers,
         seenAt,
         onSeen,
       }),
@@ -72,6 +88,16 @@ const watch = (initial: Props, onSeen = vi.fn()) => {
   );
   return { ...view, onSeen };
 };
+
+/** jsdom's page is always visible; a test that hides it must show it again. */
+const setVisibility = (state: DocumentVisibilityState): void => {
+  Object.defineProperty(document, "visibilityState", { configurable: true, value: state });
+  document.dispatchEvent(new Event("visibilitychange"));
+};
+
+afterEach(() => {
+  Object.defineProperty(document, "visibilityState", { configurable: true, value: "visible" });
+});
 
 describe("what is new since the reader's last visit", () => {
   it("sums up marks whose content changed after the pointer, with their pages", () => {
@@ -149,6 +175,25 @@ describe("what is new since the reader's last visit", () => {
     expect(result.current.newMarks).toEqual([]);
     expect(result.current.notice).toBeNull();
   });
+
+  it("leaves a hidden layer out of the notice, the halo and the pointer", () => {
+    const { result, unmount, onSeen } = watch({
+      annotations: [
+        mark("cue", { content_at: "2026-10-26T15:00:00Z", layer_name: "leader" }),
+        mark("choir", { content_at: AFTER }),
+      ],
+      seenAt: SEEN,
+      visibleLayers: { ...ALL_SHOWN, leader: false },
+    });
+
+    expect(result.current.notice).toEqual({ kind: "since", count: 1, pages: [4] });
+    expect(result.current.newMarks.map((m) => m.id)).toEqual(["choir"]);
+
+    unmount();
+
+    // Only as far as what was on screen: the hidden cue stays news.
+    expect(onSeen).toHaveBeenCalledExactlyOnceWith("edition-1", AFTER, false);
+  });
 });
 
 describe("marks that arrive while the stand is open", () => {
@@ -206,7 +251,7 @@ describe("leaving the edition", () => {
 
     unmount();
 
-    expect(onSeen).toHaveBeenCalledExactlyOnceWith("edition-1", AFTER);
+    expect(onSeen).toHaveBeenCalledExactlyOnceWith("edition-1", AFTER, false);
   });
 
   it("sends nothing when nothing newer than the pointer was drawn", () => {
@@ -229,7 +274,7 @@ describe("leaving the edition", () => {
       editionId: "edition-2",
     });
 
-    expect(onSeen).toHaveBeenCalledExactlyOnceWith("edition-1", AFTER);
+    expect(onSeen).toHaveBeenCalledExactlyOnceWith("edition-1", AFTER, false);
   });
 
   it("sends when the stand closes, and a reopen does not show the same marks as new", () => {
@@ -239,12 +284,112 @@ describe("leaving the edition", () => {
     });
 
     rerender({ annotations: [mark("a", { content_at: AFTER })], seenAt: SEEN, watching: false });
-    expect(onSeen).toHaveBeenCalledExactlyOnceWith("edition-1", AFTER);
+    expect(onSeen).toHaveBeenCalledExactlyOnceWith("edition-1", AFTER, false);
 
     // The stale fingerprint answer is all a reopened stand has at first.
     rerender({ annotations: [mark("a", { content_at: AFTER })], seenAt: SEEN, watching: true });
 
     expect(result.current.newMarks).toEqual([]);
     expect(result.current.notice).toBeNull();
+  });
+});
+
+describe("an edition nothing was measured against", () => {
+  it("sends nothing when the stand closes before the fingerprint answers", () => {
+    const { unmount, onSeen } = watch({
+      annotations: [mark("a", { content_at: AFTER })],
+      seenAt: undefined,
+    });
+
+    unmount();
+
+    expect(onSeen).not.toHaveBeenCalled();
+  });
+
+  it("sends nothing for a piece of the book turned past before its fingerprint answered", () => {
+    const { rerender, onSeen } = watch({
+      annotations: [mark("a", { content_at: AFTER })],
+      seenAt: SEEN,
+    });
+
+    rerender({
+      annotations: [mark("z", { edition: "edition-2", content_at: AFTER })],
+      seenAt: undefined,
+      editionId: "edition-2",
+    });
+    rerender({
+      annotations: [mark("y", { edition: "edition-3", content_at: AFTER })],
+      seenAt: undefined,
+      editionId: "edition-3",
+    });
+
+    expect(onSeen).toHaveBeenCalledExactlyOnceWith("edition-1", AFTER, false);
+  });
+
+  it("does not let an earlier open's measure stand in for a reopen that took none", () => {
+    const { rerender, onSeen } = watch({
+      annotations: [mark("a", { content_at: AFTER })],
+      seenAt: SEEN,
+    });
+    rerender({ annotations: [mark("a", { content_at: AFTER })], seenAt: SEEN, watching: false });
+    onSeen.mockClear();
+
+    // Reopened from the cache with no signal: a newer mark is drawn, but the
+    // fingerprint never answers.
+    const later = "2026-10-26T16:00:00Z";
+    rerender({
+      annotations: [mark("a", { content_at: AFTER }), mark("b", { content_at: later })],
+      seenAt: undefined,
+      watching: true,
+    });
+    rerender({
+      annotations: [mark("a", { content_at: AFTER }), mark("b", { content_at: later })],
+      seenAt: undefined,
+      watching: false,
+    });
+
+    expect(onSeen).not.toHaveBeenCalled();
+  });
+});
+
+describe("the app leaving the foreground", () => {
+  it("queues the pointer when the page is hidden, and does not send it again on close", () => {
+    const { unmount, onSeen } = watch({
+      annotations: [mark("a", { content_at: AFTER })],
+      seenAt: SEEN,
+    });
+
+    act(() => setVisibility("hidden"));
+
+    expect(onSeen).toHaveBeenCalledExactlyOnceWith("edition-1", AFTER, true);
+
+    act(() => setVisibility("visible"));
+    unmount();
+
+    expect(onSeen).toHaveBeenCalledTimes(1);
+  });
+
+  it("queues on pagehide, which iOS sends where it skips the visibility change", () => {
+    const { onSeen } = watch({
+      annotations: [mark("a", { content_at: AFTER })],
+      seenAt: SEEN,
+    });
+
+    act(() => {
+      window.dispatchEvent(new Event("pagehide"));
+    });
+
+    expect(onSeen).toHaveBeenCalledExactlyOnceWith("edition-1", AFTER, true);
+  });
+
+  it("queues nothing for a stand whose fingerprint has not answered", () => {
+    const { onSeen } = watch({
+      annotations: [mark("a", { content_at: AFTER })],
+      seenAt: undefined,
+    });
+
+    act(() => setVisibility("hidden"));
+
+    expect(onSeen).not.toHaveBeenCalled();
   });
 });

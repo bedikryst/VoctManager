@@ -28,6 +28,14 @@ export const PROJECT_STATUS = {
 export type ProjectStatus =
   (typeof PROJECT_STATUS)[keyof typeof PROJECT_STATUS];
 
+/**
+ * Over or called off: nothing more is asked of the cast, so nothing more is
+ * sent to them (the server's `Project.CLOSED_STATUSES`). Takes a plain string
+ * because the songbook's read-model types its status loosely.
+ */
+export const isClosedProjectStatus = (status: string | null | undefined): boolean =>
+  status === PROJECT_STATUS.DONE || status === PROJECT_STATUS.CANCELLED;
+
 // What the ensemble is singing at. It decides whether a programme item has a
 // place in a rite to name: a Mass is programmed against the order of the
 // liturgy, a concert against a running order.

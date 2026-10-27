@@ -149,10 +149,25 @@ export const AnnotationsService = {
     return response.data.restored;
   },
 
-  /** What "Powiadom chór" would send now. The conductor and managers only. */
+  /**
+   * What "Powiadom chór" would send now. The conductor and managers only.
+   * The cooldown left is read against the answer's own `Date`, so a device
+   * clock running fast or slow cannot wake the button early or hold it late;
+   * without that header it falls back to this device's clock.
+   */
   marksNews: async (projectId: string): Promise<MarksNews> => {
-    const response = await api.get<MarksNews>(`${projectPath(projectId)}marks_news/`);
-    return response.data;
+    const response = await api.get<Omit<MarksNews, "cooldown_ms">>(
+      `${projectPath(projectId)}marks_news/`,
+    );
+    const news = response.data;
+    const end = news.next_allowed_at ? Date.parse(news.next_allowed_at) : Number.NaN;
+    const header: unknown = response.headers["date"];
+    const serverNow = typeof header === "string" ? Date.parse(header) : Number.NaN;
+    const now = Number.isNaN(serverNow) ? Date.now() : serverNow;
+    return {
+      ...news,
+      cooldown_ms: Number.isNaN(end) ? null : Math.max(0, end - now),
+    };
   },
 
   /** Tells the live cast which pieces carry new marks. */

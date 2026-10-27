@@ -16,6 +16,11 @@
       "nothing_new": "Nic nowego od ostatniego powiadomienia.",
       "nobody": "Nikt z obsady nie może jeszcze dostać powiadomienia.",
       "cooling_down": "Chór dostał powiadomienie przed chwilą. Spróbuj za kilka minut.",
+      "cooling_down_for_one": "Chór dostał powiadomienie przed chwilą. Następne wyślesz za {{count}} minutę.",
+      "cooling_down_for_few": "Chór dostał powiadomienie przed chwilą. Następne wyślesz za {{count}} minuty.",
+      "cooling_down_for_many": "Chór dostał powiadomienie przed chwilą. Następne wyślesz za {{count}} minut.",
+      "offline": "Chór powiadomisz, gdy wróci internet.",
+      "unavailable": "Nie udało się teraz powiadomić chóru. Spróbuj ponownie za chwilę.",
       "pieces": "Nowe uwagi: {{titles}}"
     },
     "set_aside": {
@@ -34,7 +39,8 @@
       "set_count_one": "{{count}} uwaga",
       "set_count_few": "{{count}} uwagi",
       "set_count_many": "{{count}} uwag",
-      "restore": "Przywróć"
+      "restore": "Przywróć",
+      "offline": "Odkładanie i przywracanie uwag działa tylko z internetem."
     },
     "collapse_tools": "Zwiń narzędzia",
     "draw_needs_room": "Powiększ, by pisać",
@@ -4261,7 +4267,7 @@
       "material_recording": "Nowe nagranie utworu „{{piece}}”.",
       "material_other": "Nowe materiały do utworu „{{piece}}”.",
       "material_untitled": "Nowe materiały.",
-      "score_marks_one": "Nowe uwagi w nutach utworu „{{piece}}”.",
+      "score_marks_single": "Nowe uwagi w nutach utworu „{{piece}}”.",
       "score_marks_many_one": "Nowe uwagi w nutach {{count}} utworu.",
       "score_marks_many_few": "Nowe uwagi w nutach {{count}} utworów.",
       "score_marks_many_many": "Nowe uwagi w nutach {{count}} utworów.",

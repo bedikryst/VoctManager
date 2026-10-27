@@ -1,3 +1,13 @@
+/**
+ * @file ProjectMaterialGroup.tsx
+ * @description One project in the songbook: its header (date, readiness ring
+ * or the reader's role on it, the offline download), the concert book, "Powiadom
+ * chór" for whoever may tell the choir, and the programme's piece rows. Inside a
+ * member preview it shows what the member has and opens nothing that would act
+ * as the manager.
+ * @module features/materials/components
+ */
+
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -11,14 +21,18 @@ import {
 } from "lucide-react";
 
 import { ProjectScoreBook } from "@/features/projects/components/ProjectScoreBook";
+import { isClosedProjectStatus } from "@/features/projects/constants/projectDomain";
 import { NotifyChoirButton, scoreAnnotatorModeFor } from "@/features/annotations";
 import { useAuth } from "@/app/providers/AuthProvider";
+import { useArtistPreview } from "@/app/providers/ArtistPreviewProvider";
 import { isManager } from "@/shared/auth/rbac";
 import { CompletionRing } from "@/shared/ui/composites/CompletionRing";
 import { Badge } from "@/shared/ui/primitives/Badge";
 import { Button } from "@/shared/ui/primitives/Button";
+import { INERT_SURFACE } from "@/shared/ui/primitives/inertSurface";
 import { Eyebrow, Text } from "@/shared/ui/primitives/typography";
 import { formatLocalizedDate } from "@/shared/lib/time/intl";
+import { cn } from "@/shared/lib/utils";
 import { PieceRow } from "./PieceRow";
 import { OfflineDownloadControl } from "./OfflineDownloadControl";
 import { isReadinessWithheld, practisedProgram } from "../lib/readiness";
@@ -33,6 +47,9 @@ export const ProjectMaterialGroup = ({
 }: ProjectMaterialGroupProps): React.JSX.Element => {
   const { t } = useTranslation();
   const { user } = useAuth();
+  // Inside a member preview the session is still the manager's, so anything
+  // that writes would write as them on a screen that promises only to look.
+  const { isPreview } = useArtistPreview();
   const [isBookOpen, setBookOpen] = useState(false);
   const isArchived = group.project.status === "DONE";
   const hasProgram = group.program.length > 0;
@@ -61,8 +78,12 @@ export const ProjectMaterialGroup = ({
   const hasNoSeat = group.participationId === null;
   // "Powiadom chór" is the conductor's: a manager, or the podium of this one
   // project. Not a stand-in — the choir hears of new marks from whoever is
-  // answerable for them. Nothing to tell once the concert is behind it.
-  const canNotifyChoir = !isArchived && (isManager(user) || group.isConducting);
+  // answerable for them. Nothing to tell once the concert is behind it or
+  // called off, and never from a preview, whose reader is not the one shown.
+  const canNotifyChoir =
+    !isPreview &&
+    !isClosedProjectStatus(group.project.status) &&
+    (isManager(user) || group.isConducting);
 
   return (
     <div className={`space-y-4 ${isArchived ? "opacity-70" : "opacity-100"}`}>
@@ -187,35 +208,43 @@ export const ProjectMaterialGroup = ({
           rehearsal — the rows below are for working on one piece at a time. */}
       {group.project.has_score_pdf && (
         <>
-          <Button
-            variant="secondary"
-            size="touch"
-            leftIcon={<BookOpen size={14} aria-hidden="true" />}
-            onClick={() => setBookOpen(true)}
-            className="w-full sm:w-auto"
-          >
-            {t("score_book.open_cta", "Otwórz książkę koncertu")}
-          </Button>
-          <ProjectScoreBook
-            projectId={group.project.id}
-            projectTitle={group.project.title}
-            isOpen={isBookOpen}
-            // The pencil follows the ROLE, not the podium. Standing in front of
-            // the choir — whether as the named conductor or as a stand-in — does
-            // not make someone a manager. The one exception is a leader whose
-            // grant opens the choir's layer, and the book is one stand over the
-            // whole programme, so it is armed only when EVERY piece in it is
-            // theirs to mark for the choir — a pill the server would refuse on
-            // half the pages reads as the app losing marks.
-            mode={scoreAnnotatorModeFor({
-              isManager: isManager(user),
-              mayMarkForChoir:
-                group.program.length > 0 &&
-                group.program.every((item) => item.piece.may_mark_for_choir),
-            })}
-            canNotifyChoir={canNotifyChoir}
-            onClose={() => setBookOpen(false)}
-          />
+          {/* In a preview the button stays, dimmed, as the answer to "does
+              Kasia have the book" — but the book is not opened: it would be the
+              manager's stand, with their pencil, the choir's set-aside and
+              their copy number, over the singer's page. */}
+          <div inert={isPreview} className={cn(isPreview && INERT_SURFACE)}>
+            <Button
+              variant="secondary"
+              size="touch"
+              leftIcon={<BookOpen size={14} aria-hidden="true" />}
+              onClick={() => setBookOpen(true)}
+              className="w-full sm:w-auto"
+            >
+              {t("score_book.open_cta", "Otwórz książkę koncertu")}
+            </Button>
+          </div>
+          {!isPreview && (
+            <ProjectScoreBook
+              projectId={group.project.id}
+              projectTitle={group.project.title}
+              isOpen={isBookOpen}
+              // The pencil follows the ROLE, not the podium. Standing in front of
+              // the choir — whether as the named conductor or as a stand-in — does
+              // not make someone a manager. The one exception is a leader whose
+              // grant opens the choir's layer, and the book is one stand over the
+              // whole programme, so it is armed only when EVERY piece in it is
+              // theirs to mark for the choir — a pill the server would refuse on
+              // half the pages reads as the app losing marks.
+              mode={scoreAnnotatorModeFor({
+                isManager: isManager(user),
+                mayMarkForChoir:
+                  group.program.length > 0 &&
+                  group.program.every((item) => item.piece.may_mark_for_choir),
+              })}
+              canNotifyChoir={canNotifyChoir}
+              onClose={() => setBookOpen(false)}
+            />
+          )}
         </>
       )}
 

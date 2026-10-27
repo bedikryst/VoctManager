@@ -13,6 +13,10 @@
       "nothing_new": "Rien de nouveau depuis le dernier envoi au chœur.",
       "nobody": "Personne dans la distribution ne peut encore le recevoir.",
       "cooling_down": "Le chœur vient d'être prévenu. Réessayez dans quelques minutes.",
+      "cooling_down_for_one": "Le chœur vient d'être prévenu. Prochain envoi possible dans {{count}} minute.",
+      "cooling_down_for_other": "Le chœur vient d'être prévenu. Prochain envoi possible dans {{count}} minutes.",
+      "offline": "Vous pourrez prévenir le chœur une fois la connexion revenue.",
+      "unavailable": "Impossible de prévenir le chœur pour le moment. Réessayez dans un instant.",
       "pieces": "Nouvelles annotations : {{titles}}"
     },
     "set_aside": {
@@ -27,7 +31,8 @@
       "restored_other": "{{count}} annotations restaurées",
       "set_count_one": "{{count}} annotation",
       "set_count_other": "{{count}} annotations",
-      "restore": "Restaurer"
+      "restore": "Restaurer",
+      "offline": "Mettre des annotations de côté ou les restaurer nécessite une connexion."
     },
     "collapse_tools": "Réduire les outils",
     "draw_needs_room": "Agrandir pour écrire",
@@ -4189,7 +4194,7 @@
       "material_recording": "Nouvel enregistrement de « {{piece}} ».",
       "material_other": "Nouveau matériel pour « {{piece}} ».",
       "material_untitled": "Nouveau matériel.",
-      "score_marks_one": "Nouvelles annotations dans la partition de « {{piece}} ».",
+      "score_marks_single": "Nouvelles annotations dans la partition de « {{piece}} ».",
       "score_marks_many_one": "Nouvelles annotations dans les partitions de {{count}} pièce.",
       "score_marks_many_other": "Nouvelles annotations dans les partitions de {{count}} pièces.",
       "absence_approved": "Votre absence à la répétition {{when}} est acceptée : inutile de venir.",

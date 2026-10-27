@@ -13,6 +13,7 @@ import { useOutletContext } from "react-router-dom";
 
 import type { ProjectHubContext } from "./ProjectHubLayout";
 import { ScorePackagePanel } from "./components/ScorePackagePanel";
+import { isClosedProjectStatus } from "./constants/projectDomain";
 
 export default function ProjectScorePage(): React.JSX.Element {
   const { project } = useOutletContext<ProjectHubContext>();
@@ -20,6 +21,7 @@ export default function ProjectScorePage(): React.JSX.Element {
     <ScorePackagePanel
       projectId={String(project.id)}
       projectTitle={project.title}
+      canNotifyChoir={!isClosedProjectStatus(project.status)}
     />
   );
 }

@@ -676,7 +676,7 @@ const describe = (
       const only = pieces.length === 1 ? pieces[0] : undefined;
       return {
         sentence: only
-          ? t("notifications.row.score_marks_one", { piece: only.title })
+          ? t("notifications.row.score_marks_single", { piece: only.title })
           : t("notifications.row.score_marks_many", { count: pieces.length }),
         context: m.project_name,
         detail: only ? undefined : pieces.map((piece) => piece.title).join(", "),

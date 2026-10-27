@@ -190,6 +190,17 @@ const barChrome =
 const panelChrome =
   "pointer-events-auto rounded-2xl border border-line-on-inverse bg-surface-inverse/70 p-2.5 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-xl";
 
+/**
+ * The same pill with no pencil in it, for a page that belongs to no edition —
+ * the concert book's title page and contents, where the book opens. What the
+ * project offers as a whole ("Powiadom chór") still has its place there.
+ */
+export const BareToolbar = ({
+  children,
+}: {
+  children: React.ReactNode;
+}): React.JSX.Element => <div className={cn(barChrome, "p-1.5")}>{children}</div>;
+
 export const AnnotationToolbar = ({
   mode,
   tool,

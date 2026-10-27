@@ -16,6 +16,10 @@
  * In conductor mode the drawer ends in "Odłóż uwagi" for the edition in front
  * of the reader, whose count is whole for the same reason: it says what a set
  * would take, whatever is hidden.
+ *
+ * The drawer root carries `ANNOTATION_DRAWER_ATTR`, so the stand's Escape can
+ * tell the drawer's search field from the page: Escape there leaves the field,
+ * not the tool in hand and not the score.
  * @module features/annotations/components
  */
 
@@ -48,6 +52,9 @@ import type { LayerVisibility } from "../lib/useAnnotationTools";
 import type { ScoreAnnotatorMode } from "../useScoreAnnotator";
 import { SetAsideSection } from "./SetAsideSection";
 
+/** The attribute on the drawer's root (see the header). */
+export const ANNOTATION_DRAWER_ATTR = "data-annotation-drawer";
+
 /** A note or a symbol, as the index and the "new" list name it. */
 interface IndexEntry {
   mark: ScoreAnnotation;
@@ -67,7 +74,10 @@ const byPlace = (a: IndexEntry, b: IndexEntry): number =>
 
 interface AnnotationSidebarProps {
   annotations: ScoreAnnotation[];
-  /** Marks new to this reader since their last visit (see `useIncomingMarks`). */
+  /**
+   * Marks new to this reader since their last visit, on visible layers only
+   * (see `useIncomingMarks`).
+   */
   newMarks: readonly ScoreAnnotation[];
   currentPage: number;
   /** `focusY` is the mark's own normalized y, so the jump lands ON it. */
@@ -93,6 +103,8 @@ interface AnnotationSidebarProps {
    * "Odłóż uwagi" for that edition (conductor mode only).
    */
   editionId?: string | null;
+  /** An edition's marks were put aside or brought back (see `SetAsideSection`). */
+  onMarksReplaced?: (editionId: string) => void;
 }
 
 
@@ -108,6 +120,7 @@ export const AnnotationSidebar = ({
   mode,
   onSelectMark,
   editionId = null,
+  onMarksReplaced,
 }: AnnotationSidebarProps): React.JSX.Element | null => {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
@@ -159,14 +172,13 @@ export const AnnotationSidebar = ({
 
   /** Named marks by name; strokes, which say nothing in words, by page. */
   const fresh = useMemo<NewEntry[]>(() => {
-    const shown = newMarks.filter((a) => visibleLayers[layerOf(a)]);
-    const named: NewEntry[] = shown
+    const named: NewEntry[] = newMarks
       .map(toEntry)
       .filter((entry): entry is IndexEntry => entry !== null)
       .sort(byPlace)
       .map((entry) => ({ kind: "mark", ...entry }));
     const strokesPerPage = new Map<number, number>();
-    for (const mark of shown) {
+    for (const mark of newMarks) {
       if (toEntry(mark)) continue;
       strokesPerPage.set(mark.page_number, (strokesPerPage.get(mark.page_number) ?? 0) + 1);
     }
@@ -178,7 +190,7 @@ export const AnnotationSidebar = ({
     const pageOf = (entry: NewEntry): number =>
       entry.kind === "mark" ? entry.mark.page_number : entry.page;
     return [...named, ...strokes].sort((a, b) => pageOf(a) - pageOf(b));
-  }, [newMarks, toEntry, visibleLayers]);
+  }, [newMarks, toEntry]);
 
   /**
    * Lands ON the mark, not just its page: on a fit that shows half a page at a
@@ -215,6 +227,7 @@ export const AnnotationSidebar = ({
         {open ? (
           <motion.aside
             key="panel"
+            data-annotation-drawer
             initial={{ transform: "translateX(40px)", opacity: 0 }}
             animate={{ transform: "translateX(0px)", opacity: 1 }}
             exit={{ transform: "translateX(40px)", opacity: 0 }}
@@ -415,7 +428,11 @@ export const AnnotationSidebar = ({
               </section>
 
               {mode === "conductor" && editionId && (
-                <SetAsideSection editionId={editionId} count={setAsideCount} />
+                <SetAsideSection
+                  editionId={editionId}
+                  count={setAsideCount}
+                  onReplaced={onMarksReplaced}
+                />
               )}
             </div>
           </motion.aside>

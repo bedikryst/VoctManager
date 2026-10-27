@@ -10,9 +10,12 @@
  * stylus the finger draws, because reserving it for panning would leave the
  * reader unable to write at all. Two fingers are never a stroke: a second
  * pointer abandons the line in progress and hands the gesture to the viewer's
- * pinch zoom. A pen stroke is the exception to that rule — while one is live, a
- * touch is the hand resting on the glass, so it neither pans, nor draws, nor
- * ends the line.
+ * pinch zoom, and no finger starts anything while another is still down — the
+ * re-grip after a pinch and a third finger belong to the pinch. A pen stroke is
+ * the exception to that rule — while one is live, a touch is the hand resting on
+ * the glass, so it neither pans, nor draws, nor ends the line — and a pen that
+ * lands on a touch's line takes the page from it: that touch was the palm,
+ * which got there first.
  *
  * Only the primary button writes or places. A right-click and a pen's eraser
  * end are not ink. Points accumulate in a ref, so a move handler never reads a
@@ -155,6 +158,8 @@ export const useOverlayInput = ({
   const strokeRef = useRef<LiveStroke | null>(null);
   const panRef = useRef<Pan | null>(null);
   const tapRef = useRef<Tap | null>(null);
+  /** Touches down on this surface, by pointer id. */
+  const touchesRef = useRef(new Set<number>());
 
   // Read at the moment a gesture ends, never as a reason to rebuild the
   // handlers: the overlay hands in fresh closures on every render.
@@ -197,13 +202,30 @@ export const useOverlayInput = ({
   const onPointerDown = useCallback<SurfacePointerHandler>(
     (event) => {
       if (event.button !== 0) return;
+      // Counted whatever the tool, so the count is true when a pen tool is
+      // picked up mid-gesture. A primary touch is the first of its interaction
+      // anywhere on the screen, so nothing counted before it can still be down:
+      // an id whose lift landed elsewhere is forgotten there.
+      let othersDown = false;
+      if (event.pointerType === "touch") {
+        if (event.isPrimary) touchesRef.current.clear();
+        othersDown = touchesRef.current.size > 0;
+        touchesRef.current.add(event.pointerId);
+      }
       if (drawing) {
         const live = strokeRef.current;
         if (live && live.pointerId !== event.pointerId) {
           if (live.pointerType === "pen" && event.pointerType === "touch") return;
           // A second pointer means a pinch is starting, not a line: drop the
-          // stroke so the viewer's zoom gesture takes the page cleanly.
+          // stroke so the viewer's zoom gesture takes the page cleanly. A pen
+          // goes on to start its own line.
           abandonStroke();
+          if (event.pointerType !== "pen") return;
+        }
+        if (othersDown) {
+          // Part of a gesture already under way: it neither draws nor pans, and
+          // a pan that was running hands the page to the viewer's pinch.
+          panRef.current = null;
           return;
         }
         if (event.pointerType === "touch" && !fingerDraw) {
@@ -283,6 +305,7 @@ export const useOverlayInput = ({
 
   const onPointerUp = useCallback<SurfacePointerHandler>(
     (event) => {
+      touchesRef.current.delete(event.pointerId);
       const pan = panRef.current;
       if (pan && pan.pointerId === event.pointerId) {
         panRef.current = null;
@@ -328,6 +351,7 @@ export const useOverlayInput = ({
   // and that cancel must not take the pencil's line with it.
   const onPointerCancel = useCallback<SurfacePointerHandler>(
     (event) => {
+      touchesRef.current.delete(event.pointerId);
       if (panRef.current?.pointerId === event.pointerId) panRef.current = null;
       if (tapRef.current?.pointerId === event.pointerId) tapRef.current = null;
       if (strokeRef.current?.pointerId === event.pointerId) abandonStroke();

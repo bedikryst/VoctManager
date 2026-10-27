@@ -6,9 +6,10 @@
  * The failures this guards drew ink nobody asked for, or lost ink somebody
  * drew: a right-click or a pen's eraser end laying down a line; the point the
  * pen lifted at cut off the end of every stroke; a palm resting on the glass
- * ending the pencil's line or panning the page under it; and a line half-drawn
- * when the tool or the page changed hanging on as a ghost, or landing on the
- * next page.
+ * ending the pencil's line or panning the page under it, or owning the page so
+ * the pencil could not start one; a finger re-gripping mid-pinch drawing a line;
+ * and a line half-drawn when the tool or the page changed hanging on as a ghost,
+ * or landing on the next page.
  * @module features/annotations/lib/useOverlayInput.test
  */
 
@@ -42,6 +43,11 @@ interface PointerInit {
   id?: number;
   type?: "mouse" | "pen" | "touch";
   button?: number;
+  /**
+   * The browser's own count: false for a touch that lands while another touch
+   * is down anywhere on the screen.
+   */
+  primary?: boolean;
   x: number;
   y: number;
 }
@@ -49,12 +55,13 @@ interface PointerInit {
 /** The fields the router reads, on the element React would hand it. */
 const pointer = (
   target: HTMLElement,
-  { id = 1, type = "pen", button = 0, x, y }: PointerInit,
+  { id = 1, type = "pen", button = 0, primary = true, x, y }: PointerInit,
 ): React.PointerEvent<HTMLElement> =>
   ({
     pointerId: id,
     pointerType: type,
     button,
+    isPrimary: primary,
     clientX: x,
     clientY: y,
     currentTarget: target,
@@ -233,11 +240,79 @@ describe("palm rejection", () => {
 
     act(() => send("onPointerDown", { id: 1, type: "touch", x: 10, y: 10 }));
     act(() => send("onPointerMove", { id: 1, type: "touch", x: 30, y: 30 }));
-    act(() => send("onPointerDown", { id: 2, type: "touch", x: 60, y: 60 }));
+    act(() => send("onPointerDown", { id: 2, type: "touch", primary: false, x: 60, y: 60 }));
     act(() => send("onPointerUp", { id: 1, type: "touch", x: 40, y: 40 }));
 
     expect(result.current.stroke).toBeNull();
     expect(onStroke).not.toHaveBeenCalled();
+  });
+
+  it("lets the pen take the page from a palm that landed first, with finger drawing on", () => {
+    const { result, send, onStroke } = mount({ fingerDraw: true });
+
+    act(() => send("onPointerDown", { id: 2, type: "touch", x: 50, y: 50 }));
+    act(() => send("onPointerMove", { id: 2, type: "touch", x: 60, y: 60 }));
+    act(() => send("onPointerDown", { id: 1, x: 10, y: 10 }));
+    act(() => send("onPointerMove", { id: 2, type: "touch", x: 70, y: 70 }));
+    act(() => send("onPointerMove", { id: 1, x: 30, y: 30 }));
+    act(() => send("onPointerUp", { id: 2, type: "touch", x: 70, y: 70 }));
+    expect(result.current.stroke).toEqual([
+      [0.1, 0.1],
+      [0.3, 0.3],
+    ]);
+    act(() => send("onPointerUp", { id: 1, x: 40, y: 40 }));
+
+    expect(onStroke).toHaveBeenCalledExactlyOnceWith([
+      [0.1, 0.1],
+      [0.3, 0.3],
+      [0.4, 0.4],
+    ]);
+  });
+});
+
+describe("a pinch", () => {
+  it("draws nothing for a third finger, or for a finger that re-grips while one is down", () => {
+    const { result, send, onStroke } = mount({ fingerDraw: true });
+
+    act(() => send("onPointerDown", { id: 1, type: "touch", x: 10, y: 10 }));
+    act(() => send("onPointerDown", { id: 2, type: "touch", primary: false, x: 60, y: 60 }));
+    // A third finger joins the pinch.
+    act(() => send("onPointerDown", { id: 3, type: "touch", primary: false, x: 30, y: 70 }));
+    act(() => send("onPointerMove", { id: 3, type: "touch", x: 40, y: 80 }));
+    act(() => send("onPointerUp", { id: 3, type: "touch", x: 40, y: 80 }));
+    // The first finger lifts and lands again while the second is still down.
+    act(() => send("onPointerUp", { id: 1, type: "touch", x: 10, y: 10 }));
+    act(() => send("onPointerDown", { id: 4, type: "touch", primary: false, x: 20, y: 20 }));
+    act(() => send("onPointerMove", { id: 4, type: "touch", x: 50, y: 50 }));
+    expect(result.current.stroke).toBeNull();
+    act(() => send("onPointerUp", { id: 4, type: "touch", x: 50, y: 50 }));
+    act(() => send("onPointerUp", { id: 2, type: "touch", x: 60, y: 60 }));
+
+    expect(onStroke).not.toHaveBeenCalled();
+
+    // Every finger is up: the next one writes again.
+    act(() => send("onPointerDown", { id: 5, type: "touch", x: 10, y: 10 }));
+    act(() => send("onPointerUp", { id: 5, type: "touch", x: 30, y: 30 }));
+    expect(onStroke).toHaveBeenCalledExactlyOnceWith([
+      [0.1, 0.1],
+      [0.3, 0.3],
+    ]);
+  });
+
+  it("forgets a finger whose lift it never saw once a first touch lands again", () => {
+    const { send, onStroke } = mount({ fingerDraw: true });
+
+    act(() => send("onPointerDown", { id: 1, type: "touch", x: 10, y: 10 }));
+    act(() => send("onPointerDown", { id: 2, type: "touch", primary: false, x: 60, y: 60 }));
+    act(() => send("onPointerUp", { id: 1, type: "touch", x: 10, y: 10 }));
+    // Finger 2 was never captured; it slid off the page and lifted there.
+    act(() => send("onPointerDown", { id: 3, type: "touch", x: 20, y: 20 }));
+    act(() => send("onPointerUp", { id: 3, type: "touch", x: 40, y: 40 }));
+
+    expect(onStroke).toHaveBeenCalledExactlyOnceWith([
+      [0.2, 0.2],
+      [0.4, 0.4],
+    ]);
   });
 });
 

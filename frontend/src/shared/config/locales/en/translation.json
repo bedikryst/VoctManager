@@ -13,6 +13,10 @@
       "nothing_new": "Nothing new since the choir was last told.",
       "nobody": "Nobody in the cast can receive this yet.",
       "cooling_down": "The choir was told a moment ago. Try again in a few minutes.",
+      "cooling_down_for_one": "The choir was told a moment ago. You can send the next notice in {{count}} minute.",
+      "cooling_down_for_other": "The choir was told a moment ago. You can send the next notice in {{count}} minutes.",
+      "offline": "You can notify the choir once you are back online.",
+      "unavailable": "The choir could not be notified just now. Try again in a moment.",
       "pieces": "New marks: {{titles}}"
     },
     "set_aside": {
@@ -27,7 +31,8 @@
       "restored_other": "{{count}} marks restored",
       "set_count_one": "{{count}} mark",
       "set_count_other": "{{count}} marks",
-      "restore": "Restore"
+      "restore": "Restore",
+      "offline": "Setting marks aside and bringing them back needs a connection."
     },
     "collapse_tools": "Collapse tools",
     "draw_needs_room": "Zoom in to write",
@@ -4180,7 +4185,7 @@
       "material_recording": "New recording of “{{piece}}”.",
       "material_other": "New material for “{{piece}}”.",
       "material_untitled": "New material.",
-      "score_marks_one": "New marks in the score of “{{piece}}”.",
+      "score_marks_single": "New marks in the score of “{{piece}}”.",
       "score_marks_many_one": "New marks in the scores of {{count}} piece.",
       "score_marks_many_other": "New marks in the scores of {{count}} pieces.",
       "absence_approved": "You are excused from the rehearsal {{when}} — no need to come.",

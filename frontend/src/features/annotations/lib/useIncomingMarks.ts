@@ -9,7 +9,9 @@
  * and — for whoever is taking the evening — the leader cues. The author may be
  * the conductor or a leader writing for the choir, so whoever announces these
  * must not name one. A leader's own rows are left out by author: the draft
- * carries their id from the moment it is drawn.
+ * carries their id from the moment it is drawn. A layer the reader has hidden
+ * is left out too, from the notice, the halo and the pointer alike: a mark
+ * that was never on screen has not been read.
  *
  * New is measured against the reader's pointer (`seen_at`), taken once per
  * edition per open, from the stand's first fingerprint. The set it picks out
@@ -19,14 +21,20 @@
  * more if it arrives (or changes) while the stand is open.
  *
  * Leaving an edition — closing the stand, or turning from one piece of the
- * concert book into the next — sends the newest `content_at` the device drew.
- * In the book only the editions whose pages were on screen move.
+ * concert book into the next — sends the newest `content_at` the device drew,
+ * but only for an edition whose pointer this open took. A score opened from the
+ * cache with no signal, closed before the fingerprint answered, or a piece of
+ * the book turned past on the way has had nothing measured against it, and its
+ * news must wait for a visit that does. The app going to the background counts
+ * as leaving too, and that pointer goes straight into the durable queue: a PWA
+ * swiped away or evicted by iOS runs no cleanup at all.
  * @module features/annotations/lib
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import type { ScoreAnnotation } from "../types/annotations.dto";
+import { layerOf } from "./layers";
 import {
   isAddressedTo,
   isNewSince,
@@ -34,6 +42,7 @@ import {
   pagesOf,
   timeOf,
 } from "./markSeen";
+import type { LayerVisibility } from "./useAnnotationTools";
 
 /** One line's worth of news, and the pages it is on (edition pages, ascending). */
 export interface IncomingMarks {
@@ -70,6 +79,7 @@ export const useIncomingMarks = ({
   editionId,
   watching,
   userId,
+  visibleLayers,
   seenAt,
   onSeen,
 }: {
@@ -81,21 +91,39 @@ export const useIncomingMarks = ({
   editionId: string | null;
   watching: boolean;
   userId: string | null;
+  /** The reader's layer switches; a hidden layer is neither news nor read. */
+  visibleLayers: LayerVisibility;
   /** The reader's pointer from the fingerprint; undefined until it answers. */
   seenAt: string | null | undefined;
-  /** Moves the pointer for an edition the reader is leaving. */
-  onSeen: (editionId: string, at: string) => void;
+  /**
+   * Moves the pointer for an edition the reader is leaving. `durable`: the page
+   * may not live to hear an answer, so the pointer goes straight to the queue.
+   */
+  onSeen: (editionId: string, at: string, durable: boolean) => void;
 }): IncomingMarksState => {
   const [baseline, setBaseline] = useState<Baseline | null>(null);
   const [notice, setNotice] = useState<IncomingMarks | null>(null);
   const summarized = useRef(false);
   const announced = useRef(new Set<string>());
-  /** Per edition: the pointer this open started from, and what was sent since. */
+  /**
+   * Per edition: the pointer an open started from, and what was sent since.
+   * Kept across opens, so a reopened stand never shows as new what its last
+   * `seen` is still carrying to the server.
+   */
   const pointers = useRef(new Map<string, number>());
+  /** The editions whose pointer THIS open took: the only ones it may move. */
+  const measured = useRef(new Set<string>());
   /** Per edition: the newest content the device drew, as the server spelled it. */
   const drawnUpTo = useRef(new Map<string, string>());
   const onSeenRef = useRef(onSeen);
   onSeenRef.current = onSeen;
+
+  // A new open measures afresh. Cleared as the open starts rather than as it
+  // ends: the closing stand's own `seen` is sent from a cleanup, which runs
+  // before any effect of the render that closed it.
+  useEffect(() => {
+    if (watching) measured.current.clear();
+  }, [watching]);
 
   // A different score, or the same one opened again, is a different
   // conversation — forget the baseline and anything still on screen.
@@ -118,12 +146,18 @@ export const useIncomingMarks = ({
     const sent = pointers.current.get(editionId) ?? Number.NEGATIVE_INFINITY;
     const time = Math.max(server, sent);
     pointers.current.set(editionId, time);
+    measured.current.add(editionId);
     setBaseline({ editionId, time });
   }, [baseline, editionId, seenAt, watching]);
 
   const addressed = useMemo(
-    () => (watching ? annotations.filter((mark) => isAddressedTo(mark, userId)) : []),
-    [annotations, userId, watching],
+    () =>
+      watching
+        ? annotations.filter(
+            (mark) => isAddressedTo(mark, userId) && visibleLayers[layerOf(mark)],
+          )
+        : [],
+    [annotations, userId, visibleLayers, watching],
   );
 
   const newMarks = useMemo(() => {
@@ -157,22 +191,45 @@ export const useIncomingMarks = ({
     if (newest) drawnUpTo.current.set(editionId, newest);
   }, [addressed, editionId, isLoaded]);
 
+  /**
+   * Sends one edition's pointer, if this open measured the edition and the
+   * device drew further than was already sent. Reads only refs, which are
+   * written in place and never replaced, so it is stable for the hook's life.
+   */
+  const moveSeen = useCallback((edition: string, durable: boolean): void => {
+    if (!measured.current.has(edition)) return;
+    const at = drawnUpTo.current.get(edition);
+    const time = timeOf(at);
+    if (!at || time === null) return;
+    if (time <= (pointers.current.get(edition) ?? Number.NEGATIVE_INFINITY)) return;
+    pointers.current.set(edition, time);
+    onSeenRef.current(edition, at, durable);
+  }, []);
+
   // Leaving the edition: its cleanup runs before the next edition's effects,
   // so it still reads this edition's entries.
   useEffect(() => {
     if (!watching || !editionId) return;
-    // The maps are never replaced, only written, so these are the live ones.
-    const drawn = drawnUpTo.current;
-    const sent = pointers.current;
-    return () => {
-      const at = drawn.get(editionId);
-      const time = timeOf(at);
-      if (!at || time === null) return;
-      if (time <= (sent.get(editionId) ?? Number.NEGATIVE_INFINITY)) return;
-      sent.set(editionId, time);
-      onSeenRef.current(editionId, at);
+    return () => moveSeen(editionId, false);
+  }, [editionId, moveSeen, watching]);
+
+  // The app leaving the foreground. Every edition this open measured is sent,
+  // since in the book the reader may have read several before the switch.
+  useEffect(() => {
+    if (!watching) return;
+    const leave = (): void => {
+      for (const edition of measured.current) moveSeen(edition, true);
     };
-  }, [editionId, watching]);
+    const onVisibility = (): void => {
+      if (document.visibilityState === "hidden") leave();
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+    window.addEventListener("pagehide", leave);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisibility);
+      window.removeEventListener("pagehide", leave);
+    };
+  }, [moveSeen, watching]);
 
   const dismiss = useCallback(() => setNotice(null), []);
 

@@ -136,6 +136,14 @@ export interface MarksNews {
   /** How many people a press would reach. */
   recipients: number;
   pieces: MarkedPieceNews[];
+  /**
+   * Set by the client, not the wire: how long the cooldown still ran when the
+   * server answered, measured on the server's own clock (`next_allowed_at`
+   * against the answer's `Date`). Added to when the answer arrived, it places
+   * the cooldown's end on this device's clock without trusting that clock to
+   * agree with the server's. Null once a press is allowed.
+   */
+  cooldown_ms: number | null;
 }
 
 /** Create payload — `edition` is injected by the mutation layer. */

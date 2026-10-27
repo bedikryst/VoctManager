@@ -6,10 +6,12 @@
  * one back.
  *
  * It acts on the edition in front of the reader — in the concert book, the
- * piece whose page is open. A singer's own pencil is never part of a set, and
- * the count on the button says so by counting only the rest. Putting away takes
- * two taps, like clearing the page; bringing a set back takes one, because
- * nothing is lost by it — though to the choir those marks are new again.
+ * piece whose page is open — and each press carries that edition with it, so a
+ * page turned while the server works cannot redirect the answer. A singer's own
+ * pencil is never part of a set, and the count on the button says so by
+ * counting only the rest. Putting away takes two taps, like clearing the page;
+ * bringing a set back takes one, because nothing is lost by it — though to the
+ * choir those marks are new again. Both need the network, and say so offline.
  * @module features/annotations/components
  */
 
@@ -17,8 +19,9 @@ import React, { useEffect, useState } from "react";
 import { Archive, ArchiveRestore, Check } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
+import { useIsOnline } from "@/shared/lib/dom/useIsOnline";
 import { formatLocalizedDateTime } from "@/shared/lib/time/intl";
-import { Eyebrow } from "@/shared/ui/primitives/typography";
+import { Caption, Eyebrow, Text } from "@/shared/ui/primitives/typography";
 
 import { useSetAsideMutations, useSetAsideSets } from "../api/choirMarks.queries";
 
@@ -26,6 +29,12 @@ interface SetAsideSectionProps {
   editionId: string;
   /** How many marks on the edition a set would take: everything but personal pencil. */
   count: number;
+  /**
+   * The edition's marks were swapped on the server — put away or brought back.
+   * The stand's undo history names the rows that were there before, so it has
+   * to go.
+   */
+  onReplaced?: (editionId: string) => void;
 }
 
 /** How long a first tap stays armed before it lets go on its own. */
@@ -34,10 +43,12 @@ const ARMED_MS = 3500;
 export const SetAsideSection = ({
   editionId,
   count,
+  onReplaced,
 }: SetAsideSectionProps): React.JSX.Element => {
   const { t, i18n } = useTranslation();
+  const isOnline = useIsOnline();
   const { data: sets = [] } = useSetAsideSets(editionId, true);
-  const { setAside, restoreSet } = useSetAsideMutations(editionId);
+  const { setAside, restoreSet } = useSetAsideMutations({ onReplaced });
   const [armed, setArmed] = useState(false);
 
   useEffect(() => {
@@ -50,15 +61,16 @@ export const SetAsideSection = ({
   useEffect(() => setArmed(false), [editionId]);
 
   const busy = setAside.isPending || restoreSet.isPending;
+  const held = busy || !isOnline;
 
   const press = (): void => {
-    if (busy || count === 0) return;
+    if (held || count === 0) return;
     if (!armed) {
       setArmed(true);
       return;
     }
     setArmed(false);
-    setAside.mutate();
+    setAside.mutate(editionId);
   };
 
   return (
@@ -66,13 +78,13 @@ export const SetAsideSection = ({
       <Eyebrow as="p" color="ink-on-inverse-muted" className="mb-1">
         {t("annotations.set_aside.title")}
       </Eyebrow>
-      <p className="mb-2 text-[11px] leading-snug text-ink-on-inverse/60">
-        {t("annotations.set_aside.hint")}
-      </p>
+      <Caption as="p" color="ink-on-inverse-muted" className="mb-2">
+        {isOnline ? t("annotations.set_aside.hint") : t("annotations.set_aside.offline")}
+      </Caption>
       <button
         type="button"
         onClick={press}
-        disabled={busy || count === 0}
+        disabled={held || count === 0}
         className={
           armed
             ? "flex w-full items-center justify-center gap-1.5 rounded-lg bg-ethereal-gold/90 px-2.5 py-1.5 text-xs font-medium text-surface-inverse"
@@ -93,22 +105,22 @@ export const SetAsideSection = ({
               className="flex items-center justify-between gap-2 rounded-lg px-2 py-1.5"
             >
               <span className="min-w-0">
-                <span className="block truncate text-xs text-ink-on-inverse">
+                <Text as="span" size="sm" color="ink-on-inverse" className="block truncate">
                   {formatLocalizedDateTime(
                     set.archived_at,
                     { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" },
                     i18n.language,
                   )}
-                </span>
-                <span className="block text-[10px] text-ink-on-inverse/50">
+                </Text>
+                <Text as="span" size="xs" color="ink-on-inverse-muted" className="block">
                   {t("annotations.set_aside.set_count", { count: set.count })}
-                </span>
+                </Text>
               </span>
               <button
                 type="button"
-                onClick={() => restoreSet.mutate(set.archived_at)}
-                disabled={busy}
-                className="flex shrink-0 items-center gap-1 rounded-full bg-ink-on-inverse/10 px-2.5 py-1 text-[11px] font-medium text-ink-on-inverse transition-colors hover:bg-ink-on-inverse/20 disabled:opacity-40"
+                onClick={() => restoreSet.mutate({ editionId, archivedAt: set.archived_at })}
+                disabled={held}
+                className="flex shrink-0 items-center gap-1 rounded-full bg-ink-on-inverse/10 px-2.5 py-1 text-xs font-medium text-ink-on-inverse transition-colors hover:bg-ink-on-inverse/20 disabled:opacity-40"
               >
                 <ArchiveRestore size={12} aria-hidden="true" />
                 {t("annotations.set_aside.restore")}

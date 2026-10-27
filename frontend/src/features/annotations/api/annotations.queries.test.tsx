@@ -34,6 +34,7 @@ import {
   annotationKeys,
   landQueuedMark,
   useAnnotationMutations,
+  useMarkSeen,
   useScoreAnnotations,
 } from "./annotations.queries";
 import type { ScoreAnnotation } from "../types/annotations.dto";
@@ -439,5 +440,51 @@ describe("undoing an erase", () => {
     await waitFor(() => expect(result.current.marks.annotations).toEqual([restored]));
     unmount();
     await act(async () => {});
+  });
+});
+
+describe("the reader's pointer", () => {
+  const SEEN_URL = `*${ANNOTATIONS_PATH}seen/`;
+  const AT = "2026-10-27T09:00:00Z";
+
+  it("goes straight to the queue when the app is leaving, without waiting on the network", () => {
+    const sent = { count: 0 };
+    server.use(
+      http.post(SEEN_URL, () => {
+        sent.count += 1;
+        return new HttpResponse(null, { status: 204 });
+      }),
+    );
+    const { result } = renderHookWithPanel(() => useMarkSeen());
+
+    act(() => result.current("edition-1", AT, true));
+
+    expect(sent.count).toBe(0);
+    expect(queued()).toEqual([
+      expect.objectContaining({
+        kind: "annotation_seen",
+        body: { edition: "edition-1", at: AT },
+        background: true,
+      }),
+    ]);
+  });
+
+  it("lets a 403 go: the reader may no longer open that edition", async () => {
+    const answered = { count: 0 };
+    server.use(
+      http.post(SEEN_URL, () => {
+        answered.count += 1;
+        return HttpResponse.json({ detail: "forbidden" }, { status: 403 });
+      }),
+    );
+    const error = vi.spyOn(toast, "error");
+    const { result } = renderHookWithPanel(() => useMarkSeen());
+
+    act(() => result.current("edition-gone", AT));
+
+    await waitFor(() => expect(answered.count).toBe(1));
+    await act(async () => {});
+    expect(queued()).toEqual([]);
+    expect(error).not.toHaveBeenCalled();
   });
 });

@@ -11,6 +11,11 @@
  * on page five, and because a rehearsal is the worst possible moment for a
  * dialog. So: no backdrop, no focus steal, nothing to answer, and it retires on
  * its own.
+ *
+ * What a screen reader hears comes from a live region that is mounted for as
+ * long as the stand is, with only its words swapped. A region that mounts
+ * together with its text is often skipped by VoiceOver, so the chip the eye
+ * reads carries no role of its own; its text names its button.
  * @module features/annotations/components
  */
 
@@ -53,6 +58,12 @@ export const IncomingMarksNotice = ({
   const { t } = useTranslation();
   const named = pages.slice(0, MAX_PAGES_NAMED).join(", ");
   const pageList = pages.length > MAX_PAGES_NAMED ? `${named}…` : named;
+  // Counted, so the key carries every Polish plural form — there is no honest
+  // single wording for "1 oznaczenie" and "5 oznaczeń".
+  const message =
+    kind === "since"
+      ? t("annotations.incoming.since", { count, pages: pageList })
+      : t("annotations.incoming.line", { count, page: pages[0] ?? 1 });
 
   useEffect(() => {
     if (count === 0) return;
@@ -72,6 +83,9 @@ export const IncomingMarksNotice = ({
         lifted ? "pb-40 sm:pb-44" : "pb-20",
       )}
     >
+      <Text as="span" role="status" className="sr-only">
+        {count > 0 ? message : ""}
+      </Text>
       <AnimatePresence>
         {count > 0 && (
           <motion.div
@@ -79,7 +93,6 @@ export const IncomingMarksNotice = ({
             animate={{ opacity: 1, transform: "translateY(0px)" }}
             exit={{ opacity: 0, transform: "translateY(12px)" }}
             transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
-            role="status"
             className="pointer-events-auto flex min-w-0 max-w-full items-center gap-1 rounded-full border border-ethereal-gold/40 bg-surface-inverse/85 py-1.5 pl-3.5 pr-1.5 shadow-[0_8px_32px_rgba(0,0,0,0.45)] backdrop-blur-xl"
           >
             <PencilLine
@@ -92,12 +105,8 @@ export const IncomingMarksNotice = ({
               onClick={onGoToPage}
               className="min-w-0 rounded-full px-1.5 py-1 text-left transition-colors hover:bg-ink-on-inverse/10"
             >
-              {/* Counted, so the key carries every Polish plural form — there is
-                  no honest single wording for "1 oznaczenie" and "5 oznaczeń". */}
               <Text as="span" size="sm" color="ink-on-inverse" className="leading-snug">
-                {kind === "since"
-                  ? t("annotations.incoming.since", { count, pages: pageList })
-                  : t("annotations.incoming.line", { count, page: pages[0] ?? 1 })}
+                {message}
               </Text>
             </button>
             <button

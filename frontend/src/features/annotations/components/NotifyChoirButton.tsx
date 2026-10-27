@@ -4,14 +4,21 @@
  * choir marks they have not been told about. The choir is never told on its own,
  * so this button is the only way a mark becomes news outside the app.
  *
- * It names how many pieces it would send and is disabled when there are none,
- * when nobody in the cast can receive it, or while the cooldown after the last
- * notice runs. Sending pages the whole choir, so it takes two taps: the first
- * says how many people will hear, the second sends.
+ * It names how many pieces it would send and is held back, with the reason in
+ * words, when there is no network, while the cooldown after the last notice
+ * runs (with the minutes left), when there is nothing new, or when nobody in the
+ * cast can receive it. Sending pages the whole choir, so it takes two taps: the
+ * first says how many people will hear, the second sends.
  *
- * Two surfaces: `page` for the book cockpit and the project's materials, and
- * `chrome` for the annotation toolbar over a score. Mount it only for a reader
- * who may press it (a manager or the podium conductor); the server refuses
+ * The cooldown is the server's: the button counts down from how long the
+ * server said was left, on this device's clock, and when that runs out it asks
+ * the server again instead of deciding by itself that the time has come.
+ *
+ * Two surfaces: `page` for the book cockpit and the project's materials, with
+ * the reason printed under the button, and `chrome` for the annotation toolbar
+ * over a score, where there is no room for a line of text — a press on a held
+ * chip says why instead. Mount it only for a reader who may press it (a manager
+ * or the podium conductor, never inside a member preview); the server refuses
  * everyone else.
  * @module features/annotations/components
  */
@@ -19,7 +26,9 @@
 import React, { useEffect, useState } from "react";
 import { Check, Megaphone } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 
+import { useIsOnline } from "@/shared/lib/dom/useIsOnline";
 import { cn } from "@/shared/lib/utils";
 import { Button } from "@/shared/ui/primitives/Button";
 import { Text } from "@/shared/ui/primitives/typography";
@@ -35,19 +44,28 @@ interface NotifyChoirButtonProps {
 /** How long a first tap stays armed before it lets go on its own. */
 const ARMED_MS = 3500;
 
+/** How often the minutes left are redrawn while the cooldown runs. */
+const COOLDOWN_TICK_MS = 15_000;
+
+/** One toast for every held press, so a reader tapping twice reads it once. */
+const REASON_TOAST_ID = "notify-choir-reason";
+
 export const NotifyChoirButton = ({
   projectId,
   surface,
   className,
 }: NotifyChoirButtonProps): React.JSX.Element | null => {
   const { t } = useTranslation();
-  const { data: news } = useMarksNews(projectId, true);
+  const isOnline = useIsOnline();
+  const { data: news, dataUpdatedAt, refetch } = useMarksNews(projectId, true);
   const notify = useNotifyChoir(projectId);
   const [armed, setArmed] = useState(false);
-  // Re-rendered once when the cooldown runs out, so the button wakes up on
-  // its own instead of waiting for the next read of the news.
-  const [, setCooldownOver] = useState(0);
-  const cooldownEnd = news?.next_allowed_at ? new Date(news.next_allowed_at).getTime() : 0;
+  // Re-renders while the cooldown runs, so the minutes left keep moving.
+  const [, setTick] = useState(0);
+  // On this device's clock: when the answer arrived, plus what the server
+  // said was left. Both ends are read off the same clock, so its error cancels.
+  const cooldownEnd =
+    news?.cooldown_ms != null ? dataUpdatedAt + news.cooldown_ms : 0;
 
   useEffect(() => {
     if (!armed) return;
@@ -58,29 +76,44 @@ export const NotifyChoirButton = ({
   useEffect(() => {
     const wait = cooldownEnd - Date.now();
     if (wait <= 0) return;
-    const timer = window.setTimeout(() => setCooldownOver((n) => n + 1), wait + 250);
-    return () => window.clearTimeout(timer);
-  }, [cooldownEnd]);
+    const tick = window.setInterval(() => setTick((n) => n + 1), COOLDOWN_TICK_MS);
+    const wake = window.setTimeout(() => {
+      setTick((n) => n + 1);
+      void refetch();
+    }, wait + 1000);
+    return () => {
+      window.clearInterval(tick);
+      window.clearTimeout(wake);
+    };
+  }, [cooldownEnd, refetch]);
 
   if (!news) return null;
 
   const pieceCount = news.pieces.length;
-  const coolingDown = cooldownEnd > Date.now();
-  const reason = coolingDown
-    ? t("annotations.notify.cooling_down")
-    : pieceCount === 0
-      ? t("annotations.notify.nothing_new")
-      : news.recipients === 0
-        ? t("annotations.notify.nobody")
-        : null;
-  const disabled = reason !== null || notify.isPending;
+  const coolingFor = cooldownEnd - Date.now();
+  const reason = !isOnline
+    ? t("annotations.notify.offline")
+    : coolingFor > 0
+      ? t("annotations.notify.cooling_down_for", {
+          count: Math.max(1, Math.ceil(coolingFor / 60_000)),
+        })
+      : pieceCount === 0
+        ? t("annotations.notify.nothing_new")
+        : news.recipients === 0
+          ? t("annotations.notify.nobody")
+          : null;
+  const held = reason !== null || notify.isPending;
   const titles = news.pieces.map((piece) => piece.title).join(", ");
   const label = armed
     ? t("annotations.notify.confirm", { count: news.recipients })
     : t("annotations.notify.cta");
 
   const press = (): void => {
-    if (disabled) return;
+    if (reason !== null) {
+      toast.info(reason, { id: REASON_TOAST_ID });
+      return;
+    }
+    if (held) return;
     if (!armed) {
       setArmed(true);
       return;
@@ -94,11 +127,13 @@ export const NotifyChoirButton = ({
       <button
         type="button"
         onClick={press}
-        disabled={disabled}
-        aria-label={label}
+        // Held, not disabled: a disabled button takes no tap, and the tap is
+        // the only way the reason reaches a reader on a tablet.
+        aria-disabled={held}
+        aria-label={reason ? `${label}. ${reason}` : label}
         title={reason ?? titles}
         className={cn(
-          "flex h-9 shrink-0 items-center gap-1.5 rounded-full px-3 text-xs font-medium transition-colors disabled:opacity-40",
+          "flex h-9 shrink-0 items-center gap-1.5 rounded-full px-3 transition-colors aria-disabled:opacity-40",
           armed
             ? "bg-ethereal-gold/90 text-surface-inverse"
             : "bg-ink-on-inverse/10 text-ink-on-inverse hover:bg-ink-on-inverse/20",
@@ -110,11 +145,25 @@ export const NotifyChoirButton = ({
         ) : (
           <Megaphone size={14} aria-hidden="true" />
         )}
-        <span className={cn(!armed && "hidden sm:inline")}>{label}</span>
+        <Text
+          as="span"
+          size="sm"
+          weight="medium"
+          color="inherit"
+          className={cn(!armed && "hidden sm:inline")}
+        >
+          {label}
+        </Text>
         {!armed && pieceCount > 0 && (
-          <span className="rounded-full bg-ethereal-gold/90 px-1.5 text-[10px] font-semibold text-surface-inverse">
+          <Text
+            as="span"
+            size="xs"
+            weight="semibold"
+            color="inherit"
+            className="rounded-full bg-ethereal-gold/90 px-1.5 text-surface-inverse"
+          >
             {pieceCount}
-          </span>
+          </Text>
         )}
       </button>
     );
@@ -129,7 +178,7 @@ export const NotifyChoirButton = ({
           armed ? <Check size={14} aria-hidden="true" /> : <Megaphone size={14} aria-hidden="true" />
         }
         onClick={press}
-        disabled={disabled}
+        disabled={held}
         isLoading={notify.isPending}
         className="w-full sm:w-auto"
       >

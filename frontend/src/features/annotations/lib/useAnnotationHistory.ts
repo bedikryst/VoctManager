@@ -21,7 +21,9 @@
  *     be on top — the undo the reader pressed is still the one they get.
  *
  * Owns no transport: it takes the mutation layer's writers. History resets when
- * the edition changes.
+ * the edition changes, and when the caller says the edition's marks were
+ * replaced wholesale (a set put aside or brought back): every step then names
+ * rows that are archived, or a page that is no longer the one it undid.
  * @module features/annotations/lib
  */
 
@@ -72,6 +74,8 @@ export interface AnnotationHistory {
   clear: (annotations: readonly ScoreAnnotation[]) => void;
   undo: () => void;
   redo: () => void;
+  /** Forgets the timeline, if it is this edition's; presses still waiting do nothing. */
+  reset: (editionId: string) => void;
   canUndo: boolean;
   canRedo: boolean;
 }
@@ -272,6 +276,16 @@ export const useAnnotationHistory = (deps: HistoryDeps): AnnotationHistory => {
   const undo = useCallback(() => run("undo"), [run]);
   const redo = useCallback(() => run("redo"), [run]);
 
+  const reset = useCallback(
+    (target: string) => {
+      // Another edition is open: its timeline was never this one.
+      if (openEdition.current !== target) return;
+      generation.current += 1;
+      commit({ undo: [], redo: [] });
+    },
+    [commit],
+  );
+
   return {
     create,
     update,
@@ -279,6 +293,7 @@ export const useAnnotationHistory = (deps: HistoryDeps): AnnotationHistory => {
     clear,
     undo,
     redo,
+    reset,
     canUndo: stacks.undo.length > 0,
     canRedo: stacks.redo.length > 0,
   };
