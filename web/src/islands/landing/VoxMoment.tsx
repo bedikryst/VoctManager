@@ -59,6 +59,7 @@ export function VoxMoment({
           <VideoPlayer
             src={VOX_VIDEO.src}
             srcAv1={VOX_VIDEO.srcAv1}
+            duration={VOX_VIDEO.duration}
             poster={poster}
             caption={caption}
             lang={lang}

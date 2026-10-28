@@ -67,6 +67,9 @@ interface VideoPlayerProps {
   readonly glow?: boolean;
   /** 9:16 audience document — height-driven portrait frame instead of the 16:9 stage. */
   readonly portrait?: boolean;
+  /** The film's known length in seconds: the clock states it before the metadata arrives (a
+   *  phone may not fetch any until play). Omit where it is not known; the clock then waits. */
+  readonly duration?: number;
   /** Keep playback position in sessionStorage for other players using the same media src. */
   readonly resume?: boolean;
   /**
@@ -111,6 +114,7 @@ export function VideoPlayer({
   glow = false,
   portrait = false,
   resume = true,
+  duration: knownDuration,
   lang,
 }: VideoPlayerProps): React.JSX.Element {
   const idRef = useRef<string | null>(null);
@@ -166,9 +170,10 @@ export function VideoPlayer({
       );
     }
     if (timeRef.current) {
-      timeRef.current.textContent = `${formatTime(time)} / ${formatTime(duration)}`;
+      const total = Number.isFinite(duration) && duration > 0 ? duration : (knownDuration ?? 0);
+      timeRef.current.textContent = `${formatTime(time)} / ${formatTime(total)}`;
     }
-  }, [joiner]);
+  }, [joiner, knownDuration]);
 
   const pause = useCallback((): void => {
     const video = videoRef.current;
@@ -303,6 +308,9 @@ export function VideoPlayer({
     video.addEventListener("waiting", onWaiting);
     video.addEventListener("playing", onPlaying);
     video.addEventListener("error", onError);
+    // The <video> is server-rendered and starts fetching metadata before this island hydrates, so
+    // `loadedmetadata` can fire before the listener above exists. Read what has already arrived.
+    if (video.readyState >= HTMLMediaElement.HAVE_METADATA) onMeta();
     return () => {
       video.removeEventListener("play", onPlay);
       video.removeEventListener("pause", onPause);
@@ -711,7 +719,7 @@ export function VideoPlayer({
             <span className="vplayer-error">{t.unavailable}</span>
           ) : (
             <span className="vplayer-time" ref={timeRef} aria-hidden="true">
-              0:00 / 0:00
+              {`0:00 / ${formatTime(knownDuration ?? 0)}`}
             </span>
           )}
           <button

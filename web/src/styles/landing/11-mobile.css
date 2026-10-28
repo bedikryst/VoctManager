@@ -115,7 +115,7 @@
 
     .donation-row {
       gap: 6px;
-      padding: 20px 0;
+      padding-block: 20px;
     }
 
     /* ── Vertical rhythm · close the desktop-scale voids ──────────────────────

@@ -162,14 +162,16 @@ const mSizes = coverVw(mobile);
   .bleed img {
     transition: opacity 0.9s ease;
   }
+  /* A breath, not a camera move: the reader should sense the photograph is alive without ever
+     catching it travel. Every frame's scale covers its pan with room to spare, so no edge shows. */
   .bleed img.is-animated {
     will-change: transform;
-    animation: bleedKenBurns 38s ease-in-out infinite alternate;
+    animation: bleedKenBurns 60s ease-in-out infinite alternate;
   }
   @keyframes bleedKenBurns {
-    0% { transform: scale(1.06) translate3d(0, 0, 0); }
-    50% { transform: scale(1.12) translate3d(-1.4%, -0.8%, 0); }
-    100% { transform: scale(1.08) translate3d(1.2%, 0.6%, 0); }
+    0% { transform: scale(1.03) translate3d(0, 0, 0); }
+    50% { transform: scale(1.06) translate3d(-0.6%, -0.35%, 0); }
+    100% { transform: scale(1.045) translate3d(0.5%, 0.25%, 0); }
   }
   /* Parallax drift is applied via JS (the [data-parallax] controller in BaseLayout) so it
      works in every browser — native scroll-driven animation-timeline is still partial in

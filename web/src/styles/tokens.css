@@ -45,11 +45,22 @@
      5.44 / 4.93 / 4.50:1 — so the token holds on any ground the site actually has, and a new
      band cannot quietly fall out of contract.
 
-     Use it for gold TEXT on any paper ground, whatever the size. Keep --candle for dark grounds,
+     Use it for small gold TEXT on any paper ground; large text may take --candle-display
+     below, and anything that is not text may stay on --candle. Keep --candle for dark grounds,
      and for rules, borders, backgrounds and decorative marks, where no minimum applies. On a
      ground that changes at runtime (the footer's day/night plate) mix the two on the same
      variable the ground itself is mixed on. */
   --candle-ink: #735f35;
+  /* The candle as DISPLAY ink: gold text on paper that is LARGE in WCAG's sense (≥ 24px, or
+     ≥ 18.66px bold), where the bar is 3 : 1. The same hue scaled to 72%, stated against all three
+     grounds like the tokens above: 3.85 / 3.49 / 3.18 : 1 on paper / paper-soft / paper-deep.
+
+     Gold on paper therefore comes in exactly two strengths, chosen by size: small text takes
+     --candle-ink, large text takes this, and neither ever takes --candle. Smaller is darker, so
+     the two read as one gold at two sizes rather than two golds side by side. A large line whose
+     size clamps below 24px on some width is small text there, and its clamp floor is what has to
+     move — not its colour. */
+  --candle-display: #8f7642;
   --candle-blue: #1b2d60;
   /* The night ground every dark band sits on (hero plates, concert stations, the colophon).
      It belongs here — BaseLayout loads this file on every page — but for a long time it was

@@ -114,10 +114,12 @@
     transition: opacity 1.4s var(--ease-slow) 1.2s;
   }
 
+  /* Large gold on parchment — the display gold (tokens.css). The score above stays on --candle:
+     it is a drawn mark, not text. */
   .coda-caption em {
     font-style: italic;
     font-weight: 360;
-    color: var(--candle);
+    color: var(--candle-display);
   }
 
   /* Half-ink, like every other line on the site, and no travel: the words are already on the

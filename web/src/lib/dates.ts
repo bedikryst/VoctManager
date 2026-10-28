@@ -105,7 +105,7 @@ export const longMoment = (moment: Moment, locale: Locale): string =>
       ? pickLocale(moment.dateLabel, locale)
       : "";
 
-/** Descending value/glyph pairs — enough for any year this site will print. */
+/** Descending value/glyph pairs — enough for any number this site will print in roman. */
 const ROMAN: readonly (readonly [number, string])[] = [
   [1000, "M"],
   [900, "CM"],
@@ -123,9 +123,10 @@ const ROMAN: readonly (readonly [number, string])[] = [
 ];
 
 /**
- * A number in roman numerals. Two surfaces read it and both want it locale-neutral: the landing
- * dates an evening by its year ("MMXXIV"), which is half the reason it dates in roman at all, and
- * the cycle numbers its stations from their position (`lib/cycle`).
+ * A number in roman numerals, for ORDINALS only: the cycle numbers its stations from their
+ * position (`lib/cycle`, the /koncerty walk). Roman is the site's numbering and inscription voice,
+ * never its calendar — a year a reader dates by is printed in Arabic numerals everywhere, and the
+ * colophon's "MMXXVI" is an inscription written out by hand, not a date formatted here.
  */
 export function romanNumeral(value: number): string {
   let rest = value;
@@ -140,17 +141,17 @@ export function romanNumeral(value: number): string {
 }
 
 /**
- * A photograph's night as the Imagines band prints it — "styczeń MMXXIV" / "January MMXXIV" /
- * "janvier MMXXIV". The month is formatted per locale from an ISO `YYYY-MM`; the year stays roman
- * because that is the register's voice and the band's numerals answer the register's.
+ * A photograph's night as the Imagines band prints it — "styczeń 2024" / "January 2024" /
+ * "janvier 2024". The month is formatted per locale from an ISO `YYYY-MM`; the year is the ISO
+ * year as written, in Arabic numerals like every year the register states beside it.
  *
- * It replaces a hand-written `frameDate` that carried a Polish month inside a data string, which
- * is the fault §5 of the copy-desk spec bans outright: it would have printed "styczeń" under the
+ * Formatting it here is what keeps a month out of the data: a month typed into a data string is
+ * the fault §5 of the copy-desk spec bans outright, since it would print "styczeń" under the
  * English plate with nothing anywhere reporting an error.
  */
 export const photographMoment = (isoMonth: string, locale: Locale): string => {
   const month = new Date(`${isoMonth}-01T00:00:00`).toLocaleDateString(INTL_LOCALE[locale], {
     month: "long",
   });
-  return `${month} ${romanNumeral(Number(isoMonth.slice(0, 4)))}`;
+  return `${month} ${isoMonth.slice(0, 4)}`;
 };

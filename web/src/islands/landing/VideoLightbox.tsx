@@ -140,6 +140,7 @@ export function VideoLightbox({
           src={src}
           srcAv1={srcAv1}
           poster={src === MODAL_VIDEO.src ? poster : undefined}
+          duration={src === MODAL_VIDEO.src ? MODAL_VIDEO.duration : undefined}
           caption={open.caption ?? caption}
           note={open.note}
           portrait={open.portrait}

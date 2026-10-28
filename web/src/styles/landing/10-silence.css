@@ -39,15 +39,15 @@
     margin: 0;
     color: var(--ink);
   }
-  /* The whole line is the em, so this is the only ink that renders. It rests below full
-     strength on purpose: the word is a rest, and it keeps its distance from the coda's
-     finalis, which owns the page's last full-strength line. That distance is carried by the
-     COLOUR, never by opacity — opacity belongs to the entrance register, and a resting value
-     there would peg the half-ink state to an arbitrary ceiling instead of to the token. */
+  /* The whole line is the em, so this is the only ink that renders. It is large gold on paper,
+     so it takes the display gold (tokens.css) at full strength: a translucent candle measured
+     1.8 : 1 here, and the word is text a reader needs, not an ornament. Its distance from the
+     coda's finalis is carried by the gold and the italic, never by opacity — opacity belongs to
+     the entrance register. */
   .silence-line em {
     font-style: italic;
     font-weight: 360;
-    color: color-mix(in srgb, var(--candle) 82%, transparent);
+    color: var(--candle-display);
   }
 
   /* No-JS / no-motion: everything above is the resting state, so those visitors simply see the

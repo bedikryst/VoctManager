@@ -84,13 +84,12 @@
        token, w chwili gdy tokens.css przyciemnił go do 58%, i nikt by tego nie zauważył.
        Znaki i włosy (mid-doty, romby, kreski) zostają na `--candle`
        w obu paletach: dla nich minimum kontrastu nie obowiązuje.
-       ZEGAR TEŻ IDZIE PRZEZ `--candle-text`, choć tokens.css zostawia pełny candle
-       „dużemu złotu display". Ten wyjątek go nie obejmuje: 22–28 px to tekst duży
-       w rozumieniu WCAG, więc obowiązuje próg 3:1 — a pełny candle daje na pergaminie
-       2,10 i nie przechodzi nawet tego. Wyjątek dla display był pisany o złocie na
-       ciemnym gruncie, gdzie ta sama farba ma 8,08; płyta nocna dostaje ją z powrotem
-       i zegar świeci tam pełnią. */
+       The clock is LARGE text (24px and up), so it takes the display gold on
+       parchment rather than the ink gold, the strength tokens.css gives large text,
+       matching the coda's gold line right above the footer. The night plate gives
+       both mixes full candle back. */
     --candle-text: color-mix(in oklab, var(--candle-ink), var(--candle) calc(var(--nox) * 100%));
+    --candle-display-text: color-mix(in oklab, var(--candle-display), var(--candle) calc(var(--nox) * 100%));
     /* The rubric's Latin tier is a CHILD (base.css) and never saw `--candle-text`: it kept the
        bare default, so the one word set in capitals sat at 2,10:1 on the parchment plate while
        its own gloss read fine. Handing it the same mixed value moves both tiers with the plate. */
@@ -270,9 +269,9 @@
      i 1,971em przy 700), Cinzel rośnie 2,139em → 2,310em, czyli zegar wędrowałby
      w prawo przy każdej zmianie wagi. */
   .dateline-clock {
-    color: var(--candle-text);
+    color: var(--candle-display-text);
     font-family: var(--serif);
-    font-size: clamp(22px, 1.9vw, 28px);
+    font-size: clamp(24px, 1.9vw, 28px);
     font-weight: 300;
     font-variation-settings: "wght" 380;
     font-variant-numeric: lining-nums;

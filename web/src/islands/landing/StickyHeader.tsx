@@ -6,7 +6,8 @@
  *  Audio toggle dispatches `voct:toggle-audio` and mirrors truth from `voct:audio-state`;
  *  "Wesprzyj" dispatches `voct:open-vault`. The audio controller (Faza 3b) and vault island
  *  (Faza 3c) own those events; until then the listeners are dormant (graceful no-op).
- *  Adaptive tint (`is-on-dark`/`is-active`) is driven by the page motion script, not here.
+ *  Adaptive tint is owned here: `is-on-dark` from a probe under the bar's edge, `is-active` (the
+ *  glass) once the hero's foot row reaches the bar or the hero has all but left.
  * @module islands/landing/StickyHeader
  */
 
@@ -43,6 +44,10 @@ const DARK_SELECTORS =
 // bookmark pull AND the mobile Vitta's ribbon descent (nave-menu.css).
 const RIBBON_PULL_MS = 220;
 
+// How far ahead of the hero's foot row the bar takes its glass: the ground has to be down before
+// the row's capitals reach the bar's edge, not as they touch it.
+const FOOT_LEAD_PX = 8;
+
 export interface StickyHeaderProps {
   /** The desktop "registrum" — one register ribbon per page-bearing concert, derived by
       lib/registrum in LandingPage.astro (islands can't read the collection themselves). Its
@@ -69,7 +74,7 @@ export function StickyHeader({
   const [audioOn, setAudioOn] = useState(false);
   // Adaptive tint, owned by React (an external script toggling these classes would be
   // reverted on the next render). `onDark` = glass over a dark surface; `active` = glass mode
-  // engaged once the hero is scrolled past. Hero starts dark, so onDark defaults true.
+  // engaged once the hero's foot reaches the bar. Hero starts dark, so onDark defaults true.
   const [onDark, setOnDark] = useState(true);
   const [active, setActive] = useState(false);
 
@@ -214,13 +219,42 @@ export function StickyHeader({
       window.requestAnimationFrame(probe);
     };
 
-    let io: IntersectionObserver | null = null;
+    // The bar takes its glass when EITHER the hero has all but left OR the hero's foot row has
+    // reached the bar's lower edge. The foot sits at the bottom of a full-height hero, so waiting
+    // for the hero alone let the row pass under a transparent bar — the film's label under the
+    // brand, the descend cue under the bar's links. The foot's line is fixed at the bar's RESTING
+    // height, read once while the bar is still resting: the glass state is tighter, and a line that
+    // followed the live height would release the glass it had just engaged.
+    let heroGone = false;
+    let footPassed = false;
+    const syncActive = () => setActive(heroGone || footPassed);
+
+    const observers: IntersectionObserver[] = [];
     if (hero) {
-      io = new IntersectionObserver(
-        (entries) => entries.forEach((e) => setActive(e.intersectionRatio < 0.08)),
+      const heroIo = new IntersectionObserver(
+        (entries) =>
+          entries.forEach((e) => {
+            heroGone = e.intersectionRatio < 0.08;
+            syncActive();
+          }),
         { threshold: [0, 0.08, 0.5, 1] },
       );
-      io.observe(hero);
+      heroIo.observe(hero);
+      observers.push(heroIo);
+    }
+    const foot = hero?.querySelector<HTMLElement>(".hero-foot");
+    if (foot) {
+      const restingBottom = Math.ceil(header.getBoundingClientRect().bottom) + FOOT_LEAD_PX;
+      const footIo = new IntersectionObserver(
+        (entries) =>
+          entries.forEach((e) => {
+            footPassed = e.boundingClientRect.top < (e.rootBounds?.top ?? restingBottom);
+            syncActive();
+          }),
+        { rootMargin: `-${restingBottom}px 0px 0px 0px`, threshold: [0, 1] },
+      );
+      footIo.observe(foot);
+      observers.push(footIo);
     }
 
     window.addEventListener("scroll", onScroll, { passive: true });
@@ -232,7 +266,7 @@ export function StickyHeader({
     return () => {
       window.removeEventListener("scroll", onScroll);
       window.removeEventListener("resize", onScroll);
-      io?.disconnect();
+      observers.forEach((o) => o.disconnect());
       timers.forEach((t) => window.clearTimeout(t));
     };
   }, []);

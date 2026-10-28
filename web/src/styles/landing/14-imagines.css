@@ -64,15 +64,17 @@
     max-width: 22ch;
     font-family: var(--serif);
     font-weight: 300;
-    font-size: clamp(23px, 2.3vw, 34px);
+    font-size: clamp(24px, 2.3vw, 34px);
     line-height: 1.16;
     letter-spacing: -0.01em;
     color: var(--ink);
   }
 
+  /* Large gold on paper — the display gold (tokens.css), which is why the line's floor above is
+     24px, WCAG's large-text size, like `.vox-line`'s. */
   .imagines-line em {
     font-style: italic;
-    color: var(--candle);
+    color: var(--candle-display);
   }
 
   /* ── The plate ────────────────────────────────────────────────────────────────────────
@@ -504,7 +506,7 @@
      tall under I, one under II, two under III, one under IV, two under V. On a strip seen one
      panel at a time that irregularity is the only rhythm there is, and the flex row hands the
      tallest caption's height to all five, so the short ones sit over dead paper. The wraps also
-     fell where the line ran out rather than where the sense breaks: "…· STYCZEŃ / MMXXIV" leaves
+     fell where the line ran out rather than where the sense breaks: "…· STYCZEŃ / 2024" leaves
      the year alone on a row of its own.
 
      So the date takes its own line and the separator before it goes: name above, dateline below,

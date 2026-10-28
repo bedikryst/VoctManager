@@ -35,6 +35,9 @@ export interface Path {
   /** Concert id in the `concerts` collection — the SSoT the program list and the title are read
    *  from, and the key this evening's editorial copy is filed under in `landing.yaml`. */
   readonly concertId: string;
+  /** The year the programme was given, in Arabic numerals: it is a date, and a reader dates by
+   *  it. Roman is kept for what is a NUMBERING (the evening's ordinal, `ROMAN` below) and for the
+   *  inscriptions, never for a year. */
   readonly year: string;
   /** Bare asset name under src/assets/photos (no extension), resolved via photo(). */
   readonly poster: string;
@@ -129,12 +132,11 @@ export interface Path {
    * dates the PHOTOGRAPH's own night, which for a programme that toured is not the same as `year`
    * — the register dates the programme, the band dates the evening it is showing. Written out
    * rather than left to the bare year because the register's year is not a chronology here: three
-   * of five panels read MMXXIV.
+   * of five panels read 2024.
    *
-   * STRUCTURED, NOT WRITTEN. It used to be "styczeń MMXXIV", a Polish month inside a data string,
-   * which would have printed Polish under the English plate with nothing reporting an error.
-   * `lib/dates.photographMoment` formats the month per locale and keeps the year roman, which is
-   * the register's own voice.
+   * STRUCTURED, NOT WRITTEN. A month typed into a data string is a Polish word that would print
+   * under the English plate with nothing reporting an error. `lib/dates.photographMoment` formats
+   * the month per locale and prints the year in Arabic numerals, as the register does.
    */
   readonly frameMonth: string;
 }
@@ -148,7 +150,7 @@ export const PATHS: readonly Path[] = [
   {
     slug: "kontemplacja-wcielenia",
     concertId: "wcielenie",
-    year: "MMXXIV",
+    year: "2024",
     poster: "poster-wcielenie",
     // The gallery opens on three rehearsal frames; the band announces the evening, so it takes
     // the first one shot at the concert itself.
@@ -175,7 +177,7 @@ export const PATHS: readonly Path[] = [
   {
     slug: "wolanie-gor",
     concertId: "wolanie-gor",
-    year: "MMXXIV",
+    year: "2024",
     poster: "poster-wolanie",
     // Same as Wcielenie: entries 0–3 are the rehearsal in Szczawnica, not the evening — and they
     // are monochrome, so the band's frame can only come from 4 upward whatever else changes.
@@ -225,7 +227,7 @@ export const PATHS: readonly Path[] = [
   {
     slug: "9-kart-z-ksiegi-psalmow",
     concertId: "9-kart",
-    year: "MMXXIV",
+    year: "2024",
     poster: "poster-9-kart",
     // Chosen on SUBJECT SCALE and on HUE RANGE, which are the two statistics the panels in this
     // line stand or fall on. Scale first: `kd-9-kart-2` once stood here with the ensemble behind a
@@ -263,7 +265,7 @@ export const PATHS: readonly Path[] = [
   {
     slug: "hymn-poleglym",
     concertId: "hymn-poleglym",
-    year: "MMXXV",
+    year: "2025",
     poster: "poster-hymn",
     // THE DARKEST EVENING IN THE ARCHIVE, and the one with the least to choose from. `kd-hymn-4`,
     // the altarpiece open and lit red over the ensemble, is the frame this panel was built for
@@ -293,7 +295,7 @@ export const PATHS: readonly Path[] = [
   {
     slug: "aeternam-epitafium-dla-gazy",
     concertId: "aeternam",
-    year: "MMXXV",
+    year: "2025",
     poster: "poster-aeternam",
     // `-3` stood here and read the altar over the conductor's shoulder from behind the ensemble —
     // the architecture carried, the singers as backs. This one is the same altar from in front:
@@ -314,7 +316,7 @@ export const PATHS: readonly Path[] = [
   {
     slug: "pochwala-stworzenia",
     concertId: "pochwala-stworzenia",
-    year: "MMXXVI",
+    year: "2026",
     poster: "poster-stworzenie",
     // The gallery's plate: the ensemble's line before the high altar, seen from the nave, with the
     // retable, its painting and the crucifix above it. The only frame of the evening where both

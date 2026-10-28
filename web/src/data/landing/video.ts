@@ -17,6 +17,10 @@ export interface VideoSource {
   readonly srcAv1: string;
   /** Mono caption line rendered under the frame and in the lightbox. */
   readonly caption: string;
+  /** The film's length in seconds, so the player's clock states what the film costs before its
+   *  metadata arrives (a phone may fetch none until play) instead of "0:00 / 0:00". Re-read it
+   *  from the file whenever the file is replaced. */
+  readonly duration: number;
 }
 
 /** Hero CTA "Zobacz i usłysz" → lightbox: the full ~5 min concert video (dark room only). */
@@ -24,6 +28,7 @@ export const MODAL_VIDEO: VideoSource = {
   src: videoAsset("landing-modal"),
   srcAv1: videoAssetAv1("landing-modal"),
   caption: "Wybrane fragmenty koncertu „Kontemplacja Wcielenia” · VoctEnsemble 2024",
+  duration: 247.2,
 };
 
 /**

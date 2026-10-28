@@ -395,6 +395,10 @@
       color 0.5s var(--ease),
       letter-spacing 0.6s var(--ease-slow),
       font-variation-settings 0.6s var(--ease-slow);
+    /* The band is `--paper-soft`, where plain muted is 4.11 : 1 — under the small-text bar for
+       every place, tag and "Program koncertu" in it. The deeper tier (tokens.css) is redefined
+       here so the rules below go on writing `var(--ink-muted)`. */
+    --ink-muted: var(--ink-muted-deep);
     background: var(--paper-soft);
     border-top: 1px solid var(--line);
     border-bottom: 1px solid var(--line);
@@ -476,13 +480,15 @@
     padding-top: clamp(8px, 1vw, 14px);
   }
 
+  /* The evening's ordinal is text a reader counts by, so it takes the display gold (tokens.css),
+     and its floor is 24px — WCAG's large-text size, where that gold clears 3 : 1. */
   .path-entry-roman {
     font-family: var(--serif);
     font-style: italic;
-    font-size: clamp(22px, 2vw, 30px);
+    font-size: clamp(24px, 2vw, 30px);
     font-weight: 300;
     line-height: 1;
-    color: var(--candle);
+    color: var(--candle-display);
     letter-spacing: 0;
   }
 
@@ -613,7 +619,7 @@
   }
 
   .path-next .path-entry-tag {
-    color: var(--candle);
+    color: var(--candle-ink);
   }
 
   .path-next .path-entry-title {
@@ -627,7 +633,7 @@
   .path-next-cta {
     justify-self: start;
     margin-top: clamp(10px, 1.2vw, 18px);
-    color: var(--candle);
+    color: var(--candle-ink);
   }
 
   /* ── The register's OTHER closing: the evening that is announced ────────────
@@ -1738,7 +1744,7 @@
       padding-top: 0;
     }
     .path-entry-roman {
-      font-size: 22px;
+      font-size: 24px;
     }
   }
 
@@ -1996,6 +2002,7 @@
      vault at its own amount through the delegated `[data-vault-open]` handler. Button reset
      first — the row's geometry is the grid below, never the UA's. */
   .donation-row {
+    position: relative;
     display: grid;
     grid-template-columns: var(--coda-spine) minmax(0, 1fr);
     gap: var(--coda-spine-gap);
@@ -2004,7 +2011,8 @@
     width: 100%;
     border: 0;
     border-bottom: 1px solid var(--coda-hair);
-    padding: 22px 0;
+    /* The right side is the arrow's lane (`::after` below). */
+    padding: 22px 36px 22px 0;
     background: transparent;
     color: inherit;
     cursor: pointer;
@@ -2038,6 +2046,35 @@
   .donation-row:hover,
   .donation-row:focus-visible {
     background-color: rgba(198, 164, 91, 0.055);
+  }
+
+  /* The row says it can be pressed before it is touched: the arrow the page's doors carry
+     (`.primary-link::after`), held at the row's right edge so the three stand in one column at
+     every width, the stacked phone ledger included — hence the row's right padding. It is
+     decoration for the accessible name, which the `/ ""` alternative keeps out of it; a browser
+     that cannot parse that form takes the first declaration. */
+  .donation-row::after {
+    content: "\2192";
+    content: "\2192" / "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    right: 8px;
+    display: flex;
+    align-items: center;
+    font-family: var(--serif);
+    font-size: 22px;
+    line-height: 1;
+    color: color-mix(in srgb, currentColor 55%, transparent);
+    transition:
+      color 0.45s var(--ease),
+      transform 0.4s var(--ease);
+  }
+
+  .donation-row:hover::after,
+  .donation-row:focus-visible::after {
+    color: var(--candle);
+    transform: translateX(6px);
   }
 
   .donation-row:focus-visible {
@@ -2209,7 +2246,31 @@
   /* The one place on the page where the two link roles are a real hierarchy rather than
      two parallel invitations (see the hero note in 02-hero-sections.css): this section's
      purpose is the donation vault. Candle-gold at rest is the same "this one matters"
-     signal the register's next-concert CTA already uses (.path-next-cta). */
+     signal the register's next-concert CTA already uses (.path-next-cta).
+
+     And it is a BUTTON, not a ruled link: the frame is the bar's WESPRZYJ pill (01-foundation.css
+     `.support-link--give`) at the height a thumb needs, so the page's last ask looks like the one
+     a reader has been passing in the bar all along. The frame replaces the hairline. */
   .final-actions .primary-link {
     color: var(--candle);
+    padding: 0 22px;
+    border: 1px solid currentColor;
+    border-radius: 999px;
+    transition:
+      color 0.45s var(--ease),
+      background-color 0.35s var(--ease);
+  }
+
+  .final-actions .primary-link::before {
+    content: none;
+  }
+
+  .final-actions .primary-link:hover,
+  .final-actions .primary-link:focus-visible {
+    background-color: color-mix(in srgb, currentColor 12%, transparent);
+  }
+
+  .final-actions .primary-link:focus-visible {
+    outline: 1px solid currentColor;
+    outline-offset: 4px;
   }

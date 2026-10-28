@@ -48,9 +48,10 @@
     color: var(--ink);
   }
 
+  /* Large gold on paper — the display gold (tokens.css); the line never sets below 24px. */
   .vox-line em {
     font-style: italic;
-    color: var(--candle);
+    color: var(--candle-display);
   }
 
   /* In-flow breathing room above the frame (vplayer.css keeps the player margin-neutral). */
