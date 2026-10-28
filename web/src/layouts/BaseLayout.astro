@@ -20,7 +20,9 @@ import "../styles/cursor.css";
 import "../styles/transitions.css";
 import "../styles/nave-menu.css";
 import "../styles/registrum.css";
+import "../styles/scroll-rail.css";
 import { ScrollTopButton } from "../islands/landing/ScrollTopButton";
+import { ScrollRail, type RailNames } from "../islands/landing/ScrollRail";
 import { SiteCursor } from "../islands/landing/SiteCursor";
 
 interface Props {
@@ -66,6 +68,11 @@ interface Props {
    * `preloader-skip` gate for this document at all.
    */
   rite?: boolean;
+  /**
+   * The landing's movement names, which turn the desktop scroll rail into an index of its three
+   * movements. Every other page omits it and gets the plain scrollbar (islands/landing/ScrollRail).
+   */
+  railNames?: RailNames;
   /** Page locale — drives `<html lang>` and og:locale. Defaults to Polish (the un-prefixed site). */
   lang?: Locale;
   /** hreflang alternates for a translated page (absolute URLs incl. x-default). Empty on
@@ -95,6 +102,7 @@ const {
   themeColor = "#000000",
   reveal = true,
   rite = false,
+  railNames,
   lang = "pl",
   alternates = [],
   breadcrumb,
@@ -279,6 +287,9 @@ const breadcrumbLd = breadcrumb ? breadcrumbList(breadcrumb, lang) : undefined;
     <slot />
     <SiteCursor client:load transition:persist="site-cursor" />
     <ScrollTopButton client:idle transition:persist="scroll-top" lang={lang} />
+    {/* Not persisted: each page measures its own length and sections. The query is
+        scroll-rail.css's own, so a phone never loads the island it cannot show. */}
+    <ScrollRail client:media="(min-width: 1200px) and (pointer: fine)" names={railNames} />
 
     <script>
       // The canvas colour drives the bands iOS Safari opens above and below a fixed header —

@@ -1,19 +1,25 @@
 /**
  * @file ScrollRail.tsx
- * @description The landing's scrollbar. The public site hides the native one (styles/base.css)
- *  and scrolls through Lenis, so on a desktop this rail is the only cue for where the reader
- *  stands in a page some twenty screens long.
+ * @description The site's desktop scrollbar, mounted by BaseLayout on every page. The public site
+ *  hides the native one (styles/base.css) and scrolls through Lenis, so on a desktop this rail is
+ *  the only cue for where the reader stands in pages that run to twenty screens.
  *
- *  It stays off the hero: the film is the page's opening composition, and the rail rises only
- *  once the reader has scrolled ~60% of a screen into the page, when the film is already leaving.
+ *  It stays off the opening screen — on the landing that is the hero's film, the page's opening
+ *  composition — and rises only once the reader has scrolled ~60% of a screen into the page.
  *  From there it rests as a hairline at the window's right edge with a thumb at the scroll
- *  position.
+ *  position, and the thumb drags. A page shorter than that never raises it.
  *
- *  A pointer on the right edge opens it: the three movements stand as notches at their own scroll
- *  positions, each with a plate carrying its Polish name and its Latin inscription, and a plate
- *  click travels there through Lenis. The thumb drags (Lenis, immediate), and a press anywhere on
- *  the rail brings the thumb under the pointer first, as a native scrollbar does. While the thumb
- *  is held it names the movement it stands in, and the name leaves ~600ms after the release.
+ *  THE LANDING ALONE GETS AN INDEX (`names`). Every other long page already indexes itself — the
+ *  tabula hung from the bar on the concert, foundation, patronage, images and privacy pages, the
+ *  via-rails on /koncerty and /obrazy — and a second index at the other edge would name the same
+ *  sections twice. There the rail is a plain scrollbar.
+ *
+ *  On the landing a pointer on the right edge opens it: the three movements stand as notches at
+ *  their own scroll positions, each with a plate carrying its Polish name and its Latin
+ *  inscription, and a plate click travels there through Lenis. The thumb drags (Lenis,
+ *  immediate), and a press anywhere on the rail brings the thumb under the pointer first, as a
+ *  native scrollbar does. While the thumb is held on the landing it names the movement it stands
+ *  in, and the name leaves ~600ms after the release.
  *  Nothing is named while the reader merely scrolls: a label that appears mid-read pulls the eye
  *  off the page and reads as a fault.
  *
@@ -129,9 +135,12 @@ const nightAt = (rail: HTMLElement, x: number, y: number): boolean => {
 const sameGrounds = (a: Grounds, b: Grounds): boolean =>
   a.say === b.say && a.ticks.every((v, i) => v === b.ticks[i]);
 
+export type RailNames = Readonly<Record<MovementKey, string>>;
+
 interface ScrollRailProps {
-  /** The movements' names in the page's language (a chrome triple, `railNames`). */
-  readonly names: Readonly<Record<MovementKey, string>>;
+  /** The landing's movement names in the page's language (a chrome triple, `railNames`). Absent
+   *  on every other page, which keeps the rail a plain scrollbar. */
+  readonly names?: RailNames;
 }
 
 export function ScrollRail({ names }: ScrollRailProps): React.JSX.Element {
@@ -179,7 +188,8 @@ export function ScrollRail({ names }: ScrollRailProps): React.JSX.Element {
   const readGrounds = useCallback((): void => {
     groundFrame.current = null;
     const rail = railRef.current;
-    if (!rail) return;
+    // A plain scrollbar carries no plate, so it has no ground to read.
+    if (!rail || !names) return;
     const top = rail.getBoundingClientRect().top;
     const x = window.innerWidth - PROBE_INSET;
     const next: Grounds = {
@@ -190,7 +200,7 @@ export function ScrollRail({ names }: ScrollRailProps): React.JSX.Element {
       say: nightAt(rail, x, top + centreAt(geo.current, currentScroll())),
     };
     setGrounds((prev) => (sameGrounds(prev, next) ? prev : next));
-  }, []);
+  }, [names]);
 
   const groundSoon = useCallback((): void => {
     if (groundFrame.current === null) {
@@ -220,10 +230,12 @@ export function ScrollRail({ names }: ScrollRailProps): React.JSX.Element {
         Math.max(MIN_THUMB, Math.round((trackHeight * view) / Math.max(height, 1))),
       );
       const y = window.scrollY;
-      const tops = MOVEMENTS.map((m) => {
-        const el = document.querySelector<HTMLElement>(`[data-movement="${m.key}"]`);
-        return el ? el.getBoundingClientRect().top + y : Number.NaN;
-      });
+      const tops = names
+        ? MOVEMENTS.map((m) => {
+            const el = document.querySelector<HTMLElement>(`[data-movement="${m.key}"]`);
+            return el ? el.getBoundingClientRect().top + y : Number.NaN;
+          })
+        : [];
       const g: Geometry = { track: trackHeight, thumb, limit: Math.max(0, height - view), view, tops };
       geo.current = g;
       thumbEl.style.height = `${thumb}px`;
@@ -263,7 +275,7 @@ export function ScrollRail({ names }: ScrollRailProps): React.JSX.Element {
       if (groundFrame.current !== null) window.cancelAnimationFrame(groundFrame.current);
       if (lingerRef.current !== null) window.clearTimeout(lingerRef.current);
     };
-  }, [paint, groundSoon]);
+  }, [paint, groundSoon, names]);
 
   const seek = (clientY: number): void => {
     const d = drag.current;
@@ -330,7 +342,7 @@ export function ScrollRail({ names }: ScrollRailProps): React.JSX.Element {
     }
   };
 
-  const current = active >= 0 ? MOVEMENTS[active] : undefined;
+  const current = names && active >= 0 ? MOVEMENTS[active] : undefined;
   // A held thumb keeps the rail up even when dragged back onto the hero.
   const shown = ticks !== null && (past || dragging);
 
@@ -364,7 +376,7 @@ export function ScrollRail({ names }: ScrollRailProps): React.JSX.Element {
         })}
         <div ref={thumbRef} className="scroll-rail-thumb">
           <span className="scroll-rail-bar" />
-          {current && (
+          {current && names && (
             <span className={`scroll-rail-plate scroll-rail-say${grounds.say ? " is-night" : ""}`}>
               <span className="scroll-rail-name">{names[current.key]}</span>
               <span className="scroll-rail-dot">·</span>
@@ -375,7 +387,7 @@ export function ScrollRail({ names }: ScrollRailProps): React.JSX.Element {
       </div>
       {MOVEMENTS.map((m, i) => {
         const y = ticks?.[i];
-        return y == null ? null : (
+        return y == null || !names ? null : (
           <button
             key={m.key}
             type="button"

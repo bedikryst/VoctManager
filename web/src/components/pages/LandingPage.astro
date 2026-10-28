@@ -68,7 +68,6 @@ import VaultMount from "../VaultMount.astro";
 import { VoxMoment } from "../../islands/landing/VoxMoment";
 import { VideoLightbox } from "../../islands/landing/VideoLightbox";
 import { ImageLightbox } from "../../islands/landing/ImageLightbox";
-import { ScrollRail } from "../../islands/landing/ScrollRail";
 
 interface Props {
   /** Which language this render is. Drives the copy, the chrome, the URL and the hreflang graph. */
@@ -143,6 +142,7 @@ const jsonLd = {
   lang={lang}
   alternates={alternates}
   rite
+  railNames={t.railNames}
 >
   <Fragment slot="head">
     <script is:inline type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
@@ -156,8 +156,6 @@ const jsonLd = {
     <AudioController client:load />
 
     <StickyHeader client:load ribbons={ribbons} lang={lang} chrome={t} />
-    {/* The query is 13-rail.css's own; a phone never loads the island it cannot show. */}
-    <ScrollRail client:media="(min-width: 1200px) and (pointer: fine)" names={t.railNames} />
 
     <main id="main">
       <HeroSection copy={c.hero} videoCaption={c.vox.videoCaption} lang={lang} />
@@ -196,7 +194,7 @@ const jsonLd = {
           Easter Vigil acclamation sung as the paschal candle enters a dark church — the exact
           rite this movement's interlude performs (parchment cut to night, one flame). Keep any
           replacement short: the scroll rail prints it after the movement's name on a plate that
-          reaches into the page from the right edge (13-rail.css). */}
+          reaches into the page from the right edge (scroll-rail.css). */}
       <section class="movement" id="ruch-i" data-movement="lumen" aria-label="I · Lumen Christi">
         <AetherInterlude variant="passage" roman="I" latin="Lumen Christi" />
         <LitanySection copy={c.litany} lang={lang} />

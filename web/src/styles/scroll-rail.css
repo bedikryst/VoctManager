@@ -1,0 +1,239 @@
+/**
+ * @file scroll-rail.css
+ * @description The site's desktop scrollbar (islands/landing/ScrollRail.tsx), on every page
+ *  BaseLayout renders. The site hides the native one (base.css), so on a desktop this is the
+ *  only position cue. Absent over the opening screen; past it, a hairline at the window's right
+ *  edge and a thumb. On the landing a pointer on the right edge opens it into the three
+ *  movements, each a notch on the rail and a plate beside it, and a held thumb names its own;
+ *  elsewhere it stays a plain scrollbar. Fine pointer at ≥ 1200px only — the same query as the
+ *  island's `client:media` in BaseLayout.astro; keep the two equal.
+ * @module styles/scroll-rail
+ */
+
+/*
+   The thumb is --candle-display, not --candle: it is the one mark here a reader needs, and it
+   clears 3:1 against both grounds the rail crosses (3.85 on paper, ~4.4 on night) where the
+   lighter gold reads 2.1 on paper. The track stays --candle, faint; it is the groove, not the
+   position.
+
+   The thumb is --candle-display, not --candle: it is the one mark here a reader needs, and it
+   clears 3:1 against both grounds the rail crosses (3.85 on paper, ~4.4 on night) where the
+   lighter gold reads 2.1 on paper. The track stays --candle, faint; it is the groove, not the
+   position.
+
+   Each plate takes the ground of the section under IT (`is-night`, probed by the island at the
+   plate's own height). The bar's `is-on-dark` is no guide here: it describes the top of the
+   screen, and a plate halfway down stood dark on parchment under a bar over a photograph. A
+   label with no ground at all printed itself across whatever reached the right edge; at 0.92
+   the plate holds its text against any page beneath it, so no section has to step aside for
+   the rail and none carries a flag for it. */
+.scroll-rail {
+  --rail-zone: 24px;
+  position: fixed;
+  top: clamp(88px, 12vh, 120px);
+  bottom: clamp(88px, 12vh, 120px);
+  right: 0;
+  z-index: 40;
+  display: none;
+  width: var(--rail-zone);
+  opacity: 0;
+  pointer-events: none;
+  user-select: none;
+  transition: opacity 0.6s var(--ease);
+}
+
+@media (min-width: 1200px) and (pointer: fine) {
+  .scroll-rail {
+    display: block;
+  }
+}
+
+/* Raised once measured — so the server's thumb (at the top) never shows over a restored scroll
+   position — and once past the hero. Inert while lowered: an invisible rail must not open its
+   index under a pointer resting at the film's edge. */
+.scroll-rail.is-shown {
+  opacity: 1;
+}
+
+.scroll-rail.is-shown .scroll-rail-track {
+  pointer-events: auto;
+}
+
+.scroll-rail-track {
+  position: absolute;
+  inset: 0;
+  cursor: grab;
+}
+
+.scroll-rail.is-dragging .scroll-rail-track {
+  cursor: grabbing;
+}
+
+.scroll-rail-line,
+.scroll-rail-bar {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 5px;
+  width: 2px;
+  transform-origin: right center;
+  transition: opacity 0.4s var(--ease), transform 0.4s var(--ease);
+}
+
+.scroll-rail-line {
+  background: var(--candle);
+  opacity: 0.3;
+}
+
+/* Moved by the island's transform alone; its height is set on measure. */
+.scroll-rail-thumb {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 28px;
+  will-change: transform;
+}
+
+.scroll-rail-bar {
+  background: var(--candle-display);
+}
+
+.scroll-rail:hover .scroll-rail-line,
+.scroll-rail.is-dragging .scroll-rail-line {
+  opacity: 0.5;
+  transform: scaleX(1.5);
+}
+
+.scroll-rail:hover .scroll-rail-bar,
+.scroll-rail.is-dragging .scroll-rail-bar {
+  transform: scaleX(2);
+}
+
+/* A notch stands where the thumb's centre stands when its movement reaches the top. */
+.scroll-rail-notch {
+  position: absolute;
+  right: 7px;
+  width: 12px;
+  height: 1px;
+  background: var(--candle-display);
+  opacity: 0;
+  transform: translateY(-50%) scaleX(0.4);
+  transform-origin: right center;
+  pointer-events: none;
+  transition: opacity 0.4s var(--ease), transform 0.4s var(--ease);
+}
+
+.scroll-rail:hover .scroll-rail-notch,
+.scroll-rail.is-dragging .scroll-rail-notch {
+  opacity: 0.55;
+  transform: translateY(-50%);
+}
+
+.scroll-rail:hover .scroll-rail-notch.is-active,
+.scroll-rail.is-dragging .scroll-rail-notch.is-active {
+  opacity: 1;
+}
+
+.scroll-rail-plate {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 6px 12px 5px;
+  background: rgba(244, 241, 233, 0.92);
+  color: var(--ink);
+  font-family: var(--serif);
+  font-size: 14px;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+/* The name a reader knows first, in the reading serif; the inscription after it in the capitalis
+   the interludes carve it in (AetherInterlude.astro), smaller and in gold. */
+.scroll-rail-name {
+  font-family: var(--serif);
+  font-size: 16px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}
+
+.scroll-rail-dot {
+  color: var(--ink-muted);
+}
+
+.scroll-rail-latin {
+  font-family: var(--capitalis);
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--candle-ink);
+}
+
+.scroll-rail-plate.is-night {
+  background: rgba(16, 15, 13, 0.92);
+  color: var(--paper);
+}
+
+.scroll-rail-plate.is-night .scroll-rail-dot {
+  color: rgba(244, 241, 233, 0.6);
+}
+
+.scroll-rail-plate.is-night .scroll-rail-latin {
+  color: var(--candle);
+}
+
+/* The open rail's index. Plates stand left of the pointer zone, never on it, so a press at a
+   notch's height still grips the rail. Inert while closed: invisible plates must not catch
+   clicks meant for the page. Under a held thumb the plates give way to the thumb's own name. */
+.scroll-rail-tick {
+  position: absolute;
+  right: var(--rail-zone);
+  margin: 0;
+  border: 0;
+  cursor: pointer;
+  opacity: 0;
+  transform: translate(6px, -50%);
+  pointer-events: none;
+  transition: opacity 0.35s var(--ease), transform 0.35s var(--ease);
+}
+
+.scroll-rail:hover:not(.is-dragging) .scroll-rail-tick {
+  opacity: 1;
+  transform: translate(0, -50%);
+  pointer-events: auto;
+}
+
+.scroll-rail-tick:hover .scroll-rail-name {
+  text-decoration: underline 1px;
+  text-underline-offset: 4px;
+}
+
+/* The thumb's name, while held and for a moment after the release. Released under the pointer,
+   it gives way at once to the open rail, which already names all three. */
+.scroll-rail-say {
+  position: absolute;
+  top: 50%;
+  right: var(--rail-zone);
+  opacity: 0;
+  transform: translate(6px, -50%);
+  pointer-events: none;
+  transition: opacity 0.4s var(--ease), transform 0.4s var(--ease);
+}
+
+.scroll-rail.is-naming:not(:hover) .scroll-rail-say,
+.scroll-rail.is-naming.is-dragging .scroll-rail-say {
+  opacity: 1;
+  transform: translate(0, -50%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scroll-rail,
+  .scroll-rail-line,
+  .scroll-rail-bar,
+  .scroll-rail-notch,
+  .scroll-rail-tick,
+  .scroll-rail-say {
+    transition: none;
+  }
+}

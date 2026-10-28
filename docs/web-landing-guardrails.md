@@ -327,7 +327,7 @@ mobile-first site that is most of the traffic, so any future switch from push to
 has to carry the same two lines with it.
 
 **Movement inscriptions stay short (~13 characters).** This is why `Lumen quaerit` → `Lumen Christi`
-and not `Lumen ad revelationem`. The desktop scroll rail (`ScrollRail.tsx`, `13-rail.css`) prints
+and not `Lumen ad revelationem`. The desktop scroll rail (`ScrollRail.tsx`, `scroll-rail.css`) prints
 each one after the movement's plain name on a plate that reaches into the page from the right edge,
 so every character added is more of the page covered while the rail is open.
 
