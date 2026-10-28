@@ -4,26 +4,33 @@
  *  and scrolls through Lenis, so on a desktop this rail is the only cue for where the reader
  *  stands in a page some twenty screens long.
  *
- *  At rest it is a hairline at the window's right edge with a thumb at the scroll position. A
- *  pointer on the right edge opens it: the three movements stand as ticks at their own scroll
- *  positions, each with its Polish name and its Latin inscription, and a tick click travels there
- *  through Lenis. The thumb drags (Lenis, immediate), and a press anywhere on the rail brings the
- *  thumb under the pointer first, as a native scrollbar does. While the thumb is dragged, or a
- *  wheel run is fast, the thumb names the movement it stands in, and the name leaves ~600ms after
- *  the scroll stops.
+ *  It stays off the hero: the film is the page's opening composition, and the rail rises only
+ *  once the reader has scrolled ~60% of a screen into the page, when the film is already leaving.
+ *  From there it rests as a hairline at the window's right edge with a thumb at the scroll
+ *  position.
+ *
+ *  A pointer on the right edge opens it: the three movements stand as notches at their own scroll
+ *  positions, each with a plate carrying its Polish name and its Latin inscription, and a plate
+ *  click travels there through Lenis. The thumb drags (Lenis, immediate), and a press anywhere on
+ *  the rail brings the thumb under the pointer first, as a native scrollbar does. While the thumb
+ *  is held it names the movement it stands in, and the name leaves ~600ms after the release.
+ *  Nothing is named while the reader merely scrolls: a label that appears mid-read pulls the eye
+ *  off the page and reads as a fault.
+ *
+ *  Each plate takes the ground of what lies under IT, probed at its own height with the bar's
+ *  list of dark surfaces (lib/darkSurfaces) — not the bar's verdict, which describes the top of
+ *  the screen. The probe is a hit test, so it runs only while plates are visible (rail open or
+ *  thumb held), at most once a frame; at rest the scroll tick reads Lenis's own numbers and
+ *  writes the thumb's transform, nothing else.
  *
  *  `aria-hidden` and unfocusable by design: the movements are landmarks (`section[aria-label]`),
  *  which is how a keyboard and a screen reader already move through the page, and a control a
  *  screen reader cannot announce must not take focus either.
- *
- *  Geometry (track, thumb, section tops, scroll limit) is measured when the page's size changes,
- *  never inside the scroll tick: the tick only reads Lenis's own numbers and writes the thumb's
- *  transform. Labels stand on plates in the bar's ground (13-rail.css), so nothing on the page has
- *  to step aside for them.
  * @module islands/landing/ScrollRail
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { DARK_SURFACES } from "./lib/darkSurfaces";
 
 type MovementKey = "lumen" | "vox" | "sustinete";
 
@@ -39,9 +46,12 @@ const MOVEMENTS: readonly Movement[] = [
   { key: "sustinete", latin: "Sustinete nos" },
 ];
 
+/** Night for a plate: the bar's dark surfaces plus the two it has no verdict for — the hero, where
+ *  the bar is transparent, and the announcement band under it. */
+const NIGHT = `${DARK_SURFACES}, .hero, .proximum`;
+
 interface LenisLike {
   readonly scroll: number;
-  readonly velocity: number;
   scrollTo: (
     target: number | HTMLElement,
     opts?: { duration?: number; offset?: number; immediate?: boolean },
@@ -66,16 +76,25 @@ interface Drag {
   readonly grip: number;
 }
 
-/** Scroll speed, px per frame, above which a wheel run counts as fast and the thumb names its
- *  movement. A reading scroll through Lenis runs at ~5–15; a flick passes 40. */
-const FAST_VELOCITY = 24;
-/** How long the thumb's name stays after the last scroll frame. */
+/** Which plates stand on night: one per movement, and the thumb's own. */
+interface Grounds {
+  readonly ticks: readonly boolean[];
+  readonly say: boolean;
+}
+
+/** The share of a screen the reader scrolls before the rail rises off the hero. */
+const HERO_SHARE = 0.6;
+/** How long the thumb's name stays after the thumb is released. */
 const NAME_LINGER_MS = 600;
 /** The thumb's shortest length, so it stays a target on the longest page. */
 const MIN_THUMB = 28;
 /** Where a tick's jump lands: the movement's top 10px under the window's top edge. */
 const JUMP_OFFSET = -10;
 const JUMP_DURATION = 1.2;
+/** Probe column, px from the window's right edge: past the 24px pointer zone, inside every plate. */
+const PROBE_INSET = 64;
+
+const LIGHT: Grounds = { ticks: MOVEMENTS.map(() => false), say: false };
 
 const lenisOf = (): LenisLike | undefined =>
   (window as unknown as { __lenis?: LenisLike }).__lenis;
@@ -98,26 +117,45 @@ const movementAt = (g: Geometry, scroll: number): number => {
   return found;
 };
 
+/** Whether the page under a client point is a night surface, looking through the rail itself. */
+const nightAt = (rail: HTMLElement, x: number, y: number): boolean => {
+  for (const el of document.elementsFromPoint(x, y)) {
+    if (rail.contains(el)) continue;
+    return el.closest(NIGHT) !== null;
+  }
+  return false;
+};
+
+const sameGrounds = (a: Grounds, b: Grounds): boolean =>
+  a.say === b.say && a.ticks.every((v, i) => v === b.ticks[i]);
+
 interface ScrollRailProps {
   /** The movements' names in the page's language (a chrome triple, `railNames`). */
   readonly names: Readonly<Record<MovementKey, string>>;
 }
 
 export function ScrollRail({ names }: ScrollRailProps): React.JSX.Element {
+  const railRef = useRef<HTMLDivElement>(null);
   const trackRef = useRef<HTMLDivElement>(null);
   const thumbRef = useRef<HTMLDivElement>(null);
   const geo = useRef<Geometry>({ track: 0, thumb: MIN_THUMB, limit: 0, view: 0, tops: [] });
+  const tickRef = useRef<readonly (number | null)[]>([]);
   const drag = useRef<Drag | null>(null);
+  const openRef = useRef(false);
   const activeRef = useRef(-1);
+  const pastRef = useRef(false);
   const namingRef = useRef(false);
   const lingerRef = useRef<number | null>(null);
+  const groundFrame = useRef<number | null>(null);
 
   // Tick centres stay null until the first measurement, so the server's markup carries none and
   // hydration matches it.
   const [ticks, setTicks] = useState<readonly (number | null)[] | null>(null);
   const [active, setActive] = useState(-1);
+  const [past, setPast] = useState(false);
   const [naming, setNaming] = useState(false);
   const [dragging, setDragging] = useState(false);
+  const [grounds, setGrounds] = useState<Grounds>(LIGHT);
 
   const paint = useCallback((scroll: number): void => {
     const g = geo.current;
@@ -131,22 +169,40 @@ export function ScrollRail({ names }: ScrollRailProps): React.JSX.Element {
       activeRef.current = idx;
       setActive(idx);
     }
+    const beyond = scroll > g.view * HERO_SHARE;
+    if (beyond !== pastRef.current) {
+      pastRef.current = beyond;
+      setPast(beyond);
+    }
   }, []);
+
+  const readGrounds = useCallback((): void => {
+    groundFrame.current = null;
+    const rail = railRef.current;
+    if (!rail) return;
+    const top = rail.getBoundingClientRect().top;
+    const x = window.innerWidth - PROBE_INSET;
+    const next: Grounds = {
+      ticks: MOVEMENTS.map((_, i) => {
+        const y = tickRef.current[i];
+        return y != null && nightAt(rail, x, top + y);
+      }),
+      say: nightAt(rail, x, top + centreAt(geo.current, currentScroll())),
+    };
+    setGrounds((prev) => (sameGrounds(prev, next) ? prev : next));
+  }, []);
+
+  const groundSoon = useCallback((): void => {
+    if (groundFrame.current === null) {
+      groundFrame.current = window.requestAnimationFrame(readGrounds);
+    }
+  }, [readGrounds]);
 
   const name = useCallback((on: boolean): void => {
     if (on === namingRef.current) return;
     namingRef.current = on;
     setNaming(on);
   }, []);
-
-  // The name leaves NAME_LINGER_MS after the last scroll frame, but never under a held thumb.
-  const linger = useCallback((): void => {
-    if (lingerRef.current !== null) window.clearTimeout(lingerRef.current);
-    lingerRef.current = window.setTimeout(() => {
-      lingerRef.current = null;
-      if (!drag.current) name(false);
-    }, NAME_LINGER_MS);
-  }, [name]);
 
   useEffect(() => {
     let frame: number | null = null;
@@ -171,8 +227,11 @@ export function ScrollRail({ names }: ScrollRailProps): React.JSX.Element {
       const g: Geometry = { track: trackHeight, thumb, limit: Math.max(0, height - view), view, tops };
       geo.current = g;
       thumbEl.style.height = `${thumb}px`;
-      setTicks(tops.map((top) => (Number.isFinite(top) ? centreAt(g, top) : null)));
+      const centres = tops.map((top) => (Number.isFinite(top) ? centreAt(g, top) : null));
+      tickRef.current = centres;
+      setTicks(centres);
       paint(currentScroll());
+      if (openRef.current || drag.current) groundSoon();
     };
     const schedule = (): void => {
       if (frame === null) frame = window.requestAnimationFrame(measure);
@@ -187,22 +246,11 @@ export function ScrollRail({ names }: ScrollRailProps): React.JSX.Element {
     void document.fonts.ready.then(schedule);
     schedule();
 
-    let lastScroll = currentScroll();
-    let lastTime = performance.now();
     const onScroll = (): void => {
-      const lenis = lenisOf();
-      const scroll = lenis ? lenis.scroll : window.scrollY;
-      const now = performance.now();
-      // Lenis knows its own speed. Native scrolling (reduced motion) is measured over time, not
-      // per event, because one wheel notch is a single 100px event however slowly it comes.
-      const speed = lenis
-        ? Math.abs(lenis.velocity)
-        : (Math.abs(scroll - lastScroll) / Math.max(now - lastTime, 1)) * (1000 / 60);
-      lastScroll = scroll;
-      lastTime = now;
-      paint(scroll);
-      if (drag.current || speed > FAST_VELOCITY) name(true);
-      if (namingRef.current) linger();
+      paint(currentScroll());
+      // The page moves under visible plates, so their grounds are read again; a closed rail
+      // shows no plate and reads nothing.
+      if (openRef.current || drag.current) groundSoon();
     };
     window.addEventListener("scroll", onScroll, { passive: true });
 
@@ -212,9 +260,10 @@ export function ScrollRail({ names }: ScrollRailProps): React.JSX.Element {
       window.removeEventListener("load", schedule);
       window.removeEventListener("scroll", onScroll);
       if (frame !== null) window.cancelAnimationFrame(frame);
+      if (groundFrame.current !== null) window.cancelAnimationFrame(groundFrame.current);
       if (lingerRef.current !== null) window.clearTimeout(lingerRef.current);
     };
-  }, [paint, name, linger]);
+  }, [paint, groundSoon]);
 
   const seek = (clientY: number): void => {
     const d = drag.current;
@@ -236,8 +285,10 @@ export function ScrollRail({ names }: ScrollRailProps): React.JSX.Element {
     const onThumb = local >= thumbTop && local <= thumbTop + g.thumb;
     drag.current = { trackTop, grip: onThumb ? local - thumbTop : g.thumb / 2 };
     event.currentTarget.setPointerCapture(event.pointerId);
+    if (lingerRef.current !== null) window.clearTimeout(lingerRef.current);
     setDragging(true);
     name(true);
+    groundSoon();
     if (!onThumb) seek(event.clientY);
   };
 
@@ -252,7 +303,19 @@ export function ScrollRail({ names }: ScrollRailProps): React.JSX.Element {
       event.currentTarget.releasePointerCapture(event.pointerId);
     }
     setDragging(false);
-    linger();
+    lingerRef.current = window.setTimeout(() => {
+      lingerRef.current = null;
+      name(false);
+    }, NAME_LINGER_MS);
+  };
+
+  const onEnter = (): void => {
+    openRef.current = true;
+    groundSoon();
+  };
+
+  const onLeave = (): void => {
+    openRef.current = false;
   };
 
   const onJump = (key: MovementKey): void => {
@@ -268,11 +331,16 @@ export function ScrollRail({ names }: ScrollRailProps): React.JSX.Element {
   };
 
   const current = active >= 0 ? MOVEMENTS[active] : undefined;
+  // A held thumb keeps the rail up even when dragged back onto the hero.
+  const shown = ticks !== null && (past || dragging);
 
   return (
     <div
-      className={`scroll-rail${ticks ? " is-ready" : ""}${dragging ? " is-dragging" : ""}${naming && current ? " is-naming" : ""}`}
+      ref={railRef}
+      className={`scroll-rail${shown ? " is-shown" : ""}${dragging ? " is-dragging" : ""}${naming && current ? " is-naming" : ""}`}
       aria-hidden="true"
+      onPointerEnter={onEnter}
+      onPointerLeave={onLeave}
     >
       <div
         ref={trackRef}
@@ -297,7 +365,7 @@ export function ScrollRail({ names }: ScrollRailProps): React.JSX.Element {
         <div ref={thumbRef} className="scroll-rail-thumb">
           <span className="scroll-rail-bar" />
           {current && (
-            <span className="scroll-rail-plate scroll-rail-say">
+            <span className={`scroll-rail-plate scroll-rail-say${grounds.say ? " is-night" : ""}`}>
               <span className="scroll-rail-name">{names[current.key]}</span>
               <span className="scroll-rail-dot">·</span>
               <span className="scroll-rail-latin">{current.latin}</span>
@@ -312,7 +380,7 @@ export function ScrollRail({ names }: ScrollRailProps): React.JSX.Element {
             key={m.key}
             type="button"
             tabIndex={-1}
-            className={`scroll-rail-plate scroll-rail-tick${i === active ? " is-active" : ""}`}
+            className={`scroll-rail-plate scroll-rail-tick${i === active ? " is-active" : ""}${grounds.ticks[i] ? " is-night" : ""}`}
             style={{ top: `${y.toFixed(1)}px` }}
             onMouseDown={(event) => event.preventDefault()}
             onClick={() => onJump(m.key)}

@@ -27,17 +27,9 @@ import { FOUNDATION_PAGE_LINKED } from "../../data/foundationSupport";
 import type { LandingChrome } from "../../i18n/content/landing";
 import { useAudioChoice } from "./hooks/useAudioChoice";
 import { useFocusTrap } from "./hooks/useFocusTrap";
+import { DARK_SURFACES } from "./lib/darkSurfaces";
 import { horaForWarsaw } from "./lib/horaeCanonicae";
 import { Typo } from "./lib/Typo";
-
-// Sections whose surface is dark enough that the glass chrome must invert to its light brand.
-// The footer is CONDITIONALLY one of them: it is printed on the ground of the canonical hour it
-// is read in (`body[data-lumen]`, set by scripts/landing.ts), so at Completorium the bar stands
-// over a night plate and a dark brand on it would be unreadable. The probe below runs
-// `closest()` on every scroll frame, so the condition is live — a plate that turns at 21:00
-// takes the chrome with it.
-const DARK_SELECTORS =
-  ".litany, .ensemble, .director-dark, .final-support, .preloader, .vault, .regulamin, .gratitude, .failure, body[data-lumen='nox'] .site-footer";
 
 // How long a chosen silk is held before the page swap fires — one beat, so the gesture reads
 // before the crossfade (transitions.css) dissolves it. Shared by the desktop registrum's
@@ -211,7 +203,9 @@ export function StickyHeader({
       if (probeY <= 0 || probeY >= window.innerHeight) return;
       const el = document.elementFromPoint(probeX, probeY);
       if (!el) return;
-      setOnDark(Boolean(el.closest(DARK_SELECTORS)));
+      // Over a dark surface the glass inverts to its light brand; the probe runs on every scroll
+      // frame, so the footer's hour-bound ground (lib/darkSurfaces) is followed live.
+      setOnDark(Boolean(el.closest(DARK_SURFACES)));
     };
     const onScroll = () => {
       if (pending) return;

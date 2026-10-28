@@ -337,8 +337,11 @@ was never wide enough for it: it printed `Vox memoriae` across the Imagines plat
 from 1440px up (the plate's margin only clears ~68px of inscription past ~1780px, and below 1280px
 the band runs to the window's edge outright), and across the liniatura's risen seal at every width
 under ~1780. Sections had to flag themselves for it to withdraw. The rail answers this by
-construction — a 2px hairline at the window's edge, labels on plates in the bar's ground — so no
-section carries a flag. Any future edge device must do the same or re-measure those two objects.
+construction — a 2px hairline at the window's edge, labels only on hover or under a held thumb, each
+on a plate in the ground of the section under it — so no section carries a flag. The ground is
+probed at the plate's own height (`lib/darkSurfaces`): the bar's `is-on-dark` describes the top of
+the screen and set plates dark on parchment. Any future edge device must do the same or re-measure
+those two objects.
 
 **`Vox memoriae` and `Sustinete nos` stay.** Both are grammatical. `Sustinete nos` is site-wide nav
 vocabulary (`SiteChrome.astro`, `StickyHeader.tsx`), and `Vox` anchors `data-movement="vox"` plus

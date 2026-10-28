@@ -1,19 +1,22 @@
   /* ── Scroll rail ──────────────────────────────────────────────────────────────────────
      The landing's scrollbar (islands/landing/ScrollRail.tsx). The site hides the native one
-     (base.css), so on a desktop this is the only position cue. At rest: a hairline at the window's
-     right edge and a thumb. A pointer on the right edge opens it into the three movements, each a
-     notch on the rail and a plate beside it. Fine pointer at ≥ 1200px only — the same query as
-     the island's `client:media` in LandingPage.astro; keep the two equal.
+     (base.css), so on a desktop this is the only position cue. Absent over the hero; past it, a
+     hairline at the window's right edge and a thumb. A pointer on the right edge opens it into the
+     three movements, each a notch on the rail and a plate beside it; a held thumb names its own.
+     Fine pointer at ≥ 1200px only — the same query as the island's `client:media` in
+     LandingPage.astro; keep the two equal.
 
      The thumb is --candle-display, not --candle: it is the one mark here a reader needs, and it
      clears 3:1 against both grounds the rail crosses (3.85 on paper, ~4.4 on night) where the
      lighter gold reads 2.1 on paper. The track stays --candle, faint; it is the groove, not the
      position.
 
-     The plates take the BAR'S ground, read from the header's own `is-on-dark`: the rail is
-     chrome, and a label that floated on the page with no ground printed itself across whatever
-     reached the right edge. At 0.92 the plate holds its text against any page beneath it, so no
-     section has to step aside for the rail and none carries a flag for it. */
+     Each plate takes the ground of the section under IT (`is-night`, probed by the island at the
+     plate's own height). The bar's `is-on-dark` is no guide here: it describes the top of the
+     screen, and a plate halfway down stood dark on parchment under a bar over a photograph. A
+     label with no ground at all printed itself across whatever reached the right edge; at 0.92
+     the plate holds its text against any page beneath it, so no section has to step aside for
+     the rail and none carries a flag for it. */
   .scroll-rail {
     --rail-zone: 24px;
     position: fixed;
@@ -24,6 +27,7 @@
     display: none;
     width: var(--rail-zone);
     opacity: 0;
+    pointer-events: none;
     user-select: none;
     transition: opacity 0.6s var(--ease);
   }
@@ -34,10 +38,15 @@
     }
   }
 
-  /* Raised only once measured, so the server's thumb (at the top) never shows over a restored
-     scroll position. */
-  .scroll-rail.is-ready {
+  /* Raised once measured — so the server's thumb (at the top) never shows over a restored scroll
+     position — and once past the hero. Inert while lowered: an invisible rail must not open its
+     index under a pointer resting at the film's edge. */
+  .scroll-rail.is-shown {
     opacity: 1;
+  }
+
+  .scroll-rail.is-shown .scroll-rail-track {
+    pointer-events: auto;
   }
 
   .scroll-rail-track {
@@ -151,16 +160,16 @@
     color: var(--candle-ink);
   }
 
-  .voct-landing:has(.chrome.is-on-dark) .scroll-rail-plate {
+  .scroll-rail-plate.is-night {
     background: rgba(16, 15, 13, 0.92);
     color: var(--paper);
   }
 
-  .voct-landing:has(.chrome.is-on-dark) .scroll-rail-dot {
+  .scroll-rail-plate.is-night .scroll-rail-dot {
     color: rgba(244, 241, 233, 0.6);
   }
 
-  .voct-landing:has(.chrome.is-on-dark) .scroll-rail-latin {
+  .scroll-rail-plate.is-night .scroll-rail-latin {
     color: var(--candle);
   }
 
@@ -190,8 +199,8 @@
     text-underline-offset: 4px;
   }
 
-  /* The thumb's name, while dragged or on a fast run. An open rail already names all three, so
-     the thumb stays silent under a resting pointer and speaks again once the pointer holds it. */
+  /* The thumb's name, while held and for a moment after the release. Released under the pointer,
+     it gives way at once to the open rail, which already names all three. */
   .scroll-rail-say {
     position: absolute;
     top: 50%;
