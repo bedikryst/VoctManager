@@ -44,17 +44,25 @@
  *     → "removed" (intent-carrying URLs skip the whole rite);
  *   - reduced motion → no rite at all: the question (or the page) is owed immediately,
  *     because the ceremony IS the motion;
+ *   - rite already seen this session (e.g. TTL expired mid-session) → the question
+ *     immediately, without the ceremony;
  *   - valid saved audio choice (3h TTL, useAudioChoice) → the BRIEF rite: cadence only,
  *     fixed length, never waiting for `load` — holding a curtain to mask loading when
  *     there is no question to ask is a performance, not a threshold. DocumentGates arms
  *     `html.rite-brief` before paint, so the pen starts writing on the first frame,
  *     before this island hydrates; here we only schedule the resolution off the already
  *     running animation;
- *   - no valid choice → the FULL rite: hold (until both display words have surfaced,
- *     elastic until `load`, capped) → cadence → the question, with the rings still
- *     breathing behind it;
- *   - rite already seen this session (e.g. TTL expired mid-session) → the question
- *     immediately, without the ceremony.
+ *   - full rite met within the last day (`RITE_AT_KEY`) → the question without the
+ *     ceremony, as for a session that has seen it;
+ *   - otherwise → the FULL rite: hold (until both display words have surfaced, elastic
+ *     until `load`, capped) → cadence → the question, with the rings still breathing
+ *     behind it.
+ *
+ *  THE RITE CAN BE SKIPPED, never shortened. During hold and cadence any key, tap or wheel
+ *  ends it with a short crossfade (`is-skipped`) — into the question, or onto the page when
+ *  the choice is remembered — and a quiet "Pomiń" surfaces ~1.2s in for whoever would not
+ *  guess that. A skipped full rite is spent for the day like a watched one, and is reported
+ *  as `wejscie+pomin`.
  *
  *  The chosen option is written here, reported to Plausible (`wejscie+dzwiek` /
  *  `wejscie+cisza`, lib/plausible) and broadcast as `voct:audio-choice`; the
@@ -80,7 +88,7 @@ import { Typo } from "./lib/Typo";
 // to move with it — any shorter and the hold parts before that word is legible. SAFETY_CEILING
 // caps waiting for `load` — past it the cadence begins regardless, because the threshold
 // question is a better place to wait than a curtain: there the visitor has something to do.
-// Both count from the hold's first frame (`holdStartTime`), not from this island's mount.
+// Both count from the hold's first frame (`cssClockStart`), not from this island's mount.
 // CADENCE_MS mirrors the CSS timeline (illumination ends ~2900ms on the brief path's
 // lead-in) and is only the fallback — the primary resolution is the `riteIllum`
 // animation's own `finished`. REST_BEAT lets the completed mark land before it parts.
@@ -90,9 +98,24 @@ const CADENCE_MS = 2950;
 const REST_BEAT = 420;
 const HERO_GRACE = 900;
 const EXIT_DURATION = 700;
+// "Pomiń" surfaces once the first display word is legible (w1 starts at 1s): early enough to be
+// found by someone who came for the page, late enough not to be the first thing the rite says.
+const SKIP_REVEAL_AT = 1200;
+// The skip's crossfade; mirrors `--skip-fade` on `.preloader.is-skipped` (01-foundation.css).
+const SKIP_FADE_MS = 300;
+// How long after a skip the question ignores its own buttons. The tap that skipped lands its
+// `click` after its `pointerdown`, and by then a button may stand under the finger.
+const SKIP_CLICK_GUARD = 450;
 const SEEN_KEY = "voct.preloader.seen";
+// The full rite is spent for a day once met, watched or skipped: a later session inside that day
+// gets the question without the ceremony. The session flag alone does not hold it, because a
+// reload clears that flag (DocumentGates) and a phone that unloaded the tab reloads it on return.
+// DocumentGates reads the same key and TTL before paint — change both together.
+const RITE_AT_KEY = "voct.preloader.rite-at";
+const RITE_TTL_MS = 24 * 60 * 60 * 1000;
+const MODIFIER_KEYS = new Set(["Shift", "Control", "Alt", "AltGraph", "Meta", "CapsLock"]);
 
-function preloaderAlreadySeen(): boolean {
+function seenThisSession(): boolean {
   if (typeof window === "undefined") return false;
   try {
     return window.sessionStorage.getItem(SEEN_KEY) === "1";
@@ -101,7 +124,7 @@ function preloaderAlreadySeen(): boolean {
   }
 }
 
-function markPreloaderSeen(): void {
+function markSeenThisSession(): void {
   try {
     window.sessionStorage.setItem(SEEN_KEY, "1");
   } catch {
@@ -109,16 +132,42 @@ function markPreloaderSeen(): void {
   }
 }
 
+/** Whether the full rite was met within `RITE_TTL_MS`. An expired stamp is removed here — the
+ *  expiry the privacy policy (§ 7, § 10) states. */
+function fullRiteMetRecently(): boolean {
+  try {
+    const at = Number(window.localStorage.getItem(RITE_AT_KEY));
+    const age = Date.now() - at;
+    if (at > 0 && age >= 0 && age <= RITE_TTL_MS) return true;
+    window.localStorage.removeItem(RITE_AT_KEY);
+    return false;
+  } catch {
+    return false;
+  }
+}
+
+/** The full rite has been met: spent for this session and, from now, for a day. */
+function stampFullRite(): void {
+  markSeenThisSession();
+  try {
+    window.localStorage.setItem(RITE_AT_KEY, String(Date.now()));
+  } catch {
+    /* private mode / disabled storage — the session flag still holds */
+  }
+}
+
 /**
- * When the hold's CSS clock started, on the `performance.now()` timebase. The hold is
- * server-rendered and its words begin on the first painted frame, while this island mounts
- * only after hydration — a floor counted from the mount would shift with hydration time and
- * part the hold before its words have played. Null when the hold has no animation to read;
- * the caller then counts from the mount.
+ * When an element's CSS clock started, on the `performance.now()` timebase: the earliest
+ * start among the animations in its subtree. The rite is server-rendered and begins on the
+ * first painted frame, while this island mounts only after hydration — a delay counted from
+ * the mount would shift with hydration time (and part the hold before its words have
+ * played). Null when nothing there is animating; the caller then counts from the mount.
  */
-function holdStartTime(hold: HTMLElement | null): number | null {
-  const start = hold?.getAnimations({ subtree: true })[0]?.startTime;
-  return typeof start === "number" ? start : null;
+function cssClockStart(el: HTMLElement | null): number | null {
+  const starts = (el?.getAnimations({ subtree: true }) ?? [])
+    .map((anim) => anim.startTime)
+    .filter((start): start is number => typeof start === "number");
+  return starts.length > 0 ? Math.min(...starts) : null;
 }
 
 function prefersReducedMotion(): boolean {
@@ -249,6 +298,14 @@ export function Preloader({ copy, chrome, lang }: PreloaderProps): React.JSX.Ele
   const wentCadence = useRef(false);
   const wentChoice = useRef(false);
   const wentTransit = useRef(false);
+  // Which rite is playing, null until the mount effect starts one. "hold" is also the undecided
+  // first state of every path, so a tap on a page that will never show the rite must not count
+  // as a skip; and only a skipped FULL rite is stamped and reported.
+  const riteForm = useRef<"full" | "brief" | null>(null);
+  // Set once and never cleared — a tap fires both `pointerdown` and the button's `click`.
+  const wentSkip = useRef(false);
+  const pickGuardUntil = useRef(0);
+  const [skipShown, setSkipShown] = useState(false);
 
   useBodyClass(
     phase === "choice" ? "threshold-open" : phase !== "removed" ? "preload-open" : null,
@@ -265,8 +322,8 @@ export function Preloader({ copy, chrome, lang }: PreloaderProps): React.JSX.Ele
     // Same session: never replay the rite. Reduced motion: never play it at all. Either
     // way the saved choice decides whether the question is still owed. (DocumentGates
     // arms `preloader-skip` for both cases before paint, so nothing flashes.)
-    if (prefersReducedMotion() || preloaderAlreadySeen()) {
-      markPreloaderSeen();
+    if (prefersReducedMotion() || seenThisSession()) {
+      markSeenThisSession();
       if (read() === null) {
         wentChoice.current = true;
         setPhase("choice");
@@ -280,21 +337,32 @@ export function Preloader({ copy, chrome, lang }: PreloaderProps): React.JSX.Ele
     // fixed length, already running since first paint via `html.rite-brief`. No waiting
     // for `load`: the page may keep painting under the dissolve.
     if (read() !== null) {
-      markPreloaderSeen();
+      markSeenThisSession();
+      riteForm.current = "brief";
       wentCadence.current = true;
       setPhase("cadence");
       return;
     }
 
+    // The full rite was met within the day and the choice has since expired: the question
+    // alone. (DocumentGates arms `preloader-skip` for this case too.)
+    if (fullRiteMetRecently()) {
+      markSeenThisSession();
+      wentChoice.current = true;
+      setPhase("choice");
+      return;
+    }
+
     // The full rite: the hold loop breathes until the page is ready AND both display words
     // have surfaced, then the pen takes over.
-    const startedAt = holdStartTime(holdRef.current) ?? performance.now();
+    riteForm.current = "full";
+    const startedAt = cssClockStart(holdRef.current) ?? performance.now();
     let timer: number | undefined;
 
     const beginCadence = () => {
       const remaining = Math.max(0, MIN_HOLD - (performance.now() - startedAt));
       timer = window.setTimeout(() => {
-        markPreloaderSeen();
+        stampFullRite();
         wentCadence.current = true;
         setPhase("cadence");
       }, remaining);
@@ -371,8 +439,68 @@ export function Preloader({ copy, chrome, lang }: PreloaderProps): React.JSX.Ele
     };
   }, [phase, read]);
 
+  const skip = useCallback(() => {
+    if (wentSkip.current || riteForm.current === null) return;
+    wentSkip.current = true;
+    pickGuardUntil.current = performance.now() + SKIP_CLICK_GUARD;
+    if (riteForm.current === "full") {
+      stampFullRite();
+      track(GOALS.riteSkipped);
+    }
+    if (read() === null) {
+      wentChoice.current = true;
+      setPhase("choice");
+    } else {
+      setPhase("hiding");
+    }
+  }, [read]);
+
+  // Declared after the mount effect, so on the first commit `riteForm` is already decided.
+  useEffect(() => {
+    if ((phase !== "hold" && phase !== "cadence") || riteForm.current === null) return;
+
+    const onKey = (event: KeyboardEvent) => {
+      // A chord or a bare modifier is addressed to the browser (a tab switch, a reload, the
+      // address bar), not to the page.
+      if (event.ctrlKey || event.metaKey || event.altKey || MODIFIER_KEYS.has(event.key)) return;
+      // The key is spent on the skip. The question's focus trap attaches its document listener
+      // before this event has bubbled that far, and would read the same Escape as "silence".
+      event.preventDefault();
+      event.stopPropagation();
+      skip();
+    };
+    const onGesture = () => skip();
+    const gesture = { capture: true, passive: true } as const;
+
+    window.addEventListener("keydown", onKey, true);
+    window.addEventListener("pointerdown", onGesture, gesture);
+    window.addEventListener("wheel", onGesture, gesture);
+    window.addEventListener("touchmove", onGesture, gesture);
+    return () => {
+      window.removeEventListener("keydown", onKey, true);
+      window.removeEventListener("pointerdown", onGesture, true);
+      window.removeEventListener("wheel", onGesture, true);
+      window.removeEventListener("touchmove", onGesture, true);
+    };
+  }, [phase, skip]);
+
+  // Counted from the rite's first painted frame, and never shown before hydration: a "Pomiń"
+  // on screen with no listener behind it would be the one control on the site that lies.
+  useEffect(() => {
+    if ((phase !== "hold" && phase !== "cadence") || riteForm.current === null || skipShown) {
+      return;
+    }
+    const startedAt = cssClockStart(overlayRef.current) ?? performance.now();
+    const timer = window.setTimeout(
+      () => setSkipShown(true),
+      Math.max(0, SKIP_REVEAL_AT - (performance.now() - startedAt)),
+    );
+    return () => window.clearTimeout(timer);
+  }, [phase, skipShown]);
+
   const pick = useCallback(
     (choice: AudioChoice) => {
+      if (performance.now() < pickGuardUntil.current) return;
       write(choice);
       // AudioController (always mounted) starts the ambient synchronously inside this
       // same click call stack — the user gesture WebAudio needs.
@@ -391,36 +519,51 @@ export function Preloader({ copy, chrome, lang }: PreloaderProps): React.JSX.Ele
 
   useEffect(() => {
     if (phase !== "choice") return;
-    const timer = window.setTimeout(() => {
-      choiceRef.current?.focus({ preventScroll: true });
-    }, 950);
+    const timer = window.setTimeout(
+      () => {
+        choiceRef.current?.focus({ preventScroll: true });
+      },
+      wentSkip.current ? SKIP_FADE_MS : 950,
+    );
     return () => window.clearTimeout(timer);
   }, [phase]);
 
+  // A skip that parts straight onto the page leaves in the skip's own time; a skip that led
+  // to the question has already spent its crossfade, and the answer leaves as any answer does.
+  const skipExits = wentSkip.current && !wentChoice.current;
+
   useEffect(() => {
     if (phase !== "hiding") return;
-    const timer = window.setTimeout(() => setPhase("removed"), EXIT_DURATION);
+    const timer = window.setTimeout(
+      () => setPhase("removed"),
+      skipExits ? SKIP_FADE_MS : EXIT_DURATION,
+    );
     return () => window.clearTimeout(timer);
-  }, [phase]);
+  }, [phase, skipExits]);
 
   if (phase === "removed") return null;
 
   const isChoice = phase === "choice";
+  const isRite = phase === "hold" || phase === "cadence";
   const classes = ["preloader"];
   if (wentCadence.current) classes.push("is-cadence");
   if (isChoice || (phase === "hiding" && wentChoice.current)) classes.push("is-choice");
   if (wentTransit.current) classes.push("is-pinned", "is-transit");
+  if (wentSkip.current && (phase !== "hiding" || skipExits)) classes.push("is-skipped");
+  if (isRite && skipShown) classes.push("is-skippable");
   if (phase === "hiding") classes.push("is-hidden");
 
   return (
     <Typo locale={lang}>
+      {/* Not `aria-hidden` during the rite: "Pomiń" is focusable and lives here. Everything
+          else of the rite hides itself, and the question is `visibility: hidden` until owed. */}
       <div
         ref={overlayRef}
         className={classes.join(" ")}
         role={isChoice ? "dialog" : undefined}
         aria-modal={isChoice || undefined}
         aria-labelledby={isChoice ? "threshold-title" : undefined}
-        aria-hidden={isChoice ? undefined : true}
+        aria-hidden={phase === "hiding" || undefined}
       >
         <div className="preloader-rings" aria-hidden="true">
           <span className="preloader-ring r1" />
@@ -461,6 +604,15 @@ export function Preloader({ copy, chrome, lang }: PreloaderProps): React.JSX.Ele
               out on the way down and snap back on arrival. */}
           <span className="rite-raster" />
         </div>
+
+        <button
+          type="button"
+          className="rite-skip"
+          aria-label={chrome.skipRiteAria}
+          onClick={skip}
+        >
+          {chrome.skipRite}
+        </button>
 
         <div className="preloader-choice">
           <div className="threshold-inner" ref={choiceRef} tabIndex={-1}>

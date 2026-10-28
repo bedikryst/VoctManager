@@ -30,7 +30,7 @@
 # language (RODO is the GDPR; `ustawa o rachunkowości` is the Polish Accounting Act) and never
 # renumbers a citation or rounds a period.
 #
-# STORAGE KEYS ARE IDENTIFIERS, not words. `voct.demo.audio` and the two preloader flags are
+# STORAGE KEYS ARE IDENTIFIERS, not words. `voct.demo.audio` and the preloader entries are
 # structural fields rendered inside `<code>`; only the sentence around them is copy.
 #
 # TRANSLATIONS ARE NOT HERE. They live in `src/content/pages.{en,fr}.yaml` under this page's desk
@@ -42,8 +42,8 @@
 
 # The version this document is at, and the day it started to apply. Both are read by the line under
 # the title and by the newest entry of the history at the foot.
-version: "1.7"
-effectiveFrom: "2026-10-02"
+version: "1.8"
+effectiveFrom: "2026-10-28"
 
 meta:
   # Read in a browser tab and by a crawler, never on the page. The document is `noindex,follow` —
@@ -466,6 +466,11 @@ s7:
       textHtml: >-
         <strong>Preferencja audio</strong> w localStorage — 3 godziny od zapisu lub do czasu
         wyczyszczenia danych przeglądarki przez użytkownika.
+    # `RITE_TTL_MS` in `islands/landing/Preloader.tsx` (and its mirror in DocumentGates).
+    - id: riteAt
+      textHtml: >-
+        <strong>Znacznik ekranu wejściowego</strong> w localStorage — 24 godziny od zapisu lub do
+        czasu wyczyszczenia danych przeglądarki przez użytkownika.
 
 s8:
   title: "Twoje prawa"
@@ -567,6 +572,13 @@ s10:
           Flaga informująca, że widziałeś już rytualny ekran wejściowy w tej sesji; pozwala pominąć
           go przy powrotach do strony głównej z podstron. Kasowana automatycznie przy zamknięciu
           karty oraz przy odświeżeniu strony.
+      - id: riteAt
+        storageKey: "voct.preloader.rite-at"
+        store: "localStorage"
+        note: >-
+          Znacznik czasu ostatniego wyświetlenia pełnego rytualnego ekranu wejściowego, także
+          wtedy, gdy został pominięty. Przez 24 godziny od zapisu strona nie odtwarza tego ekranu
+          w całości. Wpis nie zawiera nic poza znacznikiem czasu.
       - id: preloaderLastLoad
         storageKey: "voct.preloader.last-load"
         store: "sessionStorage"
@@ -654,6 +666,13 @@ history:
   # inside a key part.
   label: "Historia zmian"
   entries:
+    - id: "v1-8"
+      version: "1.8"
+      date: "2026-10-28"
+      note: >-
+        W § 10 i § 7 opisaliśmy nowy wpis w pamięci przeglądarki (localStorage): znacznik czasu,
+        dzięki któremu rytualny ekran wejściowy strony głównej nie odtwarza się w całości częściej
+        niż raz na 24 godziny. Wpis nie zawiera danych osobowych i nie opuszcza przeglądarki.
     - id: "v1-7"
       version: "1.7"
       date: "2026-10-02"

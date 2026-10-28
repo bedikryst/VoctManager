@@ -606,6 +606,10 @@ export interface LandingChrome {
   readonly enterVoice: string;
   readonly enterVoiceHint: string;
   readonly enterVoiceAria: string;
+  /** The rite's quiet exit and its accessible name, which begins with the visible word. An
+      affordance, not desk copy: one verb, complete in every locale by type. */
+  readonly skipRite: string;
+  readonly skipRiteAria: string;
 
   /** The IBAN copy control, before and after the click. */
   readonly copy: string;
@@ -656,6 +660,8 @@ export const LANDING_CHROME: Record<Locale, LandingChrome> = {
     enterVoice: "Wejdź z głosem",
     enterVoiceHint: "śpiew zespołu · cicho",
     enterVoiceAria: "Wejdź z głosem — cichy śpiew zespołu",
+    skipRite: "Pomiń",
+    skipRiteAria: "Pomiń wstęp",
     copy: "Kopiuj",
     copied: "Skopiowano",
     footerAria: "Stopka",
@@ -693,6 +699,8 @@ export const LANDING_CHROME: Record<Locale, LandingChrome> = {
     enterVoice: "Enter with voice",
     enterVoiceHint: "the ensemble singing · quietly",
     enterVoiceAria: "Enter with voice — the ensemble singing quietly",
+    skipRite: "Skip",
+    skipRiteAria: "Skip the intro",
     copy: "Copy",
     copied: "Copied",
     footerAria: "Footer",
@@ -730,6 +738,8 @@ export const LANDING_CHROME: Record<Locale, LandingChrome> = {
     enterVoice: "Entrer avec la voix",
     enterVoiceHint: "le chant de l'ensemble · en sourdine",
     enterVoiceAria: "Entrer avec la voix — le chant de l'ensemble en sourdine",
+    skipRite: "Passer",
+    skipRiteAria: "Passer l'introduction",
     copy: "Copier",
     copied: "Copié",
     footerAria: "Pied de page",

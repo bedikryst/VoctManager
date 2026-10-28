@@ -210,6 +210,7 @@ The site does not set first-party cookies or embed third-party trackers; its onl
 |:---|:---|:---|:---|
 | `voct.demo.audio` | localStorage | Threshold choice (silence / voice) | 3 hours |
 | `voct.preloader.seen` | sessionStorage | Skip the opening rite on intra-session returns | tab close |
+| `voct.preloader.rite-at` | localStorage | When the full rite was last met (watched or skipped); later sessions within the day get the question without it | 24 hours |
 | `voct.preloader.last-load` | sessionStorage | Distinguish reload from ClientRouter swap | tab close |
 
 Payment-gateway scripts (BNP Paribas Axepta / PayU) load only when the user enters the donation funnel; cookies they set are strictly necessary for the transaction (PSD2 SCA, fraud detection).

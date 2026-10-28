@@ -223,7 +223,10 @@
        the rite landed on the chrome underneath, which the visitor cannot see. It lets go
        only once it starts leaving. */
     pointer-events: auto;
-    transition: opacity 1s var(--ease-slow), visibility 1s var(--ease-slow), filter 1s var(--ease-slow);
+    transition:
+      opacity var(--skip-fade, 1s) var(--ease-slow),
+      visibility var(--skip-fade, 1s) var(--ease-slow),
+      filter var(--skip-fade, 1s) var(--ease-slow);
 
     /* The hinge (see `.is-transit` below). NOT `--ease-slow`: that curve is for something
        arriving and settling from nowhere, and this is a body already at rest being moved.
@@ -248,6 +251,14 @@
     pointer-events: none;
   }
 
+  /* A skipped rite is a crossfade, never a cut, and a short one: the visitor asked to go.
+     Every transition the skip sets off — the hold and the mark yielding, the question
+     arriving, or the overlay parting onto the page — reads this one duration and keeps its
+     own when no skip happened. Preloader.tsx mirrors it as SKIP_FADE_MS. */
+  .preloader.is-skipped {
+    --skip-fade: 300ms;
+  }
+
   /* ── The rite's body: a hold that breathes ─────────────────────────────────
      A curtain covers a wait of unknown length, so the hold is a LOOP, never a
      film: the candle-spark pulses at the centre, rings radiate like sound in a
@@ -263,7 +274,7 @@
   .preloader-hold {
     position: absolute;
     inset: 0;
-    transition: opacity 0.7s var(--ease);
+    transition: opacity var(--skip-fade, 0.7s) var(--ease);
   }
 
   .preloader-spark {
@@ -558,6 +569,55 @@
     }
   }
 
+  /* ── "Pomiń": the rite's one control ──────────────────────────────────────
+     Any key, tap or wheel already ends the rite (Preloader.tsx); this is the same exit
+     made visible for whoever would not guess that. Quiet by design: a 12px capital at the
+     foot of the frame, in paper at 0.54 — 5.5:1 on --dark, 5.4:1 where the centre glow
+     still reaches the foot on a short landscape phone. It is shown only while the rite can
+     really be skipped: `is-skippable` comes from the island ~1.2s into the rite and never
+     before hydration. The extra left padding is the tracking's own trailing gap, so the
+     word sits on the centre line rather than 3px left of it. */
+  .rite-skip {
+    position: absolute;
+    left: 50%;
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 18px);
+    z-index: 3;
+    padding: 16px 22px 16px calc(22px + 0.24em);
+    border: 0;
+    background: none;
+    color: rgba(244, 241, 233, 0.54);
+    font-family: var(--capitalis);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.24em;
+    line-height: 1;
+    text-transform: uppercase;
+    cursor: pointer;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateX(-50%);
+    transition:
+      opacity var(--skip-fade, 0.6s) var(--ease),
+      visibility 0s linear var(--skip-fade, 0.6s),
+      color 0.45s var(--ease);
+  }
+
+  .preloader.is-skippable .rite-skip {
+    opacity: 1;
+    visibility: visible;
+    transition-delay: 0s;
+  }
+
+  .rite-skip:hover,
+  .rite-skip:focus-visible {
+    color: var(--paper);
+  }
+
+  .rite-skip:focus-visible {
+    outline: 1px solid var(--candle);
+    outline-offset: -6px;
+  }
+
   /* ── The rite's final beat: the threshold choice INSIDE the preloader ──────
      One overlay, one decision. The old standalone `.threshold` modal (a second
      fullscreen gate after the preloader) is gone — its inner classes
@@ -574,8 +634,8 @@
     visibility: hidden;
     transform: translateY(14px);
     transition:
-      opacity 0.9s var(--ease-slow),
-      transform 0.9s var(--ease-slow),
+      opacity var(--skip-fade, 0.9s) var(--ease-slow),
+      transform var(--skip-fade, 0.9s) var(--ease-slow),
       visibility 0s linear 0.9s;
   }
 
@@ -594,7 +654,7 @@
      co-exist and source order breaks the tie. */
   .preloader.is-choice:not(.is-transit) .rite {
     opacity: 0;
-    transition: opacity 0.6s var(--ease);
+    transition: opacity var(--skip-fade, 0.6s) var(--ease);
   }
 
   .preloader.is-choice .preloader-hold {

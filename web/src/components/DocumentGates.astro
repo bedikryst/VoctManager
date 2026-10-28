@@ -36,11 +36,17 @@
 <script is:inline>
   (function () {
     var SEEN = "voct.preloader.seen";
+    // Mirrors RITE_AT_KEY / RITE_TTL_MS in Preloader.tsx: the full rite, once met, is spent for a
+    // day. Judged here, like the audio choice below, so the ceremony never paints for a visitor
+    // who is owed only the question; expiry housekeeping stays with the island.
+    var RITE_AT = "voct.preloader.rite-at";
+    var RITE_TTL_MS = 24 * 60 * 60 * 1000;
 
-    // The rite is a SESSION event: sessionStorage carries "seen" across ClientRouter returns to
-    // "/", while a reload should feel like a fresh start. This script runs exactly once per real
+    // Within a session the rite never replays: sessionStorage carries "seen" across ClientRouter
+    // returns to "/". A reload starts a fresh session, so the brief rite can bow again; whether
+    // the FULL rite plays is the daily stamp's call. This script runs exactly once per real
     // document load, so a reload-typed navigation into the landing is precisely the moment to
-    // forget it — no stamp bookkeeping needed to tell a reload from a swap.
+    // forget the session flag — no stamp bookkeeping needed to tell a reload from a swap.
     if (document.documentElement.getAttribute("data-rite") === "on") {
       try {
         var nav = performance.getEntriesByType("navigation")[0];
@@ -65,6 +71,16 @@
         if (data.choice !== "silence" && data.choice !== "voice") return false;
         if (!isFinite(data.timestamp)) return false;
         return Date.now() - data.timestamp <= CHOICE_TTL_MS;
+      } catch (e) {
+        return false;
+      }
+    }
+
+    function fullRiteMetRecently() {
+      try {
+        var at = Number(window.localStorage.getItem(RITE_AT));
+        var age = Date.now() - at;
+        return at > 0 && age >= 0 && age <= RITE_TTL_MS;
       } catch (e) {
         return false;
       }
@@ -101,11 +117,14 @@
       // island so the overlay never paints, exactly as for a spent session. A fresh
       // session with a remembered choice instead gets the BRIEF rite (cadence only,
       // fixed length) — armed pre-paint so the pen starts writing on the first frame.
+      // Without a choice, a full rite met within the day leaves only the question owed.
       if (root.getAttribute("data-rite") === "on") {
         if (reduced || riteIsSpent(url)) {
           root.classList.add("preloader-skip");
         } else if (audioChoiceIsValid()) {
           root.classList.add("rite-brief");
+        } else if (fullRiteMetRecently()) {
+          root.classList.add("preloader-skip");
         }
       }
     }

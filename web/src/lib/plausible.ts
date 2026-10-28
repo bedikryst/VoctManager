@@ -24,7 +24,10 @@
  *     split between buttons, every visitor who meets the question answers it, so the two goals
  *     are a ratio over the landing's whole audience, and it says whether the audio path that
  *     shapes the landing's first seconds is taken at all. A saved choice skips the question for
- *     three hours (useAudioChoice), so a goal counts a choice made, not a visit.
+ *     three hours (useAudioChoice), so a goal counts a choice made, not a visit. Beside them, the
+ *     full rite skipped before its question: the number that decides whether the ceremony keeps
+ *     its place in front of the page. A visitor meets the full rite at most once a day, so this
+ *     counts first visits and returns after a day alike — a skip rate is not a newcomer rate.
  *  A moment the backend already records at the same instant (the Axepta submit creates the Donation
  *  row) is not a goal: the ledger is the backend, Plausible adds nothing there.
  *  Where a goal fires on more than one page, the page path in the goal's own breakdown tells them
@@ -55,9 +58,11 @@ export const GOALS = {
   /* /press in use (scripts/press-goals.ts, and the composer's own archive). */
   pressDownload: "press+pobranie",
   pressCopy: "press+kopiuj",
-  /* The landing threshold (islands/landing/Preloader.tsx). Escape answers "silence". */
+  /* The landing threshold (islands/landing/Preloader.tsx). Escape answers "silence"; during the
+   *  rite it skips instead. */
   enteredWithSound: "wejscie+dzwiek",
   enteredInSilence: "wejscie+cisza",
+  riteSkipped: "wejscie+pomin",
   /* Public invitation: anonymous intent and practical next steps, without custom properties. */
   invitationAccepted: "zaproszenie+przyjecie",
   invitationShare: "zaproszenie+udostepnienie",

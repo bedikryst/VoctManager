@@ -20,7 +20,8 @@
  *  observer would be left holding nodes that are no longer in the document, which is exactly how
  *  the footer's entrance failed once before (guardrails §2).
  *
- *  The `rite` flag declares the once-per-session preloader to the shell, which decides the
+ *  The `rite` flag declares the preloader (once per session, the full rite once a day) to the
+ *  shell, which decides the
  *  `preloader-skip` / `voct-motion` gates for this page (DocumentGates) — they cannot be armed
  *  from here, because on a navigation into "/" it is the outgoing page that has to arm them.
  * @module components/pages/LandingPage
@@ -260,12 +261,12 @@ const jsonLd = {
        opacity 0. An `!important` that only repeats what the cascade already says is a trap
        for whoever next tries to change the thing it pins. */
 
-    /* Once-per-session preloader skip: hide the SSR'd overlay BEFORE first paint for
-       returning visitors (and for reduced motion, which never gets the rite). The
-       body.preload-open scroll-lock is also neutralised so the page is immediately
-       interactive on a ClientRouter return to "/". EXCEPTION: when the rite resolves into
-       the threshold choice (`.is-choice` — e.g. the saved choice expired mid-session), the
-       overlay must show despite the session skip; its scroll lock is `threshold-open`,
+    /* Preloader skip: hide the SSR'd overlay BEFORE first paint for returning visitors —
+       this session, or the full rite met within the day — and for reduced motion, which
+       never gets the rite. The body.preload-open scroll-lock is also neutralised so the page
+       is immediately interactive on a ClientRouter return to "/". EXCEPTION: when the rite
+       resolves into the threshold choice (`.is-choice` — e.g. the saved choice expired), the
+       overlay must show despite the skip; its scroll lock is `threshold-open`,
        which this neutralisation deliberately doesn't touch.
        `.is-hidden` belongs in the same exception: dismissing that choice drops `.is-choice`,
        so without it the overlay hit `display: none` in the same frame and the 700ms
