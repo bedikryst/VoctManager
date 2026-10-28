@@ -47,6 +47,7 @@
  * @module widgets/landing/SiteFooter
  */
 
+import { FOUNDATION_PAGE_LINKED } from "../../data/foundationSupport";
 import { SOCIAL } from "../../data/social";
 import { localizePath, type Locale } from "../../i18n/config";
 import { UI } from "../../i18n/ui";
@@ -253,11 +254,14 @@ export function SiteFooter({ lang, chrome }: SiteFooterProps): React.JSX.Element
                 <span className="pl">{chrome.stanzaDocuments}</span>
               </span>
               <ul className="foundation-corpus-list">
-                {/* The foundation's own page leads the corpus: it is where the documents below
-                    are filed with the identity they belong to. */}
-                <li>
-                  <a href={hrefFoundation}>{t.footer.foundationPage}</a>
-                </li>
+                {/* Once announced (FOUNDATION_PAGE_LINKED), the foundation's own page leads the
+                    corpus: it is where the documents below are filed with the identity they
+                    belong to. */}
+                {FOUNDATION_PAGE_LINKED && (
+                  <li>
+                    <a href={hrefFoundation}>{t.footer.foundationPage}</a>
+                  </li>
+                )}
                 <li>
                   <a
                     href="/docs/Statut-VoctFoundation.pdf"

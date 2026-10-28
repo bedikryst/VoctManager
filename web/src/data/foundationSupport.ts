@@ -95,15 +95,15 @@ export const STATUTE_PATH = "/docs/Statut-VoctFoundation.pdf";
 export const TAX_LINE_CONFIRMED = false;
 
 /**
- * Whether the site points at /fundacja and /mecenat yet. Both pages are built and deployed in
- * every state — this only decides who is told about them. While `false` both are `noindex` and
- * reachable through the doors the developer keeps open on purpose (the footers, a link sent to a
- * patron), and everything that would announce them stays silent: the vault's closing line
- * (VaultModal), the nav bar and the mobile card's fine print (SiteChrome, StickyHeader), the
- * second button on /o-nas's foundation band, the foundation's JSON-LD `url`
- * (lib/foundationSchema, which points at /o-nas#fundacja until then), /kontakt's locus link
- * (which falls back to /o-nas#fundacja), the landing's third door in FinalSupportSection. Flip
- * it once the pages have passed their review — and drop the matching `/(fundacja|mecenat)$` clause from the sitemap
- * filter in `astro.config.mjs`, which is JS and cannot read this flag.
+ * Whether /fundacja and /mecenat are public. While `false` they exist for the local build only:
+ * nothing links to them — the footers (SiteFooter, islands/landing/SiteFooter), the vault's
+ * closing line (VaultModal), the nav bar and the mobile card's fine print (SiteChrome,
+ * StickyHeader), the second button on /o-nas's foundation band, /kontakt's locus link (which
+ * falls back to /o-nas#fundacja), the landing's third door in FinalSupportSection — the
+ * foundation's JSON-LD `url` points at /o-nas#fundacja (lib/foundationSchema), both pages carry
+ * `noindex`, and production answers both with the site's 404 (`infra/nginx/prod.conf`). Flip
+ * it once the pages have passed their review — and drop the two things that cannot read this
+ * flag: the nginx location that hides them and the `/(fundacja|mecenat)$` clause of the sitemap
+ * filter in `astro.config.mjs`.
  */
 export const FOUNDATION_PAGE_LINKED = false;

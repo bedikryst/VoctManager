@@ -120,8 +120,9 @@ const ogImage = view.visual?.desktop ?? bleedPair("chor-nawa").desktop;
   ]}
 >
   <Fragment slot="head">
-    {/* Announced together with /fundacja (FOUNDATION_PAGE_LINKED); until then a patron's link
-        works and a search engine is kept out — the sitemap filter in astro.config.mjs agrees. */}
+    {/* Public together with /fundacja (FOUNDATION_PAGE_LINKED); until then production answers
+        this URL with a 404 (infra/nginx/prod.conf), and noindex and the sitemap filter in
+        astro.config.mjs agree. */}
     {!FOUNDATION_PAGE_LINKED && <meta name="robots" content="noindex,follow" />}
   </Fragment>
 

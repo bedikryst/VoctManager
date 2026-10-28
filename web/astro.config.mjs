@@ -96,8 +96,8 @@ export default defineConfig({
         // /podziekowanie the thanks sent after the evening: all `noindex,follow`, reached only by
         // the links sent with them.
         !/\/(rsvp|zaproszenie|podziekowanie)$/.test(new URL(page).pathname) &&
-        // /fundacja and /mecenat are deployed but not announced: `noindex` while
-        // FOUNDATION_PAGE_LINKED is false in src/data/foundationSupport.ts. Drop this clause
+        // /fundacja and /mecenat are not public while FOUNDATION_PAGE_LINKED is false in
+        // src/data/foundationSupport.ts (production answers them with a 404). Drop this clause
         // together with that flag.
         !/\/(fundacja|mecenat)$/.test(new URL(page).pathname),
       // NO customPages. The privacy policy used to be declared here — it was a hand-authored
