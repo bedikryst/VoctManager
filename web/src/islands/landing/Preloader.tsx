@@ -60,9 +60,12 @@
  *
  *  THE RITE CAN BE SKIPPED, never shortened. During hold and cadence any key, tap or wheel
  *  ends it with a short crossfade (`is-skipped`) — into the question, or onto the page when
- *  the choice is remembered — and a quiet "Pomiń" surfaces ~1.2s in for whoever would not
- *  guess that. A skipped full rite is spent for the day like a watched one, and is reported
- *  as `wejscie+pomin`.
+ *  the choice is remembered. Only the FULL rite also shows a quiet "Pomiń", ~1.2s in, for
+ *  whoever would not guess that. The brief rite is over too soon after that moment for the
+ *  word to be read, so there it would only flicker under the mark; its skip stays a gesture
+ *  alone, because a reload brings the brief rite back and the curtain would otherwise swallow
+ *  a returning reader's first scroll. A skipped full rite is spent for the day like a watched
+ *  one, and is reported as `wejscie+pomin`.
  *
  *  The chosen option is written here, reported to Plausible (`wejscie+dzwiek` /
  *  `wejscie+cisza`, lib/plausible) and broadcast as `voct:audio-choice`; the
@@ -486,8 +489,9 @@ export function Preloader({ copy, chrome, lang }: PreloaderProps): React.JSX.Ele
 
   // Counted from the rite's first painted frame, and never shown before hydration: a "Pomiń"
   // on screen with no listener behind it would be the one control on the site that lies.
+  // The full rite only — see the header on the brief one.
   useEffect(() => {
-    if ((phase !== "hold" && phase !== "cadence") || riteForm.current === null || skipShown) {
+    if ((phase !== "hold" && phase !== "cadence") || riteForm.current !== "full" || skipShown) {
       return;
     }
     const startedAt = cssClockStart(overlayRef.current) ?? performance.now();

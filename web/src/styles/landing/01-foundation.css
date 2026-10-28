@@ -574,8 +574,8 @@
      made visible for whoever would not guess that. Quiet by design: a 12px capital at the
      foot of the frame, in paper at 0.54 — 5.5:1 on --dark, 5.4:1 where the centre glow
      still reaches the foot on a short landscape phone. It is shown only while the rite can
-     really be skipped: `is-skippable` comes from the island ~1.2s into the rite and never
-     before hydration. The extra left padding is the tracking's own trailing gap, so the
+     really be skipped, and on the full rite only: `is-skippable` comes from the island ~1.2s
+     into it and never before hydration. The extra left padding is the tracking's own trailing gap, so the
      word sits on the centre line rather than 3px left of it. */
   .rite-skip {
     position: absolute;
