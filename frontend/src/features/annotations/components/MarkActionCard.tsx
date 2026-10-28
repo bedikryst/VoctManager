@@ -36,7 +36,7 @@ import { MarkVoicePicker, type MarkVoices } from "./MarkVoicePicker";
 import { boundsAnchor, markBounds } from "../lib/markBounds";
 import { placeNoteCard } from "../lib/noteCardPlacement";
 import { getShapeDef, isShapeKind } from "../lib/shapes";
-import { getStampDef, StampGlyph } from "../lib/stamps";
+import { getStampDef, stampSampleSize, StampGlyph } from "../lib/stamps";
 import { useMeasuredHeight } from "../lib/useMeasuredHeight";
 import { layerOf, type WriteLayer } from "../lib/layers";
 import type { AnnotationInk } from "../lib/palette";
@@ -76,6 +76,8 @@ const CARD_WIDTH = 232;
 const CARD_ESTIMATED_HEIGHT = 150;
 /** Air between the marking and the card talking about it. */
 const CARD_CLEARANCE = 12;
+/** The size sample's tile (h-8 w-8), less a little air either side of a word. */
+const SAMPLE_TILE_PX = 32 - 4;
 
 /**
  * What this marking is called, so the card says what it is acting on. Ink the
@@ -231,7 +233,7 @@ export const MarkActionCard = ({
             <StampGlyph
               symbol={stamp.symbol}
               color={annotation.color}
-              size={10 + shownScale * 8}
+              size={stampSampleSize(stampDef, 10 + shownScale * 8, SAMPLE_TILE_PX)}
             />
           </span>
           <input

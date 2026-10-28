@@ -43,7 +43,7 @@
       "slot": "{{family}} : {{tool}}"
     },
     "more": "Plus",
-    "draw_needs_room": "Agrandir pour écrire",
+    "draw_needs_room": "Agrandir pour dessiner",
     "ink_color": "Couleur",
     "ink_reserved": "Le rouge est réservé au chef de chœur.",
     "input": {

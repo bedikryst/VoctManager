@@ -56,19 +56,25 @@ export const INLINE_MARK_CLASS =
 /**
  * A boxed note — a rehearsal letter, a bar number — framed in its own ink
  * (`border-current`, the button's colour being the note's), square-cornered
- * and bold, the way an engraver sets one. No resting ring: the frame is the
- * mark, and a second outline would read as a double box. The frame is in em
- * like the padding, so the box keeps its proportions at every zoom.
+ * and bold, the way an engraver sets one and the way print draws it. No
+ * resting ring: the frame is the mark, and a second outline would read as a
+ * double box. The frame is in em like the padding, so the box keeps its
+ * proportions at every zoom.
  */
 export const BOX_MARK_CLASS =
-  "whitespace-pre-wrap break-words rounded-[0.25em] border-[length:0.12em] border-current px-[0.35em] py-[0.12em] text-center font-bold leading-snug";
+  "whitespace-pre-wrap break-words rounded-none border-[length:0.12em] border-current px-[0.35em] py-[0.12em] text-center font-bold leading-snug";
 export const INLINE_MARK_BACKGROUND = "rgba(255,255,255,0.82)";
 
 /** The notes whose words sit on the page itself, centred on their anchor. */
 export const isOnPageDisplay = (display: NoteDisplay | undefined): boolean =>
   display === "inline" || display === "box";
 
-const DISPLAY_MODES: ReadonlyArray<{ mode: NoteDisplay; labelKey: string; fallback: string }> = [
+/** How a note can sit on the page, in the order this card and the toolbar offer them. */
+export const NOTE_DISPLAY_MODES: ReadonlyArray<{
+  mode: NoteDisplay;
+  labelKey: string;
+  fallback: string;
+}> = [
   { mode: "inline", labelKey: "annotations.note.inline", fallback: "Na nucie" },
   { mode: "box", labelKey: "annotations.note.box", fallback: "W ramce" },
   { mode: "pin", labelKey: "annotations.note.pin", fallback: "Pinezka" },
@@ -412,7 +418,7 @@ export const NoteCard = ({
 
         {/* On the page, in a box, or behind a pin. */}
         <div className="mt-2 flex items-center gap-1">
-          {DISPLAY_MODES.map(({ mode, labelKey, fallback }) => (
+          {NOTE_DISPLAY_MODES.map(({ mode, labelKey, fallback }) => (
             <button
               key={mode}
               type="button"

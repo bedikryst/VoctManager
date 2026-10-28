@@ -105,7 +105,7 @@ export const ToolFamilySlot = ({
     tool: memberLabel,
     defaultValue: "{{family}}: {{tool}}",
   });
-  const needsRoom = t("annotations.draw_needs_room", "Powiększ, by pisać");
+  const needsRoom = t("annotations.draw_needs_room", "Powiększ, by rysować");
   const isArmed = available && family.members.includes(armed);
   const Icon = member.icon;
 

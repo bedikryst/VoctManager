@@ -2,8 +2,9 @@
  * @file shapes.test.ts
  * @description Pins the promises the shape tool rests on: every straight edge
  * is a two-point path (the only kind both renderers draw straight), snapping is
- * judged in pixels on a page that is not square, and the direction of a drag
- * decides which side of the stave a slur or a bracket sits on.
+ * judged in pixels on a page that is not square, the direction of a drag
+ * decides which side of the stave a slur or a bracket sits on, and it never
+ * turns a crescendo into a diminuendo.
  * @module features/annotations/lib
  */
 
@@ -70,7 +71,7 @@ describe("buildShapePaths", () => {
     }
   });
 
-  it("opens a crescendo at its end and a diminuendo at its start, from one closed point", () => {
+  it("closes a crescendo on the left and a diminuendo on the right, from one point", () => {
     const [up, down] = buildShapePaths("cresc", [0.1, 0.5], [0.5, 0.5], W, H);
     expect(up).toHaveLength(2);
     expect(down).toHaveLength(2);
@@ -84,6 +85,16 @@ describe("buildShapePaths", () => {
     expect(left[0]).toEqual(right[0]);
     expect(left[0][0]).toBeCloseTo(0.5, 6);
     expect(left[1][0]).toBeCloseTo(0.1, 6);
+  });
+
+  it("keeps a hairpin's closed end where the music puts it when dragged right to left", () => {
+    const [cresc] = buildShapePaths("cresc", [0.5, 0.5], [0.1, 0.5], W, H);
+    expect(cresc[0][0]).toBeCloseTo(0.1, 6);
+    expect(cresc[1][0]).toBeCloseTo(0.5, 6);
+
+    const [dim] = buildShapePaths("dim", [0.5, 0.5], [0.1, 0.5], W, H);
+    expect(dim[0][0]).toBeCloseTo(0.5, 6);
+    expect(dim[1][0]).toBeCloseTo(0.1, 6);
   });
 
   it("keeps a short hairpin narrower than its length", () => {

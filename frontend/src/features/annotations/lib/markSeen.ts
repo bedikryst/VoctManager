@@ -36,8 +36,13 @@ export const timeOf = (iso: string | null | undefined): number | null => {
   return Number.isNaN(time) ? null : time;
 };
 
-/** A mark somebody else wrote for this reader to read. */
-export const isAddressedTo = (
+/**
+ * A mark somebody else wrote on a layer this reader is written to. Voices are
+ * not asked here: the stand hands in only marks that reach the reader's section
+ * (`reachesSections`). Whether "Mój głos" shows a mark is a different question,
+ * answered by `isAddressedTo` in `voices.ts`.
+ */
+export const isWrittenToReader = (
   mark: ScoreAnnotation,
   userId: string | null,
 ): boolean => ADDRESSED_LAYERS.has(mark.layer_name) && mark.created_by !== userId;

@@ -63,7 +63,8 @@ export const reachesSections = (
 
 /**
  * Whether a mark is the reader's to see under "Mój głos + tutti": it reaches
- * their section, or they wrote it.
+ * their section, or they wrote it. What counts as news to them is a different
+ * question (`isWrittenToReader` in `markSeen.ts`): their own marks never are.
  */
 export const isAddressedTo = (
   mark: { layer_name: string; voices?: readonly string[]; created_by: string | null },

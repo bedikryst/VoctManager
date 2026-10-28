@@ -13,12 +13,17 @@
  * somewhere around twenty symbols. Groups are an EDITOR concern only — the
  * print mirror (`backend/archive/annotation_stamps.py`) knows ids and shapes,
  * and the two files must be edited in one change or a placed mark prints as a
- * hole. Group ids deliberately live under a `group:` key rather than an `id:`
- * one: the parity test reads stamp ids out of this file with a regex.
+ * hole. The parity test reads each stamp's id and drawing (glyph, size, box,
+ * paths, dots) out of this file with regexes, so a definition stays a literal or
+ * a `dynamic(…)` / `word(…)` call. Group ids deliberately live under a `group:`
+ * key rather than an `id:` one, which keeps them out of that read.
  * @module features/annotations/lib
  */
 
 import React from "react";
+
+/** The face a text stamp is set in, on the page and in every preview of it. */
+const STAMP_FONT_FAMILY = 'Georgia, "Times New Roman", serif';
 
 export type StampGroupId =
   | "breath"
@@ -412,13 +417,61 @@ const stampAspect = (def: StampDef): number => {
   return (parts[3] ?? 1) / (parts[2] ?? 1);
 };
 
+/** Type size the width of a word is measured at; any size will do, it is divided out. */
+const MEASURE_PX = 100;
+const textWidthEm = new Map<string, number>();
+let measureContext: CanvasRenderingContext2D | null | undefined;
+
 /**
- * The `size` that fits a stamp's preview inside a square of `box` px. An SVG
- * stamp is sized by its width, so a tall one (a flat, a cut-off) is narrowed
- * until its height fits too.
+ * A word's width per px of type size, ink included: a bold italic leans past
+ * its own advance. Measured, because a serif's letters differ too much in width
+ * ("m" against "i", "D.C." against "To") for a character count to size a tile.
+ * The faces are system fonts, so the measure never runs ahead of a font load,
+ * and each word is measured once. Where there is no canvas (a test runner),
+ * half an em per character stands in.
  */
-export const stampPreviewSize = (def: StampDef, box: number): number =>
-  def.kind === "text" ? box * 0.68 : Math.min(box, box / stampAspect(def));
+export const stampTextEm = (glyph: string): number => {
+  const known = textWidthEm.get(glyph);
+  if (known !== undefined) return known;
+  if (measureContext === undefined) {
+    measureContext =
+      typeof document === "undefined"
+        ? null
+        : (document.createElement("canvas").getContext("2d") ?? null);
+  }
+  let em = glyph.length * 0.5;
+  if (measureContext) {
+    measureContext.font = `italic 700 ${MEASURE_PX}px ${STAMP_FONT_FAMILY}`;
+    const metrics = measureContext.measureText(glyph);
+    const ink = metrics.actualBoundingBoxLeft + metrics.actualBoundingBoxRight;
+    em = Math.max(metrics.width, ink) / MEASURE_PX;
+  }
+  textWidthEm.set(glyph, em);
+  return em;
+};
+
+/**
+ * The `size` that fits a stamp's preview inside a tile `box` px tall and
+ * `width` px wide (square unless said). An SVG stamp is sized by its width and
+ * kept within the box, so a tall one (a flat, a cut-off) is narrowed until its
+ * height fits too. A word is set at two thirds of the box, and smaller only
+ * when its measured width needs it.
+ */
+export const stampPreviewSize = (def: StampDef, box: number, width: number = box): number =>
+  def.kind === "text"
+    ? Math.min(box * 0.68, width / stampTextEm(def.glyph))
+    : Math.min(box, width, box / stampAspect(def));
+
+/**
+ * The `size` of a size sample: the slider's `box`, drawn in a square `tile` px
+ * wide. A word keeps the box as its type size until its measured width runs
+ * out of tile, then shrinks to fit rather than being cut; a symbol is fitted
+ * like a preview.
+ */
+export const stampSampleSize = (def: StampDef, box: number, tile: number): number =>
+  def.kind === "text"
+    ? Math.min(box, tile / stampTextEm(def.glyph))
+    : stampPreviewSize(def, Math.min(box, tile));
 
 interface StampGlyphProps {
   symbol: string;
@@ -450,7 +503,7 @@ export const StampGlyph = ({
         style={{
           color,
           fontSize: size,
-          fontFamily: 'Georgia, "Times New Roman", serif',
+          fontFamily: STAMP_FONT_FAMILY,
           fontStyle: "italic",
           fontWeight: 700,
           lineHeight: 1,

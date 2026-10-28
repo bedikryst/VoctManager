@@ -72,7 +72,12 @@ import {
   useMarkSeen,
   useScoreAnnotations,
 } from "./api/annotations.queries";
-import { TOOL_KEYS, useAnnotationTools, type AnnotationTool } from "./lib/useAnnotationTools";
+import {
+  DRAWING_TOOLS,
+  TOOL_KEYS,
+  useAnnotationTools,
+  type AnnotationTool,
+} from "./lib/useAnnotationTools";
 import { useAnnotationHistory } from "./lib/useAnnotationHistory";
 import { useCanDraw } from "./lib/useCanDraw";
 import { useIncomingMarks } from "./lib/useIncomingMarks";
@@ -197,13 +202,6 @@ export interface ScoreAnnotatorBindings {
   /** The live page handle, for chrome outside the annotator (a programme bar). */
   pageApi: PdfPageApi;
 }
-
-/** Tools that need a stylus/precision surface — coerced away on phones. */
-const PRECISION_TOOLS: ReadonlySet<AnnotationTool> = new Set<AnnotationTool>([
-  "pen",
-  "highlighter",
-  "shape",
-]);
 
 const TOOL_BY_KEY: ReadonlyMap<string, AnnotationTool> = new Map(
   (Object.entries(TOOL_KEYS) as [AnnotationTool, string][]).map(([tool, key]) => [key, tool]),
@@ -403,7 +401,7 @@ export const useScoreAnnotator = ({
   // Coerce precision tools back to browse while the page is too small to write
   // on — a pen held over a thumbnail would only produce marks nobody can place.
   const effectiveTool = useMemo(() => {
-    if (!canDraw && PRECISION_TOOLS.has(activeTool)) return "pointer" as const;
+    if (!canDraw && DRAWING_TOOLS.has(activeTool)) return "pointer" as const;
     return activeTool;
   }, [activeTool, canDraw]);
 
@@ -694,7 +692,7 @@ export const useScoreAnnotator = ({
         return false;
       }
       const next = TOOL_BY_KEY.get(event.key.toLowerCase());
-      if (!next || (!canDraw && PRECISION_TOOLS.has(next))) return false;
+      if (!next || (!canDraw && DRAWING_TOOLS.has(next))) return false;
       event.preventDefault();
       setActiveTool(next);
       return true;

@@ -43,7 +43,7 @@
       "slot": "{{family}}: {{tool}}"
     },
     "more": "More",
-    "draw_needs_room": "Zoom in to write",
+    "draw_needs_room": "Zoom in to draw",
     "ink_color": "Ink colour",
     "ink_reserved": "Red is reserved for the conductor.",
     "input": {
@@ -270,7 +270,7 @@
       "sfz": "Sforzando (sfz)",
       "fp": "Forte-piano (fp)",
       "fine": "Fine (the end)",
-      "to_coda": "To Coda (jump to the coda)",
+      "to_coda": "To Coda (to the coda)",
       "poco": "Poco a poco (little by little)",
       "molto": "Molto (very)",
       "bocca_chiusa": "Bocca chiusa (closed mouth)",

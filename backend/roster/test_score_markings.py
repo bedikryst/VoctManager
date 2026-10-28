@@ -705,28 +705,91 @@ class CockpitReadModelTests(_Base):
         self.assertTrue(self.package.include_markings)
 
 
+_StampDrawing = tuple[str, float, str, tuple[str, ...], tuple[tuple[float, ...], ...]]
+
+
+def _first_group(pattern: str, text: str) -> str | None:
+    import re
+
+    match = re.search(pattern, text, re.S)
+    return match.group(1) if match else None
+
+
+def _tsx_stamp_drawings() -> dict[str, _StampDrawing]:
+    """Each stamp the editor's catalogue defines, keyed by id, as
+    (glyph, size fraction, view box, paths, dots) — what print draws from."""
+    import re
+    from pathlib import Path
+
+    tsx = (
+        Path(__file__).resolve().parents[2]
+        / "frontend" / "src" / "features" / "annotations" / "lib" / "stamps.tsx"
+    )
+    source = tsx.read_text(encoding="utf-8")
+    start = source.index("export const STAMPS")
+    # Whole-line comments only: the caesura's glyph is itself "//".
+    body = re.sub(r"^\s*//[^\n]*", "", source[start : source.index("\n];", start)], flags=re.M)
+    body = body[body.index("= [") + 3 :]
+
+    def factory_size(name: str) -> float:
+        size = _first_group(rf"const {name} = .*?sizeFraction:\s*([\d.]+)", source)
+        assert size is not None, f"no sizeFraction in the {name}() factory"
+        return float(size)
+
+    drawings: dict[str, _StampDrawing] = {}
+    for mark in re.findall(r'\bdynamic\("([a-z_]+)"\)', body):
+        drawings[mark] = (mark, factory_size("dynamic"), "", (), ())
+    for stamp_id, glyph in re.findall(r'\bword\("([a-z_]+)",\s*"([^"]*)"', body):
+        drawings[stamp_id] = (glyph, factory_size("word"), "", (), ())
+
+    # The literal definitions: every top-level `{ … }` of the array.
+    depth = 0
+    opened = 0
+    for index, char in enumerate(body):
+        if char == "{":
+            if depth == 0:
+                opened = index
+            depth += 1
+        elif char == "}":
+            depth -= 1
+            if depth == 0:
+                block = body[opened : index + 1]
+                stamp_id = _first_group(r'\bid:\s*"([a-z_]+)"', block)
+                size = _first_group(r"\bsizeFraction:\s*([\d.]+)", block)
+                assert stamp_id is not None and size is not None, block
+                paths = _first_group(r"\bpaths:\s*\[(.*?)\]", block) or ""
+                dots = block[block.index("dots:") :] if "dots:" in block else ""
+                drawings[stamp_id] = (
+                    _first_group(r'\bglyph:\s*"([^"]*)"', block) or "",
+                    float(size),
+                    _first_group(r'\bviewBox:\s*"([^"]*)"', block) or "",
+                    tuple(re.findall(r'"([^"]*)"', paths)),
+                    tuple(
+                        tuple(float(n) for n in triple)
+                        for triple in re.findall(
+                            r"\[\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)\s*\]", dots
+                        )
+                    ),
+                )
+    return drawings
+
+
 class StampParityTests(SimpleTestCase):
     """A symbol the editor can place but the printer cannot draw prints NOTHING
-    where the conductor expected a mark, so the two catalogues must not drift."""
+    where the conductor expected a mark, and one the two draw differently prints
+    as some other mark, so the two catalogues must not drift."""
 
-    def test_python_and_tsx_catalogues_hold_the_same_ids(self) -> None:
-        import re
-        from pathlib import Path
-
+    def test_python_and_tsx_catalogues_draw_the_same_stamps(self) -> None:
         from archive.annotation_stamps import STAMPS
 
-        tsx = (
-            Path(__file__).resolve().parents[2]
-            / "frontend" / "src" / "features" / "annotations" / "lib" / "stamps.tsx"
-        )
-        source = tsx.read_text(encoding="utf-8")
-        # Three shapes a stamp id takes over there: a literal in a definition,
-        # and the two factory helpers (dynamics, tempo words). The palette's
-        # GROUP ids are deliberately keyed `group:`, so they stay out of this.
-        ids = set(re.findall(r'id:\s*"([a-z_]+)"', source))
-        ids |= set(re.findall(r'dynamic\("([a-z_]+)"\)', source))
-        ids |= set(re.findall(r'word\("([a-z_]+)"', source))
-        self.assertEqual(ids, {stamp.id for stamp in STAMPS})
+        editor = _tsx_stamp_drawings()
+        printer: dict[str, _StampDrawing] = {
+            stamp.id: (stamp.glyph, stamp.size_fraction, stamp.view_box, stamp.paths, stamp.dots)
+            for stamp in STAMPS
+        }
+        # The ids first, so a stamp missing on one side reads as that.
+        self.assertEqual(set(editor), set(printer))
+        self.assertEqual(editor, printer)
 
     def test_the_sanitizer_keeps_every_shape_the_editor_draws(self) -> None:
         # A shape name the server drops is a hairpin its card calls "a line".

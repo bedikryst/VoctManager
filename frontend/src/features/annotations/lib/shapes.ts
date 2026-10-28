@@ -24,7 +24,9 @@
  * The drag's direction says which side of the music a slur or a bracket is
  * on. Drawn left to right, as a phrase is read, the arc bows up and the
  * bracket's hooks point down, which is how both sit above a stave; drawn right
- * to left, both turn over and sit below it.
+ * to left, both turn over and sit below it. A hairpin is the exception: it is
+ * read in the music's direction whichever way the hand went, so a crescendo
+ * is closed at its left end and a diminuendo at its right.
  *
  * Snapping happens in screen pixels, because the page is not square and a
  * normalized 45° is not a drawn 45°.
@@ -230,7 +232,9 @@ export const buildShapePaths = (
       const half =
         Math.min(width * HAIRPIN_OPENING_FRACTION, length * HAIRPIN_OPENING_MAX_SHARE) / 2;
       // Both legs start at the closed end, so the point is one cap, not two.
-      const [closed, open] = kind === "cresc" ? [a, b] : [b, a];
+      // A plumb hairpin has no left end and keeps the drag's order.
+      const [leftEnd, rightEnd] = b[0] < a[0] ? [b, a] : [a, b];
+      const [closed, open] = kind === "cresc" ? [leftEnd, rightEnd] : [rightEnd, leftEnd];
       return [segment(closed, off(open, half)), segment(closed, off(open, -half))];
     }
     case "slur": {

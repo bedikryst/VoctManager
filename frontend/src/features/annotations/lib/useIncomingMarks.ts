@@ -37,8 +37,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ScoreAnnotation } from "../types/annotations.dto";
 import { layerOf } from "./layers";
 import {
-  isAddressedTo,
   isNewSince,
+  isWrittenToReader,
   newestContent,
   pagesOf,
   timeOf,
@@ -155,7 +155,7 @@ export const useIncomingMarks = ({
     () =>
       watching
         ? annotations.filter(
-            (mark) => isAddressedTo(mark, userId) && visibleLayers[layerOf(mark)],
+            (mark) => isWrittenToReader(mark, userId) && visibleLayers[layerOf(mark)],
           )
         : [],
     [annotations, userId, visibleLayers, watching],

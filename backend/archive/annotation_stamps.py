@@ -11,10 +11,11 @@
 
     Two catalogues is a deliberate trade: the frontend's is TSX (React elements),
     and importing that into Python is not on the table. What matters is that the
-    IDS never diverge — a symbol the editor can place but the printer cannot draw
-    prints NOTHING where the conductor expected a mark — so a parity test asserts
-    the two id sets are identical, and this file must be updated in the same
-    change as the TSX one. The editor's palette GROUPS are not mirrored here:
+    two never diverge — a symbol the editor can place but the printer cannot draw
+    prints NOTHING where the conductor expected a mark, and one drawn differently
+    prints as some other mark — so a parity test asserts that both hold the same
+    ids and draw each from the same glyph, size, box, paths and dots, and this
+    file must be updated in the same change as the TSX one. The editor's palette GROUPS are not mirrored here:
     print has no palette, and a grouping is a fact about a toolbar.
 @module archive/annotation_stamps
 """

@@ -20,10 +20,12 @@
  * below; in personal mode the strip would hold nothing but "Moje", so that
  * chip heads the row instead. On the narrowest phones the row cannot hold
  * every slot, so collapse and redo move into ⋯ and what is left may wrap to a
- * second line — nothing hides behind a scroll.
+ * second line — nothing hides behind a scroll. The options panel's rows wrap
+ * for the same reason.
  *
  * Each tool's tooltip names the key that arms it (`TOOL_KEYS`), and the symbol
- * palette previews every symbol in the ink in hand, on a scrap of paper.
+ * palette previews every symbol in the ink in hand, on a scrap of paper. A word
+ * spans as many palette cells as its measured width needs.
  *
  * Collapsed, the bar is a trigger that NAMES the tool in hand — a rehearsal is
  * no place to discover that the pencil was armed all along. Whether it opens
@@ -96,15 +98,20 @@ import {
   groupOfStamp,
   STAMP_GROUPS,
   stampPreviewSize,
+  stampSampleSize,
   stampsInGroup,
+  stampTextEm,
   StampGlyph,
+  type StampDef,
+  type StampGroupId,
 } from "../lib/stamps";
 import { SHAPE_KINDS, type ShapeKind } from "../lib/shapes";
+import { useMeasuredWidth } from "../lib/useMeasuredWidth";
 import { layerTakesVoices } from "../lib/voices";
-import type { NoteDisplay } from "../types/annotations.dto";
 import type { DelegateLayer, ScoreAnnotatorMode } from "../useScoreAnnotator";
 import { AnnotationAudienceBar, PendingPill, PersonalLayerChip } from "./AnnotationAudienceBar";
 import { MarkVoicePicker } from "./MarkVoicePicker";
+import { NOTE_DISPLAY_MODES } from "./NoteCard";
 import {
   DRAW_FAMILY,
   familyOf,
@@ -212,18 +219,42 @@ const SHAPE_ICONS: Record<ShapeKind, ShapeIcon> = {
   bracket: drawnShapeIcon("M3 15 L3 8 L21 8 L21 15"),
 };
 
-const NOTE_DISPLAYS: ReadonlyArray<{ mode: NoteDisplay; labelKey: string; fallback: string }> = [
-  { mode: "inline", labelKey: "annotations.note.inline", fallback: "Na nucie" },
-  { mode: "box", labelKey: "annotations.note.box", fallback: "W ramce" },
-  { mode: "pin", labelKey: "annotations.note.pin", fallback: "Pinezka" },
-];
-
 /** A tool's name with the key that arms it, for its tooltip. */
 const withKey = (label: string, tool: AnnotationTool): string =>
   `${label} (${TOOL_KEYS[tool].toUpperCase()})`;
 
-/** Words this long take two cells of the stamp grid, or they spill into the next. */
-const WIDE_STAMP_CHARS = 8;
+/** The symbol palette's grid: five cells across, `gap-1` between them. */
+const STAMP_COLUMNS = 5;
+const STAMP_GAP_PX = 4;
+/** Paper either side of a word in its tile, so the ink never touches the edge. */
+const STAMP_TILE_INSET_PX = 4;
+/** The square a symbol's preview fits inside its 36 px tile. */
+const STAMP_PREVIEW_BOX = 22;
+/** Only until the grid is first measured — one layout pass, before paint. */
+const STAMP_GRID_ESTIMATED_WIDTH = 200;
+const COLUMN_SPANS = ["col-span-1", "col-span-2", "col-span-3", "col-span-4", "col-span-5"] as const;
+/** The size sample's tile (h-9 w-9), less its paper inset. */
+const SAMPLE_TILE_PX = 36 - 2 * STAMP_TILE_INSET_PX;
+
+/** Room for a word in a tile `span` cells wide. */
+const tileRoom = (span: number, cell: number): number =>
+  span * cell + (span - 1) * STAMP_GAP_PX - 2 * STAMP_TILE_INSET_PX;
+
+/**
+ * How many cells a stamp's tile spans: one for a symbol, and for a word as many
+ * as its measured width at preview size needs. A word wider than the whole row
+ * takes the row and is set smaller to fit it.
+ */
+const stampTileSpan = (def: StampDef, cell: number): number => {
+  if (def.kind !== "text") return 1;
+  const width =
+    stampTextEm(def.glyph) *
+    stampPreviewSize(def, STAMP_PREVIEW_BOX, Number.POSITIVE_INFINITY);
+  for (let span = 1; span < STAMP_COLUMNS; span++) {
+    if (width <= tileRoom(span, cell)) return span;
+  }
+  return STAMP_COLUMNS;
+};
 
 const SIZES: ReadonlyArray<{ id: StrokeSize; dot: number; labelKey: string; fallback: string }> = [
   { id: "fine", dot: 5, labelKey: "annotations.size.fine", fallback: "Cienka" },
@@ -293,6 +324,60 @@ const ToolSeparator = ({ rail }: { rail: boolean }): React.JSX.Element =>
  * themes, because the page is.
  */
 const paperTile = "flex items-center justify-center rounded-lg bg-white/90";
+
+/**
+ * One group's symbols. A cell's width is only known once the panel has laid
+ * out, and it differs between a phone, the rail's panel and a wide window, so
+ * the grid measures itself and each word spans the cells it needs there.
+ */
+const StampPalette = ({
+  group,
+  stamp,
+  color,
+  onPick,
+}: {
+  group: StampGroupId;
+  stamp: string;
+  color: string;
+  onPick: (symbol: string) => void;
+}): React.JSX.Element => {
+  const { t } = useTranslation();
+  const gridRef = useRef<HTMLDivElement | null>(null);
+  const gridWidth = useMeasuredWidth(gridRef, STAMP_GRID_ESTIMATED_WIDTH);
+  const cell = (gridWidth - (STAMP_COLUMNS - 1) * STAMP_GAP_PX) / STAMP_COLUMNS;
+
+  return (
+    <div ref={gridRef} className="grid grid-cols-5 gap-1">
+      {stampsInGroup(group).map((def) => {
+        const span = stampTileSpan(def, cell);
+        return (
+          <button
+            key={def.id}
+            type="button"
+            onClick={() => onPick(def.id)}
+            aria-label={t(def.labelKey, def.fallback)}
+            aria-pressed={stamp === def.id}
+            title={t(def.labelKey, def.fallback)}
+            className={cn(
+              paperTile,
+              "h-9 transition-shadow",
+              COLUMN_SPANS[span - 1],
+              stamp === def.id
+                ? "ring-2 ring-ethereal-gold"
+                : "hover:ring-1 hover:ring-ethereal-gold/60",
+            )}
+          >
+            <StampGlyph
+              symbol={def.id}
+              color={color}
+              size={stampPreviewSize(def, STAMP_PREVIEW_BOX, tileRoom(span, cell))}
+            />
+          </button>
+        );
+      })}
+    </div>
+  );
+};
 
 /**
  * The same pill with no pencil in it, for a page that belongs to no edition —
@@ -697,7 +782,7 @@ export const AnnotationToolbar = ({
       className={cn(
         panelChrome,
         "no-scrollbar flex flex-col gap-3",
-        isRail ? "max-h-full max-w-xs overflow-y-auto" : "max-w-full overflow-x-auto",
+        isRail ? "max-h-full max-w-xs overflow-y-auto" : "max-w-full",
       )}
     >
       {/* The armed family's members, so a sibling is one tap from the one in
@@ -877,8 +962,8 @@ export const AnnotationToolbar = ({
       )}
 
       {showNoteMode && (
-        <div className="flex items-center gap-1">
-          {NOTE_DISPLAYS.map(({ mode: displayMode, labelKey, fallback }) => (
+        <div className="flex flex-wrap items-center gap-1">
+          {NOTE_DISPLAY_MODES.map(({ mode: displayMode, labelKey, fallback }) => (
             <button
               key={displayMode}
               type="button"
@@ -925,11 +1010,7 @@ export const AnnotationToolbar = ({
                 <StampGlyph
                   symbol={stamp}
                   color={color}
-                  size={
-                    armedStamp.kind === "text"
-                      ? stampSampleBox
-                      : stampPreviewSize(armedStamp, stampSampleBox)
-                  }
+                  size={stampSampleSize(armedStamp, stampSampleBox, SAMPLE_TILE_PX)}
                 />
               </span>
             )
@@ -942,14 +1023,11 @@ export const AnnotationToolbar = ({
         // palette shows ONE group at a time. The open group is derived from
         // the armed stamp rather than held separately — that way the symbol
         // in hand is always the one lit up on screen — and picking a group
-        // arms its first symbol, so a tab is never a dead end. Beside the
-        // rail the groups wrap: the panel there is narrow and tall.
+        // arms its first symbol, so a tab is never a dead end. The groups
+        // wrap: a tab scrolled out of a phone's panel is a group nobody finds.
         <div className="flex flex-col gap-1.5">
           <div
-            className={cn(
-              "no-scrollbar flex gap-1",
-              isRail ? "flex-wrap" : "overflow-x-auto",
-            )}
+            className="flex flex-wrap gap-1"
             role="group"
             aria-label={t("annotations.stamp_groups.label", "Grupy symboli")}
           >
@@ -974,28 +1052,12 @@ export const AnnotationToolbar = ({
               </button>
             ))}
           </div>
-          <div className="grid grid-cols-5 gap-1">
-            {stampsInGroup(activeStampGroup).map((def) => (
-              <button
-                key={def.id}
-                type="button"
-                onClick={() => setStamp(def.id)}
-                aria-label={t(def.labelKey, def.fallback)}
-                aria-pressed={stamp === def.id}
-                title={t(def.labelKey, def.fallback)}
-                className={cn(
-                  paperTile,
-                  "h-9 transition-shadow",
-                  def.kind === "text" && def.glyph.length >= WIDE_STAMP_CHARS && "col-span-2",
-                  stamp === def.id
-                    ? "ring-2 ring-ethereal-gold"
-                    : "hover:ring-1 hover:ring-ethereal-gold/60",
-                )}
-              >
-                <StampGlyph symbol={def.id} color={color} size={stampPreviewSize(def, 22)} />
-              </button>
-            ))}
-          </div>
+          <StampPalette
+            group={activeStampGroup}
+            stamp={stamp}
+            color={color}
+            onPick={setStamp}
+          />
         </div>
       )}
     </div>

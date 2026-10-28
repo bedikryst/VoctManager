@@ -38,7 +38,10 @@ export type AnnotationTool =
   | "select"
   | "link";
 
-/** Tools that put ink on the page under a moving pointer. */
+/**
+ * Tools that put ink on the page under a moving pointer. They need room to aim,
+ * so a page too small to write on coerces them to browse.
+ */
 export const DRAWING_TOOLS: ReadonlySet<AnnotationTool> = new Set<AnnotationTool>([
   "pen",
   "highlighter",

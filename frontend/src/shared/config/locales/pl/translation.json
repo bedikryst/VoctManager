@@ -52,7 +52,7 @@
       "slot": "{{family}}: {{tool}}"
     },
     "more": "Więcej",
-    "draw_needs_room": "Powiększ, by pisać",
+    "draw_needs_room": "Powiększ, by rysować",
     "ink_color": "Kolor",
     "ink_reserved": "Czerwony jest zarezerwowany dla dyrygenta.",
     "input": {
@@ -279,7 +279,7 @@
       "sfz": "Sforzando (sfz)",
       "fp": "Forte-piano (fp)",
       "fine": "Fine (koniec)",
-      "to_coda": "To Coda (skok do cody)",
+      "to_coda": "To Coda (do kody)",
       "poco": "Poco a poco (stopniowo)",
       "molto": "Molto (bardzo)",
       "bocca_chiusa": "Bocca chiusa (zamknięte usta)",
