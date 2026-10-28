@@ -326,35 +326,32 @@ navigation is invisible to analytics unless `plausible("pageview")` is called by
 mobile-first site that is most of the traffic, so any future switch from push to replace anywhere
 has to carry the same two lines with it.
 
-**Movement inscriptions must stay short (~13 characters).** `13-spine.css` hides the spine label
-below 1440px because the gutter is narrow; a longer inscription pushes that breakpoint up until
-the label effectively never shows. This is why `Lumen quaerit` → `Lumen Christi` and not
-`Lumen ad revelationem`.
+**Movement inscriptions stay short (~13 characters).** This is why `Lumen quaerit` → `Lumen Christi`
+and not `Lumen ad revelationem`. The desktop scroll rail (`ScrollRail.tsx`, `13-rail.css`) prints
+each one after the movement's plain name on a plate that reaches into the page from the right edge,
+so every character added is more of the page covered while the rail is open.
 
-**A section whose content reaches into the gutter must carry `data-spine-clear`.** The spine is
-`position: fixed` and stands in the page's 5vw gutter, which every section grants it — except one
-that runs its CONTENT to the viewport edge, or one whose object is wide enough that the gutter is
-all that is left between them. The Imagines band shipped without the attribute and the spine
-printed `Vox memoriae` across its fifth photograph from 1440px up, and its numeral and tick from
-1201px. It still needs it at the measure: the plate's margin is 5vw until 1756px and only opens
-past the spine's ~68px inscription at about 1780, and below the 1280px breakpoint its rail runs to
-the window's edge outright. The attribute is
-read by `MovementSpine.tsx` on the same viewport centre band it already uses for the active
-movement, and the spine withdraws for as long as the section holds it. Withdrawing, not shifting:
-the spine is orientation, the bled object is the page.
+**Nothing at the right edge may float on the page without a ground of its own.** The scroll rail
+replaced a movement spine (2026-10) that stood in the 5vw gutter as bare gold type, and the gutter
+was never wide enough for it: it printed `Vox memoriae` across the Imagines plate's fifth photograph
+from 1440px up (the plate's margin only clears ~68px of inscription past ~1780px, and below 1280px
+the band runs to the window's edge outright), and across the liniatura's risen seal at every width
+under ~1780. Sections had to flag themselves for it to withdraw. The rail answers this by
+construction — a 2px hairline at the window's edge, labels on plates in the bar's ground — so no
+section carries a flag. Any future edge device must do the same or re-measure those two objects.
 
 **`Vox memoriae` and `Sustinete nos` stay.** Both are grammatical. `Sustinete nos` is site-wide nav
 vocabulary (`SiteChrome.astro`, `StickyHeader.tsx`), and `Vox` anchors `data-movement="vox"` plus
 the VoxMoment eyebrow. Only movement I was actually broken Latin (a verb with no subject).
 
-**The manifest carries NO stanza numerals, and that is the spine's doing.** I/II/III in the
-manifest's left margin were capitalis, hairline-small and ink-muted — the same object
-`MovementSpine` fixes at the right edge for the page's three actual movements, in the same face at
-11–14px, and the two sat within ~25 pixels of one baseline. Two roman indices facing each other
-across one screen, counting different things, with nothing telling them apart. Removing the
-decorative one was also what freed the type to hang on the opening rule's left terminal. If a
-future pass wants the theses enumerated, the question to answer first is what the spine is then
-counting.
+**The manifest carries NO stanza numerals.** I/II/III in the manifest's left margin were capitalis,
+hairline-small and ink-muted — the same object the interludes carve for the page's three actual
+movements. When they were cut, the movement spine was also printing I/II/III at the right edge
+within ~25 pixels of their baseline: two roman indices facing each other across one screen,
+counting different things. The scroll rail prints no numerals, but the interludes still do, a screen
+below. Removing the decorative count was also what freed the type to hang on the opening rule's
+left terminal. If a future pass wants the theses enumerated, the question to answer first is what
+the interludes' numerals are then counting.
 
 **The manifest's rule is a MEASURE, not a frame.** `.manifest-top` spans the full container and
 for a long time nothing below it touched either end — every line was placed by a `margin-left`

@@ -20,7 +20,7 @@
 @import "./landing/11-mobile.css"; /* mobile art-direction layer (Faza 1/2/3) */
 @import "./vplayer.css"; /* shared video player chrome (.vplayer) — also imported standalone by /press */
 @import "./landing/12-vox.css"; /* Vox — zobacz i usłysz (movement II) + video lightbox room */
-@import "./landing/13-spine.css"; /* movement spine — right-edge I·II·III orientation */
+@import "./landing/13-rail.css"; /* scroll rail — the desktop scrollbar, opening into the three movements */
 @import "./landing/14-imagines.css"; /* Imagines — the plate of five frames (movement II) */
 @import "./landing/15-litany.css"; /* Litania — the plate of names over the night nave (movement I) */
 @import "./landing/16-proximum.css"; /* Proximum — the announced evening in two surfaces: the plate on night under the hero, the band above the register (movement II) */

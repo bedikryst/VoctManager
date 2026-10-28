@@ -918,7 +918,7 @@
     --lin-pitch: calc(var(--lin-address) * 1.1 + 34px);
     /* The seal at rest, beside its verb; and the seal once it has risen to the writing line, where
        it is scaled against that 64px line rather than against the verb it left. The risen one is
-       the widest thing at the grid's right edge, which is why the sheet marks `data-spine-clear`. */
+       the widest thing at the grid's right edge. */
     --lin-seal: clamp(38px, 2.9vw, 46px);
     --lin-seal-ready: clamp(52px, 4.6vw, 74px);
     --lin-ink: var(--line-strong);

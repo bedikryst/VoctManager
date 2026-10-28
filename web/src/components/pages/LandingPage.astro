@@ -68,7 +68,7 @@ import VaultMount from "../VaultMount.astro";
 import { VoxMoment } from "../../islands/landing/VoxMoment";
 import { VideoLightbox } from "../../islands/landing/VideoLightbox";
 import { ImageLightbox } from "../../islands/landing/ImageLightbox";
-import { MovementSpine } from "../../islands/landing/MovementSpine";
+import { ScrollRail } from "../../islands/landing/ScrollRail";
 
 interface Props {
   /** Which language this render is. Drives the copy, the chrome, the URL and the hreflang graph. */
@@ -156,7 +156,8 @@ const jsonLd = {
     <AudioController client:load />
 
     <StickyHeader client:load ribbons={ribbons} lang={lang} chrome={t} />
-    <MovementSpine client:idle aria={t.spineAria} />
+    {/* The query is 13-rail.css's own; a phone never loads the island it cannot show. */}
+    <ScrollRail client:media="(min-width: 1200px) and (pointer: fine)" names={t.railNames} />
 
     <main id="main">
       <HeroSection copy={c.hero} videoCaption={c.vox.videoCaption} lang={lang} />
@@ -194,8 +195,8 @@ const jsonLd = {
       {/* Movement inscriptions are real liturgical Latin, never coined: "Lumen Christi" is the
           Easter Vigil acclamation sung as the paschal candle enters a dark church — the exact
           rite this movement's interlude performs (parchment cut to night, one flame). Keep any
-          replacement short: the spine label is hidden below 1440px because the gutter is narrow
-          (13-spine.css), and a longer inscription pushes that breakpoint up. */}
+          replacement short: the scroll rail prints it after the movement's name on a plate that
+          reaches into the page from the right edge (13-rail.css). */}
       <section class="movement" id="ruch-i" data-movement="lumen" aria-label="I · Lumen Christi">
         <AetherInterlude variant="passage" roman="I" latin="Lumen Christi" />
         <LitanySection copy={c.litany} lang={lang} />

@@ -584,8 +584,8 @@ export interface LandingChrome {
   readonly proximumFree: string;
   /** The transfer block inside the support section. */
   readonly bankAria: string;
-  /** The right-edge movement index. */
-  readonly spineAria: string;
+  /** The movements' plain names, printed before their Latin on the desktop scroll rail. */
+  readonly railNames: { readonly lumen: string; readonly vox: string; readonly sustinete: string };
 
   /** The audio pill in the bar, which prints its STATE rather than its action — "voice" while the
       ensemble is singing, "silence" while it is not. The threshold below teaches both words. */
@@ -651,7 +651,7 @@ export const LANDING_CHROME: Record<Locale, LandingChrome> = {
     proximumCta: "Zobacz program",
     proximumFree: "Wstęp wolny",
     bankAria: "Dane do przelewu",
-    spineAria: "Części",
+    railNames: { lumen: "Zespół", vox: "Koncerty", sustinete: "Wsparcie" },
     audioOn: "Głos",
     audioOff: "Cisza",
     enterSilence: "Wejdź w ciszę",
@@ -690,7 +690,7 @@ export const LANDING_CHROME: Record<Locale, LandingChrome> = {
     proximumCta: "See the programme",
     proximumFree: "Free admission",
     bankAria: "Bank transfer details",
-    spineAria: "Movements",
+    railNames: { lumen: "Ensemble", vox: "Concerts", sustinete: "Support" },
     audioOn: "Voice",
     audioOff: "Silence",
     enterSilence: "Enter in silence",
@@ -729,7 +729,7 @@ export const LANDING_CHROME: Record<Locale, LandingChrome> = {
     proximumCta: "Voir le programme",
     proximumFree: "Entrée libre",
     bankAria: "Coordonnées bancaires",
-    spineAria: "Mouvements",
+    railNames: { lumen: "Ensemble", vox: "Concerts", sustinete: "Soutien" },
     audioOn: "Voix",
     audioOff: "Silence",
     enterSilence: "Entrer en silence",

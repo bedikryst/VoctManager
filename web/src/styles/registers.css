@@ -46,7 +46,7 @@
    both the landing and BaseLayout call. `.is-settled` follows when the gesture is spent
    and strips the transition so the compositor can release the layer. Note that
    `.is-visible` is NOT this: it belongs to React islands with a visibility state of
-   their own (`.scroll-top`, `.movement-spine`, the vault's modals) and must never be
+   their own (`.scroll-top`, the vault's modals) and must never be
    read as a register trigger.
    ═══════════════════════════════════════════════════════════════════════════════ */
 
