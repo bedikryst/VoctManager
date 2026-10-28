@@ -4595,6 +4595,33 @@ msgstr ""
 msgid "A jump link requires a target page."
 msgstr ""
 
+#: backend/archive/models.py:657
+msgid "Highlight"
+msgstr ""
+
+#: backend/archive/models.py:658
+msgid "Text Comment"
+msgstr ""
+
+#: backend/archive/models.py:659
+msgid "Freehand Pen"
+msgstr ""
+
+#: backend/archive/models.py:660
+msgid "Stamp / Symbol"
+msgstr ""
+
+#: backend/archive/models.py:663
+msgid "Jump link"
+msgstr ""
+
+#: backend/roster/views.py:1090
+#, python-format
+msgid ""
+"The new marks are only for the sections %(sections)s, and nobody in the cast"
+" from them can receive this yet."
+msgstr ""
+
 #~ msgid ""
 #~ "%(artist)s is asking to be excused from a run of rehearsals. The dates are "
 #~ "below — approve or decline them in the panel."

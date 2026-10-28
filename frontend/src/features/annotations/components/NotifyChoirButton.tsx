@@ -6,9 +6,10 @@
  *
  * It names how many pieces it would send and is held back, with the reason in
  * words, when there is no network, while the cooldown after the last notice
- * runs (with the minutes left), when there is nothing new, or when nobody in the
- * cast can receive it. Sending pages the whole choir, so it takes two taps: the
- * first says how many people will hear, the second sends.
+ * runs (with the minutes left), when there is nothing new, when the new marks
+ * are all for sections nobody in the cast can be told in (named), or when
+ * nobody in the cast can receive it. Sending pages the whole choir, so it takes
+ * two taps: the first says how many people will hear, the second sends.
  *
  * The cooldown is the server's: the button counts down from how long the
  * server said was left, on this device's clock, and when that runs out it asks
@@ -34,6 +35,8 @@ import { Button } from "@/shared/ui/primitives/Button";
 import { Text } from "@/shared/ui/primitives/typography";
 
 import { useMarksNews, useNotifyChoir } from "../api/choirMarks.queries";
+import { VOICE_SECTIONS } from "../lib/voices";
+import { VOICE_SECTION_NAMES } from "./MarkVoicePicker";
 
 interface NotifyChoirButtonProps {
   projectId: string;
@@ -55,7 +58,7 @@ export const NotifyChoirButton = ({
   surface,
   className,
 }: NotifyChoirButtonProps): React.JSX.Element | null => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const isOnline = useIsOnline();
   const { data: news, dataUpdatedAt, refetch } = useMarksNews(projectId, true);
   const notify = useNotifyChoir(projectId);
@@ -91,6 +94,15 @@ export const NotifyChoirButton = ({
 
   const pieceCount = news.pieces.length;
   const coolingFor = cooldownEnd - Date.now();
+  // A cached answer from a server that predates the field has none to name.
+  const unreachedLetters = news.unreached_sections ?? "";
+  const unreached = VOICE_SECTIONS.filter((section) => unreachedLetters.includes(section));
+  const unreachedNames = unreached
+    .map((section) => {
+      const [key, fallback] = VOICE_SECTION_NAMES[section];
+      return t(key, fallback).toLocaleLowerCase(i18n.language);
+    })
+    .join(", ");
   const reason = !isOnline
     ? t("annotations.notify.offline")
     : coolingFor > 0
@@ -98,7 +110,12 @@ export const NotifyChoirButton = ({
           count: Math.max(1, Math.ceil(coolingFor / 60_000)),
         })
       : pieceCount === 0
-        ? t("annotations.notify.nothing_new")
+        ? unreached.length > 0
+          ? t("annotations.notify.unreached", {
+              count: unreached.length,
+              voices: unreachedNames,
+            })
+          : t("annotations.notify.nothing_new")
         : news.recipients === 0
           ? t("annotations.notify.nobody")
           : null;

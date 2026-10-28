@@ -12,6 +12,12 @@
     access control: a mark for the tenors is as readable to a soprano as any
     other mark on the choir's layer, and the layer rules stay the only gate.
 
+    They address readers on the choir's layer only. On the leader's cues a
+    voice is a label ("check the tenors here"), read by whoever runs the
+    evening whatever they sing themselves: a soprano taking the tenor
+    sectional must not lose that cue to her own seat. The private layers take
+    no voices at all; a mark moved onto one sheds them.
+
     A reader answers to the letters of their seat
     (``core.voice_labels.section_letters_of_seat``): a divisi S1 singer is a
     soprano, and an unseated mezzo answers to the sopranos and the altos alike,
@@ -74,8 +80,10 @@ def addresses(voices: Any, reader_letters: str) -> bool:
 
 def widens(before: Any, after: Sequence[str]) -> bool:
     """Whether readdressing a mark reaches a voice it did not reach before.
-    Narrowing it tells nobody anything new; widening it is news to the voices
-    it now reaches."""
+    Narrowing it tells nobody anything new. Widening it moves the mark's one
+    `content_at`, so it reads as news to every voice it now reaches, the ones
+    that already had it included. A mark read twice costs less than a
+    `content_at` per voice would."""
     old = mark_letters(before)
     new = mark_letters(after)
     if not old:

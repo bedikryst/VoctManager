@@ -15,6 +15,9 @@
       "sent_many": "Powiadomiono {{count}} osób",
       "nothing_new": "Nic nowego od ostatniego powiadomienia.",
       "nobody": "Nikt z obsady nie może jeszcze dostać powiadomienia.",
+      "unreached_one": "Nowe uwagi są tylko dla sekcji: {{voices}}. Nikt z tej sekcji nie może jeszcze dostać powiadomienia.",
+      "unreached_few": "Nowe uwagi są tylko dla sekcji: {{voices}}. Nikt z tych sekcji nie może jeszcze dostać powiadomienia.",
+      "unreached_many": "Nowe uwagi są tylko dla sekcji: {{voices}}. Nikt z tych sekcji nie może jeszcze dostać powiadomienia.",
       "cooling_down": "Chór dostał powiadomienie przed chwilą. Spróbuj za kilka minut.",
       "cooling_down_for_one": "Chór dostał powiadomienie przed chwilą. Następne wyślesz za {{count}} minutę.",
       "cooling_down_for_few": "Chór dostał powiadomienie przed chwilą. Następne wyślesz za {{count}} minuty.",
@@ -86,9 +89,9 @@
         "choir_title": "Moje albo dla chóru",
         "choir_body": "Przełącznik przy narzędziach decyduje, gdzie trafi NASTĘPNE oznaczenie: „Moje” widzisz tylko Ty, „Chór” zobaczy każdy, kto śpiewa ten utwór. Zmienić i skasować możesz tylko własne oznaczenia — te od dyrygenta zostają jego.",
         "both_title": "Moje, dla chóru albo z dyrygentem",
-        "both_body": "Przełącznik przy narzędziach decyduje, gdzie trafi NASTĘPNE oznaczenie: „Moje” widzisz tylko Ty, „Chór” zobaczy każdy, kto śpiewa ten utwór, a „Z dyrygentem” tylko dyrygent i Ty. Zmienić i skasować możesz tylko własne oznaczenia — te od dyrygenta zostają jego.",
+        "both_body": "Przełącznik przy narzędziach decyduje, gdzie trafi NASTĘPNE oznaczenie: „Moje” widzisz tylko Ty, „Chór” zobaczy każdy, kto śpiewa ten utwór, a „Z dyrygentem” dyrygent i prowadzący próby, ale nikt z chóru. Zmienić i skasować możesz tylko własne oznaczenia — te od dyrygenta zostają jego.",
         "conductor_title": "Moje albo z dyrygentem",
-        "conductor_body": "Przełącznik przy narzędziach decyduje, gdzie trafi NASTĘPNE oznaczenie: „Moje” widzisz tylko Ty, „Z dyrygentem” zobaczy też dyrygent, ale nikt z chóru. Tak odpowiadasz na jego wskazówki tam, gdzie je zapisał. Zmienić i skasować możesz tylko własne oznaczenia."
+        "conductor_body": "Przełącznik przy narzędziach decyduje, gdzie trafi NASTĘPNE oznaczenie: „Moje” widzisz tylko Ty, „Z dyrygentem” zobaczą dyrygent i prowadzący próby, ale nikt z chóru. Tak odpowiadasz na jego wskazówki tam, gdzie je zapisał. Zmienić i skasować możesz tylko własne oznaczenia."
       },
       "personal": {
         "title": "Twoje ślady na nutach",
@@ -127,14 +130,14 @@
         "box_title": "Litery orientacyjne i numery taktów",
         "box_body": "Notatka „W ramce” wygląda jak litera orientacyjna albo numer taktu w nutach: pogrubiona, w prostokącie. Tak samo się drukuje.",
         "link_title": "Skok w inne miejsce",
-        "link_body": "Narzędziem Skok dotknij miejsca, z którego się skacze, np. przy D.S., potem przewróć na stronę, do której prowadzi, i dotknij celu. Dotknięcie strzałki przenosi tam, a „Wróć” z powrotem. Usuniesz go gumką. Do druku skok nie trafia.",
+        "link_body": "Narzędziem Skok dotknij miejsca, z którego się skacze, np. przy D.S., potem przewróć na stronę, do której prowadzi, i dotknij środka strony na wysokości celu. Dotknięcie strzałki przenosi tam, a „Wróć” z powrotem. Usuniesz go gumką. Do druku skok nie trafia.",
         "keys_title": "Z klawiatury",
         "keys_body": "Delete usuwa zaznaczenie, a strzałki je przesuwają (z Shiftem dalej). Ctrl+Z lub ⌘Z cofa, z Shiftem ponawia. Esc odkłada narzędzie.",
         "eraser_end_title": "Gumka w rysiku",
         "eraser_end_body": "Jeśli Twój rysik ma gumkę na drugim końcu, odwróć go i potrzyj oznaczenie. Zniknie bez zmiany narzędzia.",
         "voices_title": "Uwagi dla jednego głosu",
         "voices_reader_body": "Dyrygent może skierować uwagę do jednej sekcji. W panelu adnotacji wybierz „Mój głos + tutti”, a zobaczysz tylko uwagi dla swojego głosu i dla wszystkich.",
-        "voices_writer_body": "Przy narzędziach wybierz S, A, T albo B, a następne oznaczenie będzie dla tej sekcji. Na karcie oznaczenia zmienisz to po fakcie. Inni nadal je widzą, ale „Powiadom chór” powie tylko tym głosom, a chórzysta może czytać sam swój głos."
+        "voices_writer_body": "Gdy wybierzesz narzędzie, dotknij w jego panelu głosu: S, A, T albo B. Następne oznaczenie będzie dla tej sekcji, a na karcie oznaczenia zmienisz to po fakcie. Wszyscy nadal je widzą, ale „Powiadom chór” powie tylko tym głosom, a chórzysta z włączonym „Mój głos + tutti” zobaczy tylko uwagi dla siebie."
       }
     },
     "open_tools": "Narzędzia adnotacji",
@@ -142,9 +145,9 @@
     "undo": "Cofnij",
     "layer": {
       "for_leader_short": "Dla prowadzącego",
-      "with_conductor": "Z dyrygentem: widzi to tylko on i Ty",
+      "with_conductor": "Z dyrygentem: widzą to dyrygent i prowadzący próby, chór nie",
       "with_conductor_short": "Z dyrygentem",
-      "with_conductor_hint": "Widzisz to Ty i dyrygent. Chór — nie.",
+      "with_conductor_hint": "Widzą to dyrygent i prowadzący próby. Chór — nie.",
       "from_conductor_short": "Dyrygent",
       "leader": "Dla prowadzącego próbę",
       "leader_hint": "Osoba, której powierzysz prowadzenie próby, i menedżerowie. Chór — nie.",
@@ -163,7 +166,8 @@
       "follow": "Przejdź na s. {{page}}",
       "entry": "Skok na s. {{page}}",
       "placing_from": "Dotknij miejsca, z którego się skacze, np. przy D.S.",
-      "placing_to": "Teraz dotknij miejsca, do którego prowadzi skok. Możesz przewrócić stronę.",
+      "placing_to": "Teraz dotknij środka strony na wysokości celu. Możesz najpierw przewrócić stronę.",
+      "unbound": "Strony, na którą prowadzi ten skok, nie ma w książce",
       "return": "Wróć na s. {{page}}",
       "cancel": "Anuluj skok"
     },

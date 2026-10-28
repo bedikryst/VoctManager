@@ -23,11 +23,12 @@
  * because the reader can leave either one from outside the drawing surface:
  * they erase a mark, turn the page, or press Escape.
  *
- * For a reader it also keeps track of what is new: marks written for them since
- * their last visit carry a halo and a "Nowe" list in the drawer, and one
- * dismissible line sums them up on open and announces what arrives while the
- * stand is open — the conductor writing mid-rehearsal — because a mark that
- * lands three pages away would otherwise never be found.
+ * It also keeps track of what is new to the reader, the conductor included:
+ * marks someone else wrote for them since their last visit carry a halo and a
+ * "Nowe" list in the drawer, and one dismissible line sums them up on open and
+ * announces what arrives while the stand is open — the conductor writing
+ * mid-rehearsal, or an assistant answering him — because a mark that lands
+ * three pages away would otherwise never be found.
  *
  * Marks may be addressed to voices (`lib/voices`). A mark for another section
  * is never news to this reader, and under "Mój głos + tutti" it leaves their
@@ -79,10 +80,11 @@ import { CARD_ATTR } from "./lib/useOverlayInput";
 import { bookFocusY, bookPageFor, type ScoreBook } from "./lib/scoreBook";
 import { layerOf, WRITE_LAYERS, type WriteLayer } from "./lib/layers";
 import {
-  addressesSections,
   canonicalVoices,
   isAddressedTo,
   layerTakesVoices,
+  reachesSections,
+  voicesAddressLayer,
 } from "./lib/voices";
 import type { MarkClipboard, MarkEdit, SelectionKeys } from "./lib/selection";
 import {
@@ -328,6 +330,13 @@ export const useScoreAnnotator = ({
     ? (book.frames.get(pageApi.currentPage)?.edition ?? null)
     : editionId;
 
+  // The next mark's voices belong to one piece on one open stand: closing the
+  // stand, or turning into the next piece of the book, starts again at tutti.
+  const setNextVoices = tools.setVoices;
+  useEffect(() => {
+    setNextVoices([]);
+  }, [active, activeEditionId, setNextVoices]);
+
   const {
     annotations: allAnnotations,
     pendingCount,
@@ -358,15 +367,19 @@ export const useScoreAnnotator = ({
     () => allAnnotations.filter((a) => layerOf(a) !== "personal").length,
     [allAnnotations],
   );
-  // Whether the filter has anything to do on this edition.
+  // Whether the filter has anything to do on this edition: a voice on a leader
+  // cue is a label, and filters nothing.
   const hasVoicedMarks = useMemo(
-    () => allAnnotations.some((a) => canonicalVoices(a.voices).length > 0),
+    () =>
+      allAnnotations.some(
+        (a) => voicesAddressLayer(a.layer_name) && canonicalVoices(a.voices).length > 0,
+      ),
     [allAnnotations],
   );
-  // What is news to this reader is what is addressed to their voice, whether or
-  // not they chose to see the rest.
+  // What is news to this reader is what reaches their voice, whether or not
+  // they chose to see the rest.
   const addressedToReader = useMemo(
-    () => allAnnotations.filter((a) => addressesSections(a.voices, readerSections)),
+    () => allAnnotations.filter((a) => reachesSections(a, readerSections)),
     [allAnnotations, readerSections],
   );
 
@@ -720,6 +733,20 @@ export const useScoreAnnotator = ({
     [activeEditionId, book, pageApi.currentPage],
   );
 
+  /**
+   * The page a link leads to, in the document open, or null when the book does
+   * not bind it: the item was trimmed or its PDF replaced since the link was
+   * placed. Read as a book page, the edition's own number would land in
+   * another piece, so such a link cannot be followed.
+   */
+  const linkTargetPage = useCallback(
+    (sourcePage: number): number | null => {
+      if (!book || !activeEditionId) return sourcePage;
+      return bookPageFor(book, activeEditionId, sourcePage, pageApi.currentPage);
+    },
+    [activeEditionId, book, pageApi.currentPage],
+  );
+
   /** A mark's own height on the page on screen — see `bookFocusY`. */
   const displayFocusY = useCallback(
     (sourcePage: number, y: number): number => {
@@ -763,7 +790,9 @@ export const useScoreAnnotator = ({
     isSettled,
     editionId: activeEditionId,
     // A closed stand is a reader who left: the hook sends their pointer then.
-    watching: mode !== "conductor" && active,
+    // The conductor is a reader too: of an assistant's answer on the leader's
+    // layer, and of what a delegate wrote for the choir.
+    watching: active,
     userId,
     visibleLayers: tools.visibleLayers,
     seenAt,
@@ -784,9 +813,12 @@ export const useScoreAnnotator = ({
   // turn, and the pages need not be drawn again for it.
   const pageApiRef = useRef(pageApi);
   pageApiRef.current = pageApi;
-  const displayRef = useRef({ displayPage, displayFocusY });
-  displayRef.current = { displayPage, displayFocusY };
-  const linkPage = useCallback((page: number) => displayRef.current.displayPage(page), []);
+  const displayRef = useRef({ displayPage, displayFocusY, linkTargetPage });
+  displayRef.current = { displayPage, displayFocusY, linkTargetPage };
+  const linkPage = useCallback(
+    (page: number) => displayRef.current.linkTargetPage(page),
+    [],
+  );
 
   /**
    * A tap with the link tool. The first sets where the link sits; the second,
@@ -815,13 +847,19 @@ export const useScoreAnnotator = ({
   );
 
   const handleFollowLink = useCallback((mark: LinkMark) => {
-    const { displayPage: pageOf, displayFocusY: focusOf } = displayRef.current;
+    const {
+      displayPage: pageOf,
+      displayFocusY: focusOf,
+      linkTargetPage: targetOf,
+    } = displayRef.current;
+    const target = targetOf(mark.payload.target_page);
+    if (target === null) return;
     setReturnTo({
       page: pageOf(mark.page_number),
       y: focusOf(mark.page_number, mark.payload.y),
     });
     pageApiRef.current.goToPage(
-      pageOf(mark.payload.target_page),
+      target,
       focusOf(mark.payload.target_page, mark.payload.target_y),
     );
   }, []);
@@ -993,6 +1031,7 @@ export const useScoreAnnotator = ({
         currentPage={pageApi.currentPage}
         goToPage={pageApi.goToPage}
         displayPage={displayPage}
+        linkTargetPage={linkTargetPage}
         displayFocusY={displayFocusY}
         visibleLayers={visibleLayers}
         toggleLayerVisibility={tools.toggleLayerVisibility}

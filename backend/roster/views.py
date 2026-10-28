@@ -1055,9 +1055,10 @@ class ProjectViewSet(viewsets.ModelViewSet):
     def notify_marks(self, request, pk=None) -> Response:
         """
         Tells the live cast which pieces carry new marks: one notice each, with
-        a deep link. 409 when there is nothing to say or nobody to say it to,
-        429 while the last notice is too recent, 503 when the notice could not
-        be queued (the press may simply be repeated).
+        a deep link. 409 when there is nothing to say or nobody to say it to
+        (`unreached` names, in `sections`, the voices the marks are for), 429
+        while the last notice is too recent, 503 when the notice could not be
+        queued (the press may simply be repeated).
         """
         project = self._marks_notifier_project()
         try:
@@ -1082,6 +1083,18 @@ class ProjectViewSet(viewsets.ModelViewSet):
                         ),
                     },
                     status=status.HTTP_429_TOO_MANY_REQUESTS,
+                )
+            if refusal.reason == MarksNoticeRefused.UNREACHED:
+                return Response(
+                    {
+                        "detail": _(
+                            "The new marks are only for the sections %(sections)s, and "
+                            "nobody in the cast from them can receive this yet."
+                        ) % {"sections": ", ".join(refusal.sections)},
+                        "code": refusal.reason,
+                        "sections": refusal.sections,
+                    },
+                    status=status.HTTP_409_CONFLICT,
                 )
             detail = (
                 _("No marks have changed since the choir was last told.")

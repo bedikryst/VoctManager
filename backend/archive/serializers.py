@@ -44,6 +44,7 @@ from .annotation_stamps import get_stamp
 from .annotation_voices import InvalidMarkVoices, clean_mark_voices, widens
 from .dtos import PieceWriteDTO, VoiceRequirementDTO
 from .models import (
+    CONDUCTOR_ANNOTATION_LAYER,
     PERSONAL_ANNOTATION_LAYER,
     Annotation,
     AnnotationType,
@@ -410,6 +411,9 @@ _INK_SHAPES = frozenset({
 _MAX_PAYLOAD_BYTES = 256 * 1024
 
 
+#: The layers no voice addresses: mirror of `layerTakesVoices` on the client.
+_VOICELESS_LAYERS = frozenset({PERSONAL_ANNOTATION_LAYER, CONDUCTOR_ANNOTATION_LAYER})
+
 #: The payload field that carries what a placed mark SAYS, per type. Strokes
 #: have none: a redrawn line is a move.
 _CONTENT_KEYS: dict[str, str] = {
@@ -429,8 +433,10 @@ def _says_something_new(instance: Annotation, changes: Mapping[str, Any]) -> boo
     A note's words, a stamp's symbol, and where the mark is addressed (its layer,
     its edition, a voice it did not reach before): a mark moved onto the choir's
     layer is new to the choir, and a mark for the tenors opened to the basses is
-    new to the basses. Its place, size and ink are not, so tidying a page never
-    reads as news, and nor does narrowing a mark to fewer voices.
+    new to the basses. A mark has one `content_at`, so the tenors see that mark
+    as new again too (`annotation_voices.widens`). Its place, size and ink say
+    nothing new, so tidying a page never reads as news, and nor does narrowing
+    a mark to fewer voices.
     """
     if changes.get('annotation_type', instance.annotation_type) != instance.annotation_type:
         return True
@@ -536,10 +542,12 @@ class AnnotationSerializer(serializers.ModelSerializer):
         # an existing mark keeps the key it was born with.
         if self.instance is not None:
             attrs.pop('id', None)
-        # A private pencil has one reader, so it is addressed to nobody's voice;
-        # a mark moved there sheds the voices it was written for.
+        # A private pencil has one reader and the conductor's desk has no
+        # singing ones, so neither is addressed to a voice. A mark moved there
+        # sheds the voices it was written for, rather than keeping them hidden
+        # to come back if it is moved out again.
         layer = attrs.get('layer_name', getattr(self.instance, 'layer_name', None))
-        if layer == PERSONAL_ANNOTATION_LAYER and ('voices' in attrs or 'layer_name' in attrs):
+        if layer in _VOICELESS_LAYERS and ('voices' in attrs or 'layer_name' in attrs):
             attrs['voices'] = []
         # Each rule below judges only what this write carries, so a row stored
         # before the rule (page 0, a retired stamp) can still be moved and

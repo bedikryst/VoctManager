@@ -102,6 +102,11 @@ interface AnnotationSidebarProps {
    */
   displayPage?: (sourcePage: number) => number;
   /**
+   * Where a jump link leads, the same way, or null when the document open does
+   * not hold that page. Defaults to `displayPage`.
+   */
+  linkTargetPage?: (sourcePage: number) => number | null;
+  /**
    * The same translation for a mark's height: in the binder the edition's page
    * sits inside a rectangle of the book page. Identity for a single edition.
    */
@@ -138,6 +143,7 @@ export const AnnotationSidebar = ({
   currentPage,
   goToPage,
   displayPage = (page) => page,
+  linkTargetPage = displayPage,
   displayFocusY = (_page, y) => y,
   visibleLayers,
   toggleLayerVisibility,
@@ -181,14 +187,16 @@ export const AnnotationSidebar = ({
         return { mark, label, y: mark.payload.y };
       }
       if (isLink(mark)) {
-        const label = t("annotations.link.entry", "Skok na s. {{page}}", {
-          page: displayPage(mark.payload.target_page),
-        });
+        const target = linkTargetPage(mark.payload.target_page);
+        const label =
+          target === null
+            ? t("annotations.link.unbound", "Strony, na którą prowadzi ten skok, nie ma w książce")
+            : t("annotations.link.entry", "Skok na s. {{page}}", { page: target });
         return { mark, label, y: mark.payload.y };
       }
       return null;
     },
-    [displayPage, t],
+    [linkTargetPage, t],
   );
 
   const index = useMemo(

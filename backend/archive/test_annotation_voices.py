@@ -3,10 +3,11 @@
 @description Marks addressed to voices.
 
     A mark names sections, stored in SATB order, with tutti as an empty list
-    whichever way it was spelled; anything else is refused, and a private
-    pencil carries no voices. Opening a mark to a voice it did not reach is
-    news to that voice, narrowing it is not. The fingerprint tells the stand
-    which sections its reader answers to, from their seat on the music.
+    whichever way it was spelled; anything else is refused, and neither a
+    private pencil nor the conductor's desk carries voices. Opening a mark to a
+    voice it did not reach is news to that voice, narrowing it is not. The
+    fingerprint tells the stand which sections its reader answers to, from
+    their seat on the music and the line each piece casts them on.
 
 @module archive/test_annotation_voices
 """
@@ -19,13 +20,14 @@ from django.utils import timezone
 
 from archive.annotation_voices import addresses, clean_mark_voices, widens
 from archive.models import (
+    CONDUCTOR_ANNOTATION_LAYER,
     PERSONAL_ANNOTATION_LAYER,
     SHARED_ANNOTATION_LAYER,
     Annotation,
 )
 from archive.test_annotation_integrity import _ENDPOINT, _MarksFixture
 from core.constants import VoiceLine
-from roster.models import Participation, Project, VoiceType
+from roster.models import Participation, Project, ProjectPieceCasting, VoiceType
 
 
 class VoiceRulesTests(_MarksFixture):
@@ -79,13 +81,18 @@ class VoiceRulesTests(_MarksFixture):
         self.assertEqual(response.status_code, 201, response.content)
         self.assertEqual(response.json()["voices"], [])
 
+    def test_a_mark_moved_to_the_conductors_desk_sheds_its_voices_for_good(self) -> None:
         mark = self._mark(self.manager, SHARED_ANNOTATION_LAYER, voices=["T"])
         self.client.force_authenticate(self.manager)
-        response = self.client.patch(
-            f"{_ENDPOINT}{mark.pk}/", {"layer_name": "conductor"}, format="json",
+        moved = self.client.patch(
+            f"{_ENDPOINT}{mark.pk}/", {"layer_name": CONDUCTOR_ANNOTATION_LAYER}, format="json",
         )
-        self.assertEqual(response.status_code, 200, response.content)
-        self.assertEqual(response.json()["voices"], ["T"])
+        self.assertEqual(moved.status_code, 200, moved.content)
+        self.assertEqual(moved.json()["voices"], [])
+        back = self.client.patch(
+            f"{_ENDPOINT}{mark.pk}/", {"layer_name": SHARED_ANNOTATION_LAYER}, format="json",
+        )
+        self.assertEqual(back.json()["voices"], [])
 
     def test_opening_a_mark_to_another_voice_is_news_and_narrowing_it_is_not(self) -> None:
         mark = self._mark(self.manager, SHARED_ANNOTATION_LAYER, voices=["T"])
@@ -137,6 +144,21 @@ class ReaderSectionsTests(_MarksFixture):
         seat.default_voice_line = VoiceLine.BARITONE
         seat.save(update_fields=["default_voice_line"])
         self.assertEqual(self._sections(self.singer_user), "TB")
+
+    def test_the_line_this_piece_casts_them_on_counts_beside_their_seat(self) -> None:
+        piece = self.edition.piece
+        assert piece is not None
+        ProjectPieceCasting.objects.create(
+            participation=self._seat(self.singer_user), piece=piece, voice_line=VoiceLine.ALTO_1,
+        )
+        self.assertEqual(self._sections(self.singer_user), "AT")
+        other_piece = self.second_edition.piece
+        assert other_piece is not None
+        ProjectPieceCasting.objects.create(
+            participation=self._seat(self.other_user), piece=other_piece,
+            voice_line=VoiceLine.BASS_1,
+        )
+        self.assertEqual(self._sections(self.other_user), "T")
 
     def test_a_reader_with_no_seat_on_the_music_answers_to_none(self) -> None:
         self.assertEqual(self._sections(self.manager), "")

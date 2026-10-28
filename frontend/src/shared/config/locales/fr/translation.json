@@ -12,6 +12,8 @@
       "sent_other": "Envoyé à {{count}} personnes",
       "nothing_new": "Rien de nouveau depuis le dernier envoi au chœur.",
       "nobody": "Personne dans la distribution ne peut encore le recevoir.",
+      "unreached_one": "Les nouvelles annotations ne concernent qu’un pupitre : {{voices}}. Personne de ce pupitre dans la distribution ne peut encore être prévenu.",
+      "unreached_other": "Les nouvelles annotations ne concernent que ces pupitres : {{voices}}. Personne de ces pupitres dans la distribution ne peut encore être prévenu.",
       "cooling_down": "Le chœur vient d'être prévenu. Réessayez dans quelques minutes.",
       "cooling_down_for_one": "Le chœur vient d'être prévenu. Prochain envoi possible dans {{count}} minute.",
       "cooling_down_for_other": "Le chœur vient d'être prévenu. Prochain envoi possible dans {{count}} minutes.",
@@ -78,9 +80,9 @@
         "choir_title": "Perso, ou pour le chœur",
         "choir_body": "Le commutateur près des outils décide où ira la PROCHAINE annotation : « Perso » n'est visible que par vous, « Chœur » par tous ceux qui chantent cette pièce. Vous ne pouvez modifier ou effacer que vos propres annotations — celles du chef restent les siennes.",
         "both_title": "Perso, pour le chœur ou avec le chef",
-        "both_body": "Le commutateur près des outils décide où ira la PROCHAINE annotation : « Perso » n'est visible que par vous, « Chœur » par tous ceux qui chantent cette pièce, et « Avec le chef » seulement par le chef et vous. Vous ne pouvez modifier ou effacer que vos propres annotations.",
+        "both_body": "Le commutateur près des outils décide où ira la PROCHAINE annotation : « Perso » n'est visible que par vous, « Chœur » par tous ceux qui chantent cette pièce, et « Avec le chef » par le chef et ceux qui dirigent les répétitions, jamais par le chœur. Vous ne pouvez modifier ou effacer que vos propres annotations.",
         "conductor_title": "Perso, ou avec le chef",
-        "conductor_body": "Le commutateur près des outils décide où ira la PROCHAINE annotation : « Perso » n'est visible que par vous, « Avec le chef » l'est aussi par le chef, mais par personne dans le chœur. C'est ainsi que vous répondez à ses indications là où elles sont écrites. Vous ne pouvez modifier ou effacer que vos propres annotations."
+        "conductor_body": "Le commutateur près des outils décide où ira la PROCHAINE annotation : « Perso » n'est visible que par vous, « Avec le chef » l'est par le chef et ceux qui dirigent les répétitions, mais par personne dans le chœur. C'est ainsi que vous répondez à ses indications là où elles sont écrites. Vous ne pouvez modifier ou effacer que vos propres annotations."
       },
       "personal": {
         "title": "Vos propres traces",
@@ -119,14 +121,14 @@
         "box_title": "Lettres de repère et numéros de mesure",
         "box_body": "Une note « Encadré » ressemble à une lettre de repère ou à un numéro de mesure dans la partition : en gras, dans un rectangle. Elle s’imprime de la même façon.",
         "link_title": "Un saut vers un autre endroit",
-        "link_body": "Avec Saut, touchez l'endroit d'où part le saut (au D.S. par exemple), puis tournez jusqu'à la page où il mène et touchez la cible. Toucher la flèche vous y emmène, et « Revenir » vous ramène. La gomme l'efface. Un saut n'est jamais imprimé.",
+        "link_body": "Avec Saut, touchez l'endroit d'où part le saut (au D.S. par exemple), puis tournez jusqu'à la page où il mène et touchez le milieu de la page à la hauteur de la cible. Toucher la flèche vous y emmène, et « Revenir » vous ramène. La gomme l'efface. Un saut n'est jamais imprimé.",
         "keys_title": "Au clavier",
         "keys_body": "Suppr efface la sélection et les flèches la déplacent (plus loin avec Maj). Ctrl+Z ou ⌘Z annule, et avec Maj rétablit. Échap repose l’outil.",
         "eraser_end_title": "La gomme du stylet",
         "eraser_end_body": "Si votre stylet a une gomme à l’autre bout, retournez-le et frottez l’annotation : elle disparaît sans changer d’outil.",
         "voices_title": "Remarques pour un seul pupitre",
         "voices_reader_body": "Le chef peut adresser une remarque à un seul pupitre. Dans le panneau des annotations, choisissez « Mon pupitre + tutti » pour ne voir que les remarques pour votre voix et pour tous.",
-        "voices_writer_body": "À côté des outils, choisissez S, A, T ou B : l’annotation suivante sera pour ce pupitre. Vous pouvez le changer ensuite sur la carte de l’annotation. Tout le monde la voit encore, mais « Prévenir le chœur » ne prévient que ces pupitres, et un choriste peut ne lire que le sien."
+        "voices_writer_body": "Une fois l’outil choisi, touchez un pupitre dans son panneau : S, A, T ou B. L’annotation suivante sera pour ce pupitre, et vous pourrez le changer ensuite sur la carte de l’annotation. Tout le monde la voit encore, mais « Prévenir le chœur » ne prévient que ces pupitres, et un choriste qui active « Mon pupitre + tutti » ne voit que ce qui lui est destiné."
       }
     },
     "open_tools": "Outils d'annotation",
@@ -134,9 +136,9 @@
     "undo": "Annuler",
     "layer": {
       "for_leader_short": "Pour l'assistant",
-      "with_conductor": "Avec le chef : seuls le chef et vous le voyez",
+      "with_conductor": "Avec le chef : le chef et ceux qui dirigent les répétitions le voient, pas le chœur",
       "with_conductor_short": "Avec le chef",
-      "with_conductor_hint": "Vous et le chef le voyez. Le chœur, non.",
+      "with_conductor_hint": "Le chef et ceux qui dirigent les répétitions le voient. Le chœur, non.",
       "from_conductor_short": "Chef",
       "leader": "Pour qui dirige la répétition",
       "leader_hint": "La personne à qui vous confiez la répétition, et les responsables. Pas le chœur.",
@@ -155,7 +157,8 @@
       "follow": "Aller à la p. {{page}}",
       "entry": "Saut vers la p. {{page}}",
       "placing_from": "Touchez l'endroit d'où part le saut, au D.S. par exemple.",
-      "placing_to": "Touchez maintenant l'endroit où mène le saut. Vous pouvez d'abord tourner la page.",
+      "placing_to": "Touchez maintenant le milieu de la page à la hauteur de la cible. Vous pouvez d'abord tourner la page.",
+      "unbound": "La page où mène ce saut n'est pas dans le recueil",
       "return": "Revenir à la p. {{page}}",
       "cancel": "Annuler le saut"
     },

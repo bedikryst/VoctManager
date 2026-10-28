@@ -3,15 +3,16 @@
  * @description What is new on this score for this reader, what to tell them
  * about it, and how far to move their read pointer as they leave.
  *
- * Only the reader's side is watched. In conductor mode the shared layer IS the
- * user's own hand, so announcing it back to them would be noise. Everyone else
- * hears about marks on the two layers written TO them: what the choir is told,
- * and — for whoever is taking the evening — the leader cues. The author may be
- * the conductor or a leader writing for the choir, so whoever announces these
- * must not name one. A leader's own rows are left out by author: the draft
- * carries their id from the moment it is drawn. A layer the reader has hidden
- * is left out too, from the notice, the halo and the pointer alike: a mark
- * that was never on screen has not been read.
+ * Every reader hears about marks someone else wrote on the two layers written
+ * TO a reader: what the choir is told, and the leader cues. For a singer that
+ * is the conductor's hand, or a leader writing for the choir; for whoever is
+ * taking the evening, the cues left for them; for the conductor, an
+ * assistant's answer on the leader's layer and what a delegate wrote for the
+ * choir. The author varies, so whoever announces these must not name one. The
+ * reader's own rows are left out by author: the draft carries their id from
+ * the moment it is drawn. A layer the reader has hidden is left out too, from
+ * the notice, the halo and the pointer alike: a mark that was never on screen
+ * has not been read.
  *
  * New is measured against the reader's pointer (`seen_at`), taken once per
  * edition per open, from the stand's first fingerprint. The set it picks out

@@ -6045,7 +6045,36 @@ msgstr "Les pupitres doivent être une liste de lettres : S, A, T, B."
 
 #: backend/archive/serializers.py:700
 msgid "A jump link requires a target page."
-msgstr "Un lien de saut doit indiquer une page cible."
+msgstr "Un saut doit mener à une page précise."
+
+#: backend/archive/models.py:657
+msgid "Highlight"
+msgstr "Surligneur"
+
+#: backend/archive/models.py:658
+msgid "Text Comment"
+msgstr "Note"
+
+#: backend/archive/models.py:659
+msgid "Freehand Pen"
+msgstr "Stylo"
+
+#: backend/archive/models.py:660
+msgid "Stamp / Symbol"
+msgstr "Symbole"
+
+#: backend/archive/models.py:663
+msgid "Jump link"
+msgstr "Saut"
+
+#: backend/roster/views.py:1090
+#, python-format
+msgid ""
+"The new marks are only for the sections %(sections)s, and nobody in the cast"
+" from them can receive this yet."
+msgstr ""
+"Les nouvelles annotations ne concernent que les pupitres %(sections)s, et "
+"personne de ces pupitres dans la distribution ne peut encore être prévenu."
 
 #~ msgid "Review the request"
 #~ msgstr "Examiner la demande"

@@ -204,8 +204,11 @@ interface AnnotationOverlayProps {
   onLinkTap: (page: number, point: NormPoint) => void;
   /** A reader's tap on a placed link. */
   onFollowLink: (mark: LinkMark) => void;
-  /** The page number a link's target is shown as, in the document open. */
-  displayPage: (sourcePage: number) => number;
+  /**
+   * The page number a link's target is shown as, in the document open, or
+   * null when that document does not hold it: such a link cannot be followed.
+   */
+  displayPage: (sourcePage: number) => number | null;
 }
 
 /** Where a jump link being placed sits, until its target is tapped. */
@@ -1241,8 +1244,10 @@ export const AnnotationOverlay = ({
       {pageAnnotations.filter(isLink).map((a) => {
         const payload = a.payload;
         const erasable = erasing && canModify(a);
-        const live = browsing || erasable;
+        // A link whose target the document open does not hold is drawn faded
+        // and leads nowhere; its owner can still rub it out.
         const target = displayPage(payload.target_page);
+        const live = (browsing && target !== null) || erasable;
         return (
           <div
             key={a.id}
@@ -1260,16 +1265,25 @@ export const AnnotationOverlay = ({
             <button
               type="button"
               data-pdf-pinch-through
-              onClick={() => (erasing ? onDelete(a.id) : onFollowLink(a))}
-              aria-label={t("annotations.link.follow", "Przejdź na s. {{page}}", {
-                page: target,
-              })}
+              onClick={() => {
+                if (erasing) onDelete(a.id);
+                else if (target !== null) onFollowLink(a);
+              }}
+              aria-label={
+                target === null
+                  ? t(
+                      "annotations.link.unbound",
+                      "Strony, na którą prowadzi ten skok, nie ma w książce",
+                    )
+                  : t("annotations.link.follow", "Przejdź na s. {{page}}", { page: target })
+              }
               tabIndex={live ? 0 : -1}
               className={cn(
                 INLINE_MARK_CLASS,
                 "relative flex items-center gap-[0.25em] whitespace-nowrap rounded-full transition-shadow",
                 highlighted.has(a.id) ? "ring-2 ring-ethereal-gold" : "ring-black/10",
                 erasable && "cursor-pointer hover:ring-ethereal-crimson",
+                target === null && "opacity-50",
               )}
               style={{
                 color: a.color,
@@ -1284,7 +1298,7 @@ export const AnnotationOverlay = ({
                 className="absolute left-1/2 top-1/2 h-11 min-h-full w-11 min-w-full -translate-x-1/2 -translate-y-1/2"
               />
               <CornerDownRight size="1em" aria-hidden="true" />
-              {t("annotations.link.chip", "s. {{page}}", { page: target })}
+              {target !== null && t("annotations.link.chip", "s. {{page}}", { page: target })}
             </button>
           </div>
         );

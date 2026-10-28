@@ -12,6 +12,8 @@
       "sent_other": "Sent to {{count}} people",
       "nothing_new": "Nothing new since the choir was last told.",
       "nobody": "Nobody in the cast can receive this yet.",
+      "unreached_one": "The new marks are only for one section: {{voices}}. Nobody in the cast from that section can receive this yet.",
+      "unreached_other": "The new marks are only for these sections: {{voices}}. Nobody in the cast from them can receive this yet.",
       "cooling_down": "The choir was told a moment ago. Try again in a few minutes.",
       "cooling_down_for_one": "The choir was told a moment ago. You can send the next notice in {{count}} minute.",
       "cooling_down_for_other": "The choir was told a moment ago. You can send the next notice in {{count}} minutes.",
@@ -78,9 +80,9 @@
         "choir_title": "Mine, or for the choir",
         "choir_body": "The switch beside the tools decides where the NEXT mark goes: \"Mine\" is seen by you alone, \"Choir\" by everyone singing this piece. You can change or erase only your own marks — the conductor's stay his.",
         "both_title": "Mine, for the choir, or with the conductor",
-        "both_body": "The switch beside the tools decides where the NEXT mark goes: \"Mine\" is seen by you alone, \"Choir\" by everyone singing this piece, and \"With conductor\" by the conductor and you only. You can change or erase only your own marks.",
+        "both_body": "The switch beside the tools decides where the NEXT mark goes: \"Mine\" is seen by you alone, \"Choir\" by everyone singing this piece, and \"With conductor\" by the conductor and whoever leads rehearsals, never by the choir. You can change or erase only your own marks.",
         "conductor_title": "Mine, or with the conductor",
-        "conductor_body": "The switch beside the tools decides where the NEXT mark goes: \"Mine\" is seen by you alone, \"With conductor\" by the conductor too, and by nobody in the choir. That is how you answer the conductor's cues where they were written. You can change or erase only your own marks."
+        "conductor_body": "The switch beside the tools decides where the NEXT mark goes: \"Mine\" is seen by you alone, \"With conductor\" by the conductor and whoever leads rehearsals, and by nobody in the choir. That is how you answer the conductor's cues where they were written. You can change or erase only your own marks."
       },
       "personal": {
         "title": "Your own marks",
@@ -119,14 +121,14 @@
         "box_title": "Rehearsal letters and bar numbers",
         "box_body": "A “Boxed” note looks like a rehearsal letter or a bar number in the score: bold, in a rectangle. It prints the same way.",
         "link_title": "A jump to another place",
-        "link_body": "With Jump, tap where the jump starts (at a D.S., say), then turn to the page it leads to and tap the target. Tapping the arrow takes you there, and \"Back\" brings you back. The eraser removes it. A jump never goes to print.",
+        "link_body": "With Jump, tap where the jump starts (at a D.S., say), then turn to the page it leads to and tap the middle of the page at the target's height. Tapping the arrow takes you there, and \"Back\" brings you back. The eraser removes it. A jump never goes to print.",
         "keys_title": "From the keyboard",
         "keys_body": "Delete removes the selection and the arrow keys nudge it (further with Shift). Ctrl+Z or ⌘Z undoes, and with Shift redoes. Esc puts the tool down.",
         "eraser_end_title": "The pen's eraser",
         "eraser_end_body": "If your pen has an eraser on its other end, turn it over and rub a marking out. It goes without a change of tool.",
         "voices_title": "Remarks for one voice",
         "voices_reader_body": "The conductor can address a remark to one section. In the annotations panel choose “My voice + tutti” to see only the remarks for your voice and for everyone.",
-        "voices_writer_body": "Next to the tools, choose S, A, T or B and the next marking is for that section. You can change it afterwards on the marking's card. Everyone can still see it, but “Notify the choir” tells only those voices, and a singer can read just their own."
+        "voices_writer_body": "With a tool picked, tap a voice in its panel: S, A, T or B. The next marking is for that section, and you can change it afterwards on the marking's card. Everyone can still see it, but “Notify the choir” tells only those voices, and a singer who turns on “My voice + tutti” sees only what is for them."
       }
     },
     "open_tools": "Annotation tools",
@@ -134,9 +136,9 @@
     "undo": "Undo",
     "layer": {
       "for_leader_short": "For the lead",
-      "with_conductor": "With the conductor: only the conductor and you see it",
+      "with_conductor": "With the conductor: the conductor and whoever leads rehearsals see it, not the choir",
       "with_conductor_short": "With conductor",
-      "with_conductor_hint": "You and the conductor see this. Not the choir.",
+      "with_conductor_hint": "The conductor and whoever leads rehearsals see this. Not the choir.",
       "from_conductor_short": "Conductor",
       "leader": "For whoever runs the rehearsal",
       "leader_hint": "Whoever you hand the rehearsal to, and the managers. Not the choir.",
@@ -155,7 +157,8 @@
       "follow": "Go to p. {{page}}",
       "entry": "Jump to p. {{page}}",
       "placing_from": "Tap where the jump starts, at a D.S. for instance.",
-      "placing_to": "Now tap where the jump leads. You can turn the page first.",
+      "placing_to": "Now tap the middle of the page at the target's height. You can turn the page first.",
+      "unbound": "The page this jump leads to is not in the book",
       "return": "Back to p. {{page}}",
       "cancel": "Cancel the jump"
     },

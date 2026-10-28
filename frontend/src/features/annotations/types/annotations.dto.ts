@@ -193,7 +193,13 @@ export interface MarksNews {
   next_allowed_at: string | null;
   /** How many people a press would reach. */
   recipients: number;
+  /** Pieces somebody in the cast would hear of; one that reaches nobody is left out. */
   pieces: MarkedPieceNews[];
+  /**
+   * The sections (`S A T B`) of the new marks nobody in the cast would hear of,
+   * '' when there are none, or when nobody can be told anything at all.
+   */
+  unreached_sections: string;
   /**
    * Set by the client, not the wire: how long the cooldown still ran when the
    * server answered, measured on the server's own clock (`next_allowed_at`

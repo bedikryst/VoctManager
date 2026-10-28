@@ -134,7 +134,7 @@ export const AnnotationGuide = ({
           title: t("annotations.guide.leader.both_title", "Moje, dla chóru albo z dyrygentem"),
           body: t(
             "annotations.guide.leader.both_body",
-            "Przełącznik przy narzędziach decyduje, gdzie trafi NASTĘPNE oznaczenie: „Moje” widzisz tylko Ty, „Chór” zobaczy każdy, kto śpiewa ten utwór, a „Z dyrygentem” tylko dyrygent i Ty. Zmienić i skasować możesz tylko własne oznaczenia — te od dyrygenta zostają jego.",
+            "Przełącznik przy narzędziach decyduje, gdzie trafi NASTĘPNE oznaczenie: „Moje” widzisz tylko Ty, „Chór” zobaczy każdy, kto śpiewa ten utwór, a „Z dyrygentem” dyrygent i prowadzący próby, ale nikt z chóru. Zmienić i skasować możesz tylko własne oznaczenia — te od dyrygenta zostają jego.",
           ),
         }
       : withConductor
@@ -142,7 +142,7 @@ export const AnnotationGuide = ({
             title: t("annotations.guide.leader.conductor_title", "Moje albo z dyrygentem"),
             body: t(
               "annotations.guide.leader.conductor_body",
-              "Przełącznik przy narzędziach decyduje, gdzie trafi NASTĘPNE oznaczenie: „Moje” widzisz tylko Ty, „Z dyrygentem” zobaczy też dyrygent, ale nikt z chóru. Tak odpowiadasz na jego wskazówki tam, gdzie je zapisał. Zmienić i skasować możesz tylko własne oznaczenia.",
+              "Przełącznik przy narzędziach decyduje, gdzie trafi NASTĘPNE oznaczenie: „Moje” widzisz tylko Ty, „Z dyrygentem” zobaczą dyrygent i prowadzący próby, ale nikt z chóru. Tak odpowiadasz na jego wskazówki tam, gdzie je zapisał. Zmienić i skasować możesz tylko własne oznaczenia.",
             ),
           }
         : {
@@ -290,7 +290,7 @@ export const AnnotationGuide = ({
       title: t("annotations.guide.tools.link_title", "Skok w inne miejsce"),
       body: t(
         "annotations.guide.tools.link_body",
-        "Narzędziem Skok dotknij miejsca, z którego się skacze, np. przy D.S., potem przewróć na stronę, do której prowadzi, i dotknij celu. Dotknięcie strzałki przenosi tam, a „Wróć” z powrotem. Usuniesz go gumką. Do druku skok nie trafia.",
+        "Narzędziem Skok dotknij miejsca, z którego się skacze, np. przy D.S., potem przewróć na stronę, do której prowadzi, i dotknij środka strony na wysokości celu. Dotknięcie strzałki przenosi tam, a „Wróć” z powrotem. Usuniesz go gumką. Do druku skok nie trafia.",
       ),
     },
     {
@@ -305,7 +305,7 @@ export const AnnotationGuide = ({
             )
           : t(
               "annotations.guide.tools.voices_writer_body",
-              "Przy narzędziach wybierz S, A, T albo B, a następne oznaczenie będzie dla tej sekcji. Na karcie oznaczenia zmienisz to po fakcie. Inni nadal je widzą, ale „Powiadom chór” powie tylko tym głosom, a chórzysta może czytać sam swój głos.",
+              "Gdy wybierzesz narzędzie, dotknij w jego panelu głosu: S, A, T albo B. Następne oznaczenie będzie dla tej sekcji, a na karcie oznaczenia zmienisz to po fakcie. Wszyscy nadal je widzą, ale „Powiadom chór” powie tylko tym głosom, a chórzysta z włączonym „Mój głos + tutti” zobaczy tylko uwagi dla siebie.",
             ),
     },
     ...(hasKeyboard

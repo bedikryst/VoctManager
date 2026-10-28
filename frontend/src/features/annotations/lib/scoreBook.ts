@@ -81,6 +81,10 @@ export const buildScoreBook = (
  * so the answer is the copy nearest to where the reader is standing; jumping
  * them across the whole binder to an identical page would be a worse answer
  * than not moving at all.
+ *
+ * Null when the book does not bind that page at all: an item trimmed, or its
+ * PDF replaced, after the mark was made. The edition's own page number is no
+ * stand-in for it, since read as a book page it lands in another piece.
  */
 export const bookPageFor = (
   book: ScoreBook,

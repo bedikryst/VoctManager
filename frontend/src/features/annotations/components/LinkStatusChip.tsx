@@ -86,7 +86,7 @@ export const LinkStatusChip = ({
                       )
                     : t(
                         "annotations.link.placing_to",
-                        "Teraz dotknij miejsca, do którego prowadzi skok. Możesz przewrócić stronę.",
+                        "Teraz dotknij środka strony na wysokości celu. Możesz najpierw przewrócić stronę.",
                       )}
                 </Text>
               </>

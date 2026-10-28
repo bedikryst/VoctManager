@@ -102,19 +102,26 @@ def user_has_live_access_to_piece(user: User, piece_id: uuid.UUID | str | None) 
 
 def reader_section_letters(user: User, edition_id: uuid.UUID | str) -> str:
     """The section letters a reader answers to on one edition's music: the
-    seats they hold in the live projects that programme its piece. Which
-    project opened the score does not matter, since the book, the songbook and
-    the schedule all reach it through one of these seats. '' when they hold
-    none (a manager, a stand-in who is not singing, a closed concert), which
-    every reader of the voices takes as "show everything"."""
+    seats they hold in the live projects that programme its piece, and the
+    lines those projects cast them on in this piece. An alto cast on the tenor
+    line of one piece is called by that piece's tenor marks as well as her
+    own. Which project opened the score does not matter, since the book, the
+    songbook and the schedule all reach it through one of these seats. ''
+    when they hold none (a manager, a stand-in who is not singing, a closed
+    concert), which every reader of the voices takes as "show everything"."""
     seats = (
         Participation.live_seats(artist__user=user)
         .filter(project__program_items__piece__editions__id=edition_id)
         .exclude(project__status__in=CLOSED_PROJECT_STATUSES)
-        .values_list('artist__voice_type', 'default_voice_line')
-        .distinct()
     )
-    return reader_letters_of_seats(seats)
+    cast_lines = (
+        ProjectPieceCasting.objects
+        .filter(participation__in=seats, piece__editions__id=edition_id)
+        .values_list('participation__artist__voice_type', 'voice_line')
+    )
+    return reader_letters_of_seats(
+        seats.values_list('artist__voice_type', 'default_voice_line').union(cast_lines)
+    )
 
 
 def user_is_refused_instrumental(user: User, project_id: uuid.UUID | str) -> bool:

@@ -273,12 +273,54 @@ class MarksNewsTests(_MarksFixture):
         self._mark(self.manager, SHARED_ANNOTATION_LAYER)
         self.assertEqual(self._news().json()["recipients"], 3)
 
-    def test_a_mark_for_a_voice_nobody_sings_tells_nobody(self) -> None:
+    def test_a_mark_for_a_voice_nobody_sings_names_that_voice(self) -> None:
+        self._mark(self.manager, SHARED_ANNOTATION_LAYER, voices=["B"])
+        news = self._news().json()
+        self.assertEqual(news["pieces"], [])
+        self.assertEqual(news["recipients"], 0)
+        self.assertEqual(news["unreached_sections"], "B")
+        response, delay = self._press()
+        self.assertEqual(response.status_code, 409, response.content)
+        self.assertEqual(response.json()["code"], "unreached")
+        self.assertEqual(response.json()["sections"], "B")
+        delay.assert_not_called()
+
+    def test_a_piece_nobody_would_hear_of_is_not_on_offer(self) -> None:
+        self._mark(self.manager, SHARED_ANNOTATION_LAYER)
+        self._mark(self.manager, SHARED_ANNOTATION_LAYER, edition=self.second_edition, voices=["B"])
+        news = self._news().json()
+        self.assertEqual([piece["title"] for piece in news["pieces"]], ["Dixit Dominus"])
+        self.assertEqual(news["unreached_sections"], "B")
+        response, _delay = self._press()
+        self.assertEqual(response.status_code, 200, response.content)
+        self.assertEqual(response.json()["pieces"], 1)
+
+    def test_a_cast_without_accounts_is_told_apart_from_a_missing_voice(self) -> None:
+        Artist.objects.filter(user__isnull=False).exclude(
+            voice_type=VoiceType.CONDUCTOR,
+        ).update(user=None)
         self._mark(self.manager, SHARED_ANNOTATION_LAYER, voices=["B"])
         news = self._news().json()
         self.assertEqual(self._piece_titles(self._news()), ["Dixit Dominus"])
-        self.assertEqual(news["recipients"], 0)
-        response, delay = self._press()
-        self.assertEqual(response.status_code, 409, response.content)
+        self.assertEqual(news["unreached_sections"], "")
+        response, _delay = self._press()
         self.assertEqual(response.json()["code"], "nobody")
-        delay.assert_not_called()
+
+    def test_the_line_a_piece_casts_a_singer_on_reaches_them(self) -> None:
+        piece = self.edition.piece
+        assert piece is not None
+        seat = Participation.objects.get(artist__user=self.other_user, project=self.project)
+        ProjectPieceCasting.objects.create(
+            participation=seat, piece=piece, voice_line=VoiceLine.BASS_1,
+        )
+        self._mark(self.manager, SHARED_ANNOTATION_LAYER, voices=["B"])
+        self._mark(self.manager, SHARED_ANNOTATION_LAYER, edition=self.second_edition, voices=["B"])
+
+        response, delay = self._press()
+        self.assertEqual(response.status_code, 200, response.content)
+        delay.assert_called_once()
+        self.assertEqual(delay.call_args.kwargs["recipient_ids"], [str(self.other_user.pk)])
+        self.assertEqual(
+            [piece["title"] for piece in delay.call_args.kwargs["metadata"]["pieces"]],
+            ["Dixit Dominus"],
+        )

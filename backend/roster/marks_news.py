@@ -12,7 +12,12 @@
     A mark addressed to some voices is news to those voices only
     (`archive.annotation_voices.addresses`): a piece whose new marks are all
     for the tenors is listed to the tenors, and to whoever answers to no
-    section, never to the sopranos.
+    section, never to the sopranos. A singer answers to their seat and, piece
+    by piece, to the line they are cast on there.
+
+    A piece whose new marks reach nobody in the cast is left out of what the
+    button offers. When that leaves nothing, the button says which voices the
+    marks are for, rather than offering a press that can only be refused.
 @module roster/marks_news
 """
 
@@ -26,9 +31,9 @@ from uuid import UUID
 
 from django.utils import timezone
 
-from archive.annotation_voices import addresses, mark_letters
+from archive.annotation_voices import addresses, mark_letters, reader_letters_of_seats
 from archive.models import SHARED_ANNOTATION_LAYER, Annotation
-from core.voice_labels import canonical_section_letters, section_letters_of_seat
+from core.voice_labels import canonical_section_letters
 from notifications.dtos import MarkedPieceMetadata, ScoreMarksSharedMetadata
 from notifications.models import NotificationLevel, NotificationType
 from notifications.tasks import send_bulk_notifications_task
@@ -36,6 +41,7 @@ from roster.models import (
     Participation,
     ProgramItem,
     Project,
+    ProjectPieceCasting,
     VoiceType,
     instrumental_item_exists,
 )
@@ -78,6 +84,9 @@ class MarksNews:
     recipients: int
     #: When the cooldown ends, while it runs; None once a press is allowed.
     next_allowed_at: datetime | None
+    #: The sections of the new marks nobody in the cast would hear of, '' when
+    #: there are none to name (see `_Reach.unreached_sections`).
+    unreached_sections: str = ''
 
 
 @dataclass(frozen=True)
@@ -92,12 +101,21 @@ class MarksNoticeRefused(Exception):
 
     NOTHING_NEW = "nothing_new"
     NOBODY = "nobody"
+    #: The new marks are all for sections nobody in the cast can be told in;
+    #: `sections` names them.
+    UNREACHED = "unreached"
     TOO_SOON = "too_soon"
 
-    def __init__(self, reason: str, next_allowed_at: datetime | None = None) -> None:
+    def __init__(
+        self,
+        reason: str,
+        next_allowed_at: datetime | None = None,
+        sections: str = '',
+    ) -> None:
         super().__init__(reason)
         self.reason = reason
         self.next_allowed_at = next_allowed_at
+        self.sections = sections
 
 
 class MarksNoticeUndelivered(Exception):
@@ -178,40 +196,80 @@ def marked_pieces(project: Project, *, since: datetime, until: datetime) -> list
     return pieces
 
 
-def _audiences(
-    project: Project, sender: Any, pieces: list[MarkedPiece],
-) -> list[tuple[list[str], list[MarkedPiece]]]:
+@dataclass(frozen=True)
+class _Reach:
+    """Who would hear about which pieces, and what nobody would hear."""
+
+    #: One per distinct list of pieces: the recipients' ids, and those pieces.
+    audiences: list[tuple[list[str], list[MarkedPiece]]]
+    #: The pieces somebody would hear of, in programme order.
+    reached: list[MarkedPiece]
+    #: The section letters of the new marks on pieces nobody would hear of.
+    #: '' when every piece reaches somebody, and when nobody in the cast can
+    #: be told anything at all: the reason is then the cast, not the voices.
+    unreached_sections: str
+
+
+def _reach(project: Project, sender: Any, pieces: list[MarkedPiece]) -> _Reach:
     """Who hears about which pieces: the live cast, minus the one pressing the
     button and the podium. A singer is told of the sung pieces whose new marks
-    reach their section; a player of every piece, by the instrumental rule and
+    reach their section, which in one piece is their seat's and the line they
+    are cast on there; a player of every piece, by the instrumental rule and
     because a player answers to no section. One audience per distinct list of
     pieces, so one notice says the same thing to everyone it reaches. Nobody
     once the concert is over — the scores are no longer theirs to open."""
     if not pieces or project.status in Project.CLOSED_STATUSES:
-        return []
-    seats = (
+        return _Reach(audiences=[], reached=[], unreached_sections='')
+    live = (
         Participation.live_seats()
         .filter(project=project, artist__user__isnull=False)
         .exclude(artist__voice_type=VoiceType.CONDUCTOR)
-        .values_list('artist__user_id', 'artist__voice_type', 'default_voice_line')
     )
     if sender is not None:
-        seats = seats.exclude(artist__user=sender)
+        live = live.exclude(artist__user=sender)
+    seats = list(
+        live.values_list('id', 'artist__user_id', 'artist__voice_type', 'default_voice_line')
+    )
     sung = [piece for piece in pieces if not piece.instrumental]
+    cast_lines: dict[tuple[Any, Any], list[str]] = {}
+    for seat_id, piece_id, line in (
+        ProjectPieceCasting.objects
+        .filter(
+            participation_id__in=[seat[0] for seat in seats],
+            piece_id__in=[piece.piece_id for piece in sung],
+        )
+        .values_list('participation_id', 'piece_id', 'voice_line')
+    ):
+        cast_lines.setdefault((seat_id, piece_id), []).append(line)
     by_pieces: dict[tuple[UUID, ...], set[str]] = {}
-    for user_id, voice_type, voice_line in seats:
+    for seat_id, user_id, voice_type, voice_line in seats:
         if voice_type == VoiceType.INSTRUMENTALIST:
             told = pieces
         else:
-            letters = section_letters_of_seat(voice_type, voice_line)
-            told = [piece for piece in sung if piece.is_news_to(letters)]
+            told = [
+                piece for piece in sung
+                if piece.is_news_to(reader_letters_of_seats([
+                    (voice_type, voice_line),
+                    *((voice_type, line) for line in cast_lines.get((seat_id, piece.piece_id), ())),
+                ]))
+            ]
         if told:
             by_pieces.setdefault(tuple(piece.piece_id for piece in told), set()).add(str(user_id))
     in_order = {piece.piece_id: piece for piece in pieces}
-    return [
-        (sorted(user_ids), [in_order[piece_id] for piece_id in key])
-        for key, user_ids in by_pieces.items()
-    ]
+    reached_ids = {piece_id for key in by_pieces for piece_id in key}
+    return _Reach(
+        audiences=[
+            (sorted(user_ids), [in_order[piece_id] for piece_id in key])
+            for key, user_ids in by_pieces.items()
+        ],
+        reached=[piece for piece in pieces if piece.piece_id in reached_ids],
+        unreached_sections=canonical_section_letters(
+            letter
+            for piece in pieces
+            if piece.piece_id not in reached_ids
+            for letter in piece.sections
+        ) if seats else '',
+    )
 
 
 def _send_notice(recipient_ids: list[str], metadata: dict[str, Any]) -> None:
@@ -228,12 +286,17 @@ def read_marks_news(project: Project, sender: Any) -> MarksNews:
     now = timezone.now()
     since = _window_start(project)
     pieces = marked_pieces(project, since=since, until=now)
+    reach = _reach(project, sender, pieces)
     return MarksNews(
         since=since,
         notified_at=project.marks_notified_at,
-        pieces=pieces,
-        recipients=sum(len(ids) for ids, _ in _audiences(project, sender, pieces)),
+        # A piece nobody would hear of is not on offer. When nobody hears of
+        # anything and no voices explain it, the pieces stay listed beside a
+        # count of nobody: the cast is the reason, not the marks.
+        pieces=reach.reached if reach.reached or reach.unreached_sections else pieces,
+        recipients=sum(len(ids) for ids, _ in reach.audiences),
         next_allowed_at=_cooldown_end(project, now),
+        unreached_sections=reach.unreached_sections,
     )
 
 
@@ -243,8 +306,9 @@ def notify_choir(project: Project, sender: Any) -> MarksNoticeSent:
 
     The stamp is claimed with a conditional update on the value read, so two
     managers pressing at once send one notice, not two. Raises
-    `MarksNoticeRefused` when there is nothing to say, nobody to say it to, or
-    the last notice is too recent.
+    `MarksNoticeRefused` when there is nothing to say, nobody to say it to (or
+    nobody in the sections the marks are for), or the last notice is too
+    recent.
 
     The notices are queued right after the claim, outside any transaction. If
     the broker refuses one, the claim is undone and `MarksNoticeUndelivered`
@@ -261,8 +325,13 @@ def notify_choir(project: Project, sender: Any) -> MarksNoticeSent:
     pieces = marked_pieces(project, since=_window_start(project), until=now)
     if not pieces:
         raise MarksNoticeRefused(MarksNoticeRefused.NOTHING_NEW)
-    audiences = _audiences(project, sender, pieces)
+    reach = _reach(project, sender, pieces)
+    audiences = reach.audiences
     if not audiences:
+        if reach.unreached_sections:
+            raise MarksNoticeRefused(
+                MarksNoticeRefused.UNREACHED, sections=reach.unreached_sections,
+            )
         raise MarksNoticeRefused(MarksNoticeRefused.NOBODY)
 
     claimed = (
@@ -301,7 +370,7 @@ def notify_choir(project: Project, sender: Any) -> MarksNoticeSent:
     return MarksNoticeSent(
         notified_at=now,
         recipients=sum(len(ids) for ids, _ in audiences),
-        pieces=len(pieces),
+        pieces=len(reach.reached),
     )
 
 
@@ -312,6 +381,7 @@ def marks_news_payload(news: MarksNews) -> dict[str, Any]:
         "notified_at": news.notified_at.isoformat() if news.notified_at else None,
         "next_allowed_at": news.next_allowed_at.isoformat() if news.next_allowed_at else None,
         "recipients": news.recipients,
+        "unreached_sections": news.unreached_sections,
         "pieces": [
             {
                 "piece_id": str(piece.piece_id),

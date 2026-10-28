@@ -5,8 +5,9 @@
  * for the network rather than firing on reconnect; the cooldown is the server's
  * and is counted down on the server's clock, so a phone set an hour wrong
  * neither wakes it early nor holds it late; a notice the server could not hand
- * on (503) may be sent again; and on the toolbar, where there is no room for a
- * line of text, a press on a held chip says why.
+ * on (503) may be sent again; marks no voice in the cast can be told of name
+ * that voice rather than offer a press that is refused; and on the toolbar,
+ * where there is no room for a line of text, a press on a held chip says why.
  * @module features/annotations/components/NotifyChoirButton.test
  */
 
@@ -29,6 +30,7 @@ const news = (overrides: Record<string, unknown> = {}) => ({
   notified_at: null,
   next_allowed_at: null,
   recipients: 12,
+  unreached_sections: "",
   pieces: [
     { piece_id: "piece-1", title: "Ave verum", composer_name: "W. A. Mozart", count: 3 },
   ],
@@ -133,6 +135,25 @@ describe("a notice the server could not hand on", () => {
     fireEvent.click(again);
     fireEvent.click(await screen.findByRole("button", { name: "Wyślij do 12 osób" }));
     await waitFor(() => expect(presses.count).toBe(2));
+  });
+});
+
+describe("new marks for a section nobody in the cast can be told in", () => {
+  it("names the section instead of offering a press that is refused", async () => {
+    server.use(
+      http.get(NEWS_URL, () =>
+        HttpResponse.json(news({ pieces: [], recipients: 0, unreached_sections: "T" })),
+      ),
+    );
+    renderWithPanel(<NotifyChoirButton projectId="project-1" surface="page" />);
+
+    expect(
+      await screen.findByText(
+        "Nowe uwagi są tylko dla sekcji: tenory. Nikt z tej sekcji nie może jeszcze dostać powiadomienia.",
+      ),
+    ).toBeTruthy();
+    const button = screen.getByRole("button", { name: /Powiadom chór/ }) as HTMLButtonElement;
+    expect(button.disabled).toBe(true);
   });
 });
 

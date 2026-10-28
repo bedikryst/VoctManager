@@ -13,6 +13,7 @@ import {
   canonicalVoices,
   isAddressedTo,
   layerTakesVoices,
+  reachesSections,
   sameVoices,
   toggleVoice,
 } from "./voices";
@@ -42,9 +43,16 @@ describe("addressesSections", () => {
 
 describe("isAddressedTo", () => {
   it("always shows the reader their own marks", () => {
-    const own = { voices: ["T"], created_by: "me" };
+    const own = { layer_name: "shared", voices: ["T"], created_by: "me" };
     expect(isAddressedTo(own, "S", "me")).toBe(true);
     expect(isAddressedTo(own, "S", "someone-else")).toBe(false);
+  });
+});
+
+describe("reachesSections", () => {
+  it("filters the choir's layer by voice, and reads a leader cue's voice as a label", () => {
+    expect(reachesSections({ layer_name: "shared", voices: ["T"] }, "S")).toBe(false);
+    expect(reachesSections({ layer_name: "leader", voices: ["T"] }, "S")).toBe(true);
   });
 });
 

@@ -6006,7 +6006,36 @@ msgstr "Głosy muszą być listą liter sekcji: S, A, T, B."
 
 #: backend/archive/serializers.py:700
 msgid "A jump link requires a target page."
-msgstr "Link skoku musi wskazywać stronę docelową."
+msgstr "Skok musi prowadzić na określoną stronę."
+
+#: backend/archive/models.py:657
+msgid "Highlight"
+msgstr "Zakreślacz"
+
+#: backend/archive/models.py:658
+msgid "Text Comment"
+msgstr "Notatka"
+
+#: backend/archive/models.py:659
+msgid "Freehand Pen"
+msgstr "Pióro"
+
+#: backend/archive/models.py:660
+msgid "Stamp / Symbol"
+msgstr "Symbol"
+
+#: backend/archive/models.py:663
+msgid "Jump link"
+msgstr "Skok"
+
+#: backend/roster/views.py:1090
+#, python-format
+msgid ""
+"The new marks are only for the sections %(sections)s, and nobody in the cast"
+" from them can receive this yet."
+msgstr ""
+"Nowe uwagi są tylko dla sekcji %(sections)s, a nikt z obsady w tych sekcjach"
+" nie może jeszcze dostać powiadomienia."
 
 #~ msgid "Review the request"
 #~ msgstr "Rozpatrz prośbę"

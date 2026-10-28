@@ -142,7 +142,10 @@ export type DelegateTarget = "personal" | "shared" | "leader";
 /**
  * How a leader's targets name themselves. The `leader` layer is the row the
  * conductor calls "Prowadzący", named here from the other side of the desk:
- * what the assistant has to know before writing is that the conductor reads it.
+ * what the assistant has to know before writing is that the conductor reads
+ * it. So does every other leader with the marking grant on a project that
+ * programmes the piece, and the copy says so rather than promise a private
+ * line to the conductor.
  */
 export const delegateTargetCopy = (t: TFunction): Record<DelegateTarget, WriteLayerCopy> => {
   const rungs = writeLayerCopy(t);
@@ -159,11 +162,14 @@ export const delegateTargetCopy = (t: TFunction): Record<DelegateTarget, WriteLa
     shared: rungs.shared,
     leader: {
       ...rungs.leader,
-      label: t("annotations.layer.with_conductor", "Z dyrygentem: widzi to tylko on i Ty"),
+      label: t(
+        "annotations.layer.with_conductor",
+        "Z dyrygentem: widzą to dyrygent i prowadzący próby, chór nie",
+      ),
       short: t("annotations.layer.with_conductor_short", "Z dyrygentem"),
       hint: t(
         "annotations.layer.with_conductor_hint",
-        "Widzisz to Ty i dyrygent. Chór — nie.",
+        "Widzą to dyrygent i prowadzący próby. Chór — nie.",
       ),
     },
   };

@@ -4,10 +4,10 @@
  * that moves their read pointer when there is no signal to send it.
  *
  * New is a mark addressed to the reader — the choir's layer, or the cues for
- * whoever runs the evening — written by someone else, whose `content_at` is
- * later than how far they had read. Their own marks are never news to them, and
- * neither is a mark the conductor only moved, resized or recoloured: the server
- * leaves `content_at` alone for those.
+ * whoever runs the evening and the answers to them — written by someone else,
+ * whose `content_at` is later than how far they had read. Their own marks are
+ * never news to them, and neither is a mark only moved, resized or recoloured:
+ * the server leaves `content_at` alone for those.
  *
  * The pointer only ever moves to a `content_at` the device drew, never to the
  * device's clock: a phone set an hour fast would otherwise swallow everything

@@ -744,8 +744,9 @@ class Annotation(SoftDeleteModel):
         verbose_name=_("Set aside at"),
     )
     # Which sections the mark is for (see archive/annotation_voices.py). A
-    # reader's filter and "Powiadom chór" read it; the layer stays the only
-    # rule of who may read the mark at all.
+    # reader's filter and "Powiadom chór" read it on the choir's layer; on the
+    # leader's it is a label. The layer stays the only rule of who may read
+    # the mark at all.
     voices = models.JSONField(
         default=list, blank=True,
         help_text=_("Section letters (S, A, T, B) the mark is addressed to. Empty means tutti."),

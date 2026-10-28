@@ -9,6 +9,11 @@
  * "Powiadom chór" tells; they are not access control, and a mark for the tenors
  * is as readable to a soprano as any other on the choir's layer.
  *
+ * They address readers on the choir's layer only. On the leader's cues a voice
+ * is a label ("check the tenors here") for whoever runs the evening, whatever
+ * they sing: a soprano taking the tenor sectional must not lose that cue to her
+ * own seat.
+ *
  * The reader answers to the letters of their seat on the music, which the
  * fingerprint carries (`reader_sections`): a divisi S1 singer is a soprano, an
  * unseated mezzo answers to the sopranos and the altos alike. A reader with no
@@ -45,17 +50,27 @@ export const addressesSections = (
   return letters.some((letter) => readerSections.includes(letter));
 };
 
+/** Whether the voices on this layer decide who a mark reaches: the choir's only. */
+export const voicesAddressLayer = (layerName: string): boolean =>
+  layerTakesVoices(layerName) && layerName !== "leader";
+
+/** Whether a mark reaches a reader answering to `readerSections`, by its layer and voices. */
+export const reachesSections = (
+  mark: { layer_name: string; voices?: readonly string[] },
+  readerSections: string,
+): boolean =>
+  !voicesAddressLayer(mark.layer_name) || addressesSections(mark.voices, readerSections);
+
 /**
- * Whether a mark is the reader's to see under "Mój głos + tutti": addressed to
- * their section, or written by them.
+ * Whether a mark is the reader's to see under "Mój głos + tutti": it reaches
+ * their section, or they wrote it.
  */
 export const isAddressedTo = (
-  mark: { voices?: readonly string[]; created_by: string | null },
+  mark: { layer_name: string; voices?: readonly string[]; created_by: string | null },
   readerSections: string,
   userId: string | null,
 ): boolean =>
-  (userId !== null && mark.created_by === userId) ||
-  addressesSections(mark.voices, readerSections);
+  (userId !== null && mark.created_by === userId) || reachesSections(mark, readerSections);
 
 /** The voices with `section` added or taken away. */
 export const toggleVoice = (
@@ -69,10 +84,10 @@ export const toggleVoice = (
   );
 
 /**
- * Whether marks on this layer are addressed to voices. The choir's layer is,
- * and the leader's cues are ("check the tenors here"). A private pencil has one
- * reader, and the conductor's own layer is read by managers only, so neither
- * is offered voices.
+ * Whether marks on this layer carry voices. The choir's layer does, and the
+ * leader's cues do, as a label ("check the tenors here"). A private pencil has
+ * one reader, and the conductor's own layer is read by managers only, so
+ * neither is offered voices; the server clears them on a mark moved there.
  */
 export const layerTakesVoices = (layerName: string): boolean =>
   layerName !== "personal" && layerName !== "conductor";

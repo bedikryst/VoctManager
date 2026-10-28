@@ -269,9 +269,10 @@ export interface AnnotationToolState {
   layer: AnnotationLayer;
   setLayer: (layer: AnnotationLayer) => void;
   /**
-   * The sections the NEXT mark is for; none is tutti. Held for one open stand
-   * only: a conductor who wrote for the tenors yesterday must not find today's
-   * first mark silently addressed to them.
+   * The sections the NEXT mark is for; none is tutti. Held for one piece on one
+   * open stand only (the stand resets it): a conductor who wrote for the tenors
+   * yesterday, or in the previous piece of the book, must not find the next
+   * mark silently addressed to them.
    */
   voices: readonly VoiceSection[];
   setVoices: (voices: readonly VoiceSection[]) => void;
