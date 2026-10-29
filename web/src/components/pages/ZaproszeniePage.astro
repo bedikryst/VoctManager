@@ -24,11 +24,9 @@
  *  THE ARTWORK IS OPTIONAL TO THE BUILD AND OUTSIDE GIT. `zaproszenie-eclipse` is a total solar
  *  eclipse at its diamond ring (NASA/Carla Thomas, 2017, public domain), recoloured amber, its
  *  black turned to transparency, its clipped flare softened into the corona and the Moon kept
- *  opaque so no star shows through it. `zaproszenie-milkyway` is the galactic centre cut from
- *  ESO's all-sky panorama (ESO/S. Brunier, CC BY 4.0), tilted to run past the eclipse, its sky
- *  turned to transparency and its core warmed. `zaproszenie-stars` is a seamless star tile drawn
- *  for this page. Without them the sheet is its night and the eclipse its amber haze. The
- *  photographs' credit closes the page, one clause for each photograph the build found.
+ *  opaque so no star shows through it. `zaproszenie-stars` is a seamless star tile drawn for this
+ *  page. Without them the sheet is its night and the eclipse its amber haze. The eclipse's credit
+ *  closes the page when the build found the photograph.
  *
  *  THE ASK IS THE LIST'S ISLAND IN THIS PAGE'S DRESS. `NoticeForm` is mounted here directly rather
  *  through `NoticeSignup`, whose rubric, Latin and headline are /koncerty's: here the rubric is the
@@ -130,15 +128,12 @@ const art = async (name: string, width: number) => {
   const src = photoOptional(name);
   return src ? getImage({ src, width: Math.min(width, src.width), format: "webp" }) : undefined;
 };
-const [eclipse, stars, milkyWay] = await Promise.all([
+const [eclipse, stars] = await Promise.all([
   art("zaproszenie-eclipse", 1200),
   /* Drawn at twice the 1024 CSS px it tiles at (styles/zaproszenie.css). */
   art("zaproszenie-stars", 2048),
-  art("zaproszenie-milkyway", 2400),
 ]);
-const credits = [eclipse && copy.cover.credit.eclipseHtml, milkyWay && copy.cover.credit.milkyWayHtml].filter(Boolean);
-const creditLead = credits.length > 1 ? copy.cover.credit.leadComposite : copy.cover.credit.lead;
-const creditHtml = credits.length > 0 ? `${creditLead} ${credits.join("; ")}.` : undefined;
+const creditHtml = eclipse ? `${copy.cover.credit.lead} ${copy.cover.credit.eclipseHtml}.` : undefined;
 ---
 
 <BaseLayout
@@ -162,7 +157,7 @@ const creditHtml = credits.length > 0 ? `${creditLead} ${credits.join("; ")}.` :
     <div class="inv-sky" aria-hidden="true"></div>
 
     {/* ── The cover ── */}
-    <header class="zap-cover" data-entrance="waiting" style={milkyWay ? `--zap-milky-way: url("${milkyWay.src}")` : undefined}>
+    <header class="zap-cover" data-entrance="waiting">
       <div class="zap-figure" role={eclipse ? "img" : undefined} aria-label={eclipse ? copy.cover.eclipse : undefined} aria-hidden={eclipse ? undefined : "true"}>
         {eclipse && (
           <img class="zap-art" src={eclipse.src} width={eclipse.attributes.width} height={eclipse.attributes.height} alt="" decoding="async" fetchpriority="high" />

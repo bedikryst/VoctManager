@@ -10,10 +10,10 @@
  *  (`styles/invitation.css`) is re-read below for a dark ground, so every shared rule that inks the
  *  sheet inks it light and the reply card is a night a shade lifted, framed by its hairlines. No
  *  light block stands on the page: on this dark one reads as glare, so the acts are drawn in line
- *  rather than filled. Stars run over the whole sheet, full under the cover
- *  and quieter where the text runs; the Milky Way crosses the cover alone, past the eclipse's
- *  right as on the poster. Above the title, an eclipse at its diamond ring, the instant the Sun's
- *  light returns past the Moon; the title reaches up into its faint lower halo.
+ *  rather than filled. Stars run over the whole sheet, full under the cover and quieter where the
+ *  text runs. The poster's Milky Way stays off the page: bright enough to read as one, it fuses
+ *  with the corona or sits under the text. Above the title, an eclipse at its diamond ring, the
+ *  instant the Sun's light returns past the Moon; the title reaches up into its faint lower halo.
  *
  *  THE COVER'S GESTURE RUNS ONCE, THEN THE COVER BREATHES. The eclipse dawns out of the dark; the
  *  amber it throws into the sky is CSS and stays while the photograph loads. Afterwards the corona
@@ -111,23 +111,6 @@ html.voct-motion .zap .inv-rubric:not(.is-in)::after {
   text-align: center;
 }
 
-/* The Milky Way, bled to the window's edges past the sheet's gutters. Its axis runs a tenth of
-   the width right of centre at the eclipse's height, which keeps it in a phone's narrow crop of
-   the image; it fades out before the cover ends so the spread reads on the plain night. */
-.zap-cover::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  right: calc(50% - 50vw);
-  bottom: 0;
-  left: calc(50% - 50vw);
-  z-index: -1;
-  background: var(--zap-milky-way, none) center / cover no-repeat;
-  -webkit-mask-image: linear-gradient(to bottom, #000 55%, transparent);
-  mask-image: linear-gradient(to bottom, #000 55%, transparent);
-  pointer-events: none;
-}
-
 /* The eclipse sits in a square whose side is the variable: the photograph's disc is a third of
    it, and its halo fades out before the square's edge, which is what lets the title rise into it. */
 .zap-figure {
@@ -139,7 +122,7 @@ html.voct-motion .zap .inv-rubric:not(.is-in)::after {
 
 /* The amber the corona throws into the sky, a little wider than the photograph's own halo and
    kept faint: the night stays dark right up to the corona, as on the poster, and the warmth
-   belongs to the eclipse and the Milky Way's core rather than to a fog over the cover. */
+   belongs to the eclipse rather than to a fog over the cover. */
 .zap-figure::before {
   content: "";
   position: absolute;

@@ -47,16 +47,10 @@ export const ZAPROSZENIE = {
     line: "Zaproszenie na koncert",
     /** The cover's eclipse, for a reader who cannot see it. */
     eclipse: "Całkowite zaćmienie Słońca: ostatni błysk światła na krawędzi tarczy Księżyca",
-    /** Closes the page, the smallest line on it: one clause for each photograph the cover shows.
-     *  With both, the lead says the cover is a composite, since no eye sees the Milky Way during
-     *  totality. The Milky Way is ESO's under CC BY 4.0, whose terms the clause meets: ESO's
-     *  credit wording unaltered, the source and the licence linked, the changes said. */
+    /** Closes the page, the smallest line on it, when the build found the eclipse's photograph. */
     credit: {
       lead: "Na okładce:",
-      leadComposite: "Okładka łączy dwa zdjęcia:",
       eclipseHtml: "całkowite zaćmienie Słońca 21&nbsp;sierpnia 2017&nbsp;r., fot. NASA/Carla&nbsp;Thomas",
-      milkyWayHtml:
-        'Droga Mleczna, fot. <a class="inv-link" href="https://www.eso.org/public/images/eso0932a/" target="_blank" rel="noopener noreferrer">ESO/S.&nbsp;Brunier</a> (<a class="inv-link" href="https://creativecommons.org/licenses/by/4.0/deed.pl" target="_blank" rel="noopener noreferrer">CC BY 4.0</a>), kadr i barwy zmienione',
     },
   },
   inside: {
