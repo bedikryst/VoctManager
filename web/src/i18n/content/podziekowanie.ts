@@ -85,6 +85,8 @@ export const PODZIEKOWANIE = {
   },
   cover: {
     line: "Dziękujemy",
+    /** The Warsaw invitation's two hands, for a reader who cannot see them. */
+    hands: "Dwie dłonie wyciągnięte ku sobie w świetle, motyw ze „Stworzenia Adama” Michała Anioła",
   },
   letter: {
     lede:

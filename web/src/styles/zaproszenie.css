@@ -5,46 +5,91 @@
  *  spread, the response strip and the foundation's close. The ask between the last two, the list's
  *  island as a quiet postscript, is dressed by `styles/invitation-notice.css`.
  *
- *  THE COVER IS ITS TWO HANDS, AND THE GAP BETWEEN THEM. The card's cover is the fresco's gesture:
- *  two hands reaching for each other, the light where the fingertips nearly meet. Each hand is its
- *  own layer and is pinned by its FINGERTIPS to the page's axis, not by its arm to the page's edge:
- *  the gap is the composition, so it is the one thing that holds at every width, and the arms run
- *  out of the screen on a phone and dissolve into the light on a desktop (a mask on their outer
- *  half), where the cut of the artwork would otherwise stand in the open. Their height, not their
- *  width, is the variable, so the two layers — one a few pixels wider than the other — keep the
- *  artwork's one scale.
+ *  THE SHEET IS THE EVENING'S NIGHT. The evening's poster sets the programme in orbit round an
+ *  eclipse among stars; the page keeps that thought, not its picture. The invitation's ledger
+ *  (`styles/invitation.css`) is re-read below for a dark ground, so every shared rule that inks the
+ *  sheet inks it light and the reply card is a night a shade lifted, framed by its hairlines. No
+ *  light block stands on the page: on this dark one reads as glare, so the acts are drawn in line
+ *  rather than filled. Stars run over the whole sheet, full under the cover
+ *  and quieter where the text runs; the Milky Way crosses the cover alone, past the eclipse's
+ *  right as on the poster. Above the title, an eclipse at its diamond ring, the instant the Sun's
+ *  light returns past the Moon; the title reaches up into its faint lower halo.
  *
- *  THE COVER'S GESTURE RUNS ONCE, THEN THE COVER BREATHES. The hands come in from a little further
- *  out and stop short of each other; the burst opens between them as they settle. Afterwards the
- *  light breathes on the material's own clock (`inv-breathe`), visibly, and each hand swells by a
- *  hair from its fingertips on a period of its own, so the gap never changes. They never touch. The
- *  cover's data-entrance cue gives the hands a short readiness window, runs once and stays
- *  composed after it leaves view. The radial light stays visible while the artwork loads; only the
- *  burst image dawns. The clouds billow on the material's clock too. The title is readable at full
- *  opacity throughout.
+ *  THE COVER'S GESTURE RUNS ONCE, THEN THE COVER BREATHES. The eclipse dawns out of the dark; the
+ *  amber it throws into the sky is CSS and stays while the photograph loads. Afterwards the corona
+ *  swells by a hair on a slow clock. The cover's data-entrance cue gives the photograph a short
+ *  readiness window, runs once and stays composed after it leaves view. The title is readable at
+ *  full opacity throughout.
  * @module styles/zaproszenie
  */
 
 body.page-zaproszenie {
+  --inv-paper: #0e0d12;
+  --inv-paper-rgb: 14 13 18;
+  --inv-ink: #ece5da;
+  --inv-ink-deep: #f6f1e8;
+  --inv-ink-soft: #c4b9ad;
+  --inv-text: #dcd3c8;
+  --inv-muted: #a3998f;
+  --inv-card: #17151c;
+  --inv-line: rgb(236 229 218 / 0.16);
+  --inv-line-strong: rgb(236 229 218 / 0.42);
+  --inv-refusal: #e3958e;
+  --inv-shadow: 0 0 0;
   --edge-foot: var(--inv-paper);
+}
+
+/* On the night an act is drawn in line, not filled: a light block on this dark reads as glare. */
+.zap .inv-card .notice-act {
+  border: 1px solid var(--inv-line-strong);
+  background: transparent;
+  color: var(--inv-ink);
+}
+
+.zap .inv-card .notice-act::before {
+  border-color: var(--inv-line);
+}
+
+.zap .inv-card .notice-act:hover:not(:disabled) {
+  border-color: var(--inv-ink);
+  background: color-mix(in srgb, var(--inv-ink) 8%, transparent);
+}
+
+.zap .inv-card .notice-act:hover:not(:disabled)::before {
+  border-color: var(--inv-line-strong);
+}
+
+/* Two passes of one star tile at scales of 8 : 11, so the field repeats only past eleven thousand
+   pixels. The tile is transparent between its stars, so the night shows through: cooler at the
+   top, as the poster's is, warming into the sheet's own by the cover's foot. */
+.zap > .inv-sky {
+  background:
+    var(--zap-stars, none) 0 0 / 1024px auto repeat,
+    var(--zap-stars, none) 389px 211px / 1408px auto repeat,
+    linear-gradient(180deg, #080a10, transparent 90vh);
+  -webkit-mask-image: linear-gradient(to bottom, #000 90vh, rgb(0 0 0 / 0.4) 160vh);
+  mask-image: linear-gradient(to bottom, #000 90vh, rgb(0 0 0 / 0.4) 160vh);
+}
+
+/* The eclipse's dawn is the page's one gesture, so nothing on the sheet waits for a reveal: the
+   rubric's hairlines stand drawn rather than running out from the word. */
+html.voct-motion .zap .inv-rubric:not(.is-in)::before,
+html.voct-motion .zap .inv-rubric:not(.is-in)::after {
+  transform: none;
+  transition: none;
+}
+
+/* The ask's light is a candle's, not the daylight the card's paper takes it in. */
+.zap .inv-ask::before {
+  background: radial-gradient(
+    44% 44% at 50% 58%,
+    color-mix(in srgb, var(--candle) 9%, transparent),
+    transparent 74%
+  );
 }
 
 .zap img[hidden] {
   display: none;
-}
-
-/* The sky dissolves into the same paper before the sheet's physical edge. */
-.zap > .inv-sky {
-  -webkit-mask-image: linear-gradient(
-    to bottom,
-    #000 calc(100% - clamp(100px, 12vw, 160px)),
-    transparent 100%
-  );
-  mask-image: linear-gradient(
-    to bottom,
-    #000 calc(100% - clamp(100px, 12vw, 160px)),
-    transparent 100%
-  );
 }
 
 .zap {
@@ -53,6 +98,7 @@ body.page-zaproszenie {
 
 /* ── The cover ─────────────────────────────────────────────────────────────── */
 .zap-cover {
+  --eclipse: clamp(280px, 40vw, 500px);
   position: relative;
   isolation: isolate;
   display: flex;
@@ -61,12 +107,13 @@ body.page-zaproszenie {
   justify-content: center;
   min-height: 88vh;
   min-height: 88svh;
-  padding: clamp(112px, 11vw, 140px) 0 clamp(32px, 5vw, 64px);
+  padding: clamp(112px, 11vw, 140px) 0 clamp(40px, 6vw, 80px);
   text-align: center;
 }
 
-/* The cover's sky: light gathered where the hands meet, spent before the cover ends so the inside
-   page sits on plain paper. Bled to the window's edges past the sheet's gutters. */
+/* The Milky Way, bled to the window's edges past the sheet's gutters. Its axis runs a tenth of
+   the width right of centre at the eclipse's height, which keeps it in a phone's narrow crop of
+   the image; it fades out before the cover ends so the spread reads on the plain night. */
 .zap-cover::before {
   content: "";
   position: absolute;
@@ -75,62 +122,47 @@ body.page-zaproszenie {
   bottom: 0;
   left: calc(50% - 50vw);
   z-index: -1;
-  background: radial-gradient(
-    60% 46% at 50% 42%,
-    rgb(255 255 255 / 0.74),
-    rgb(255 255 255 / 0.24) 52%,
-    transparent 78%
-  );
-}
-
-.zap-touch {
-  --hand-h: clamp(168px, 25vw, 360px);
-  --hand-gap: clamp(2px, 0.45vw, 8px);
-  position: relative;
-  isolation: isolate;
-  flex-shrink: 0;
-  width: 100vw;
-  height: var(--hand-h);
-}
-
-.zap-hand {
-  position: absolute;
-  top: 0;
-  display: block;
-  width: auto;
-  height: 100%;
-  max-width: none;
-  user-select: none;
-}
-
-.zap-hand-left {
-  right: calc(50% + var(--hand-gap));
-  -webkit-mask-image: linear-gradient(90deg, transparent 2%, #000 46%);
-  mask-image: linear-gradient(90deg, transparent 2%, #000 46%);
-}
-
-.zap-hand-right {
-  left: calc(50% + var(--hand-gap));
-  -webkit-mask-image: linear-gradient(270deg, transparent 2%, #000 46%);
-  mask-image: linear-gradient(270deg, transparent 2%, #000 46%);
-}
-
-/* The light between the fingertips: centred on the gap, which in the artwork's own cut sits at
-   49 % of the hands' height. */
-.zap-glow {
-  position: absolute;
-  top: 49%;
-  left: 50%;
-  z-index: -1;
-  width: calc(var(--hand-h) * 2.7);
-  aspect-ratio: 1;
-  translate: -50% -50%;
+  background: var(--zap-milky-way, none) center / cover no-repeat;
+  -webkit-mask-image: linear-gradient(to bottom, #000 55%, transparent);
+  mask-image: linear-gradient(to bottom, #000 55%, transparent);
   pointer-events: none;
+}
+
+/* The eclipse sits in a square whose side is the variable: the photograph's disc is a third of
+   it, and its halo fades out before the square's edge, which is what lets the title rise into it. */
+.zap-figure {
+  position: relative;
+  flex-shrink: 0;
+  width: var(--eclipse);
+  aspect-ratio: 1;
+}
+
+/* The amber the corona throws into the sky, wider than the photograph's own halo. */
+.zap-figure::before {
+  content: "";
+  position: absolute;
+  inset: -45%;
+  z-index: -1;
+  background: radial-gradient(
+    closest-side,
+    color-mix(in srgb, var(--candle) 20%, transparent),
+    color-mix(in srgb, var(--candle) 7%, transparent) 55%,
+    transparent
+  );
+  pointer-events: none;
+}
+
+.zap-art {
+  display: block;
+  width: 100%;
+  height: 100%;
+  user-select: none;
 }
 
 .zap-title {
   --wght-rest: 460;
-  margin: clamp(26px, 3.6vw, 44px) 0 0;
+  position: relative;
+  margin: calc(var(--eclipse) * -0.1) 0 0;
   padding-left: 0.075em;
   color: var(--inv-ink-deep);
   font-size: clamp(36px, 5.4vw, 74px);
@@ -182,27 +214,6 @@ body.page-zaproszenie {
   grid-template-columns: var(--spread-columns);
   align-items: start;
   gap: var(--spread-gap);
-}
-
-/* The spread's paragraphs settle onto the paper one by one, each on its own trigger. The resting
-   ink stays near full because the date and venue are among them and must read at any moment. */
-html.voct-motion .zap-spread .reveal {
-  --half-ink: 0.88;
-  transform: translateY(14px);
-  transition-property: opacity, transform;
-  transition-duration: 720ms;
-  transition-timing-function: cubic-bezier(0.22, 0.61, 0.36, 1);
-  transition-delay: var(--reveal-delay, 0s);
-}
-
-html.voct-motion .zap-spread .reveal.is-in {
-  transform: none;
-}
-
-html.voct-motion .zap-spread .reveal.is-settled,
-html.voct-motion.vt-nav .zap-spread .reveal.is-in {
-  transition-duration: 0s;
-  transition-delay: 0s;
 }
 
 .zap-inside {
@@ -347,9 +358,9 @@ html.voct-motion.vt-nav .zap-spread .reveal.is-in {
   min-height: 54px;
   margin: 0;
   padding: 12px 24px;
-  border: 1px solid var(--inv-ink);
-  background: var(--inv-ink);
-  color: var(--inv-card);
+  border: 1px solid var(--inv-line-strong);
+  background: transparent;
+  color: var(--inv-ink);
   font-family: var(--serif);
   font-size: 19px;
   font-weight: 600;
@@ -365,7 +376,8 @@ html.voct-motion.vt-nav .zap-spread .reveal.is-in {
 }
 
 .zap-accept:hover:not([aria-disabled="true"]) {
-  background: var(--inv-ink-deep);
+  border-color: var(--inv-ink);
+  background: color-mix(in srgb, var(--inv-ink) 8%, transparent);
 }
 
 .zap-accept[data-accepted] {
@@ -660,73 +672,44 @@ html.voct-motion.vt-nav .zap-spread .reveal.is-in {
   color: var(--inv-ink-soft);
 }
 
+/* The cover photograph's credit, below everything the page has to say. */
+.zap-credit {
+  margin: clamp(40px, 5vw, 56px) 0 0;
+  color: var(--inv-muted);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
 /* ── Motion ────────────────────────────────────────────────────────────────────
    Gated on `html.voct-motion` (JS live, motion allowed), so a reduced-motion or no-JS visitor
-   gets the cover composed, the hands at rest with the light between them. */
-html.voct-motion .zap-cover[data-entrance="waiting"] .zap-hand {
+   gets the cover composed, the eclipse at rest in its haze. */
+html.voct-motion .zap-cover[data-entrance="waiting"] .zap-art {
   opacity: 0;
 }
 
-html.voct-motion .zap-cover[data-entrance="waiting"] .zap-glow img {
-  opacity: 0;
+/* The length is `ENTRANCE_MS` in scripts/invitation.ts, which switches the cover to composed. */
+html.voct-motion .zap-cover[data-entrance="play"] .zap-art {
+  animation: zap-dawn 2.4s cubic-bezier(0.3, 0.1, 0.3, 1) both;
 }
 
-html.voct-motion .zap-cover[data-entrance="play"] .zap-hand {
-  animation: zap-reach 1.8s cubic-bezier(0.3, 0.1, 0.3, 1) both;
+/* Once composed, the corona swells by a hair. Scale, not opacity: the Moon's disc is opaque in
+   the photograph so no star shows through it, and fading the layer would let them. */
+html.voct-motion .zap-cover[data-entrance="composed"] .zap-art {
+  animation: zap-corona 11s ease-in-out infinite alternate;
 }
 
-/* Each hand is anchored at its fingertips, which the artwork's cut puts at 49 % of its height. */
-.zap-hand-left {
-  --reach-from: -6%;
-  transform-origin: 100% 49%;
-}
-.zap-hand-right {
-  --reach-from: 6%;
-  transform-origin: 0% 49%;
-}
-
-html.voct-motion .zap-cover[data-entrance="play"] .zap-glow img {
-  animation: zap-dawn 1.8s cubic-bezier(0.3, 0.1, 0.3, 1) both;
-}
-
-/* Once composed, each hand breathes by a hair: it swells from its fingertips, so the gap never
-   narrows, and only the arm moves (2–5 px at its far end, off-screen on a phone). The periods do
-   not divide each other or the light's 12 s, so the hands never move together or with the light.
-   The right hand starts late rather than mid-cycle, which would jump on the switch from the
-   entrance. Meant to go unseen until someone keeps looking: past ~1.02 it reads as motion. */
-html.voct-motion .zap-cover[data-entrance="composed"] .zap-hand {
-  animation: zap-hand-breathe 9s ease-in-out infinite alternate;
-}
-
-html.voct-motion .zap-cover[data-entrance="composed"] .zap-hand-right {
-  animation-duration: 13s;
-  animation-delay: 2.5s;
-}
-
-/* Must stay after every rule that sets an `animation` shorthand on these nodes: the shorthand
-   resets the play state, and the hands' rule above ties with these on specificity. */
-html.voct-motion .zap-cover[data-atmosphere="paused"] :is(.inv-light, .zap-hand),
-html.voct-motion .zap .inv-cloud[data-atmosphere="paused"],
-html.voct-motion .zap[data-writing] :is(.inv-light, .inv-cloud, .zap-hand),
-html.voct-motion .zap[data-motion-paused] :is(.inv-light, .inv-cloud, .zap-hand) {
+/* Must stay after every rule that sets an `animation` shorthand on the eclipse: the shorthand
+   resets the play state, and the rule above ties with these on specificity. */
+html.voct-motion .zap-cover[data-atmosphere="paused"] .zap-art,
+html.voct-motion .zap:is([data-writing], [data-motion-paused]) .zap-art {
   animation-play-state: paused;
-}
-
-@keyframes zap-reach {
-  from {
-    opacity: 0;
-    transform: translateX(var(--reach-from));
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
 }
 
 @keyframes zap-dawn {
   from {
     opacity: 0;
-    transform: scale(0.92);
+    transform: scale(0.94);
   }
   to {
     opacity: 1;
@@ -734,12 +717,12 @@ html.voct-motion .zap[data-motion-paused] :is(.inv-light, .inv-cloud, .zap-hand)
   }
 }
 
-@keyframes zap-hand-breathe {
+@keyframes zap-corona {
   from {
-    scale: 1;
+    transform: scale(1);
   }
   to {
-    scale: 1.015;
+    transform: scale(1.02);
   }
 }
 
@@ -793,40 +776,12 @@ html.voct-motion .zap[data-motion-paused] :is(.inv-light, .inv-cloud, .zap-hand)
 }
 
 @media (prefers-reduced-motion: reduce) {
-  html.voct-motion .zap-spread .reveal {
-    --half-ink: 1;
-    transform: none;
-    transition-duration: 0s;
-    transition-delay: 0s;
-  }
-
-  html.voct-motion .zap .inv-cloud,
-  html.voct-motion .zap .inv-cloud.is-in,
-  html.voct-motion .zap .inv-light,
-  html.voct-motion .zap .zap-glow,
-  html.voct-motion .zap .zap-cover .zap-glow img,
-  html.voct-motion .zap .zap-cover .zap-hand,
+  html.voct-motion .zap .zap-cover .zap-art,
   html.voct-motion .zap .zap-title {
     animation: none;
     transition: none;
     opacity: 1;
     transform: none;
-  }
-
-  html.voct-motion .zap .inv-cloud,
-  html.voct-motion .zap .zap-hand {
-    translate: none;
-  }
-
-  html.voct-motion .zap .reveal {
-    opacity: 1;
-    transform: none;
-    transition: none;
-  }
-
-  html.voct-motion .zap .reveal-rule::before {
-    transform: scaleX(1);
-    transition: none;
   }
 
   .zap-accept {

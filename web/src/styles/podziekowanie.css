@@ -8,10 +8,10 @@
  *  the signature. The list's ask between the photographs and the back page is dressed by
  *  `styles/invitation-notice.css`.
  *
- *  THE HANDS ARE THE INVITATION'S, AND THEY REACH AS THEY DID THERE. Their geometry and their
- *  entrance are `styles/zaproszenie.css`'s (`.zap-touch`, `zap-reach`, `zap-dawn`): the artwork's
- *  cut puts the fingertips on each image's inner edge at 49 % of its height, the gap and the masks
- *  are the ones it measured, and `scripts/podziekowanie.ts` sets `data-entrance` on its contract.
+ *  THE HANDS ARE THE WARSAW INVITATION'S, AND THEY REACH AS THEY DID ON ITS COVER. `.pdz-touch`,
+ *  `pdz-reach` and `pdz-dawn` hold that cover's geometry and entrance: the artwork's cut puts the
+ *  fingertips on each image's inner edge at 49 % of its height, the gap and the masks are measured
+ *  on that cut, and `scripts/podziekowanie.ts` sets `data-entrance` on the invitation's contract.
  *  The gap stays open. Closing it would turn Michelangelo's moment into the poster quotation of
  *  it, and two separately cut images meeting edge to edge would show the seam. Without motion the
  *  cover is simply composed.

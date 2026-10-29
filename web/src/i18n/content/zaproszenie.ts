@@ -17,8 +17,9 @@
  *  paragraph about the concert is the card's as edited for this page, with one sentence about the
  *  evening's church; the Canticle's Polish name is spelled as the site spells it („Pieśń
  *  słoneczna”); a festival is named without an edition number; the ensemble is billed above its
- *  soloists and without a count of voices; and the donors' line under the foundation's paragraph is
- *  not on the card at all. `about.church` and `about.cast` belong to one evening and change with it.
+ *  soloists; and the donors' line under the foundation's paragraph and the cover photograph's
+ *  credit are not on the card at all. `about.church` and `about.cast` belong to one evening and
+ *  change with it.
  *
  *  THE ASK IS THE LIST'S, IN THE CARD'S VOICE. Where the card prints its RSVP the page invites the
  *  reader onto the concert invitation list (`outreach`, the "Zaproszenia" list). What must read the
@@ -44,8 +45,10 @@ export const ZAPROSZENIE = {
   },
   cover: {
     line: "Zaproszenie na koncert",
-    /** The cover's two hands, for a reader who cannot see them. */
-    hands: "Dwie dłonie wyciągnięte ku sobie w świetle, motyw ze „Stworzenia Adama” Michała Anioła",
+    /** The cover's eclipse, for a reader who cannot see it. */
+    eclipse: "Całkowite zaćmienie Słońca: ostatni błysk światła na krawędzi tarczy Księżyca",
+    /** Closes the page, the smallest line on it. */
+    credit: "Na okładce: całkowite zaćmienie Słońca 21 sierpnia 2017 r., fot. NASA/Carla Thomas.",
   },
   inside: {
     /** The inside page as assistive technology names it; it carries no heading of its own. */
@@ -92,10 +95,10 @@ export const ZAPROSZENIE = {
       "Dubra",
     ],
     /** Two lines, each line's items joined by a centred dot. The ensemble and its conductor lead,
-        a grade above the soloists, as a concert programme bills them. No count of voices, which
-        the card printed: the count is the roster's, and a roster can change until the evening. */
+        a grade above the soloists, as a concert programme bills them. The count of voices is the
+        evening's, as the press texts give it. */
     cast: [
-      ["VoctEnsemble", "Florent de Bazelaire"],
+      ["12 głosów VoctEnsemble", "Florent de Bazelaire"],
       ["Radu Ropotan — skrzypce", "Jakub Kapała — organy"],
     ],
     programme: "Program koncertu",

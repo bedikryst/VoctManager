@@ -1,7 +1,7 @@
 /**
  * @file invitation.ts
- * @description Gives the invitation hands a bounded decoding window and pauses its atmosphere
- *  outside the viewport, in a hidden tab and while a guest writes. The cover is composed once;
+ * @description Gives the invitation cover's artwork a bounded decoding window and pauses its
+ *  atmosphere outside the viewport, in a hidden tab and while a guest writes. The cover is composed once;
  *  delayed artwork, reduced motion and Astro navigation cannot replay it after the reader leaves.
  *  Sharing uses the device's native sheet when available and an addressed email draft otherwise.
  *  Acceptance is a session-local gesture measured anonymously in Plausible, not a reservation.
@@ -17,6 +17,9 @@ const invitationLinkGoals: Readonly<Record<string, Goal>> = {
   social: GOALS.invitationSocial,
   share: GOALS.invitationShare,
 };
+
+/** The cover's entrance, `zap-dawn` in styles/zaproszenie.css. */
+const ENTRANCE_MS = 2400;
 
 export function setupInvitation(): (() => void) | undefined {
   const sheet = document.querySelector<HTMLElement>(".zap");
@@ -84,14 +87,11 @@ export function setupInvitation(): (() => void) | undefined {
   const hideFailedArtwork = (image: HTMLImageElement): void => {
     if (!image.complete || image.naturalWidth > 0) return;
     image.hidden = true;
-    if (image.classList.contains("zap-hand")) {
-      cover.querySelectorAll<HTMLImageElement>(".zap-hand").forEach((hand) => {
-        hand.hidden = true;
-      });
-      const touch = cover.querySelector(".zap-touch");
-      touch?.removeAttribute("role");
-      touch?.removeAttribute("aria-label");
-      touch?.setAttribute("aria-hidden", "true");
+    if (image.classList.contains("zap-art")) {
+      const figure = cover.querySelector(".zap-figure");
+      figure?.removeAttribute("role");
+      figure?.removeAttribute("aria-label");
+      figure?.setAttribute("aria-hidden", "true");
       compose();
     }
   };
@@ -119,12 +119,7 @@ export function setupInvitation(): (() => void) | undefined {
 
   const syncPreference = (): void => {
     sheet.toggleAttribute("data-motion-paused", media.matches || document.hidden);
-    if (media.matches) {
-      compose();
-      sheet.querySelectorAll(".reveal, .reveal-cue, .reveal-rule").forEach((node) => {
-        node.classList.add("is-in");
-      });
-    }
+    if (media.matches) compose();
   };
   const syncWriting = (): void => {
     const field = document.activeElement;
@@ -136,22 +131,15 @@ export function setupInvitation(): (() => void) | undefined {
     );
   };
 
-  // The cover carries its own state for everything that breathes inside it (light and hands);
-  // each cloud carries its own, since the banks sit at the far end of the sheet.
-  const clouds = Array.from(sheet.querySelectorAll<HTMLElement>(".inv-cloud"));
+  // The cover carries the state of everything that breathes inside it.
   const observer = new IntersectionObserver((entries) => {
     for (const entry of entries) {
-      const target = entry.target as HTMLElement;
-      target.dataset.atmosphere = entry.isIntersecting ? "running" : "paused";
-      if (target === cover && !entry.isIntersecting) compose();
+      cover.dataset.atmosphere = entry.isIntersecting ? "running" : "paused";
+      if (!entry.isIntersecting) compose();
     }
   });
   cover.dataset.atmosphere = "paused";
   observer.observe(cover);
-  clouds.forEach((cloud) => {
-    cloud.dataset.atmosphere = "paused";
-    observer.observe(cloud);
-  });
 
   sheet.addEventListener("focusin", syncWriting, { signal: listeners.signal });
   sheet.addEventListener(
@@ -184,11 +172,11 @@ export function setupInvitation(): (() => void) | undefined {
     compose();
   }
 
-  const hands = Array.from(cover.querySelectorAll<HTMLImageElement>(".zap-hand"));
-  if (hands.length === 0) compose();
+  const artwork = Array.from(cover.querySelectorAll<HTMLImageElement>(".zap-art"));
+  if (artwork.length === 0) compose();
   if (cover.dataset.entrance === "waiting") {
     const decoded = Promise.all(
-      hands.map(async (image) => {
+      artwork.map(async (image) => {
         try {
           await image.decode();
         } catch {
@@ -215,7 +203,7 @@ export function setupInvitation(): (() => void) | undefined {
         return;
       }
       cover.dataset.entrance = "play";
-      finishTimer = window.setTimeout(compose, 1800);
+      finishTimer = window.setTimeout(compose, ENTRANCE_MS);
     });
   }
 

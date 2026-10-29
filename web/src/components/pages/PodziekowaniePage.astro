@@ -60,7 +60,7 @@ import { NoticeForm } from "../../islands/landing/NoticeForm";
 import { KONCERTY_PAGE } from "../../i18n/content/koncerty";
 import { NUNTIUS } from "../../i18n/content/nuntius";
 import { PODZIEKOWANIE } from "../../i18n/content/podziekowanie";
-import { INVITATION_CONCERT_ID, ZAPROSZENIE } from "../../i18n/content/zaproszenie";
+import { INVITATION_CONCERT_ID } from "../../i18n/content/zaproszenie";
 import { UI } from "../../i18n/ui";
 import { candleFrom } from "../../lib/candle";
 import { croppedShot } from "../../lib/croppedShot";
@@ -271,7 +271,7 @@ const hasHands = Boolean(handLeft && handRight);
 
     {/* ── The cover ── */}
     <header class="pdz-cover" data-entrance="waiting">
-      <div class="pdz-touch" role={hasHands ? "img" : undefined} aria-label={hasHands ? ZAPROSZENIE.cover.hands : undefined} aria-hidden={hasHands ? undefined : "true"}>
+      <div class="pdz-touch" role={hasHands ? "img" : undefined} aria-label={hasHands ? PODZIEKOWANIE.cover.hands : undefined} aria-hidden={hasHands ? undefined : "true"}>
         <span class="pdz-glow" aria-hidden="true">
           <span class="inv-light">
             {light && <img src={light.src} width={light.attributes.width} height={light.attributes.height} alt="" decoding="async" fetchpriority="high" />}

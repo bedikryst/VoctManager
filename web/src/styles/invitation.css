@@ -22,7 +22,8 @@
  *  every photograph (`src/assets/photos/zaproszenie-*`): the two cloud corners, cropped from its
  *  inside page and toned so the paper around them lands on `--inv-paper` (that value and the files
  *  move together), the burst of light from its cover, and the cover's two hands. Each is optional
- *  and both pages read without them.
+ *  and every page reads without them. `/zaproszenie` follows the evening it invites to, so its
+ *  cover is that evening's own (`styles/zaproszenie.css`) and takes none of this artwork.
  *
  *  THE ISLANDS ARE DRESSED HERE TOO. Both reply cards hold a React form (`RsvpForm`, `NoticeForm`)
  *  whose classes are their own; the writing line, the caption, the act and the small print are one
@@ -78,7 +79,7 @@ body.page-invitation .chrome.is-solid::after {
 
 /* ── The sky ───────────────────────────────────────────────────────────────────
    Paper grain over the whole sheet and the card's clouds in its foot corners. Where the light
-   falls is each page's to say (`.rsvp .inv-sky`, `.zap-cover::before`). */
+   falls is each page's to say (`.rsvp .inv-sky`, `.pdz > .inv-sky`). */
 .inv-sky {
   position: absolute;
   inset: 0;

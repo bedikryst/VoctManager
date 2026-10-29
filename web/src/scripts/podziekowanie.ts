@@ -2,13 +2,13 @@
  * @file podziekowanie.ts
  * @description The motion on /podziekowanie that CSS cannot time on its own.
  *
- *  THE COVER'S ONE MOVEMENT: the invitation's hands reach as they did on /zaproszenie while the
- *  light dawns between them (`styles/podziekowanie.css`, `pdz-reach` / `pdz-dawn`). The contract is
- *  the invitation's entrance (`scripts/invitation.ts`): the cover waits (`data-entrance="waiting"`)
- *  while the hands decode, within a bounded window, and plays only when they are ready, the cover
- *  is in view, the tab is visible and motion is allowed. Otherwise, and once the movement ends, it
- *  is composed: the hands at rest under the light, which is also what CSS draws without
- *  JavaScript. The hands' breathing stays on /zaproszenie.
+ *  THE COVER'S ONE MOVEMENT: the Warsaw invitation's hands reach as they did on its cover while
+ *  the light dawns between them (`styles/podziekowanie.css`, `pdz-reach` / `pdz-dawn`). The
+ *  contract is the invitation's entrance (`scripts/invitation.ts`): the cover waits
+ *  (`data-entrance="waiting"`) while the hands decode, within a bounded window, and plays only when
+ *  they are ready, the cover is in view, the tab is visible and motion is allowed. Otherwise, and
+ *  once the movement ends, it is composed: the hands at rest under the light, which is also what
+ *  CSS draws without JavaScript. The hands do not breathe here.
  *
  *  THE ATMOSPHERE RESTS WHERE NOBODY SEES IT, as on the invitation: the cover's light while the
  *  cover is out of view, each cloud bank while it is, everything in a hidden tab or under reduced

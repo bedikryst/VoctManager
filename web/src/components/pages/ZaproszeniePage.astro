@@ -6,11 +6,14 @@
  *  concert invitation list. Sharing and Facebook links connect the reader with other guests
  *  and the organiser's event; this page does not collect attendance declarations.
  *
- *  THE COVER OPENS AN EDITORIAL SPREAD. The hands reach towards the light beneath the title.
+ *  THE COVER OPENS AN EDITORIAL SPREAD. The page is the evening's poster in thought rather than
+ *  in picture: a night sky over the whole sheet and, above the title, an eclipse at the moment its
+ *  light returns. Nothing on it is a light block, the reply card included (`styles/zaproszenie.css`).
  *  The spread pairs the invitation's host, moment, venue and signature with the concert's prose,
  *  composers and performers. Each column reads down its own axis; on a phone the invitation
  *  precedes the concert. The programme link introduces its composers, followed by performer
- *  credits. The spread enters paragraph by paragraph, as it is read. One response strip follows both, before the
+ *  credits. The eclipse's dawn is the page's one gesture: every word stands from the start, with
+ *  no reveal on scroll. One response strip follows both, before the
  *  future-invitation list and the foundation's close: its paragraph, its own profiles (not the
  *  ensemble's, which the footer carries) and, smallest and last, the donors' line. It opens the
  *  donation vault in place, as the menu's "Wesprzyj" does; its href, the landing's donation
@@ -18,8 +21,13 @@
  *  once, on the cover; the
  *  invitation reads on from it as one sentence ("VoctEnsemble serdecznie zaprasza na Koncert Duchowy…").
  *
- *  THE ARTWORK IS THE CARD'S OWN LAYERS (`styles/invitation.css` says which), optional to the build
- *  and outside git; without it the cover is its light alone and the sheet its gradients.
+ *  THE ARTWORK IS OPTIONAL TO THE BUILD AND OUTSIDE GIT. `zaproszenie-eclipse` is a total solar
+ *  eclipse at its diamond ring (NASA/Carla Thomas, 2017, public domain), recoloured amber, its
+ *  black turned to transparency and the Moon kept opaque so no star shows through it.
+ *  `zaproszenie-stars` is a seamless star tile and `zaproszenie-milkyway` a Milky Way band, both
+ *  drawn for this page and transparent where the sky is empty.
+ *  Without them the sheet is its night and the eclipse its amber haze. The photograph's credit
+ *  closes the page.
  *
  *  THE ASK IS THE LIST'S ISLAND IN THIS PAGE'S DRESS. `NoticeForm` is mounted here directly rather
  *  through `NoticeSignup`, whose rubric, Latin and headline are /koncerty's: here the rubric is the
@@ -121,14 +129,12 @@ const art = async (name: string, width: number) => {
   const src = photoOptional(name);
   return src ? getImage({ src, width: Math.min(width, src.width), format: "webp" }) : undefined;
 };
-const [light, handLeft, handRight, cloudLeft, cloudRight] = await Promise.all([
-  art("zaproszenie-light", 1200),
-  art("zaproszenie-hand-left", 1200),
-  art("zaproszenie-hand-right", 1200),
-  art("zaproszenie-cloud-left", 860),
-  art("zaproszenie-cloud-right", 920),
+const [eclipse, stars, milkyWay] = await Promise.all([
+  art("zaproszenie-eclipse", 1200),
+  /* Drawn at twice the 1024 CSS px it tiles at (styles/zaproszenie.css). */
+  art("zaproszenie-stars", 2048),
+  art("zaproszenie-milkyway", 2400),
 ]);
-const hasHands = Boolean(handLeft && handRight);
 ---
 
 <BaseLayout
@@ -146,31 +152,16 @@ const hasHands = Boolean(handLeft && handRight);
   </Fragment>
 
   <a class="skip-link" href="#tresc">{ui.skipToContent}</a>
-  <SiteChrome current="/zaproszenie" ground="paper" lang={lang} />
+  <SiteChrome current="/zaproszenie" tone="dark" lang={lang} />
 
-  <main id="tresc" class="inv-sheet zap">
-    <div class="inv-sky" aria-hidden="true">
-      {cloudLeft && (
-        <img class="inv-cloud inv-cloud-left reveal-cue" src={cloudLeft.src} width={cloudLeft.attributes.width} height={cloudLeft.attributes.height} alt="" loading="lazy" decoding="async" />
-      )}
-      {cloudRight && (
-        <img class="inv-cloud inv-cloud-right reveal-cue" src={cloudRight.src} width={cloudRight.attributes.width} height={cloudRight.attributes.height} alt="" loading="lazy" decoding="async" />
-      )}
-    </div>
+  <main id="tresc" class="inv-sheet zap" style={stars ? `--zap-stars: url("${stars.src}")` : undefined}>
+    <div class="inv-sky" aria-hidden="true"></div>
 
     {/* ── The cover ── */}
-    <header class="zap-cover" data-entrance="waiting">
-      <div class="zap-touch" role={hasHands ? "img" : undefined} aria-label={hasHands ? copy.cover.hands : undefined} aria-hidden={hasHands ? undefined : "true"}>
-        <span class="zap-glow" aria-hidden="true">
-          <span class="inv-light">
-            {light && <img src={light.src} width={light.attributes.width} height={light.attributes.height} alt="" decoding="async" fetchpriority="high" />}
-          </span>
-        </span>
-        {hasHands && handLeft && (
-          <img class="zap-hand zap-hand-left" src={handLeft.src} width={handLeft.attributes.width} height={handLeft.attributes.height} alt="" decoding="async" fetchpriority="high" />
-        )}
-        {hasHands && handRight && (
-          <img class="zap-hand zap-hand-right" src={handRight.src} width={handRight.attributes.width} height={handRight.attributes.height} alt="" decoding="async" fetchpriority="high" />
+    <header class="zap-cover" data-entrance="waiting" style={milkyWay ? `--zap-milky-way: url("${milkyWay.src}")` : undefined}>
+      <div class="zap-figure" role={eclipse ? "img" : undefined} aria-label={eclipse ? copy.cover.eclipse : undefined} aria-hidden={eclipse ? undefined : "true"}>
+        {eclipse && (
+          <img class="zap-art" src={eclipse.src} width={eclipse.attributes.width} height={eclipse.attributes.height} alt="" decoding="async" fetchpriority="high" />
         )}
       </div>
       <h1 class="zap-title">{concert.title}</h1>
@@ -182,23 +173,19 @@ const hasHands = Boolean(handLeft && handRight);
     </header>
 
     <div class="zap-content">
-      {/* Each paragraph of the spread enters on its own trigger. A single node for the whole
-          spread would be crossed while a phone still shows the cover, and would ink a column
-          several screens tall at once. `data-d` staggers what one frame crosses together; the
-          second column trails the first by one step. */}
       <div class="zap-spread">
         {/* ── The invitation ── */}
         <section class="zap-inside" aria-label={inside.aria}>
-          <p class="zap-host reveal">
+          <p class="zap-host">
             <span class="zap-host-name">{inside.host}</span>
             <span class="zap-host-line">{inside.invites}</span>
           </p>
-          <p class="zap-kind reveal" data-d="1">{inside.kind}</p>
-          <p class="zap-subtitle reveal" data-d="2" set:html={inside.subtitleHtml} />
+          <p class="zap-kind">{inside.kind}</p>
+          <p class="zap-subtitle" set:html={inside.subtitleHtml} />
 
           <span class="zap-rule" aria-hidden="true"></span>
 
-          <p class="zap-moment reveal">
+          <p class="zap-moment">
             <time datetime={`${date}T${time}`}>
               <span class="zap-day">{day}</span>
               <span class="zap-sep zap-sep-day" aria-hidden="true">—</span>
@@ -214,7 +201,7 @@ const hasHands = Boolean(handLeft && handRight);
             )}
           </p>
 
-          <address class="zap-place reveal" data-d="1">
+          <address class="zap-place">
             <span class="zap-church">{church}</span>
             {concert.address && (concert.mapUrl ? (
               <a class="zap-address inv-link" href={concert.mapUrl} target="_blank" rel="noopener noreferrer">{concert.address}</a>
@@ -229,17 +216,17 @@ const hasHands = Boolean(handLeft && handRight);
             )}
           </address>
 
-          <p class="zap-sign reveal">
+          <p class="zap-sign">
             <span class="zap-sign-name">{inside.signature.name}</span>
             <span class="zap-sign-role">{inside.signature.role}</span>
           </p>
         </section>
 
         {/* ── The concert ── */}
-        <section class="zap-about" aria-labelledby="zap-about-heading" data-d="1">
-          <h2 id="zap-about-heading" class="zap-about-heading reveal">{copy.about.heading}</h2>
-          <p class="zap-about-text reveal" data-d="2" set:html={`${copy.about.textHtml} ${copy.about.church}`} />
-          <div class="zap-programme reveal">
+        <section class="zap-about" aria-labelledby="zap-about-heading">
+          <h2 id="zap-about-heading" class="zap-about-heading">{copy.about.heading}</h2>
+          <p class="zap-about-text" set:html={`${copy.about.textHtml} ${copy.about.church}`} />
+          <div class="zap-programme">
             {concert.hasPage && (
               <p class="zap-door">
                 <a class="inv-door" href={`/koncerty/${INVITATION_CONCERT_ID}#program`} data-invitation-goal="programme">{copy.about.programme}</a>
@@ -251,12 +238,12 @@ const hasHands = Boolean(handLeft && handRight);
           </div>
           <div class="zap-cast">
             {copy.about.cast.map((line, row) => (
-              <p class={row === 0 ? "zap-cast-lead reveal" : "reveal"}>{line.map((item, index, all) => <><span class="zap-name">{item}</span>{index < all.length - 1 && " "}</>)}</p>
+              <p class={row === 0 ? "zap-cast-lead" : undefined}>{line.map((item, index, all) => <><span class="zap-name">{item}</span>{index < all.length - 1 && " "}</>)}</p>
             ))}
             {/* The organiser who booked the evening and the funder's sentence, owed to the reader
                 as facts and set as the credits' last, quietest line. */}
             {(organizer || concert.funding) && (
-              <p class="zap-credits reveal">
+              <p class="zap-credits">
                 {organizer && <span class="zap-name">{organizer}</span>}{" "}
                 {concert.funding && <span class="zap-name">{concert.funding}</span>}
               </p>
@@ -285,12 +272,12 @@ const hasHands = Boolean(handLeft && handRight);
 
     {/* ── The ask, where the card prints its RSVP ── */}
     <section class="inv-ask" aria-labelledby="zap-ask-heading">
-      <h2 id="zap-ask-heading" class="inv-rubric inv-ask-rubric reveal">{copy.ask.rubric}</h2>
-      <p class="inv-say reveal" data-d="1">
+      <h2 id="zap-ask-heading" class="inv-rubric inv-ask-rubric">{copy.ask.rubric}</h2>
+      <p class="inv-say">
         <span class="inv-say-invitation">{copy.ask.invitation}</span>
         <span class="inv-say-promise">{notice.lede}</span>
       </p>
-      <div class="inv-slot reveal" data-d="2">
+      <div class="inv-slot">
         <div class="inv-card inv-notice notice-inner">
           <NoticeForm
             client:visible
@@ -313,19 +300,20 @@ const hasHands = Boolean(handLeft && handRight);
 
     {/* ── The foundation, as the card's last page closes ── */}
     <section class="zap-foundation" aria-labelledby="zap-foundation-heading">
-      <h2 id="zap-foundation-heading" class="zap-foundation-name reveal">{copy.foundation.name}</h2>
-      <p class="zap-foundation-text reveal" data-d="1">{copy.foundation.text}</p>
+      <h2 id="zap-foundation-heading" class="zap-foundation-name">{copy.foundation.name}</h2>
+      <p class="zap-foundation-text">{copy.foundation.text}</p>
       {FOUNDATION.socials.length > 0 && (
-        <p class="zap-foundation-links reveal" data-d="2">
+        <p class="zap-foundation-links">
           {FOUNDATION.socials.map((profile) => (
             <a class="inv-door" href={profile.url} data-invitation-goal="social" target="_blank" rel="noopener noreferrer">{SOCIAL_NETWORK_NAMES[profile.network]}</a>
           ))}
         </p>
       )}
-      <p class="zap-donors reveal">
+      <p class="zap-donors">
         {copy.foundation.donors}{" "}
         <a class="inv-link" href="/#wesprzyj" data-vault-open="100">{copy.foundation.support}</a>
       </p>
+      {eclipse && <p class="zap-credit">{copy.cover.credit}</p>}
     </section>
   </main>
 
