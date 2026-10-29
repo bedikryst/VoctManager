@@ -62,6 +62,8 @@ services:
       retries: 5
 
   web:
+    # Named explicitly because `celery` runs this same image (see there).
+    image: voctmanager-web
     build:
       context: ./backend
       dockerfile: Dockerfile
@@ -100,9 +102,13 @@ services:
       start_period: 60s
 
   celery:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
+    # Runs the image `web` builds: one Dockerfile, one build, one export. A second
+    # `build:` here exports a second, identical image on every deploy — minutes on
+    # the droplet's one vCPU. `never` because the image lives in no registry: without
+    # it a first `up --build` tries to pull it before `web` has built it and logs a
+    # spurious "pull access denied".
+    image: voctmanager-web
+    pull_policy: never
     container_name: voct_celery
     restart: always
     logging: *default-logging

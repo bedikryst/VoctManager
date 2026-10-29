@@ -47,8 +47,9 @@ COPY requirements.txt .
 # which `make deploy` used to cause on every single run by pruning the build
 # cache immediately beforehand. The cache mount survives a layer miss, so a
 # rebuild now re-uses the downloaded wheels instead of fetching them again.
-# `sharing=locked` because `web` and `celery` build this identical Dockerfile
-# as two services and pip's cache is not safe under concurrent writers.
+# `sharing=locked` because pip's cache is not safe under concurrent writers and
+# two builds of this file can overlap (a manual build during a deploy). Only the
+# `web` service builds it; `celery` runs the same image.
 #
 # The runtime stage keeps its own --no-cache-dir. That one is correct: its
 # layer is in the shipped image.
