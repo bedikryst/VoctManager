@@ -164,8 +164,8 @@ every prune freed 0 B; after `systemctl restart docker` the same command reporte
 to the records (the day included an interrupted build). The restart takes the
 whole stack down for about a minute and every service comes back by itself
 (`restart: always`), so do it at a quiet hour; then
-`docker builder prune -f --filter until=168h`, or the next deploy's trim,
-reclaims what no build has used for a week.
+`docker builder prune -f --filter until=48h`, or the next deploy's trim,
+reclaims what no build has used for two days.
 
 ### Why the build-cache trim is by age, not by a budget
 
@@ -188,10 +188,12 @@ runtime stage rebuilt from scratch on unchanged inputs. A record whose layers an
 image holds frees nothing when pruned; only its cache metadata goes.
 
 So build cache is trimmed in one place only, the run after a deploy's build
-(`--trim-build-cache`), with `--filter until=$GC_MAX_AGE` (default 168h) and
+(`--trim-build-cache`), with `--filter until=$GC_MAX_AGE` (default 48h) and
 nothing else: it filters on last use, so nothing that build touched is eligible.
 Garbage is made only by builds, and a wall-clock trim from cron would expire a
-cache that is still exact after any week without a deploy. At or above
+cache that is still exact after any quiet spell without a deploy. Two days
+rather than a week because deploys come in bursts of several a day; the script
+says what the shorter window costs. At or above
 `GC_DISK_PCT` (default 80%) every run only warns in `prune.log`.
 Answer the warning outside Docker first (`journalctl --disk-usage`,
 `~/voct-backups`), and with `make gc DEEP=--deep` only as the emergency.
@@ -204,7 +206,7 @@ that asymmetry is the symptom, not a coincidence.
 
 Age cannot protect the Astro image-encode mount. A build that leaves `web/`
 alone hits the layer cache and never mounts it, so its last use is the last
-*web* deploy, and a week without one ages it out at the next deploy's trim; BuildKit's
+*web* deploy, and two days without one age it out at the next deploy's trim; BuildKit's
 own GC drops idle cache mounts on a schedule of its own. Re-encoding ~790
 variants then costs ~20 minutes of the one vCPU.
 

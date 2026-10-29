@@ -147,7 +147,7 @@ COPY --from=web-builder /app/dist /app/dist
 # ==========================================
 # The cache mount above belongs to BuildKit, and BuildKit evicts it. Its last-used time moves
 # only on a build that changed web/ — on any other build that RUN is layer-cached and never
-# mounts it — so a week without a web deploy ages it out of infra/docker-gc.sh's trim, and
+# mounts it — so two days without a web deploy age it out of infra/docker-gc.sh's trim, and
 # BuildKit's own GC drops idle cache mounts on a schedule of its own.
 #
 # A plain directory on the build host is out of reach of every prune, so `make astro-stage`

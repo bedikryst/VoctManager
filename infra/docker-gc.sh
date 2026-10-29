@@ -24,7 +24,7 @@
 # (`--trim-build-cache`); cron and the call before the build reclaim images and
 # containers. Build-cache garbage is made only by builds, so only a build ages
 # it out: a wall-clock trim from cron would expire a cache that is still exact
-# after any week without a deploy, and the next deploy would rebuild it all.
+# after any quiet spell without a deploy, and the next deploy would rebuild it all.
 #
 # Rollback is git-based (checkout the old commit, rebuild), so discarding old
 # images costs nothing but rebuild time.
@@ -43,7 +43,14 @@ export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:${PATH
 # Age threshold for --trim-build-cache. `until` filters on LAST USE, so nothing
 # the build that just finished touched is ever in range — which is the whole
 # point of preferring it to a budget (see the trim branch below).
-GC_MAX_AGE="${GC_MAX_AGE:-168h}"
+#
+# Two days, not a week: deploys come in bursts, several a day, each superseding
+# a couple of GB of records, and a week's window kept every burst's garbage on a
+# 49 GB disk for a week. The cost is bounded: a stage whose inputs stay unchanged
+# through two days of other deploys may lose its intermediate records (`npm ci`,
+# `apt`, `pip install`) and re-run them the next time those inputs change —
+# minutes, once. The Astro encode cache comes back from ASTRO_CACHE_DIR in seconds.
+GC_MAX_AGE="${GC_MAX_AGE:-48h}"
 
 # Root filesystem usage (percent) at which every run prints a disk-pressure
 # warning into prune.log. It prunes nothing extra at that point — see the trim
@@ -124,7 +131,7 @@ elif [ "$TRIM_BUILD_CACHE" -eq 1 ]; then
   # outside Docker, or the emergency is `make gc DEEP=--deep` by hand.
   #
   # The Astro image-encode mount is the exception age cannot protect: a build
-  # that leaves web/ alone never mounts it, so a week without a web deploy ages
+  # that leaves web/ alone never mounts it, so GC_MAX_AGE without a web deploy ages
   # it out here. `make astro-stage` refills it from the build host's copy
   # (ASTRO_CACHE_DIR), which is why losing it costs seconds, not a re-encode.
   log "trimming build cache unused for more than $GC_MAX_AGE…"
