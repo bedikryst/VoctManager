@@ -139,7 +139,7 @@ class ProjectAdmin(admin.ModelAdmin):
     """Admin view for managing production lifecycles and global event logistics."""
     list_display = ('title', 'date_time', 'location', 'status')
     list_filter = ('status', 'date_time')
-    search_fields = ('title', 'location')
+    search_fields = ('title', 'location__name')
     inlines = [ProgramItemInline]
 
 
@@ -165,7 +165,7 @@ class RehearsalAdmin(admin.ModelAdmin):
     """Admin view for physical rehearsal scheduling."""
     list_display = ('date_time', 'project', 'location', 'is_mandatory')
     list_filter = ('project', 'is_mandatory', 'date_time')
-    search_fields = ('location', 'focus', 'project__title')
+    search_fields = ('location__name', 'focus', 'project__title')
 
 
 @admin.register(Attendance)
