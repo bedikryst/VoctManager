@@ -15,13 +15,13 @@ endif
 COMPOSE_DEV  = docker compose -f docker-compose.yml -f docker-compose.dev.yml
 COMPOSE_PROD = docker compose -f docker-compose.yml -f docker-compose.prod.yml
 
-# The production droplet has ONE vCPU. Compose builds its services concurrently by
-# default, which on a single core buys nothing and costs real memory: a deploy was
-# observed running the backend's `pip install` and the Astro sharp pass at the same
-# time, each slowing the other. Serialising them does not lengthen the build — there
-# is one core either way — it only stops them fighting over it.
-# NOTE: this bounds concurrency BETWEEN services, never between STAGES — see the
-# `astro-stage` target below for the half of the problem it cannot reach.
+# The production droplet has ONE vCPU. COMPOSE_PARALLEL_LIMIT=1 limits Compose's own
+# parallel engine calls (pulls, container starts), but it does NOT serialise the build:
+# Compose builds through bake, every service in one BuildKit solve, and a deploy log
+# shows web, celery and the frontend's stages running at once under this setting. The
+# heaviest pair — the panel's Vite build and Astro's sharp pass, which together do not
+# fit in this droplet's RAM — is kept apart by `astro-stage` below, which takes Astro
+# out of that solve.
 BUILD_ENV = COMPOSE_PARALLEL_LIMIT=1 APP_BUILD_SHA=$(shell git log -1 --format=%h -- frontend 2>/dev/null)
 
 # The panel bundle's identity, stamped into it and carried by every in-app feedback
@@ -80,23 +80,24 @@ deploy:
 	$(COMPOSE_PROD) exec -T web python manage.py migrate --check
 	-@bash infra/docker-gc.sh
 
-# The Astro stage, built ALONE, so the next build finds it in cache.
+# The Astro site, built ALONE and tagged, so the compose build never builds it.
 #
 # frontend/Dockerfile holds two node builder stages that depend on nothing but their
-# base image — panel-builder and web-builder — and BuildKit schedules independent
-# stages CONCURRENTLY. COMPOSE_PARALLEL_LIMIT does not reach inside a Dockerfile, so
-# on one vCPU the two peaks land on top of each other: a rollup graph carrying
-# sourcemaps for 3000+ modules beside sharp and the ~700 MB of video Vite emits. The
-# sum does not fit in this droplet's RAM, and the failure mode is not a slow build —
-# it is the whole box paging, load into the 60s, every other container starved for
-# minutes at a time. Sequential, each peak fits; concurrent, neither does.
+# base image — panel-builder and web-builder — and BuildKit runs independent stages
+# CONCURRENTLY. On one vCPU the two peaks land on top of each other: a rollup graph
+# carrying sourcemaps for 3000+ modules beside sharp. The sum does not fit in this
+# droplet's RAM, and the failure mode is not a slow build — it is the whole box
+# paging, load into the 60s, every other container starved for minutes at a time.
+# Sequential, each peak fits; concurrent, neither does.
 #
-# The `--target` build has to come FIRST and it has to be the ASTRO one: web-builder
-# declares no ARG, so its hash cannot differ between this invocation and the compose
-# build that follows, which is what guarantees the second one reuses it instead of
-# repeating it. Going the other way would put the VITE_* build args in the middle of
-# that guarantee. The image left behind is untagged on purpose — the `gc` at the end
-# of `deploy` reclaims it, while the cache records it wrote survive by age.
+# So this target builds the `astro-dist` stage and tags it ASTRO_DIST_IMAGE, and
+# docker-compose.prod.yml hands that image to the compose build as the named context
+# `astro-dist`, which replaces the stage: the compose build copies this run's site and
+# has no Astro build of its own. Counting on the layer cache to make the compose build
+# reuse this one does not hold — a deploy log shows it re-running web-builder two
+# minutes after this target had built it, on an empty encode cache: every photograph
+# re-encoded, beside the panel build. The tag keeps the image out of `docker image
+# prune`; the one it displaces goes dangling and the next `gc` reclaims it.
 #
 # The two builds around it keep Astro's image-encode cache in ASTRO_CACHE_DIR, a plain
 # directory no Docker prune reaches: the first refills BuildKit's cache mount from it, the
@@ -105,12 +106,14 @@ deploy:
 # that mirrors its destination can never empty the copy. All four lines are `-` prefixed:
 # a cache that fails to move costs a slow build, never a failed deploy.
 ASTRO_CACHE_DIR ?= $(HOME)/voct-astro-cache
+# Named in docker-compose.prod.yml too (the frontend's additional_contexts); keep both equal.
+ASTRO_DIST_IMAGE = voctmanager-astro-dist:latest
 
 astro-stage:
 	-@mkdir -p "$(ASTRO_CACHE_DIR)" && rm -rf "$(ASTRO_CACHE_DIR).incoming"
 	-$(BUILD_ENV) docker build --target astro-cache-restore --build-arg ASTRO_CACHE_RUN=$$(date +%s) \
 		--build-context astro-seed="$(ASTRO_CACHE_DIR)" -f frontend/Dockerfile .
-	$(BUILD_ENV) docker build --target web-builder -f frontend/Dockerfile .
+	$(BUILD_ENV) docker build --target astro-dist -t $(ASTRO_DIST_IMAGE) -f frontend/Dockerfile .
 	-$(BUILD_ENV) docker build --target astro-cache-new --build-arg ASTRO_CACHE_RUN=$$(date +%s) \
 		--build-context astro-seed="$(ASTRO_CACHE_DIR)" \
 		--output type=local,dest="$(ASTRO_CACHE_DIR).incoming" -f frontend/Dockerfile .

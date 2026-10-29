@@ -130,6 +130,19 @@ RUN --mount=type=cache,target=/app/node_modules/.astro,sharing=locked \
 
 
 # ==========================================
+# The public site alone, as `make astro-stage` tags it
+# ==========================================
+# The production build never runs web-builder itself. `make astro-stage` builds this target on
+# its own, right after refilling the encode cache, and tags it; docker-compose.prod.yml passes
+# that image to the compose build as the named context `astro-dist`, which replaces this stage,
+# so `runtime` copies the site that run built. Only dist travels: a tag on web-builder would keep
+# its node_modules on the droplet's disk between deploys.
+# Without the named context (`make up`, a bare build) this stage builds here as usual.
+FROM scratch AS astro-dist
+COPY --from=web-builder /app/dist /app/dist
+
+
+# ==========================================
 # Astro encode cache, kept on the build host
 # ==========================================
 # The cache mount above belongs to BuildKit, and BuildKit evicts it. Its last-used time moves
@@ -191,9 +204,9 @@ LABEL org.opencontainers.image.title="voctmanager-frontend" \
 # Panel SPA → mirrors `root /usr/share/nginx/html/app` in infra/nginx/prod.conf
 COPY --from=panel-builder /app/dist /usr/share/nginx/html/app
 
-# Astro public site → mirrors `root /usr/share/nginx/html/marketing` in prod.conf;
-# this replaces the previous host-side bind mount of `./web/dist`.
-COPY --from=web-builder /app/dist /usr/share/nginx/html/marketing
+# Astro public site → mirrors `root /usr/share/nginx/html/marketing` in prod.conf.
+# Under `make prod` / `make deploy` astro-dist is the image `make astro-stage` tagged.
+COPY --from=astro-dist /app/dist /usr/share/nginx/html/marketing
 
 EXPOSE 80
 

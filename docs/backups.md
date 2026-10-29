@@ -206,6 +206,12 @@ resets it, at the price of one full re-encode on the next web build.
 During a build, `(reused cache entry)` means the cache held and
 `(before: … after: …)` means that variant re-encoded.
 
+The site is built once per deploy, inside `make astro-stage`, right after the
+refill. The compose build takes it from the image that target tags
+(`voctmanager-astro-dist`, passed as a named context in
+`docker-compose.prod.yml`), so image lines under a `[frontend …]` step mean the
+compose build is running Astro again and the named context is not being applied.
+
 ## Restore drill (routine — non-destructive)
 
 Run [`infra/restore-drill.sh`](../infra/restore-drill.sh) on the droplet. It

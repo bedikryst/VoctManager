@@ -48,15 +48,21 @@ services:
       # folder on the host holds exactly what was uploaded to it by hand.
       - ./web/public/audio:/usr/share/nginx/html/marketing/audio:ro
       # The Astro public site at /usr/share/nginx/html/marketing is baked INTO
-      # the image by frontend/Dockerfile (web-builder stage). No host mount
-      # needed — building via `make prod` (both -f files!) produces the panel
-      # SPA and the public site in a single nginx image.
+      # the image, from the astro-dist image below. No host mount needed.
     build:
       # Build context = repo root so the Dockerfile sees both frontend/ and web/.
       # Photos under web/src/assets/photos/ and videos under web/src/assets/videos/
       # must be present on the build host (gitignored — see web/README.md §Conventions).
       context: .
       dockerfile: frontend/Dockerfile
+      # The public site is NOT built here. `make astro-stage` builds it alone and tags it
+      # (ASTRO_DIST_IMAGE in the Makefile — keep the two names equal); this named context
+      # replaces the Dockerfile's astro-dist stage, so the build copies that image's site and
+      # never runs Astro beside the panel build. Build this file only through `make prod` or
+      # `make deploy`: a bare `docker compose … build` ships whatever site the tag last held,
+      # and fails before the first `make astro-stage` has created it.
+      additional_contexts:
+        astro-dist: docker-image://voctmanager-astro-dist:latest
       args:
         - VITE_GOOGLE_MAPS_FRONTEND_KEY=${VITE_GOOGLE_MAPS_FRONTEND_KEY}
         - VITE_GOOGLE_MAP_ID=${VITE_GOOGLE_MAP_ID}
