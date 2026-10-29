@@ -35,9 +35,10 @@ concert.pochwala-stworzenia.essence: "The concert grows out of St Francis’s La
 # English too; a translation that converges them puts one paraphrase on two surfaces.
 concert.pochwala-stworzenia.invitation: "St Francis’s Canticle of the Sun greets the sun, the wind, the water and the fire as its own kin, and at the end greets death on the same terms. The programme follows that road: from light towards what is fragile in us, and further — to where the praise of creation becomes the prayer of all the saints, in the church that bears their name."
 
-concert.pochwala-stworzenia.facts.0: "Festival “Fenomen Człowieka”"
-concert.pochwala-stworzenia.facts.1: "Voices, violin, organ"
-concert.pochwala-stworzenia.facts.2: "St Francis’s Canticle of the Sun"
+# The festival's chip is chrome now, printed from the structured `festival` (KONCERTY_CHROME
+# `festivalChip`), so the two programme chips moved up one index each.
+concert.pochwala-stworzenia.facts.0: "Voices, violin, organ"
+concert.pochwala-stworzenia.facts.1: "St Francis’s Canticle of the Sun"
 # The four returns hang off works 02, 05, 08 and 09 — the conductor's own running order numbers the
 # episodes I–V and ends the evening on Stetit Angelus, with nothing after it (15.09.2026). The INDEX
 # is the row the return follows, so a clasp that moves is a key that moves: leave a stale index here
@@ -76,6 +77,20 @@ concert.pochwala-stworzenia.inscriptioRef.source: "St Francis's Canticle of the 
 # do and leaves the reader to join it to the beauty that stays in pain.
 concert.pochwala-stworzenia.venueNote: "Upper church"
 concert.pochwala-stworzenia.festivalNote: "Three days of exhibitions, workshops and conversations; this concert closes them. The festival is run by the Mój Dom hospice foundation, which accompanies people with ALS and their families. This year's edition reads the human through beauty: the beauty of values and of relationships, the beauty of nature and of sound, and the beauty that stays even in pain. This programme descends towards that last one."
+
+# ── The second performance, Poznań 15.11.2026 (keyed by its date). While it is ahead it speaks on
+#    the landing, the door band and /koncerty in place of the Warsaw evening's own words above.
+#
+#    The series keeps its Polish name on the page (a proper name, NOT_COPY); the board's English
+#    pack calls it "Choral Chamber Concerts of the Grand Prix of Polish Choral Music", which is why
+#    the note below says "Grand Prix" and not a translation of it. The invitation ends on the one
+#    fact Poznań adds: the church belongs to the order the Canticle's author founded. "Kin" is the
+#    accepted rendering of „rodzeństwo” from the Warsaw invitation.
+concert.pochwala-stworzenia.dates.2026-11-15.metaPlace: "Franciscan Church of St Anthony of Padua, Poznań"
+concert.pochwala-stworzenia.dates.2026-11-15.invitation: "St Francis’s Canticle of the Sun greets the sun, the wind, the water and the fire as its own kin, and at the end greets death on the same terms. The programme follows that road, from light towards what is fragile in us, until the praise of creation becomes the prayer of all the saints. This time it is sung with the Franciscans, in a church of the order the Canticle’s author founded."
+concert.pochwala-stworzenia.dates.2026-11-15.festivalNote: "Since 2018 the Stefan Stuligrosz Grand Prix of Polish Choral Music Foundation has run the Grand Prix, which brings together the winners of six national choral competitions. A year-round series of chamber concerts with programmes of the performers’ own design accompanies it; VoctEnsemble sings in it at the foundation’s invitation."
+concert.pochwala-stworzenia.dates.2026-11-15.funding: "Co-financed by the City of Poznań."
+concert.pochwala-stworzenia.dates.2026-11-15.posterAlt: "Poster for the concert In Praise of Creation in Poznań"
 
 # The próg carries no date, hour, festival or open door: the band above prints all four from the
 # structured fields, and a paragraph restating them would be the page speaking twice.

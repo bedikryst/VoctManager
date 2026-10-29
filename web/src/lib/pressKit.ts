@@ -31,7 +31,7 @@ import { z } from "astro/zod";
 import YAML from "yaml";
 
 import { FOUNDATION } from "../data/foundation.ts";
-import { upcomingStation, type CycleStation } from "./cycle.ts";
+import { upcomingStation, type CycleStation, type Upcoming } from "./cycle.ts";
 import { dayMonth, longDate, weekdayName } from "./dates.ts";
 
 /** Inside `web/`. One `<concert-id>.yaml` per kit. */
@@ -138,8 +138,11 @@ const pressKitSchema = z.object({
    */
   frame: z
     .object({
-      organizers: z.string().min(1),
+      organizer: z.string().min(1),
+      coOrganizers: z.string().min(1).optional(),
       within: z.string().min(1),
+      /** The funder's own sentence, printed as written ("Koncert współfinansowany ze środków…"). */
+      funding: z.string().min(1).optional(),
       mediaPatron: z.string().min(1).optional(),
     })
     .optional(),
@@ -227,7 +230,13 @@ export interface KitConcert {
   readonly venueNote?: string | undefined;
   readonly address?: string | undefined;
   readonly admission?: "free" | "paid" | undefined;
-  readonly festival?: { readonly name: string; readonly url?: string | undefined } | undefined;
+  readonly festival?:
+    | {
+        readonly name: string;
+        readonly url?: string | undefined;
+        readonly kind?: "festival" | "series" | undefined;
+      }
+    | undefined;
   readonly facebookEvent?: string | undefined;
   readonly credits?: readonly { readonly role: string; readonly name: string }[] | undefined;
   readonly essence?: string | undefined;
@@ -246,7 +255,7 @@ export interface ConcertFacts {
   /** "Kościół Wszystkich Świętych, Warszawa · kościół górny". */
   readonly venue: string;
   readonly address?: string | undefined;
-  /** "Festiwal „Fenomen Człowieka”". */
+  /** "Festiwal „Fenomen Człowieka”", or a series' bare name, which already says what it is. */
   readonly festival?: string | undefined;
   /** "Wstęp wolny", or absent where the corpus states no free door. */
   readonly admission?: string | undefined;
@@ -273,10 +282,14 @@ export function concertFacts(concert: KitConcert): ConcertFacts {
     dateline,
     venue,
     address: concert.address,
-    festival: concert.festival ? `Festiwal „${concert.festival.name}”` : undefined,
+    festival: concert.festival
+      ? concert.festival.kind === "series"
+        ? concert.festival.name
+        : `Festiwal „${concert.festival.name}”`
+      : undefined,
     admission: concert.admission === "free" ? "Wstęp wolny" : undefined,
-    // `essence` before `invitation`: the landing's invitation greets the creatures "jak
-    // rodzeństwo", the horizontal kinship the press texts are barred from (the kit's header).
+    // `essence` before `invitation`: a fact block quotes the programme note, and the invitation is
+    // the landing's register, written for a reader still deciding whether to come.
     lede: concert.essence ?? concert.invitation,
     composers: [...new Set(composers)],
   };
@@ -367,8 +380,10 @@ export function releaseText(
     factsText(facts, undefined, { lede: false, lineup }),
     ...(kit.frame
       ? [
-          `Organizatorzy: ${kit.frame.organizers}`,
+          `Organizator: ${kit.frame.organizer}`,
+          ...(kit.frame.coOrganizers ? [`Współorganizacja: ${kit.frame.coOrganizers}`] : []),
           `W ramach: ${kit.frame.within}`,
+          ...(kit.frame.funding ? [kit.frame.funding] : []),
           ...(kit.frame.mediaPatron ? [`Patron medialny: ${kit.frame.mediaPatron}`] : []),
         ]
       : []),
@@ -425,15 +440,30 @@ export function kitProblems(kit: PressKit, concert: KitConcert | undefined): str
 }
 
 /**
+ * The evening a kit speaks for: its concert's next performance while one is ahead — the row with
+ * that performance laid over it (lib/cycle) — and the row itself otherwise. A kit for a programme
+ * booked again names the repeat's day, so `kitProblems` must hold it to that day and not the
+ * record's.
+ */
+export function kitConcert<S extends CycleStation>(
+  kit: PressKit,
+  stations: readonly S[],
+  now: Date = new Date(),
+): S["data"] | undefined {
+  const own = stations.filter((station) => station.id === kit.concert);
+  return (upcomingStation(own, now) ?? own[0])?.data;
+}
+
+/**
  * The kit the page leads with: the one whose concert is the soonest still ahead, by the same rule
  * `upcomingStation` applies to the whole site — read at build, so the deploy after the concert is
- * what takes it down.
+ * what takes it down. The station comes back with its next performance laid over it.
  */
 export function latestKit<S extends CycleStation>(
   kits: readonly PressKit[],
   stations: readonly S[],
   now: Date = new Date(),
-): { kit: PressKit; station: S } | undefined {
+): { kit: PressKit; station: Upcoming<S> } | undefined {
   const withKit = stations.filter((station) => kits.some((kit) => kit.concert === station.id));
   const station = upcomingStation(withKit, now);
   const kit = station && kits.find((entry) => entry.concert === station.id);
@@ -446,8 +476,21 @@ export const concertUrl = (site: string, concertId: string): string =>
 
 // ── Freshness ─────────────────────────────────────────────────────────────────────────────────
 
+/** The evening fields of a `dates[]` item the pack prints once that performance is the one ahead. */
+type PackEvening = Pick<
+  KitConcert,
+  "date" | "time" | "venue" | "venueNote" | "address" | "admission" | "festival" | "facebookEvent" | "invitation" | "posterCredit"
+> & { readonly poster?: string | undefined };
+
 /** A `concerts.yaml` row as the generator reads it: the kit's slice plus the poster it copies. */
-type PackConcertRow = KitConcert & { readonly id: string; readonly poster?: string | undefined };
+type PackConcertRow = KitConcert & {
+  readonly id: string;
+  readonly poster?: string | undefined;
+  readonly dates?: readonly PackEvening[] | undefined;
+};
+
+const printedFestival = (festival: KitConcert["festival"]) =>
+  festival && { name: festival.name, url: festival.url, kind: festival.kind ?? "festival" };
 
 /**
  * The part of a concert row the pack prints: the `KitConcert` slice, with the programme and the
@@ -455,6 +498,10 @@ type PackConcertRow = KitConcert & { readonly id: string; readonly poster?: stri
  * A gallery, a hero or an alt belongs to the concert page, so replacing the evening's photographs
  * does not stale a pack that never printed them. `satisfies` makes a new `KitConcert` field a type
  * error here until it is hashed.
+ *
+ * Every performance in `dates` is hashed as written, not the one the calendar picks today: the
+ * pack is cut before a repeat and the site built against it, and a fingerprint that moved with the
+ * clock would refuse a pack nothing about has changed.
  */
 function printedConcert(row: PackConcertRow | undefined) {
   if (!row) return null;
@@ -466,7 +513,7 @@ function printedConcert(row: PackConcertRow | undefined) {
     venueNote: row.venueNote,
     address: row.address,
     admission: row.admission,
-    festival: row.festival && { name: row.festival.name, url: row.festival.url },
+    festival: printedFestival(row.festival),
     facebookEvent: row.facebookEvent,
     credits: row.credits?.map((credit) => ({ role: credit.role, name: credit.name })),
     essence: row.essence,
@@ -475,7 +522,20 @@ function printedConcert(row: PackConcertRow | undefined) {
     ritornello: row.ritornello && { composer: row.ritornello.composer },
     program: row.program?.map((work) => ({ composer: work.composer, bis: work.bis })),
     poster: row.poster,
-  } satisfies Record<keyof KitConcert | "poster", unknown>;
+    dates: row.dates?.map((evening) => ({
+      date: evening.date,
+      time: evening.time,
+      venue: evening.venue,
+      venueNote: evening.venueNote,
+      address: evening.address,
+      admission: evening.admission,
+      festival: printedFestival(evening.festival),
+      facebookEvent: evening.facebookEvent,
+      invitation: evening.invitation,
+      posterCredit: evening.posterCredit,
+      poster: evening.poster,
+    })),
+  } satisfies Record<keyof KitConcert | "poster" | "dates", unknown>;
 }
 
 /**

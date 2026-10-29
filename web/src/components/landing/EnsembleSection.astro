@@ -17,6 +17,7 @@
  */
 import { getCollection } from "astro:content";
 import BleedImage from "../BleedImage.astro";
+import { isEveningAhead } from "../../lib/calendar";
 import { bleedPair } from "../../lib/photos";
 import { PATHS } from "../../data/landing/paths";
 import type { LandingCopy } from "../../i18n/content/landing";
@@ -38,13 +39,15 @@ const ensemble = bleedPair("chor-nawa");
 // venue line, which is why `dates[].venue` writes the town last even where a district comes
 // before it ("…, Mistrzejowice, Kraków" is Kraków, and must stay written that way round). Derived
 // rather than written down for the reason /press states over its own counts: a hand-kept number
-// rots at the next concert, silently.
+// rots at the next concert, silently. A programme booked again carries its next evening in `dates`
+// before it is sung, so an evening still ahead (lib/calendar) is not counted until the build after it.
 const concerts = new Map(
   (await getCollection("concerts")).map((entry) => [entry.id, entry.data] as const),
 );
+const builtAt = new Date();
 const venues = PATHS.flatMap((path) => {
   const concert = concerts.get(path.concertId);
-  const dates = concert?.dates ?? [];
+  const dates = (concert?.dates ?? []).filter((date) => !isEveningAhead(date, builtAt));
   return dates.length > 0 ? dates.map((date) => date.venue) : [concert?.venue ?? ""];
 });
 // In first-sung order, which is the order the register itself runs in — so the list reads as a

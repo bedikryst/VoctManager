@@ -1,51 +1,49 @@
-# The press kit for Pochwała Stworzenia (11.10.2026): the board's documents /press offers, the
-# texts it offers to copy, and the lines it prints about them. Schema and every string built from
-# it: `src/lib/pressKit.ts`.
+# The press kit for Pochwała Stworzenia in Poznań (15.11.2026, Chóralne Koncerty Kameralne Grand
+# Prix Polskiej Chóralistyki): the board's documents /press offers, the texts it offers to copy,
+# and the lines it prints about them. Schema and every string built from it: `src/lib/pressKit.ts`.
 #
-# ONLY COPY LIVES HERE. Title, day, hour, venue, address, festival, door, composers and the
-# conductor are printed from `concerts.yaml`. The prose below has to name the day and the hour
-# anyway — an announcement is pasted whole into somebody's listing — so the loader checks that
-# every dated text still names the corpus's; move the concert and the build fails until this file
-# follows.
+# A PROGRAMME SUNG AGAIN. The concert row in `concerts.yaml` stays the record of the Warsaw evening
+# (11.10.2026); Poznań is its second performance in `dates`, and while it is ahead `lib/cycle`
+# hands this kit the row with the Poznań facts laid over it. So the facts this kit's card prints
+# (day, hour, venue, address, series, door, poster) are Poznań's, and the loader holds every dated
+# text below to 15 listopada and 19:00. The Warsaw kit is in git history; its served files sit in
+# `press-pack/inbox/2026-10-11-warszawa-wydane/`.
 #
-# THE RELEASE, THE ANNOUNCEMENTS AND THE BIOGRAMS ARE THE BOARD'S PDFs, served as they were sent
-# and under the names they were sent with (Ania, 28.09.2026): editors expect one predictable
-# format for every text, and the names are ordered and descriptive on purpose. The release and the
-# two announcements also come as Word (`docx`, Ania, 29.09.2026): the Polish cultural press wants a
-# file it can edit in the layout it sees, so those rows download the DOCX and preview the PDF. The
-# files sit in `press-pack/kits/pochwala-stworzenia/` (outside git); a corrected file under the
-# same name needs only `npm run press:pack`, a new name needs `documents`. The board's names carry
-# a date, so a new version usually arrives under a new name.
+# ONLY COPY LIVES HERE. Title, day, hour, venue, address, series, door, composers and the conductor
+# are printed from `concerts.yaml`. The prose below has to name the day and the hour anyway — an
+# announcement is pasted whole into somebody's listing — so the loader checks that every dated text
+# still names the corpus's; move the concert and the build fails until this file follows.
 #
-# THE RELEASES OF 05.10 CAME AS WORD ONLY, Polish and English. Their PDFs are exported here from
-# that DOCX through Word (File → Export → PDF), and the DOCX carries `doNotExpandShiftReturn` in its
-# compatibility settings: Ania writes in Google Docs, which leaves a line ending in a manual break
-# alone, while Word justifies it across the page and tears the fact block apart. A DOCX that
-# arrives without it gets it before export. Her originals sit unchanged in
-# `press-pack/inbox/2026-10-06/`; the kit's copies carry the corrections listed beside them there.
+# THE RELEASES, THE ANNOUNCEMENTS AND THE BIOGRAMS ARE THE BOARD'S (Ania, 26–27.10.2026), served
+# under the names they were sent with, corrected (29.10.2026): two files swapped under each other's
+# names, two PDFs sent without an extension, and fourteen wording fixes, all listed in
+# `press-pack/inbox/2026-10-29/CORRECTIONS.txt` beside the untouched originals. The four Word files
+# in `press-pack/kits/pochwala-stworzenia/` carry those fixes and their PDFs are set again from them
+# by `tools/press-docs/board_docs.py` (Word's own export hangs on this machine). The biogram PDF is
+# the board's as sent.
 #
-# `release` AND `announce` ARE THOSE DOCUMENTS TRANSCRIBED, WORD FOR WORD, for the page's Kopiuj: a
-# text copied out of a PDF breaks at every line, and an editor pastes into a form. Nothing in the
-# build reads a PDF or a DOCX, so whoever replaces one compares its text with its twin and with its
-# block here and makes the three agree. Last compared 06.10.2026: the Polish release of 05.10, and
-# the announcements of 27.09 with their DOCX; they agree but for the layout (the headings, the
-# composers' line, separators, closing metadata), which Kopiuj does not carry. The English release
+# `release` AND `announce` ARE THOSE DOCUMENTS TRANSCRIBED, WORD FOR WORD (`pandoc -t plain` of the
+# corrected DOCX, 29.10.2026), for the page's Kopiuj: a text copied out of a PDF breaks at every
+# line, and an editor pastes into a form. Nothing in the build reads a PDF or a DOCX, so whoever
+# replaces one compares its text with its twin and with its block here and makes the three agree.
+# They agree but for the layout, which Kopiuj does not carry: the composers' line under the
+# release's title, the practical block (printed from the corpus by `releaseText`), the empty
+# "Patroni medialni:" heading the board kept, separators and the closing metadata. The ~500
+# announcement's three short paragraphs are one here, as a listing takes it. The English release
 # has no transcription, so its row downloads and previews without Kopiuj.
 #
 # The measures in the announcements' names (~500, ~1500) are the board's approximate values, not
 # counts: the practical lines closing the long one do not count towards it (28.09.2026).
 #
-# WHAT A TEXT HERE MUST NEVER SAY, from docs/specs/koncert-pochwala-stworzenia-2026-10.md — check
-# any later edit against it, and the board's PDFs as well:
-#   · the relation is VERTICAL — creation as the road to the Creator, the human as God's image
-#     (§9); never the human as a brother of the creatures (§12);
+# WHAT A TEXT HERE MUST NEVER SAY — check any later edit against it, and the board's files too:
 #   · the encore is never named: it is the ensemble's to give, and a press text that lists it has
 #     promised it;
 #   · nothing about how often the Pärt returns or where: the conductor's numbering has moved twice,
 #     and a printed listing cannot follow a third move;
-#   · the Stetit Angelus / All Saints rhyme is spent ONCE per text;
 #   · no Polish Canticle but our own glosses: Leopold Staff's translation is protected to the end of
-#     2027 (§11).
+#     2027.
+# The Warsaw kit also barred the human as a brother of the creatures; the developer lifted that for
+# this kit (29.10.2026), and the board's HEAD paragraph below keeps its sentence about it.
 #
 # NO PROGRAMME ON /press. The board sent one (in the inbox); it lists the Pärt's returns and an
 # encore, and the concert page is where the running order is kept true.
@@ -53,58 +51,60 @@
 concert: pochwala-stworzenia
 forces: "12 głosów · skrzypce · organy"
 
-# The concert card's paragraph on /press, and the paragraph its Kopiuj carries.
+# The concert card's paragraph on /press, and the paragraph its Kopiuj carries: the board's "HEAD"
+# paragraph from the master pack, whole. Its fact lines are not carried — the card prints them
+# from the corpus.
 lede: >-
-  „Pochwała Stworzenia” to kolejny koncert z autorskiego cyklu Koncertów Duchowych VoctEnsemble,
-  inspirowanego XVIII-wieczną tradycją francuskich Concerts Spirituels. Osią, a zarazem inspiracją
-  dla koncertu, jest „Pieśń słoneczna” św. Franciszka z Asyżu. Muzyka różnych epok rozwija
-  przesłanie kantyku, prowadząc od zachwytu nad stworzeniem przez doświadczenie ludzkiej kruchości
-  i śmierci ku modlitwie i nadziei ostatecznej.
+  „Pochwała Stworzenia” to kolejna odsłona autorskiego cyklu Koncertów Duchowych VoctEnsemble,
+  inspirowanego XVIII-wieczną francuską tradycją Concerts Spirituels. Osią programu jest Pieśń
+  słoneczna św. Franciszka z Asyżu – kantyk, w którym cały świat, od żywiołów po człowieka, zostaje
+  włączony w jedną pochwałę Stwórcy. Franciszek zwraca się do stworzenia jak do rodzeństwa,
+  ukazując człowieka nie jako kogoś stojącego ponad światem, lecz jako jego część. Pochwała obejmuje
+  zarówno piękno i życiodajność stworzenia, jak i ludzkie doświadczenie przebaczenia, cierpienia
+  i śmierci. Muzyka różnych epok podejmuje tę franciszkańską wizję, w której zachwyt nad światem
+  i doświadczenie ludzkiego losu pozostają nierozdzielne od relacji ze Stwórcą.
 
-# The board's PDFs, in the order the page lists them. `sub` is the row's second line (the
+# The board's files, in the order the page lists them. `sub` is the row's second line (the
 # concert's title where absent); `text` names the transcription below that the row's Kopiuj writes.
 documents:
-  - file: "[Informacja prasowa]_Pochwala-Stworzenia-2026.10.05.pdf"
-    docx: "[Informacja prasowa]_Pochwala-Stworzenia-2026.10.05.docx"
+  - file: "[Press-PL]_InformacjaPrasowa_PochwalaStworzenia_VoctEnsemble_2026.10.pdf"
+    docx: "[Press-PL]_InformacjaPrasowa_PochwalaStworzenia_VoctEnsemble_2026.10.docx"
     title: "Informacja prasowa PL"
     text: release
-  - file: "[Press release]_In-Praise-of-Creation _2026.10.05.pdf"
-    docx: "[Press release]_In-Praise-of-Creation _2026.10.05.docx"
+  - file: "[Press-EN]_PressRelease_PochwalaStworzenia_VoctEnsemble_2026.10.pdf"
+    docx: "[Press-EN]_PressRelease_PochwalaStworzenia_VoctEnsemble_2026.10.docx"
     title: "Informacja prasowa EN"
     sub: "In Praise of Creation"
-  - file: "[500zzs—PL_EN]_Zapowiedz _Pochwala_Stworzenia_VoctEnsemble_2026.09.27.pdf"
-    docx: "[500zzs—PL_EN]_Zapowiedz _Pochwala_Stworzenia_VoctEnsemble_2026.09.27.docx"
+  - file: "[500zzs-PL_EN]_Zapowiedz _PochwalaStworzenia_VoctEnsemble_2026.10.pdf"
+    docx: "[500zzs-PL_EN]_Zapowiedz _PochwalaStworzenia_VoctEnsemble_2026.10.docx"
     title: "Zapowiedź PL/EN ~500 znaków"
     text: announceShort
-  - file: "[1500zzs—PL_EN]_Zapowiedz _Pochwala_Stworzenia_VoctEnsemble_2026.09.27.pdf"
-    docx: "[1500zzs—PL_EN]_Zapowiedz _Pochwala_Stworzenia_VoctEnsemble_2026.09.27.docx"
+  - file: "[1500zzs-PL_EN]_Zapowiedz _PochwalaStworzenia_VoctEnsemble_2026.10.pdf"
+    docx: "[1500zzs-PL_EN]_Zapowiedz _PochwalaStworzenia_VoctEnsemble_2026.10.docx"
     title: "Zapowiedź PL/EN ~1500 znaków"
     text: announceLong
-  - file: "[Biogramy—PL_EN]_Pochwala_Stworzenia_VoctEnsemble_2026.09.27.pdf"
+  - file: "[Biogramy-PL_EN]_Pochwala_Stworzenia_VoctEnsemble_2026.10.27.pdf"
     title: "Biogramy PL/EN"
     # The people the PDF holds, in its order.
-    sub: "VoctEnsemble · Florent de Bazelaire · Sebastian Kuczyński · Radu Ropotan"
+    sub: "VoctEnsemble · Florent de Bazelaire · Jakub Kapała · Radu Ropotan"
 
 # The poster rows' second line after the concert's title: the design's credit in the form the
 # board set for /press, and the print file's sheet. The concert page credits the same design from
-# `concerts.yaml` `posterCredit`, in the site's own form.
+# `concerts.yaml` (the Poznań performance's `posterCredit`), in the site's own form.
 #
-# WHAT IS DOWNLOADED AND WHAT IS SHOWN ARE TWO VARIANTS ON PURPOSE (developer, 06.10.2026). The
-# designer's latest sheet (05.10) carries the festival's eye logo and a QR labelled for the
-# programme; on a screen the eye pulls the look away from the title. So every sheet the site SHOWS
-# (concert page, /koncerty, landing, /press card and its lightbox, the share card, the 4:5, 9:16
-# and 16:9 graphics) is the 03.10 sheet without it, `poster-stworzenie` in `src/assets/photos/`;
-# what /press hands over as the poster is the latest: `plakat.jpg` from
-# `press-pack/posters/pochwala-stworzenia.png` (rendered from the print PDF's trim box) and the
-# print PDF itself. The two differ only in the footer.
+# ONE SHEET, SHOWN AND DOWNLOADED. The board re-issued the poster as A3 with the corrected address
+# line (29.10.2026). The site's sheet is `poster-stworzenie-poznan` in `src/assets/photos/` (its
+# original in `.original-photos/`, the board's JPG as sent); `plakat.jpg` is rendered from it, and
+# `press-pack/posters/pochwala-stworzenia.pdf` is the board's print file, 309 × 432 mm.
 poster:
   credit: "VoctEnsemble / Anna Marcisz"
-  printSheet: "A3, spady 3 mm"
+  printSheet: "A3, spady 6 mm"
 
 frame:
-  organizers: "VoctFoundation i VoctEnsemble"
-  within: "III edycji „Fenomenu Człowieka” Fundacji Hospicyjnej „Mój Dom”"
-  mediaPatron: "POLMIC"
+  organizer: "Fundacja Grand Prix Polskiej Chóralistyki im. Stefana Stuligrosza"
+  coOrganizers: "Fundacja VoctFoundation i VoctEnsemble"
+  within: "Chóralnych Koncertów Kameralnych Grand Prix Polskiej Chóralistyki"
+  funding: "Koncert współfinansowany ze środków Miasta Poznania."
 
 release:
   title: "Pochwała Stworzenia"
@@ -112,15 +112,19 @@ release:
     Koncert Duchowy VoctEnsemble inspirowany kantykiem Laudes creaturarum św. Franciszka z Asyżu,
     znanym jako „Pieśń słoneczna”
   lead: >-
-    11 października o godz. 13:30 VoctEnsemble wystąpi po raz pierwszy w Warszawie z Koncertem
-    Duchowym. W kościele Wszystkich Świętych zabrzmi „Pochwała Stworzenia”, kolejny projekt
-    autorskiego cyklu, który nawiązuje do XVIII-wiecznej tradycji francuskich Concerts Spirituels.
-    Tytuł zaczerpnięty jest z kantyku Laudes creaturarum św. Franciszka z Asyżu, znanego jako
-    „Pieśń słoneczna”. Program tworzą dzieła od końca XIX wieku po muzykę najnowszą,
-    ze szczególnym miejscem dla twórczości Mariana Borkowskiego.
+    15 listopada o godz. 19:00 VoctEnsemble wystąpi po raz pierwszy w Poznaniu. W kościele pw.
+    św. Antoniego z Padwy na poznańskim Starym Mieście zabrzmi „Pochwała Stworzenia”, kolejna
+    odsłona autorskiego cyklu Koncertów Duchowych VoctEnsemble, inspirowanego XVIII-wieczną
+    francuską tradycją Concerts Spirituels.
   sections:
-    # The conductor's words as the board's release carries them, attribution on its own line.
+    # The second paragraph of the opening, then the conductor's words with their attribution on
+    # its own line, as the board's release carries them.
     - body:
+        - >-
+          Program obejmuje muzykę od końca XIX wieku po twórczość najnowszą, ze szczególnym
+          miejscem dla kompozycji Mariana Borkowskiego. Zabrzmi również Stoi lód na Prośnie Jacka
+          Sykulskiego, kompozytora i dyrygenta od lat związanego z poznańskim środowiskiem
+          chóralnym.
         - |-
           „To koncert o zachwycie nad światem stworzonym i o odkrywaniu w nim obecności Boga. Jest w nim również ludzkie doświadczenie kruchości, cierpienia i śmierci, ale także nadzieja życia wiecznego.”
           — Florent de Bazelaire, dyrygent i kierownik artystyczny VoctEnsemble
@@ -128,78 +132,84 @@ release:
       body:
         - >-
           Laudes creaturarum jest pochwałą Boga poprzez stworzenie. Franciszek wysławia Stwórcę
-          przez słońce, księżyc i żywioły, a następnie zwraca się ku ludzkiemu doświadczeniu
+          przywołując słońce, księżyc i żywioły, a następnie zwraca się ku ludzkiemu doświadczeniu
           cierpienia, przebaczenia i śmierci. Ta perspektywa wyznacza dramaturgię „Pochwały
           Stworzenia”: kolejne utwory rozwijają zawarte w kantyku motywy i prowadzą ku pytaniom
           o człowieka, jego kruchość i nadzieję.
         - >-
           Centralne miejsce zajmuje Laudes creaturarum Carla Orffa, ośmiogłosowe opracowanie
-          XIII-wiecznego tekstu w jego oryginalnym, ludowym języku włoskim (volgare). Pomiędzy
-          kolejnymi częściami koncertu powraca Spiegel im Spiegel Arvo Pärta, tworząc muzyczną
-          klamrę całego programu.
+          XIII-wiecznego tekstu w oryginalnym języku włoskim epoki, określanym jako volgare.
+          Pomiędzy kolejnymi częściami koncertu powraca Spiegel im Spiegel Arvo Pärta, tworząc
+          muzyczną klamrę całego programu.
     - heading: "Polska muzyka w przebiegu koncertu"
       body:
         - >-
           Utwory polskich kompozytorów zostały rozmieszczone w różnych częściach programu, zgodnie
           z jego dramaturgią. Koncert otwierają Gloria II i Lumen Mariana Borkowskiego, których
           materiał słowny ogranicza się odpowiednio do jednego słowa: „Gloria” i „Lumen”. W tej
-          części pojawia się Stoi lód na Prośnie Jacka Sykulskiego, którego tekst przywołuje
-          zamarzniętą rzekę, młyn, dziewczynę oczekującą pocieszenia i upływ czasu. Niemal pod
-          koniec koncertu powraca muzyka Borkowskiego w Dona eis requiem I, opartej na słowach
-          „Pie Jesu, dona eis requiem” – prośbie o wieczny odpoczynek.
+          części pojawia się Stoi lód na Prośnie Jacka Sykulskiego. Utwór konkretyzuje
+          franciszkański motyw ziemi, która żywi człowieka — tutaj przestaje go żywić, gdy rzeka
+          zamarza i unieruchamia młyn, od którego zależy byt lokalnej społeczności. Historia
+          dziewczyny oczekującej pocieszenia staje się obrazem ludzkiej bezradności wobec sił natury
+          i kruchości warunków, które pozwalają człowiekowi żyć. Niemal pod koniec koncertu powraca
+          muzyka Borkowskiego w Dona eis requiem I, opartej na słowach „Pie Jesu, dona eis
+          requiem” — prośbie o wieczny odpoczynek.
         - >-
           Program zamyka Stetit Angelus Rihardsa Dubry, którego tekst zaczerpnięty jest
           z Apokalipsy św. Jana: anioł stoi przy ołtarzu z kadzielnicą, a dym kadzideł wznosi się
-          przed Bogiem wraz z modlitwami świętych. Wykonanie tego utworu w kościele Wszystkich
-          Świętych tworzy na zakończenie bezpośrednie połączenie między tekstem dzieła a miejscem
-          koncertu.
+          przed Bogiem wraz z modlitwami świętych.
     - heading: "Głos, skrzypce i organy"
       body:
         - >-
-          Dwunastoosobowy skład VoctEnsemble wykonuje utwory o różnej konstrukcji wokalnej, od
-          pięciu do dwunastu głosów. Partie wokalne uzupełnią skrzypce i organy, a całość
-          poprowadzi Florent de Bazelaire.
+          Dwunastoosobowy VoctEnsemble wykona utwory o różnej obsadzie wokalnej — od pięciu do
+          dwunastu partii. Partie wokalne uzupełnią skrzypce i organy, a całość poprowadzi Florent
+          de Bazelaire.
         - >-
-          Z VoctEnsemble wystąpią Radu Ropotan, rumuński skrzypek, absolwent Royal Academy of Music
-          w Londynie, oraz Sebastian Kuczyński, organista i improwizator, absolwent Uniwersytetu
-          Muzycznego Fryderyka Chopina i dyrektor artystyczny Mokotowskiego Międzynarodowego
-          Festiwalu Muzyki Organowej i Kameralnej.
-    - heading: "Finał Fenomenu Człowieka"
+          Z VoctEnsemble wystąpią Radu Ropotan, rumuński skrzypek i absolwent Royal Academy of Music
+          w Londynie, oraz Jakub Kapała, organista i laureat międzynarodowych konkursów, związany
+          z krakowską bazyliką jezuitów.
+    - heading: "W przededniu Grand Prix Polskiej Chóralistyki"
       body:
         - >-
-          „Pochwała Stworzenia” zamknie III edycję „Fenomenu Człowieka”, poświęconą pięknu.
-          Wydarzenie organizowane przez Fundację Hospicyjną „Mój Dom” wyrasta z doświadczenia
-          towarzyszenia osobom ze stwardnieniem zanikowym bocznym. Symbolem Fenomenu jest oko.
+          Na zaproszenie Fundacji Grand Prix Polskiej Chóralistyki im. Stefana Stuligrosza
+          VoctEnsemble wystąpi w Poznaniu w ramach Chóralnych Koncertów Kameralnych, poprzedzających
+          tegoroczną edycję Grand Prix.
         - >-
-          W „Pochwale Stworzenia” spojrzenie otwiera się na piękno świata, podczas gdy dla osoby
-          chorej na SLA może pozostać jednym z ostatnich sposobów kontaktu z drugim człowiekiem. W ten sposób oko łączy dwa doświadczenia obecne w tegorocznym Fenomenie:
-          zachwyt nad pięknem i obecność przy człowieku w jego kruchości.
+          Organizowane od 2018 roku Grand Prix skupia laureatów sześciu ogólnopolskich konkursów
+          chóralnych. Towarzyszący mu całoroczny cykl koncertów kameralnych poszerza tę formułę
+          o prezentację różnorodnych praktyk wykonawczych i autorskich koncepcji programowych.
         - >-
-          Koncert rozpocznie się o godz. 13:30, po niedzielnej liturgii w kościele Wszystkich
-          Świętych. Wstęp wolny.
+          „Pochwała Stworzenia” pokazuje, że spójność programu koncertowego nie musi wynikać ze
+          stylistycznego pokrewieństwa utworów, lecz z relacji między nimi: następstwa, kontrastów
+          i znaczeń ujawniających się w przebiegu całego koncertu. Kameralna obsada VoctEnsemble
+          nadaje tej koncepcji dodatkowy wymiar. Indywidualność poszczególnych głosów pozostaje
+          czytelna, a różnorodność faktur i języków kompozytorskich służy budowaniu jednej,
+          konsekwentnej dramaturgii.
         - >-
-          Patronat medialny nad koncertem objęło Polskie Centrum Informacji Muzycznej POLMIC.
+          Koncert odbędzie się 15 listopada o godz. 19:00, po wieczornej liturgii w kościele
+          św. Antoniego z Padwy przy ul. Franciszkańskiej 2 w Poznaniu. Wstęp wolny.
   # After the practical block and the links: who the ensemble and the foundation are.
   about:
     - heading: "O VoctEnsemble"
       body:
         - >-
-          VoctEnsemble to niezależny profesjonalny zespół wokalny, który Florent de Bazelaire
-          założył w Krakowie w 2024 roku. Tworzy autorskie Koncerty Duchowe, w których muzyka,
-          tekst, przestrzeń i światło składają się na spójną całość. Każdy projekt wyrasta z jednej
-          idei, pytania lub intencji, wokół których budowane są repertuar, jego dramaturgia
-          i sposób wykonania. Zespół sięga po muzykę od renesansowej polifonii po twórczość
-          najnowszą, ze szczególnym miejscem dla repertuaru sakralnego oraz muzyki podejmującej
-          tematy duchowe i egzystencjalne. VoctEnsemble występował w Krakowie, Warszawie, Łodzi,
-          Rybniku, Szczawnicy i Niedzicy, a także uczestniczył w wydarzeniach i festiwalach
-          muzycznych w różnych częściach Polski.
+          VoctEnsemble to niezależny profesjonalny zespół wokalny założony przez Florent
+          de Bazelaire w Krakowie w 2024 roku. Tworzy autorskie Koncerty Duchowe, w których muzyka,
+          tekst, przestrzeń i światło składają się na spójną całość. Każdy projekt wyrasta
+          z konkretnej idei, pytania lub intencji, wokół których budowane są repertuar, jego
+          dramaturgia i sposób wykonania. Zespół sięga po muzykę od renesansowej polifonii po
+          twórczość najnowszą, ze szczególnym miejscem dla repertuaru sakralnego oraz muzyki
+          podejmującej tematy duchowe i egzystencjalne. VoctEnsemble występował w Krakowie,
+          Warszawie, Łodzi, Rybniku, Szczawnicy i Niedzicy, prezentując swoje projekty podczas
+          koncertów i wydarzeń muzycznych w całej Polsce.
     - heading: "O VoctFoundation"
       body:
         - >-
           VoctFoundation, powołana w 2026 roku, wspiera realizację projektów artystycznych,
           łącząc ich twórców i wykonawców z partnerami instytucjonalnymi i publicznością.
-          VoctEnsemble jest zespołem rezydentem Fundacji, a „Pochwała Stworzenia” jej pierwszą
-          realizacją.
+          Rezydujący przy niej VoctEnsemble prezentuje „Pochwałę Stworzenia” po raz drugi. Tym
+          razem projekt powstaje we współpracy z Fundacją Grand Prix Polskiej Chóralistyki
+          im. Stefana Stuligrosza.
   # The address is printed after these from `data/foundation.ts`.
   contact: { name: "Anna Marcisz", role: "wiceprezes VoctFoundation" }
 
@@ -210,118 +220,119 @@ announce:
     inspirowanego XVIII-wieczną tradycją francuskich Concerts Spirituels. Osią, a zarazem
     inspiracją dla koncertu, jest „Pieśń słoneczna” św. Franciszka z Asyżu. Muzyka różnych epok
     rozwija przesłanie kantyku, prowadząc od zachwytu nad stworzeniem przez doświadczenie ludzkiej
-    kruchości i śmierci ku modlitwie i nadziei ostatecznej. 11 października, godz. 13:30, kościół
-    Wszystkich Świętych w Warszawie. 12 głosów, skrzypce i organy. Wstęp wolny.
+    kruchości i śmierci ku modlitwie i nadziei życia wiecznego. 12 głosów, skrzypce i organy. Wstęp
+    wolny. 15 listopada, godz. 19:00, kościół św. Antoniego z Padwy (oo. franciszkanów) na Wzgórzu
+    Przemysła, ul. Franciszkańska 2, Poznań.
   # The ~1500 measure, the closing practical lines not counted: for a column's announcement. The
   # last block is lines, not prose.
   long:
     - >-
-      „Pochwała Stworzenia” — nowy Koncert Duchowy VoctEnsemble inspirowany „Pieśnią słoneczną”
+      „Pochwała Stworzenia” — Koncert Duchowy VoctEnsemble inspirowany „Pieśnią słoneczną”
       św. Franciszka z Asyżu
     - >-
-      11 października o godz. 13:30 w kościele Wszystkich Świętych w Warszawie odbędzie się
-      „Pochwała Stworzenia”, VI projekt autorskiego cyklu Koncertów Duchowych VoctEnsemble, będący
-      finałem III edycji „Fenomenu Człowieka” Fundacji Hospicyjnej „Mój Dom”.
+      W niedzielę 15 listopada 2026 r. o godz. 19:00 w kościele św. Antoniego z Padwy
+      (oo. franciszkanów) przy ul. Franciszkańskiej 2 w Poznaniu VoctEnsemble zaprezentuje
+      „Pochwałę Stworzenia”, szósty projekt autorskiego cyklu Koncertów Duchowych. Koncert odbędzie
+      się w ramach Chóralnych Koncertów Kameralnych Grand Prix Polskiej Chóralistyki. Wstęp wolny.
     - >-
       Inspiracją dla koncertu jest „Pieśń słoneczna” (Laudes creaturarum) św. Franciszka z Asyżu,
-      w której całe stworzenie staje się drogą ku Stwórcy. Kantyk prowadzi od słońca, księżyca
-      i gwiazd, przez wiatr, wodę, ogień i ziemię, aż po przebaczenie, cierpienie i „siostrę
-      śmierć”. Program podejmuje tę drogę, prowadząc od zachwytu nad stworzeniem ku doświadczeniu
-      człowieka, jego kruchości i przemijania, aż po modlitwę i ostateczną nadzieję.
+      w której pochwała stworzenia staje się zarazem pochwałą Stwórcy. Kantyk obejmuje zarówno
+      słońce, księżyc i żywioły, jak i ludzkie doświadczenie przebaczenia, cierpienia i „siostry
+      śmierci”. Program rozwija te motywy, ukazując franciszkańską wizję stworzenia w perspektywie
+      ludzkiej kruchości i przemijania, a ostatecznie — modlitwy i nadziei.
     - >-
       W programie znalazły się m.in. Spiegel im Spiegel Arvo Pärta, ośmiogłosowe Laudes
       creaturarum Carla Orffa, Gloria II, Lumen i Dona eis requiem I Mariana Borkowskiego, a także
       utwory Jacka Sykulskiego, Jules’a Masseneta, Ēriksa Ešenvaldsa, Ralpha Vaughana Williamsa,
-      George’a Enescu i Rihardsa Dubry. Zestawienie muzyki różnych epok i estetyk pozwala ukazać
-      kolejne aspekty franciszkańskiej wizji stworzenia, od kontemplacji świata po doświadczenie
-      przemijania i modlitwę.
+      George’a Enescu i Rihardsa Dubry. Różnorodność języków muzycznych pozwala ukazać kolejne
+      wymiary franciszkańskiej wizji stworzenia — od kontemplacji świata po refleksję nad
+      przemijaniem i nadzieję chrześcijańską.
     - >-
-      Za pulpitem dyrygenckim stanie Florent de Bazelaire, a dwunastoosobowemu VoctEnsemble
-      towarzyszyć będą rumuński skrzypek Radu Ropotan oraz warszawski organista Sebastian
-      Kuczyński.
-    - "Wstęp wolny."
+      Koncert poprowadzi Florent de Bazelaire, a dwunastoosobowemu VoctEnsemble towarzyszyć będą
+      rumuński skrzypek Radu Ropotan oraz krakowski organista Jakub Kapała. Wstęp wolny.
     - |-
       Pochwała Stworzenia
-      niedziela, 11.10.2026 — 13:30
-      Kościół Wszystkich Świętych
-      Warszawa · pl. Grzybowski 3/5
-      Finał III edycji Fenomenu Człowieka
+      niedziela, 15.11.2026 — 19:00
+      Kościół św. Antoniego z Padwy (oo. franciszkanów)
+      Poznań · ul. Franciszkańska 2
+      Chóralne Koncerty Kameralne Grand Prix Polskiej Chóralistyki
       wstęp wolny
-  # The same two measures in English: the second half of the same PDF.
+  # The same two measures in English: the second half of the same files.
   en:
     short: >-
-      In Praise of Creation is the latest concert in VoctEnsemble’s original Spiritual Concerts
-      series, inspired by the tradition of the 18th-century French Concerts Spirituels. At its
-      heart is St Francis of Assisi’s Canticle of the Sun, which provides both the inspiration and
-      the central thread of the concert. Music from different periods unfolds the canticle’s
-      message, leading from wonder at creation through the experience of human fragility and death
-      towards prayer and ultimate hope. 11 October, 1.30 pm, Church of All Saints, Warsaw. Twelve
-      voices, violin and organ. Admission free.
+      In Praise of Creation is another concert in VoctEnsemble’s original Spiritual Concerts series,
+      inspired by the tradition of the 18th-century French Concerts Spirituels. At its heart is
+      St Francis of Assisi’s Canticle of the Sun, which provides both the inspiration and the
+      central thread of the concert. Music from different periods unfolds the canticle’s message,
+      leading from wonder at creation through the experience of human fragility and death towards
+      prayer and eschatological hope. Twelve voices, violin and organ. Admission free. 15 November,
+      7 pm, St Anthony of Padua Franciscan Church on Przemysł Hill, 2 Franciszkańska Street, Poznań.
     long:
       - >-
-        “In Praise of Creation” — a new Spiritual Concert by VoctEnsemble, inspired by St Francis
-        of Assisi’s Canticle of the Sun
+        “In Praise of Creation” — a Spiritual Concert by VoctEnsemble, inspired by St Francis of
+        Assisi’s Canticle of the Sun
       - >-
-        On 11 October at 1.30 p.m., the Church of All Saints in Warsaw will host In Praise of
-        Creation, the sixth project in VoctEnsemble’s original Spiritual Concerts series, marking
-        the finale of the third edition of the Fenomen Człowieka festival organised by the Mój Dom
-        Hospice Foundation.
+        On Sunday 15 November 2026 at 7 p.m., VoctEnsemble will present In Praise of Creation at the
+        Franciscan Church of St Anthony of Padua in Poznań (2 Franciszkańska Street). The concert is
+        the sixth project in the ensemble’s original Spiritual Concerts series and forms part of the
+        chamber concert series organised by the Stefan Stuligrosz Grand Prix of Polish Choral Music
+        Foundation. Admission is free.
       - >-
-        The concert is inspired by St Francis of Assisi’s Canticle of the Sun (Laudes
-        creaturarum), in which all of creation becomes a path towards the Creator. The canticle
-        moves from the sun, moon and stars, through wind, water, fire and earth, to forgiveness,
-        suffering and “Sister Death”. The programme follows this journey, moving from wonder at
-        creation towards the human experience of fragility and transience, and ultimately towards
-        prayer and hope.
+        The concert is inspired by St Francis of Assisi’s Canticle of the Sun (Laudes creaturarum),
+        in which praise of creation becomes a means of praising the Creator. The canticle
+        encompasses the sun, moon and elements, as well as the human experiences of forgiveness,
+        suffering and “Sister Death”. The programme develops these themes, exploring the Franciscan
+        vision of creation through human fragility and transience, ultimately leading towards
+        Christian hope.
       - >-
         The programme includes, among other works, Arvo Pärt’s Spiegel im Spiegel, Carl Orff’s
         eight-part Laudes creaturarum, and Marian Borkowski’s Gloria II, Lumen and Dona eis
         requiem I, alongside works by Jacek Sykulski, Jules Massenet, Ēriks Ešenvalds, Ralph
-        Vaughan Williams, George Enescu and Rihards Dubra. Bringing together music from different
-        periods and aesthetic traditions, the programme explores different aspects of the
-        Franciscan vision of creation, from contemplation of the world to an awareness of
-        transience and prayer.
+        Vaughan Williams, George Enescu and Rihards Dubra. The diversity of musical languages
+        reveals different dimensions of the Franciscan vision of creation, from contemplation of
+        the world to reflection on transience and salvation.
       - >-
         VoctEnsemble will perform with twelve singers under the direction of Florent de Bazelaire,
-        joined by Romanian violinist Radu Ropotan and organist Sebastian Kuczyński. Admission is
-        free.
+        joined by Romanian violinist Radu Ropotan and organist Jakub Kapała. Admission is free.
       - |-
         In Praise of Creation
-        Sunday, 11 October 2026 — 1:30 p.m.
-        Church of All Saints
-        Warsaw · pl. Grzybowski 3/5
-        Final event of the third edition of Fenomen Człowieka
+        Sunday, 15 November 2026 — 7 p.m.
+        Franciscan Church of St Anthony of Padua
+        Poznań · 2 Franciszkańska Street
+        Choral Chamber Concerts · Grand Prix of Polish Choral Music
         Free admission
 
-
 social:
-  # Pasted by other people's accounts (the festival, partners, media), who tag @VoctEnsemble
-  # themselves. `postText` appends the concert's address.
+  # The board's "POST" block from the master pack. Pasted by other people's accounts (the series,
+  # partners, media), who tag @VoctEnsemble themselves; `postText` appends the concert's page, not
+  # the street address, so the address below stands once. "(oo. Franciszkanie)" in the board's
+  # block is set as the release sets it, "(oo. franciszkanów)".
   post:
-    - "Jeden kantyk. Dziewięciu kompozytorów. Jedna muzyczna droga."
+    - "Jeden kantyk. Dziewięciu kompozytorów. Pochwała całego stworzenia."
     - >-
-      11 października o 13:30 w kościele Wszystkich Świętych w Warszawie zabrzmi „Pochwała
-      Stworzenia”, VI projekt autorskiego cyklu Koncertów Duchowych VoctEnsemble.
+      15 listopada VoctEnsemble po raz pierwszy wystąpi w Poznaniu z „Pochwałą Stworzenia”,
+      Koncertem Duchowym inspirowanym Pieśnią słoneczną św. Franciszka z Asyżu.
     - >-
-      Punktem wyjścia jest Pieśń słoneczna (Laudes creaturarum) św. Franciszka z Asyżu, w której
-      całe stworzenie staje się drogą ku Stwórcy. Kantyk prowadzi od słońca, księżyca i gwiazd,
-      przez wiatr, wodę, ogień i ziemię, aż po przebaczenie, cierpienie i „siostrę śmierć”.
+      Muzyka dziewięciu kompozytorów (m.in. Masseneta, Vaughana Williamsa, Borkowskiego i Pärta)
+      rozwija franciszkańską wizję stworzenia, w której cały świat zostaje włączony w pochwałę
+      Stwórcy. Program zabrzmi w wykonaniu dwunastu głosów VoctEnsemble, którym towarzyszyć będą
+      Radu Ropotan, rumuński skrzypek, oraz Jakub Kapała, krakowski organista.
     - >-
-      Tę samą perspektywę rozwija program koncertu „Pochwała Stworzenia”, w którym muzyka Pärta,
-      Orffa, Borkowskiego, Sykulskiego, Ešenvaldsa, Masseneta, Vaughana Williamsa, Enescu i Dubry
-      prowadzi od światła i pochwały, przez kruchość i przemijanie, ku modlitwie i nadziei,
-      w brzmieniu 12 głosów, skrzypiec i organów.
+      Koncert odbędzie się w ramach Chóralnych Koncertów Kameralnych Grand Prix Polskiej
+      Chóralistyki.
     - |-
-      Finał III edycji Fenomenu Człowieka.
+      15 listopada · godz. 19:00
+      Kościół św. Antoniego z Padwy (oo. franciszkanów)
+      ul. Franciszkańska 2, Poznań
       Wstęp wolny.
   hashtags:
-    - "#Warszawa"
-    - "#Koncert"
+    - "#Poznań"
     - "#PochwałaStworzenia"
     - "#VoctEnsemble"
+    - "#GrandPrixPolskiejChóralistyki"
     - "#Zaproszenie"
 
 # The evening's instrumentalists. The conductor is the corpus's (`credits`).
 guests:
   - { name: "Radu Ropotan", role: "skrzypce" }
-  - { name: "Sebastian Kuczyński", role: "organy" }
+  - { name: "Jakub Kapała", role: "organy" }

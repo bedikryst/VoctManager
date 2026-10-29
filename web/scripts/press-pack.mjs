@@ -55,6 +55,7 @@ import {
   documentPath,
   docxPath,
   hashtagsText,
+  kitConcert,
   kitProblems,
   latestKit,
   loadPressKits,
@@ -122,21 +123,22 @@ try {
 if (kits.length === 0 && problems.length === 0) {
   fail("there is no press kit in src/content/press-kits/ — the page has nothing to lead with.");
 }
+/* The same rule the whole site uses for "the next concert" (lib/cycle), fed from raw YAML: a
+   station is any evening not marked `cycle: false`. The whole row goes in, `dates` included, so a
+   programme booked again comes back as its next performance — the day, the venue and the poster
+   this pack is cut for. */
+const stations = concerts.map((entry) => ({
+  id: entry.id,
+  data: { ...entry, cycle: entry.cycle ?? true },
+}));
 for (const kit of kits) {
-  for (const problem of kitProblems(kit, concerts.find((entry) => entry.id === kit.concert))) {
+  for (const problem of kitProblems(kit, kitConcert(kit, stations))) {
     fail(problem);
   }
 }
-
-/* The same rule the whole site uses for "the next concert" (lib/cycle), fed from raw YAML: a
-   station is any evening not marked `cycle: false`. */
-const stations = concerts.map((entry) => ({
-  id: entry.id,
-  data: { order: entry.order, cycle: entry.cycle ?? true, date: entry.date },
-}));
 const latest = latestKit(kits, stations);
 const kit = latest?.kit;
-const concert = kit && concerts.find((entry) => entry.id === kit.concert);
+const concert = latest && { ...latest.station.data, id: latest.station.id };
 if (kits.length > 0 && !kit) {
   warnings.push("no kit's concert is still ahead, so the pack ships without a concert kit.");
 }

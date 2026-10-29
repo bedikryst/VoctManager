@@ -2649,8 +2649,9 @@
   # texts open on different facts rather than paraphrasing each other. It carries no date, no
   # hour, no place and no admission: the band prints all five from the fields above.
   invitation: "Pieśń słoneczna św. Franciszka wita słońce, wiatr, wodę i ogień jak rodzeństwo, a na końcu tak samo wita śmierć. Program idzie tą drogą: od światła ku temu, co w człowieku kruche, i dalej — aż tam, gdzie pochwała stworzenia staje się modlitwą wszystkich świętych, w kościele pod tym samym wezwaniem."
+  # The festival's chip is printed from `festival` (KoncertyPage), so the station names whichever
+  # frame the evening it announces was sung within, and no chip here restates it.
   facts:
-    - Festiwal „Fenomen Człowieka”
     - Głosy, skrzypce, organy
     - Pieśń słoneczna św. Franciszka
   # All three stems say `stworzenie`, not the concert's id — the archive's own naming, which
@@ -2671,6 +2672,49 @@
   posterCredit: "Anna Marcisz · VoctEnsemble"
   realizacja: "Skrzypce: Radu Ropotan"
   hasPage: true
+  # THE PROGRAMME BOOKED AGAIN (Grand Prix Polskiej Chóralistyki, Poznań). The row stays the record
+  # of 11 October — gallery, recording, cast, bis, festival — and the Poznań evening is a second
+  # performance: while it is ahead, lib/cycle lays these facts over the row for every announcing
+  # surface. `dates[0]` is the row's own evening (content.config refuses anything else); its
+  # night-specific facts (room, map, Facebook, festival) stay on the row above.
+  #
+  # Poznań states every fact of its own and inherits none: it has no Facebook event and no map link
+  # (the organiser published neither, and neither is composed here), and no `endTime`, since nobody
+  # published one. Organiser, series and funding sentence are the board's pack (29.10.2026).
+  dates:
+    - date: "2026-10-11"
+      venue: "Kościół Wszystkich Świętych, Warszawa"
+      time: "13:30"
+      address: "pl. Grzybowski 3/5, Warszawa"
+      admission: free
+    - date: "2026-11-15"
+      time: "19:00"
+      venue: "Kościół św. Antoniego z Padwy (oo. franciszkanów), Poznań"
+      metaPlace: { pl: "Kościół św. Antoniego z Padwy (oo. franciszkanów), Poznań" }
+      address: "ul. Franciszkańska 2, Poznań"
+      admission: free
+      festival:
+        name: "Chóralne Koncerty Kameralne Grand Prix Polskiej Chóralistyki"
+        url: "https://gppch.pl/koncerty-kameralne/"
+        kind: series
+      # Who runs the frame and what it is, then why we are in it. No timing claim about the Grand
+      # Prix's own edition: the board's release says "w przededniu", and the edition's date is not
+      # on record here.
+      festivalNote: >-
+        Fundacja Grand Prix Polskiej Chóralistyki im. Stefana Stuligrosza od 2018 roku organizuje
+        Grand Prix, w którym spotykają się laureaci sześciu ogólnopolskich konkursów chóralnych.
+        Towarzyszy mu całoroczny cykl koncertów kameralnych z autorskimi programami; VoctEnsemble
+        śpiewa w nim na zaproszenie fundacji.
+      organizer: "Fundacja Grand Prix Polskiej Chóralistyki im. Stefana Stuligrosza"
+      funding: "Koncert współfinansowany ze środków Miasta Poznania."
+      # The landing's paragraph for this night. It keeps the row's opening (the Canticle greets its
+      # subjects, death on the same terms) and spends its last sentence on the one fact Poznań adds:
+      # the church belongs to the order the Canticle's author founded.
+      invitation: "Pieśń słoneczna św. Franciszka wita słońce, wiatr, wodę i ogień jak rodzeństwo, a na końcu tak samo wita śmierć. Program idzie tą drogą, od światła ku temu, co w człowieku kruche, aż pochwała stworzenia staje się modlitwą wszystkich świętych. Tym razem zabrzmi u franciszkanów, w kościele zakonu, który założył autor kantyku."
+      poster: poster-stworzenie-poznan
+      posterAlt: Plakat koncertu Pochwała Stworzenia w Poznaniu
+      posterCredit: "Anna Marcisz · VoctEnsemble"
+      share: share-stworzenie-poznan
   # The passages the conductor chose from the concert recording, in programme order; Lumen and
   # the Méditation are left out by his choice, so no copy may promise a passage of every work.
   # One chapter per work, even where a work gives two passages. `program` is an index into

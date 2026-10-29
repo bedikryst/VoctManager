@@ -67,6 +67,9 @@ export interface EventSeed {
       schema.org relation for exactly that, and it stays true after the night is over, so it is
       not date-gated the way the visible link is. */
   readonly sameAs?: string;
+  /** An outside organiser who booked the evening (`organizer`, content.config). Listed BEFORE the
+      foundation, which co-organises such an evening rather than leaving the node. */
+  readonly organizer?: string;
 }
 
 /** The emitted node. Deliberately open-valued: this is JSON-LD on its way to `JSON.stringify`,
@@ -141,7 +144,7 @@ export const musicEvent = (seed: EventSeed, now: Date = new Date()): MusicEventN
       ...(seed.address ? { address: seed.address } : {}),
     },
     performer: PERFORMER,
-    organizer: ORGANIZER,
+    organizer: seed.organizer ? [{ "@type": "Organization", name: seed.organizer }, ORGANIZER] : ORGANIZER,
     ...offersFor(seed.admission, seed.url),
   };
 };

@@ -65,6 +65,7 @@ import {
   documentPath,
   factsText,
   hashtagsText,
+  kitConcert,
   kitProblems,
   latestKit,
   lineupLines,
@@ -155,9 +156,7 @@ const concerts = await getCollection("concerts");
 const kits = loadPressKits();
 /* The generator refuses a kit whose texts name another day; the page refuses it too, so a moved
    concert cannot ship last week's date in a Kopiuj button while its pack is being rebuilt. */
-const problems = kits.flatMap((kit) =>
-  kitProblems(kit, concerts.find((entry) => entry.id === kit.concert)?.data),
-);
+const problems = kits.flatMap((kit) => kitProblems(kit, kitConcert(kit, concerts)));
 if (problems.length > 0) throw new Error(`/press: ${problems.join(" ")}`);
 
 const latest = latestKit(kits, concerts);

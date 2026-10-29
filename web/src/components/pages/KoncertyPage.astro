@@ -49,7 +49,14 @@ import { framedShot } from "../../lib/galleryFrame";
 import { designCredit } from "../../lib/photoCredit";
 import { absolute, musicEvent } from "../../lib/eventSchema";
 import { longDate, romanNumeral, viaMoment } from "../../lib/dates";
-import { cycleNumerals, cycleStations, upcomingStation } from "../../lib/cycle";
+import {
+  cycleNumerals,
+  cycleStations,
+  eveningKey,
+  isUnsung,
+  upcomingStation,
+  type Upcoming,
+} from "../../lib/cycle";
 import { formatRef } from "../../lib/scriptureRef";
 import { concertKey, withOverlay } from "../../lib/copyOverlay";
 import { programmeLine, ritornelloLine } from "../../lib/programmeLine";
@@ -164,7 +171,12 @@ const programRows = (concert: CollectionEntry<"concerts">, ahead: boolean): read
 };
 
 const entries = await Promise.all(
-  concerts.map(async (c) => {
+  concerts.map(async (row) => {
+    // The announced station speaks for its next evening: a programme booked again comes back from
+    // `upcomingStation` with that performance's day, place, door, frame and poster laid over the
+    // row (lib/cycle), and its copy is keyed under the performance (`eveningKey`).
+    const c: Upcoming<CollectionEntry<"concerts">> = upcoming && row.id === upcoming.id ? upcoming : row;
+    const sayEvening = (field: string, polish: string): string => say(c.id, eveningKey(c, field), polish);
     const title = say(c.id, "title", c.data.title);
     const posterImg = c.data.poster ? photo(c.data.poster) : null;
     return {
@@ -193,11 +205,11 @@ const entries = await Promise.all(
       // The dateline is composed here, not stored: place per locale (copy, so it comes through the
       // desk), the moment formatted from the ISO `date` or taken from the vague `dateLabel` (a tour
       // across a year, a season) — which is copy too.
-      metaPlace: say(c.id, "metaPlace", c.data.metaPlace.pl),
+      metaPlace: sayEvening("metaPlace", c.data.metaPlace.pl),
       // The via-rail's own abbreviation of that same moment — derived, never stored (lib/dates).
       viaDate: viaMoment(c.data, lang),
       meta: [
-        say(c.id, "metaPlace", c.data.metaPlace.pl),
+        sayEvening("metaPlace", c.data.metaPlace.pl),
         c.data.date
           ? longDate(c.data.date, lang)
           : c.data.dateLabel && say(c.id, "dateLabel", c.data.dateLabel.pl),
@@ -215,6 +227,16 @@ const entries = await Promise.all(
           only where the ensemble recorded the answer — chrome, so it cannot be left behind in one
           locale, and read off `admission` so the fact has one home (content.config). */
       door: c.id === upcoming?.id && c.data.admission === "free" ? t.freeAdmission : undefined,
+      /** The frame the evening is sung within, as the chip row's first entry and the link label
+          under it. Printed from the structured field rather than kept as a `facts` row, so the
+          announced repeat names ITS frame and the record afterwards names its own. A series is
+          named bare: its name already says what it is, and "festiwal" would be untrue of it. */
+      frameChip: c.data.festival
+        ? c.data.festival.kind === "series"
+          ? c.data.festival.name
+          : fill(t.festivalChip, { name: c.data.festival.name })
+        : undefined,
+      frameSite: c.data.festival?.kind === "series" ? t.seriesSite : t.festivalSite,
       // Via-rail fill is derived from position among the STATIONS, not stored per-entry: adding a
       // concert no longer means re-percentaging every other YAML row by hand, and an office that
       // never enters the rail cannot advance it.
@@ -236,13 +258,15 @@ const entries = await Promise.all(
           with no accessible name at all. Falls back to the chrome's template, exactly as the
           concert's own coda does — one wording for one object on both surfaces. */
       posterAlt: c.data.posterAlt
-        ? say(c.id, "posterAlt", c.data.posterAlt)
+        ? sayEvening("posterAlt", c.data.posterAlt)
         : fill(concertUi.poster.altFallback, { title }),
       /** Never through the overlay: the label is translated, the hands are names (glossary §1).
           Most evenings leave it unset and the frame then prints no line — a poster is drawn, and
           there is no equivalent of "archiwum zespołu" for a hand that is not on record. */
       posterCredit: c.data.posterCredit ? designCredit(c.data.posterCredit, lang) : undefined,
-      progRows: programRows(c, c.id === upcoming?.id),
+      // Sealed only while no evening of the programme has been sung: a repeat's encore is already
+      // in the record (and in the excerpts reel) of the night before it.
+      progRows: programRows(c, c.id === upcoming?.id && isUnsung(c.data)),
     };
   }),
 );
@@ -352,7 +376,11 @@ const metaDescription = announced
         date: announcedDate,
         place: announced.metaPlace,
       }),
-      announced.festival ? fill(t.metaAnnouncedFestival, { name: announced.festival.name }) : "",
+      announced.festival
+        ? fill(announced.festival.kind === "series" ? t.metaAnnouncedSeries : t.metaAnnouncedFestival, {
+            name: announced.festival.name,
+          })
+        : "",
       announced.admission === "free" ? t.metaAnnouncedFree : "",
     ]
       .filter(Boolean)
@@ -668,9 +696,10 @@ const ogImage = shareImg ?? hero.desktop;
                     the programme disclosure. The essence and the incipit share 0.18s and must:
                     the incipit's ink+lead pair pins that delay regardless of `data-d`, so it is
                     the one node in the stack that cannot be moved. */}
-                {(s.facts.length > 0 || s.door) && (
+                {(s.facts.length > 0 || s.door || s.frameChip) && (
                   <div class="station-facts reveal" data-d="3" role="list" aria-label={t.factsAria}>
                     {s.door && <span class="station-fact-door" role="listitem">{s.door}</span>}
+                    {s.frameChip && <span role="listitem">{s.frameChip}</span>}
                     {s.facts.map((f) => (
                       <span role="listitem">{f}</span>
                     ))}
@@ -696,11 +725,11 @@ const ogImage = shareImg ?? hero.desktop;
                       </a>
                     )}
                     {s.realizacja && <span class="station-credit">{s.realizacja}</span>}
-                    {/* The festival's own page. The label does not repeat its name — the chip row
-                        directly above states it, and the evening names it once. */}
+                    {/* The festival's or the series' own page. The label does not repeat its name —
+                        the chip row directly above states it, and the evening names it once. */}
                     {s.festival && (
                       <a class="link-min" href={s.festival.url} target="_blank" rel="noopener noreferrer">
-                        {t.festivalSite}
+                        {s.frameSite}
                       </a>
                     )}
                     {/* The event page, and only while the evening is ahead: afterwards it is a

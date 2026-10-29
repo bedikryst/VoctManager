@@ -70,6 +70,32 @@ const PLACE_TAIL = /^\p{Lu}[\p{L}\s.-]*$/u;
 
 const placeTail = (venue: string): string => venue.split(",").at(-1)?.trim() ?? "";
 
+/** The frame an evening is sung within — its name, and its own page.
+ *
+ *  STRUCTURED, because several surfaces need different halves of one fact: the concert page prints
+ *  the name, the note and the link; the /koncerty station prints the name as a chip and a link to
+ *  the frame's own site; and the announced-evening meta names it in the sentence a result page
+ *  shows. The NAME stays as written in every locale — it is a proper name — and the words around it
+ *  are chrome. It reaches the JSON-LD nowhere: `superEvent` would be validated as a second event on
+ *  facts that are not ours (see lib/eventSchema).
+ *
+ *  `kind` says which words: a FESTIVAL ("Fenomen Człowieka") or a SERIES of concerts somebody else
+ *  runs through a season (the Grand Prix's chamber concerts). The two are not interchangeable in
+ *  print — "w ramach festiwalu" about a concert series is a false claim about the organiser.
+ *
+ *  `role` is set only where the evening's place in the festival is confirmed: "finale" when it
+ *  closes the festival (the foundation's realisation sheet says so in words). An edition number is
+ *  not a role and is never inferred from one. */
+const festival = z
+  .object({
+    name: z.string(),
+    url: z.string().url(),
+    kind: z.enum(["festival", "series"]).default("festival"),
+    role: z.enum(["finale"]).optional(),
+  })
+  .strict()
+  .optional();
+
 const concerts = defineCollection({
   loader: file("src/content/concerts.yaml"),
   schema: z.object({
@@ -150,32 +176,23 @@ const concerts = defineCollection({
         be restated as a `facts` chip — one fact in two homes, one of them translated by hand. The
         chip's wording is chrome (a complete triple), not copy, for the same reason. */
     admission: z.enum(["free", "paid"]).optional(),
-    /** The festival this evening is sung within — its name, and its own page.
-     *
-     *  STRUCTURED, because three surfaces need different halves of one fact and a hand-written
-     *  `links` row could only ever be the door: the concert page prints the name, the note and
-     *  the link; the /koncerty station prints a link to the festival's site; and the
-     *  announced-evening meta on /koncerty names it in the sentence a result page shows. The
-     *  NAME stays as written in every locale — it is a proper name — and the words around it
-     *  are chrome. It reaches the JSON-LD nowhere: `superEvent` would be validated as a second
-     *  event on facts that are not ours (see lib/eventSchema).
-     *
-     *  It does not replace the evening's own `facts` chip: the chip states that the evening
-     *  belongs to a festival, this states WHICH one and where it lives.
-     *
-     *  `role` is set only where the evening's place in the festival is confirmed: "finale" when
-     *  it closes the festival (the foundation's realisation sheet says so in words). An edition
-     *  number is not a role and is never inferred from one. */
-    festival: z
-      .object({ name: z.string(), url: z.string().url(), role: z.enum(["finale"]).optional() })
-      .strict()
-      .optional(),
+    /** The festival or series this evening is sung within (see `festival` above). Its chip on
+        /koncerty is printed from here, so no `facts` row restates it. */
+    festival,
     /** What the festival's own edition is about, in a sentence or two, where the frame is worth
         more to a reader than the bare name. Copy, so it is translated; and somebody else's event,
         so it states what the frame is and how it rhymes with this programme, then stops. No appeal
         on the organiser's behalf (.ai/07 rules out donation-first framing), and nothing about their
         work that their own site says better — `festival.url` is the door to that. */
     festivalNote: z.string().optional(),
+    /** Who presents the evening where it is somebody else — an outside organiser who booked the
+        programme. A proper name, printed nowhere on the page (the festival note names them in a
+        sentence) and carried by JSON-LD as the event's `organizer` beside the ensemble's own. */
+    organizer: z.string().optional(),
+    /** The public money behind the evening, in the sentence its funder requires to be printed
+        ("Koncert współfinansowany ze środków Miasta Poznania"). Copy, so it is translated; printed
+        under the festival block of the door band while the evening is ahead. */
+    funding: z.string().optional(),
     /** /o-nas milestone editorial — the About page derives its "Via" list from this
         collection (single source of truth with /koncerty). All fields optional:
         place falls back to `venue`, blurb to `essence`; a missing img renders the
@@ -370,20 +387,48 @@ const concerts = defineCollection({
         note: z.string().optional(),
       })
       .optional(),
-    /** Multi-city tour dates. When present the detail page shows a "Wykonania" itinerary and
-        JSON-LD emits one MusicEvent per date; single-date concerts keep using `date`/`venue`. */
+    /** Every evening this programme was or will be sung — a tour, or a sung programme booked
+        again. When present the detail page shows a "Wykonania" itinerary and JSON-LD emits one
+        MusicEvent per item.
+
+        A PERFORMANCE STATES ITS OWN EVENING. The fields mirror the row's evening fields and mean
+        the same thing; while an item is the next evening ahead, `lib/cycle.upcomingStation` hands
+        every announcing surface the row with that item laid over it, and an evening field the item
+        leaves unset is UNSET for that evening — never inherited from the row, whose Facebook event,
+        room and festival belong to another night.
+
+        A row that has its own `date` as well keeps that evening as `dates[0]` (same day, venue and
+        hour — refused otherwise): the row stays the record of the night it describes, and the
+        items after it are the repeats. The copy fields are on the desk under
+        `dates.<date>.<field>` (copydesk/contract.mjs). */
     dates: z
       .array(
-        z.object({
-          date: z.string(), // ISO YYYY-MM-DD
-          venue: z.string(), // full venue + city
-          time: z.string().optional(), // e.g. "20:00"
-          /** Street address of THIS evening's venue — JSON-LD Place.address, same contract
-              as the concert-level `address`. */
-          address: z.string().optional(),
-          /** Admission for THIS evening (see the concert-level `admission`). */
-          admission: z.enum(["free", "paid"]).optional(),
-        }),
+        z
+          .object({
+            date: z.string(), // ISO YYYY-MM-DD
+            venue: z.string(), // full venue + city
+            time: z.string().optional(), // e.g. "20:00"
+            endTime: z.string().optional(),
+            /** Street address of THIS evening's venue — JSON-LD Place.address, same contract
+                as the concert-level `address`. */
+            address: z.string().optional(),
+            /** Admission for THIS evening (see the concert-level `admission`). */
+            admission: z.enum(["free", "paid"]).optional(),
+            metaPlace: localized.optional(),
+            venueNote: z.string().optional(),
+            mapUrl: z.string().url().optional(),
+            facebookEvent: z.string().url().optional(),
+            festival,
+            festivalNote: z.string().optional(),
+            organizer: z.string().optional(),
+            funding: z.string().optional(),
+            invitation: z.string().optional(),
+            poster: z.string().optional(),
+            posterAlt: z.string().optional(),
+            posterCredit: z.string().optional(),
+            share: z.string().optional(),
+          })
+          .strict(),
       )
       .default([]),
     /** Documentary photographs from the evening (detail page gallery + the /obrazy archive).
@@ -654,6 +699,26 @@ const concerts = defineCollection({
               ` \`numbered: true\` to mark the row it already has.`,
         });
       }
+    }
+
+    // A row with its own evening AND a dates[] list is a programme sung again: the row is the
+    // record of its first night, and lib/cycle tells that night from the repeats by its date. A
+    // first item that disagrees with the row would make one evening two, and the itinerary,
+    // the JSON-LD and the landing's count would each believe a different one.
+    const opening = concert.dates[0];
+    if (
+      concert.date !== undefined &&
+      opening !== undefined &&
+      (opening.date !== concert.date || opening.venue !== concert.venue || opening.time !== concert.time)
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["dates", 0],
+        message:
+          `${concert.title}: dates[0] must be the row's own evening (${concert.date}, ` +
+          `${concert.time ?? "no hour"}, "${concert.venue ?? ""}") — the row is the record of that` +
+          ` night and the items after it are its repeats.`,
+      });
     }
 
     // A per-date venue is ONE evening in ONE place by definition, so a slash there is a tour

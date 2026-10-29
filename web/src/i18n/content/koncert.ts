@@ -94,6 +94,9 @@ export interface ConcertChrome {
     readonly gift: string;
     /** The door under the gift line — opens the donation vault in place. */
     readonly give: string;
+    /** The rubric of a programme booked again, over its next evening: on the door band, which
+        then names a night other than the one the page records, and as the hero's lit line. */
+    readonly nextPerformance: string;
   };
   readonly verbum: {
     /** Summary of the disclosure holding the whole transcript. */
@@ -207,6 +210,7 @@ export const CONCERT: Record<Locale, ConcertChrome> = {
       door: "Wstęp",
       gift: "To, że drzwi są otwarte, jest czyimś darem.",
       give: "Wesprzyj koncert",
+      nextPerformance: "Najbliższe wykonanie",
     },
     verbum: {
       fullCue: "Całe słowo wprowadzenia",
@@ -277,6 +281,7 @@ export const CONCERT: Record<Locale, ConcertChrome> = {
       door: "Admission",
       gift: "An open door is someone's gift.",
       give: "Support the concert",
+      nextPerformance: "The next performance",
     },
     verbum: {
       fullCue: "The whole of the opening word",
@@ -347,6 +352,7 @@ export const CONCERT: Record<Locale, ConcertChrome> = {
       door: "Entrée",
       gift: "Si la porte est ouverte, c'est grâce au don de quelqu'un.",
       give: "Soutenir le concert",
+      nextPerformance: "La prochaine date",
     },
     verbum: {
       fullCue: "L'intégralité de la parole d'ouverture",

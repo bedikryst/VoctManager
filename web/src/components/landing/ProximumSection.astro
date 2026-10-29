@@ -56,7 +56,7 @@ import { photoOptional } from "../../lib/photos";
 import { framedShot } from "../../lib/galleryFrame";
 import { designCredit } from "../../lib/photoCredit";
 import { longDate } from "../../lib/dates";
-import { upcomingStation } from "../../lib/cycle";
+import { eveningKey, upcomingStation } from "../../lib/cycle";
 import { concertKey, withOverlay } from "../../lib/copyOverlay";
 import { localizePath, type Locale } from "../../i18n/config";
 import type { LandingChrome, LandingCopy } from "../../i18n/content/landing";
@@ -79,9 +79,10 @@ const hrefNotice = localizePath("/newsletter", lang);
 const invitation = NUNTIUS[lang].invitation;
 
 /** This evening's words, in this locale: the overlay's translation where one exists, the corpus's
-    Polish otherwise. Never `pickLocale` — the corpus is Polish-only (spec §7). */
+    Polish otherwise. Never `pickLocale` — the corpus is Polish-only (spec §7). A repeat's own
+    invitation and place are keyed under its performance (`eveningKey`, lib/cycle). */
 const say = (field: string, polish: string): string =>
-  upcoming ? withOverlay(concertKey(upcoming.id, field), lang, polish) : polish;
+  upcoming ? withOverlay(concertKey(upcoming.id, eveningKey(upcoming, field)), lang, polish) : polish;
 
 // `photoOptional`, so a poster named in the corpus before the file lands leaves the band standing
 // as type rather than failing the landing's build.

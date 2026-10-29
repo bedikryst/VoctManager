@@ -18,20 +18,28 @@
  * The recipe — the sheet at full card height on a ground blurred out of itself — is shared with the
  * press kit's social graphics (scripts/press-pack/graphics.mjs), so the two cannot drift apart.
  *
- * Run: `node poster-art.cjs` from `web/`. Output lands in src/assets/photos/, which is gitignored
- * — upload it to the build host with the rest.
+ * Run from `web/`: `node poster-art.cjs <poster> <share>` — the poster's file name in
+ * src/assets/photos/ and the stem the card is written under, the one the evening's `share` names
+ * (`node poster-art.cjs poster-stworzenie-poznan.jpg share-stworzenie-poznan`). Output lands in
+ * src/assets/photos/, which is gitignored — upload it to the build host with the rest.
  */
 const sharp = require("sharp");
 
 const DIR = "src/assets/photos";
-const POSTER = `${DIR}/poster-stworzenie.png`;
 const CARD = { width: 1200, height: 630 };
+
+const [poster, share] = process.argv.slice(2);
+if (!poster || !share) {
+  console.error("usage: node poster-art.cjs <poster file in src/assets/photos> <share stem>");
+  process.exit(1);
+}
 
 (async () => {
   const { posterOnGround } = await import("./scripts/press-pack/graphics.mjs");
-  const card = await posterOnGround(POSTER, CARD);
-  await card.webp({ quality: 86 }).toFile(`${DIR}/share-stworzenie.webp`);
+  const card = await posterOnGround(`${DIR}/${poster}`, CARD);
+  const out = `${DIR}/${share}.webp`;
+  await card.webp({ quality: 86 }).toFile(out);
 
-  const m = await sharp(`${DIR}/share-stworzenie.webp`).metadata();
-  console.log(`wrote ${DIR}/share-stworzenie.webp — ${m.width}x${m.height}`);
+  const m = await sharp(out).metadata();
+  console.log(`wrote ${out} — ${m.width}x${m.height}`);
 })();

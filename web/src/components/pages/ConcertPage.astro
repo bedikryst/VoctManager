@@ -55,7 +55,7 @@ import { absolute, musicEvent } from "../../lib/eventSchema";
 import { videoAsset, videoAssetAv1 } from "../../lib/videos";
 import { concertExcerpts } from "../../lib/excerpts";
 import { longDate } from "../../lib/dates";
-import { cycleNumerals, upcomingStation } from "../../lib/cycle";
+import { cycleNumerals, eveningKey, isUnsung, upcomingStation } from "../../lib/cycle";
 import { formatRef } from "../../lib/scriptureRef";
 import { CONCERT, fill } from "../../i18n/content/koncert";
 // ONE WORDING ON TWO PAGES, deliberately across the page boundary. The open door, the link to a
@@ -116,16 +116,6 @@ const metaDate = c.date
   : c.dateLabel && say("dateLabel", c.dateLabel.pl);
 const heroMeta = [metaPlace, metaDate].filter(Boolean).join(" · ");
 const heroTime = c.time ? [ui.hero.timePrefix, c.time].filter(Boolean).join(" ") : "";
-// The door band's own moment: the day in full, and the hour as a WINDOW wherever somebody published
-// the end of the slot. Never a duration — the running orders are untimed (content.config's
-// `endTime`, lib/eventSchema) — so the two clock times are printed with an en dash between them and
-// nothing is computed from the pair. The en dash is glued on both sides, which is what keeps a
-// phone from ending a line on it.
-const timeSpan = c.time ? (c.endTime ? `${c.time}–${c.endTime}` : c.time) : "";
-const ianuaTime = timeSpan ? [ui.hero.timePrefix, timeSpan].filter(Boolean).join(" ") : "";
-const whenLine = [metaDate, ianuaTime].filter(Boolean).join(" · ");
-const venueNote = sayIf("venueNote", c.venueNote);
-const festivalNote = sayIf("festivalNote", c.festivalNote);
 // The evening's motto: a Latin verse (printed unchanged), its vernacular, and the citation that
 // cites the verse. The gloss does two jobs in one slot — the Latin's vernacular where there IS an
 // `inscriptio`, a standalone editorial note where there is not — and both are copy either way.
@@ -137,14 +127,6 @@ const inscriptioRefText = c.inscriptioRef
 // as the milestone — rather than a second byte-identical copy under the `st-*-bg-desktop`
 // name. `bg` stays what it is: the pre-blurred card wash for /koncerty.
 const bg = bleedPair(c.heroImg ?? c.bg);
-// What a PASTED LINK previews with, which is not the same picture as the page's own opening.
-// An evening still ahead declares a `share` frame built from its poster — the one image that
-// carries the day, the hour and the door — and a sung evening keeps its hero, the honest frame
-// for a document, unless that hero predates the evening (see the field's note in
-// content.config.ts). `photoOptional`, so a declared-but-missing file falls back rather than
-// failing a build on the host the photographs are uploaded to by hand.
-const shareImg = c.share ? photoOptional(c.share) : undefined;
-const ogImage = shareImg ?? bg.desktop;
 
 // ── The station's own light: `--candle` inside <main> takes the concert accent's hue at
 // the base gold's OKLCH lightness (build-time hex — no runtime CSS feature risk). Gold
@@ -211,6 +193,49 @@ const ahead =
       }
     : undefined;
 
+// ── The door: this programme's evening still ahead, when it is the one the site announces.
+//
+// On a first night it is the row itself. On a programme booked again it is the row with its next
+// performance laid over it (lib/cycle), and everything the door band, the result-page pair and the
+// link preview print is read from `evening` — never from `c`, which stays the record of the night
+// this page documents. `repeat` is that second case: the door then names a night the page does not.
+const door = upcoming?.id === entry.id ? upcoming : undefined;
+const evening = door?.data ?? c;
+const repeat = door?.performance !== undefined;
+/** One of the door's copy fields, under the performance's own desk key on a repeat. */
+const sayDoor = (field: string, polish: string | undefined): string | undefined =>
+  polish === undefined
+    ? undefined
+    : withOverlay(concertKey(entry.id, door ? eveningKey(door, field) : field), lang, polish);
+const doorPlace = sayDoor("metaPlace", evening.metaPlace.pl) ?? metaPlace;
+const doorDate = evening.date ? longDate(evening.date, lang) : metaDate;
+const doorMeta = [doorPlace, doorDate].filter(Boolean).join(" · ");
+// The door band's own moment: the day in full, and the hour as a WINDOW wherever somebody published
+// the end of the slot. Never a duration — the running orders are untimed (content.config's
+// `endTime`, lib/eventSchema) — so the two clock times are printed with an en dash between them and
+// nothing is computed from the pair. The en dash is glued on both sides, which is what keeps a
+// phone from ending a line on it.
+const timeSpan = evening.time ? (evening.endTime ? `${evening.time}–${evening.endTime}` : evening.time) : "";
+const ianuaTime = timeSpan ? [ui.hero.timePrefix, timeSpan].filter(Boolean).join(" ") : "";
+const whenLine = [doorDate, ianuaTime].filter(Boolean).join(" · ");
+const venueNote = sayDoor("venueNote", evening.venueNote);
+const festivalNote = sayDoor("festivalNote", evening.festivalNote);
+const funding = sayDoor("funding", evening.funding);
+const invitation = sayDoor("invitation", evening.invitation);
+/** The town of a repeat, for the hero's lit line: the tail of its venue, which content.config
+    holds to a place name. */
+const doorTown = evening.venue?.split(",").at(-1)?.trim();
+
+// What a PASTED LINK previews with, which is not the same picture as the page's own opening.
+// An evening still ahead declares a `share` frame built from its poster — the one image that
+// carries the day, the hour and the door — and a sung evening keeps its hero, the honest frame
+// for a document, unless that hero predates the evening (see the field's note in
+// content.config.ts). A repeat previews with ITS frame while it is ahead: the link a press release
+// carries to this page is an invitation to that night. `photoOptional`, so a declared-but-missing
+// file falls back rather than failing a build on the host the photographs are uploaded to by hand.
+const shareImg = evening.share ? photoOptional(evening.share) : undefined;
+const ogImage = shareImg ?? bg.desktop;
+
 // ── Poster + documentary gallery. photoOptional so a slot can be declared in YAML before its
 // image lands on disk — a missing file is silently skipped rather than breaking the build.
 const posterImg = c.poster ? photoOptional(c.poster) : undefined;
@@ -222,6 +247,12 @@ const posterFrame = posterImg ? await framedShot(posterImg) : undefined;
     hands are names (glossary §1). An evening whose designer is not on record prints no line — a
     poster is drawn, and there is no equivalent of "archiwum zespołu" for a hand nobody recorded. */
 const posterCredit = c.posterCredit ? designCredit(c.posterCredit, lang) : undefined;
+/** The door band's sheet — the announced evening's own, which on a repeat is a different poster
+    from the record's keepsake in the coda. */
+const doorPosterImg = evening.poster ? photoOptional(evening.poster) : undefined;
+const doorPosterFrame =
+  evening.poster === c.poster ? posterFrame : doorPosterImg ? await framedShot(doorPosterImg) : undefined;
+const doorPosterCredit = evening.posterCredit ? designCredit(evening.posterCredit, lang) : undefined;
 const gallery: {
   img: ImageMetadata;
   alt: string;
@@ -281,6 +312,12 @@ const galleryCredits = creditSentence(
 );
 
 const hasTour = c.dates.length > 0;
+/** The itinerary's rows, each with the festival or series it was sung within — the row's own
+    evening reads its frame off the row, where its night-specific facts live (content.config). */
+const itinerary = c.dates.map((d) => ({
+  ...d,
+  frame: d.festival ?? (d.date === c.date ? c.festival : undefined),
+}));
 
 // ── Credits: the ROLE is copy and the NAME never is (glossary §1). Keyed by position, which is
 // stable under append — the contract's own rule, and the reason a role that looks like a natural
@@ -318,7 +355,11 @@ const instrumentGroups = rosterGroups.filter((g) => g.instrument);
 //
 // Nothing that survives the turn may be phrased in a tense the turn falsifies — that rule belongs
 // to the corpus, and `locus` is the field it bites hardest (content.config).
-const unsung = upcoming?.id === entry.id;
+//
+// A PROGRAMME BOOKED AGAIN is a record with a door: `door` stands and `unsung` does not. The door
+// band, the notice list and the announcing title follow `door`; the tabula, the poster in the coda
+// and the encore follow `unsung`, since the record is already a document and its encore is in it.
+const unsung = door !== undefined && isUnsung(c);
 
 // ── The programme, in this locale. Every work is resolved ONCE here, against its own position in
 // `c.program` — which is the key the copy desk addresses it by — so that the grouping below and
@@ -411,7 +452,7 @@ const excerpts = await concertExcerpts(entry, lang, bg.desktop);
 // door is the only row the calendar adds, and it goes first because that is where the band goes.
 const TABULA_ROMAN = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX"] as const;
 const tabula: TabulaEntry[] = [
-  { when: unsung, id: "wejscie", title: ui.bands.ianua, figure: "Ianua" },
+  { when: door !== undefined, id: "wejscie", title: repeat ? ui.ianua.nextPerformance : ui.bands.ianua, figure: "Ianua" },
   { when: !!c.prologue, id: "prolog", title: ui.bands.prologue, figure: "Ante concentum" },
   { when: !!c.verbum, id: "slowo", title: ui.bands.verbum, figure: "Verbum" },
   { when: hasTour, id: "wykonania", title: ui.bands.tour, figure: "Itinerarium" },
@@ -470,25 +511,33 @@ const concertTitle = say("title", c.title);
     `<img alt="">` reaches a screen reader with no accessible name at all. */
 const posterAlt =
   sayIf("posterAlt", c.posterAlt) ?? fill(ui.poster.altFallback, { title: concertTitle });
+const doorPosterAlt =
+  sayDoor("posterAlt", evening.posterAlt) ?? fill(ui.poster.altFallback, { title: concertTitle });
 const essence = say("essence", c.essence);
 // ── What a RESULT PAGE shows, which is a different job before the concert and after it. `essence`
 // is the programme note and says nothing about when the evening is or whether the door is open — the
 // two facts a reader searching for something to go to is searching for. So while the evening is
 // ahead the pair becomes the announcement, assembled from the same templates /koncerty swaps its own
 // pair with (KONCERTY_CHROME — see the import's note), and it returns to the programme note on the
-// first build after the date.
-const title = unsung
-  ? fill(walkUi.metaAnnouncedTitle, { title: concertTitle, date: metaDate ?? "" })
+// first build after the date. A repeat announces its own night: the reader searching for it is
+// searching for that day and that town.
+const title = door
+  ? fill(walkUi.metaAnnouncedTitle, { title: concertTitle, date: doorDate ?? "" })
   : `${concertTitle} — ${ui.meta.titleSuffix}`;
-const description = unsung
+const description = door
   ? [
       fill(walkUi.metaAnnouncedLead, {
         title: concertTitle,
-        date: metaDate ?? "",
-        place: metaPlace,
+        date: doorDate ?? "",
+        place: doorPlace,
       }),
-      c.festival ? fill(walkUi.metaAnnouncedFestival, { name: c.festival.name }) : "",
-      c.admission === "free" ? walkUi.metaAnnouncedFree : "",
+      evening.festival
+        ? fill(
+            evening.festival.kind === "series" ? walkUi.metaAnnouncedSeries : walkUi.metaAnnouncedFestival,
+            { name: evening.festival.name },
+          )
+        : "",
+      evening.admission === "free" ? walkUi.metaAnnouncedFree : "",
     ]
       .filter(Boolean)
       .join(" ")
@@ -502,21 +551,27 @@ const description = unsung
 // alternates in <head> are what tie the three documents together.
 const eventUrl = absolute(path);
 const eventImage = absolute((await shareImage(ogImage)).src);
+// Each performance describes itself from its own item; the row's own evening (dates[0] of a
+// programme sung again, content.config) keeps its night-specific facts on the row, so they are read
+// from there for that one item. A performance with an invitation of its own is described by it.
 const events = hasTour
-  ? c.dates.map((d) =>
-      musicEvent({
+  ? c.dates.map((d) => {
+      const own = d.date === c.date;
+      return musicEvent({
         name: concertTitle,
-        description: essence,
+        description: d.invitation ? say(`dates.${d.date}.invitation`, d.invitation) : essence,
         image: eventImage,
         url: eventUrl,
         date: d.date,
         time: d.time,
+        endTime: d.endTime ?? (own ? c.endTime : undefined),
         venue: d.venue,
         address: d.address,
         admission: d.admission,
-        sameAs: c.facebookEvent,
-      }),
-    )
+        sameAs: d.facebookEvent ?? (own ? c.facebookEvent : undefined),
+        organizer: d.organizer ?? (own ? c.organizer : undefined),
+      });
+    })
   : [
       musicEvent({
         name: concertTitle,
@@ -530,6 +585,7 @@ const events = hasTour
         address: c.address,
         admission: c.admission,
         sameAs: c.facebookEvent,
+        organizer: c.organizer,
       }),
     ];
 const jsonLd =
@@ -586,11 +642,15 @@ const jsonLd =
             name the evening the same way. It stands ABOVE the station line rather than inside it:
             "Obraz VII · Laudes" says which evening this is in the cycle, and this says that it has
             not happened — two facts, and the dateline under the title already holds three.
-            Same onset as the station line; the two are one block. */}
-        {unsung && (
+            Same onset as the station line; the two are one block.
+
+            A repeat names its night here as well: the dateline under the title is the record's, and
+            a reader who came from the next evening's press link must not take the page for a
+            concert that is over. */}
+        {door && (
           <p class="kd-hero-ahead reveal">
             <span class="lit-dot" aria-hidden="true"></span>
-            <span>{ui.coda.aheadLabel}</span>
+            <span>{repeat ? [ui.ianua.nextPerformance, doorDate, doorTown].filter(Boolean).join(" · ") : ui.coda.aheadLabel}</span>
           </p>
         )}
         <p class="kd-hero-eyebrow reveal">
@@ -658,42 +718,46 @@ const jsonLd =
           gift, and the line under it lets the reader be that somebody. It opens the vault, which
           names the foundation, its register and the account — so nothing here needs to say who
           receives the money, and no amount or progress is printed beside the evening. The band
-          leaves the page once the evening is sung, and the ask leaves with it. */}
-    {unsung && (
-      <section class="kd-band kd-ianua" id="wejscie" aria-label={ui.bands.ianua}>
+          leaves the page once the evening is sung, and the ask leaves with it.
+
+          A PROGRAMME BOOKED AGAIN raises the same band for its next night, read entirely off
+          `evening` and headed "Najbliższe wykonanie": the record below is another night's, and the
+          band is where the page says which one is still to come. */}
+    {door && (
+      <section class="kd-band kd-ianua" id="wejscie" aria-label={repeat ? ui.ianua.nextPerformance : ui.bands.ianua}>
         <div class="kd-wrap kd-ianua-wrap">
           {/* The same sheet, the same frame and the same lightbox the coda opens — read that block
               for why a drawing opens alone and carries no exit. What differs is the size and the
               caption: here it is the notice and is set large enough to be READ, and the line under
               it credits the hand that drew it, where the coda's calls it a keepsake. */}
-          {posterImg && posterFrame && (
+          {doorPosterImg && doorPosterFrame && (
             <figure class="kd-poster kd-ianua-poster">
               <span class="kd-poster-frame" aria-hidden="true"></span>
               <button
                 type="button"
                 class="kd-poster-media shot-open"
                 data-image-open
-                data-image-src={posterFrame.src}
-                data-image-srcset={posterFrame.srcset}
-                data-image-sizes={posterFrame.sizes}
-                data-image-alt={posterAlt}
-                data-image-caption={heroMeta}
-                data-image-credit={posterCredit}
-                data-image-w={String(posterFrame.width)}
-                data-image-h={String(posterFrame.height)}
+                data-image-src={doorPosterFrame.src}
+                data-image-srcset={doorPosterFrame.srcset}
+                data-image-sizes={doorPosterFrame.sizes}
+                data-image-alt={doorPosterAlt}
+                data-image-caption={doorMeta}
+                data-image-credit={doorPosterCredit}
+                data-image-w={String(doorPosterFrame.width)}
+                data-image-h={String(doorPosterFrame.height)}
               >
                 <Image
-                  src={posterImg}
+                  src={doorPosterImg}
                   widths={[320, 480, 640]}
                   width={640}
                   sizes="(max-width: 860px) 70vw, 320px"
-                  alt={posterAlt}
+                  alt={doorPosterAlt}
                   loading="eager"
                   decoding="async"
                 />
                 <span class="reveal-light" aria-hidden="true"></span>
               </button>
-              {posterCredit && <figcaption class="micro reveal">{posterCredit}</figcaption>}
+              {doorPosterCredit && <figcaption class="micro reveal">{doorPosterCredit}</figcaption>}
             </figure>
           )}
 
@@ -701,22 +765,22 @@ const jsonLd =
             <h2 class="kd-section-label micro reveal">
               <span class="lat">Ianua</span>
               <span class="kd-dot" aria-hidden="true">·</span>
-              <span>{ui.bands.ianua}</span>
+              <span>{repeat ? ui.ianua.nextPerformance : ui.bands.ianua}</span>
             </h2>
 
-            {c.invitation && (
-              <p class="kd-ianua-invitation reveal" data-d="1">{say("invitation", c.invitation)}</p>
+            {invitation && (
+              <p class="kd-ianua-invitation reveal" data-d="1">{invitation}</p>
             )}
 
             <dl class="kd-ianua-facts reveal" data-d="2">
-              {(whenLine || c.facebookEvent) && (
+              {(whenLine || evening.facebookEvent) && (
                 <div class="kd-ianua-fact">
                   <dt>{ui.ianua.when}</dt>
                   <dd>
                     {whenLine}
-                    {c.facebookEvent && (
+                    {evening.facebookEvent && (
                       <span class="kd-ianua-aside">
-                        <a href={c.facebookEvent} target="_blank" rel="noopener noreferrer">{walkUi.facebookEvent}</a>
+                        <a href={evening.facebookEvent} target="_blank" rel="noopener noreferrer">{walkUi.facebookEvent}</a>
                       </span>
                     )}
                   </dd>
@@ -725,18 +789,18 @@ const jsonLd =
               <div class="kd-ianua-fact">
                 <dt>{ui.ianua.where}</dt>
                 <dd>
-                  {c.venue ?? heroMeta}
+                  {evening.venue ?? doorMeta}
                   {venueNote && <span class="kd-ianua-room">{venueNote}</span>}
-                  {c.address && (
+                  {evening.address && (
                     <span class="kd-ianua-address">
-                      {c.mapUrl
-                        ? <a href={c.mapUrl} target="_blank" rel="noopener noreferrer">{c.address} <span aria-hidden="true">↗</span></a>
-                        : c.address}
+                      {evening.mapUrl
+                        ? <a href={evening.mapUrl} target="_blank" rel="noopener noreferrer">{evening.address} <span aria-hidden="true">↗</span></a>
+                        : evening.address}
                     </span>
                   )}
                 </dd>
               </div>
-              {c.admission === "free" && (
+              {evening.admission === "free" && (
                 <div class="kd-ianua-fact">
                   <dt>{ui.ianua.door}</dt>
                   <dd>
@@ -748,18 +812,23 @@ const jsonLd =
               )}
             </dl>
 
-            {c.festival && (
+            {/* The funder's sentence closes the frame it paid for, in the note's grade but quieter:
+                it is owed to the reader as a fact, and it is nobody's invitation. */}
+            {(evening.festival || funding) && (
               <div class="kd-ianua-festival reveal" data-d="3">
-                <p class="kd-ianua-festival-name">{c.festival.name}</p>
+                {evening.festival && <p class="kd-ianua-festival-name">{evening.festival.name}</p>}
                 {festivalNote && <p class="kd-ianua-festival-note">{festivalNote}</p>}
-                <a
-                  class="kd-ianua-festival-link micro"
-                  href={c.festival.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  {walkUi.festivalSite}
-                </a>
+                {funding && <p class="kd-ianua-festival-note kd-ianua-funding">{funding}</p>}
+                {evening.festival && (
+                  <a
+                    class="kd-ianua-festival-link micro"
+                    href={evening.festival.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {evening.festival.kind === "series" ? walkUi.seriesSite : walkUi.festivalSite}
+                  </a>
+                )}
               </div>
             )}
           </div>
@@ -901,10 +970,15 @@ const jsonLd =
               It is drawn while the first row is still arriving, which is the order a scribe works
               in and the reason this register exists. */}
           <ol class="kd-tour-list reveal-rule">
-            {c.dates.map((d, i) => (
+            {itinerary.map((d, i) => (
               <li class="kd-tour-row reveal" data-d={String((i % 3) + 1)}>
                 <span class="kd-tour-date">{longDate(d.date, lang)}</span>
-                <span class="kd-tour-venue">{d.venue}</span>
+                <span class="kd-tour-venue">
+                  {d.venue}
+                  {d.frame && (
+                    <a class="kd-tour-frame" href={d.frame.url} target="_blank" rel="noopener noreferrer">{d.frame.name} <span aria-hidden="true">↗</span></a>
+                  )}
+                </span>
                 {d.time && <span class="kd-tour-time">{[ui.hero.timePrefix, d.time].filter(Boolean).join(" ")}</span>}
               </li>
             ))}
@@ -1415,14 +1489,15 @@ const jsonLd =
               the line returns here, under the photographs: the reader who came for them has just
               seen what the gift paid for. The sentence is the band's own (the board's), unchanged;
               only the door names the evenings still to come. Before the evening the door band
-              asks, so this stays silent.
+              asks, so this stays silent — on a programme booked again too, while its next night's
+              door band carries the same line.
 
               The same block is the gallery's LAST STOP in the frame (`data-image-coda`,
               scripts/image-triggers). A reader who walks the set in the lightbox closes it at the
               photograph they pressed, which on a phone can be a dozen screens above this line, so the
               room repeats it where they finish. It reads both texts off these attributes, so the
               two cannot drift, and the stop exists only where this block is printed. */}
-          {!unsung && c.admission === "free" && (
+          {!(door && evening.admission === "free") && c.admission === "free" && (
             <div
               class="kd-gallery-gift reveal"
               data-image-coda="kd-gallery"
@@ -1460,7 +1535,7 @@ const jsonLd =
           ON THE FULL WRAP, LEFT-SET, as the coda under it and Ianua above it are: this band is
           the head of the coda's night, and a narrow column centred between two left-set
           compositions was the one thing on the page that floated. */}
-    {unsung && (
+    {door && (
       <section class="kd-band kd-nuntius" id="nuntius" aria-label={nuntius.form.bandAria}>
         <div class="kd-wrap">
           <NoticeSignup lang={lang} surface="web:koncert" />
@@ -1547,12 +1622,12 @@ const jsonLd =
                 <span class="kd-vianav-dir micro">{ui.hero.station} {numerals.get(next.id)} <span aria-hidden="true">→</span></span>
                 <span class="kd-vianav-name">{neighbourTitle(next)}</span>
               </a>
-            ) : ahead || unsung ? (
+            ) : ahead || door ? (
               /* The announcement standing under the rail IS the forward door, and a second one
                  offering the notice list beside it asks a reader to subscribe to news they are
                  being handed. The slot steps aside for it.
 
-                 `unsung` joins the same condition for the same reason at the other end: this page
+                 `door` joins the same condition for the same reason at the other end: this page
                  IS the announcement, and the band a screen above already asks the one question the
                  list exists to ask. Two doors to one list on one page is the drift NoticeSignup's
                  own header exists to prevent, so the condition is written here as the band's. */
@@ -1880,6 +1955,7 @@ const jsonLd =
   .kd-ianua-festival-name { margin: 0; font-family: var(--capitalis); font-size: 11px; letter-spacing: .22em; text-transform: uppercase; color: var(--candle); }
   .kd-ianua-festival-note { margin: 10px 0 0; max-width: 58ch; font-family: var(--sans); font-weight: 300; font-size: clamp(14.5px, 1.2vw, 15.5px); line-height: 1.65; color: rgba(244,241,233,.7); }
   .kd-ianua-festival-link { margin: 14px 0 0; }
+  .kd-ianua-funding { font-size: clamp(13px, 1.05vw, 14px); color: rgba(244,241,233,.56); }
 
   .kd-tabula-front { background: var(--night, #100f0d); color: var(--paper); padding-top: clamp(48px, 6vw, 78px); padding-bottom: clamp(48px, 6vw, 78px); }
   .kd-tabula-list { list-style: none; margin: 0; padding: 0; max-width: 720px; border-top: 1px solid rgba(244, 241, 233, .14); }
@@ -1906,6 +1982,10 @@ const jsonLd =
   .kd-tour-row { display: grid; grid-template-columns: minmax(180px, 240px) 1fr max-content; gap: 12px 28px; align-items: baseline; padding: clamp(18px, 2.4vw, 26px) 0; border-bottom: 1px solid rgba(244,241,233,.14); }
   .kd-tour-date { font-family: var(--serif); font-style: italic; font-size: clamp(19px, 2vw, 26px); color: var(--candle); }
   .kd-tour-venue { font-family: var(--serif); font-weight: 300; font-size: clamp(17px, 1.6vw, 21px); color: rgba(244,241,233,.9); }
+  /* The frame an evening was sung within, under its venue in the rubric voice the door band's own
+     festival link speaks. */
+  .kd-tour-frame { display: block; margin-top: 6px; font-family: var(--capitalis); font-size: 10.5px; letter-spacing: .16em; text-transform: uppercase; color: var(--candle); border-bottom: 1px solid transparent; width: fit-content; transition: border-color .3s var(--ease, ease); }
+  .kd-tour-frame:hover { border-bottom-color: var(--candle); }
   .kd-tour-time { font-family: var(--capitalis); font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: rgba(244,241,233,.56); }
 
   /* ── Reflection ────────────────────────────────────────────────────────── */

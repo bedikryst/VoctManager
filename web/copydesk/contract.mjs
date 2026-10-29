@@ -155,6 +155,58 @@ export const CONCERT_CONTRACT = [
       "with this programme, then a full stop. Carry NO appeal on the organiser's behalf in any " +
       "locale, and keep the festival's own name as written — it is a proper name (see NOT_COPY).",
   },
+  {
+    kind: "field",
+    path: "funding",
+    label: "Wejście · finansowanie",
+    note: "The funder's required sentence, printed under the festival block. Translate it plainly.",
+  },
+
+  // ── Kolejne wykonanie ───────────────────────────────────────────────────────────────────────
+  // A programme sung again announces its next evening with that evening's own words (lib/cycle
+  // lays them over the row while it is ahead). Keyed by the evening's ISO date, which is identity
+  // and never copy, so a performance added later re-keys nothing.
+  {
+    kind: "list",
+    path: "dates",
+    keyBy: "date",
+    label: "Wykonanie",
+    fields: [
+      { path: "metaPlace.pl", key: "metaPlace", label: "miejsce w nagłówku", shape: "map" },
+      {
+        path: "venueNote",
+        key: "venueNote",
+        label: "wejście · która sala",
+        note: "The practical fact a reader at the address still needs; render it as a sign would.",
+      },
+      {
+        path: "invitation",
+        key: "invitation",
+        label: "zaproszenie",
+        note:
+          "The invitation for THIS evening of the programme, on the landing and the door band while " +
+          "it is ahead. Same rules as the concert's own `invitation`: an invitation, never a " +
+          "restatement of the place, date, hour or admission the band prints beside it.",
+      },
+      {
+        path: "festivalNote",
+        key: "festivalNote",
+        label: "wejście · o cyklu lub festiwalu",
+        note:
+          "Somebody else's event in our voice: what it is, then a full stop. No appeal on the " +
+          "organiser's behalf; the frame's own name stays as written (NOT_COPY).",
+      },
+      {
+        path: "funding",
+        key: "funding",
+        label: "wejście · finansowanie",
+        note:
+          "The funder's required sentence. Translate it plainly; the city's name follows local usage " +
+          "(Poznań stays Poznań).",
+      },
+      { path: "posterAlt", key: "posterAlt", label: "plakat · opis alternatywny" },
+    ],
+  },
 
   // ── Próg wieczoru ───────────────────────────────────────────────────────────────────────────
   { kind: "field", path: "prologue", label: "Próg wieczoru" },
@@ -381,7 +433,9 @@ export const NOT_COPY = {
     " itself carries none and is not on the desk.",
   "festival.name": "a proper name — the festival is somebody else's entity and keeps its own name",
   "festival.url": "URL",
+  "festival.kind": "enum — festival or concert series; the words around the name are chrome",
   "festival.role": "enum — the evening's confirmed place in the festival; its wording is /fundacja's copy",
+  organizer: "a proper name — the outside organiser, JSON-LD only",
   "ritornello.composer": "a person's name — the attributions and exonyms in it are lib/programmeTerms'",
   "ritornello.years": "life dates — \"ur.\" and \"ok.\" are rendered per locale by lib/programmeTerms",
   "ritornello.year": "a dating — rendered per locale by lib/programmeTerms, never copy",
@@ -426,8 +480,19 @@ export const NOT_COPY = {
   "dates[].date": "ISO date per evening",
   "dates[].venue": "venue name per evening",
   "dates[].time": "clock time",
-  "dates[].address": "street address — JSON-LD only",
-  "dates[].admission": "enum, JSON-LD only",
+  "dates[].address": "street address — JSON-LD, and the door band of an evening still ahead",
+  "dates[].admission": "enum — JSON-LD, and the door band's open-door line",
+  "dates[].endTime": "clock time — the end of the slot as somebody else published it",
+  "dates[].mapUrl": "URL",
+  "dates[].facebookEvent": "URL",
+  "dates[].festival.name": "a proper name — somebody else's event keeps its own name",
+  "dates[].festival.url": "URL",
+  "dates[].festival.kind": "enum — festival or concert series",
+  "dates[].festival.role": "enum — the evening's confirmed place in the festival",
+  "dates[].organizer": "a proper name — the outside organiser, JSON-LD only",
+  "dates[].poster": "asset name",
+  "dates[].posterCredit": "the hands that drew the poster — names (see `posterCredit`)",
+  "dates[].share": "asset name — the Open Graph frame",
   "links[].href": "URL",
   "gallery[].img": "asset name",
   "gallery[].credit": "the photographer's name",

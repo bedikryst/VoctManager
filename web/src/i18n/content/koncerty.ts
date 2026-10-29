@@ -318,6 +318,11 @@ export interface KoncertyChrome {
   readonly openConcert: string;
   readonly spotify: string;
   readonly festivalSite: string;
+  /** The same link where the frame is a concert SERIES rather than a festival (`festival.kind`). */
+  readonly seriesSite: string;
+  /** The station's chip naming the festival it was sung within; `{name}` is the festival's own,
+      unchanged in every locale. A series takes no template — its name already says what it is. */
+  readonly festivalChip: string;
   /** The evening's Facebook event (`facebookEvent`, content.config) — printed on the announced
       station here and on the concert page's door band, both under the date gate. The network is
       named because the label is the whole promise: a reader who does not use it should know
@@ -335,6 +340,7 @@ export interface KoncertyChrome {
   readonly metaAnnouncedTitle: string;
   readonly metaAnnouncedLead: string;
   readonly metaAnnouncedFestival: string;
+  readonly metaAnnouncedSeries: string;
   readonly metaAnnouncedFree: string;
 }
 
@@ -363,10 +369,13 @@ export const KONCERTY_CHROME: Record<Locale, KoncertyChrome> = {
     openConcert: "Otwórz stronę koncertu →",
     spotify: "Posłuchaj programu",
     festivalSite: "Strona festiwalu ↗",
+    seriesSite: "Strona cyklu ↗",
+    festivalChip: "Festiwal „{name}”",
     facebookEvent: "Wydarzenie na Facebooku ↗",
     metaAnnouncedTitle: "{title} · {date} — VoctEnsemble",
     metaAnnouncedLead: "Najbliższy koncert VoctEnsemble: {title} — {date}, {place}.",
     metaAnnouncedFestival: "W ramach festiwalu „{name}”.",
+    metaAnnouncedSeries: "W ramach cyklu „{name}”.",
     metaAnnouncedFree: "Wstęp wolny.",
   },
   en: {
@@ -386,10 +395,13 @@ export const KONCERTY_CHROME: Record<Locale, KoncertyChrome> = {
     openConcert: "Open the concert page →",
     spotify: "Listen to the programme",
     festivalSite: "The festival's site ↗",
+    seriesSite: "The series' site ↗",
+    festivalChip: "Festival “{name}”",
     facebookEvent: "The event on Facebook ↗",
     metaAnnouncedTitle: "{title} · {date} — VoctEnsemble",
     metaAnnouncedLead: "VoctEnsemble's next concert: {title} — {date}, {place}.",
     metaAnnouncedFestival: "Part of the “{name}” festival.",
+    metaAnnouncedSeries: "Part of the “{name}” concert series.",
     metaAnnouncedFree: "Free admission.",
   },
   fr: {
@@ -409,10 +421,13 @@ export const KONCERTY_CHROME: Record<Locale, KoncertyChrome> = {
     openConcert: "Ouvrir la page du concert →",
     spotify: "Écouter le programme",
     festivalSite: "Le site du festival ↗",
+    seriesSite: "Le site du cycle ↗",
+    festivalChip: "Festival « {name} »",
     facebookEvent: "L’événement sur Facebook ↗",
     metaAnnouncedTitle: "{title} · {date} — VoctEnsemble",
     metaAnnouncedLead: "Le prochain concert de VoctEnsemble : {title} — {date}, {place}.",
     metaAnnouncedFestival: "Dans le cadre du festival « {name} ».",
+    metaAnnouncedSeries: "Dans le cadre du cycle de concerts « {name} ».",
     metaAnnouncedFree: "Entrée libre.",
   },
 };

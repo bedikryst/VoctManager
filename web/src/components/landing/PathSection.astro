@@ -27,7 +27,7 @@
 import { getCollection } from "astro:content";
 import { PATHS, ROMAN } from "../../data/landing/paths";
 import { candleFrom } from "../../lib/candle";
-import { upcomingStation } from "../../lib/cycle";
+import { eveningKey, upcomingStation } from "../../lib/cycle";
 import { longMoment } from "../../lib/dates";
 import { concertKey, overlayValue } from "../../lib/copyOverlay";
 import { concertExcerpts } from "../../lib/excerpts";
@@ -132,16 +132,24 @@ const ahead = upcoming
           line they all carry. It is four screens from the band that announces this evening in
           full, which is far enough that a reader arriving here has no memory of the address — the
           same reading `ProximumSection` records for the open door standing twice. */
-      place: overlayValue(concertKey(upcoming.id, "metaPlace"), lang) ?? upcoming.data.metaPlace.pl,
+      place:
+        overlayValue(concertKey(upcoming.id, eveningKey(upcoming, "metaPlace")), lang) ??
+        upcoming.data.metaPlace.pl,
       free: upcoming.data.admission === "free",
       /** NO ENCORES ON AN EVENING THAT HAS NOT HAPPENED. `/koncerty` filters `bis` off the
           upcoming station for the same reason: a bis is what was given beyond the programme, so
           printing one in advance either spoils it or promises it. The filter also keeps the
           numbering honest — the entries above mark a bis with an em-dash instead of a number, and
-          with none present every line here simply counts. */
-      program: (upcoming.data.program ?? [])
-        .map((p, i) => ({ ...programmeLine(upcoming.id, i, p, lang), bis: p.bis }))
-        .filter((p) => !p.bis),
+          with none present every line here simply counts.
+
+          A PROGRAMME SUNG AGAIN prints none here: its register entry stands a few rows up with the
+          same works in the same order, and a second disclosure of them would read as a second
+          programme. The closing then states only the new evening — its day, its place, its door. */
+      program: upcoming.performance
+        ? []
+        : (upcoming.data.program ?? [])
+            .map((p, i) => ({ ...programmeLine(upcoming.id, i, p, lang), bis: p.bis }))
+            .filter((p) => !p.bis),
     }
   : undefined;
 ---

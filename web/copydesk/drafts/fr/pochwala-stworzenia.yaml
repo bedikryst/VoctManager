@@ -34,9 +34,10 @@ concert.pochwala-stworzenia.essence: "Le concert naît des Laudes creaturarum de
 # paraphrase sur deux surfaces.
 concert.pochwala-stworzenia.invitation: "Le Cantique des créatures de saint François salue le soleil, le vent, l’eau et le feu comme une fratrie, et salue la mort dans les mêmes termes. Le programme suit ce chemin : de la lumière vers ce qui est fragile en l’homme, et plus loin — jusque là où la louange de la création devient la prière de tous les saints, en l’église qui porte leur nom."
 
-concert.pochwala-stworzenia.facts.0: "Festival « Fenomen Człowieka »"
-concert.pochwala-stworzenia.facts.1: "Voix, violon, orgue"
-concert.pochwala-stworzenia.facts.2: "Le Cantique des créatures de saint François"
+# The festival's chip is chrome now (KONCERTY_CHROME `festivalChip`), so the two programme
+# chips moved up one index each.
+concert.pochwala-stworzenia.facts.0: "Voix, violon, orgue"
+concert.pochwala-stworzenia.facts.1: "Le Cantique des créatures de saint François"
 # Les quatre retours s'accrochent aux œuvres 02, 05, 08 et 09 — l'ordre du chef numérote les
 # épisodes I–V et termine la soirée sur Stetit Angelus, sans rien après (15.09.2026). L'INDICE
 # désigne la ligne que le retour suit : un retour qui se déplace est une clé qui se déplace, et un
@@ -76,6 +77,15 @@ concert.pochwala-stworzenia.inscriptioRef.source: "Cantique des créatures de sa
 # douleur.
 concert.pochwala-stworzenia.venueNote: "Église haute"
 concert.pochwala-stworzenia.festivalNote: "Trois jours d'expositions, d'ateliers et de rencontres ; ce concert les referme. Le festival est porté par la fondation de soins palliatifs Mój Dom, qui accompagne les personnes atteintes de SLA et leurs familles. L'édition de cette année lit l'homme à travers la beauté : celle des valeurs et des relations, celle de la nature et du son, et celle qui demeure jusque dans la douleur. Ce programme descend vers cette dernière."
+
+# ── The second performance, Poznań 15.11.2026 (keyed by its date). The series keeps its Polish
+#    name on the page (NOT_COPY). « Comme une fratrie » is the accepted rendering of „rodzeństwo”
+#    from the Warsaw invitation; the last sentence carries the one fact Poznań adds.
+concert.pochwala-stworzenia.dates.2026-11-15.metaPlace: "Église Saint-Antoine-de-Padoue des franciscains, Poznań"
+concert.pochwala-stworzenia.dates.2026-11-15.invitation: "Le Cantique des créatures de saint François salue le soleil, le vent, l’eau et le feu comme une fratrie, et salue la mort dans les mêmes termes. Le programme suit ce chemin, de la lumière vers ce qui est fragile en l’homme, jusqu’à ce que la louange de la création devienne la prière de tous les saints. Cette fois, il résonne chez les franciscains, dans une église de l’ordre fondé par l’auteur du Cantique."
+concert.pochwala-stworzenia.dates.2026-11-15.festivalNote: "Depuis 2018, la Fondation Stefan Stuligrosz du Grand Prix de l’art choral polonais organise le Grand Prix, qui réunit les lauréats de six concours choraux nationaux. Un cycle de concerts de chambre aux programmes conçus par leurs interprètes l’accompagne toute l’année ; VoctEnsemble y chante à l’invitation de la fondation."
+concert.pochwala-stworzenia.dates.2026-11-15.funding: "Concert cofinancé par la Ville de Poznań."
+concert.pochwala-stworzenia.dates.2026-11-15.posterAlt: "Affiche du concert Louange de la Création à Poznań"
 
 # Le seuil ne porte ni date, ni heure, ni festival, ni porte ouverte : la bande ci-dessus les imprime
 # tous les quatre depuis les champs structurés, et un paragraphe qui les répéterait serait la page
