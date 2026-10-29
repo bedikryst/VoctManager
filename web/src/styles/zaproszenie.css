@@ -137,16 +137,18 @@ html.voct-motion .zap .inv-rubric:not(.is-in)::after {
   aspect-ratio: 1;
 }
 
-/* The amber the corona throws into the sky, wider than the photograph's own halo. */
+/* The amber the corona throws into the sky, a little wider than the photograph's own halo and
+   kept faint: the night stays dark right up to the corona, as on the poster, and the warmth
+   belongs to the eclipse and the Milky Way's core rather than to a fog over the cover. */
 .zap-figure::before {
   content: "";
   position: absolute;
-  inset: -45%;
+  inset: -20%;
   z-index: -1;
   background: radial-gradient(
     closest-side,
-    color-mix(in srgb, var(--candle) 20%, transparent),
-    color-mix(in srgb, var(--candle) 7%, transparent) 55%,
+    color-mix(in srgb, var(--candle) 12%, transparent),
+    color-mix(in srgb, var(--candle) 4%, transparent) 50%,
     transparent
   );
   pointer-events: none;
@@ -672,13 +674,20 @@ html.voct-motion .zap .inv-rubric:not(.is-in)::after {
   color: var(--inv-ink-soft);
 }
 
-/* The cover photograph's credit, below everything the page has to say. */
+/* The cover photographs' credit, below everything the page has to say. Its links keep the line's
+   quiet colour; only their hairline marks them. */
 .zap-credit {
   margin: clamp(40px, 5vw, 56px) 0 0;
   color: var(--inv-muted);
   font-size: 14px;
   font-weight: 500;
   line-height: 1.5;
+  text-wrap: balance;
+}
+
+.zap-credit .inv-link {
+  color: inherit;
+  text-underline-offset: 3px;
 }
 
 /* ── Motion ────────────────────────────────────────────────────────────────────

@@ -23,11 +23,12 @@
  *
  *  THE ARTWORK IS OPTIONAL TO THE BUILD AND OUTSIDE GIT. `zaproszenie-eclipse` is a total solar
  *  eclipse at its diamond ring (NASA/Carla Thomas, 2017, public domain), recoloured amber, its
- *  black turned to transparency and the Moon kept opaque so no star shows through it.
- *  `zaproszenie-stars` is a seamless star tile and `zaproszenie-milkyway` a Milky Way band, both
- *  drawn for this page and transparent where the sky is empty.
- *  Without them the sheet is its night and the eclipse its amber haze. The photograph's credit
- *  closes the page.
+ *  black turned to transparency, its clipped flare softened into the corona and the Moon kept
+ *  opaque so no star shows through it. `zaproszenie-milkyway` is the galactic centre cut from
+ *  ESO's all-sky panorama (ESO/S. Brunier, CC BY 4.0), tilted to run past the eclipse, its sky
+ *  turned to transparency and its core warmed. `zaproszenie-stars` is a seamless star tile drawn
+ *  for this page. Without them the sheet is its night and the eclipse its amber haze. The
+ *  photographs' credit closes the page, one clause for each photograph the build found.
  *
  *  THE ASK IS THE LIST'S ISLAND IN THIS PAGE'S DRESS. `NoticeForm` is mounted here directly rather
  *  through `NoticeSignup`, whose rubric, Latin and headline are /koncerty's: here the rubric is the
@@ -135,6 +136,9 @@ const [eclipse, stars, milkyWay] = await Promise.all([
   art("zaproszenie-stars", 2048),
   art("zaproszenie-milkyway", 2400),
 ]);
+const credits = [eclipse && copy.cover.credit.eclipseHtml, milkyWay && copy.cover.credit.milkyWayHtml].filter(Boolean);
+const creditLead = credits.length > 1 ? copy.cover.credit.leadComposite : copy.cover.credit.lead;
+const creditHtml = credits.length > 0 ? `${creditLead} ${credits.join("; ")}.` : undefined;
 ---
 
 <BaseLayout
@@ -313,7 +317,7 @@ const [eclipse, stars, milkyWay] = await Promise.all([
         {copy.foundation.donors}{" "}
         <a class="inv-link" href="/#wesprzyj" data-vault-open="100">{copy.foundation.support}</a>
       </p>
-      {eclipse && <p class="zap-credit">{copy.cover.credit}</p>}
+      {creditHtml && <p class="zap-credit" set:html={creditHtml} />}
     </section>
   </main>
 
