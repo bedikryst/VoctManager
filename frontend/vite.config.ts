@@ -25,8 +25,13 @@ import { fileURLToPath, URL } from "node:url";
  * a shell from days ago, "already fixed" and "still broken" look identical in the
  * triage queue.
  *
+ * The commit named is the last one that touched frontend/, not HEAD: the bundle is
+ * built from frontend/ alone, and a stamp that moved with every backend or web
+ * commit would change the bundle, and offer members an update, on deploys that
+ * changed nothing here (the Makefile says what it costs the Docker build).
+ *
  * `APP_BUILD_SHA` is checked before git because the production build runs inside
- * Docker, where `.git` is excluded from the context — `git rev-parse` there finds
+ * Docker, where `.git` is excluded from the context — `git log` there finds
  * no repository and the commit would be missing from exactly the builds that
  * matter. The Makefile resolves it on the host and passes it through as a build
  * arg. The git call is the local `npm run build` path; the bare timestamp is the
@@ -39,7 +44,8 @@ const resolveBuildId = (): string => {
   if (injected) return `${stamp} · ${injected}`;
 
   try {
-    const sha = execSync("git rev-parse --short HEAD", {
+    const sha = execSync("git log -1 --format=%h -- .", {
+      cwd: fileURLToPath(new URL(".", import.meta.url)),
       stdio: ["ignore", "pipe", "ignore"],
     })
       .toString()
