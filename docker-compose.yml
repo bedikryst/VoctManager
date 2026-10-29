@@ -100,6 +100,10 @@ services:
       retries: 3
       # collectstatic in the entrypoint delays the first listen on cold starts.
       start_period: 60s
+      # Probe every 2 s within start_period: `celery` starts only once this service
+      # is healthy, so at the 30 s interval every deploy's `up` idled for up to half
+      # a minute after Django was already answering.
+      start_interval: 2s
 
   celery:
     # Runs the image `web` builds: one Dockerfile, one build, one export. A second

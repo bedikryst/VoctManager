@@ -74,13 +74,21 @@ prod:
 # between deploys. On this one-vCPU droplet that cache is worth far more than the
 # disk it occupies. Dangling images are what actually free the headroom, in both
 # calls.
+#
+# `migrate` and `migrate --check` share one exec, so Django boots once on the one
+# vCPU instead of twice; `&&` keeps the check from running after a failed migrate.
+# The `[deploy]` lines timestamp each step, so a deploy log shows where the time went.
 deploy:
 	-@bash infra/docker-gc.sh
+	@echo "[deploy] $$(date +%T) astro-stage"
 	$(MAKE) astro-stage
+	@echo "[deploy] $$(date +%T) build"
 	$(BUILD_ENV) $(COMPOSE_PROD) build
+	@echo "[deploy] $$(date +%T) up"
 	$(COMPOSE_PROD) up -d
-	$(COMPOSE_PROD) exec -T web python manage.py migrate
-	$(COMPOSE_PROD) exec -T web python manage.py migrate --check
+	@echo "[deploy] $$(date +%T) migrate"
+	$(COMPOSE_PROD) exec -T web sh -c 'python manage.py migrate && python manage.py migrate --check'
+	@echo "[deploy] $$(date +%T) gc"
 	-@bash infra/docker-gc.sh --trim-build-cache
 
 # The Astro site, built ALONE and tagged, so the compose build never builds it.
