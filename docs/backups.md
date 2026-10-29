@@ -157,6 +157,16 @@ have errored into that log every week while reclaiming nothing. The script
 prints `docker system df` plus `df -h /` before and after every run — so the log
 shows exactly what was reclaimed, or that nothing was.
 
+**If `docker buildx du | tail -2` shows almost nothing reclaimable, restart the
+daemon.** On 2026-10-29 it reported 20.45 GB total and 0.6 GB reclaimable, so
+every prune freed 0 B; after `systemctl restart docker` the same command reported
+15.3 GB, all of it reclaimable. The running daemon had been holding references
+to the records (the day included an interrupted build). The restart takes the
+whole stack down for about a minute and every service comes back by itself
+(`restart: always`), so do it at a quiet hour; then
+`docker builder prune -f --filter until=168h`, or the next deploy's trim,
+reclaims what no build has used for a week.
+
 ### Why the build-cache trim is by age, not by a budget
 
 A budgeted prune (`--max-used-space`) has no concept of "a build": it holds a

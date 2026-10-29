@@ -111,10 +111,11 @@ elif [ "$TRIM_BUILD_CACHE" -eq 1 ]; then
   # There is deliberately NO budgeted prune (`--max-used-space`), not even under
   # disk pressure. A budget evicts from the least-recently-used end of a flat list
   # of records, cache mounts included, until the total is under the number — and
-  # on this droplet's engine (containerd image store) `docker buildx du` reports
-  # ~20 GB that no build or prune has reduced, nearly all of it not reclaimable,
-  # so no budget below that is ever met and the prune runs to the bottom of the
-  # list every time. It ran at the end of two deploys, reclaimed 0 B both times,
+  # on this droplet's engine (containerd image store) `docker buildx du` can show
+  # nearly all of the cache as not reclaimable for weeks, the daemon holding
+  # references until it restarts (docs/backups.md). Then no budget is ever met and
+  # the prune runs to the bottom of the list every time. It ran at the end of two
+  # deploys in that state, reclaimed 0 B both times,
   # and each following build found none of the records that back an image (the
   # Astro site, the backend's runtime stage): pruning such a record frees nothing,
   # as the image holds its layers, and drops only the cache metadata.
