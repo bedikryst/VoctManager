@@ -19,10 +19,12 @@
 # now almost entirely VIDEO — 427 of the 465 MB of dist is three MP4s — so the
 # next real cut is the AV1 work, not anything on the photograph side.
 #
-# Run by `make deploy` (before and after) and daily from cron — see
-# docs/backups.md. Both entry points must stay wired: cron alone let a week of
-# build cache pile up between runs, which is what made the first attempt at
-# this look like it did nothing.
+# Run by `make deploy` (before and after the build) and daily from cron — see
+# docs/backups.md. Only the call after a deploy's build trims BUILD CACHE
+# (`--trim-build-cache`); cron and the call before the build reclaim images and
+# containers. Build-cache garbage is made only by builds, so only a build ages
+# it out: a wall-clock trim from cron would expire a cache that is still exact
+# after any week without a deploy, and the next deploy would rebuild it all.
 #
 # Rollback is git-based (checkout the old commit, rebuild), so discarding old
 # images costs nothing but rebuild time.
@@ -38,14 +40,14 @@ set -euo pipefail
 # binaries an interactive shell does.
 export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:${PATH:-}"
 
-# Age threshold for the ordinary build-cache trim. `until` filters on LAST USE,
-# so nothing the most recent build touched is ever in range — which is the whole
-# point of preferring it to a budget (see the default branch below).
+# Age threshold for --trim-build-cache. `until` filters on LAST USE, so nothing
+# the build that just finished touched is ever in range — which is the whole
+# point of preferring it to a budget (see the trim branch below).
 GC_MAX_AGE="${GC_MAX_AGE:-168h}"
 
-# Root filesystem usage (percent) at which the run prints a disk-pressure
-# warning into prune.log. It prunes nothing extra at that point — see the
-# default branch below for why there is no budgeted prune to fall back to.
+# Root filesystem usage (percent) at which every run prints a disk-pressure
+# warning into prune.log. It prunes nothing extra at that point — see the trim
+# branch below for why there is no budgeted prune to fall back to.
 GC_DISK_PCT="${GC_DISK_PCT:-80}"
 
 # Stopped containers younger than this are left alone — a container that died
@@ -53,22 +55,22 @@ GC_DISK_PCT="${GC_DISK_PCT:-80}"
 GC_CONTAINER_AGE="${GC_CONTAINER_AGE:-24h}"
 
 # Modes, and they are mutually exclusive in effect:
-#   (default)            trim BuildKit by AGE, warn under disk pressure
+#   (default)            reclaim images/containers only, never touch build cache
+#   --trim-build-cache   also trim BuildKit by AGE (the run after a deploy's build)
 #   --deep               drop ALL build cache including cache mounts
-#   --keep-build-cache   reclaim images/containers only, never touch build cache
 #
-# --keep-build-cache exists for the run that BRACKETS a build from the front
-# (Makefile `deploy`). Pruning there deleted the very records the build was
-# about to ask for: the backend's `pip wheel` layer re-downloaded every package
-# on every deploy. Reclaiming
-# dangling IMAGES is what buys the headroom that call is there for, and this
-# script already calls that the single biggest one-shot win.
+# The default leaves build cache alone because two of the three callers must:
+# cron, for the reason in the header, and the run that brackets a build from the
+# front (Makefile `deploy`) — pruning there deleted the very records the build
+# was about to ask for, and the backend's `pip wheel` layer re-downloaded every
+# package on every deploy. Reclaiming dangling IMAGES is what buys the headroom
+# both are there for, and this script calls that the single biggest win.
 DEEP=0
-KEEP_BUILD_CACHE=0
+TRIM_BUILD_CACHE=0
 for arg in "$@"; do
   case "$arg" in
     --deep) DEEP=1 ;;
-    --keep-build-cache) KEEP_BUILD_CACHE=1 ;;
+    --trim-build-cache) TRIM_BUILD_CACHE=1 ;;
     "") ;;
     *)
       printf '[docker-gc] unknown argument: %s\n' "$arg" >&2
@@ -79,7 +81,7 @@ done
 
 log() { printf '[docker-gc] %s %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$*"; }
 
-log "start (max_age=$GC_MAX_AGE, disk_pct=$GC_DISK_PCT, deep=$DEEP, keep_build_cache=$KEEP_BUILD_CACHE)"
+log "start (max_age=$GC_MAX_AGE, disk_pct=$GC_DISK_PCT, deep=$DEEP, trim_build_cache=$TRIM_BUILD_CACHE)"
 log "disk before:"
 docker system df
 df -h / | tail -n 1
@@ -92,9 +94,7 @@ docker image prune -f
 log "pruning containers stopped for more than $GC_CONTAINER_AGE…"
 docker container prune -f --filter "until=$GC_CONTAINER_AGE"
 
-if [ "$KEEP_BUILD_CACHE" -eq 1 ]; then
-  log "build cache left untouched (--keep-build-cache)"
-elif [ "$DEEP" -eq 1 ]; then
+if [ "$DEEP" -eq 1 ]; then
   # `--all` drops BuildKit CACHE MOUNTS unconditionally — the npm download
   # cache and Astro's image-encode cache (node_modules/.astro). The next build
   # re-downloads npm packages; the Astro mount is refilled by `make astro-stage`
@@ -103,25 +103,24 @@ elif [ "$DEEP" -eq 1 ]; then
   # been tried.
   log "deep prune: dropping ALL build cache including cache mounts…"
   docker builder prune -af
-else
-  # Ordinary trim: evict by AGE, and by nothing else. `until` filters on last
-  # use, so a record the latest build touched is never eligible, and growth stays
-  # bounded because records from builds older than GC_MAX_AGE do age out.
+elif [ "$TRIM_BUILD_CACHE" -eq 1 ]; then
+  # Trim by AGE, and by nothing else. `until` filters on last use, so a record the
+  # build that just finished touched is never eligible, and growth stays bounded
+  # because the records of superseded builds age out at later deploys.
   #
   # There is deliberately NO budgeted prune (`--max-used-space`), not even under
   # disk pressure. A budget evicts from the least-recently-used end of a flat list
   # of records, cache mounts included, until the total is under the number — and
-  # on this droplet's engine (containerd image store) `docker buildx du` reports a
-  # total no build or prune ever changes: 19.74 GB, 0 B reclaimable, the same 128
-  # records in every reading. No budget below that is ever met, so the prune runs
-  # to the bottom of the list every time. It ran at the end of two deploys,
-  # reclaimed 0 B both times, and each following build found none of the records
-  # that back an image (the Astro site, the backend's runtime stage) — pruning a
-  # record whose layers an image holds frees nothing and drops only the cache
-  # metadata. A plain rebuild right after a build, and one after
-  # `docker image prune`, were fully cached. Disk is reclaimed by the
-  # dangling-image prune above; past that, the space is outside Docker, or the
-  # emergency is `make gc DEEP=--deep` by hand.
+  # on this droplet's engine (containerd image store) `docker buildx du` reports
+  # ~20 GB that no build or prune has reduced, nearly all of it not reclaimable,
+  # so no budget below that is ever met and the prune runs to the bottom of the
+  # list every time. It ran at the end of two deploys, reclaimed 0 B both times,
+  # and each following build found none of the records that back an image (the
+  # Astro site, the backend's runtime stage): pruning such a record frees nothing,
+  # as the image holds its layers, and drops only the cache metadata.
+  # Back-to-back rebuilds, one after `docker image prune`, were fully cached.
+  # Disk is reclaimed by the dangling-image prune above; past that, the space is
+  # outside Docker, or the emergency is `make gc DEEP=--deep` by hand.
   #
   # The Astro image-encode mount is the exception age cannot protect: a build
   # that leaves web/ alone never mounts it, so a week without a web deploy ages
@@ -129,18 +128,20 @@ else
   # (ASTRO_CACHE_DIR), which is why losing it costs seconds, not a re-encode.
   log "trimming build cache unused for more than $GC_MAX_AGE…"
   docker builder prune -f --filter "until=$GC_MAX_AGE" || true
+else
+  log "build cache left untouched (only --trim-build-cache, after a build, ages it out)"
+fi
 
-  # `df -P` pins the POSIX single-line-per-filesystem format, but the capacity
-  # column still cannot be addressed positionally: a device name containing a
-  # space shifts every field after it. Scan for the field that ENDS in `%`
-  # instead. An unparseable result falls through to 0, i.e. "no warning".
-  disk_pct="$(df -P / | awk 'NR==2 { for (i = 1; i <= NF; i++) if ($i ~ /%$/) { gsub(/%/, "", $i); print $i; exit } }')"
-  if [ "${disk_pct:-0}" -ge "$GC_DISK_PCT" ]; then
-    log "WARNING: / at ${disk_pct}% (threshold ${GC_DISK_PCT}%). Build cache is not trimmed"
-    log "WARNING: to a budget (see this script). Free disk outside Docker first — the"
-    log "WARNING: journal (\`journalctl --disk-usage\`), ~/voct-backups — or, as the"
-    log "WARNING: emergency, \`make gc DEEP=--deep\`."
-  fi
+# `df -P` pins the POSIX single-line-per-filesystem format, but the capacity
+# column still cannot be addressed positionally: a device name containing a
+# space shifts every field after it. Scan for the field that ENDS in `%`
+# instead. An unparseable result falls through to 0, i.e. "no warning".
+disk_pct="$(df -P / | awk 'NR==2 { for (i = 1; i <= NF; i++) if ($i ~ /%$/) { gsub(/%/, "", $i); print $i; exit } }')"
+if [ "${disk_pct:-0}" -ge "$GC_DISK_PCT" ]; then
+  log "WARNING: / at ${disk_pct}% (threshold ${GC_DISK_PCT}%). Build cache is not trimmed"
+  log "WARNING: to a budget (see this script). Free disk outside Docker first — the"
+  log "WARNING: journal (\`journalctl --disk-usage\`), ~/voct-backups — or, as the"
+  log "WARNING: emergency, \`make gc DEEP=--deep\`."
 fi
 
 log "disk after:"

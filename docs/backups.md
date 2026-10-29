@@ -117,9 +117,10 @@ crontab -e
 
 **Do NOT schedule `--deep`.** It drops the BuildKit cache MOUNTS unconditionally,
 so the next build re-downloads every npm package. A monthly `--deep` line used
-to sit here and bought nothing the daily run cannot: the daily run trims by age
-and writes a warning into `prune.log` when `/` crosses `GC_DISK_PCT`.
-Run `make gc DEEP=--deep` by hand if disk is a genuine emergency.
+to sit here and bought nothing. The daily run reclaims dangling images and old
+stopped containers, leaves build cache alone (only the end of `make deploy`
+trims it), and writes a warning into `prune.log` when `/` crosses
+`GC_DISK_PCT`. Run `make gc DEEP=--deep` by hand if disk is a genuine emergency.
 
 **The crontab is server state, and it drifts from this file.** Nothing deploys
 it: `git pull` updates the scripts, never the schedule that calls them. A
@@ -156,7 +157,7 @@ have errored into that log every week while reclaiming nothing. The script
 prints `docker system df` plus `df -h /` before and after every run — so the log
 shows exactly what was reclaimed, or that nothing was.
 
-### Why the ordinary trim is by age, not by a budget
+### Why the build-cache trim is by age, not by a budget
 
 A budgeted prune (`--max-used-space`) has no concept of "a build": it holds a
 flat list of records and deletes from the least-recently-used end until it is
@@ -176,9 +177,12 @@ none of the records that back an image — the Astro site and the backend's
 runtime stage rebuilt from scratch on unchanged inputs. A record whose layers an
 image holds frees nothing when pruned; only its cache metadata goes.
 
-So the script trims with `--filter until=$GC_MAX_AGE` (default 168h) and nothing
-else: it filters on last use, so nothing the most recent build touched is
-eligible. At or above `GC_DISK_PCT` (default 80%) it only warns in `prune.log`.
+So build cache is trimmed in one place only, the run after a deploy's build
+(`--trim-build-cache`), with `--filter until=$GC_MAX_AGE` (default 168h) and
+nothing else: it filters on last use, so nothing that build touched is eligible.
+Garbage is made only by builds, and a wall-clock trim from cron would expire a
+cache that is still exact after any week without a deploy. At or above
+`GC_DISK_PCT` (default 80%) every run only warns in `prune.log`.
 Answer the warning outside Docker first (`journalctl --disk-usage`,
 `~/voct-backups`), and with `make gc DEEP=--deep` only as the emergency.
 
@@ -190,7 +194,7 @@ that asymmetry is the symptom, not a coincidence.
 
 Age cannot protect the Astro image-encode mount. A build that leaves `web/`
 alone hits the layer cache and never mounts it, so its last use is the last
-*web* deploy, and a week without one ages it out of the daily trim; BuildKit's
+*web* deploy, and a week without one ages it out at the next deploy's trim; BuildKit's
 own GC drops idle cache mounts on a schedule of its own. Re-encoding ~790
 variants then costs ~20 minutes of the one vCPU.
 

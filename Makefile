@@ -65,22 +65,23 @@ prod:
 # otherwise succeeded (make prints "Error N (ignored)" if the script trips).
 #
 # NEITHER call may delete records the next build wants, and they avoid it in
-# different ways. The FIRST is explicit: --keep-build-cache, because pruning
-# immediately before a build deleted the records the line below was about to
-# reuse (the backend re-downloaded every pip package on every deploy). The SECOND
-# relies on the script's ordinary mode trimming by AGE — nothing the build that
-# just finished touched is eligible, so the Astro image cache survives its own
-# deploy. On this one-vCPU droplet that cache is worth far more than the disk it
-# occupies: a single 2560px AVIF costs ~30s, and a full pass is 522 variants.
-# Dangling images are what actually free the headroom, in both calls.
+# different ways. The FIRST leaves build cache alone (the script's default):
+# pruning immediately before a build deleted the records the line below was about
+# to reuse (the backend re-downloaded every pip package on every deploy). The
+# SECOND, --trim-build-cache, ages out records no build has used for GC_MAX_AGE —
+# nothing the build that just finished touched is eligible, and nothing else ever
+# trims build cache (not cron), so a cache that is still exact survives any gap
+# between deploys. On this one-vCPU droplet that cache is worth far more than the
+# disk it occupies. Dangling images are what actually free the headroom, in both
+# calls.
 deploy:
-	-@bash infra/docker-gc.sh --keep-build-cache
+	-@bash infra/docker-gc.sh
 	$(MAKE) astro-stage
 	$(BUILD_ENV) $(COMPOSE_PROD) build
 	$(COMPOSE_PROD) up -d
 	$(COMPOSE_PROD) exec -T web python manage.py migrate
 	$(COMPOSE_PROD) exec -T web python manage.py migrate --check
-	-@bash infra/docker-gc.sh
+	-@bash infra/docker-gc.sh --trim-build-cache
 
 # The Astro site, built ALONE and tagged, so the compose build never builds it.
 #
