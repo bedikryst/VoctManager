@@ -42,11 +42,13 @@ import SiteFooter from "../SiteFooter.astro";
 import VaultMount from "../VaultMount.astro";
 import { FOUNDATION, SOCIAL_NETWORK_NAMES } from "../../data/foundation";
 import { NoticeForm } from "../../islands/landing/NoticeForm";
+import { fill } from "../../i18n/content/koncert";
 import { KONCERTY_PAGE } from "../../i18n/content/koncerty";
 import { NUNTIUS } from "../../i18n/content/nuntius";
-import { INVITATION_CONCERT_ID, ZAPROSZENIE } from "../../i18n/content/zaproszenie";
+import { INVITATION_CONCERT_ID, ZAPROSZENIE, frameTemplate } from "../../i18n/content/zaproszenie";
 import { UI } from "../../i18n/ui";
 import { SITE } from "../../i18n/config";
+import { currentPerformance } from "../../lib/cycle";
 import { longDate, weekdayName } from "../../lib/dates";
 import { chromeHtmlForIsland } from "../../lib/islandCopy";
 import { pageCopy } from "../../lib/pageCopy";
@@ -63,16 +65,34 @@ const inside = copy.inside;
 
 const entry = await getEntry("concerts", INVITATION_CONCERT_ID);
 if (!entry) throw new Error(`[zaproszenie] No concert "${INVITATION_CONCERT_ID}" in the corpus.`);
-const concert = entry.data;
-const { date, time } = concert;
-if (!date || !time) {
-  throw new Error(`[zaproszenie] "${INVITATION_CONCERT_ID}" needs a date and an hour to be invited to.`);
+/* The evening invited to: the programme's next performance laid over its row, so every fact below
+   is that night's and none is the record's (lib/cycle). */
+const concert = currentPerformance(entry).data;
+const { date, time, venue } = concert;
+if (!date || !time || !venue) {
+  throw new Error(`[zaproszenie] "${INVITATION_CONCERT_ID}" needs a date, an hour and a venue to be invited to.`);
 }
 
 const day = `${weekdayName(date, lang)}, ${longDate(date, lang)}`;
-const city = concert.venue?.split(",").at(-1)?.trim();
+/* The venue is "church, town" (content.config): the card sets the church on its own line and the
+   town on the cover. */
+const venueParts = venue.split(",").map((part) => part.trim());
+const city = venueParts.length > 1 ? venueParts.at(-1) : undefined;
+const church = venueParts.length > 1 ? venueParts.slice(0, -1).join(", ") : venue;
+const free = concert.admission === "free";
+/* The frame's name is set in italics, so the template is printed around it rather than as HTML. */
+const [frameBefore, frameAfter] = concert.festival ? frameTemplate(concert.festival).split("{name}") : [];
+const organizer = concert.organizer ? fill(inside.organizer, { name: concert.organizer }) : undefined;
+const description = [
+  fill(copy.meta.description, { title: concert.title, day, time, venue }),
+  free ? copy.meta.free : "",
+].filter(Boolean).join(" ");
 const invitationUrl = `${SITE}/zaproszenie`;
-const shareText = `${inside.host} ${inside.invites} ${inside.kind} „${concert.title}”. ${day}, ${time}. ${inside.place.church}, ${inside.place.address}. ${inside.admission}.`;
+const shareText = [
+  `${inside.host} ${inside.invites} ${inside.kind} „${concert.title}”. ${day}, ${time}.`,
+  `${[church, concert.address ?? city].filter(Boolean).join(", ")}.`,
+  free ? copy.meta.free : "",
+].filter(Boolean).join(" ");
 const shareEmail = `mailto:?subject=${encodeURIComponent(copy.meta.title)}&body=${encodeURIComponent(shareText + "\n\n" + invitationUrl)}`;
 /* The card sets the hour the Polish way, minutes raised over the hour: 13³⁰. */
 const [hours, minutes] = time.split(":");
@@ -113,7 +133,7 @@ const hasHands = Boolean(handLeft && handRight);
 
 <BaseLayout
   title={copy.meta.title}
-  description={copy.meta.description}
+  description={description}
   path="/zaproszenie"
   image={ogImage}
   bodyClass="page-invitation page-zaproszenie"
@@ -186,24 +206,27 @@ const hasHands = Boolean(handLeft && handRight);
                 {inside.hourPrefix}&nbsp;<span class="sr-only">{time}</span><span aria-hidden="true">{hours}<sup class="inv-minutes">{minutes}</sup></span>
               </span>
             </time>
-            <span class="zap-sep" aria-hidden="true">—</span>
-            <span class="zap-free">{inside.admission}</span>
+            {free && (
+              <>
+                <span class="zap-sep" aria-hidden="true">—</span>
+                <span class="zap-free">{inside.admission}</span>
+              </>
+            )}
           </p>
 
           <address class="zap-place reveal" data-d="1">
-            <span class="zap-church">{inside.place.church}</span>
-            {concert.mapUrl ? (
-              <a class="zap-address inv-link" href={concert.mapUrl} target="_blank" rel="noopener noreferrer">
-                {inside.place.address}<span class="inv-out" aria-hidden="true">↗</span>
-              </a>
+            <span class="zap-church">{church}</span>
+            {concert.address && (concert.mapUrl ? (
+              <a class="zap-address inv-link" href={concert.mapUrl} target="_blank" rel="noopener noreferrer">{concert.address}</a>
             ) : (
-              <span class="zap-address">{inside.place.address}</span>
+              <span class="zap-address">{concert.address}</span>
+            ))}
+            {(concert.venueNote || concert.festival) && (
+              <span class="zap-room">
+                {concert.venueNote && <span class="zap-room-floor">{concert.venueNote}</span>}
+                {concert.festival && <span>{frameBefore}<em>{concert.festival.name}</em>{frameAfter}</span>}
+              </span>
             )}
-            <span class="zap-room">
-              <span class="zap-room-floor">{inside.place.room}</span>
-              <span class="zap-room-dot" aria-hidden="true">·</span>
-              <span set:html={inside.place.festivalHtml} />
-            </span>
           </address>
 
           <p class="zap-sign reveal">
@@ -215,11 +238,11 @@ const hasHands = Boolean(handLeft && handRight);
         {/* ── The concert ── */}
         <section class="zap-about" aria-labelledby="zap-about-heading" data-d="1">
           <h2 id="zap-about-heading" class="zap-about-heading reveal">{copy.about.heading}</h2>
-          <p class="zap-about-text reveal" data-d="2" set:html={copy.about.textHtml} />
+          <p class="zap-about-text reveal" data-d="2" set:html={`${copy.about.textHtml} ${copy.about.church}`} />
           <div class="zap-programme reveal">
             {concert.hasPage && (
               <p class="zap-door">
-                <a class="inv-door" href={`/koncerty/${INVITATION_CONCERT_ID}#program`} data-invitation-goal="programme">{copy.about.programme}<span class="zap-door-arrow" aria-hidden="true">→</span></a>
+                <a class="inv-door" href={`/koncerty/${INVITATION_CONCERT_ID}#program`} data-invitation-goal="programme">{copy.about.programme}</a>
               </p>
             )}
             <ul class="zap-works" role="list">
@@ -230,21 +253,31 @@ const hasHands = Boolean(handLeft && handRight);
             {copy.about.cast.map((line, row) => (
               <p class={row === 0 ? "zap-cast-lead reveal" : "reveal"}>{line.map((item, index, all) => <><span class="zap-name">{item}</span>{index < all.length - 1 && " "}</>)}</p>
             ))}
+            {/* The organiser who booked the evening and the funder's sentence, owed to the reader
+                as facts and set as the credits' last, quietest line. */}
+            {(organizer || concert.funding) && (
+              <p class="zap-credits reveal">
+                {organizer && <span class="zap-name">{organizer}</span>}{" "}
+                {concert.funding && <span class="zap-name">{concert.funding}</span>}
+              </p>
+            )}
           </div>
         </section>
       </div>
 
       <div class="zap-response">
-        <button class="zap-accept" type="button" hidden data-invitation-accept data-accept-key={INVITATION_CONCERT_ID} data-accepted-label={copy.actions.accepted} aria-live="polite">
+        {/* Keyed by the evening, so a guest who accepted an earlier night of the programme is
+            asked again for this one. */}
+        <button class="zap-accept" type="button" hidden data-invitation-accept data-accept-key={`${INVITATION_CONCERT_ID}:${date}`} data-accepted-label={copy.actions.accepted} aria-live="polite">
           {copy.actions.accept}
         </button>
         <nav class="zap-actions" aria-label={copy.actions.aria}>
           <div class="zap-utilities">
-            <a class="inv-door" href="/zaproszenie.ics" data-invitation-goal="calendar" download="pochwala-stworzenia.ics" data-astro-reload>{copy.actions.calendar}<span class="inv-out" aria-hidden="true">↓</span></a>
-            <a class="inv-door" href={shareEmail} data-invitation-goal="share" data-invitation-share data-share-title={copy.meta.title} data-share-text={shareText} data-share-url={invitationUrl}>{copy.actions.share}<span class="zap-door-arrow" aria-hidden="true">→</span></a>
+            <a class="inv-door" href="/zaproszenie.ics" data-invitation-goal="calendar" download="pochwala-stworzenia.ics" data-astro-reload>{copy.actions.calendar}</a>
+            <a class="inv-door" href={shareEmail} data-invitation-goal="share" data-invitation-share data-share-title={copy.meta.title} data-share-text={shareText} data-share-url={invitationUrl}>{copy.actions.share}</a>
           </div>
           {concert.facebookEvent && (
-            <a class="inv-door zap-facebook" href={concert.facebookEvent} data-invitation-goal="facebook" target="_blank" rel="noopener noreferrer">{copy.actions.facebook}<span class="inv-out" aria-hidden="true">↗</span></a>
+            <a class="inv-door zap-facebook" href={concert.facebookEvent} data-invitation-goal="facebook" target="_blank" rel="noopener noreferrer">{copy.actions.facebook}</a>
           )}
         </nav>
       </div>
@@ -285,7 +318,7 @@ const hasHands = Boolean(handLeft && handRight);
       {FOUNDATION.socials.length > 0 && (
         <p class="zap-foundation-links reveal" data-d="2">
           {FOUNDATION.socials.map((profile) => (
-            <a class="inv-door" href={profile.url} data-invitation-goal="social" target="_blank" rel="noopener noreferrer">{SOCIAL_NETWORK_NAMES[profile.network]}<span class="inv-out" aria-hidden="true">↗</span></a>
+            <a class="inv-door" href={profile.url} data-invitation-goal="social" target="_blank" rel="noopener noreferrer">{SOCIAL_NETWORK_NAMES[profile.network]}</a>
           ))}
         </p>
       )}

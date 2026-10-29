@@ -298,8 +298,7 @@ html.voct-motion.vt-nav .zap-spread .reveal.is-in {
   text-wrap: pretty;
 }
 
-.zap-sep-day,
-.zap-room-dot {
+.zap-sep-day {
   display: none;
 }
 
@@ -439,16 +438,6 @@ html.voct-motion.vt-nav .zap-spread .reveal.is-in {
 .zap .zap-facebook {
   color: var(--inv-ink-soft);
   font-size: 17px;
-}
-
-.zap-door-arrow {
-  display: inline-block;
-  flex: 0 0 auto;
-  transition: transform 240ms var(--ease);
-}
-
-.zap .inv-door:is(:hover, :focus-visible) .zap-door-arrow {
-  transform: translateX(3px);
 }
 
 /* The church floor and festival belong on separate lines within the letter. */
@@ -606,6 +595,14 @@ html.voct-motion.vt-nav .zap-spread .reveal.is-in {
   margin-top: 4px;
   font-size: 20px;
   font-style: italic;
+}
+
+/* The organiser and the funder: facts the reader is owed, quieter than any performer. */
+.zap-cast .zap-credits {
+  margin-top: 6px;
+  color: var(--inv-muted);
+  font-size: 17px;
+  line-height: 1.45;
 }
 
 /* ── The foundation ────────────────────────────────────────────────────────── */
@@ -801,13 +798,6 @@ html.voct-motion .zap[data-motion-paused] :is(.inv-light, .inv-cloud, .zap-hand)
     transform: none;
     transition-duration: 0s;
     transition-delay: 0s;
-  }
-
-  html.voct-motion .zap .zap-door-arrow,
-  html.voct-motion .zap .inv-door:is(:hover, :focus-visible) .zap-door-arrow {
-    opacity: 1;
-    transform: none;
-    transition: none;
   }
 
   html.voct-motion .zap .inv-cloud,

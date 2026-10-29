@@ -194,3 +194,19 @@ export const upcomingStation = <T extends CycleStation>(
     .sort((a, b) => eveningStart(a.evening).localeCompare(eveningStart(b.evening)))[0];
   return soonest && project(soonest.entry, soonest.evening);
 };
+
+/**
+ * One programme as a page devoted to its evening reads it: the next performance laid over the row
+ * while one is ahead, and the last one sung once none is, so a page that outlives its night still
+ * builds and still names that night. It asks about this row alone, whether or not another station
+ * is sooner, and holds weddings and stations alike.
+ */
+export const currentPerformance = <T extends CycleStation>(
+  entry: T,
+  now: Date = new Date(),
+): Upcoming<T> => {
+  const evening =
+    nextEvening(entry.data, now) ??
+    [...eveningsOf(entry.data)].sort((a, b) => eveningStart(a).localeCompare(eveningStart(b))).at(-1);
+  return evening ? project(entry, evening) : entry;
+};

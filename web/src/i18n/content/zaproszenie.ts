@@ -1,21 +1,24 @@
 /**
  * @file zaproszenie.ts
- * @description Every word of `/zaproszenie` — the printed invitation to one concert, opened on a
- *  screen, with an invitation to the next concerts where the card asks for an RSVP.
+ * @description Every word of `/zaproszenie` — the invitation to one concert, opened on a screen, with
+ *  an invitation to the next concerts where a printed card would ask for an RSVP.
  *
  *  POLISH ONLY AND OFF THE COPY DESK, on purpose, like `/rsvp`: the invitation is Polish, the page
- *  lives until one concert has been sung, and it is reached by a link sent with the invitation.
- *  The evening's own facts (title, day, hour, map) are not restated here: the page reads them from
- *  the corpus entry `INVITATION_CONCERT_ID` names. The downloadable calendar uses the same entry.
+ *  lives until one evening has been sung, and it is reached by a link sent with the invitation.
+ *  The evening's own facts (title, day, hour, venue, address, room, frame, organiser, funding) are
+ *  not restated here: the page reads them from the corpus entry `INVITATION_CONCERT_ID` names, with
+ *  its next performance laid over it (`lib/cycle` `currentPerformance`). A programme sung again
+ *  therefore moves this page to its next evening by data alone. The downloadable calendar reads the
+ *  same evening.
  *
- *  THE PRINTED INVITATION IS THE SOURCE OF THE WORDING (docs/specs — the invitation PDF). The
- *  cover line, the inside page, the composers, the performers and the foundation's paragraph are
- *  the card's own sentences. The departures are deliberate: the paragraph about the concert is the
- *  card's as edited for this page; the Canticle's Polish name is spelled as the site spells it
- *  („Pieśń słoneczna”); the festival line under the place names the festival without an edition
- *  number, which the corpus has never confirmed; the ensemble is billed above its soloists; and
- *  the line about donors under the foundation's paragraph is not on the card at all.
- *  Change the rest together with the card.
+ *  THE WORDING IS THE PRINTED CARD'S (docs/specs — the invitation PDF for 11 October 2026), carried
+ *  to the evening the page now invites to. The cover line, the inside page, the composers and the
+ *  foundation's paragraph are the card's own sentences. The departures are deliberate: the
+ *  paragraph about the concert is the card's as edited for this page, with one sentence about the
+ *  evening's church; the Canticle's Polish name is spelled as the site spells it („Pieśń
+ *  słoneczna”); a festival is named without an edition number; the ensemble is billed above its
+ *  soloists and without a count of voices; and the donors' line under the foundation's paragraph is
+ *  not on the card at all. `about.church` and `about.cast` belong to one evening and change with it.
  *
  *  THE ASK IS THE LIST'S, IN THE CARD'S VOICE. Where the card prints its RSVP the page invites the
  *  reader onto the concert invitation list (`outreach`, the "Zaproszenia" list). What must read the
@@ -35,8 +38,9 @@ const CONTACT_MAILBOX = "kontakt@voctensemble.com";
 export const ZAPROSZENIE = {
   meta: {
     title: "Zaproszenie · Pochwała Stworzenia — VoctEnsemble",
-    description:
-      "VoctEnsemble zaprasza na Koncert Duchowy Pochwała Stworzenia: niedziela, 11 października 2026, godz. 13:30, Kościół Wszystkich Świętych w Warszawie. Wstęp wolny.",
+    description: "VoctEnsemble zaprasza na Koncert Duchowy {title}: {day}, godz. {time}, {venue}.",
+    /** Appended to the description, and to the calendar's note, when admission is free. */
+    free: "Wstęp wolny.",
   },
   cover: {
     line: "Zaproszenie na koncert",
@@ -53,13 +57,13 @@ export const ZAPROSZENIE = {
     /** "godz." before the hour, as the printed invitation sets it. */
     hourPrefix: "godz.",
     admission: "wstęp wolny",
-    place: {
-      church: "Kościół Wszystkich Świętych",
-      address: "pl. Grzybowski 3/5, Warszawa",
-      /** The building has two churches; the festival's schedule puts this hour upstairs. */
-      room: "kościół górny",
-      festivalHtml: "finał festiwalu <em>Fenomen Człowieka</em>",
+    /** The line under the address that names the evening's frame; `{name}` is set in italics. */
+    frame: {
+      finale: "finał festiwalu {name}",
+      festival: "w ramach festiwalu {name}",
+      series: "w ramach cyklu {name}",
     },
+    organizer: "Organizator: {name}",
     signature: {
       name: "Florent de Bazelaire",
       role: "— Dyrygent VoctEnsemble",
@@ -73,6 +77,8 @@ export const ZAPROSZENIE = {
       "z <em>Laudes creaturarum</em> św. Franciszka z Asyżu, kantyku znanego jako " +
       "„Pieśń&nbsp;słoneczna” – pochwały Boga poprzez stworzenie: od słońca, księżyca " +
       "i żywiołów aż po ludzkie doświadczenie cierpienia, przebaczenia i śmierci.",
+    /** The evening's church, closing the paragraph above. */
+    church: "W Poznaniu program zabrzmi u franciszkanów, w kościele zakonu, który założył autor kantyku.",
     /** In the card's order, which is not the running order. */
     composers: [
       "Pärt",
@@ -86,11 +92,11 @@ export const ZAPROSZENIE = {
       "Dubra",
     ],
     /** Two lines, each line's items joined by a centred dot. The ensemble and its conductor lead,
-        a grade above the soloists, as a concert programme bills them; the card prints the
-        soloists first. */
+        a grade above the soloists, as a concert programme bills them. No count of voices, which
+        the card printed: the count is the roster's, and a roster can change until the evening. */
     cast: [
-      ["12 głosów VoctEnsemble", "Florent de Bazelaire"],
-      ["Radu Ropotan — skrzypce", "Sebastian Kuczyński — organy"],
+      ["VoctEnsemble", "Florent de Bazelaire"],
+      ["Radu Ropotan — skrzypce", "Jakub Kapała — organy"],
     ],
     programme: "Program koncertu",
   },
@@ -101,8 +107,8 @@ export const ZAPROSZENIE = {
     share: "Zaproś kogoś",
     accept: "Przyjmuję zaproszenie",
     accepted: "Dziękujemy. Do zobaczenia!",
-    calendarDescription:
-      "Koncert Duchowy VoctEnsemble. Wstęp wolny. Kościół górny. Finał festiwalu Fenomen Człowieka.",
+    /** The calendar entry's note opens with this; admission, room, frame and organiser follow. */
+    calendarDescription: "Koncert Duchowy VoctEnsemble.",
   },
   ask: {
     rubric: "Zaproszenia",
@@ -120,9 +126,21 @@ export const ZAPROSZENIE = {
       "Fundacja wspiera rozwój VoctEnsemble i jego projektów artystycznych, tworząc warunki do ich " +
       "realizacji i spotkania z publicznością. „Pochwała Stworzenia” jest pierwszym projektem " +
       "realizowanym przez Fundację.",
-    /** The page's last, smallest line: free admission is paid for by donors, and the link leads
-        to the landing's donation section. Impersonal, so it holds the card's "Państwo". */
-    donors: "Realizacja koncertu jest możliwa dzięki wsparciu darczyńców.",
-    support: "Zapraszamy do współtworzenia koncertu, który pozostaje otwarty dla wszystkich.",
+    /** The page's last, smallest line, and the link leads to the donation vault. It speaks of the
+        concerts to come rather than of this one, which an outside organiser may be paying for.
+        Impersonal, so it holds the card's "Państwo". */
+    donors: "Następne koncerty VoctEnsemble są możliwe dzięki wsparciu darczyńców.",
+    support: "Zapraszamy do ich współtworzenia, by pozostały otwarte dla wszystkich.",
   },
 } as const;
+
+/** The `inside.frame` template for an evening's festival or series. */
+export const frameTemplate = (festival: {
+  readonly kind: "festival" | "series";
+  readonly role?: "finale" | undefined;
+}): string =>
+  festival.kind === "series"
+    ? ZAPROSZENIE.inside.frame.series
+    : festival.role === "finale"
+      ? ZAPROSZENIE.inside.frame.finale
+      : ZAPROSZENIE.inside.frame.festival;
