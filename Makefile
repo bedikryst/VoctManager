@@ -22,11 +22,13 @@ COMPOSE_PROD = docker compose -f docker-compose.yml -f docker-compose.prod.yml
 # heaviest pair — the panel's Vite build and Astro's sharp pass, which together do not
 # fit in this droplet's RAM — is kept apart by `astro-stage` below, which takes Astro
 # out of that solve.
-BUILD_ENV = COMPOSE_PARALLEL_LIMIT=1 APP_BUILD_SHA=$(shell git log -1 --format=%h -- frontend 2>/dev/null)
+BUILD_ENV = COMPOSE_PARALLEL_LIMIT=1 APP_BUILD_SHA=$(shell git log -1 --format=%h -- frontend ':!frontend/Dockerfile' 2>/dev/null)
 
 # The panel bundle's identity, stamped into it and carried by every in-app feedback
-# report: the last commit that touched frontend/, NOT HEAD. The bundle is built from
-# frontend/ alone, so this names exactly the code a report came from, and it leaves
+# report: the last commit that touched frontend/ other than its Dockerfile, NOT HEAD.
+# The bundle is built from that tree alone (the Dockerfile reaches the builder on its
+# own channel and is kept out of the context by .dockerignore), so this names exactly
+# the code a report came from, and it leaves
 # the panel-builder stage cached on every deploy that does not touch frontend/. HEAD
 # moves with every backend or web commit, and the build arg is part of the cache key
 # of that stage's `npm run build`: a full typecheck + Vite build on the droplet's one

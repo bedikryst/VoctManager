@@ -45,10 +45,11 @@ ARG VITE_GOOGLE_MAPS_FRONTEND_KEY
 ARG VITE_GOOGLE_MAP_ID
 ARG VITE_VAPID_PUBLIC_KEY
 ARG VAPID_PUBLIC_KEY
-# The last commit that touched frontend/, stamped into the bundle for feedback
-# reports. Resolved on the host (see the Makefile): `.git` is excluded from the
-# build context, so vite's own `git log` cannot answer this from inside the image.
-# It is part of this stage's cache key, which is why it must not be HEAD.
+# The last commit that touched frontend/ other than this file, stamped into the
+# bundle for feedback reports. Resolved on the host (see the Makefile): `.git` is
+# excluded from the build context, so vite's own `git log` cannot answer this from
+# inside the image. It is part of this stage's cache key, which is why it must not
+# be HEAD, and why neither it nor `COPY frontend/` (.dockerignore) sees this file.
 ARG APP_BUILD_SHA
 ENV VITE_API_URL=$VITE_API_URL \
     VITE_GOOGLE_MAPS_FRONTEND_KEY=$VITE_GOOGLE_MAPS_FRONTEND_KEY \
@@ -111,11 +112,10 @@ COPY web/ ./
 #  • It is only ever EXERCISED on a build where a photo changed. When none did, `COPY web/ ./`
 #    hits the layer cache and this whole RUN is skipped — no image lines at all. So "the cache
 #    works when I change nothing" is the layer cache, not this one, and says nothing about it.
-#  • infra/docker-gc.sh trims BuildKit to GC_KEEP with `docker builder prune --max-used-space`.
-#    That budget evicts by LRU across ALL records, cache mounts included — the flagless prune
-#    is what spares them, not a budgeted one. A photo-changing build writes ~2 GB of fresh
-#    records, so a tight budget can drop this mount and make the NEXT such build fully cold.
-#    Symptom: image lines reading `(before: … after: …)` instead of `(reused cache entry)`.
+#  • Prunes evict it. A budgeted `docker builder prune` evicts by LRU across ALL records, cache
+#    mounts included, which is why infra/docker-gc.sh trims by age only; BuildKit's own GC and
+#    a `--deep` run drop it too. Symptom: image lines reading `(before: … after: …)` instead of
+#    `(reused cache entry)`.
 # Neither eviction has to cost a re-encode: the astro-cache stages below refill this mount
 # from a copy on the build host before the build and add its new entries to that copy after.
 # Sources are 2560px proxies (web/downscale-photos.mjs), yet a genuinely cold pass is still

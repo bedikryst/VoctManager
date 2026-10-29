@@ -8,9 +8,8 @@
  *  desktop rung), yet the archive holds 8256px frames up to 44 MB. Sharp re-reads the source
  *  once PER VARIANT, so every one of the ~6 renditions a photograph gets pays the full decode:
  *  measured 8.6s for six variants off a 44 MB original against 3.3s off a 2560 proxy. The same
- *  originals also inflate the Docker build context — `COPY web/ ./` carries them into a ~960 MB
- *  BuildKit record on every photo-changing build, which is what pushes the cache past the
- *  `GC_KEEP` budget in infra/docker-gc.sh and evicts the Astro image cache the next build needs.
+ *  originals also inflate the Docker build context — `COPY web/ ./` would carry them into a
+ *  ~960 MB BuildKit record on every photo-changing build, on a droplet whose disk is the limit.
  *
  *  THE CAPS, and why they are the numbers they are. Both are ceilings the page code states, so
  *  raising a ladder anywhere means raising the matching constant here or that rung silently

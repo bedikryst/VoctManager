@@ -43,41 +43,24 @@ export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:${PATH
 # point of preferring it to a budget (see the default branch below).
 GC_MAX_AGE="${GC_MAX_AGE:-168h}"
 
-# Root filesystem usage (percent) at which age-based trimming is no longer
-# enough and a budgeted prune runs anyway. Below it, disk is not the emergency
-# and a warm image-encode cache is worth more than the gigabytes it occupies.
+# Root filesystem usage (percent) at which the run prints a disk-pressure
+# warning into prune.log. It prunes nothing extra at that point — see the
+# default branch below for why there is no budgeted prune to fall back to.
 GC_DISK_PCT="${GC_DISK_PCT:-80}"
-
-# Budget for the pressure path only — NOT the ordinary trim.
-#
-# It MUST sit above the UN-RECLAIMABLE FLOOR, and on this droplet that floor is
-# most of the cache: `docker buildx du` reports 16.35 GB total against just
-# 4.73 GB reclaimable, because every record backing a running image is pinned.
-#
-# A budget below the floor is unreachable, and an unreachable budget does not
-# stop at the number — it evicts EVERY reclaimable record trying to get there.
-# The Astro image-encode mount is one of them (`Type: exec.cachemount`,
-# `Reclaimable: true`), so a 6 GB budget quietly turned every single deploy into
-# a full re-encode: prune at the end of `make deploy`, cold cache on the next.
-#
-# Read the floor before lowering this — `docker buildx du | tail -4`, then take
-# total minus reclaimable and leave real headroom above the result.
-GC_KEEP="${GC_KEEP:-14GB}"
 
 # Stopped containers younger than this are left alone — a container that died
 # minutes ago is evidence, not garbage.
 GC_CONTAINER_AGE="${GC_CONTAINER_AGE:-24h}"
 
 # Modes, and they are mutually exclusive in effect:
-#   (default)            trim BuildKit by AGE, budget only under disk pressure
+#   (default)            trim BuildKit by AGE, warn under disk pressure
 #   --deep               drop ALL build cache including cache mounts
 #   --keep-build-cache   reclaim images/containers only, never touch build cache
 #
 # --keep-build-cache exists for the run that BRACKETS a build from the front
 # (Makefile `deploy`). Pruning there deleted the very records the build was
 # about to ask for: the backend's `pip wheel` layer re-downloaded every package
-# on every deploy, and a budgeted prune evicts by LRU, so the layers that never
-# change — exactly the ones worth keeping — were the first to go. Reclaiming
+# on every deploy. Reclaiming
 # dangling IMAGES is what buys the headroom that call is there for, and this
 # script already calls that the single biggest one-shot win.
 DEEP=0
@@ -96,7 +79,7 @@ done
 
 log() { printf '[docker-gc] %s %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$*"; }
 
-log "start (max_age=$GC_MAX_AGE, disk_pct=$GC_DISK_PCT, keep=$GC_KEEP, deep=$DEEP, keep_build_cache=$KEEP_BUILD_CACHE)"
+log "start (max_age=$GC_MAX_AGE, disk_pct=$GC_DISK_PCT, deep=$DEEP, keep_build_cache=$KEEP_BUILD_CACHE)"
 log "disk before:"
 docker system df
 df -h / | tail -n 1
@@ -121,20 +104,24 @@ elif [ "$DEEP" -eq 1 ]; then
   log "deep prune: dropping ALL build cache including cache mounts…"
   docker builder prune -af
 else
-  # Ordinary trim: evict by AGE, and fall back to a budget only when the disk
-  # actually demands it.
+  # Ordinary trim: evict by AGE, and by nothing else. `until` filters on last
+  # use, so a record the latest build touched is never eligible, and growth stays
+  # bounded because records from builds older than GC_MAX_AGE do age out.
   #
-  # A budgeted prune has no concept of "a build". It holds a flat list of records
-  # and deletes from the least-recently-used end until the total is under the
-  # number — and BuildKit cache MOUNTS are ordinary removable records in that
-  # list. Worse, most of this cache is pinned by running images and cannot be
-  # reclaimed at all (see GC_KEEP), so a budget set below that floor never
-  # succeeds and degenerates into "delete everything reclaimable" on every run.
-  # Either way every cache record the next build wants goes with it, and age is
-  # what spares them: `until` filters on last use, so a record the latest build
-  # touched is never eligible. Growth stays bounded because records from builds
-  # older than GC_MAX_AGE do age out; a burst of deploys inside that window is
-  # exactly what the pressure path below is for.
+  # There is deliberately NO budgeted prune (`--max-used-space`), not even under
+  # disk pressure. A budget evicts from the least-recently-used end of a flat list
+  # of records, cache mounts included, until the total is under the number — and
+  # on this droplet's engine (containerd image store) `docker buildx du` reports a
+  # total no build or prune ever changes: 19.74 GB, 0 B reclaimable, the same 128
+  # records in every reading. No budget below that is ever met, so the prune runs
+  # to the bottom of the list every time. It ran at the end of two deploys,
+  # reclaimed 0 B both times, and each following build found none of the records
+  # that back an image (the Astro site, the backend's runtime stage) — pruning a
+  # record whose layers an image holds frees nothing and drops only the cache
+  # metadata. A plain rebuild right after a build, and one after
+  # `docker image prune`, were fully cached. Disk is reclaimed by the
+  # dangling-image prune above; past that, the space is outside Docker, or the
+  # emergency is `make gc DEEP=--deep` by hand.
   #
   # The Astro image-encode mount is the exception age cannot protect: a build
   # that leaves web/ alone never mounts it, so a week without a web deploy ages
@@ -146,44 +133,13 @@ else
   # `df -P` pins the POSIX single-line-per-filesystem format, but the capacity
   # column still cannot be addressed positionally: a device name containing a
   # space shifts every field after it. Scan for the field that ENDS in `%`
-  # instead. An unparseable result falls through to 0, i.e. "no pressure" — the
-  # safe default here is leaving the cache warm, not pruning on a bad reading.
+  # instead. An unparseable result falls through to 0, i.e. "no warning".
   disk_pct="$(df -P / | awk 'NR==2 { for (i = 1; i <= NF; i++) if ($i ~ /%$/) { gsub(/%/, "", $i); print $i; exit } }')"
-  if [ "${disk_pct:-0}" -lt "$GC_DISK_PCT" ]; then
-    log "/ at ${disk_pct}% (under ${GC_DISK_PCT}%) — build cache left warm, no budgeted prune."
-  else
-    log "WARNING: / at ${disk_pct}% (threshold ${GC_DISK_PCT}%) — falling back to a budgeted prune."
-    log "WARNING: this evicts least-recently-used build cache, so the next build"
-    log "WARNING: repeats layers and downloads it would otherwise have reused."
-    log "WARNING: raise GC_KEEP, or free disk outside Docker, to stop this recurring."
-
-    # Docker 28 replaced `--keep-storage` with `--reserved-space`, and the two are
-    # NOT equivalent: reserved-space is "never prune below N", not "prune down to
-    # N". A cron line carrying the old flag is silently accepted, warns about the
-    # rename, and reclaims exactly 0 B — which is how ~14 GB of build cache
-    # accumulated unnoticed. `--max-used-space` is the flag with the intended
-    # "trim to a budget" meaning, so prefer it and detect rather than assume.
-    if docker builder prune --help 2>/dev/null | grep -q -- '--max-used-space'; then
-      budget_flag="--max-used-space"
-    else
-      budget_flag="--keep-storage"
-    fi
-    log "trimming build cache to $GC_KEEP ($budget_flag)…"
-    prune_out="$(docker builder prune -f "$budget_flag" "$GC_KEEP" 2>&1)" || true
-    printf '%s\n' "$prune_out"
-
-    # A prune that reclaims nothing while the cache is still over budget means the
-    # flag was accepted but did not do what it says. Never let that pass quietly
-    # again — an unread warning in prune.log is what this whole script exists for.
-    if printf '%s' "$prune_out" | grep -qi 'reclaimed space: *0B'; then
-      if printf '%s' "$prune_out" | grep -qi 'deprecated'; then
-        log "WARNING: reclaimed 0 B and Docker reported a deprecated flag."
-        log "WARNING: this docker build cache is NOT being trimmed — check the flag"
-        log "WARNING: names in \`docker builder prune --help\` and fix this script."
-      else
-        log "note: reclaimed 0 B (cache already at or below $GC_KEEP)."
-      fi
-    fi
+  if [ "${disk_pct:-0}" -ge "$GC_DISK_PCT" ]; then
+    log "WARNING: / at ${disk_pct}% (threshold ${GC_DISK_PCT}%). Build cache is not trimmed"
+    log "WARNING: to a budget (see this script). Free disk outside Docker first — the"
+    log "WARNING: journal (\`journalctl --disk-usage\`), ~/voct-backups — or, as the"
+    log "WARNING: emergency, \`make gc DEEP=--deep\`."
   fi
 fi
 

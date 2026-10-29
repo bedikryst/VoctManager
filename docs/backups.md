@@ -118,7 +118,7 @@ crontab -e
 **Do NOT schedule `--deep`.** It drops the BuildKit cache MOUNTS unconditionally,
 so the next build re-downloads every npm package. A monthly `--deep` line used
 to sit here and bought nothing the daily run cannot: the daily run trims by age
-and escalates to a budgeted prune on its own when `/` crosses `GC_DISK_PCT`.
+and writes a warning into `prune.log` when `/` crosses `GC_DISK_PCT`.
 Run `make gc DEEP=--deep` by hand if disk is a genuine emergency.
 
 **The crontab is server state, and it drifts from this file.** Nothing deploys
@@ -153,8 +153,8 @@ these cron lines only catch garbage from manual `docker compose build` runs.
 the outside: Docker 28 deprecated `--keep-storage` in favour of
 `--max-used-space`, and the hand-written cron line that used the old flag would
 have errored into that log every week while reclaiming nothing. The script
-detects the flag, and prints `docker system df` plus `df -h /` before and after
-every run — so the log shows exactly what was reclaimed, or that nothing was.
+prints `docker system df` plus `df -h /` before and after every run — so the log
+shows exactly what was reclaimed, or that nothing was.
 
 ### Why the ordinary trim is by age, not by a budget
 
@@ -165,24 +165,26 @@ that list. Running one at the end of `make deploy` therefore destroyed the Astro
 image-encode cache that the *next* deploy needed, and the cost lands as a full
 re-encode of ~530 image variants — half an hour of one vCPU, every deploy.
 
-**A budget below the un-reclaimable floor is worse than no budget.** Most of this
-cache is pinned by running images: `docker buildx du` reported 16.35 GB total
-against 4.73 GB reclaimable, so a 6 GB budget could never be met. An unmeetable
-budget does not stop at its number — it evicts every reclaimable record trying to
-reach it, and the encode cache (`Reclaimable: true`) is always among them. Read
-the floor with `docker buildx du | tail -4` and keep `GC_KEEP` well above
-*total − reclaimable*; the default is 14 GB for exactly that reason.
+**An unmeetable budget evicts everything it may.** It does not stop at its
+number — it deletes every reclaimable record trying to reach it. On the
+droplet's engine (containerd image store) every budget is unmeetable: `docker
+buildx du` reports a total that no build or prune changes (19.74 GB, 0 B
+reclaimable, the same 128 records in every reading since at least 2026-10-29).
+The pressure-only budget that used to remain in the script fired at the end of
+both deploys on 2026-10-29, reclaimed 0 B each time, and the next build found
+none of the records that back an image — the Astro site and the backend's
+runtime stage rebuilt from scratch on unchanged inputs. A record whose layers an
+image holds frees nothing when pruned; only its cache metadata goes.
+
+So the script trims with `--filter until=$GC_MAX_AGE` (default 168h) and nothing
+else: it filters on last use, so nothing the most recent build touched is
+eligible. At or above `GC_DISK_PCT` (default 80%) it only warns in `prune.log`.
+Answer the warning outside Docker first (`journalctl --disk-usage`,
+`~/voct-backups`), and with `make gc DEEP=--deep` only as the emergency.
 
 Note that `make prod` never calls this script, while `make deploy` calls it
-twice. If the encode cache is warm after a `make prod` and cold after every
-`make deploy`, that asymmetry is the symptom, not a coincidence.
-
-So the ordinary mode trims with `--filter until=$GC_MAX_AGE` (default 168h),
-which filters on last use: nothing the most recent build touched is eligible.
-The budget survives only as an escape hatch, entered when `/` is at or above
-`GC_DISK_PCT` (default 80%), and `prune.log` says loudly when that happens.
-**Raising `GC_KEEP` is the right response to repeated pressure warnings**, not
-lowering it — on this droplet the cache is cheaper than the rebuild.
+twice. If a cache is warm after a `make prod` and cold after every `make deploy`,
+that asymmetry is the symptom, not a coincidence.
 
 ### The Astro encode cache lives on the host, not in BuildKit
 

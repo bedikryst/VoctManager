@@ -35,6 +35,9 @@ web/.env.production
 **/pnpm-debug.log
 
 # ---- Frontend build / cache ----
+# The Dockerfile reaches the builder on its own channel, so this only keeps it out of
+# `COPY frontend/ ./`: editing it — a comment, another stage — never rebuilds the panel.
+frontend/Dockerfile
 frontend/dist
 frontend/.vite
 frontend/coverage
@@ -49,8 +52,7 @@ web/.astro
 # by the build: Astro globs `src/assets/photos/*` FLAT (lib/photos.ts), and the proxies it does
 # glob are generated from the archive by `npm run photos:proxy` on the host, before the image is
 # built. Letting these into the context would put ~530 MB straight back into the `COPY web/ ./`
-# layer — the weight the proxies exist to remove, and what pushes BuildKit past the GC_KEEP
-# budget in infra/docker-gc.sh and evicts the Astro image cache the next build needs.
+# layer — the weight the proxies exist to remove, on a droplet whose disk is the limit.
 web/src/assets/photos/.original-photos
 web/src/assets/photos/.old-bg-desktop
 
@@ -79,7 +81,7 @@ web/press-pack/posters
 #    everything under public/ is otherwise copied verbatim into dist/ and baked in.
 # Together they are ~1.7 GB that used to ride the `COPY web/ ./` layer, get hashed by rollup,
 # land in dist/, and be copied into the image a second time — 29 minutes of asset pass per
-# deploy, and the BuildKit budget blown by records nothing would reuse.
+# deploy, and gigabytes of build cache in records nothing would reuse.
 #
 # CONSEQUENCE, and it is the failure worth recognising: with the mount missing on a host, the
 # films 404 and everything else on the page is fine. Check the volume before suspecting the code.
