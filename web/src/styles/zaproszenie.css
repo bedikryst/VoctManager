@@ -2,8 +2,8 @@
  * @file zaproszenie.css
  * @description `/zaproszenie`, the invitation opened on a screen: what the page composes from the
  *  invitation's material (`styles/invitation.css`, imported first) — the cover, an editorial
- *  spread, the response strip and the foundation's close. The ask between the last two, the list's
- *  island as a quiet postscript, is dressed by `styles/invitation-notice.css`.
+ *  spread, the response strip, the foundation with its gift and the cover's credit. The list's
+ *  island between the last two, a quiet postscript, is dressed by `styles/invitation-notice.css`.
  *
  *  THE SHEET IS THE EVENING'S NIGHT. The evening's poster sets the programme in orbit round an
  *  eclipse among stars; the page keeps that thought, not its picture. The invitation's ledger
@@ -19,7 +19,8 @@
  *  amber it throws into the sky is CSS and stays while the photograph loads. Afterwards the corona
  *  swells by a hair on a slow clock. The cover's data-entrance cue gives the photograph a short
  *  readiness window, runs once and stays composed after it leaves view. The title is readable at
- *  full opacity throughout.
+ *  full opacity throughout. The only other motion is the gift's: its act, the one thing on the
+ *  sheet drawn in gold, takes the light once when the reader reaches it.
  * @module styles/zaproszenie
  */
 
@@ -71,8 +72,8 @@ body.page-zaproszenie {
   mask-image: linear-gradient(to bottom, #000 90vh, rgb(0 0 0 / 0.4) 160vh);
 }
 
-/* The eclipse's dawn is the page's one gesture, so nothing on the sheet waits for a reveal: the
-   rubric's hairlines stand drawn rather than running out from the word. */
+/* The eclipse's dawn and the gift's kindle are the page's only motion, so nothing on the sheet
+   waits for a reveal: the rubric's hairlines stand drawn rather than running out from the word. */
 html.voct-motion .zap .inv-rubric:not(.is-in)::before,
 html.voct-motion .zap .inv-rubric:not(.is-in)::after {
   transform: none;
@@ -602,7 +603,9 @@ html.voct-motion .zap .inv-rubric:not(.is-in)::after {
   line-height: 1.45;
 }
 
-/* ── The foundation ────────────────────────────────────────────────────────── */
+/* ── The foundation, and the gift ──────────────────────────────────────────────
+   The page's second ask, between the response strip and the list: the foundation says what it
+   carries, the donors' sentences say why it asks, and one act answers. */
 .zap-foundation {
   max-width: 34em;
   margin: clamp(96px, 12vw, 150px) auto 0;
@@ -627,41 +630,116 @@ html.voct-motion .zap .inv-rubric:not(.is-in)::after {
   text-wrap: pretty;
 }
 
+/* At reading size and a grade brighter than the paragraph above: the reason for the act below. */
+.zap-donors {
+  margin: 14px 0 0;
+  color: var(--inv-ink);
+  font-size: clamp(18.5px, 1.8vw, 20px);
+  font-weight: 500;
+  line-height: 1.55;
+  text-wrap: pretty;
+}
+
+/* The candle the act stands in, thrown wide and dark until the kindle (Motion, below) raises it
+   once and leaves it glowing. It spans the viewport on a phone and stops short of it on a wide
+   screen, so it reads as light round the act rather than as a band across the sheet. */
+.zap-give {
+  position: relative;
+  isolation: isolate;
+  margin: 32px 0 0;
+}
+
+.zap-give::before {
+  content: "";
+  position: absolute;
+  top: -96px;
+  right: calc(50% - min(50vw, 360px));
+  bottom: -96px;
+  left: calc(50% - min(50vw, 360px));
+  z-index: -1;
+  background: radial-gradient(
+    closest-side,
+    color-mix(in srgb, var(--candle) 16%, transparent),
+    color-mix(in srgb, var(--candle) 5%, transparent) 55%,
+    transparent
+  );
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* The page's one act in gold. Drawn in line like every act on the night, never filled at rest. */
+.zap-give-act {
+  position: relative;
+  isolation: isolate;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 54px;
+  padding: 12px 32px;
+  border: 1px solid color-mix(in srgb, var(--candle) 72%, transparent);
+  color: var(--candle);
+  font-family: var(--serif);
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  line-height: 1.3;
+  text-decoration: none;
+  transition:
+    border-color 0.25s var(--ease),
+    background-color 0.25s var(--ease),
+    color 0.25s var(--ease);
+}
+
+.zap-give-act:hover,
+.zap-give-act:focus-visible {
+  border-color: var(--candle);
+  background: color-mix(in srgb, var(--candle) 10%, transparent);
+  color: color-mix(in srgb, var(--candle) 65%, var(--inv-ink-deep));
+}
+
+.zap-give-act:focus-visible {
+  outline: 1px solid var(--candle);
+  outline-offset: 4px;
+}
+
+/* The kindle's two layers, as the bar's WESPRZYJ wears them: a halo that stays, and a flare
+   that rises over it and goes out. Opacity only, so nothing repaints while they run. */
+.zap-give-act::before,
+.zap-give-act::after {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  z-index: -1;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.zap-give-act::before {
+  box-shadow: 0 0 22px 2px color-mix(in srgb, var(--candle) 40%, transparent);
+}
+
+.zap-give-act::after {
+  background: color-mix(in srgb, var(--candle) 14%, transparent);
+  box-shadow:
+    0 0 44px 10px color-mix(in srgb, var(--candle) 45%, transparent),
+    inset 0 0 16px color-mix(in srgb, var(--candle) 30%, transparent);
+}
+
 .zap-foundation-links {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
   gap: 0 28px;
-  margin: 10px 0 0;
-}
-
-/* The sheet's smallest line, a credit rather than an ask: set below reading size and a grade
-   quieter, so it closes the page without competing with the list above it. */
-.zap-donors {
-  max-width: 34em;
-  margin: clamp(40px, 5vw, 56px) auto 0;
-  color: var(--inv-muted);
-  font-size: 16px;
-  font-weight: 500;
-  line-height: 1.5;
-  text-wrap: balance;
-}
-
-/* The invitation to give starts its own line, and the measure above is wide enough to keep it
-   whole on a desktop; a phone breaks it in two balanced lines. Shrink-wrapped, so the link's hit
-   area is its words, not the sheet's width. */
-.zap-donors .inv-link {
-  display: block;
-  width: fit-content;
-  margin-inline: auto;
-  color: var(--inv-ink-soft);
+  margin: 28px 0 0;
 }
 
 /* The cover photographs' credit, below everything the page has to say. Its links keep the line's
    quiet colour; only their hairline marks them. */
 .zap-credit {
-  margin: clamp(40px, 5vw, 56px) 0 0;
+  max-width: 34em;
+  margin: clamp(64px, 8vw, 96px) auto 0;
   color: var(--inv-muted);
+  text-align: center;
   font-size: 14px;
   font-weight: 500;
   line-height: 1.5;
@@ -715,6 +793,70 @@ html.voct-motion .zap:is([data-writing], [data-motion-paused]) .zap-art {
   }
   to {
     transform: scale(1.02);
+  }
+}
+
+/* The gift takes the light once, when the reader reaches it (scripts/give-kindle.ts sets
+   `body.give-kindled`, which lights the bar's WESPRZYJ in the same moment): the candle rises
+   round the act, flares, and settles to a glow that stays. Never looped: a pulse here would read
+   as an advertisement on a page that otherwise only breathes. */
+html.voct-motion body.give-kindled .zap-give::before {
+  animation: zap-give-glow 4.2s var(--ease-slow) both;
+}
+
+html.voct-motion body.give-kindled .zap-give-act::before {
+  animation: zap-give-halo 4.2s var(--ease-slow) both;
+}
+
+html.voct-motion body.give-kindled .zap-give-act::after {
+  animation: zap-give-flare 4.2s var(--ease-slow) both;
+}
+
+/* Without motion, or without JS, the gift stands as the kindle leaves it. */
+html:not(.voct-motion) .zap-give::before {
+  opacity: 0.6;
+}
+
+html:not(.voct-motion) .zap-give-act::before {
+  opacity: 0.55;
+}
+
+@keyframes zap-give-glow {
+  0% {
+    opacity: 0;
+  }
+  20%,
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.6;
+  }
+}
+
+@keyframes zap-give-halo {
+  0% {
+    opacity: 0;
+  }
+  15%,
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.55;
+  }
+}
+
+@keyframes zap-give-flare {
+  0% {
+    opacity: 0;
+  }
+  15%,
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
   }
 }
 

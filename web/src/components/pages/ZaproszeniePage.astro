@@ -12,13 +12,14 @@
  *  The spread pairs the invitation's host, moment, venue and signature with the concert's prose,
  *  composers and performers. Each column reads down its own axis; on a phone the invitation
  *  precedes the concert. The programme link introduces its composers, followed by performer
- *  credits. The eclipse's dawn is the page's one gesture: every word stands from the start, with
- *  no reveal on scroll. One response strip follows both, before the
- *  future-invitation list and the foundation's close: its paragraph, its own profiles (not the
- *  ensemble's, which the footer carries) and, smallest and last, the donors' line. It opens the
- *  donation vault in place, as the menu's "Wesprzyj" does; its href, the landing's donation
- *  section (`/#wesprzyj`, a deep link that skips the rite), is the road without JS. The title stands
- *  once, on the cover; the
+ *  credits. Every word stands from the start, with no reveal on scroll. One response strip follows
+ *  both. The foundation comes next, as the page's second ask and the one it most wants answered:
+ *  its paragraph, the donors' sentences, the gift's act, and its own profiles (not the ensemble's,
+ *  which the footer carries). The act opens the donation vault in place, as the menu's "Wesprzyj"
+ *  does; its href, the landing's donation section (`/#wesprzyj`, a deep link that skips the rite),
+ *  is the road without JS. The page moves twice: the eclipse dawns, and the act takes the light
+ *  once when it is reached. The future-invitation list follows as a postscript for the reader not
+ *  ready to give, and the cover's credit closes the sheet. The title stands once, on the cover; the
  *  invitation reads on from it as one sentence ("VoctEnsemble serdecznie zaprasza na Koncert Duchowy…").
  *
  *  THE ARTWORK IS OPTIONAL TO THE BUILD AND OUTSIDE GIT. `zaproszenie-eclipse` is a total solar
@@ -269,6 +270,26 @@ const creditHtml = eclipse ? `${copy.cover.credit.lead} ${copy.cover.credit.ecli
       </div>
     </div>
 
+    {/* ── The foundation, and the gift ── */}
+    <section class="zap-foundation" aria-labelledby="zap-foundation-heading">
+      <h2 id="zap-foundation-heading" class="zap-foundation-name">{copy.foundation.name}</h2>
+      <p class="zap-foundation-text">{copy.foundation.text}</p>
+      <p class="zap-donors">{copy.foundation.donors}</p>
+      {/* `data-give-kindle`: reaching the act lights it, and the bar's WESPRZYJ with it
+          (scripts/give-kindle.ts). The mark sits on the act, not the section, so a phone sees the
+          flare rather than the heading above it. */}
+      <p class="zap-give" data-give-kindle>
+        <a class="zap-give-act" href="/#wesprzyj" data-vault-open="100">{copy.foundation.give}</a>
+      </p>
+      {FOUNDATION.socials.length > 0 && (
+        <p class="zap-foundation-links">
+          {FOUNDATION.socials.map((profile) => (
+            <a class="inv-door" href={profile.url} data-invitation-goal="social" target="_blank" rel="noopener noreferrer">{SOCIAL_NETWORK_NAMES[profile.network]}</a>
+          ))}
+        </p>
+      )}
+    </section>
+
     {/* ── The ask, where the card prints its RSVP ── */}
     <section class="inv-ask" aria-labelledby="zap-ask-heading">
       <h2 id="zap-ask-heading" class="inv-rubric inv-ask-rubric">{copy.ask.rubric}</h2>
@@ -297,23 +318,7 @@ const creditHtml = eclipse ? `${copy.cover.credit.lead} ${copy.cover.credit.ecli
       </div>
     </section>
 
-    {/* ── The foundation, as the card's last page closes ── */}
-    <section class="zap-foundation" aria-labelledby="zap-foundation-heading">
-      <h2 id="zap-foundation-heading" class="zap-foundation-name">{copy.foundation.name}</h2>
-      <p class="zap-foundation-text">{copy.foundation.text}</p>
-      {FOUNDATION.socials.length > 0 && (
-        <p class="zap-foundation-links">
-          {FOUNDATION.socials.map((profile) => (
-            <a class="inv-door" href={profile.url} data-invitation-goal="social" target="_blank" rel="noopener noreferrer">{SOCIAL_NETWORK_NAMES[profile.network]}</a>
-          ))}
-        </p>
-      )}
-      <p class="zap-donors">
-        {copy.foundation.donors}{" "}
-        <a class="inv-link" href="/#wesprzyj" data-vault-open="100">{copy.foundation.support}</a>
-      </p>
-      {creditHtml && <p class="zap-credit" set:html={creditHtml} />}
-    </section>
+    {creditHtml && <p class="zap-credit" set:html={creditHtml} />}
   </main>
 
   <SiteFooter lang={lang} variant="invitation" />

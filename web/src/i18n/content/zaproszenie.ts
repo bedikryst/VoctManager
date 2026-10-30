@@ -19,8 +19,9 @@
  *  its first sentence at the ensemble's projects, as the conductor asked, and its second counts
  *  the foundation's concerts; the Canticle's Polish
  *  name is spelled as the site spells it („Pieśń słoneczna”); a festival is named without an
- *  edition number; the ensemble is billed above its soloists; and the donors' line under the
- *  foundation's paragraph and the cover photographs' credit are not on the card at all.
+ *  edition number; the ensemble is billed above its soloists; and the donors' sentences with their
+ *  act under the foundation's paragraph and the cover photographs' credit are not on the card at
+ *  all.
  *  `about.eveningHtml` and `about.cast` belong to one evening and change with it.
  *
  *  THE ASK IS THE LIST'S, IN THE CARD'S VOICE. Where the card prints its RSVP the page invites the
@@ -136,11 +137,16 @@ export const ZAPROSZENIE = {
     text:
       "Fundacja wspiera rozwój VoctEnsemble i jego projektów artystycznych. „Pochwała Stworzenia” " +
       "w Poznaniu jest drugim koncertem realizowanym przez Fundację.",
-    /** The page's last, smallest line, and the link leads to the donation vault. It speaks of the
-        concerts to come rather than of this one, which an outside organiser may be paying for.
-        Impersonal, so it holds the card's "Państwo". */
-    donors: "Następne koncerty VoctEnsemble są możliwe dzięki wsparciu darczyńców.",
-    support: "Zapraszamy do ich współtworzenia, by pozostały otwarte dla wszystkich.",
+    /** The conductor's own sentences. They name no evening and no payer, so they hold for any
+        night of the programme and print no account of who pays for this one. Impersonal, so they
+        hold the card's "Państwo". */
+    donors:
+      "Koncerty VoctEnsemble są możliwe dzięki wsparciu darczyńców. Zapraszamy do ich " +
+      "współtworzenia, by pozostały otwarte dla wszystkich.",
+    /** The act that opens the donation vault. The guest answers in the first person, as
+        `actions.accept` does; "koncert" reads as the evening the page invites to, which is what
+        a guest is ready to give for, while the vault itself collects for the cycle. */
+    give: "Wspieram koncert",
   },
 } as const;
 
