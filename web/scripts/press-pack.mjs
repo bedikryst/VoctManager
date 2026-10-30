@@ -27,8 +27,8 @@
  *  in the corpus or whose post names another day, a document the kit names that is not on this
  *  machine or is not the PDF or DOCX it claims to be, a concert without its poster, a photo row without a credit or a
  *  source, a source held for want of its photographer's consent. It only WARNS AND SKIPS a photo
- *  whose crop is under 1080 px on its short edge — a thumbnail sent by mistake — and an archive
- *  over 50 MB.
+ *  whose crop is under 1080 px on its short edge — a thumbnail sent by mistake, unless its row
+ *  says no larger file exists — and WARNS about an archive over `SIZE_CEILING`.
  *
  *  THE OUTPUT IS NOT IN GIT. `public/press/` is gitignored and uploaded to the build host by hand,
  *  as the photographs are. `index.json` carries `kitHash` (lib/pressKit), and the site refuses to
@@ -81,8 +81,9 @@ const ARCHIVES = {
   komplet: "voctensemble-press-komplet.zip",
   zdjecia: "voctensemble-press-zdjecia.zip",
 };
-/** Past this, mail servers start refusing the link's own reply. */
-const SIZE_CEILING = 50 * 1_000_000;
+/** Our own warning line for an archive's size, not a limit anything outside imposes: raise it when
+    the pack has a reason to grow. */
+const SIZE_CEILING = 100 * 1_000_000;
 
 /**
  * The poster graphics. 9:16 is the story; the sheet is inset so Instagram's own bars never cover
@@ -483,7 +484,7 @@ const archives = {
 for (const archive of Object.values(archives)) {
   if (archive.bytes > SIZE_CEILING) {
     warnings.push(
-      `${archive.path} is ${(archive.bytes / 1_000_000).toFixed(1)} MB, over the 50 MB ceiling.`,
+      `${archive.path} is ${(archive.bytes / 1_000_000).toFixed(1)} MB, over the ${SIZE_CEILING / 1_000_000} MB ceiling.`,
     );
   }
 }

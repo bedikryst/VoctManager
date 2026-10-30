@@ -134,7 +134,8 @@ export const ZAPROSZENIE = {
     name: "VoctFoundation",
     text:
       "Fundacja wspiera rozwój VoctEnsemble i jego projektów artystycznych. „Pochwała Stworzenia” " +
-      "jest pierwszym projektem realizowanym przez Fundację.",
+      "jest pierwszym projektem realizowanym przez Fundację, a wieczór w Poznaniu jej drugim " +
+      "koncertem.",
     /** The page's last, smallest line, and the link leads to the donation vault. It speaks of the
         concerts to come rather than of this one, which an outside organiser may be paying for.
         Impersonal, so it holds the card's "Państwo". */

@@ -339,14 +339,15 @@ const PHOTO_GROUPS = [
 
 /* The desktop row count follows the number of photographs: the widest row, up to the group's
    maximum, that leaves no tile alone on the last line. A lone portrait under a full row reads as
-   a leftover. Narrower screens take fixed counts in the CSS, and a phone one scrolling row per
-   group, which is what the `sizes` above describe at 560 px and below. */
+   a leftover, but a single column reads worse, so a count no row width divides well (seven
+   landscapes) keeps the widest row. Narrower screens take fixed counts in the CSS, and a phone
+   one scrolling row per group, which is what the `sizes` above describe at 560 px and below. */
 const columnsFor = (count: number, max: number): number => {
   for (let columns = Math.min(count, max); columns > 1; columns--) {
     const last = count % columns;
     if (last === 0 || last > 1) return columns;
   }
-  return 1;
+  return Math.min(count, max);
 };
 
 const photoGroups = PHOTO_GROUPS.map((group) => {

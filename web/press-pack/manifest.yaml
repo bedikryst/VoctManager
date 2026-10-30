@@ -37,15 +37,39 @@
 # Hymn Poległym) — and even then they were delivered with a matte border and a credit burnt into
 # the frame, so they cannot be laid out by a designer; `kd-wolanie-4` is 900 px wide and sourced
 # from PieninyInfo.
+#
+# THE ORDER IS THE PAGE'S. /press lays each ratio out as a grid in this order, so each group opens
+# with the people of the evening the kit announces (the conductor and the guests) and the ensemble
+# follows. Six landscapes make two full rows of three; a seventh would hang alone under them. Out
+# of the set (30.10.2026), originals kept in `photos/`: 06 (scores at a rehearsal, the seventh
+# landscape) and 10 (the conductor at 1200 px, a fourth of him once 13 and 14 came).
 
 photos:
   # ── 16:9 ────────────────────────────────────────────────────────────────────────────────────
+  - id: voctensemble-12-fot-voctensemble
+    source: Florent-de-Bazelaire_koncert_fot-VoctEnsemble_12.jpg
+    ratio: "16:9"
+    focus: [0.5, 0.4]
+    caption: "Florent de Bazelaire i VoctEnsemble · Koncert Pochwała Stworzenia, Warszawa 2026"
+    credit: VoctEnsemble
   - id: voctensemble-01-fot-voctensemble
     source: VoctEnsemble_Radu-Ropotan_fot-VE_01.jpg
     ratio: "16:9"
     focus: [0.5, 0.52]
     caption: "VoctEnsemble i Radu Ropotan · Koncert Wołanie Gór, Szczawnica 2024"
     credit: VoctEnsemble
+  - id: voctensemble-05-fot-voctensemble
+    source: VoctEnsemble_Radu-Ropotan_proba_fot-VoctEnsemble_05.jpg
+    ratio: "16:9"
+    focus: [0.5, 0.4]
+    caption: "Radu Ropotan · Próba VoctEnsemble"
+    credit: VoctEnsemble
+  - id: voctensemble-04-fot-kamila-grudzinska
+    source: VoctEnsemble_koncert_fot-Kamila-Grudzinska_04.jpg
+    ratio: "16:9"
+    focus: [0.5, 0.42]
+    caption: "Florent de Bazelaire i VoctEnsemble · Koncert 9 Kart z Księgi Psalmów, Kraków 2024"
+    credit: Kamila Grudzińska
   - id: voctensemble-02-fot-kamila-grudzinska
     source: VoctEnsemble_koncert_fot-Kamila-Grudzinska_02.jpg
     ratio: "16:9"
@@ -58,26 +82,32 @@ photos:
     focus: [0.5, 0.5]
     caption: "VoctEnsemble · Koncert Aeternam — Epitafium dla Gazy, Niedzica 2025"
     credit: VoctEnsemble
-  - id: voctensemble-04-fot-kamila-grudzinska
-    source: VoctEnsemble_koncert_fot-Kamila-Grudzinska_04.jpg
-    ratio: "16:9"
-    focus: [0.5, 0.42]
-    caption: "Florent de Bazelaire i VoctEnsemble · Koncert 9 Kart z Księgi Psalmów, Kraków 2024"
-    credit: Kamila Grudzińska
-  - id: voctensemble-05-fot-voctensemble
-    source: VoctEnsemble_Radu-Ropotan_proba_fot-VoctEnsemble_05.jpg
-    ratio: "16:9"
-    focus: [0.5, 0.4]
-    caption: "Radu Ropotan · Próba VoctEnsemble"
-    credit: VoctEnsemble
-  - id: voctensemble-06-fot-voctensemble
-    source: VoctEnsemble_proba_partytury_fot-VoctEnsemble_06.jpg
-    ratio: "16:9"
-    focus: [0.5, 0.5]
-    caption: "Próba VoctEnsemble"
-    credit: VoctEnsemble
 
   # ── 4:5 ─────────────────────────────────────────────────────────────────────────────────────
+  # A portrait, so its caption names the man and his role rather than a context (the board,
+  # 28.09.2026).
+  - id: voctensemble-14-fot-jakub-pryba
+    source: Florent-de-Bazelaire_dyrygent_fot-Jakub-Pryba.jpg
+    ratio: "4:5"
+    focus: [0.5, 0.52]
+    caption: "Florent de Bazelaire · dyrygent i założyciel VoctEnsemble"
+    credit: Jakub Pryba
+  # From the rehearsals for Pochwała Stworzenia (07.10.2026), a 9:16 phone frame cut from the top.
+  - id: voctensemble-13-fot-voctensemble
+    source: Florent-de-Bazelaire_proba_fot-VoctEnsemble_13.jpg
+    ratio: "4:5"
+    focus: [0.5, 0.35]
+    caption: "Florent de Bazelaire · Próba VoctEnsemble"
+    credit: VoctEnsemble
+  # The organist of the Poznań evening, a portrait captioned like 14. 900 × 1200 is the only file
+  # there is (the board, 30.10.2026): a 900 × 1125 crop, enough for the web, short for print.
+  - id: voctensemble-11-fot-dariusz-bakowski-kois
+    source: Jakub-Kapala_organista_fot-Dariusz-Bakowski-Kois.jpg
+    ratio: "4:5"
+    focus: [0.5, 0.45]
+    noLargerOriginal: true
+    caption: "Jakub Kapała · organista"
+    credit: Dariusz Bąkowski-Kois
   - id: voctensemble-07-fot-kamila-grudzinska
     source: VoctEnsemble_koncert_fot-Kamila-Grudzinska_07.jpg
     ratio: "4:5"
@@ -98,20 +128,3 @@ photos:
     focus: [0.5, 0.5]
     caption: "Próba VoctEnsemble"
     credit: VoctEnsemble
-  # A portrait, so its caption names the man and his role rather than a context (the board,
-  # 28.09.2026). 1200 × 1600 gives a 1200 × 1500 crop: right for social and the web, short for print.
-  - id: voctensemble-10-fot-voctensemble
-    source: Florent-de-Bazelaire_dyrygent_fot-VoctEnsemble_10.jpg.jpg
-    ratio: "4:5"
-    focus: [0.5, 0.4]
-    caption: "Florent de Bazelaire · dyrygent i założyciel VoctEnsemble"
-    credit: VoctEnsemble
-  # The organist of the Poznań evening, a portrait captioned like 10. 900 × 1200 is the only file
-  # there is (the board, 30.10.2026): a 900 × 1125 crop, enough for the web, short for print.
-  - id: voctensemble-11-fot-dariusz-bakowski-kois
-    source: Jakub-Kapala_organista_fot-Dariusz-Bakowski-Kois.jpg
-    ratio: "4:5"
-    focus: [0.5, 0.45]
-    noLargerOriginal: true
-    caption: "Jakub Kapała · organista"
-    credit: Dariusz Bąkowski-Kois

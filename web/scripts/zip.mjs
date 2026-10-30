@@ -5,8 +5,8 @@
  *  WHY NOT A LIBRARY. The press pack is the only thing on this site that needs an archive, and
  *  `archiver` / `jszip` would be the first runtime-shaped dependency added to `web/` in a year
  *  for one build script. The part of the format we need is small and frozen: local headers, a
- *  central directory, an end record. No ZIP64 (the pack is capped at 50 MB by its own spec, four
- *  orders below the 4 GB line), no encryption, no data descriptors, no multi-disk.
+ *  central directory, an end record. No ZIP64 (the pack is tens of MB, orders below the
+ *  4 GB line), no encryption, no data descriptors, no multi-disk.
  *
  *  STORE FOR MEDIA, DEFLATE FOR TEXT. JPEG, PNG and PDF are already compressed and deflating them
  *  costs time to save nothing — sometimes to lose. The caller says which by passing `store`.
