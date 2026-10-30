@@ -40,9 +40,11 @@
 #
 # THE ORDER IS THE PAGE'S. /press lays each ratio out as a grid in this order, so each group opens
 # with the people of the evening the kit announces (the conductor and the guests) and the ensemble
-# follows. Six landscapes make two full rows of three; a seventh would hang alone under them. Out
-# of the set (30.10.2026), originals kept in `photos/`: 06 (scores at a rehearsal, the seventh
-# landscape) and 10 (the conductor at 1200 px, a fourth of him once 13 and 14 came).
+# follows. Six landscapes make two full rows of three; a seventh would hang alone under them, and
+# six portraits fill two rows of three below 1100 px, where a seventh would too. Out of the set
+# (30.10.2026), originals kept in `photos/`: 06 (scores at a rehearsal, the seventh landscape), 10
+# (the conductor at 1200 px, a fourth of him once 13 and 14 came) and 09 (the whole ensemble
+# rehearsing in a crypt, figures too small in a portrait, its caption 08's; it made room for 15).
 
 photos:
   # ── 16:9 ────────────────────────────────────────────────────────────────────────────────────
@@ -108,6 +110,14 @@ photos:
     noLargerOriginal: true
     caption: "Jakub Kapała · organista"
     credit: Dariusz Bąkowski-Kois
+  # The violinist of the Poznań evening, cut from a 3:2 concert frame down to him and the violin;
+  # the singers at its right edge fall outside the crop.
+  - id: voctensemble-15-fot-voctensemble
+    source: VoctEnsemble_Radu-Ropotan_koncert_fot-VoctEnsemble_15.jpg
+    ratio: "4:5"
+    focus: [0.36, 0.5]
+    caption: "Radu Ropotan · Koncert Pochwała Stworzenia, Warszawa 2026"
+    credit: VoctEnsemble
   - id: voctensemble-07-fot-kamila-grudzinska
     source: VoctEnsemble_koncert_fot-Kamila-Grudzinska_07.jpg
     ratio: "4:5"
@@ -118,12 +128,6 @@ photos:
   # original is in `inbox/2026-10-30/`.
   - id: voctensemble-08-fot-voctensemble
     source: VoctEnsemble_proba_fot-VoctEnsemble_08.jpg
-    ratio: "4:5"
-    focus: [0.5, 0.5]
-    caption: "Próba VoctEnsemble"
-    credit: VoctEnsemble
-  - id: voctensemble-09-fot-voctensemble
-    source: VoctEnsemble_proba_fot-VoctEnsemble_09.jpg
     ratio: "4:5"
     focus: [0.5, 0.5]
     caption: "Próba VoctEnsemble"
