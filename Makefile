@@ -22,7 +22,14 @@ COMPOSE_PROD = docker compose -f docker-compose.yml -f docker-compose.prod.yml
 # heaviest pair — the panel's Vite build and Astro's sharp pass, which together do not
 # fit in this droplet's RAM — is kept apart by `astro-stage` below, which takes Astro
 # out of that solve.
-BUILD_ENV = COMPOSE_PARALLEL_LIMIT=1 APP_BUILD_SHA=$(shell git log -1 --format=%h -- frontend ':!frontend/Dockerfile' 2>/dev/null)
+# BUILDX_NO_DEFAULT_ATTESTATIONS=1: BuildKit otherwise attaches a provenance
+# attestation stamped with the build's start and finish time, so a fully cached
+# rebuild still yields a new image ID and `compose up` recreates every service —
+# a backend restart, the API down until its health check passes, on a deploy that
+# changed only the public site. Compose's own `provenance: false` does not reach
+# its bake builds (tested on Compose 2.40: the attestation stayed); this variable
+# does, and a real change still produces a new ID and a recreate.
+BUILD_ENV = BUILDX_NO_DEFAULT_ATTESTATIONS=1 COMPOSE_PARALLEL_LIMIT=1 APP_BUILD_SHA=$(shell git log -1 --format=%h -- frontend ':!frontend/Dockerfile' 2>/dev/null)
 
 # The panel bundle's identity, stamped into it and carried by every in-app feedback
 # report: the last commit that touched frontend/ other than its Dockerfile, NOT HEAD.
