@@ -10,8 +10,8 @@
  *  landing's register (#droga) and its support section, the stations of /koncerty, the milestones
  *  on /o-nas, a concert page's closing Via. Almost every one of those evenings was free to enter
  *  and someone paid for it, which is when the ask makes sense. `/zaproszenie`, which invites to one
- *  evening and walks no Via, marks its gift's act instead: the same moment lights its donors' stars
- *  and then that act (`styles/zaproszenie.css`). A page with no mark falls back to
+ *  evening and walks no Via, marks its gift's act instead and lights that act in the same moment
+ *  (`styles/zaproszenie.css`). A page with no mark falls back to
  *  its footer. A mark counts once its top passes the lower third of the viewport, so a section
  *  merely peeking in at the bottom edge does not light it; the footer counts on first sight,
  *  because on a short page it may never rise that far.

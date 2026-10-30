@@ -1,42 +1,34 @@
 /**
  * @file donor-sky.ts
- * @description The donors' sky on `/zaproszenie`: one star for each donor the collection counts
- *  (`fetchDonationProgress`: settled gateway donations plus the offline tallies), drawn into the
- *  band of sky round the foundation. Nothing on the page names or counts them, no caption and no
- *  number: a reader may guess what they are, and the rest see a sky. The figure is asked for once
- *  per page load. A failed request or no donors leaves the band empty and the sheet as it reads
- *  without it; there is no stand-in figure.
+ * @description The sky round the gift on `/zaproszenie`: `STAR_COUNT` stars drawn into the band of
+ *  sky round the foundation, under the sentence that names the donors. They stand for the donors
+ *  and count none of them: the number is fixed, so the sky reads as full whatever the collection
+ *  holds, and nothing on the page explains them. Drawn by script because their dimming depends on
+ *  where the text falls; without JavaScript the band stays empty and the act keeps its candle glow.
  *
  *  STAR k ALWAYS STANDS IN THE SAME PLACE. Its position is the k-th point of the R2 low-discrepancy
- *  sequence, nudged by a hash of k, as fractions of the band: a new donor adds one star and moves
- *  none, and no prefix of the sequence clumps or settles into a grid. Its size and brightness are
- *  hashed from k too, most of them faint and a few bright, as a real sky's are. Past `MAX_STARS`
- *  the sky draws no more.
+ *  sequence, nudged by a hash of k, as fractions of the band, so the sky neither clumps nor settles
+ *  into a grid and is the same sky on every visit. Its size and brightness are hashed from k too,
+ *  most of them faint and a few bright, as a real sky's are.
  *
  *  THE TEXT KEEPS ITS GROUND. A star over the foundation's column is dimmed (`is-dim`), so none
  *  sits bright on a line of text, and a star on the act or within its light is not drawn
  *  (`is-veiled`). Both are read again whenever the band or the act changes size, because the
  *  column wraps with the viewport.
  *
- *  THE STARS LIGHT WITH THE GIFT. Each star carries its moment in a stagger (`--d`, oldest donor
- *  first) and the section the time the act waits for them (`--sky-span`). `styles/zaproszenie.css`
- *  lights them one after another when the act is reached (`body.give-kindled`,
- *  scripts/give-kindle.ts) and kindles the act after the last. Opacity only and once: they hold
+ *  THE STARS LIGHT AS THE FOUNDATION ARRIVES. Once the section's top passes the lower fifth of the
+ *  viewport, `data-sky-lit` is set and `styles/zaproszenie.css` lights the stars one after another
+ *  (`--d`, over `LIGHTING_MS`), well before the act is reached; the act then kindles with the bar's
+ *  WESPRZYJ (scripts/give-kindle.ts), not after the stars. Opacity only and once: they hold
  *  afterwards and never twinkle.
  * @module scripts/donor-sky
  */
 
-import { fetchDonationProgress } from "../islands/landing/api/progress";
+/** How many stars the sky holds. */
+const STAR_COUNT = 70;
 
-/** Past this many donors the sky draws no more stars. */
-const MAX_STARS = 150;
-
-/** The gap between two stars lighting, and the most the whole stagger may take. */
-const STAGGER_STEP_MS = 120;
-const STAGGER_MAX_MS = 1800;
-
-/** How long after the last star begins the act takes its light (each star fades in over 800ms). */
-const ACT_AFTER_MS = 500;
+/** The span over which the stars light, first to last. */
+const LIGHTING_MS = 1400;
 
 /** The R2 sequence's two generators, the inverse powers of the plastic number. */
 const PLASTIC = 1.324717957244746;
@@ -84,7 +76,7 @@ const smoothstep = (t: number): number => {
   return c * c * (3 - 2 * c);
 };
 
-/** Star k of the sky. It depends on k alone, so adding a donor never moves another star. */
+/** Star k of the sky. It depends on k alone. */
 function starAt(k: number): Star {
   const nudgeX = (hash(k * 4 + 1) - 0.5) * 2 * JITTER;
   const nudgeY = (hash(k * 4 + 2) - 0.5) * 2 * JITTER;
@@ -108,60 +100,62 @@ export function setupDonorSky(): (() => void) | undefined {
   const act = column?.querySelector<HTMLElement>(".zap-give-act");
   if (!layer || !column || !act) return;
 
-  let active = true;
-  let observer: ResizeObserver | undefined;
-
-  void fetchDonationProgress().then(({ donors }) => {
-    const count = Math.min(Math.floor(donors), MAX_STARS);
-    if (!active || !layer.isConnected || count <= 0) return;
-
-    const span = Math.min(STAGGER_MAX_MS, STAGGER_STEP_MS * (count - 1));
-    const sky = Array.from({ length: count }, (_, k) => {
-      const star = starAt(k);
-      const node = document.createElement("span");
-      node.className = star.bright ? "zap-donor-star is-bright" : "zap-donor-star";
-      node.style.setProperty("--x", star.x.toFixed(4));
-      node.style.setProperty("--y", star.y.toFixed(4));
-      node.style.setProperty("--s", `${star.size}px`);
-      node.style.setProperty("--a", star.alpha.toFixed(3));
-      node.style.setProperty("--d", `${count > 1 ? Math.round((k / (count - 1)) * span) : 0}ms`);
-      return { star, node };
-    });
-
-    const classify = (): void => {
-      const band = layer.getBoundingClientRect();
-      const text = column.getBoundingClientRect();
-      const light = act.getBoundingClientRect();
-      for (const { star, node } of sky) {
-        const x = band.left + star.x * band.width;
-        const y = band.top + star.y * band.height;
-        const veiled =
-          x > light.left - ACT_CLEARANCE_X &&
-          x < light.right + ACT_CLEARANCE_X &&
-          y > light.top - ACT_CLEARANCE_Y &&
-          y < light.bottom + ACT_CLEARANCE_Y;
-        const dim =
-          !veiled &&
-          x > text.left - COLUMN_MARGIN &&
-          x < text.right + COLUMN_MARGIN &&
-          y > text.top - COLUMN_MARGIN &&
-          y < text.bottom + COLUMN_MARGIN;
-        node.classList.toggle("is-veiled", veiled);
-        node.classList.toggle("is-dim", dim);
-      }
-    };
-
-    layer.replaceChildren(...sky.map(({ node }) => node));
-    column.style.setProperty("--sky-span", `${span + ACT_AFTER_MS}ms`);
-    column.dataset.sky = "";
-    // The first report arrives before the stars are painted, so none shows unclassified.
-    observer = new ResizeObserver(classify);
-    observer.observe(layer);
-    observer.observe(act);
+  const sky = Array.from({ length: STAR_COUNT }, (_, k) => {
+    const star = starAt(k);
+    const node = document.createElement("span");
+    node.className = star.bright ? "zap-donor-star is-bright" : "zap-donor-star";
+    node.style.setProperty("--x", star.x.toFixed(4));
+    node.style.setProperty("--y", star.y.toFixed(4));
+    node.style.setProperty("--s", `${star.size}px`);
+    node.style.setProperty("--a", star.alpha.toFixed(3));
+    node.style.setProperty("--d", `${Math.round((k / (STAR_COUNT - 1)) * LIGHTING_MS)}ms`);
+    return { star, node };
   });
 
+  const classify = (): void => {
+    const band = layer.getBoundingClientRect();
+    const text = column.getBoundingClientRect();
+    const light = act.getBoundingClientRect();
+    for (const { star, node } of sky) {
+      const x = band.left + star.x * band.width;
+      const y = band.top + star.y * band.height;
+      const veiled =
+        x > light.left - ACT_CLEARANCE_X &&
+        x < light.right + ACT_CLEARANCE_X &&
+        y > light.top - ACT_CLEARANCE_Y &&
+        y < light.bottom + ACT_CLEARANCE_Y;
+      const dim =
+        !veiled &&
+        x > text.left - COLUMN_MARGIN &&
+        x < text.right + COLUMN_MARGIN &&
+        y > text.top - COLUMN_MARGIN &&
+        y < text.bottom + COLUMN_MARGIN;
+      node.classList.toggle("is-veiled", veiled);
+      node.classList.toggle("is-dim", dim);
+    }
+  };
+
+  layer.replaceChildren(...sky.map(({ node }) => node));
+  column.dataset.sky = "";
+  // The first report arrives before the stars are painted, so none shows unclassified.
+  const sizes = new ResizeObserver(classify);
+  sizes.observe(layer);
+  sizes.observe(act);
+
+  // Reached = on screen, or already above it: a back navigation restores the scroll position past
+  // the section, and the observer's first report then says "not intersecting".
+  const arrival = new IntersectionObserver(
+    (entries) => {
+      if (!entries.some((entry) => entry.isIntersecting || entry.boundingClientRect.top < 0)) return;
+      column.dataset.skyLit = "";
+      arrival.disconnect();
+    },
+    { rootMargin: "0px 0px -20% 0px" },
+  );
+  arrival.observe(column);
+
   return () => {
-    active = false;
-    observer?.disconnect();
+    sizes.disconnect();
+    arrival.disconnect();
   };
 }

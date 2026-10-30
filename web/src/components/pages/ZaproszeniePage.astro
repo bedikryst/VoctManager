@@ -18,12 +18,12 @@
  *  have taken part in. It prints only when the recording is on the host that builds the page.
  *  The foundation comes next, as the page's second ask and the one it most wants answered:
  *  its paragraph, the donors' sentences, the gift's act, and its own profiles (not the ensemble's,
- *  which the footer carries), in a band of sky that holds one star per donor and explains none of
- *  them (`scripts/donor-sky.ts`). The act opens the donation vault in place, as the menu's
- *  "Wesprzyj" does; its href, the landing's donation section (`/#wesprzyj`, a deep link that skips
- *  the rite), is the road without JS. The page moves twice, each time once: the eclipse dawns, and
- *  when the act is reached the donors' stars light one after another and the act takes the light
- *  last. The future-invitation list follows as a postscript for the reader not ready to give, and
+ *  which the footer carries), in a band of sky whose stars stand for the donors, count none of
+ *  them and are explained nowhere (`scripts/donor-sky.ts`). The act opens the donation vault in
+ *  place, as the menu's "Wesprzyj" does; its href, the landing's donation section (`/#wesprzyj`, a
+ *  deep link that skips the rite), is the road without JS. The page moves twice, each time once:
+ *  the eclipse dawns, and the gift lights, its stars one after another as the foundation comes
+ *  into view, then its act together with the bar's WESPRZYJ when the act is reached. The future-invitation list follows as a postscript for the reader not ready to give, and
  *  the cover's credit closes the sheet. The title stands once, on the cover; the invitation reads
  *  on from it as one sentence ("VoctEnsemble serdecznie zaprasza na Koncert Duchowy…").
  *
@@ -293,8 +293,8 @@ const creditHtml = eclipse ? `${copy.cover.credit.lead} ${copy.cover.credit.ecli
 
     {/* ── The foundation, and the gift ── */}
     <section class="zap-foundation" aria-labelledby="zap-foundation-heading">
-      {/* The donors' sky (scripts/donor-sky.ts): one star per donor, with no caption and no count.
-          Empty until the collection's figure arrives, and empty for good without one. */}
+      {/* The sky round the gift (scripts/donor-sky.ts): stars that stand for the donors, with no
+          caption and no count. Empty without JavaScript. */}
       <div class="zap-donor-sky" aria-hidden="true" data-donor-sky></div>
       <h2 id="zap-foundation-heading" class="zap-foundation-name">{copy.foundation.name}</h2>
       <p class="zap-foundation-text">{copy.foundation.text}</p>

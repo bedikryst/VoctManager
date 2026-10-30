@@ -2,7 +2,7 @@
  * @file zaproszenie.css
  * @description `/zaproszenie`, the invitation opened on a screen: what the page composes from the
  *  invitation's material (`styles/invitation.css`, imported first) — the cover, an editorial
- *  spread, the response strip, the recording, the foundation with its donors' sky and its gift,
+ *  spread, the response strip, the recording, the foundation with its sky and its gift,
  *  and the cover's credit. The list's island between the last two, a quiet postscript, is dressed
  *  by `styles/invitation-notice.css`; the recording's glyph by `styles/excerpts.css`, re-dressed
  *  here for the night.
@@ -21,9 +21,10 @@
  *  amber it throws into the sky is CSS and stays while the photograph loads. Afterwards the corona
  *  swells by a hair on a slow clock. The cover's data-entrance cue gives the photograph a short
  *  readiness window, runs once and stays composed after it leaves view. The title is readable at
- *  full opacity throughout. The only other motion is the gift's, once, when the reader reaches
- *  it: the donors' stars light one after another, and then its act, the one thing on the sheet
- *  drawn in gold, takes the light.
+ *  full opacity throughout. The only other motion is the gift's, each part of it once: as the
+ *  foundation comes into view the stars round it light one after another, and when the reader
+ *  reaches its act, the one thing on the sheet drawn in gold, the act takes the light together
+ *  with the bar's WESPRZYJ.
  * @module styles/zaproszenie
  */
 
@@ -41,7 +42,7 @@ body.page-zaproszenie {
   --inv-refusal: #e3958e;
   --inv-shadow: 0 0 0;
   --edge-foot: var(--inv-paper);
-  /* The donors' stars: a shade warmer than the tile's white, the candle in them. */
+  /* The stars round the gift: a shade warmer than the tile's white, the candle in them. */
   --zap-donor-light: color-mix(in srgb, var(--candle) 30%, #fff8ec);
 }
 
@@ -672,8 +673,8 @@ html.voct-motion .zap .inv-rubric:not(.is-in)::after {
 
 /* ── The foundation, and the gift ──────────────────────────────────────────────
    The page's second ask, between the recording and the list: the foundation says what it
-   carries, the donors' sentences say why it asks, and one act answers, in a band of sky that
-   holds one star per donor. */
+   carries, the donors' sentences say why it asks, and one act answers, in a band of sky whose
+   stars stand for the donors without counting them. */
 .zap-foundation {
   position: relative;
   isolation: isolate;
@@ -682,9 +683,9 @@ html.voct-motion .zap .inv-rubric:not(.is-in)::after {
   text-align: center;
 }
 
-/* The donors' sky: the sheet's full width, from short of the recording above to the list's light
-   below. The stars are placed, sized and dimmed by scripts/donor-sky.ts; this layer only holds
-   them. It fades towards its edges through each star's own alpha, so it needs no mask. */
+/* The sky round the gift: the sheet's full width, from short of the recording above to the list's
+   light below. The stars are placed, sized and dimmed by scripts/donor-sky.ts; this layer only
+   holds them. It fades towards its edges through each star's own alpha, so it needs no mask. */
 .zap-donor-sky {
   position: absolute;
   top: calc(-1 * clamp(56px, 7vw, 96px));
@@ -753,7 +754,7 @@ html.voct-motion .zap .inv-rubric:not(.is-in)::after {
 /* The candle the act stands in, thrown wide and dark until the kindle (Motion, below) raises it
    once and leaves it glowing. It spans the viewport on a phone and stops short of it on a wide
    screen, so it reads as light round the act rather than as a band across the sheet. It is the
-   empty sky's: once the donors' stars are drawn, they are the light round the act. */
+   empty sky's, without JavaScript: once the stars are drawn, they are the light round the act. */
 .zap-give {
   position: relative;
   isolation: isolate;
@@ -927,21 +928,15 @@ html.voct-motion body.give-kindled .zap-give-act::after {
   animation: zap-give-flare 4.2s var(--ease-slow) both;
 }
 
-/* With donors drawn, their stars light first, one after another in the order the donors came
-   (`--d`, set by scripts/donor-sky.ts), and the act waits for the last (`--sky-span`). The star's
-   800ms is the one ACT_AFTER_MS in that script counts on. Until the gift is reached they are not
-   yet lit. */
-html.voct-motion body:not(.give-kindled) .zap-donor-star {
+/* The stars light earlier, on their own cue: once the foundation comes into view
+   (`data-sky-lit`, set by scripts/donor-sky.ts), one after another (`--d`), so they are lit by
+   the time the act is reached and the act never waits for them. Until then they are dark. */
+html.voct-motion .zap-foundation:not([data-sky-lit]) .zap-donor-star {
   opacity: 0;
 }
 
-html.voct-motion body.give-kindled .zap-donor-star {
+html.voct-motion .zap-foundation[data-sky-lit] .zap-donor-star {
   animation: zap-star-light 0.8s var(--ease) var(--d, 0s) both;
-}
-
-html.voct-motion body.give-kindled .zap-foundation[data-sky] .zap-give-act::before,
-html.voct-motion body.give-kindled .zap-foundation[data-sky] .zap-give-act::after {
-  animation-delay: var(--sky-span, 0s);
 }
 
 /* Without motion, or without JS, the gift stands as the kindle leaves it. */
@@ -1062,8 +1057,8 @@ html:not(.voct-motion) .zap-give-act::before {
   }
 
   /* The stars stand lit, with no stagger. */
-  html.voct-motion body:not(.give-kindled) .zap-donor-star,
-  html.voct-motion body.give-kindled .zap-donor-star {
+  html.voct-motion .zap-foundation:not([data-sky-lit]) .zap-donor-star,
+  html.voct-motion .zap-foundation[data-sky-lit] .zap-donor-star {
     animation: none;
     opacity: calc(var(--a) * var(--dim, 1));
   }
