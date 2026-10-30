@@ -83,7 +83,7 @@ page.koncerty.notice.headline: "Nous vous inviterons aux prochains concerts."
 # consentement. Elle doit aussi dire « concert » et non « soirée », le mot propre au site : c'est la
 # bande qu'un inconnu croise en parcourant la page. Le changement est le dernier ÉLÉMENT de
 # l'énumération, la dernière chose que la lettre apporte — jamais une phrase à lui seul.
-page.koncerty.notice.lede: "Nous vous donnerons aussi de nos nouvelles."
+page.koncerty.notice.lede: "Nous vous raconterons aussi ce que nous préparons."
 page.koncerty.notice.sentTitle: "Vérifiez votre boîte."
 page.koncerty.notice.sentBody: "Nous avons envoyé une demande de confirmation. L'adresse n'est conservée qu'une fois le lien de ce message suivi."
 page.koncerty.notice.sentHint: "Le message peut arriver dans les promotions ou les indésirables. Le lien reste valable sept jours."

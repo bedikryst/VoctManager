@@ -340,7 +340,7 @@ export const NUNTIUS: Record<Locale, NuntiusChrome> = {
         confirmed: {
           title: "Jesteś na liście.",
           body:
-            "Będziemy zapraszać na koncerty i pisać, co u nas słychać. " +
+            "Będziemy zapraszać na koncerty i opowiadać, nad czym pracujemy. " +
             "W każdej wiadomości będzie link do wypisania się.",
         },
         already_confirmed: {
@@ -418,7 +418,7 @@ export const NUNTIUS: Record<Locale, NuntiusChrome> = {
       meta: {
         title: "Zaproszenia na koncerty — VoctEnsemble",
         description:
-          "Będziemy zapraszać na koncerty i pisać, co u nas słychać. Zapisz się, " +
+          "Będziemy zapraszać na koncerty i opowiadać, nad czym pracujemy. Zapisz się, " +
           "a napiszemy przed następnym Koncertem Duchowym.",
       },
     },
@@ -497,7 +497,7 @@ export const NUNTIUS: Record<Locale, NuntiusChrome> = {
         confirmed: {
           title: "You are on the list.",
           body:
-            "We will invite you to our concerts and share our news. " +
+            "We will invite you to our concerts and tell you what we are working on. " +
             "Every message carries a link to leave.",
         },
         already_confirmed: {
@@ -575,7 +575,7 @@ export const NUNTIUS: Record<Locale, NuntiusChrome> = {
       meta: {
         title: "Concert invitations — VoctEnsemble",
         description:
-          "We will invite you to our concerts and share our news. " +
+          "We will invite you to our concerts and tell you what we are working on. " +
           "Sign up and we will write before the next Spiritual Concert.",
       },
     },
@@ -655,7 +655,7 @@ export const NUNTIUS: Record<Locale, NuntiusChrome> = {
         confirmed: {
           title: "Vous êtes inscrit.",
           body:
-            "Nous vous inviterons à nos concerts et vous donnerons de nos nouvelles. " +
+            "Nous vous inviterons à nos concerts et vous raconterons ce que nous préparons. " +
             "Chaque message porte un lien pour se désinscrire.",
         },
         already_confirmed: {
@@ -736,7 +736,7 @@ export const NUNTIUS: Record<Locale, NuntiusChrome> = {
       meta: {
         title: "Invitations aux concerts — VoctEnsemble",
         description:
-          "Nous vous inviterons à nos concerts et vous donnerons de nos nouvelles. " +
+          "Nous vous inviterons à nos concerts et vous raconterons ce que nous préparons. " +
           "Inscrivez-vous : nous écrirons avant le prochain Concert Spirituel.",
       },
     },

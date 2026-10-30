@@ -82,7 +82,7 @@ NOTICE_CONFIRM: dict[str, NoticeMailCopy] = {
             "nic więcej."
         ),
         button="Potwierdzam zapis",
-        promise="Będziemy zapraszać na koncerty i pisać, co u nas słychać.",
+        promise="Będziemy zapraszać na koncerty i opowiadać, nad czym pracujemy.",
         ignore=(
             "Jeśli to nie Ty — po prostu zignoruj tę wiadomość. Link wygasa po siedmiu dniach, "
             "a adres usuwamy."
@@ -108,7 +108,7 @@ NOTICE_CONFIRM: dict[str, NoticeMailCopy] = {
             "send nothing further."
         ),
         button="Confirm",
-        promise="We will invite you to our concerts and share our news.",
+        promise="We will invite you to our concerts and tell you what we are working on.",
         ignore=(
             "If it was not you, simply ignore this message. The link expires after seven "
             "days, and we delete the address."
@@ -134,7 +134,7 @@ NOTICE_CONFIRM: dict[str, NoticeMailCopy] = {
             "liste et nous n'envoyons rien d'autre."
         ),
         button="Je confirme",
-        promise="Nous vous inviterons à nos concerts et vous donnerons de nos nouvelles.",
+        promise="Nous vous inviterons à nos concerts et vous raconterons ce que nous préparons.",
         ignore=(
             "Si ce n'était pas vous, ignorez simplement ce message. Le lien expire au bout de "
             "sept jours et nous supprimons l'adresse."

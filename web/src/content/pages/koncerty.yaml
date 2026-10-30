@@ -82,7 +82,7 @@ notice:
   # of its own first: `NoticeSignup`, `NoticeLetter` (one h1 of both), /zaproszenie, /podziekowanie.
   # It addresses nobody, so it sits under /zaproszenie's "Państwo" as well as under "Cię".
   lede: >-
-    Napiszemy też, co u nas słychać.
+    Opowiemy też, nad czym pracujemy.
   # Read after the address is submitted. It says a mail is on its way, never "you are subscribed":
   # nothing is stored as a consent until the link in it is clicked.
   sentTitle: "Sprawdź skrzynkę."

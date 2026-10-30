@@ -28,8 +28,8 @@ without the meaning changing makes the history unreadable.
 #
 # 4.0 is the purpose widened. Under 3.0 the line above the clause promised concerts and nothing
 # else ("Piszemy tylko o koncertach. Termin, miejsce, program i każda zmiana."). Under 4.0 the
-# band's headline invites to the concerts and `notice.lede` adds "Napiszemy też, co u nas
-# słychać."; the policy (1.9, § 3 and § 4) names what that covers: concerts before and after
+# band's headline invites to the concerts and `notice.lede` adds "Opowiemy też, nad czym
+# pracujemy."; the policy (1.9, § 3 and § 4) names what that covers: concerts before and after
 # (invitations, changes, photographs, recordings), news of the ensemble, and requests for
 # support. Consents stamped 3.0 and earlier were not asked again. The list was some fifteen
 # people who know the ensemble, and the developer (2026-10-30) chose to tell them in the next
