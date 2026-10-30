@@ -22,7 +22,9 @@
  *  edition number; the ensemble is billed above its soloists; and the donors' sentences with their
  *  act under the foundation's paragraph and the cover photographs' credit are not on the card at
  *  all.
- *  `about.eveningHtml` and `about.cast` belong to one evening and change with it.
+ *  `about.eveningHtml` and `about.cast` belong to one evening and change with it. `listen` names
+ *  the recording, which is the programme's first evening and stays that evening's whichever night
+ *  the page invites to.
  *
  *  THE ASK IS THE LIST'S, IN THE CARD'S VOICE. Where the card prints its RSVP the page invites the
  *  reader onto the concert invitation list (`outreach`, the "Zaproszenia" list). What must read the
@@ -35,9 +37,25 @@
  * @module i18n/content/zaproszenie
  */
 
+import type { ConcertChrome } from "./koncert";
+
 export const INVITATION_CONCERT_ID = "pochwala-stworzenia";
 
 const CONTACT_MAILBOX = "kontakt@voctensemble.com";
+
+/** The excerpts glyph's chrome on this page. The title and the source line say what is heard and
+    who chose it, not a call to listen: the page speaks to "Państwo", and the disc's triangle is the
+    call. The reel is cut by hand and does not hold every work, so nothing here promises one. */
+const LISTEN: ConcertChrome["excerpts"] = {
+  title: "„Pochwała Stworzenia” w Warszawie",
+  source: "Fragmenty wybrane przez dyrygenta",
+  unavailable: "Nagranie jest chwilowo niedostępne",
+  play: "Odtwórz fragmenty nagrania z koncertu",
+  pause: "Wstrzymaj fragmenty nagrania z koncertu",
+  stop: "Zatrzymaj",
+  region: "Odtwarzacz fragmentów nagrania z koncertu",
+  timeline: "Oś czasu nagrania",
+};
 
 export const ZAPROSZENIE = {
   meta: {
@@ -122,6 +140,7 @@ export const ZAPROSZENIE = {
     /** The calendar entry's note opens with this; admission, room, frame and organiser follow. */
     calendarDescription: "Koncert Duchowy VoctEnsemble.",
   },
+  listen: LISTEN,
   ask: {
     rubric: "Zaproszenia",
     invitation: "Z przyjemnością zaprosimy Państwa także na kolejne koncerty.",

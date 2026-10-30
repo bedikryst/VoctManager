@@ -2,8 +2,10 @@
  * @file zaproszenie.css
  * @description `/zaproszenie`, the invitation opened on a screen: what the page composes from the
  *  invitation's material (`styles/invitation.css`, imported first) — the cover, an editorial
- *  spread, the response strip, the foundation with its gift and the cover's credit. The list's
- *  island between the last two, a quiet postscript, is dressed by `styles/invitation-notice.css`.
+ *  spread, the response strip, the recording, the foundation with its donors' sky and its gift,
+ *  and the cover's credit. The list's island between the last two, a quiet postscript, is dressed
+ *  by `styles/invitation-notice.css`; the recording's glyph by `styles/excerpts.css`, re-dressed
+ *  here for the night.
  *
  *  THE SHEET IS THE EVENING'S NIGHT. The evening's poster sets the programme in orbit round an
  *  eclipse among stars; the page keeps that thought, not its picture. The invitation's ledger
@@ -19,8 +21,9 @@
  *  amber it throws into the sky is CSS and stays while the photograph loads. Afterwards the corona
  *  swells by a hair on a slow clock. The cover's data-entrance cue gives the photograph a short
  *  readiness window, runs once and stays composed after it leaves view. The title is readable at
- *  full opacity throughout. The only other motion is the gift's: its act, the one thing on the
- *  sheet drawn in gold, takes the light once when the reader reaches it.
+ *  full opacity throughout. The only other motion is the gift's, once, when the reader reaches
+ *  it: the donors' stars light one after another, and then its act, the one thing on the sheet
+ *  drawn in gold, takes the light.
  * @module styles/zaproszenie
  */
 
@@ -38,6 +41,13 @@ body.page-zaproszenie {
   --inv-refusal: #e3958e;
   --inv-shadow: 0 0 0;
   --edge-foot: var(--inv-paper);
+  /* The donors' stars: a shade warmer than the tile's white, the candle in them. */
+  --zap-donor-light: color-mix(in srgb, var(--candle) 30%, #fff8ec);
+}
+
+/* While the recording's bar stands, the strip below it is the bar's night (styles/excerpts.css). */
+body.page-zaproszenie:has(> .excerpts-bar:not([hidden])) {
+  --edge-foot: var(--night);
 }
 
 /* On the night an act is drawn in line, not filled: a light block on this dark reads as glare. */
@@ -603,13 +613,113 @@ html.voct-motion .zap .inv-rubric:not(.is-in)::after {
   line-height: 1.45;
 }
 
+/* ── The recording ─────────────────────────────────────────────────────────────
+   The glyph of /podziekowanie, on the night. Its disc is drawn in the sheet's ink rather than the
+   candle, because the act below is the sheet's one thing in gold, and with no photograph under it
+   the disc's blur would show nothing. Hover lifts the disc as it lifts the drawn acts. Focus is the
+   sheet's own ring (`.inv-sheet` in invitation.css). */
+.zap-listen {
+  display: flex;
+  justify-content: center;
+  margin: clamp(80px, 10vw, 128px) auto 0;
+}
+
+.zap-listen .excerpts-glyph {
+  color: var(--inv-ink);
+}
+
+.zap-listen .excerpts-disc {
+  border-color: var(--inv-line-strong);
+  background: transparent;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  color: var(--inv-ink);
+}
+
+@media (hover: hover) {
+  .zap-listen .excerpts-glyph:hover .excerpts-disc {
+    border-color: var(--inv-ink);
+    background: color-mix(in srgb, var(--inv-ink) 8%, transparent);
+  }
+}
+
+.zap-listen .excerpts-total {
+  color: var(--inv-ink-soft);
+  font-family: var(--serif);
+  font-size: 18px;
+  font-variant-numeric: lining-nums tabular-nums;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.zap-listen .excerpts-title {
+  color: var(--inv-ink);
+  font-size: clamp(20px, 1.9vw, 23px);
+  font-weight: 500;
+  text-wrap: balance;
+}
+
+.zap-listen .excerpts-source {
+  color: var(--inv-muted);
+  font-family: var(--serif);
+  font-size: 17px;
+  font-style: italic;
+  font-weight: 500;
+  letter-spacing: 0;
+  line-height: 1.3;
+  text-transform: none;
+}
+
 /* ── The foundation, and the gift ──────────────────────────────────────────────
-   The page's second ask, between the response strip and the list: the foundation says what it
-   carries, the donors' sentences say why it asks, and one act answers. */
+   The page's second ask, between the recording and the list: the foundation says what it
+   carries, the donors' sentences say why it asks, and one act answers, in a band of sky that
+   holds one star per donor. */
 .zap-foundation {
+  position: relative;
+  isolation: isolate;
   max-width: 34em;
   margin: clamp(96px, 12vw, 150px) auto 0;
   text-align: center;
+}
+
+/* The donors' sky: the sheet's full width, from short of the recording above to the list's light
+   below. The stars are placed, sized and dimmed by scripts/donor-sky.ts; this layer only holds
+   them. It fades towards its edges through each star's own alpha, so it needs no mask. */
+.zap-donor-sky {
+  position: absolute;
+  top: calc(-1 * clamp(56px, 7vw, 96px));
+  right: calc(50% - 50vw);
+  bottom: calc(-1 * clamp(40px, 5vw, 72px));
+  left: calc(50% - 50vw);
+  z-index: -1;
+  pointer-events: none;
+}
+
+/* A few px each and brighter than the tile's stars, so they read as the sky's nearest. */
+.zap-donor-star {
+  position: absolute;
+  top: calc(var(--y) * 100%);
+  left: calc(var(--x) * 100%);
+  width: var(--s);
+  height: var(--s);
+  margin: calc(var(--s) / -2) 0 0 calc(var(--s) / -2);
+  border-radius: 50%;
+  background: var(--zap-donor-light);
+  opacity: calc(var(--a) * var(--dim, 1));
+}
+
+.zap-donor-star.is-bright {
+  box-shadow: 0 0 calc(var(--s) * 2) calc(var(--s) * 0.3)
+    color-mix(in srgb, var(--candle) 45%, transparent);
+}
+
+/* Over the column a star stays dim enough not to sit on a line of text. */
+.zap-donor-star.is-dim {
+  --dim: 0.3;
+}
+
+.zap-donor-star.is-veiled {
+  visibility: hidden;
 }
 
 .zap-foundation-name {
@@ -642,7 +752,8 @@ html.voct-motion .zap .inv-rubric:not(.is-in)::after {
 
 /* The candle the act stands in, thrown wide and dark until the kindle (Motion, below) raises it
    once and leaves it glowing. It spans the viewport on a phone and stops short of it on a wide
-   screen, so it reads as light round the act rather than as a band across the sheet. */
+   screen, so it reads as light round the act rather than as a band across the sheet. It is the
+   empty sky's: once the donors' stars are drawn, they are the light round the act. */
 .zap-give {
   position: relative;
   isolation: isolate;
@@ -665,6 +776,10 @@ html.voct-motion .zap .inv-rubric:not(.is-in)::after {
   );
   opacity: 0;
   pointer-events: none;
+}
+
+.zap-foundation[data-sky] .zap-give::before {
+  content: none;
 }
 
 /* The page's one act in gold. Drawn in line like every act on the night, never filled at rest. */
@@ -812,6 +927,23 @@ html.voct-motion body.give-kindled .zap-give-act::after {
   animation: zap-give-flare 4.2s var(--ease-slow) both;
 }
 
+/* With donors drawn, their stars light first, one after another in the order the donors came
+   (`--d`, set by scripts/donor-sky.ts), and the act waits for the last (`--sky-span`). The star's
+   800ms is the one ACT_AFTER_MS in that script counts on. Until the gift is reached they are not
+   yet lit. */
+html.voct-motion body:not(.give-kindled) .zap-donor-star {
+  opacity: 0;
+}
+
+html.voct-motion body.give-kindled .zap-donor-star {
+  animation: zap-star-light 0.8s var(--ease) var(--d, 0s) both;
+}
+
+html.voct-motion body.give-kindled .zap-foundation[data-sky] .zap-give-act::before,
+html.voct-motion body.give-kindled .zap-foundation[data-sky] .zap-give-act::after {
+  animation-delay: var(--sky-span, 0s);
+}
+
 /* Without motion, or without JS, the gift stands as the kindle leaves it. */
 html:not(.voct-motion) .zap-give::before {
   opacity: 0.6;
@@ -856,6 +988,13 @@ html:not(.voct-motion) .zap-give-act::before {
     opacity: 1;
   }
   100% {
+    opacity: 0;
+  }
+}
+
+/* From dark to the element's own opacity, which the star's dimming may change afterwards. */
+@keyframes zap-star-light {
+  from {
     opacity: 0;
   }
 }
@@ -920,5 +1059,12 @@ html:not(.voct-motion) .zap-give-act::before {
 
   .zap-accept {
     transition: none;
+  }
+
+  /* The stars stand lit, with no stagger. */
+  html.voct-motion body:not(.give-kindled) .zap-donor-star,
+  html.voct-motion body.give-kindled .zap-donor-star {
+    animation: none;
+    opacity: calc(var(--a) * var(--dim, 1));
   }
 }

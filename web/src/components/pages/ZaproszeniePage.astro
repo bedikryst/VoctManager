@@ -13,14 +13,19 @@
  *  composers and performers. Each column reads down its own axis; on a phone the invitation
  *  precedes the concert. The programme link introduces its composers, followed by performer
  *  credits. Every word stands from the start, with no reveal on scroll. One response strip follows
- *  both. The foundation comes next, as the page's second ask and the one it most wants answered:
+ *  both. Then the recording:
+ *  the programme's first evening, heard before anything is asked, because people give to what they
+ *  have taken part in. It prints only when the recording is on the host that builds the page.
+ *  The foundation comes next, as the page's second ask and the one it most wants answered:
  *  its paragraph, the donors' sentences, the gift's act, and its own profiles (not the ensemble's,
- *  which the footer carries). The act opens the donation vault in place, as the menu's "Wesprzyj"
- *  does; its href, the landing's donation section (`/#wesprzyj`, a deep link that skips the rite),
- *  is the road without JS. The page moves twice: the eclipse dawns, and the act takes the light
- *  once when it is reached. The future-invitation list follows as a postscript for the reader not
- *  ready to give, and the cover's credit closes the sheet. The title stands once, on the cover; the
- *  invitation reads on from it as one sentence ("VoctEnsemble serdecznie zaprasza na Koncert Duchowy…").
+ *  which the footer carries), in a band of sky that holds one star per donor and explains none of
+ *  them (`scripts/donor-sky.ts`). The act opens the donation vault in place, as the menu's
+ *  "Wesprzyj" does; its href, the landing's donation section (`/#wesprzyj`, a deep link that skips
+ *  the rite), is the road without JS. The page moves twice, each time once: the eclipse dawns, and
+ *  when the act is reached the donors' stars light one after another and the act takes the light
+ *  last. The future-invitation list follows as a postscript for the reader not ready to give, and
+ *  the cover's credit closes the sheet. The title stands once, on the cover; the invitation reads
+ *  on from it as one sentence ("VoctEnsemble serdecznie zaprasza na Koncert Duchowy…").
  *
  *  THE ARTWORK IS OPTIONAL TO THE BUILD AND OUTSIDE GIT. `zaproszenie-eclipse` is a total solar
  *  eclipse at its diamond ring (NASA/Carla Thomas, 2017, public domain), recoloured amber, its
@@ -45,6 +50,7 @@ import { getImage } from "astro:assets";
 import { getEntry } from "astro:content";
 
 import BaseLayout from "../../layouts/BaseLayout.astro";
+import ExcerptsGlyph from "../ExcerptsGlyph.astro";
 import SiteChrome from "../SiteChrome.astro";
 import SiteFooter from "../SiteFooter.astro";
 import VaultMount from "../VaultMount.astro";
@@ -56,13 +62,16 @@ import { NUNTIUS } from "../../i18n/content/nuntius";
 import { INVITATION_CONCERT_ID, ZAPROSZENIE, frameTemplate } from "../../i18n/content/zaproszenie";
 import { UI } from "../../i18n/ui";
 import { SITE } from "../../i18n/config";
+import { candleFrom } from "../../lib/candle";
 import { currentPerformance } from "../../lib/cycle";
 import { longDate, weekdayName } from "../../lib/dates";
+import { concertExcerpts } from "../../lib/excerpts";
 import { chromeHtmlForIsland } from "../../lib/islandCopy";
 import { pageCopy } from "../../lib/pageCopy";
 import { bleedPair, photoOptional } from "../../lib/photos";
 import "../../styles/invitation.css";
 import "../../styles/invitation-notice.css";
+import "../../styles/excerpts.css";
 import "../../styles/zaproszenie.css";
 import "../../styles/vault.css";
 
@@ -123,6 +132,11 @@ const noticeCopy = {
 /* A link pasted into a message shows the evening's poster, the same frame its own page shares. */
 const shareImg = concert.share ? photoOptional(concert.share) : undefined;
 const ogImage = shareImg ?? bleedPair("koncerty-hero").desktop;
+
+/* The recording is the record's evening, not the one invited to, so it reads the entry itself; the
+   bar it raises at the foot of the viewport burns the concert's candle, as on /podziekowanie. */
+const excerpts = await concertExcerpts(entry, lang, bleedPair(entry.data.heroImg ?? entry.data.bg).desktop);
+const excerptsCandle = candleFrom(entry.data.accent);
 
 /* The invitation's artwork. Each is optional; see the header. */
 const art = async (name: string, width: number) => {
@@ -270,8 +284,18 @@ const creditHtml = eclipse ? `${copy.cover.credit.lead} ${copy.cover.credit.ecli
       </div>
     </div>
 
+    {/* ── The recording ── */}
+    {excerpts && (
+      <div class="zap-listen">
+        <ExcerptsGlyph excerpts={excerpts} labels={copy.listen} lang={lang} candle={excerptsCandle} title={entry.data.title} />
+      </div>
+    )}
+
     {/* ── The foundation, and the gift ── */}
     <section class="zap-foundation" aria-labelledby="zap-foundation-heading">
+      {/* The donors' sky (scripts/donor-sky.ts): one star per donor, with no caption and no count.
+          Empty until the collection's figure arrives, and empty for good without one. */}
+      <div class="zap-donor-sky" aria-hidden="true" data-donor-sky></div>
       <h2 id="zap-foundation-heading" class="zap-foundation-name">{copy.foundation.name}</h2>
       <p class="zap-foundation-text">{copy.foundation.text}</p>
       <p class="zap-donors">{copy.foundation.donors}</p>
@@ -328,12 +352,18 @@ const creditHtml = eclipse ? `${copy.cover.credit.lead} ${copy.cover.credit.ecli
 
 <script>
   import "../../scripts/vault-triggers.ts";
+  import { setupDonorSky } from "../../scripts/donor-sky";
   import { setupInvitation } from "../../scripts/invitation";
 
   let dispose: (() => void) | undefined;
   document.addEventListener("astro:page-load", () => {
     dispose?.();
-    dispose = setupInvitation();
+    const invitation = setupInvitation();
+    const sky = setupDonorSky();
+    dispose = () => {
+      invitation?.();
+      sky?.();
+    };
   });
   document.addEventListener("astro:before-swap", () => {
     dispose?.();
