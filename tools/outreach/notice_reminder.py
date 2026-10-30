@@ -94,7 +94,7 @@ COPY: dict[str, dict] = {
         "button": "Program koncertu",
         "closing": "Do zobaczenia",
         "signature": "VoctEnsemble",
-        "why": "Ten adres jest na liście zaproszeń VoctEnsemble. Piszemy tylko o koncertach.",
+        "why": "Ten adres jest na liście zaproszeń VoctEnsemble.",
         "controller": (
             "Administratorem danych jest Fundacja VoctFoundation, ul. Św. Filipa 23/3, "
             "31-150 Kraków. Zgodę możesz wycofać w każdej chwili, linkiem poniżej albo pisząc "
@@ -129,7 +129,7 @@ COPY: dict[str, dict] = {
         "button": "The programme",
         "closing": "See you there",
         "signature": "VoctEnsemble",
-        "why": "This address is on the VoctEnsemble invitation list. We write only about concerts.",
+        "why": "This address is on the VoctEnsemble invitation list.",
         "controller": (
             "The data controller is Fundacja VoctFoundation, ul. Św. Filipa 23/3, 31-150 Kraków, "
             "Poland. You may withdraw your consent at any time, through the link below or by "

@@ -26,12 +26,23 @@ without the meaning changing makes the history unreadable.
 # three locales) and with the privacy policy's own version, which describes this purpose in
 # § 3/4/7.
 #
+# 4.0 is the purpose widened. Under 3.0 the line above the clause promised concerts and nothing
+# else ("Piszemy tylko o koncertach. Termin, miejsce, program i każda zmiana."). Under 4.0 the
+# band's headline invites to the concerts and `notice.lede` adds "Napiszemy też, co u nas
+# słychać."; the policy (1.9, § 3 and § 4) names what that covers: concerts before and after
+# (invitations, changes, photographs, recordings), news of the ensemble, and requests for
+# support. Consents stamped 3.0 and earlier were not asked again. The list was some fifteen
+# people who know the ensemble, and the developer (2026-10-30) chose to tell them in the next
+# letter, with its one-click exit, over a second class of subscriber that only concert letters
+# may reach. No send path filters on this version, and none should start to without that
+# decision being reopened.
+#
 # 3.0 is the clause becoming a LAYERED NOTICE, which is a change of what is on screen and
 # therefore a change of what was consented to. Art. 13 requires the information to be PROVIDED
 # when the data is collected, and the EDPB's transparency guidelines (WP260) are explicit that a
 # short first layer — with the full account one link away — is how that is met. The first layer
 # is ONE LINE: the controller by name, and the policy linked. The purpose stands directly above it
-# on every placement (the band's own sentence: concerts, and only concerts), so the clause does not
+# on every placement (the band's own sentence, `notice.lede`), so the clause does not
 # restate it; the way out, the data mailbox, the confirmation link's validity and the successor are
 # carried by the policy and by every letter. Nothing about the processing changed; where the
 # reader meets it did.
@@ -55,4 +66,4 @@ without the meaning changing makes the history unreadable.
 # clause states what happens to the list if the foundation is wound up, and it covers an
 # optional first name. Consents stamped 1.0 stay 1.0 — they were given under a clause that
 # named neither the successor nor the name, and no later wording reaches back to them.
-NOTICE_CLAUSE_VERSION = "3.0"
+NOTICE_CLAUSE_VERSION = "4.0"

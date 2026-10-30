@@ -165,13 +165,13 @@ const KONCERTY_CONTRACT: readonly CopyEntry[] = [
     kind: "field",
     path: "notice.headline",
     label: "Zaproszenia · nagłówek nad blankietem",
-    note: "The headline over the notice list's sign-up on every surface that mounts it (the landing's register, this band, a concert page, /kontakt). A benefit in the reader's direction, plural and open-ended — it must not point at whichever evening is announced beside it. One line at desktop width; the promise under it (`notice.lede`) says what a letter carries.",
+    note: "The headline over the notice list's sign-up on every surface that mounts it (the landing's register, this band, a concert page, /kontakt). A benefit in the reader's direction, plural and open-ended — it must not point at whichever evening is announced beside it. One line at desktop width; the line under it (`notice.lede`) widens it to news of the ensemble.",
   },
   {
     kind: "field",
     path: "notice.lede",
     label: "Zaproszenia · zdanie",
-    note: "One negation in the passage, at its end — the site's rule. It states a frequency, not a relationship. Say `koncert`, never the site's own `wieczór`: a stranger scanning this band reads the plainest available word, and counting letters against evenings reads as one letter every evening.",
+    note: "Leans on the headline above it: the headline names the concerts, this line adds that the list also writes about the ensemble. Friendly and short; it does not list what a letter carries, the privacy policy does. It is the purpose the consent record points at, so what it promises changes only with a new clause version (`backend/outreach/consent.py`).",
   },
   {
     kind: "field",

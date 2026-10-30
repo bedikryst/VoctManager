@@ -5,7 +5,7 @@
  *  one sentence and one blank under it, and the letter itself lying on the corner of the room.
  *
  *  THE PAGE IS THE LETTER, AND THE ROOM IS WHAT THE LETTER IS ABOUT. The reader writes their
- *  address under the photograph, beside the one sentence that says what the letter carries — and as
+ *  address under the photograph, beside the two sentences that say what the letters bring — and as
  *  they type, the letter on the right is addressed to them: the addressee's line at its head fills
  *  with what they write. That mirror is the composition's whole argument, and it is why the sheet
  *  shows a letter rather than describing one.
@@ -28,7 +28,7 @@
  *  end of the row. Each cut already ends on a measured dark line of the frame; see
  *  `scripts/nuntius-room-crops.mjs`, which owns that geometry and the luminance table behind it.
  *
- *  THE VOICE IS STILL THE BAND'S. The sentence, the sign-off and the receipt are
+ *  THE VOICE IS STILL THE BAND'S. The headline and promise, the sign-off and the receipt are
  *  `content/pages/koncerty.yaml` under `notice.*`, read through the desk overlay like every other
  *  placement — this page says what the band says, in the shape a letter says it in. Only the
  *  stationery is chrome (`i18n/content/nuntius.ts`, `letter`).
@@ -162,7 +162,9 @@ const moment = ahead
   </figure>
 
   <div class="letter-lede-row">
-    <h1 class="letter-lede">{copy.notice.lede}</h1>
+    {/* Headline and promise as one sentence pair: the promise leans on the headline ("też") and
+        would stand without its subject here otherwise. */}
+    <h1 class="letter-lede">{copy.notice.headline} {copy.notice.lede}</h1>
     {/* The box the exchange happens in — `NoticeForm` freezes its height before the receipt takes
         the blank's place, so nothing above or below it moves while the reader is looking at it. */}
     <div class="notice-letter-ask">

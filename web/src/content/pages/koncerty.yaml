@@ -71,22 +71,18 @@ notice:
   # it, and a reader looking at that evening does not need a letter to learn of it. One line at
   # desktop width. The promise that follows it — what a letter carries — is `lede` below.
   headline: "Zaprosimy Cię na kolejne koncerty."
-  # THE PROMISE IS SCOPE, NOT A COUNT. Counting letters ("one short letter before each concert")
-  # states an operational limit no sending policy keeps: one programme sung in three cities is
-  # three dates, and a moved hour is another letter. What can be promised without such a policy is
-  # the purpose the consent record already holds — concerts — so the sentence names the subject
-  # and then lists what a letter carries. "Każda zmiana" is the last ITEM of that list, never a
-  # sentence of its own about changes: it is one more thing the letter brings, and the strongest
-  # reason a stranger has to give an address.
+  # THE PROMISE, SAID THE WAY A FRIEND SAYS IT. The headline already names the concerts; this line
+  # only widens it to news of the ensemble. It does not itemise what a letter carries (changes,
+  # photographs, recordings, a request for support): the privacy policy names those once, in § 3,
+  # and a list read on a sign-up band reads as small print. It is still the purpose the consent
+  # record points at, so changing what it promises is a new `NOTICE_CLAUSE_VERSION`
+  # (`backend/outreach/consent.py`).
   #
-  # IT SAYS "KONCERT", NOT THE SITE'S OWN "WIECZÓR". This is the band a stranger meets while
-  # scanning, and the same rule `landing.yaml` states at `announceLabel` applies here: the
-  # plainest available word is the one that gets read.
-  #
-  # The two no-break spaces this line wants — "o koncertach" and "i każda" — are `lib/typo`'s
-  # work, not the author's. Write it plainly.
+  # IT LEANS ON WHAT STANDS ABOVE IT ("też"). Every surface prints the headline or an invitation
+  # of its own first: `NoticeSignup`, `NoticeLetter` (one h1 of both), /zaproszenie, /podziekowanie.
+  # It addresses nobody, so it sits under /zaproszenie's "Państwo" as well as under "Cię".
   lede: >-
-    Piszemy tylko o koncertach. Termin, miejsce, program i każda zmiana.
+    Napiszemy też, co u nas słychać.
   # Read after the address is submitted. It says a mail is on its way, never "you are subscribed":
   # nothing is stored as a consent until the link in it is clicked.
   sentTitle: "Sprawdź skrzynkę."

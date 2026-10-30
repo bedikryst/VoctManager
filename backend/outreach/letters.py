@@ -6,7 +6,7 @@
 # ruff: noqa: RUF001
 """
 A letter is what the list exists for: the ensemble writing to the people who asked to hear
-about its concerts. Letters are rare and each is designed for its own concert, so there is
+about its concerts and its news. Letters are rare and each is designed for its own concert, so there is
 no shared letter template. A letter is three things that travel together:
 
 - its templates, `templates/emails/letter_<slug>.html` and `.txt`;
@@ -17,12 +17,10 @@ no shared letter template. A letter is three things that travel together:
 Sending is `manage.py send_notice_letter <slug>`. Each subscriber gets a letter once:
 `NoticeLetterDelivery` records the hand-over, and a second run skips whoever has it.
 
-EVERY LETTER STAYS INSIDE THE LIST'S PROMISE — "we write only about concerts". A letter
-written to raise money, or announcing anything that is not a concert, needs a consent nobody
-on this list has given. Who made a concert possible is part of that concert: its letter may
-thank the donors as a fact of the evening and close that thanks on one linked phrase to the
-donation door. Never a button, a fundraising block or a letter of its own — the footer of
-every letter repeats the promise, and a button under it would break it in the same email.
+WHAT A LETTER MAY CARRY is what the list was promised (consent 4.0, `consent.py`): concerts
+before and after, news of the ensemble, and now and then a request for support. A request
+for support is written as part of the letter, in its voice, the way the donors are thanked
+in the Pochwała letter; never a fundraising block or a wall of buttons bolted under the prose.
 """
 from dataclasses import dataclass
 from typing import Any
@@ -95,7 +93,7 @@ class LetterCopy:
     #: Who writes. The ensemble, unless a person wrote the letter themselves: a name under
     #: words its owner did not write is not a signature.
     signature: str
-    #: Why the letter arrived: the list, and the promise it was given.
+    #: Why the letter arrived: the list the address is on.
     why: str
     #: That a reply reaches a person. The address stays out of the prose, so changing
     #: `PUBLIC_LETTER_REPLY_TO_EMAIL` cannot make this sentence false.
@@ -221,10 +219,7 @@ POCHWALA_STWORZENIA = Letter(
             next=f"Daty następnego koncertu jeszcze nie znamy. Napiszemy do{NBSP}Ciebie, kiedy ją ustalimy.",
             closing="Serdecznie pozdrawiamy",
             signature="VoctEnsemble",
-            why=(
-                "Dostajesz ten list, bo Twój adres jest na liście Zaproszeń VoctEnsemble. "
-                "Piszemy tylko o koncertach."
-            ),
+            why="Dostajesz ten list, bo Twój adres jest na liście Zaproszeń VoctEnsemble.",
             reply="Jeśli na niego odpiszesz, przeczytamy Twoją odpowiedź.",
             unsubscribe="Wypisz się",
             preferences="Zmień powitanie",
@@ -288,7 +283,7 @@ POCHWALA_STWORZENIA = Letter(
             signature="VoctEnsemble",
             why=(
                 "You are receiving this letter because your address is on VoctEnsemble’s "
-                "Invitations list. We write only about concerts."
+                "Invitations list."
             ),
             reply="If you reply, we will read what you write.",
             unsubscribe="Unsubscribe",
@@ -358,7 +353,7 @@ POCHWALA_STWORZENIA = Letter(
             signature="VoctEnsemble",
             why=(
                 "Cette lettre vous parvient parce que votre adresse figure sur la liste des "
-                "Invitations de VoctEnsemble. Nous n’écrivons qu’au sujet des concerts."
+                "Invitations de VoctEnsemble."
             ),
             reply="Si vous y répondez, nous lirons votre réponse.",
             unsubscribe="Se désinscrire",

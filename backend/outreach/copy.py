@@ -46,12 +46,11 @@ class NoticeMailCopy:
     #: waits — the PENDING row — so nothing here may promise that we are holding nothing yet.
     body: str
     button: str
-    #: The promise the address is being given, restated where it is acted on. It names the SUBJECT
-    #: — concerts, never the site's own "evenings" — and does not count letters: a count is an
-    #: operational limit no sending policy keeps, while the subject is exactly what the consent
-    #: record holds. The same sentence stands on the sign-up band
-    #: (`web/src/content/pages/koncerty.yaml`, `notice.lede`) and on the receipt page; the three
-    #: wordings move together.
+    #: The promise the address is being given, restated where it is acted on: concerts and the
+    #: ensemble's news, said plainly, never itemised and never counted (the privacy policy holds
+    #: the itemised account). It is the standalone form of the sign-up band's headline and
+    #: `notice.lede` (`web/src/content/pages/koncerty.yaml`) and the same sentence the receipt
+    #: page prints (`nuntius.ts`, `states.confirmed`); the wordings move together.
     promise: str
     #: What to do if the reader did not ask for this. Doing nothing must be enough, and the seven
     #: days are `models.CONFIRM_TOKEN_TTL` — the number § 7 of the privacy policy publishes.
@@ -83,7 +82,7 @@ NOTICE_CONFIRM: dict[str, NoticeMailCopy] = {
             "nic więcej."
         ),
         button="Potwierdzam zapis",
-        promise="Piszemy tylko o koncertach. Termin, miejsce, program i każda zmiana.",
+        promise="Będziemy zapraszać na koncerty i pisać, co u nas słychać.",
         ignore=(
             "Jeśli to nie Ty — po prostu zignoruj tę wiadomość. Link wygasa po siedmiu dniach, "
             "a adres usuwamy."
@@ -109,7 +108,7 @@ NOTICE_CONFIRM: dict[str, NoticeMailCopy] = {
             "send nothing further."
         ),
         button="Confirm",
-        promise="We write only about concerts. The date, the place, the programme and every change.",
+        promise="We will invite you to our concerts and share our news.",
         ignore=(
             "If it was not you, simply ignore this message. The link expires after seven "
             "days, and we delete the address."
@@ -135,10 +134,7 @@ NOTICE_CONFIRM: dict[str, NoticeMailCopy] = {
             "liste et nous n'envoyons rien d'autre."
         ),
         button="Je confirme",
-        promise=(
-            "Nous n'écrivons que pour les concerts. La date, le lieu, le programme "
-            "et chaque changement."
-        ),
+        promise="Nous vous inviterons à nos concerts et vous donnerons de nos nouvelles.",
         ignore=(
             "Si ce n'était pas vous, ignorez simplement ce message. Le lien expire au bout de "
             "sept jours et nous supprimons l'adresse."

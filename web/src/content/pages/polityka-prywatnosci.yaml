@@ -42,8 +42,8 @@
 
 # The version this document is at, and the day it started to apply. Both are read by the line under
 # the title and by the newest entry of the history at the foot.
-version: "1.8"
-effectiveFrom: "2026-10-28"
+version: "1.9"
+effectiveFrom: "2026-10-30"
 
 meta:
   # Read in a browser tab and by a crawler, never on the page. The document is `noindex,follow` —
@@ -220,7 +220,10 @@ s3:
     # notice promised below is what precedes any transfer. `backend/outreach/consent.py` records
     # the decision that took the sentence off the form.
     p2Html: >-
-      Lista istnieje po to, żeby zapraszać na koncerty zespołu VoctEnsemble. Gdyby Fundacja
+      Lista istnieje po to, żeby zapraszać na koncerty zespołu VoctEnsemble i pisać, co u nas
+      słychać. Przed koncertem piszemy o terminie, miejscu, programie i zmianach, po nim dzielimy
+      się zdjęciami i nagraniami, a czasem piszemy o tym, co dzieje się w zespole, albo prosimy
+      o wsparcie jego działalności. Gdyby Fundacja
       zakończyła działalność lub uległa reorganizacji, lista może zostać przekazana osobie
       lub podmiotowi prowadzącemu dalej ten zespół. <strong>Uprzedzimy o tym wcześniej</strong>
       — osobną wiadomością, z możliwością wypisania się przed przekazaniem. Bez takiej
@@ -299,7 +302,8 @@ s4:
         zgodność z prawem przetwarzania, którego dokonano przed wycofaniem.
     - id: notices
       textHtml: >-
-        <strong>Zapraszanie na koncerty</strong> — art. 6 ust. 1 lit. a RODO (Twoja zgoda
+        <strong>Zaproszenia na koncerty i wiadomości o zespole, w tym prośby o wsparcie</strong>
+        — art. 6 ust. 1 lit. a RODO (Twoja zgoda
         wyrażona przy zapisie) oraz art. 10 ust. 2 ustawy o świadczeniu usług drogą
         elektroniczną. Zgodę możesz wycofać w każdej chwili — linkiem w każdej naszej
         wiadomości albo pisząc na <a href="mailto:rodo@voctensemble.com">rodo@voctensemble.com</a>;
@@ -666,6 +670,13 @@ history:
   # inside a key part.
   label: "Historia zmian"
   entries:
+    - id: "v1-9"
+      version: "1.9"
+      date: "2026-10-30"
+      note: >-
+        Poszerzyliśmy cel listy zaproszeń (§ 3 i § 4): oprócz zaproszeń na koncerty piszemy w niej
+        też o tym, co u nas słychać, dzielimy się zdjęciami i nagraniami z koncertów i czasem
+        prosimy o wsparcie. Zakres danych i sposób wypisania się z listy pozostają bez zmian.
     - id: "v1-8"
       version: "1.8"
       date: "2026-10-28"

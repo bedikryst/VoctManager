@@ -54,10 +54,10 @@ class NoticeStatus(models.TextChoices):
 
 class ConcertNoticeSubscription(SoftDeleteModel):
     """
-    One address on the concert notice list: a person who asked to be written to when
-    an evening gets a date. Concerts and nothing else — the promise made at the form
-    is the boundary of what this row licenses, and it names a subject rather than a
-    number of mails.
+    One address on the concert notice list: a person who asked to be invited to the
+    concerts and to hear the ensemble's news. The promise made at the form (versioned in
+    `consent.py`) is the boundary of what this row licenses, and it names a subject
+    rather than a number of mails.
 
     IT STORES THE EVIDENCE, WHICH `PatronLead` DELIBERATELY DOES NOT. A donation lead
     is corroborated by the transaction that follows it, so its `created_at` can stand

@@ -340,7 +340,7 @@ export const NUNTIUS: Record<Locale, NuntiusChrome> = {
         confirmed: {
           title: "Jesteś na liście.",
           body:
-            "Piszemy tylko o koncertach. Termin, miejsce, program i każda zmiana. " +
+            "Będziemy zapraszać na koncerty i pisać, co u nas słychać. " +
             "W każdej wiadomości będzie link do wypisania się.",
         },
         already_confirmed: {
@@ -418,7 +418,7 @@ export const NUNTIUS: Record<Locale, NuntiusChrome> = {
       meta: {
         title: "Zaproszenia na koncerty — VoctEnsemble",
         description:
-          "Piszemy tylko o koncertach. Termin, miejsce, program i każda zmiana. Zapisz się, " +
+          "Będziemy zapraszać na koncerty i pisać, co u nas słychać. Zapisz się, " +
           "a napiszemy przed następnym Koncertem Duchowym.",
       },
     },
@@ -497,8 +497,8 @@ export const NUNTIUS: Record<Locale, NuntiusChrome> = {
         confirmed: {
           title: "You are on the list.",
           body:
-            "We write only about concerts. The date, the place, the programme and every " +
-            "change. Every message carries a link to leave.",
+            "We will invite you to our concerts and share our news. " +
+            "Every message carries a link to leave.",
         },
         already_confirmed: {
           title: "This address is already on the list.",
@@ -575,7 +575,7 @@ export const NUNTIUS: Record<Locale, NuntiusChrome> = {
       meta: {
         title: "Concert invitations — VoctEnsemble",
         description:
-          "We write only about concerts. The date, the place, the programme and every change. " +
+          "We will invite you to our concerts and share our news. " +
           "Sign up and we will write before the next Spiritual Concert.",
       },
     },
@@ -655,8 +655,8 @@ export const NUNTIUS: Record<Locale, NuntiusChrome> = {
         confirmed: {
           title: "Vous êtes inscrit.",
           body:
-            "Nous n'écrivons que pour les concerts. La date, le lieu, le programme et chaque " +
-            "changement. Chaque message porte un lien pour se désinscrire.",
+            "Nous vous inviterons à nos concerts et vous donnerons de nos nouvelles. " +
+            "Chaque message porte un lien pour se désinscrire.",
         },
         already_confirmed: {
           title: "Cette adresse est déjà inscrite.",
@@ -736,8 +736,8 @@ export const NUNTIUS: Record<Locale, NuntiusChrome> = {
       meta: {
         title: "Invitations aux concerts — VoctEnsemble",
         description:
-          "Nous n'écrivons que pour les concerts. La date, le lieu, le programme et chaque " +
-          "changement. Inscrivez-vous : nous écrirons avant le prochain Concert Spirituel.",
+          "Nous vous inviterons à nos concerts et vous donnerons de nos nouvelles. " +
+          "Inscrivez-vous : nous écrirons avant le prochain Concert Spirituel.",
       },
     },
     register: {
