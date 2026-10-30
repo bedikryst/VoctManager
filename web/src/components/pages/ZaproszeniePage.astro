@@ -224,7 +224,7 @@ const creditHtml = eclipse ? `${copy.cover.credit.lead} ${copy.cover.credit.ecli
         {/* ── The concert ── */}
         <section class="zap-about" aria-labelledby="zap-about-heading">
           <h2 id="zap-about-heading" class="zap-about-heading">{copy.about.heading}</h2>
-          <p class="zap-about-text" set:html={`${copy.about.textHtml} ${copy.about.church}`} />
+          <p class="zap-about-text" set:html={`${copy.about.textHtml} ${copy.about.eveningHtml}`} />
           <div class="zap-programme">
             {concert.hasPage && (
               <p class="zap-door">

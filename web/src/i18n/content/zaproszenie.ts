@@ -15,11 +15,12 @@
  *  to the evening the page now invites to. The cover line, the inside page, the composers and the
  *  foundation's paragraph are the card's own sentences. The departures are deliberate: the
  *  paragraph about the concert is the card's as edited for this page, with one sentence about the
- *  evening's church; the Canticle's Polish name is spelled as the site spells it („Pieśń
- *  słoneczna”); a festival is named without an edition number; the ensemble is billed above its
- *  soloists; and the donors' line under the foundation's paragraph and the cover photographs'
- *  credit are not on the card at all. `about.church` and `about.cast` belong to one evening and
- *  change with it.
+ *  evening (the programme's second performance, and its church); the foundation's paragraph ends
+ *  its first sentence at the ensemble's projects, as the conductor asked; the Canticle's Polish
+ *  name is spelled as the site spells it („Pieśń słoneczna”); a festival is named without an
+ *  edition number; the ensemble is billed above its soloists; and the donors' line under the
+ *  foundation's paragraph and the cover photographs' credit are not on the card at all.
+ *  `about.eveningHtml` and `about.cast` belong to one evening and change with it.
  *
  *  THE ASK IS THE LIST'S, IN THE CARD'S VOICE. Where the card prints its RSVP the page invites the
  *  reader onto the concert invitation list (`outreach`, the "Zaproszenia" list). What must read the
@@ -83,8 +84,12 @@ export const ZAPROSZENIE = {
       "z <em>Laudes creaturarum</em> św. Franciszka z Asyżu, kantyku znanego jako " +
       "„Pieśń&nbsp;słoneczna” – pochwały Boga poprzez stworzenie: od słońca, księżyca " +
       "i żywiołów aż po ludzkie doświadczenie cierpienia, przebaczenia i śmierci.",
-    /** The evening's church, closing the paragraph above. */
-    church: "W Poznaniu program zabrzmi u franciszkanów, w kościele zakonu, który założył autor kantyku.",
+    /** The evening's place in the programme's run and its church, closing the paragraph above. It
+        says the programme is sung again, never that every piece is: the Pärt did not sound in
+        Warsaw. */
+    eveningHtml:
+      "Po premierze w Warszawie 11&nbsp;października program zabrzmi po raz drugi, tym razem " +
+      "u franciszkanów w Poznaniu, w kościele zakonu, który założył autor kantyku.",
     /** In the card's order, which is not the running order. */
     composers: [
       "Pärt",
@@ -129,9 +134,8 @@ export const ZAPROSZENIE = {
   foundation: {
     name: "VoctFoundation",
     text:
-      "Fundacja wspiera rozwój VoctEnsemble i jego projektów artystycznych, tworząc warunki do ich " +
-      "realizacji i spotkania z publicznością. „Pochwała Stworzenia” jest pierwszym projektem " +
-      "realizowanym przez Fundację.",
+      "Fundacja wspiera rozwój VoctEnsemble i jego projektów artystycznych. „Pochwała Stworzenia” " +
+      "jest pierwszym projektem realizowanym przez Fundację.",
     /** The page's last, smallest line, and the link leads to the donation vault. It speaks of the
         concerts to come rather than of this one, which an outside organiser may be paying for.
         Impersonal, so it holds the card's "Państwo". */
