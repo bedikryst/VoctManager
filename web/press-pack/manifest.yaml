@@ -24,6 +24,7 @@
 # The script REFUSES on a row with no credit, a missing source file, or a source that is held in
 # `src/assets/photos/.held-no-consent/`; it WARNS AND SKIPS a crop whose short edge is under 1080 px,
 # so a thumbnail sent by mistake never ships as a press photo and the rest of the pack still builds.
+# `noLargerOriginal: true` lets one row under the floor through: the file is the largest that exists.
 #
 # CAPTIONS FOLLOW THE BOARD'S RULE (28.09.2026). A concert: who · "Koncert" and the title, the town
 # and the year — what identifies the evening; a church only where it matters to the frame. A
@@ -105,11 +106,12 @@ photos:
     focus: [0.5, 0.4]
     caption: "Florent de Bazelaire · dyrygent i założyciel VoctEnsemble"
     credit: VoctEnsemble
-  # The organist of the Poznań evening, a portrait captioned like 10. The board sent it at 900 × 1200
-  # (30.10.2026), under the floor, so the pack skips it until the original replaces the file.
+  # The organist of the Poznań evening, a portrait captioned like 10. 900 × 1200 is the only file
+  # there is (the board, 30.10.2026): a 900 × 1125 crop, enough for the web, short for print.
   - id: voctensemble-11-fot-dariusz-bakowski-kois
     source: Jakub-Kapala_organista_fot-Dariusz-Bakowski-Kois.jpg
     ratio: "4:5"
     focus: [0.5, 0.45]
+    noLargerOriginal: true
     caption: "Jakub Kapała · organista"
     credit: Dariusz Bąkowski-Kois

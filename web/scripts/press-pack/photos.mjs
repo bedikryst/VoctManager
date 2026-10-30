@@ -71,12 +71,13 @@ const creditXmp = (credit) => `<?xpacket begin="﻿" id="W5M0MpCehiHzreSzNTczkc9
 
 /**
  * Cut one photograph. Returns `{ skipped }` with the crop's size when it falls under the
- * short-edge floor, otherwise the print file, the preview and the thumbnails as buffers.
+ * short-edge floor, otherwise the print file, the preview and the thumbnails as buffers. A row
+ * marked `noLargerOriginal` is the largest file that exists and ships under the floor as it is.
  */
-export async function pressPhoto(file, { ratio, focus, credit }) {
+export async function pressPhoto(file, { ratio, focus, credit, noLargerOriginal }) {
   const { width, height } = await uprightSize(file);
   const box = cropBox(width, height, RATIOS[ratio], focus);
-  if (Math.min(box.width, box.height) < SHORT_EDGE_FLOOR) {
+  if (!noLargerOriginal && Math.min(box.width, box.height) < SHORT_EDGE_FLOOR) {
     return { skipped: { width: box.width, height: box.height } };
   }
 

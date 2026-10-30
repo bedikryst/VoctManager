@@ -84,12 +84,11 @@ export const ZAPROSZENIE = {
       "z <em>Laudes creaturarum</em> św. Franciszka z Asyżu, kantyku znanego jako " +
       "„Pieśń&nbsp;słoneczna” – pochwały Boga poprzez stworzenie: od słońca, księżyca " +
       "i żywiołów aż po ludzkie doświadczenie cierpienia, przebaczenia i śmierci.",
-    /** The evening's place in the programme's run and its church, closing the paragraph above. It
-        says the programme is sung again, never that every piece is: the Pärt did not sound in
-        Warsaw. */
+    /** The evening's place in the programme's run and its church, closing the paragraph above. */
     eveningHtml:
-      "Po premierze w Warszawie 11&nbsp;października program zabrzmi po raz drugi, tym razem " +
-      "u franciszkanów w Poznaniu, w kościele zakonu, który założył autor kantyku.",
+      "„Pochwała Stworzenia” po raz pierwszy zabrzmiała w październiku w Warszawie. Po raz drugi " +
+      "usłyszą ją Państwo w Poznaniu, u franciszkanów, w kościele zakonu, który założył sam autor " +
+      "kantyku.",
     /** In the card's order, which is not the running order. */
     composers: [
       "Pärt",

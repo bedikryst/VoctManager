@@ -52,13 +52,14 @@ concert: pochwala-stworzenia
 forces: "12 głosów · skrzypce · organy"
 
 # The concert card's paragraph on /press, and the paragraph its Kopiuj carries: the board's "HEAD"
-# paragraph from the master pack, whole. Its fact lines are not carried — the card prints them
-# from the corpus.
+# paragraph from the master pack, with our sentence on the second performance after its first. Its
+# fact lines are not carried — the card prints them from the corpus.
 lede: >-
   „Pochwała Stworzenia” to kolejna odsłona autorskiego cyklu Koncertów Duchowych VoctEnsemble,
-  inspirowanego XVIII-wieczną francuską tradycją Concerts Spirituels. Osią programu jest Pieśń
-  słoneczna św. Franciszka z Asyżu – kantyk, w którym cały świat, od żywiołów po człowieka, zostaje
-  włączony w jedną pochwałę Stwórcy. Franciszek zwraca się do stworzenia jak do rodzeństwa,
+  inspirowanego XVIII-wieczną francuską tradycją Concerts Spirituels. Po październikowej premierze
+  w Warszawie koncert zabrzmi po raz drugi, tym razem w Poznaniu, w kościele franciszkanów. Osią
+  programu jest Pieśń słoneczna św. Franciszka z Asyżu – kantyk, w którym cały świat, od żywiołów
+  po człowieka, zostaje włączony w jedną pochwałę Stwórcy. Franciszek zwraca się do stworzenia jak do rodzeństwa,
   ukazując człowieka nie jako kogoś stojącego ponad światem, lecz jako jego część. Pochwała obejmuje
   zarówno piękno i życiodajność stworzenia, jak i ludzkie doświadczenie przebaczenia, cierpienia
   i śmierci. Muzyka różnych epok podejmuje tę franciszkańską wizję, w której zachwyt nad światem

@@ -236,6 +236,9 @@ for (const [index, row] of rows.entries()) {
   if (!Array.isArray(focus) || focus.length !== 2 || !focus.every((n) => n >= 0 && n <= 1)) {
     fail(`${label} needs focus: [x, y], each between 0 and 1.`);
   }
+  if (row?.noLargerOriginal !== undefined && typeof row.noLargerOriginal !== "boolean") {
+    fail(`${label} has noLargerOriginal ${JSON.stringify(row.noLargerOriginal)}; use true or leave it out.`);
+  }
   if (!row?.source) {
     fail(`${label} has no source file.`);
     continue;
