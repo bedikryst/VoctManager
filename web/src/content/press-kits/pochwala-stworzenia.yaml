@@ -222,7 +222,7 @@ announce:
     inspiracją dla koncertu, jest „Pieśń słoneczna” św. Franciszka z Asyżu. Muzyka różnych epok
     rozwija przesłanie kantyku, prowadząc od zachwytu nad stworzeniem przez doświadczenie ludzkiej
     kruchości i śmierci ku modlitwie i nadziei życia wiecznego. 12 głosów, skrzypce i organy. Wstęp
-    wolny. 15 listopada, godz. 19:00, kościół św. Antoniego z Padwy (oo. franciszkanów) na Wzgórzu
+    wolny. 15 listopada, godz. 19:00, kościół św. Antoniego z Padwy (oo. franciszkanie) na Wzgórzu
     Przemysła, ul. Franciszkańska 2, Poznań.
   # The ~1500 measure, the closing practical lines not counted: for a column's announcement. The
   # last block is lines, not prose.
@@ -232,7 +232,7 @@ announce:
       św. Franciszka z Asyżu
     - >-
       W niedzielę 15 listopada 2026 r. o godz. 19:00 w kościele św. Antoniego z Padwy
-      (oo. franciszkanów) przy ul. Franciszkańskiej 2 w Poznaniu VoctEnsemble zaprezentuje
+      (oo. franciszkanie) przy ul. Franciszkańskiej 2 w Poznaniu VoctEnsemble zaprezentuje
       „Pochwałę Stworzenia”, szósty projekt autorskiego cyklu Koncertów Duchowych. Koncert odbędzie
       się w ramach Chóralnych Koncertów Kameralnych Grand Prix Polskiej Chóralistyki. Wstęp wolny.
     - >-
@@ -254,7 +254,7 @@ announce:
     - |-
       Pochwała Stworzenia
       niedziela, 15.11.2026 — 19:00
-      Kościół św. Antoniego z Padwy (oo. franciszkanów)
+      Kościół św. Antoniego z Padwy (oo. franciszkanie)
       Poznań · ul. Franciszkańska 2
       Chóralne Koncerty Kameralne Grand Prix Polskiej Chóralistyki
       wstęp wolny
@@ -306,8 +306,8 @@ announce:
 social:
   # The board's "POST" block from the master pack. Pasted by other people's accounts (the series,
   # partners, media), who tag @VoctEnsemble themselves; `postText` appends the concert's page, not
-  # the street address, so the address below stands once. "(oo. Franciszkanie)" in the board's
-  # block is set as the release sets it, "(oo. franciszkanów)".
+  # the street address, so the address below stands once. The board's "(oo. Franciszkanie)" is
+  # set lower-case, as Polish writes an order's members, the same as the release and the site.
   post:
     - "Jeden kantyk. Dziewięciu kompozytorów. Pochwała całego stworzenia."
     - >-
@@ -323,7 +323,7 @@ social:
       Chóralistyki.
     - |-
       15 listopada · godz. 19:00
-      Kościół św. Antoniego z Padwy (oo. franciszkanów)
+      Kościół św. Antoniego z Padwy (oo. franciszkanie)
       ul. Franciszkańska 2, Poznań
       Wstęp wolny.
   hashtags:

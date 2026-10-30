@@ -2689,8 +2689,8 @@
       admission: free
     - date: "2026-11-15"
       time: "19:00"
-      venue: "Kościół św. Antoniego z Padwy (oo. franciszkanów), Poznań"
-      metaPlace: { pl: "Kościół św. Antoniego z Padwy (oo. franciszkanów), Poznań" }
+      venue: "Kościół św. Antoniego z Padwy (oo. franciszkanie), Poznań"
+      metaPlace: { pl: "Kościół św. Antoniego z Padwy (oo. franciszkanie), Poznań" }
       address: "ul. Franciszkańska 2, Poznań"
       admission: free
       festival:
