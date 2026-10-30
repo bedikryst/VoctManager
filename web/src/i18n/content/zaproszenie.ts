@@ -16,7 +16,8 @@
  *  foundation's paragraph are the card's own sentences. The departures are deliberate: the
  *  paragraph about the concert is the card's as edited for this page, with one sentence about the
  *  evening (the programme's second performance, and its church); the foundation's paragraph ends
- *  its first sentence at the ensemble's projects, as the conductor asked; the Canticle's Polish
+ *  its first sentence at the ensemble's projects, as the conductor asked, and its second counts
+ *  the foundation's concerts; the Canticle's Polish
  *  name is spelled as the site spells it („Pieśń słoneczna”); a festival is named without an
  *  edition number; the ensemble is billed above its soloists; and the donors' line under the
  *  foundation's paragraph and the cover photographs' credit are not on the card at all.
@@ -134,8 +135,7 @@ export const ZAPROSZENIE = {
     name: "VoctFoundation",
     text:
       "Fundacja wspiera rozwój VoctEnsemble i jego projektów artystycznych. „Pochwała Stworzenia” " +
-      "jest pierwszym projektem realizowanym przez Fundację, a wieczór w Poznaniu jej drugim " +
-      "koncertem.",
+      "w Poznaniu jest drugim koncertem realizowanym przez Fundację.",
     /** The page's last, smallest line, and the link leads to the donation vault. It speaks of the
         concerts to come rather than of this one, which an outside organiser may be paying for.
         Impersonal, so it holds the card's "Państwo". */
