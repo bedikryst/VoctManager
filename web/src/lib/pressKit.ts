@@ -141,7 +141,7 @@ const pressKitSchema = z.object({
       organizer: z.string().min(1),
       coOrganizers: z.string().min(1).optional(),
       within: z.string().min(1),
-      /** The funder's own sentence, printed as written ("Koncert współfinansowany ze środków…"). */
+      /** The public body's credit, printed as written ("Partner: Miasto Poznań"). */
       funding: z.string().min(1).optional(),
       mediaPatron: z.string().min(1).optional(),
     })

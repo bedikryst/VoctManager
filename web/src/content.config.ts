@@ -189,9 +189,9 @@ const concerts = defineCollection({
         programme. A proper name, printed nowhere on the page (the festival note names them in a
         sentence) and carried by JSON-LD as the event's `organizer` beside the ensemble's own. */
     organizer: z.string().optional(),
-    /** The public money behind the evening, in the sentence its funder requires to be printed
-        ("Koncert współfinansowany ze środków Miasta Poznania"). Copy, so it is translated; printed
-        under the festival block of the door band while the evening is ahead. */
+    /** The public body behind the evening, credited in the organiser's own words ("Partner: Miasto
+        Poznań"). Copy, so it is translated; printed under the festival block of the door band
+        while the evening is ahead. */
     funding: z.string().optional(),
     /** /o-nas milestone editorial — the About page derives its "Via" list from this
         collection (single source of truth with /koncerty). All fields optional:

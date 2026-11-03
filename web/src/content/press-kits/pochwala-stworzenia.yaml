@@ -14,23 +14,25 @@
 # announcement is pasted whole into somebody's listing — so the loader checks that every dated text
 # still names the corpus's; move the concert and the build fails until this file follows.
 #
-# THE RELEASES, THE ANNOUNCEMENTS AND THE BIOGRAMS ARE THE BOARD'S (Ania, 26–27.10.2026), served
-# under the names they were sent with, corrected (29.10.2026): two files swapped under each other's
-# names, two PDFs sent without an extension, and fourteen wording fixes, all listed in
-# `press-pack/inbox/2026-10-29/CORRECTIONS.txt` beside the untouched originals. The four Word files
-# in `press-pack/kits/pochwala-stworzenia/` carry those fixes and their PDFs are set again from them
-# by `tools/press-docs/board_docs.py` (Word's own export hangs on this machine). The biogram PDF is
-# the board's as sent.
+# THE RELEASES, THE ANNOUNCEMENTS AND THE BIOGRAMS ARE THE BOARD'S (Ania, 26–27.10.2026; the Polish
+# release and the ~1500 announcement re-issued 02.11.2026), served under the names they were sent
+# with, corrected. Each batch's fixes sit in its inbox folder beside the untouched originals
+# (`press-pack/inbox/2026-10-29/`, `press-pack/inbox/2026-11-03/`: CORRECTIONS.txt, fixes.json);
+# the re-issue came from the board's own Google Docs without the first batch's fixes, so the second
+# list repeats those still due. The four Word files in `press-pack/kits/pochwala-stworzenia/` carry
+# the fixes and their PDFs are set again from them by `tools/press-docs/board_docs.py` (Word's own
+# export hangs on this machine). The biogram PDF is the board's as sent. What /press served before
+# the re-issue is in `press-pack/inbox/2026-10-29/wydane/`.
 #
 # `release` AND `announce` ARE THOSE DOCUMENTS TRANSCRIBED, WORD FOR WORD (`pandoc -t plain` of the
-# corrected DOCX, 29.10.2026), for the page's Kopiuj: a text copied out of a PDF breaks at every
-# line, and an editor pastes into a form. Nothing in the build reads a PDF or a DOCX, so whoever
-# replaces one compares its text with its twin and with its block here and makes the three agree.
-# They agree but for the layout, which Kopiuj does not carry: the composers' line under the
-# release's title, the practical block (printed from the corpus by `releaseText`), the empty
-# "Patroni medialni:" heading the board kept, separators and the closing metadata. The ~500
-# announcement's three short paragraphs are one here, as a listing takes it. The English release
-# has no transcription, so its row downloads and previews without Kopiuj.
+# corrected DOCX, 29.10 and 03.11.2026), for the page's Kopiuj: a text copied out of a PDF breaks at
+# every line, and an editor pastes into a form. Nothing in the build reads a PDF or a DOCX, so
+# whoever replaces one compares its text with its twin and with its block here and makes the three
+# agree. They agree but for the layout, which Kopiuj does not carry: the composers' line under the
+# release's title, the practical block and the links (printed from the corpus by `releaseText`,
+# which carries the ensemble's Facebook event and not the organiser's), separators and the closing
+# metadata. The ~500 announcement's three short paragraphs are one here, as a listing takes it. The
+# English release has no transcription, so its row downloads and previews without Kopiuj.
 #
 # The measures in the announcements' names (~500, ~1500) are the board's approximate values, not
 # counts: the practical lines closing the long one do not count towards it (28.09.2026).
@@ -68,8 +70,8 @@ lede: >-
 # The board's files, in the order the page lists them. `sub` is the row's second line (the
 # concert's title where absent); `text` names the transcription below that the row's Kopiuj writes.
 documents:
-  - file: "[Press-PL]_InformacjaPrasowa_PochwalaStworzenia_VoctEnsemble_2026.10.pdf"
-    docx: "[Press-PL]_InformacjaPrasowa_PochwalaStworzenia_VoctEnsemble_2026.10.docx"
+  - file: "[Press-PL]_InformacjaPrasowa_PochwalaStworzenia_VoctEnsemble_2026-11-03.pdf"
+    docx: "[Press-PL]_InformacjaPrasowa_PochwalaStworzenia_VoctEnsemble_2026-11-03.docx"
     title: "Informacja prasowa PL"
     text: release
   - file: "[Press-EN]_PressRelease_PochwalaStworzenia_VoctEnsemble_2026.10.pdf"
@@ -80,8 +82,8 @@ documents:
     docx: "[500zzs-PL_EN]_Zapowiedz _PochwalaStworzenia_VoctEnsemble_2026.10.docx"
     title: "Zapowiedź PL/EN ~500 znaków"
     text: announceShort
-  - file: "[1500zzs-PL_EN]_Zapowiedz _PochwalaStworzenia_VoctEnsemble_2026.10.pdf"
-    docx: "[1500zzs-PL_EN]_Zapowiedz _PochwalaStworzenia_VoctEnsemble_2026.10.docx"
+  - file: "[1500zzs-PL_EN]_Zapowiedz _PochwalaStworzenia_VoctEnsemble_20261103.pdf"
+    docx: "[1500zzs-PL_EN]_Zapowiedz _PochwalaStworzenia_VoctEnsemble_20261103.docx"
     title: "Zapowiedź PL/EN ~1500 znaków"
     text: announceLong
   - file: "[Biogramy-PL_EN]_Pochwala_Stworzenia_VoctEnsemble_2026.10.27.pdf"
@@ -93,10 +95,14 @@ documents:
 # board set for /press, and the print file's sheet. The concert page credits the same design from
 # `concerts.yaml` (the Poznań performance's `posterCredit`), in the site's own form.
 #
-# ONE SHEET, SHOWN AND DOWNLOADED. The board re-issued the poster as A3 with the corrected address
-# line (29.10.2026). The site's sheet is `poster-stworzenie-poznan` in `src/assets/photos/` (its
-# original in `.original-photos/`, the board's JPG as sent); `plakat.jpg` is rendered from it, and
-# `press-pack/posters/pochwala-stworzenia.pdf` is the board's print file, 309 × 432 mm.
+# ONE SHEET, SHOWN AND DOWNLOADED. The board's A3 of 02.11.2026 carries the organiser's, the city's
+# and the foundation's marks in its foot, and the site shows it with them. The site's sheet is
+# `poster-stworzenie-poznan` in `src/assets/photos/`; its original in `.original-photos/` is the
+# print file's own 300 ppi raster without the 6 mm bleed, at 1768 × 2500 (the board's web PNG is
+# the same design at 1414 × 2000). `plakat.jpg` is rendered from it, and
+# `press-pack/posters/pochwala-stworzenia.pdf` is the board's print file, 309 × 432 mm, as sent.
+# The organiser's own poster for its series is not offered here: one evening, one sheet, and the
+# organiser hands out its own (`press-pack/inbox/2026-11-03/`).
 poster:
   credit: "VoctEnsemble / Anna Marcisz"
   printSheet: "A3, spady 6 mm"
@@ -105,7 +111,7 @@ frame:
   organizer: "Fundacja Grand Prix Polskiej Chóralistyki im. Stefana Stuligrosza"
   coOrganizers: "Fundacja VoctFoundation i VoctEnsemble"
   within: "Chóralnych Koncertów Kameralnych Grand Prix Polskiej Chóralistyki"
-  funding: "Koncert współfinansowany ze środków Miasta Poznania."
+  funding: "Partner: Miasto Poznań"
 
 release:
   title: "Pochwała Stworzenia"
@@ -113,10 +119,10 @@ release:
     Koncert Duchowy VoctEnsemble inspirowany kantykiem Laudes creaturarum św. Franciszka z Asyżu,
     znanym jako „Pieśń słoneczna”
   lead: >-
-    15 listopada o godz. 19:00 VoctEnsemble wystąpi po raz pierwszy w Poznaniu. W kościele pw.
-    św. Antoniego z Padwy na poznańskim Starym Mieście zabrzmi „Pochwała Stworzenia”, kolejna
-    odsłona autorskiego cyklu Koncertów Duchowych VoctEnsemble, inspirowanego XVIII-wieczną
-    francuską tradycją Concerts Spirituels.
+    15 listopada o godz. 19:00 VoctEnsemble wystąpi po raz pierwszy w Poznaniu. W kościele
+    św. Antoniego z Padwy na Wzgórzu Przemysła, w sercu poznańskiego Starego Miasta, zabrzmi
+    „Pochwała Stworzenia” — szósty projekt autorskiego cyklu Koncertów Duchowych VoctEnsemble,
+    inspirowanego XVIII-wieczną francuską tradycją Concerts Spirituels.
   sections:
     # The second paragraph of the opening, then the conductor's words with their attribution on
     # its own line, as the board's release carries them.
@@ -187,8 +193,9 @@ release:
           czytelna, a różnorodność faktur i języków kompozytorskich służy budowaniu jednej,
           konsekwentnej dramaturgii.
         - >-
-          Koncert odbędzie się 15 listopada o godz. 19:00, po wieczornej liturgii w kościele
-          św. Antoniego z Padwy przy ul. Franciszkańskiej 2 w Poznaniu. Wstęp wolny.
+          Koncert odbędzie się w niedzielę 15 listopada o godz. 19:00, po wieczornej liturgii,
+          w kościele św. Antoniego z Padwy na Wzgórzu Przemysła (ul. Franciszkańska 2, Poznań).
+          Wstęp wolny.
   # After the practical block and the links: who the ensemble and the foundation are.
   about:
     - heading: "O VoctEnsemble"
@@ -212,7 +219,7 @@ release:
           razem projekt powstaje we współpracy z Fundacją Grand Prix Polskiej Chóralistyki
           im. Stefana Stuligrosza.
   # The address is printed after these from `data/foundation.ts`.
-  contact: { name: "Anna Marcisz", role: "wiceprezes VoctFoundation" }
+  contact: { name: "Anna Marcisz", role: "wiceprezes zarządu VoctFoundation" }
 
 announce:
   # The ~500 measure (the board's approximate value): for listings and calendars.
@@ -255,7 +262,7 @@ announce:
       Pochwała Stworzenia
       niedziela, 15.11.2026 — 19:00
       Kościół św. Antoniego z Padwy (oo. franciszkanie)
-      Poznań · ul. Franciszkańska 2
+      ul. Franciszkańska 2 · Wzgórze Przemysła · Poznań
       Chóralne Koncerty Kameralne Grand Prix Polskiej Chóralistyki
       wstęp wolny
   # The same two measures in English: the second half of the same files.
@@ -299,7 +306,7 @@ announce:
         In Praise of Creation
         Sunday, 15 November 2026 — 7 p.m.
         Franciscan Church of St Anthony of Padua
-        Poznań · 2 Franciszkańska Street
+        Poznań · Przemysł Hill · 2 Franciszkańska Street
         Choral Chamber Concerts · Grand Prix of Polish Choral Music
         Free admission
 

@@ -33,7 +33,8 @@
  *  Idempotent, and that is load-bearing rather than a nicety: re-encoding a proxy that was
  *  already correct yields different bytes, a different content hash, and therefore a cold
  *  re-encode of every one of that photograph's variants. A proxy already at the target
- *  geometry is left untouched.
+ *  geometry is left untouched — so an original replaced by a new image of the same size (a
+ *  re-issued poster) keeps its old proxy until that proxy is deleted.
  *
  *  Usage (from web/):  npm run photos:proxy  [-- --dry-run]
  * @module build/downscale-photos

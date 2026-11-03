@@ -12,9 +12,15 @@ Run from the repository root with the venv's Python:
 
 FIXES.json maps a DOCX file name in SRC_DIR to its corrections, `[[find, replace], ...]`. Text in a
 DOCX is cut into runs at arbitrary points, so a part's runs are joined, the text is found there and
-the change is written back into the runs it spans. A correction that matches nothing stops the run:
-a typo in FIXES.json must not pass for a correction made. Each output also carries Word's
-`doNotExpandShiftReturn`, so an editor's Word does not stretch the lines Google Docs left alone.
+the change is written back into the runs it spans, all of it into the first, which lends it its
+formatting. So find a text that starts in the run whose formatting the result should keep ("Patron: "
+alone, not "Patron: Miasto Poznań", where a bold label meets a light value); a pair whose two sides
+are equal joins a word Google Docs split between weights into its first run. `[find, null]` removes
+each paragraph that reads exactly `find` instead, with the empty paragraph right after it, so a line
+the board dropped from one language's file leaves no gap in the other's. A correction that matches
+nothing stops the run: a typo in FIXES.json must not pass for a correction made. Each output also
+carries Word's `doNotExpandShiftReturn`, so an editor's Word does not stretch the lines Google Docs
+left alone.
 
 `render` needs the documents' fonts installed (Spectral and Comfortaa for the board's documents;
 LibreOffice substitutes silently otherwise — check with `pdffonts`) and works on a copy that differs
@@ -88,6 +94,25 @@ def replace_in_part(xml: str, find: str, repl: str) -> tuple[str, int]:
     return "".join(out), len(hits)
 
 
+def drop_paragraphs(xml: str, find: str) -> tuple[str, int]:
+    out: list[str] = []
+    count = 0
+    last = 0
+    dropped_end = -1
+    for match in PARAGRAPH.finditer(xml):
+        p = match.group(0)
+        text = paragraph_text(p)
+        hit = text == find
+        blank = not text and "<w:br" not in p and "<w:drawing" not in p
+        if hit or (blank and dropped_end >= 0 and not xml[dropped_end : match.start()].strip()):
+            out.append(xml[last : match.start()])
+            last = match.end()
+            count += hit
+        dropped_end = match.end() if hit else -1
+    out.append(xml[last:])
+    return "".join(out), count
+
+
 def no_expand_shift_return(settings: str) -> str:
     # Google Docs leaves a justified line that ends in a manual break alone; Word stretches it
     # across the page unless the document carries this compatibility flag.
@@ -102,7 +127,7 @@ def no_expand_shift_return(settings: str) -> str:
 
 
 def replace(fixes_file: Path, source: Path, target: Path) -> None:
-    fixes: dict[str, list[list[str]]] = json.loads(fixes_file.read_text(encoding="utf-8"))
+    fixes: dict[str, list[tuple[str, str | None]]] = json.loads(fixes_file.read_text(encoding="utf-8"))
     target.mkdir(parents=True, exist_ok=True)
     unmatched: list[str] = []
     for name, pairs in fixes.items():
@@ -113,7 +138,10 @@ def replace(fixes_file: Path, source: Path, target: Path) -> None:
                 if TEXT_PARTS.match(info.filename):
                     xml = data.decode("utf-8")
                     for k, (find, repl) in enumerate(pairs):
-                        xml, count = replace_in_part(xml, find, repl)
+                        if repl is None:
+                            xml, count = drop_paragraphs(xml, find)
+                        else:
+                            xml, count = replace_in_part(xml, find, repl)
                         counts[k] += count
                     data = xml.encode("utf-8")
                 elif info.filename == "word/settings.xml":

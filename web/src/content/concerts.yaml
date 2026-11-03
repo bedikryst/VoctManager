@@ -2678,9 +2678,11 @@
   # surface. `dates[0]` is the row's own evening (content.config refuses anything else); its
   # night-specific facts (room, map, Facebook, festival) stay on the row above.
   #
-  # Poznań states every fact of its own and inherits none: it has no Facebook event and no map link
-  # (the organiser published neither, and neither is composed here), and no `endTime`, since nobody
-  # published one. Organiser, series and funding sentence are the board's pack (29.10.2026).
+  # Poznań states every fact of its own and inherits none. Its Facebook event is the ensemble's own
+  # (the board's pack, 03.11.2026; the organiser runs a second one); it has no map link (nobody
+  # published one, and none is composed here) and no `endTime`, since nobody published one.
+  # Organiser and series are the board's pack (29.10.2026). The city's credit is the word the
+  # organiser's poster and ours both print, "Partner", over the board's release's "Patron" (03.11.2026).
   dates:
     - date: "2026-10-11"
       venue: "Kościół Wszystkich Świętych, Warszawa"
@@ -2692,6 +2694,7 @@
       venue: "Kościół św. Antoniego z Padwy (oo. franciszkanie), Poznań"
       metaPlace: { pl: "Kościół św. Antoniego z Padwy (oo. franciszkanie), Poznań" }
       address: "ul. Franciszkańska 2, Poznań"
+      facebookEvent: "https://fb.me/e/5bG8CUGwP"
       admission: free
       festival:
         name: "Chóralne Koncerty Kameralne Grand Prix Polskiej Chóralistyki"
@@ -2706,7 +2709,7 @@
         Towarzyszy mu całoroczny cykl koncertów kameralnych z autorskimi programami; VoctEnsemble
         śpiewa w nim na zaproszenie fundacji.
       organizer: "Fundacja Grand Prix Polskiej Chóralistyki im. Stefana Stuligrosza"
-      funding: "Koncert współfinansowany ze środków Miasta Poznania."
+      funding: "Partner: Miasto Poznań"
       # The landing's paragraph for this night. It keeps the row's opening (the Canticle greets its
       # subjects, death on the same terms) and spends its last sentence on the one fact Poznań adds:
       # the church belongs to the order the Canticle's author founded.
