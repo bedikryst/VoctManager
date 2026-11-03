@@ -115,7 +115,6 @@ const metaDate = c.date
   ? longDate(c.date, lang)
   : c.dateLabel && say("dateLabel", c.dateLabel.pl);
 const heroMeta = [metaPlace, metaDate].filter(Boolean).join(" · ");
-const heroTime = c.time ? [ui.hero.timePrefix, c.time].filter(Boolean).join(" ") : "";
 // The evening's motto: a Latin verse (printed unchanged), its vernacular, and the citation that
 // cites the verse. The gloss does two jobs in one slot — the Latin's vernacular where there IS an
 // `inscriptio`, a standalone editorial note where there is not — and both are copy either way.
@@ -222,9 +221,32 @@ const venueNote = sayDoor("venueNote", evening.venueNote);
 const festivalNote = sayDoor("festivalNote", evening.festivalNote);
 const funding = sayDoor("funding", evening.funding);
 const invitation = sayDoor("invitation", evening.invitation);
-/** The town of a repeat, for the hero's lit line: the tail of its venue, which content.config
-    holds to a place name. */
-const doorTown = evening.venue?.split(",").at(-1)?.trim();
+
+// ── The hero's dateline on a repeat is the NEXT night's, not the record's.
+//
+// A press link to this page is an invitation to that night, and a reader handed it read the
+// record's place, day and hour under the title as the concert they were being asked to — the lit
+// line above it is too small to outrank the dateline. So while a repeat is ahead the dateline
+// names it, exactly as it names a first night that is still ahead, and the record keeps the one
+// fact the hero cannot drop without lying: the recording and the photograph are from another
+// town, which the recording's own line says. No second date in the hero, since two days under one
+// title is the confusion itself. The deploy after the night hands the dateline back to the record.
+const datelinePlace = repeat ? doorPlace : metaPlace;
+const datelineDate = repeat ? doorDate : metaDate;
+const datelineHour = repeat ? evening.time : c.time;
+const dateline = [
+  [datelinePlace, datelineDate].filter(Boolean).join(" · "),
+  datelineHour ? [ui.hero.timePrefix, datelineHour].filter(Boolean).join(" ") : "",
+]
+  .filter(Boolean)
+  .join(" · ");
+/** The record's town (the tail of its venue, which content.config holds to a place name), on the
+    recording's line while a repeat is ahead. */
+const recordTown = c.venue?.split(",").at(-1)?.trim();
+const excerptsLabels =
+  repeat && recordTown
+    ? { ...ui.excerpts, source: `${ui.excerpts.source} · ${recordTown}` }
+    : ui.excerpts;
 
 // What a PASTED LINK previews with, which is not the same picture as the page's own opening.
 // An evening still ahead declares a `share` frame built from its poster — the one image that
@@ -644,13 +666,12 @@ const jsonLd =
             not happened — two facts, and the dateline under the title already holds three.
             Same onset as the station line; the two are one block.
 
-            A repeat names its night here as well: the dateline under the title is the record's, and
-            a reader who came from the next evening's press link must not take the page for a
-            concert that is over. */}
+            A repeat says "Najbliższe wykonanie" here, and the night itself is the dateline under the
+            title (see `dateline` above). */}
         {door && (
           <p class="kd-hero-ahead reveal">
             <span class="lit-dot" aria-hidden="true"></span>
-            <span>{repeat ? [ui.ianua.nextPerformance, doorDate, doorTown].filter(Boolean).join(" · ") : ui.coda.aheadLabel}</span>
+            <span>{repeat ? ui.ianua.nextPerformance : ui.coda.aheadLabel}</span>
           </p>
         )}
         <p class="kd-hero-eyebrow reveal">
@@ -659,7 +680,7 @@ const jsonLd =
           <span class="lat">{c.latin}</span>
         </p>
         <h1 class="kd-hero-title reveal ink-press" data-d="1">{concertTitle}</h1>
-        <p class="kd-hero-meta reveal" data-d="1">{heroMeta}{heroTime ? ` · ${heroTime}` : ""}</p>
+        <p class="kd-hero-meta reveal" data-d="1">{dateline}</p>
 
         {/* Ink + lead, the same pairing `/koncerty` gives the station incipit this hero is the
             detail of. `data-d="2"` is 0.18s, which is exactly what the pair pins — the attribute
@@ -687,7 +708,7 @@ const jsonLd =
             link beside the island is the no-script stand-in (styles/excerpts.css). */}
         {excerpts && (
           <div class="kd-excerpts">
-            <ExcerptsGlyph excerpts={excerpts} labels={ui.excerpts} lang={lang} candle={candle} title={concertTitle} />
+            <ExcerptsGlyph excerpts={excerpts} labels={excerptsLabels} lang={lang} candle={candle} title={concertTitle} />
           </div>
         )}
 
