@@ -240,9 +240,9 @@ const dateline = [
 ]
   .filter(Boolean)
   .join(" · ");
-/** The record's town (the tail of its venue, which content.config holds to a place name), on the
-    recording's line while a repeat is ahead. */
-const recordTown = c.venue?.split(",").at(-1)?.trim();
+/** The record's town, on the recording's line while a repeat is ahead: the tail of its place in
+    this locale ("Warszawa", "Warsaw", "Varsovie"), where `venue` would print the Polish on all three. */
+const recordTown = metaPlace.split(",").at(-1)?.trim();
 const excerptsLabels =
   repeat && recordTown
     ? { ...ui.excerpts, source: `${ui.excerpts.source} · ${recordTown}` }
