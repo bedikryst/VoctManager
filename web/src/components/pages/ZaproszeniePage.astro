@@ -254,7 +254,7 @@ const creditHtml = eclipse ? `${copy.cover.credit.lead} ${copy.cover.credit.ecli
             {copy.about.cast.map((line, row) => (
               <p class={row === 0 ? "zap-cast-lead" : undefined}>{line.map((item, index, all) => <><span class="zap-name">{item}</span>{index < all.length - 1 && " "}</>)}</p>
             ))}
-            {/* The organiser who booked the evening and the funder's sentence, owed to the reader
+            {/* The organiser who booked the evening and the public body's credit, owed to the reader
                 as facts and set as the credits' last, quietest line. */}
             {(organizer || concert.funding) && (
               <p class="zap-credits">

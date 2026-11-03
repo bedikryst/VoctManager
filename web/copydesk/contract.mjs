@@ -159,7 +159,9 @@ export const CONCERT_CONTRACT = [
     kind: "field",
     path: "funding",
     label: "Wejście · finansowanie",
-    note: "The funder's required sentence, printed under the festival block. Translate it plainly.",
+    note:
+      "The public body's credit as the organiser prints it (\"Partner: Miasto Poznań\"), under the " +
+      "festival block. Keep its label word; translate plainly.",
   },
 
   // ── Kolejne wykonanie ───────────────────────────────────────────────────────────────────────
@@ -201,8 +203,8 @@ export const CONCERT_CONTRACT = [
         key: "funding",
         label: "wejście · finansowanie",
         note:
-          "The funder's required sentence. Translate it plainly; the city's name follows local usage " +
-          "(Poznań stays Poznań).",
+          "The public body's credit, label and name (\"Partner: Miasto Poznań\"). Keep the label " +
+          "word; the city's name follows local usage (Poznań stays Poznań).",
       },
       { path: "posterAlt", key: "posterAlt", label: "plakat · opis alternatywny" },
     ],

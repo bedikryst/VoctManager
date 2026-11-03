@@ -606,7 +606,7 @@ html.voct-motion .zap .inv-rubric:not(.is-in)::after {
   font-style: italic;
 }
 
-/* The organiser and the funder: facts the reader is owed, quieter than any performer. */
+/* The organiser and the public body: facts the reader is owed, quieter than any performer. */
 .zap-cast .zap-credits {
   margin-top: 6px;
   color: var(--inv-muted);
