@@ -25,15 +25,21 @@ for which kinds --test and --preview sample.
 
 ATTACHMENT.path in a page is relative to this repository's root, where the press pack lives.
 
-The Google app password is read from .secrets/gmail-app-password.txt (git-ignored); it never appears
-on the command line. Every delivered or refused address is recorded in the log (default: next to the
-page, as <page>.log.json), and a rerun skips the delivered ones, so an interrupted run resumes where
-it stopped. --drafts keeps its own log (<page>.drafts.log.json), since a draft is not a delivery.
+The Google app password is read from .secrets/gmail-app-password.txt (git-ignored) or from the file
+--password-file names; it never appears on the command line. Every delivered or refused address is
+recorded in the log (default: next to the page, as <page>.log.json), and a rerun skips the delivered
+ones, so an interrupted run resumes where it stopped. --drafts keeps its own log
+(<page>.drafts.log.json), since a draft is not a delivery.
+
+--signature-html adds the account's saved signature under each message, as an HTML part. Gmail
+inserts a saved signature only when a person starts composing, never into a message that arrives
+over SMTP or IMAP, so a page written for such an account ends on its closing line.
 """
 
 from __future__ import annotations
 
 import argparse
+import html
 import imaplib
 import json
 import os
@@ -42,6 +48,7 @@ import smtplib
 import subprocess
 import sys
 import time
+from collections.abc import Callable
 from datetime import datetime
 from email.message import EmailMessage
 from email.utils import formataddr, formatdate, make_msgid
@@ -51,6 +58,8 @@ ROOT = Path(__file__).resolve().parents[2]
 PASSWORD_FILE = ROOT / ".secrets" / "gmail-app-password.txt"
 PAGE_MARKER = "// PAGE:"
 DEFAULT_TEST_KINDS = ["sisters", "parish", "choir", "school"]
+#: A link in running text, leaving out the punctuation that closes the sentence around it.
+LINK = re.compile(r"https?://[^\s<]*[^\s<.,;:)]")
 
 RENDER_JS = """
 const src = require("fs").readFileSync(0, "utf8");
@@ -96,8 +105,30 @@ def load_attachment(spec: dict) -> tuple[bytes, str]:
     return path.read_bytes(), spec["filename"]
 
 
+def html_body(text: str, signature_html: str) -> str:
+    """The message laid out line by line as Gmail composes it, with the saved signature under it."""
+    rows = []
+    for line in text.split("\n"):
+        linked = LINK.sub(lambda m: f'<a href="{m.group(0)}">{m.group(0)}</a>', html.escape(line, quote=False))
+        rows.append(f"<div>{linked or '<br>'}</div>")
+    return f'<div dir="ltr">{"".join(rows)}<br>{signature_html}</div>'
+
+
+def plain_signature(signature_html: str) -> str:
+    text = re.sub(r"<(?:br|/div|/tr|/p)\b[^>]*>", "\n", signature_html)
+    text = html.unescape(re.sub(r"<[^>]+>", "", text))
+    return "\n".join(line.strip() for line in text.splitlines() if line.strip())
+
+
 def build(
-    fields: dict, sender: str, from_name: str, to: str, cc: str, subject: str, attachment: tuple[bytes, str]
+    fields: dict,
+    sender: str,
+    from_name: str,
+    to: str,
+    cc: str,
+    subject: str,
+    attachment: tuple[bytes, str],
+    signature_html: str = "",
 ) -> EmailMessage:
     msg = EmailMessage()
     msg["From"] = formataddr((from_name, sender))
@@ -107,7 +138,11 @@ def build(
     msg["Subject"] = subject
     msg["Date"] = formatdate(localtime=True)
     msg["Message-ID"] = make_msgid(domain=sender.split("@", 1)[1])
-    msg.set_content(fields["body"])
+    if signature_html:
+        msg.set_content(fields["body"] + "\n\n" + plain_signature(signature_html))
+        msg.add_alternative(html_body(fields["body"], signature_html), subtype="html")
+    else:
+        msg.set_content(fields["body"])
     data, filename = attachment
     msg.add_attachment(data, maintype="image", subtype="jpeg", filename=filename)
     return msg
@@ -123,16 +158,16 @@ def save_log(log: dict[str, dict], path: Path) -> None:
     path.write_text(json.dumps(log, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
-def read_password() -> str:
-    if not PASSWORD_FILE.exists():
-        sys.exit(f"Missing {PASSWORD_FILE.relative_to(ROOT)}: put the Google app password there.")
-    return PASSWORD_FILE.read_text(encoding="utf-8-sig").strip().replace(" ", "")
+def read_password(path: Path) -> str:
+    if not path.exists():
+        sys.exit(f"Missing {path}: put the Google app password there.")
+    return path.read_text(encoding="utf-8-sig").strip().replace(" ", "")
 
 
-def connect(login: str) -> smtplib.SMTP:
+def connect(login: str, password: str) -> smtplib.SMTP:
     smtp = smtplib.SMTP("smtp.gmail.com", 587, timeout=30)
     smtp.starttls()
-    smtp.login(login, read_password())
+    smtp.login(login, password)
     return smtp
 
 
@@ -146,16 +181,23 @@ def drafts_folder(imap: imaplib.IMAP4_SSL) -> str:
     sys.exit("The account has no folder flagged as Drafts.")
 
 
-def leave_as_drafts(messages: list[dict], sender: str, login: str, from_name: str, attachment: tuple[bytes, str], skip: set[str], log_path: Path) -> None:
+def leave_as_drafts(
+    messages: list[dict],
+    compose: Callable[[dict, str, str, str], EmailMessage],
+    login: str,
+    password: str,
+    skip: set[str],
+    log_path: Path,
+) -> None:
     log = load_log(log_path)
     queue = [m for m in messages if log.get(m["to"], {}).get("status") != "draft" and m["to"].lower() not in skip]
     print(f"{len(queue)} to leave as drafts, {len(messages) - len(queue)} already there or skipped")
     imap = imaplib.IMAP4_SSL("imap.gmail.com", timeout=30)
-    imap.login(login, read_password())
+    imap.login(login, password)
     try:
         folder = drafts_folder(imap)
         for i, m in enumerate(queue, 1):
-            draft = build(m, sender, from_name, m["to"], m["cc"], m["subject"], attachment)
+            draft = compose(m, m["to"], m["cc"], m["subject"])
             imap.append(folder, "(\\Draft)", None, draft.as_bytes())
             log[m["to"]] = {"name": m["name"], "status": "draft", "at": datetime.now().isoformat(timespec="seconds")}
             save_log(log, log_path)
@@ -183,6 +225,8 @@ def main() -> None:
     mode.add_argument("--report", action="store_true", help="list who was sent to, grouped, from the log")
     parser.add_argument("--pause", type=float, default=20.0, help="seconds between messages (default 20)")
     parser.add_argument("--skip", default="", help="comma-separated addresses already sent by hand")
+    parser.add_argument("--password-file", default=str(PASSWORD_FILE), help="the file holding the account's app password")
+    parser.add_argument("--signature-html", default="", help="a file holding the account's saved signature as HTML")
     args = parser.parse_args()
 
     page = Path(args.page).resolve()
@@ -216,19 +260,24 @@ def main() -> None:
 
     login = args.login or args.sender
     skip = {a.strip().lower() for a in args.skip.split(",") if a.strip()}
+    password = read_password(Path(args.password_file).resolve())
+    signature_html = Path(args.signature_html).read_text(encoding="utf-8") if args.signature_html else ""
+
+    def compose(fields: dict, to: str, cc: str, subject: str) -> EmailMessage:
+        return build(fields, args.sender, from_name, to, cc, subject, attachment, signature_html)
 
     if args.drafts:
         drafts_log = Path(args.log).resolve() if args.log else page.with_name(page.stem + ".drafts.log.json")
-        leave_as_drafts(messages, args.sender, login, from_name, attachment, skip, drafts_log)
+        leave_as_drafts(messages, compose, login, password, skip, drafts_log)
         return
 
-    smtp = connect(login)
+    smtp = connect(login, password)
     try:
         if args.test:
             test_to = args.test_to or login
             for sample in samples(messages, test_kinds):
                 subject = f"[TEST, docelowo: {sample['to']}] {sample['subject']}"
-                smtp.send_message(build(sample, args.sender, from_name, test_to, "", subject, attachment))
+                smtp.send_message(compose(sample, test_to, "", subject))
                 print(f"test sent: {sample['kind']} -> {test_to}")
             return
 
@@ -237,7 +286,7 @@ def main() -> None:
         print(f"{len(queue)} to send, {len(messages) - len(queue)} already sent or skipped")
         for i, m in enumerate(queue, 1):
             try:
-                smtp.send_message(build(m, args.sender, from_name, m["to"], m["cc"], m["subject"], attachment))
+                smtp.send_message(compose(m, m["to"], m["cc"], m["subject"]))
                 status = "sent"
             except smtplib.SMTPRecipientsRefused as exc:
                 status = f"refused: {exc.recipients}"
