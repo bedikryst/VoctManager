@@ -234,8 +234,8 @@ const invitation = sayDoor("invitation", evening.invitation);
 const datelinePlace = repeat ? doorPlace : metaPlace;
 const datelineDate = repeat ? doorDate : metaDate;
 const datelineHour = repeat ? evening.time : c.time;
-const dateline = [
-  [datelinePlace, datelineDate].filter(Boolean).join(" · "),
+const datelineWhen = [
+  datelineDate,
   datelineHour ? [ui.hero.timePrefix, datelineHour].filter(Boolean).join(" ") : "",
 ]
   .filter(Boolean)
@@ -647,7 +647,15 @@ const jsonLd =
 
   <main id="tresc" style={`--candle: ${candle}; --candle-ink: ${candleInk}`}>
     {/* ── Hero: full-bleed church, latin inscriptio, title, meta ───────────── */}
-    <section class="kd-hero" aria-label={concertTitle}>
+    <section
+      class:list={["kd-hero", { "kd-hero--floored": c.heroFloor !== undefined }]}
+      style={[
+        c.heroFloor !== undefined && `--hero-floor: ${c.heroFloor}`,
+        c.heroZoom !== undefined && `--hero-zoom: ${c.heroZoom * 100}%`,
+        c.heroPosition !== undefined && `--hero-position: ${c.heroPosition}`,
+      ].filter(Boolean).join("; ") || undefined}
+      aria-label={concertTitle}
+    >
       <div class="kd-hero-media" aria-hidden="true">
         <BleedImage desktop={bg.desktop} mobile={bg.mobile} alt="" eager animate />
       </div>
@@ -667,7 +675,7 @@ const jsonLd =
             Same onset as the station line; the two are one block.
 
             A repeat says "Najbliższe wykonanie" here, and the night itself is the dateline under the
-            title (see `dateline` above). */}
+            title (see `datelineWhen` above). */}
         {door && (
           <p class="kd-hero-ahead reveal">
             <span class="lit-dot" aria-hidden="true"></span>
@@ -680,7 +688,13 @@ const jsonLd =
           <span class="lat">{c.latin}</span>
         </p>
         <h1 class="kd-hero-title reveal ink-press" data-d="1">{concertTitle}</h1>
-        <p class="kd-hero-meta reveal" data-d="1">{dateline}</p>
+        {/* One run on a wide line; on a phone the place and the moment take a line each, so the
+            wrap never lands inside the date. */}
+        <p class="kd-hero-meta reveal" data-d="1">
+          {datelinePlace && <span class="kd-hero-meta-where">{datelinePlace}</span>}
+          {datelinePlace && datelineWhen && <span class="kd-hero-meta-sep"> · </span>}
+          {datelineWhen && <span class="kd-hero-meta-when">{datelineWhen}</span>}
+        </p>
 
         {/* Ink + lead, the same pairing `/koncerty` gives the station incipit this hero is the
             detail of. `data-d="2"` is 0.18s, which is exactly what the pair pins — the attribute
@@ -1763,10 +1777,23 @@ const jsonLd =
   :global(body.page-koncert-detail.image-open) { overflow: hidden; }
 
   /* ── Hero ──────────────────────────────────────────────────────────────── */
-  .kd-hero { position: relative; min-height: 100svh; display: flex; align-items: flex-end; padding: 0 max(28px, 5vw) clamp(72px, 10vw, 128px); color: var(--paper); overflow: hidden; isolation: isolate; }
+  /* The top padding clears the 85px site chrome. It does nothing while the stack fits; on a window
+     too short for the stack the hero grows, where the bottom-anchored type would otherwise climb
+     under the logo. */
+  .kd-hero { position: relative; min-height: 100svh; display: flex; align-items: flex-end; padding: 104px max(28px, 5vw) clamp(72px, 10vw, 128px); color: var(--paper); overflow: hidden; isolation: isolate; }
   .kd-hero-media { position: absolute; inset: 0; z-index: -2; }
   .kd-hero-media :global(picture),
   .kd-hero-media :global(img) { width: 100%; height: 115%; display: block; object-fit: cover; }
+  /* A station's own framing (`heroZoom`, `heroPosition`) holds for a landscape window. A portrait one
+     draws the 3:2 photograph far wider than the slack these spend, and the same numbers slide the
+     subject out of the frame. Under reduced motion no controller centres the layer, so this does. */
+  @media (min-width: 761px) and (min-aspect-ratio: 5/4) {
+    .kd-hero-media :global(picture) { height: var(--hero-zoom, 115%); }
+    .kd-hero-media :global(picture img) { object-position: var(--hero-position, center); }
+  }
+  @media (min-width: 761px) and (min-aspect-ratio: 5/4) and (prefers-reduced-motion: reduce) {
+    .kd-hero-media :global(picture) { top: calc((100% - var(--hero-zoom, 100%)) / 2); }
+  }
   /* Two standing gradients shaped for a dark church interior — a top wash for the chrome, a foot
      that seats the title, a rake from the left the type hangs on — over a deepened foot the
      station can raise (`heroFoot`, content.config). The standing foot only has to carry type;
@@ -1790,7 +1817,7 @@ const jsonLd =
   .kd-hero-ahead { display: flex; align-items: center; justify-content: flex-start; gap: 10px; font-family: var(--capitalis); font-size: 10.5px; letter-spacing: .2em; text-transform: uppercase; color: var(--candle); margin: 0 0 14px; }
   .kd-hero-eyebrow { display: inline-flex; align-items: center; gap: 10px; font-family: var(--capitalis); font-size: 11px; letter-spacing: .26em; text-transform: uppercase; color: rgba(244, 241, 233, .72); margin: 0 0 22px; }
   .kd-hero-title { font-family: var(--serif); font-weight: 300; line-height: .98; font-size: clamp(48px, 9vw, 124px); letter-spacing: -.01em; margin: 0; color: var(--paper); }
-  .kd-hero-meta { font-family: var(--capitalis); font-size: clamp(11.5px, 1vw, 13px); letter-spacing: .18em; text-transform: uppercase; color: rgba(244, 241, 233, .68); margin: 26px 0 0; }
+  .kd-hero-meta { font-family: var(--capitalis); font-size: clamp(11.5px, 1vw, 13px); letter-spacing: .18em; text-transform: uppercase; color: rgba(244, 241, 233, .88); margin: 26px 0 0; }
 
   .kd-inscriptio { margin: clamp(32px, 4.5vw, 52px) 0 0; max-width: 720px; font-family: var(--serif); font-weight: 300; font-size: clamp(16px, 1.5vw, 20px); line-height: 1.55; color: rgba(244, 241, 233, .82); padding-left: 18px; border-left: 1px solid color-mix(in srgb, var(--candle) 46%, transparent); }
   /* Lead register, top→down. The real border stays for no-JS and reduced-motion visitors; under
@@ -2618,6 +2645,42 @@ const jsonLd =
   @media (prefers-reduced-motion: reduce) { .kd-hero-cue::after { animation: none; } }
 
   /* ── Responsive ────────────────────────────────────────────────────────── */
+  /* The hero on a phone, at the width BleedImage swaps to the portrait crop. A phone's usable height
+     is what the browser leaves it (Safari on a 390×844 iPhone: 664), so the stack gives up the scroll
+     cue and its desktop air, and the photograph keeps what is left. */
+  @media (max-width: 760px) {
+    .kd-hero { padding-bottom: 32px; }
+    .kd-hero-ahead { margin-bottom: 8px; }
+    .kd-hero-eyebrow { margin-bottom: 14px; }
+    .kd-hero-meta { margin-top: 14px; line-height: 1.55; }
+    .kd-hero-meta-where { display: block; text-wrap: balance; }
+    .kd-hero-meta-sep { display: none; }
+    .kd-hero-meta-when { display: block; white-space: nowrap; }
+    .kd-inscriptio { margin-top: 20px; line-height: 1.42; }
+    .kd-inscriptio-ref { display: block; margin: .5em 0 0; font-size: 10px; letter-spacing: .12em; color: rgba(244, 241, 233, .66); }
+    .kd-excerpts { margin-top: 20px; }
+    .kd-hero-cue { display: none; }
+
+    /* A station whose crop has a quiet floor under its subject (`heroFloor`, content.config) stands
+       the subject on the type: the first row is whatever height the stack leaves, the second is the
+       stack, and the photograph hangs from the line between them, so the line in the frame meets
+       the top of the type at every height and in every locale. `--photo-h` is the zoom, and its width
+       has to cover the column. The photograph may end above the hero's foot under a long stack: the
+       scrim below is opaque in pixels, before the shortest tail (40% of 900) runs out.
+
+       The parallax controller re-centres a tall layer in its frame, which would lift this line off
+       the type, so the layer stays still here; the Ken Burns breath on the image carries on. */
+    .kd-hero--floored { --photo-h: max(900px, 155vw); display: grid; grid-template-rows: minmax(210px, 1fr) auto; align-items: stretch; padding-top: 0; }
+    .kd-hero--floored .kd-hero-media { position: relative; inset: auto; margin-inline: calc(-1 * max(28px, 5vw)); }
+    .kd-hero--floored .kd-hero-media :global(picture) { top: auto; bottom: calc(var(--photo-h) * (var(--hero-floor) - 1)); left: calc(50% - var(--photo-h) / 3); width: calc(var(--photo-h) * 2 / 3); height: var(--photo-h); transform: none !important; will-change: auto; }
+    .kd-hero--floored .kd-hero-media :global(img) { height: 100%; }
+    /* The type no longer hangs on the photograph, so the rake and the standing foot go: only the wash
+       behind the chrome stays, and the scrim belongs to the stack, starting where the stack starts. */
+    .kd-hero--floored .kd-hero-veil { background: linear-gradient(180deg, rgba(8,8,7,.52) 0, transparent 120px); }
+    .kd-hero--floored .kd-hero-inner { position: relative; }
+    .kd-hero--floored .kd-hero-inner::before { content: ""; position: absolute; z-index: -1; inset: -36px calc(-1 * max(28px, 5vw)) -32px; pointer-events: none;
+      background: linear-gradient(180deg, transparent 0, rgba(12,11,10,.74) 56px, rgba(12,11,10,.9) 190px, #0c0b0a 340px); }
+  }
   @media (max-width: 960px) {
     /* The door leaves the line's row before the line runs out of measure: under 960 the wrap
        minus the term and the door leaves a written address no room, so the door steps down to

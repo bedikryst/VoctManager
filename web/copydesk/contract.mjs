@@ -427,6 +427,9 @@ export const NOT_COPY = {
   bg: "asset name",
   heroImg: "asset name",
   heroFoot: "veil depth, 0–1",
+  heroFloor: "line in the phone crop, 0–1",
+  heroPosition: "CSS object-position",
+  heroZoom: "photograph height against the hero",
   poster: "asset name",
   share: "asset name — the Open Graph frame",
   posterCredit:

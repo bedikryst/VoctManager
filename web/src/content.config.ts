@@ -246,6 +246,19 @@ const concerts = defineCollection({
         a flat scrim would have dulled the raking light that is the reason to use the photograph.
         Per station: the six evenings have no single correct veil. */
     heroFoot: z.number().min(0).max(1).optional(),
+    /** Where the subject ends in the 2:3 `-mobile` crop, as a fraction of its height from the top:
+        the feet of the people, above a quiet floor. Set, a phone stands the subject on the type
+        rather than running the type across it. Unset ⇒ the type sits over the frame, which suits a
+        crop with no calm foot to give it. Read off the crop, so it moves when the crop is recut. */
+    heroFloor: z.number().min(0).max(1).optional(),
+    /** The hero's `object-position` on a landscape window, for a frame whose subject stands where
+        the type hangs. A hero draws a 3:2 photograph wider than the window, and this spends that
+        slack sideways: the heading column keeps the left, so a low first number moves the subject
+        right of it. */
+    heroPosition: z.string().optional(),
+    /** The hero photograph's height against the hero on a landscape window, 1.15 when unset. A
+        deeper frame lowers the subject and widens the slack `heroPosition` has to spend. */
+    heroZoom: z.number().min(1.15).max(1.6).optional(),
     /** The frame this concert wears OFF the site — the Open Graph image a pasted link previews
      *  with. photo() base name, 1.91:1, falling back to the hero when unset.
      *

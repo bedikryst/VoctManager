@@ -2667,6 +2667,11 @@
   # from the desktop frame like every other station's (docs/station-backgrounds.md).
   bg: st-stworzenie-bg
   heroImg: kd-stworzenie-hero
+  # The conductor's and the singers' feet in the phone crop; the marble below them carries the type.
+  heroFloor: 0.6
+  # On a wide window the pair lowers the choir under the verse and slides it right of the heading column.
+  heroPosition: 0% center
+  heroZoom: 1.35
   poster: poster-stworzenie
   posterAlt: Plakat koncertu Pochwała Stworzenia
   posterCredit: "Anna Marcisz · VoctEnsemble"

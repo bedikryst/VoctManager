@@ -110,6 +110,14 @@
   color: rgba(244, 241, 233, 0.58);
 }
 
+/* A narrow Android column: tighter tracking keeps "Recording · Town" on one line, where a wrap would
+   leave the separator hanging at the end of the first. */
+@media (max-width: 380px) {
+  .excerpts-source {
+    letter-spacing: 0.04em;
+  }
+}
+
 /* The file did not answer: the glyph rests, and its mono line says why. */
 .excerpts-glyph.is-failed {
   cursor: default;
