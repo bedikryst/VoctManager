@@ -1,7 +1,8 @@
 """
 Sends the concert mails defined in a send page, one message per recipient, through Gmail SMTP from
-the sender's own Google Workspace account. The page's script is the single source of every text:
-node renders it, so the page preview and the sent mail match.
+the sender's own Google Workspace account, or leaves them in that account's Drafts folder for the
+person who signs them to read and send. The page's script is the single source of every text: node
+renders it, so the page preview and the sent mail match.
 
 Send pages hold recipients' addresses, so they live with the campaign's records in the foundation
 office repository (../VOCTFOUNDATION/relacje/log/), never in this public repository. The 2026-10-09
@@ -11,6 +12,7 @@ Run from this repository's root (PAGE is relative to the current directory):
   python tools/outreach/send_invitations.py --page PAGE --sender FROM [--login ACCOUNT] --preview
   python tools/outreach/send_invitations.py --page PAGE --sender FROM [--login ACCOUNT] --test
   python tools/outreach/send_invitations.py --page PAGE --sender FROM [--login ACCOUNT] --send
+  python tools/outreach/send_invitations.py --page PAGE --sender FROM [--login ACCOUNT] --drafts
   python tools/outreach/send_invitations.py --page PAGE --sender FROM --report
 
 FROM is the address recipients see and the signature carries; ACCOUNT is the Google account that
@@ -26,12 +28,13 @@ ATTACHMENT.path in a page is relative to this repository's root, where the press
 The Google app password is read from .secrets/gmail-app-password.txt (git-ignored); it never appears
 on the command line. Every delivered or refused address is recorded in the log (default: next to the
 page, as <page>.log.json), and a rerun skips the delivered ones, so an interrupted run resumes where
-it stopped.
+it stopped. --drafts keeps its own log (<page>.drafts.log.json), since a draft is not a delivery.
 """
 
 from __future__ import annotations
 
 import argparse
+import imaplib
 import json
 import os
 import re
@@ -120,14 +123,45 @@ def save_log(log: dict[str, dict], path: Path) -> None:
     path.write_text(json.dumps(log, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
-def connect(login: str) -> smtplib.SMTP:
+def read_password() -> str:
     if not PASSWORD_FILE.exists():
         sys.exit(f"Missing {PASSWORD_FILE.relative_to(ROOT)}: put the Google app password there.")
-    password = PASSWORD_FILE.read_text(encoding="utf-8-sig").strip().replace(" ", "")
+    return PASSWORD_FILE.read_text(encoding="utf-8-sig").strip().replace(" ", "")
+
+
+def connect(login: str) -> smtplib.SMTP:
     smtp = smtplib.SMTP("smtp.gmail.com", 587, timeout=30)
     smtp.starttls()
-    smtp.login(login, password)
+    smtp.login(login, read_password())
     return smtp
+
+
+def drafts_folder(imap: imaplib.IMAP4_SSL) -> str:
+    """The Drafts folder as IMAP quotes it. Its name follows the account's language, so it is found by its flag."""
+    _, rows = imap.list()
+    for row in rows:
+        line = row.decode("ascii", "replace") if isinstance(row, bytes) else ""
+        if "\\Drafts" in line:
+            return line.rsplit(' "/" ', 1)[1]
+    sys.exit("The account has no folder flagged as Drafts.")
+
+
+def leave_as_drafts(messages: list[dict], sender: str, login: str, from_name: str, attachment: tuple[bytes, str], skip: set[str], log_path: Path) -> None:
+    log = load_log(log_path)
+    queue = [m for m in messages if log.get(m["to"], {}).get("status") != "draft" and m["to"].lower() not in skip]
+    print(f"{len(queue)} to leave as drafts, {len(messages) - len(queue)} already there or skipped")
+    imap = imaplib.IMAP4_SSL("imap.gmail.com", timeout=30)
+    imap.login(login, read_password())
+    try:
+        folder = drafts_folder(imap)
+        for i, m in enumerate(queue, 1):
+            draft = build(m, sender, from_name, m["to"], m["cc"], m["subject"], attachment)
+            imap.append(folder, "(\\Draft)", None, draft.as_bytes())
+            log[m["to"]] = {"name": m["name"], "status": "draft", "at": datetime.now().isoformat(timespec="seconds")}
+            save_log(log, log_path)
+            print(f"[{i}/{len(queue)}] draft: {m['name']} <{m['to']}>", flush=True)
+    finally:
+        imap.logout()
 
 
 def samples(messages: list[dict], kinds: list[str]) -> list[dict]:
@@ -145,6 +179,7 @@ def main() -> None:
     mode.add_argument("--preview", action="store_true")
     mode.add_argument("--test", action="store_true")
     mode.add_argument("--send", action="store_true")
+    mode.add_argument("--drafts", action="store_true", help="leave every message in the account's Drafts folder, sending nothing")
     mode.add_argument("--report", action="store_true", help="list who was sent to, grouped, from the log")
     parser.add_argument("--pause", type=float, default=20.0, help="seconds between messages (default 20)")
     parser.add_argument("--skip", default="", help="comma-separated addresses already sent by hand")
@@ -180,6 +215,13 @@ def main() -> None:
         return
 
     login = args.login or args.sender
+    skip = {a.strip().lower() for a in args.skip.split(",") if a.strip()}
+
+    if args.drafts:
+        drafts_log = Path(args.log).resolve() if args.log else page.with_name(page.stem + ".drafts.log.json")
+        leave_as_drafts(messages, args.sender, login, from_name, attachment, skip, drafts_log)
+        return
+
     smtp = connect(login)
     try:
         if args.test:
@@ -191,7 +233,6 @@ def main() -> None:
             return
 
         log = load_log(log_path)
-        skip = {a.strip().lower() for a in args.skip.split(",") if a.strip()}
         queue = [m for m in messages if log.get(m["to"], {}).get("status") != "sent" and m["to"].lower() not in skip]
         print(f"{len(queue)} to send, {len(messages) - len(queue)} already sent or skipped")
         for i, m in enumerate(queue, 1):
