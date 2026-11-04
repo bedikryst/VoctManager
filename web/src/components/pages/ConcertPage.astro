@@ -653,6 +653,7 @@ const jsonLd =
         c.heroFloor !== undefined && `--hero-floor: ${c.heroFloor}`,
         c.heroZoom !== undefined && `--hero-zoom: ${c.heroZoom * 100}%`,
         c.heroPosition !== undefined && `--hero-position: ${c.heroPosition}`,
+        c.heroLight !== undefined && `--hero-light: ${c.heroLight}`,
       ].filter(Boolean).join("; ") || undefined}
       aria-label={concertTitle}
     >
@@ -1784,12 +1785,18 @@ const jsonLd =
   .kd-hero-media { position: absolute; inset: 0; z-index: -2; }
   .kd-hero-media :global(picture),
   .kd-hero-media :global(img) { width: 100%; height: 115%; display: block; object-fit: cover; }
-  /* A station's own framing (`heroZoom`, `heroPosition`) holds for a landscape window. A portrait one
-     draws the 3:2 photograph far wider than the slack these spend, and the same numbers slide the
-     subject out of the frame. Under reduced motion no controller centres the layer, so this does. */
+  /* A station's own framing (`heroZoom`, `heroPosition`, `heroLight`) holds for a landscape window. A
+     portrait one draws the 3:2 photograph far wider than the slack these spend, and the same numbers
+     slide the subject out of the frame. Under reduced motion no controller centres the layer, so
+     this does.
+
+     The position travels as BleedImage's own `--bleed-pos`, set on the image, because its scoped
+     `object-position` outranks anything written here. With no `--hero-light` the gradient is invalid
+     and paints nothing, which leaves every other station's veil as it stands. */
   @media (min-width: 761px) and (min-aspect-ratio: 5/4) {
     .kd-hero-media :global(picture) { height: var(--hero-zoom, 115%); }
-    .kd-hero-media :global(picture img) { object-position: var(--hero-position, center); }
+    .kd-hero-media :global(picture img) { --bleed-pos: var(--hero-position, center); }
+    .kd-hero-veil::after { content: ""; position: absolute; inset: 0; background: radial-gradient(ellipse 60% 62% at var(--hero-light), transparent 30%, rgba(8,8,7,.62) 100%); }
   }
   @media (min-width: 761px) and (min-aspect-ratio: 5/4) and (prefers-reduced-motion: reduce) {
     .kd-hero-media :global(picture) { top: calc((100% - var(--hero-zoom, 100%)) / 2); }
@@ -2672,10 +2679,12 @@ const jsonLd =
        the type, so the layer stays still here; the Ken Burns breath on the image carries on. */
     .kd-hero--floored { --photo-h: max(900px, 155vw); display: grid; grid-template-rows: minmax(210px, 1fr) auto; align-items: stretch; padding-top: 0; }
     .kd-hero--floored .kd-hero-media { position: relative; inset: auto; margin-inline: calc(-1 * max(28px, 5vw)); }
+    .kd-hero--floored .kd-hero-media::after { content: ""; position: absolute; inset: 0; background: radial-gradient(ellipse 85% 75% at 50% 100%, transparent 35%, rgba(8,8,7,.62) 100%); }
     .kd-hero--floored .kd-hero-media :global(picture) { top: auto; bottom: calc(var(--photo-h) * (var(--hero-floor) - 1)); left: calc(50% - var(--photo-h) / 3); width: calc(var(--photo-h) * 2 / 3); height: var(--photo-h); transform: none !important; will-change: auto; }
     .kd-hero--floored .kd-hero-media :global(img) { height: 100%; }
-    /* The type no longer hangs on the photograph, so the rake and the standing foot go: only the wash
-       behind the chrome stays, and the scrim belongs to the stack, starting where the stack starts. */
+    /* The type no longer hangs on the photograph, so the rake and the standing foot go: the wash behind
+       the chrome stays, the frame falls off around the subject (the `::after` above, centred on the
+       line it stands on), and the scrim belongs to the stack, starting where the stack starts. */
     .kd-hero--floored .kd-hero-veil { background: linear-gradient(180deg, rgba(8,8,7,.52) 0, transparent 120px); }
     .kd-hero--floored .kd-hero-inner { position: relative; }
     .kd-hero--floored .kd-hero-inner::before { content: ""; position: absolute; z-index: -1; inset: -36px calc(-1 * max(28px, 5vw)) -32px; pointer-events: none;

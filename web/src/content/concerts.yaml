@@ -2672,6 +2672,8 @@
   # On a wide window the pair lowers the choir under the verse and slides it right of the heading column.
   heroPosition: 0% center
   heroZoom: 1.35
+  # The brightest interior of the evenings: its lit walls fall off around the choir.
+  heroLight: 62% 72%
   poster: poster-stworzenie
   posterAlt: Plakat koncertu Pochwała Stworzenia
   posterCredit: "Anna Marcisz · VoctEnsemble"

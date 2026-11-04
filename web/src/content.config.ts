@@ -259,6 +259,10 @@ const concerts = defineCollection({
     /** The hero photograph's height against the hero on a landscape window, 1.15 when unset. A
         deeper frame lowers the subject and widens the slack `heroPosition` has to spend. */
     heroZoom: z.number().min(1.15).max(1.6).optional(),
+    /** Where the subject stands on a landscape window, as a CSS position: the frame falls off to the
+        site's dark around it. For a photograph lit brighter than the other evenings, where a veil
+        from the foot would only blacken the people, who are already the darkest thing in it. */
+    heroLight: z.string().optional(),
     /** The frame this concert wears OFF the site — the Open Graph image a pasted link previews
      *  with. photo() base name, 1.91:1, falling back to the hero when unset.
      *

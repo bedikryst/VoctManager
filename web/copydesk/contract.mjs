@@ -430,6 +430,7 @@ export const NOT_COPY = {
   heroFloor: "line in the phone crop, 0–1",
   heroPosition: "CSS object-position",
   heroZoom: "photograph height against the hero",
+  heroLight: "CSS position of the subject",
   poster: "asset name",
   share: "asset name — the Open Graph frame",
   posterCredit:

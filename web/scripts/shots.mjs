@@ -80,6 +80,7 @@ const main = async () => {
           const eager = [...document.images].filter((image) => image.loading !== "lazy");
           await Promise.all(eager.map((image) => image.decode().catch(() => undefined)));
         });
+        if (flags.css) await page.addStyleTag({ content: flags.css });
         await page.waitForTimeout(flags.motion === "full" ? 1800 : 300);
         const stem = join(flags.out, `${slug(path)}-${width}`);
 
