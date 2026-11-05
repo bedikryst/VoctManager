@@ -66,6 +66,8 @@ class AIModel:
     HAIKU: Final[str] = "claude-haiku-4-5"      # cheap classification, dedup, simple extraction
     SONNET: Final[str] = "claude-sonnet-5"      # score analysis, translations
     OPUS: Final[str] = "claude-opus-5"          # hardest reasoning / audience-facing prose
+    OPUS_5_5: Final[str] = "claude-opus-5-5"      # the support agent
+    SONNET_5_5: Final[str] = "claude-sonnet-5-5"  # the judge of the support agent's evaluation
 
 
 # Superseded ids, kept ONLY so the golden-set harness can price a baseline run
@@ -112,6 +114,19 @@ _PRICING: Final[dict[str, _ModelPricing]] = {
         output_per_1m=Decimal("5.00"),
         cache_write_5m_per_1m=Decimal("1.25"),
         cache_read_per_1m=Decimal("0.10"),
+    ),
+    # Cache reads on Opus 5.5 are 0.05x input, not the usual 0.1x.
+    AIModel.OPUS_5_5: _ModelPricing(
+        input_per_1m=Decimal("4.00"),
+        output_per_1m=Decimal("20.00"),
+        cache_write_5m_per_1m=Decimal("5.00"),
+        cache_read_per_1m=Decimal("0.20"),
+    ),
+    AIModel.SONNET_5_5: _ModelPricing(
+        input_per_1m=Decimal("2.00"),
+        output_per_1m=Decimal("10.00"),
+        cache_write_5m_per_1m=Decimal("2.50"),
+        cache_read_per_1m=Decimal("0.20"),
     ),
     # Previous generation — same rates as their successors; present so a
     # harness baseline run does not die on "Unknown model for pricing".
@@ -164,6 +179,8 @@ _MODEL_OUTPUT_CEILING: Final[dict[str, int]] = {
     AIModel.HAIKU: 16384,
     AIModel.SONNET: 65536,
     AIModel.OPUS: 65536,
+    AIModel.OPUS_5_5: 65536,
+    AIModel.SONNET_5_5: 65536,
     LEGACY_SONNET: 65536,
     LEGACY_OPUS: 65536,
 }
@@ -294,6 +311,17 @@ def _compute_cost(
         cache_read_input_tokens=cache_read_input_tokens,
         total_usd=total_usd,
         total_cents=total_cents,
+    )
+
+
+def cost_from_usage(model: str, usage: Any) -> CallCost:
+    """Price one SDK `usage` object, for a caller driving the API without `AIClient`."""
+    return _compute_cost(
+        model=model,
+        input_tokens=usage.input_tokens or 0,
+        output_tokens=usage.output_tokens or 0,
+        cache_creation_input_tokens=getattr(usage, 'cache_creation_input_tokens', 0) or 0,
+        cache_read_input_tokens=getattr(usage, 'cache_read_input_tokens', 0) or 0,
     )
 
 
