@@ -34,8 +34,6 @@ Search the words they quote to reach a key, then search the key to reach the com
 - frontend/src/app/ holds the routes, frontend/src/shared/config/navigation/ the navigation, and \
 frontend/src/features/ the screens by domain.
 - backend/<app>/ holds models, serializers, views, permissions, services and tasks.
-- When the report asks several things, find where each one is answered before following any of them \
-into the backend, so that a search cut short still answers every part.
 
 Decide on the primary report. Neighbouring reports from the same person are context for it, and you \
 do not answer them separately. The filed_as label is a dropdown people often get wrong, so decide \
