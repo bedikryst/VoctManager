@@ -1,26 +1,18 @@
+"""
+@file admin.py
+@description Django admin for venues. Columns and search read only fields the
+    Location model stores: the address is the single formatted line, with no
+    separate city or country.
+@module logistics/admin
+"""
+
 from django.contrib import admin
 
 from .models import Location
 
-# Register your models here.
 
+@admin.register(Location)
 class LocationAdmin(admin.ModelAdmin):
-    list_display = ('name', 'category', 'address', 'city', 'state', 'country')
-    search_fields = ('name', 'address', 'city', 'state', 'country')
-    list_filter = ('category',)
-
-    def address(self, obj):
-        return obj.formatted_address
-
-    def city(self, obj):
-        return obj.city
-
-    def state(self, obj):
-        return obj.state
-
-    def country(self, obj):
-        return obj.country
-
-admin.site.register(Location, LocationAdmin)
-
-# Register your models here.
+    list_display = ('name', 'category', 'formatted_address', 'timezone', 'is_active')
+    search_fields = ('name', 'formatted_address')
+    list_filter = ('category', 'is_active')

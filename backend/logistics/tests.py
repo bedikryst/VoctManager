@@ -1,14 +1,17 @@
 """
 @file tests.py
-@description Covers the address normalization that runs on every write, and the
-    command that applies it to rows imported before it existed.
+@description Covers the address normalization that runs on every write, the
+    command that applies it to rows imported before it existed, and the admin
+    venue list.
 @module logistics/tests
 """
 
 from io import StringIO
 
+from django.contrib.auth import get_user_model
 from django.core.management import call_command
 from django.test import SimpleTestCase, TestCase
+from django.urls import reverse
 
 from .address import address_parts, normalize_address
 from .dtos import LocationCreateDTO, LocationUpdateDTO
@@ -112,3 +115,19 @@ class NormalizeAddressCommandTests(TestCase):
     def test_a_clean_estate_reports_nothing_to_do(self) -> None:
         self._run("--apply")
         self.assertIn("already normalized", self._run())
+
+
+class LocationAdminTests(TestCase):
+    def test_the_list_opens_and_searches_by_address(self) -> None:
+        Location.objects.create(
+            name="Kościół św. Andrzeja Boboli",
+            category=LocationCategory.CHURCH,
+            formatted_address="Rakowiecka 61, 02-532 Warszawa, Poland",
+        )
+        admin_user = get_user_model().objects.create_superuser(
+            username="office", email="office@example.com", password="x-secret-x",
+        )
+        self.client.force_login(admin_user)
+        url = reverse("admin:logistics_location_changelist")
+        self.assertContains(self.client.get(url), "Rakowiecka 61")
+        self.assertContains(self.client.get(url, {"q": "Rakowiecka"}), "Boboli")
