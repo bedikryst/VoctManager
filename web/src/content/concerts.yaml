@@ -2698,8 +2698,8 @@
       admission: free
     - date: "2026-11-15"
       time: "19:00"
-      venue: "Kościół św. Antoniego z Padwy (oo. franciszkanie), Poznań"
-      metaPlace: { pl: "Kościół św. Antoniego z Padwy (oo. franciszkanie), Poznań" }
+      venue: "Kościół franciszkanów św. Antoniego Padewskiego, Poznań"
+      metaPlace: { pl: "Kościół franciszkanów św. Antoniego Padewskiego, Poznań" }
       address: "ul. Franciszkańska 2, Poznań"
       facebookEvent: "https://fb.me/e/5bG8CUGwP"
       admission: free
