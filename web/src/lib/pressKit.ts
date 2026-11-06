@@ -296,14 +296,20 @@ export function concertFacts(concert: KitConcert): ConcertFacts {
 }
 
 /**
- * The concert card's lineup: everyone who sings and plays on one line, then each credit (the
- * conductor) on its own — "VoctEnsemble · Radu Ropotan · …" over "Florent de Bazelaire — dyrygent".
+ * The concert card's lineup: everyone who sings and plays on one line, then the conductor on a
+ * line of its own — "VoctEnsemble · Radu Ropotan · …" over "Florent de Bazelaire — dyrygent".
  * A pasted fact block sets `kit.forces` above it.
+ *
+ * Only the conductor comes from `credits`. That list is the record of the evening the concert page
+ * documents, and a kit announcing a repeat has other performers, so those are `kit.guests` alone.
+ * Matched on the Polish role, as the concert page matches it.
  */
 export function lineupLines(kit: PressKit, concert: KitConcert): string[] {
   return [
     [FOUNDATION.ensemble, ...kit.guests.map((guest) => guest.name)].join(" · "),
-    ...(concert.credits ?? []).map((credit) => `${credit.name} — ${credit.role.toLowerCase()}`),
+    ...(concert.credits ?? [])
+      .filter((credit) => /dyrygent/i.test(credit.role))
+      .map((credit) => `${credit.name} — ${credit.role.toLowerCase()}`),
   ];
 }
 
