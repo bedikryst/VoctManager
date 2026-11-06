@@ -9,8 +9,9 @@ Description:
     Usage, from the repo root on the machine that holds the git history:
         python backend/manage.py evaluate_support_agent <eval_set.json>
             --settings=config.test_settings_sqlite
-            [--split tune|sealed|all] [--rows q01,q07] [--runs N] [--controls]
+            [--split tune|sealed|all] [--rows q01,q07] [--runs N] [--controls] [--rejudge]
             [--model claude-haiku-5-5] [--effort high] [--workers 4] [--budget-usd 20] [--out DIR]
+            [--runner api|cli] [--claude-bin PATH] [--config-dir DIR]
 
     The tools need the repository's `.git`, so this runs on a checkout and not in
     the containers. Host-side settings do not read the root `.env`, so the key is
@@ -24,13 +25,21 @@ Description:
     and the row's forbidden claims, and shows whether the judge can tell them apart.
     Run it before spending money on the agent.
 
+    `--rejudge` calls no agent either. It grades the stored runs of the selected rows
+    again, from their transcripts, after a checklist changed. What it replaces stays
+    beside them in `results.before-rejudge.jsonl`.
+
     The output folder holds `results.jsonl`, `errors.jsonl`, `summary.json` and one
     transcript per run. It contains real reports, so it belongs in a git-ignored
-    location. Passing an existing folder resumes it: finished runs are kept, and
-    runs that ended in an error run again.
+    location. Passing an existing folder resumes it: finished runs are kept, runs
+    that ended in an error run again, and a run where only the judge failed is
+    graded again from its transcript.
 
-    NOTE: every run is a REAL, BILLED Anthropic call, outside the pipeline's budget
-    counters. `--budget-usd` stops starting new runs once it is spent.
+    NOTE: under `--runner api`, the default, every run is a REAL, BILLED Anthropic
+    call, outside the pipeline's budget counters. `--budget-usd` stops starting new
+    runs once it is spent. Under `--runner cli` the runs go through `claude -p` on a
+    subscription (see `support.cli_runner`): the dollar figures are what the API
+    would charge, nothing is charged, and `--config-dir` picks the account.
 
 Standards: SaaS 2026, evaluation-before-tuning.
 ===============================================================================
@@ -40,11 +49,13 @@ from __future__ import annotations
 import hashlib
 import json
 import re
+import shutil
 import subprocess
 import sys
 import threading
+from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
-from dataclasses import asdict
+from dataclasses import asdict, dataclass
 from datetime import UTC, datetime
 from decimal import Decimal
 from pathlib import Path
@@ -55,12 +66,29 @@ from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError, CommandParser
 
 from archive.infrastructure.ai_client import AIClient, AIModel
-from support.agent import AgentConfig, AgentRun, run_support_agent
+from support.agent import (
+    AgentConfig,
+    AgentOutcome,
+    AgentRun,
+    ReportInput,
+    ToolCallRecord,
+    TurnRecord,
+    run_support_agent,
+)
+from support.cli_runner import (
+    CliJudge,
+    CliJudgeError,
+    CliOptions,
+    claude_version,
+    find_claude_binary,
+    run_support_agent_cli,
+)
 from support.code_reader import CODE_TOOLS, CodeReader
 from support.evaluation import (
     JUDGE_MODEL,
     EvalSet,
     ItemResult,
+    JudgeError,
     RunScore,
     ScoredRow,
     SilentRow,
@@ -80,8 +108,18 @@ EVAL_REQUEST_TIMEOUT_SECONDS = 180.0
 EVAL_MAX_RETRIES = 4
 
 
+@dataclass(frozen=True)
+class _Route:
+    """Where the agent and its judges run, and whether their dollar figures are real."""
+    name: str
+    judge: AIClient
+    agent: Callable[[ReportInput, CodeReader], AgentRun]
+    charged: bool
+    client_version: str = ''
+
+
 class Command(BaseCommand):
-    help = "Run the support agent over a golden set and apply the gate. Every run is billed."
+    help = "Run the support agent over a golden set and apply the gate. Billed unless --runner cli."
 
     def add_arguments(self, parser: CommandParser) -> None:
         parser.add_argument('eval_set', type=Path)
@@ -89,6 +127,10 @@ class Command(BaseCommand):
         parser.add_argument('--rows', default='', help="Comma-separated row ids, e.g. q01,n17.")
         parser.add_argument('--runs', type=int, default=0, help="Runs per row; 0 takes the gate's value.")
         parser.add_argument('--controls', action='store_true', help="Test the judge only; calls no agent.")
+        parser.add_argument('--rejudge', action='store_true', help="Grade the runs stored in --out again.")
+        parser.add_argument('--runner', choices=['api', 'cli'], default='api')
+        parser.add_argument('--claude-bin', type=Path, default=None, help="Default: PATH, then the VS Code extension.")
+        parser.add_argument('--config-dir', type=Path, default=None, help="CLAUDE_CONFIG_DIR of the account to use.")
         parser.add_argument(
             '--model',
             choices=[AIModel.OPUS_5_5, AIModel.SONNET_5_5, AIModel.HAIKU_5_5],
@@ -108,12 +150,14 @@ class Command(BaseCommand):
             raise CommandError(f"No eval set at {path}")
         eval_set = EvalSet.model_validate_json(path.read_text(encoding='utf-8'))
         repo = Path(settings.BASE_DIR).parent
-        api_key = _api_key(repo)
         scored, silent = _selected(eval_set, options['split'], options['rows'])
-        judge = AIClient(api_key=api_key)
+        config = AgentConfig(model=options['model'], effort=options['effort'])
+        route = _route(options, repo, config)
         if options['controls']:
-            self._run_controls(judge, scored)
+            self._run_controls(route.judge, scored)
             return
+        if options['rejudge'] and options['out'] is None:
+            raise CommandError("--rejudge needs --out, the folder holding the stored runs.")
         runs_per_row = options['runs'] or eval_set.gate.runs_per_row
         out = options['out'] or repo / 'tmp' / 'agent-options' / 'eval' / _folder_name(options['split'])
         session = _Session(
@@ -121,13 +165,14 @@ class Command(BaseCommand):
             eval_set=eval_set,
             repo=repo,
             out=out,
-            judge=judge,
-            client=anthropic.Anthropic(
-                api_key=api_key, timeout=EVAL_REQUEST_TIMEOUT_SECONDS, max_retries=EVAL_MAX_RETRIES,
-            ),
-            config=AgentConfig(model=options['model'], effort=options['effort']),
+            route=route,
+            config=config,
             budget=options['budget_usd'],
         )
+        if options['rejudge']:
+            session.rejudge(scored)
+            session.report(_selected(eval_set, options['split'], '')[0], runs_per_row)
+            return
         session.write_run_header(path, options['split'], runs_per_row)
         # An empty API account or a rejected request ends the runs, and what was paid for still gets reported.
         try:
@@ -163,8 +208,7 @@ class _Session:
         eval_set: EvalSet,
         repo: Path,
         out: Path,
-        judge: AIClient,
-        client: anthropic.Anthropic,
+        route: _Route,
         config: AgentConfig,
         budget: Decimal,
     ) -> None:
@@ -172,8 +216,7 @@ class _Session:
         self.eval_set = eval_set
         self.repo = repo
         self.out = out
-        self.judge = judge
-        self.client = client
+        self.route = route
         self.config = config
         self.budget = budget
         self.lock = threading.Lock()
@@ -190,6 +233,8 @@ class _Session:
             'eval_set_status': self.eval_set.status,
             'split': split,
             'runs_per_row': runs_per_row,
+            'runner': self.route.name,
+            'client_version': self.route.client_version,
             'model': self.config.model,
             'effort': self.config.effort,
             'judge_model': JUDGE_MODEL,
@@ -227,13 +272,16 @@ class _Session:
 
     def _one_run(self, row: ScoredRow | SilentRow, rep: int) -> None:
         with self.lock:
-            if self.spent >= self.budget:
+            if self.route.charged and self.spent >= self.budget:
                 self.skipped += 1
                 return
-        reader = CodeReader(self.repo, row.build)
-        report = report_for(row, self.eval_set.reporter_role)
-        run = run_support_agent(report=report, reader=reader, client=self.client, config=self.config)
-        self._write_transcript(row.id, rep, run)
+        # An answer on disk with no result line means only its judge failed.
+        run = self._stored_run(row.id, rep)
+        if run is None:
+            reader = CodeReader(self.repo, row.build)
+            report = report_for(row, self.eval_set.reporter_role)
+            run = self.route.agent(report, reader)
+            self._write_transcript(row.id, rep, run)
         if is_error(run):
             with self.lock:
                 self.spent += run.cost_usd
@@ -243,10 +291,19 @@ class _Session:
                 })
             self.command.stdout.write(f"  {row.id}#{rep} ERROR {run.status}: {run.error}")
             return
-        if isinstance(row, ScoredRow):
-            score = score_scored_run(self.judge, row, rep, run)
-        else:
-            score = score_silent_run(row, rep, run)
+        try:
+            if isinstance(row, ScoredRow):
+                score = score_scored_run(self.route.judge, row, rep, run)
+            else:
+                score = score_silent_run(row, rep, run)
+        except (CliJudgeError, JudgeError) as exc:
+            with self.lock:
+                _append(self.out / 'errors.jsonl', {
+                    'row': row.id, 'rep': rep, 'status': 'judge_error', 'error': str(exc),
+                    'agent_cost_usd': run.cost_usd,
+                })
+            self.command.stdout.write(f"  {row.id}#{rep} JUDGE ERROR: {exc}")
+            return
         with self.lock:
             self.spent += score.agent_cost_usd + score.judge_cost_usd
             self.scores.append(score)
@@ -254,7 +311,38 @@ class _Session:
             spent = self.spent
         self.command.stdout.write(
             f"  {row.id}#{rep} {_mark(score.passed)} action={score.action} rounds={score.tool_rounds} "
-            f"{score.elapsed_seconds:.0f}s ${score.agent_cost_usd:.3f} (total ${spent:.2f})"
+            f"{score.elapsed_seconds:.0f}s ${score.agent_cost_usd:.3f} (total ${spent:.2f}) "
+            f"{_windows(run.usage_windows)}"
+        )
+
+    def rejudge(self, rows: list[ScoredRow]) -> None:
+        """Grade the selected rows' stored runs again. Their answers and measurements stay as they were."""
+        results = self.out / 'results.jsonl'
+        if not results.exists():
+            raise CommandError(f"No stored runs in {self.out}")
+        before = self.out / 'results.before-rejudge.jsonl'
+        if not before.exists():
+            shutil.copyfile(results, before)
+        by_id = {row.id: row for row in rows}
+        graded: list[RunScore] = []
+        for old in self.scores:
+            row = by_id.get(old.row)
+            run = self._stored_run(old.row, old.rep) if row else None
+            if row is None or run is None:
+                graded.append(old)
+                continue
+            score = score_scored_run(self.route.judge, row, old.rep, run)
+            score.elapsed_seconds = old.elapsed_seconds
+            graded.append(score)
+            self.command.stdout.write(
+                f"  {old.row}#{old.rep} passed {_mark(old.passed)} -> {_mark(score.passed)}, "
+                f"gap {_mark(old.gap_hit)} -> {_mark(score.gap_hit)}"
+            )
+        self.scores = graded
+        self.spent = sum((score.agent_cost_usd + score.judge_cost_usd for score in graded), Decimal('0'))
+        results.write_text(
+            ''.join(json.dumps(score.as_json(), ensure_ascii=False, default=str) + '\n' for score in graded),
+            encoding='utf-8',
         )
 
     def report(self, scored: list[ScoredRow], runs_per_row: int) -> None:
@@ -300,7 +388,8 @@ class _Session:
         write(f"Per run: {perf['seconds_p50']:.0f}s p50, {perf['seconds_p95']:.0f}s p95; "
               f"{perf['rounds_p95']:.0f} rounds p95; ${perf['agent_cost_mean']:.3f} mean, "
               f"${perf['agent_cost_p95']:.3f} p95. Cache reads {perf['cache_read_share']:.0%} of input.")
-        write(f"Spent: ${self.spent:.2f} (judges ${perf['judge_cost_total']:.2f}). "
+        spent_label = 'Spent' if self.route.charged else 'API equivalent, nothing charged'
+        write(f"{spent_label}: ${self.spent:.2f} (judges ${perf['judge_cost_total']:.2f}). "
               f"Skipped for budget: {self.skipped}. Results in {self.out}")
 
     def _load_finished(self) -> set[tuple[str, int]]:
@@ -315,11 +404,32 @@ class _Session:
             finished.add((score.row, score.rep))
         return finished
 
+    def _stored_run(self, row_id: str, rep: int) -> AgentRun | None:
+        """A run from its transcript, if that run produced an answer."""
+        path = self.out / 'transcripts' / f'{row_id}-{rep}.json'
+        if not path.exists():
+            return None
+        payload = json.loads(path.read_text(encoding='utf-8'))
+        if payload['outcome'] is None:
+            return None
+        return AgentRun(
+            status=payload['status'],
+            outcome=AgentOutcome(**payload['outcome']),
+            limit_hit=payload['limit_hit'],
+            error=payload['error'],
+            elapsed_seconds=payload.get('elapsed_seconds', 0.0),
+            turns=[TurnRecord(**{**turn, 'cost_usd': Decimal(turn['cost_usd'])}) for turn in payload['turns']],
+            tool_calls=[ToolCallRecord(**call) for call in payload['tool_calls']],
+            transcript=payload['transcript'],
+        )
+
     def _write_transcript(self, row_id: str, rep: int, run: AgentRun) -> None:
         payload = {
             'status': run.status,
             'error': run.error,
             'limit_hit': run.limit_hit,
+            'elapsed_seconds': run.elapsed_seconds,
+            'usage_windows': run.usage_windows,
             'outcome': run.outcome.model_dump() if run.outcome else None,
             'turns': [asdict(turn) for turn in run.turns],
             'tool_calls': [asdict(call) for call in run.tool_calls],
@@ -342,6 +452,35 @@ def _selected(eval_set: EvalSet, split: str, rows: str) -> tuple[list[ScoredRow]
         scored = [row for row in scored if row.id in wanted]
         silent = [row for row in silent if row.id in wanted]
     return scored, silent
+
+
+def _route(options: dict[str, Any], repo: Path, config: AgentConfig) -> _Route:
+    if options['runner'] == 'cli':
+        binary = options['claude_bin'] or find_claude_binary()
+        if binary is None or not binary.exists():
+            raise CommandError("No claude binary found: pass --claude-bin.")
+        cli = CliOptions(binary=binary, repo=repo, config_dir=options['config_dir'])
+        return _Route(
+            name='cli',
+            judge=CliJudge(cli),
+            agent=lambda report, reader: run_support_agent_cli(
+                report=report, reader=reader, options=cli, config=config,
+            ),
+            charged=False,
+            client_version=claude_version(cli),
+        )
+    api_key = _api_key(repo)
+    client = anthropic.Anthropic(api_key=api_key, timeout=EVAL_REQUEST_TIMEOUT_SECONDS, max_retries=EVAL_MAX_RETRIES)
+    return _Route(
+        name='api',
+        judge=AIClient(api_key=api_key),
+        agent=lambda report, reader: run_support_agent(report=report, reader=reader, client=client, config=config),
+        charged=True,
+    )
+
+
+def _windows(usage: dict[str, float]) -> str:
+    return ' '.join(f'{window} {share:.0%}' for window, share in usage.items())
 
 
 def _api_key(repo: Path) -> str:

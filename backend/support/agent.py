@@ -43,12 +43,12 @@ AgentAction = Literal['answer', 'answer_and_flag', 'flag_defect', 'no_reply']
 # an evaluation must not count them against it.
 RunStatus = Literal['ok', 'refusal', 'truncated', 'unparseable', 'api_error', 'model_mismatch']
 
-_WRAP_UP_NOTE: Final[str] = (
+WRAP_UP_NOTE: Final[str] = (
     "The research budget for this report is used up ({reason}). Give your final JSON object now, "
     "from what you have found. In the reply, say plainly what you could not establish."
 )
 
-_OUTCOME_FORMAT: Final[dict[str, Any]] = {
+OUTCOME_FORMAT: Final[dict[str, Any]] = {
     'type': 'json_schema',
     'schema': {
         'type': 'object',
@@ -137,6 +137,8 @@ class AgentRun:
     turns: list[TurnRecord] = field(default_factory=list)
     tool_calls: list[ToolCallRecord] = field(default_factory=list)
     transcript: list[dict[str, Any]] = field(default_factory=list)
+    # Share used of each subscription window, as `claude -p` last reported it. Empty on the API.
+    usage_windows: dict[str, float] = field(default_factory=dict)
 
     @property
     def cost_usd(self) -> Decimal:
@@ -189,7 +191,7 @@ def run_support_agent(
         'system': [{'type': 'text', 'text': SUPPORT_AGENT.system}],
         'tools': CODE_TOOLS,
         'thinking': {'type': 'adaptive'},
-        'output_config': {'effort': settings.effort, 'format': _OUTCOME_FORMAT},
+        'output_config': {'effort': settings.effort, 'format': OUTCOME_FORMAT},
         # Moves to the newest block on every turn, so each one reads the last one's work back.
         'cache_control': {'type': 'ephemeral'},
     }
@@ -215,11 +217,11 @@ def run_support_agent(
         results = _execute(tool_uses, reader, run)
         run.transcript.append({'role': 'user', 'content': results})
         messages.append({'role': 'assistant', 'content': response.content})
-        limit = _limit_reached(run, settings, time.monotonic() - started)
+        limit = limit_reached(run, settings, time.monotonic() - started)
         if limit is not None:
             run.limit_hit = limit
             params['tool_choice'] = {'type': 'none'}
-            results = [*results, {'type': 'text', 'text': _WRAP_UP_NOTE.format(reason=limit)}]
+            results = [*results, {'type': 'text', 'text': WRAP_UP_NOTE.format(reason=limit)}]
         messages.append({'role': 'user', 'content': results})
     run.elapsed_seconds = time.monotonic() - started
     return run
@@ -285,7 +287,7 @@ def _execute(tool_uses: list[Any], reader: CodeReader, run: AgentRun) -> list[di
     return results
 
 
-def _limit_reached(run: AgentRun, settings: AgentConfig, elapsed: float) -> str | None:
+def limit_reached(run: AgentRun, settings: AgentConfig, elapsed: float) -> str | None:
     if run.tool_rounds >= settings.max_tool_rounds:
         return 'tool rounds'
     if elapsed >= settings.deadline_seconds:
