@@ -116,7 +116,7 @@ _PRICING: Final[dict[str, _ModelPricing]] = {
         cache_write_5m_per_1m=Decimal("1.25"),
         cache_read_per_1m=Decimal("0.10"),
     ),
-    # Cache reads on Opus 5.5 are 0.05x input, not the usual 0.1x.
+    # Cache reads on Opus 5.5 and Sonnet 5.5 are 0.05x input, not the usual 0.1x.
     AIModel.OPUS_5_5: _ModelPricing(
         input_per_1m=Decimal("4.00"),
         output_per_1m=Decimal("20.00"),
@@ -135,7 +135,7 @@ _PRICING: Final[dict[str, _ModelPricing]] = {
         input_per_1m=Decimal("2.00"),
         output_per_1m=Decimal("10.00"),
         cache_write_5m_per_1m=Decimal("2.50"),
-        cache_read_per_1m=Decimal("0.20"),
+        cache_read_per_1m=Decimal("0.10"),
     ),
     # Previous generation — same rates as their successors; present so a
     # harness baseline run does not die on "Unknown model for pricing".
