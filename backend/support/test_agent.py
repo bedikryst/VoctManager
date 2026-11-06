@@ -105,6 +105,15 @@ class SupportAgentLoopTests(SimpleTestCase):
         self.assertEqual(len(run.tool_calls), 1)
         self.assertEqual(run.cost_usd, Decimal('0.012') * 1)
 
+    def test_the_cost_follows_the_model_under_test(self) -> None:
+        cheap = AgentConfig(model=AIModel.HAIKU_5_5)
+        turn = _message([{'type': 'text', 'text': FINAL}], 'end_turn', model=AIModel.HAIKU_5_5)
+        run = run_support_agent(
+            report=REPORT, reader=self.reader, client=_ScriptedClient(turn), config=cheap,  # type: ignore[arg-type]
+        )
+        self.assertEqual(run.status, 'ok')
+        self.assertEqual(run.cost_usd, Decimal('0.00015'))
+
     def test_tool_results_go_back_against_their_call(self) -> None:
         client = _ScriptedClient(_tool_turn(), _final_turn())
         self._run(client)

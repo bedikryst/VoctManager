@@ -10,7 +10,7 @@ Description:
         python backend/manage.py evaluate_support_agent <eval_set.json>
             --settings=config.test_settings_sqlite
             [--split tune|sealed|all] [--rows q01,q07] [--runs N] [--controls]
-            [--effort high] [--workers 4] [--budget-usd 20] [--out DIR]
+            [--model claude-haiku-5-5] [--effort high] [--workers 4] [--budget-usd 20] [--out DIR]
 
     The tools need the repository's `.git`, so this runs on a checkout and not in
     the containers. Host-side settings do not read the root `.env`, so the key is
@@ -54,7 +54,7 @@ import anthropic
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError, CommandParser
 
-from archive.infrastructure.ai_client import AIClient
+from archive.infrastructure.ai_client import AIClient, AIModel
 from support.agent import AgentConfig, AgentRun, run_support_agent
 from support.code_reader import CODE_TOOLS, CodeReader
 from support.evaluation import (
@@ -89,6 +89,11 @@ class Command(BaseCommand):
         parser.add_argument('--rows', default='', help="Comma-separated row ids, e.g. q01,n17.")
         parser.add_argument('--runs', type=int, default=0, help="Runs per row; 0 takes the gate's value.")
         parser.add_argument('--controls', action='store_true', help="Test the judge only; calls no agent.")
+        parser.add_argument(
+            '--model',
+            choices=[AIModel.OPUS_5_5, AIModel.SONNET_5_5, AIModel.HAIKU_5_5],
+            default=AIModel.OPUS_5_5,
+        )
         parser.add_argument('--effort', default='high')
         parser.add_argument('--workers', type=int, default=4)
         parser.add_argument('--budget-usd', type=Decimal, default=Decimal('20'))
@@ -120,7 +125,7 @@ class Command(BaseCommand):
             client=anthropic.Anthropic(
                 api_key=api_key, timeout=EVAL_REQUEST_TIMEOUT_SECONDS, max_retries=EVAL_MAX_RETRIES,
             ),
-            config=AgentConfig(effort=options['effort']),
+            config=AgentConfig(model=options['model'], effort=options['effort']),
             budget=options['budget_usd'],
         )
         session.write_run_header(path, options['split'], runs_per_row)

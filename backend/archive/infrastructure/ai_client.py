@@ -68,6 +68,7 @@ class AIModel:
     OPUS: Final[str] = "claude-opus-5"          # hardest reasoning / audience-facing prose
     OPUS_5_5: Final[str] = "claude-opus-5-5"      # the support agent
     SONNET_5_5: Final[str] = "claude-sonnet-5-5"  # the judge of the support agent's evaluation
+    HAIKU_5_5: Final[str] = "claude-haiku-5-5"    # the cheapest tier the support agent is measured on
 
 
 # Superseded ids, kept ONLY so the golden-set harness can price a baseline run
@@ -121,6 +122,14 @@ _PRICING: Final[dict[str, _ModelPricing]] = {
         output_per_1m=Decimal("20.00"),
         cache_write_5m_per_1m=Decimal("5.00"),
         cache_read_per_1m=Decimal("0.20"),
+    ),
+    # Haiku 5.5 bills prompts over 100K tokens at $0.50/$2.50, a rate card this
+    # table does not hold. The support agent's largest request measured 58K.
+    AIModel.HAIKU_5_5: _ModelPricing(
+        input_per_1m=Decimal("0.10"),
+        output_per_1m=Decimal("0.50"),
+        cache_write_5m_per_1m=Decimal("0.125"),
+        cache_read_per_1m=Decimal("0.01"),
     ),
     AIModel.SONNET_5_5: _ModelPricing(
         input_per_1m=Decimal("2.00"),
@@ -181,6 +190,7 @@ _MODEL_OUTPUT_CEILING: Final[dict[str, int]] = {
     AIModel.OPUS: 65536,
     AIModel.OPUS_5_5: 65536,
     AIModel.SONNET_5_5: 65536,
+    AIModel.HAIKU_5_5: 16384,
     LEGACY_SONNET: 65536,
     LEGACY_OPUS: 65536,
 }
