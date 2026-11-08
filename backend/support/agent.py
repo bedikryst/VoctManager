@@ -45,7 +45,8 @@ RunStatus = Literal['ok', 'refusal', 'truncated', 'unparseable', 'api_error', 'm
 
 WRAP_UP_NOTE: Final[str] = (
     "The research budget for this report is used up ({reason}). Give your final JSON object now, "
-    "from what you have found. In the reply, say plainly what you could not establish."
+    "from what you have found. Leave out of the reply whatever you have not confirmed in the code; "
+    "if a part they asked about is still open, say so in the developer note instead."
 )
 
 OUTCOME_FORMAT: Final[dict[str, Any]] = {
