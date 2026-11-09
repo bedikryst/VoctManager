@@ -238,6 +238,7 @@ class _Session:
             'model': self.config.model,
             'effort': self.config.effort,
             'judge_model': JUDGE_MODEL,
+            'gate': self.eval_set.gate.model_dump(),
             'limits': {
                 'max_tool_rounds': self.config.max_tool_rounds,
                 'deadline_seconds': self.config.deadline_seconds,
@@ -347,7 +348,7 @@ class _Session:
 
     def report(self, scored: list[ScoredRow], runs_per_row: int) -> None:
         verdicts = row_verdicts(scored, self.scores, runs_per_row)
-        gate = gate_verdict(self.eval_set, verdicts, self.scores)
+        gate = gate_verdict(self.eval_set.gate, scored, verdicts, self.scores)
         silent_scores = [score for score in self.scores if score.kind == 'silent']
         perf = _performance(self.scores)
         summary: dict[str, Any] = {
@@ -365,20 +366,23 @@ class _Session:
         }
         (self.out / 'summary.json').write_text(json.dumps(summary, indent=1, default=str), encoding='utf-8')
         write = self.command.stdout.write
-        write(f"\n{'row':<5}{'split':<8}{'harm':<6}{'runs':<7}{'gap':<6}{'actions (expected)'}")
+        write(f"\n{'row':<5}{'split':<8}{'harm':<6}{'runs':<7}{'items':<8}{'gap':<6}{'actions (expected)'}")
         for verdict in verdicts:
             gap = f"{verdict.gap_runs_hit}/{verdict.runs_scored}" if verdict.ended_in_commit else '-'
+            items = f"{verdict.must_say_met}/{verdict.must_say_total}"
             write(
                 f"{verdict.row:<5}{verdict.split:<8}{'yes' if verdict.harm else '':<6}"
-                f"{verdict.runs_passed}/{verdict.runs_scored:<5}{gap:<6}"
+                f"{verdict.runs_passed}/{verdict.runs_scored:<5}{items:<8}{gap:<6}"
                 f"{','.join(verdict.actions)} ({verdict.expected_action})"
             )
-        write(f"\nCorrect rows: {gate.correct} of {gate.rows_run} run; the gate wants {gate.correct_needed} of "
-              f"{gate.rows_total}.")
-        write(f"Harm rows not correct: {gate.harm_not_correct or 'none'} of {gate.harm_rows}; "
-              f"with a false claim: {gate.harm_with_false_claim or 'none'}.")
-        write(f"Gap flags: {gate.gap_flagged} of {gate.gap_rows} run; the gate wants {gate.gap_needed} of "
-              f"{sum(1 for row in self.eval_set.rows if row.ended_in_commit)}.")
+        share = gate.must_say_met / gate.must_say_total if gate.must_say_total else 0.0
+        write(f"\nHard part. False claims: {gate.false_claims or 'none'}.")
+        write(f"Critical items missed: {gate.critical_missed or 'none'}.")
+        write(f"Wrong language: {gate.wrong_language or 'none'}. Gendered forms: {gate.gendered or 'none'}.")
+        write(f"Quality part. Must-say items met: {gate.must_say_met} of {gate.must_say_total} ({share:.1%}); "
+              f"the gate wants {gate.must_say_percent_needed}%.")
+        write(f"Outside the gate. Correct rows: {gate.correct} of {gate.rows_run} run. "
+              f"Gap flags: {gate.gap_flagged} of {gate.gap_rows} run.")
         write(f"Silent rows: {summary['silent']['passed']} of {summary['silent']['runs']} runs stayed silent; "
               f"answered: {summary['silent']['answered'] or 'none'}.")
         if gate.rows_incomplete:

@@ -8,11 +8,18 @@ Description:
     real members' reports and stays out of the repository; this module only knows
     its shape (`EvalSet`), and its tests use a synthetic sample.
 
-    A scored row counts as correct only if every one of its runs conveys all of
-    `must_say` and makes none of the `must_not_say` claims. A gap flag counts on
-    the same terms: every run's note has to point at the shortfall the developer
-    later fixed. A harm row (who sees what, actions with consequences) that is not
-    correct fails the gate, so abstaining on those rows cannot pass it.
+    The gate has a hard part and a quality part, both over the selected rows. Hard:
+    no run makes a `must_not_say` claim; every run on a harm row (who sees what,
+    actions with consequences for others) conveys that row's critical `must_say`
+    items; every reply is in the report's language and shows no gender
+    (`reply_form`). A harm row with no items marked critical is held to all of
+    them. Quality: the `must_say` items met, pooled over every run, reach the
+    gate's percentage, so an agent that abstains cannot pass.
+
+    A row counts as correct when every run conveys all of `must_say` and makes
+    none of the `must_not_say` claims, and as gap-flagged when every run's note
+    points at the shortfall the developer later fixed. Both are reported beside
+    the gate, not in it.
 
     A run that never produced an answer (API failure, truncation, unparseable
     output) is an error, not a wrong answer: it leaves its row incomplete and
@@ -30,15 +37,16 @@ from __future__ import annotations
 import math
 from dataclasses import asdict, dataclass, field
 from decimal import Decimal
-from typing import Any, Literal
+from typing import Any, Literal, Self
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, model_validator
 
 from archive.dtos import CallCost
 from archive.infrastructure.ai_client import AIClient, AIModel
 from archive.infrastructure.prompts import Prompt
 from support.agent import AgentAction, AgentOutcome, AgentRun, NeighbourReport, ReportInput
 from support.prompts import GAP_JUDGE, RUBRIC_JUDGE
+from support.reply_form import gendered_forms, in_language_of
 
 JUDGE_MODEL = AIModel.SONNET_5_5
 JUDGE_MAX_TOKENS = 8000
@@ -79,9 +87,28 @@ class ScoredRow(_Row):
     question: str
     must_say: list[str]
     must_not_say: list[str]
+    critical_must_say: list[int] = []
     accepts_no_reply: bool = False
     actual_resolution: str
     neighbours: list[NeighbourRow] = []
+
+    @model_validator(mode='after')
+    def _critical_items_index_must_say(self) -> Self:
+        if self.critical_must_say and not self.harm:
+            raise ValueError(f"{self.id}: only a harm row marks critical items")
+        indices = self.critical_must_say
+        if len(set(indices)) != len(indices) or not all(0 <= index < len(self.must_say) for index in indices):
+            raise ValueError(f"{self.id}: critical_must_say {indices} does not index must_say")
+        return self
+
+    @property
+    def critical_items(self) -> list[str]:
+        """The `must_say` items the hard gate holds every run to."""
+        if not self.harm:
+            return []
+        if not self.critical_must_say:
+            return list(self.must_say)
+        return [self.must_say[index] for index in self.critical_must_say]
 
 
 class SilentRow(_Row):
@@ -96,11 +123,8 @@ class SilentRow(_Row):
 
 
 class Gate(_Row):
-    scored_rows: int
-    correct_at_least: int
-    wrong_on_harm_rows: int
-    gap_flags_at_least: int
     runs_per_row: int
+    must_say_percent_at_least: int
 
 
 class EvalSet(_Row):
@@ -349,29 +373,34 @@ class RowVerdict:
     harm: bool
     ended_in_commit: bool
     runs_scored: int
+    runs_owed: int
     runs_passed: int
     gap_runs_hit: int
     complete: bool
     correct: bool
     gap_flagged: bool
+    must_say_met: int
+    must_say_total: int
     actions: list[str]
     expected_action: str
 
 
 @dataclass
 class GateVerdict:
-    """The gate over the rows that ran. `passed` stays None until every row has run."""
+    """The gate over the selected rows. `passed` stays None until every one of them has run."""
     rows_run: int
     rows_total: int
     rows_incomplete: list[str]
+    false_claims: list[str]
+    critical_missed: list[str]
+    wrong_language: list[str]
+    gendered: list[str]
+    must_say_met: int
+    must_say_total: int
+    must_say_percent_needed: int
     correct: int
-    correct_needed: int
-    harm_rows: int
-    harm_not_correct: list[str]
-    harm_with_false_claim: list[str]
     gap_rows: int
     gap_flagged: int
-    gap_needed: int
     passed: bool | None
     still_reachable: bool
 
@@ -389,54 +418,63 @@ def row_verdicts(rows: list[ScoredRow], scores: list[RunScore], runs_per_row: in
             harm=row.harm,
             ended_in_commit=row.ended_in_commit,
             runs_scored=len(runs),
+            runs_owed=max(0, runs_per_row - len(runs)),
             runs_passed=passed,
             gap_runs_hit=hit,
             complete=complete,
             correct=complete and passed == len(runs),
             gap_flagged=complete and row.ended_in_commit and hit == len(runs),
+            must_say_met=sum(1 for run in runs for item in run.must_say if item.holds),
+            must_say_total=sum(len(run.must_say) for run in runs),
             actions=[run.action for run in runs],
             expected_action=row.expected_action,
         ))
     return verdicts
 
 
-def gate_verdict(eval_set: EvalSet, verdicts: list[RowVerdict], scores: list[RunScore]) -> GateVerdict:
-    """Apply the gate. Rows that have not run count as possible when judging reachability."""
+def gate_verdict(gate: Gate, rows: list[ScoredRow], verdicts: list[RowVerdict], scores: list[RunScore]) -> GateVerdict:
+    """Apply the gate to the selected rows. Runs still owed count as meeting everything when judging reachability."""
+    by_id = {row.id: row for row in rows}
+    false_claims: list[str] = []
+    critical_missed: list[str] = []
+    wrong_language: list[str] = []
+    gendered: list[str] = []
+    for score in scores:
+        row = by_id.get(score.row)
+        if score.kind != 'scored' or row is None:
+            continue
+        label = f'{score.row}#{score.rep}'
+        critical = set(row.critical_items)
+        false_claims += [f'{label}: {item.item}' for item in score.must_not_say if item.holds]
+        critical_missed += [
+            f'{label}: {item.item}' for item in score.must_say if item.item in critical and not item.holds
+        ]
+        if score.reply.strip():
+            if not in_language_of(score.reply, row.question):
+                wrong_language.append(label)
+            gendered += [f'{label}: {form}' for form in gendered_forms(score.reply)]
+    met = sum(verdict.must_say_met for verdict in verdicts)
+    total = sum(verdict.must_say_total for verdict in verdicts)
+    owed = sum(verdict.runs_owed * len(by_id[verdict.row].must_say) for verdict in verdicts)
+    hard_held = not (false_claims or critical_missed or wrong_language or gendered)
+    reachable = hard_held and (met + owed) * 100 >= gate.must_say_percent_at_least * (total + owed)
     ran = [verdict for verdict in verdicts if verdict.runs_scored > 0]
-    complete = [verdict for verdict in ran if verdict.complete]
-    unrun = eval_set.gate.scored_rows - len(complete)
-    correct = sum(1 for verdict in complete if verdict.correct)
-    harm = [verdict for verdict in complete if verdict.harm]
-    harm_not_correct = [verdict.row for verdict in harm if not verdict.correct]
-    gap_rows = [verdict for verdict in complete if verdict.ended_in_commit]
-    gap_flagged = sum(1 for verdict in gap_rows if verdict.gap_flagged)
-    unrun_gap_rows = sum(1 for row in eval_set.rows if row.ended_in_commit) - len(gap_rows)
-    harm_allowed = len(harm_not_correct) <= eval_set.gate.wrong_on_harm_rows
-    reachable = (
-        correct + unrun >= eval_set.gate.correct_at_least
-        and gap_flagged + unrun_gap_rows >= eval_set.gate.gap_flags_at_least
-        and harm_allowed
-    )
-    finished = unrun == 0
+    gap_rows = [verdict for verdict in verdicts if verdict.complete and verdict.ended_in_commit]
     return GateVerdict(
         rows_run=len(ran),
-        rows_total=eval_set.gate.scored_rows,
+        rows_total=len(verdicts),
         rows_incomplete=[verdict.row for verdict in ran if not verdict.complete],
-        correct=correct,
-        correct_needed=eval_set.gate.correct_at_least,
-        harm_rows=len(harm),
-        harm_not_correct=harm_not_correct,
-        harm_with_false_claim=sorted({
-            score.row
-            for score in scores
-            if score.kind == 'scored'
-            and score.row in {verdict.row for verdict in harm}
-            and any(item.holds for item in score.must_not_say)
-        }),
+        false_claims=false_claims,
+        critical_missed=critical_missed,
+        wrong_language=wrong_language,
+        gendered=gendered,
+        must_say_met=met,
+        must_say_total=total,
+        must_say_percent_needed=gate.must_say_percent_at_least,
+        correct=sum(1 for verdict in verdicts if verdict.correct),
         gap_rows=len(gap_rows),
-        gap_flagged=gap_flagged,
-        gap_needed=eval_set.gate.gap_flags_at_least,
-        passed=reachable if finished else None,
+        gap_flagged=sum(1 for verdict in gap_rows if verdict.gap_flagged),
+        passed=reachable if all(verdict.complete for verdict in verdicts) else None,
         still_reachable=reachable,
     )
 

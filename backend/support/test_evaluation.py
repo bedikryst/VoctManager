@@ -6,8 +6,8 @@ Domain: Support
 Description:
     Synthetic rows only; the real golden set holds members' reports and stays out
     of the repository. The judge is scripted, so these tests pin the arithmetic and
-    the rules around it: three runs out of three, harm rows, reference fields kept
-    from the agent, errors kept out of the score.
+    the rules around it: the gate's hard part and pooled share, critical items on
+    harm rows, reference fields kept from the agent, errors kept out of the score.
 
 Standards: SaaS 2026, no network, no database.
 ===============================================================================
@@ -26,6 +26,8 @@ from support.evaluation import (
     EvalSet,
     GapVerdict,
     Gate,
+    GateVerdict,
+    ItemResult,
     JudgeError,
     MustNotSayVerdict,
     MustSayVerdict,
@@ -66,13 +68,12 @@ def _row(row_id: str = 'q01', *, harm: bool = False, commit: bool = False, **fie
     )
 
 
-def _eval_set(rows: list[ScoredRow], **gate: int) -> EvalSet:
-    values = {'correct_at_least': 2, 'wrong_on_harm_rows': 0, 'gap_flags_at_least': 1, 'runs_per_row': 3, **gate}
+def _eval_set(rows: list[ScoredRow], percent: int) -> EvalSet:
     return EvalSet(
         version=1,
         status='synthetic',
         reporter_role='the conductor',
-        gate=Gate(scored_rows=len(rows), **values),
+        gate=Gate(runs_per_row=3, must_say_percent_at_least=percent),
         rows=rows,
         silent_rows=[],
     )
@@ -82,10 +83,20 @@ def _run(reply: str = 'An answer.', note: str = '', action: str = 'answer') -> A
     return AgentRun(outcome=AgentOutcome(reading='r', action=action, reply=reply, developer_note=note))
 
 
-def _score(row: str, rep: int, *, passed: bool = True, gap: bool | None = None) -> RunScore:
+def _score(
+    row: str,
+    rep: int,
+    *,
+    met: tuple[bool, bool] = (True, True),
+    violated: bool = False,
+    gap: bool | None = None,
+    reply: str = 'It works this way, and only managers can do it.',
+) -> RunScore:
     return RunScore(
         kind='scored', row=row, rep=rep, split='tune', status='ok', action='answer', expected_action='answer',
-        passed=passed, gap_hit=gap, limit_hit=None, reading='', reply='', developer_note='',
+        passed=all(met) and not violated, gap_hit=gap, limit_hit=None, reading='', reply=reply, developer_note='',
+        must_say=[ItemResult(item, holds) for item, holds in zip(_row().must_say, met, strict=True)],
+        must_not_say=[ItemResult(_row().must_not_say[0], violated)],
     )
 
 
@@ -120,6 +131,14 @@ class ReferenceIsolationTests(SimpleTestCase):
     def test_the_eval_set_rejects_an_unknown_field(self) -> None:
         with self.assertRaises(ValueError):
             _row(typo_field=True)
+
+    def test_critical_items_index_must_say_and_belong_to_harm_rows(self) -> None:
+        self.assertEqual(_row(harm=True, critical_must_say=[1]).critical_items, ['Only managers can do it.'])
+        for indices in ([2], [0, 0]):
+            with self.assertRaises(ValueError):
+                _row(harm=True, critical_must_say=indices)
+        with self.assertRaises(ValueError):
+            _row(critical_must_say=[0])
 
 
 class ScoringTests(SimpleTestCase):
@@ -177,72 +196,114 @@ class ScoringTests(SimpleTestCase):
 
 
 class GateTests(SimpleTestCase):
-    def _verdict(self, rows: list[ScoredRow], scores: list[RunScore], **gate: int) -> Any:
-        eval_set = _eval_set(rows, **gate)
-        return gate_verdict(eval_set, row_verdicts(rows, scores, 3), scores)
+    def _gate(self, rows: list[ScoredRow], scores: list[RunScore], percent: int = 80) -> GateVerdict:
+        eval_set = _eval_set(rows, percent)
+        return gate_verdict(eval_set.gate, rows, row_verdicts(rows, scores, 3), scores)
 
-    def test_a_row_needs_all_three_runs(self) -> None:
-        scores = [_score('q01', 1), _score('q01', 2), _score('q01', 3, passed=False)]
+    def test_a_row_needs_all_three_runs_to_count_as_correct(self) -> None:
+        scores = [_score('q01', 1), _score('q01', 2), _score('q01', 3, met=(True, False))]
         verdict = row_verdicts([_row()], scores, 3)[0]
         self.assertEqual(verdict.runs_passed, 2)
+        self.assertEqual((verdict.must_say_met, verdict.must_say_total), (5, 6))
         self.assertFalse(verdict.correct)
 
     def test_a_good_set_passes(self) -> None:
         rows = [_row('q01', commit=True), _row('q02', harm=True)]
-        scores = [
-            *[_score('q01', rep, gap=True) for rep in (1, 2, 3)],
-            *[_score('q02', rep) for rep in (1, 2, 3)],
-        ]
-        self.assertTrue(self._verdict(rows, scores).passed)
+        scores = [_score(row.id, rep, gap=True) for row in rows for rep in (1, 2, 3)]
+        self.assertTrue(self._gate(rows, scores).passed)
 
-    def test_a_harm_row_that_is_not_correct_fails_the_gate_despite_the_count(self) -> None:
-        rows = [_row('q01', commit=True), _row('q02'), _row('q03', harm=True)]
-        scores = [
-            *[_score('q01', rep, gap=True) for rep in (1, 2, 3)],
-            *[_score('q02', rep) for rep in (1, 2, 3)],
-            *[_score('q03', rep, passed=rep != 2) for rep in (1, 2, 3)],
-        ]
-        verdict = self._verdict(rows, scores)
-        self.assertEqual(verdict.correct, 2)
-        self.assertEqual(verdict.harm_not_correct, ['q03'])
+    def test_a_missed_item_off_the_critical_list_costs_only_share(self) -> None:
+        rows = [_row('q01', harm=True, critical_must_say=[0])]
+        scores = [_score('q01', rep, met=(True, rep != 2)) for rep in (1, 2, 3)]
+        verdict = self._gate(rows, scores)
+        self.assertEqual(verdict.critical_missed, [])
+        self.assertEqual(verdict.correct, 0)
+        self.assertTrue(verdict.passed)
+
+    def test_a_missed_critical_item_fails_the_gate_whatever_the_share(self) -> None:
+        rows = [_row('q01', harm=True, critical_must_say=[1])]
+        scores = [_score('q01', rep, met=(True, rep != 2)) for rep in (1, 2, 3)]
+        verdict = self._gate(rows, scores, percent=50)
+        self.assertEqual(verdict.critical_missed, ['q01#2: Only managers can do it.'])
         self.assertFalse(verdict.passed)
+
+    def test_an_unmarked_harm_row_holds_every_item_critical(self) -> None:
+        rows = [_row('q01', harm=True)]
+        scores = [_score('q01', rep, met=(rep != 3, True)) for rep in (1, 2, 3)]
+        self.assertEqual(self._gate(rows, scores, percent=50).critical_missed, ['q01#3: It works this way.'])
+
+    def test_a_false_claim_on_any_row_fails_the_gate(self) -> None:
+        rows = [_row('q01')]
+        scores = [_score('q01', rep, violated=rep == 1) for rep in (1, 2, 3)]
+        verdict = self._gate(rows, scores)
+        self.assertEqual(verdict.false_claims, ['q01#1: Everyone can do it.'])
+        self.assertFalse(verdict.passed)
+
+    def test_a_reply_in_another_language_or_with_a_gendered_form_fails_the_gate(self) -> None:
+        rows = [_row('q01').model_copy(update={'question': 'Jak to działa?'})]
+        scores = [
+            _score('q01', 1, reply='Działa to tak, a robią to tylko menedżerowie.'),
+            _score('q01', 2, reply='It works this way, and only managers can do it.'),
+            _score('q01', 3, reply='Jak już kliknąłeś, działa to tak.'),
+        ]
+        verdict = self._gate(rows, scores)
+        self.assertEqual(verdict.wrong_language, ['q01#2'])
+        self.assertEqual(verdict.gendered, ['q01#3: kliknąłeś'])
+        self.assertFalse(verdict.passed)
+
+    def test_the_share_pools_items_over_every_run(self) -> None:
+        rows = [_row('q01'), _row('q02')]
+        scores = [
+            *[_score('q01', rep) for rep in (1, 2, 3)],
+            *[_score('q02', rep, met=(False, rep == 1)) for rep in (1, 2, 3)],
+        ]
+        verdict = self._gate(rows, scores, percent=60)
+        self.assertEqual((verdict.must_say_met, verdict.must_say_total), (7, 12))
+        self.assertFalse(verdict.passed)
+        self.assertTrue(self._gate(rows, scores, percent=55).passed)
 
     def test_an_agent_that_always_abstains_fails(self) -> None:
-        rows = [_row('q01', commit=True), _row('q02', harm=True)]
-        scores = [_score(row.id, rep, passed=False, gap=False) for row in rows for rep in (1, 2, 3)]
-        verdict = self._verdict(rows, scores)
-        self.assertEqual(verdict.correct, 0)
+        rows = [_row('q01', commit=True), _row('q02')]
+        scores = [_score(row.id, rep, met=(False, False), gap=False, reply='') for row in rows for rep in (1, 2, 3)]
+        verdict = self._gate(rows, scores)
+        self.assertEqual(verdict.must_say_met, 0)
         self.assertFalse(verdict.passed)
 
-    def test_gap_flags_need_every_run(self) -> None:
+    def test_gap_flags_need_every_run_and_stay_outside_the_gate(self) -> None:
         rows = [_row('q01', commit=True), _row('q02')]
         scores = [
             *[_score('q01', rep, gap=rep != 3) for rep in (1, 2, 3)],
             *[_score('q02', rep) for rep in (1, 2, 3)],
         ]
-        verdict = self._verdict(rows, scores)
+        verdict = self._gate(rows, scores)
         self.assertEqual(verdict.gap_flagged, 0)
-        self.assertFalse(verdict.passed)
+        self.assertTrue(verdict.passed)
 
     def test_rows_still_to_run_leave_the_gate_undecided(self) -> None:
         rows = [_row('q01'), _row('q02', commit=True)]
         scores = [_score('q01', rep) for rep in (1, 2, 3)]
-        verdict = self._verdict(rows, scores)
+        verdict = self._gate(rows, scores)
         self.assertIsNone(verdict.passed)
         self.assertTrue(verdict.still_reachable)
 
     def test_an_errored_run_leaves_its_row_incomplete_rather_than_wrong(self) -> None:
         rows = [_row('q01'), _row('q02')]
         scores = [_score('q01', rep) for rep in (1, 2)]
-        verdict = self._verdict(rows, scores)
+        verdict = self._gate(rows, scores)
         self.assertEqual(verdict.rows_incomplete, ['q01'])
         self.assertEqual(verdict.correct, 0)
         self.assertIsNone(verdict.passed)
 
-    def test_a_harm_failure_makes_the_gate_unreachable_early(self) -> None:
+    def test_owed_runs_count_as_met_while_judging_reachability(self) -> None:
+        rows = [_row('q01'), _row('q02')]
+        scores = [_score('q01', rep, met=(False, rep == 1)) for rep in (1, 2, 3)]
+        self.assertTrue(self._gate(rows, scores, percent=55).still_reachable)
+        self.assertFalse(self._gate(rows, scores, percent=60).still_reachable)
+
+    def test_a_hard_failure_makes_the_gate_unreachable_early(self) -> None:
         rows = [_row('q01', harm=True), _row('q02')]
-        scores = [_score('q01', rep, passed=False) for rep in (1, 2, 3)]
-        self.assertFalse(self._verdict(rows, scores).still_reachable)
+        scores = [_score('q01', 1, met=(False, True))]
+        self.assertFalse(self._gate(rows, scores).still_reachable)
 
 
 class ControlTests(SimpleTestCase):
