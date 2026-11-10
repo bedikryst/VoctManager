@@ -143,11 +143,11 @@ class DeliveryTests(TestCase):
         self.assertEqual(callbacks, [])
 
     @patch('support.tasks.answer_feedback_report_task')
-    def test_the_run_waits_for_the_burst(self, task: MagicMock) -> None:
+    def test_the_run_waits_for_an_addendum(self, task: MagicMock) -> None:
         with override_settings(ANTHROPIC_API_KEY='sk-test'), self.captureOnCommitCallbacks(execute=True):
             schedule_answer(self.report)
 
-        task.apply_async.assert_called_once_with(args=[str(self.report.pk)], countdown=20 * 60)
+        task.apply_async.assert_called_once_with(args=[str(self.report.pk)], countdown=2 * 60)
 
     def _one(self, sent: list[dict[str, Any]], recipient: str) -> dict[str, Any]:
         matching = [item for item in sent if item['recipient_email'] == recipient]

@@ -13,8 +13,9 @@ Description:
     The report reaches the agent in the shape it was evaluated on
     (`support.evaluation.report_for`): Warsaw time, the kind's English label, the
     route with ids masked, a role instead of the reporter's identity, and the same
-    person's reports within `BURST` either side as neighbours. The task is queued
-    `BURST` after the report, so the later half of a burst already exists.
+    person's reports within `BURST` either side as neighbours. The run starts
+    shortly after the report (`support.tasks.DELAY`), so of the later reports it
+    sees only those already sent by then.
 
     Two deterministic checks from `reply_form` stand between the model and the
     reporter: the reply is in the report's language and shows no gender. A reply
