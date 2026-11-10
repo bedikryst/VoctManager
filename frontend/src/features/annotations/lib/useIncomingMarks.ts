@@ -12,7 +12,9 @@
  * reader's own rows are left out by author: the draft carries their id from
  * the moment it is drawn. A layer the reader has hidden is left out too, from
  * the notice, the halo and the pointer alike: a mark that was never on screen
- * has not been read.
+ * has not been read. So is a mark this build cannot draw (`isDrawnHere`): a
+ * kind or a symbol newer than the build is no news until the build that draws
+ * it loads.
  *
  * New is measured against the reader's pointer (`seen_at`), taken once per
  * edition per open, from the stand's first fingerprint. The set it picks out
@@ -37,6 +39,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ScoreAnnotation } from "../types/annotations.dto";
 import { layerOf } from "./layers";
 import {
+  isDrawnHere,
   isNewSince,
   isWrittenToReader,
   newestContent,
@@ -155,7 +158,10 @@ export const useIncomingMarks = ({
     () =>
       watching
         ? annotations.filter(
-            (mark) => isWrittenToReader(mark, userId) && visibleLayers[layerOf(mark)],
+            (mark) =>
+              isWrittenToReader(mark, userId) &&
+              isDrawnHere(mark) &&
+              visibleLayers[layerOf(mark)],
           )
         : [],
     [annotations, userId, visibleLayers, watching],

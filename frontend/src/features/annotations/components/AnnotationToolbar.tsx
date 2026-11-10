@@ -11,7 +11,8 @@
  *   goes to, "Powiadom chór", marks waiting for the network;
  * - the armed tool's options: its family's siblings first, then the shape in
  *   hand, what draws (stylus or finger), stroke weight, ink, voices, the note
- *   display mode, sizes, and the symbol palette (one group at a time).
+ *   display mode and italic, sizes (`MarkScaleControl`), and the symbol
+ *   palette (one group at a time).
  *
  * Orientation follows the screen, never the zoom (`usePdfToolRail`). On a
  * landscape tablet or larger the tools are a vertical rail in the left margin
@@ -46,6 +47,7 @@ import {
   Hand,
   Highlighter,
   HelpCircle,
+  Italic,
   LassoSelect,
   MoreHorizontal,
   MoreVertical,
@@ -84,9 +86,6 @@ import {
 
 import {
   DRAWING_TOOLS,
-  MARK_SCALE_MAX,
-  MARK_SCALE_MIN,
-  MARK_SCALE_STEP,
   TOOL_KEYS,
   type AnnotationTool,
   type AnnotationToolState,
@@ -96,6 +95,7 @@ import { readStored, writeStored } from "../lib/deviceStorage";
 import {
   getStampDef,
   groupOfStamp,
+  STAMP_FACE_STYLE,
   STAMP_GROUPS,
   stampPreviewSize,
   stampSampleSize,
@@ -110,6 +110,7 @@ import { useMeasuredWidth } from "../lib/useMeasuredWidth";
 import { layerTakesVoices } from "../lib/voices";
 import type { DelegateLayer, ScoreAnnotatorMode } from "../useScoreAnnotator";
 import { AnnotationAudienceBar, PendingPill, PersonalLayerChip } from "./AnnotationAudienceBar";
+import { MarkScaleControl } from "./MarkScaleControl";
 import { MarkVoicePicker } from "./MarkVoicePicker";
 import { NOTE_DISPLAY_MODES } from "./NoteCard";
 import {
@@ -268,43 +269,6 @@ const SIZES: ReadonlyArray<{ id: StrokeSize; dot: number; labelKey: string; fall
  */
 const NARROW_ROW_QUERY = "(max-width: 39.99rem)";
 
-/**
- * Continuous size control, shared by the note and stamp panels. The sample to
- * its left grows with the value, so the size is chosen by looking at a mark
- * rather than by decoding a number.
- */
-const ScaleSlider = ({
-  value,
-  onChange,
-  label,
-  sample,
-}: {
-  value: number;
-  onChange: (scale: number) => void;
-  label: string;
-  sample: React.ReactNode;
-}): React.JSX.Element => (
-  <div className="flex items-center gap-2">
-    <span
-      aria-hidden="true"
-      className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden text-ink-on-inverse"
-    >
-      {sample}
-    </span>
-    <input
-      type="range"
-      min={MARK_SCALE_MIN}
-      max={MARK_SCALE_MAX}
-      step={MARK_SCALE_STEP}
-      value={value}
-      onChange={(event) => onChange(Number(event.target.value))}
-      aria-label={label}
-      title={label}
-      className="w-36 accent-ethereal-gold"
-    />
-  </div>
-);
-
 const EXPANDED_STORAGE_KEY = "voct.annotations.toolbar_open";
 
 const readExpanded = (): boolean => readStored(EXPANDED_STORAGE_KEY) === "1";
@@ -410,6 +374,8 @@ export const AnnotationToolbar = ({
   setShape,
   noteDisplay,
   setNoteDisplay,
+  noteItalic,
+  setNoteItalic,
   stamp,
   setStamp,
   layer,
@@ -980,18 +946,34 @@ export const AnnotationToolbar = ({
               {t(labelKey, fallback)}
             </button>
           ))}
+          {/* In every display: a pin's words are read in its bubble, and
+              print sets them on the page. */}
+          <button
+            type="button"
+            onClick={() => setNoteItalic(!noteItalic)}
+            aria-pressed={noteItalic}
+            aria-label={t("annotations.note.italic", "Kursywa")}
+            title={t("annotations.note.italic", "Kursywa")}
+            className={cn(
+              "flex h-9 w-9 items-center justify-center rounded-full text-ink-on-inverse transition-colors",
+              noteItalic ? "bg-ink-on-inverse/20" : "hover:bg-ink-on-inverse/10",
+            )}
+          >
+            <Italic size={16} aria-hidden="true" />
+          </button>
         </div>
       )}
 
       {showTextSize && (
-        <ScaleSlider
+        <MarkScaleControl
+          surface="chrome"
           value={textScale}
           onChange={setTextScale}
           label={t("annotations.scale.text", "Rozmiar tekstu")}
           sample={
             <span
               className="font-semibold leading-none"
-              style={{ fontSize: 8 + textScale * 8 }}
+              style={{ fontSize: 8 + textScale * 8, ...(noteItalic ? STAMP_FACE_STYLE : null) }}
             >
               Aa
             </span>
@@ -1000,7 +982,8 @@ export const AnnotationToolbar = ({
       )}
 
       {showStampSize && (
-        <ScaleSlider
+        <MarkScaleControl
+          surface="chrome"
           value={stampScale}
           onChange={setStampScale}
           label={t("annotations.scale.stamp", "Rozmiar symbolu")}

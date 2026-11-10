@@ -25,6 +25,17 @@ import React from "react";
 /** The face a text stamp is set in, on the page and in every preview of it. */
 const STAMP_FONT_FAMILY = 'Georgia, "Times New Roman", serif';
 
+/**
+ * A text stamp's type: bold italic in the stamp face. An italic note and a
+ * phrase chip saved italic wear it too, so a typed "più mosso" is the stamp's
+ * twin on the page and in the row that offers it.
+ */
+export const STAMP_FACE_STYLE: Readonly<React.CSSProperties> = {
+  fontFamily: STAMP_FONT_FAMILY,
+  fontStyle: "italic",
+  fontWeight: 700,
+};
+
 export type StampGroupId =
   | "breath"
   | "articulation"
@@ -102,6 +113,16 @@ export const STAMPS: ReadonlyArray<StampDef> = [
     viewBox: "0 0 16 16",
     // The breath's own hook, struck through: the sign says what it forbids.
     paths: ["M6 3 C 10 5, 10 9, 5 12", "M2 13.5 L 14 2.5"],
+  },
+  // Oddech naprzemienny: the same glyph in every locale, only the label translates.
+  {
+    id: "staggered",
+    group: "breath",
+    kind: "text",
+    glyph: "o.n.",
+    labelKey: "annotations.stamps.staggered",
+    fallback: "Oddech naprzemienny (o.n.)",
+    sizeFraction: 0.026,
   },
   {
     id: "caesura",
@@ -196,6 +217,26 @@ export const STAMPS: ReadonlyArray<StampDef> = [
   dynamic("fff"),
   dynamic("sfz"),
   dynamic("fp"),
+  // Placed beside a dynamic ("più p"), so they sit next to the letters in the
+  // grid and are set at a word's size rather than a letter's.
+  {
+    id: "piu",
+    group: "dynamics",
+    kind: "text",
+    glyph: "più",
+    labelKey: "annotations.stamps.piu",
+    fallback: "Più (więcej)",
+    sizeFraction: 0.026,
+  },
+  {
+    id: "meno",
+    group: "dynamics",
+    kind: "text",
+    glyph: "meno",
+    labelKey: "annotations.stamps.meno",
+    fallback: "Meno (mniej)",
+    sizeFraction: 0.026,
+  },
   {
     id: "cresc",
     group: "dynamics",
@@ -289,6 +330,8 @@ export const STAMPS: ReadonlyArray<StampDef> = [
   // --- Tempo and expression ---------------------------------------------------
   word("rit", "rit.", "Ritardando"),
   word("accel", "accel.", "Accelerando"),
+  word("piu_mosso", "più mosso", "Più mosso (szybciej)"),
+  word("meno_mosso", "meno mosso", "Meno mosso (wolniej)"),
   word("atempo", "a tempo", "A tempo"),
   word("subito", "sub.", "Subito"),
   word("poco", "poco a poco", "Poco a poco"),
@@ -501,11 +544,9 @@ export const StampGlyph = ({
         className={className}
         aria-hidden="true"
         style={{
+          ...STAMP_FACE_STYLE,
           color,
           fontSize: size,
-          fontFamily: STAMP_FONT_FAMILY,
-          fontStyle: "italic",
-          fontWeight: 700,
           lineHeight: 1,
           whiteSpace: "nowrap",
         }}

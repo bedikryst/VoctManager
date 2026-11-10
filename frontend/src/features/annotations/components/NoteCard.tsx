@@ -4,31 +4,28 @@
  *
  * The words are TYPED where they will be read — as the mark itself on the stave,
  * or in the bubble a pin opens — so the card beside the anchor carries only
- * controls: the phrases this writer repeats all evening, pin vs on-score, size,
- * reach, delete, save. That card takes whichever side of the anchor leaves the
- * writing visible: a card sitting on the bar it annotates is a card written
- * blind.
+ * controls: the phrases this writer repeats all evening, pin vs on-score and
+ * italic, size, reach, delete, save. That card takes whichever side of the
+ * anchor leaves the writing visible: a card sitting on the bar it annotates is
+ * a card written blind.
  * @module features/annotations/components
  */
 
 import React, { useLayoutEffect, useRef, useState } from "react";
-import { Pin, Trash2, X } from "lucide-react";
+import { Italic, Pin, Trash2, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 import { cn } from "@/shared/lib/utils";
 import { FIELD_TEXT_SCALE } from "@/shared/ui/primitives/fieldShell";
 
 import { MarkAudiencePicker } from "./MarkAudiencePicker";
+import { MarkScaleControl } from "./MarkScaleControl";
 import { MarkVoicePicker, type MarkVoices } from "./MarkVoicePicker";
 import { placeNoteCard } from "../lib/noteCardPlacement";
-import { appendPhrase } from "../lib/quickPhrases";
+import { appendPhrase, type Phrase } from "../lib/quickPhrases";
+import { STAMP_FACE_STYLE } from "../lib/stamps";
 import { useMeasuredHeight } from "../lib/useMeasuredHeight";
-import {
-  clampMarkScale,
-  MARK_SCALE_MAX,
-  MARK_SCALE_MIN,
-  MARK_SCALE_STEP,
-} from "../lib/useAnnotationTools";
+import { clampMarkScale } from "../lib/useAnnotationTools";
 import type { WriteLayer } from "../lib/layers";
 import type { AnnotationLayer, NoteDisplay } from "../types/annotations.dto";
 
@@ -99,12 +96,21 @@ interface NoteCardProps {
   anchor: { x: number; y: number };
   /** Ink the note will carry — the mark being written is drawn in it. */
   color: string;
-  /** One-tap words, recent-first; each appends to what is already written. */
-  phrases: readonly string[];
+  /** One-tap words, the writer's own first; each appends to what is already written. */
+  phrases: readonly Phrase[];
+  /** A chip was tapped: its phrase moves to the front of the kept list. */
+  onTakePhrase: (phrase: Phrase) => void;
   initialText: string;
   initialDisplay: NoteDisplay;
   /** Starting font-size multiplier (1 = medium). */
   initialScale: number;
+  initialItalic: boolean;
+  /**
+   * The italic toggle was flipped by hand. A new note's composer hands it to
+   * the tool, so the next note starts the same way; an existing note's keeps it
+   * to that note.
+   */
+  onItalicChange?: (italic: boolean) => void;
   showDelete: boolean;
   audience: NoteAudience | null;
   /**
@@ -112,7 +118,7 @@ interface NoteCardProps {
    * `audience` is: the toolbar addressed the next mark already.
    */
   voices?: MarkVoices | null;
-  onSubmit: (text: string, display: NoteDisplay, scale: number) => void;
+  onSubmit: (text: string, display: NoteDisplay, scale: number, italic: boolean) => void;
   onCancel: () => void;
   onDelete?: () => void;
 }
@@ -234,9 +240,12 @@ export const NoteCard = ({
   anchor,
   color,
   phrases,
+  onTakePhrase,
   initialText,
   initialDisplay,
   initialScale,
+  initialItalic,
+  onItalicChange,
   showDelete,
   audience,
   voices = null,
@@ -248,6 +257,8 @@ export const NoteCard = ({
   const [text, setText] = useState(initialText);
   const [display, setDisplay] = useState<NoteDisplay>(initialDisplay);
   const [scale, setScale] = useState<number>(() => clampMarkScale(initialScale));
+  const [italic, setItalic] = useState(initialItalic);
+  const face = italic ? STAMP_FACE_STYLE : null;
 
   const cardRef = useRef<HTMLDivElement | null>(null);
   const markRef = useRef<HTMLDivElement | null>(null);
@@ -261,7 +272,7 @@ export const NoteCard = ({
 
   const submit = () => {
     const trimmed = text.trim();
-    if (trimmed) onSubmit(trimmed, display, scale);
+    if (trimmed) onSubmit(trimmed, display, scale, italic);
   };
 
   // How far the mark being written reaches from its anchor. An inline note is
@@ -281,22 +292,32 @@ export const NoteCard = ({
     gapBelow,
   });
 
-  // A switch between display modes leaves focus on its button, and on the
-  // inline ↔ box switch the editor stays mounted and never takes it back by
-  // itself. The words take it, so the next key typed goes into the note.
+  // A switch between display modes, or of italic, leaves focus on its button,
+  // and where the editor stays mounted it never takes it back by itself. The
+  // words take it, so the next key typed goes into the note.
   useLayoutEffect(() => {
     if (editorRef.current) focusAtEnd(editorRef.current);
-  }, [display]);
+  }, [display, italic]);
 
   const label = t("annotations.note.text_label", "Treść notatki");
-  /** Write a phrase into the mark and hand the caret back after it. */
-  const takePhrase = (phrase: string): void => {
-    const next = appendPhrase(text, phrase);
+  /**
+   * Write a phrase into the mark and hand the caret back after it. An italic
+   * phrase opening an empty note makes the note italic; added to words already
+   * there, it leaves the note's slant as the writer set it.
+   */
+  const takePhrase = (phrase: Phrase): void => {
+    if (phrase.italic && !text.trim()) setItalic(true);
+    onTakePhrase(phrase);
+    const next = appendPhrase(text, phrase.text);
     setText(next);
     const element = editorRef.current;
     if (!element) return;
     element.innerText = next;
     focusAtEnd(element);
+  };
+  const toggleItalic = (): void => {
+    setItalic(!italic);
+    onItalicChange?.(!italic);
   };
 
   return (
@@ -333,6 +354,7 @@ export const NoteCard = ({
               text.length === 0 && "min-w-14",
             )}
             style={{
+              ...face,
               color,
               backgroundColor: INLINE_MARK_BACKGROUND,
               // The mark's TRUE size — that is the whole point of writing here.
@@ -363,6 +385,7 @@ export const NoteCard = ({
                 "mt-1.5 w-full rounded-nested border border-hairline-strong bg-ethereal-marble px-2.5 py-2 leading-relaxed text-ethereal-ink shadow-glass-ethereal outline-none focus:border-ethereal-gold",
                 FIELD_TEXT_SCALE.xs,
               )}
+              style={face ?? undefined}
             />
           </div>
         )}
@@ -398,12 +421,13 @@ export const NoteCard = ({
             >
               {phrases.map((phrase) => (
                 <button
-                  key={phrase}
+                  key={phrase.text}
                   type="button"
                   onClick={() => takePhrase(phrase)}
                   className="rounded-full bg-ethereal-parchment/60 px-2 py-1 text-[11px] font-medium text-ethereal-graphite transition-colors hover:bg-ethereal-parchment"
+                  style={phrase.italic ? STAMP_FACE_STYLE : undefined}
                 >
-                  {phrase}
+                  {phrase.text}
                 </button>
               ))}
             </div>
@@ -416,7 +440,7 @@ export const NoteCard = ({
           </div>
         )}
 
-        {/* On the page, in a box, or behind a pin. */}
+        {/* On the page, in a box, or behind a pin; upright or italic. */}
         <div className="mt-2 flex items-center gap-1">
           {NOTE_DISPLAY_MODES.map(({ mode, labelKey, fallback }) => (
             <button
@@ -425,7 +449,9 @@ export const NoteCard = ({
               onClick={() => setDisplay(mode)}
               aria-pressed={display === mode}
               className={cn(
-                "flex-1 rounded-md px-2 py-1 text-[11px] font-medium transition-colors",
+                // Narrow padding: the three labels share the row with the
+                // italic toggle and must stay on one line each.
+                "flex-1 rounded-md px-1 py-1 text-[11px] font-medium transition-colors",
                 display === mode
                   ? "bg-ethereal-ink text-ethereal-marble"
                   : "bg-ethereal-parchment/60 text-ethereal-graphite hover:bg-ethereal-parchment",
@@ -434,21 +460,35 @@ export const NoteCard = ({
               {t(labelKey, fallback)}
             </button>
           ))}
+          <button
+            type="button"
+            onClick={toggleItalic}
+            aria-pressed={italic}
+            aria-label={t("annotations.note.italic", "Kursywa")}
+            title={t("annotations.note.italic", "Kursywa")}
+            className={cn(
+              "flex w-7 shrink-0 items-center justify-center self-stretch rounded-md transition-colors",
+              italic
+                ? "bg-ethereal-ink text-ethereal-marble"
+                : "bg-ethereal-parchment/60 text-ethereal-graphite hover:bg-ethereal-parchment",
+            )}
+          >
+            <Italic size={13} aria-hidden="true" />
+          </button>
         </div>
 
         {/* Text size — only meaningful for words on the page (inline or
-            boxed); what it drives is the mark itself, up on the page. */}
+            boxed); what it drives is the mark itself, up on the page, so the
+            mark is its own sample. */}
         {inline && (
-          <input
-            type="range"
-            min={MARK_SCALE_MIN}
-            max={MARK_SCALE_MAX}
-            step={MARK_SCALE_STEP}
-            value={scale}
-            onChange={(event) => setScale(Number(event.target.value))}
-            aria-label={t("annotations.scale.text", "Rozmiar tekstu")}
-            className="mt-2 w-full accent-ethereal-ink"
-          />
+          <div className="mt-2">
+            <MarkScaleControl
+              surface="card"
+              value={scale}
+              onChange={setScale}
+              label={t("annotations.scale.text", "Rozmiar tekstu")}
+            />
+          </div>
         )}
 
         {/* Who reads it. Commits on tap rather than waiting for OK, so a writer

@@ -9,8 +9,9 @@
  *
  * What describes this device outlives the viewer (`deviceStorage`), because a
  * rehearsal gives you a bar and a half to write something down: the tool last in
- * hand and the shape it draws, the size of notes and stamps, whether the finger
- * draws, which layers are shown and whether the reader's voice filters them.
+ * hand and the shape it draws, the size of notes and stamps (per edition, see
+ * `usePersistedScale`), whether notes are italic, whether the finger draws,
+ * which layers are shown and whether the reader's voice filters them.
  * None of it is server state. The two values every mounted stand reads live are
  * the reading switches (see `hiddenLayers` and `voiceFilter`); the rest is read
  * as a stand mounts.
@@ -81,6 +82,7 @@ const TOOL_STORAGE_KEY = "voct.annotations.tool";
 const FINGER_DRAW_STORAGE_KEY = "voct.annotations.finger_draw";
 const TEXT_SCALE_STORAGE_KEY = "voct.annotations.text_scale";
 const STAMP_SCALE_STORAGE_KEY = "voct.annotations.stamp_scale";
+const NOTE_ITALIC_STORAGE_KEY = "voct.annotations.note_italic";
 const SHAPE_STORAGE_KEY = "voct.annotations.shape";
 /** The layers the reader HID, comma-separated: a layer that is new is shown. */
 const HIDDEN_LAYERS_STORAGE_KEY = "voct.annotations.hidden_layers";
@@ -188,21 +190,59 @@ export const clampMarkScale = (scale: number | undefined): number => {
   return Math.min(MARK_SCALE_MAX, Math.max(MARK_SCALE_MIN, scale));
 };
 
-/** A remembered mark size, kept in the slider's range. */
-const usePersistedScale = (key: string): [number, (scale: number) => void] => {
-  const [scale, setScale] = useState<number>(() => {
-    const stored = readStored(key);
-    return stored === null ? DEFAULT_MARK_SCALE : clampMarkScale(Number(stored));
-  });
+/**
+ * The size as a number a writer can repeat: `scale × 20`, so one whole number
+ * per slider step, 10 to 48, and 20 the base size, the way a text editor
+ * numbers type. Only shown and typed; the stored value stays the scale.
+ */
+const SIZE_NUMBER_PER_SCALE = 20;
+export const MARK_SIZE_NUMBER_MIN = Math.round(MARK_SCALE_MIN * SIZE_NUMBER_PER_SCALE);
+export const MARK_SIZE_NUMBER_MAX = Math.round(MARK_SCALE_MAX * SIZE_NUMBER_PER_SCALE);
+
+export const markSizeNumber = (scale: number | undefined): number =>
+  Math.round(clampMarkScale(scale) * SIZE_NUMBER_PER_SCALE);
+
+/** The scale a typed size number stands for, clamped into the slider's range. */
+export const scaleOfSizeNumber = (sizeNumber: number): number =>
+  clampMarkScale(Math.round(sizeNumber) / SIZE_NUMBER_PER_SCALE);
+
+const readScale = (key: string, editionId: string | null, fallback: number): number => {
+  const stored = (editionId ? readStored(`${key}.${editionId}`) : null) ?? readStored(key);
+  return stored === null ? fallback : clampMarkScale(Number(stored));
+};
+
+/**
+ * A remembered mark size, kept in the slider's range, per edition. A size is a
+ * share of the page width, so the value that suits a dense engraving is wrong
+ * on a loose one: the open edition's own value wins, then the device's last
+ * value, then the base. A change writes both. In the concert book the edition
+ * changes with the page, and the size follows it.
+ */
+const usePersistedScale = (
+  key: string,
+  editionId: string | null,
+): [number, (scale: number) => void] => {
+  const [held, setHeld] = useState(() => ({
+    editionId,
+    scale: readScale(key, editionId, DEFAULT_MARK_SCALE),
+  }));
+  let current = held;
+  if (held.editionId !== editionId) {
+    // With storage unavailable the size in hand carries over, as it would
+    // through the device's last value.
+    current = { editionId, scale: readScale(key, editionId, held.scale) };
+    setHeld(current);
+  }
   const commit = useCallback(
     (next: number) => {
       const clamped = clampMarkScale(next);
-      setScale(clamped);
+      setHeld({ editionId, scale: clamped });
+      if (editionId) writeStored(`${key}.${editionId}`, String(clamped));
       writeStored(key, String(clamped));
     },
-    [key],
+    [editionId, key],
   );
-  return [scale, commit];
+  return [current.scale, commit];
 };
 
 /**
@@ -267,6 +307,13 @@ export interface AnnotationToolState {
   setShape: (shape: ShapeKind) => void;
   noteDisplay: NoteDisplay;
   setNoteDisplay: (display: NoteDisplay) => void;
+  /**
+   * Whether the NEXT note is set italic, in the dynamics' face. Remembered per
+   * device: printed dynamics are replaced in series, and a toggle that reset
+   * would cost a tap per note.
+   */
+  noteItalic: boolean;
+  setNoteItalic: (italic: boolean) => void;
   stamp: string;
   setStamp: (stamp: string) => void;
   layer: AnnotationLayer;
@@ -289,6 +336,8 @@ export interface AnnotationToolState {
 export const useAnnotationTools = (
   initialLayer: AnnotationLayer = "shared",
   isManager = true,
+  /** The edition open on the stand; the sizes are remembered per edition. */
+  editionId: string | null = null,
 ): AnnotationToolState => {
   const stylusSeen = useStylusPresence();
   const [fingerDraw, setFingerDrawState] = useState<boolean>(() =>
@@ -328,10 +377,10 @@ export const useAnnotationTools = (
   const [color, setColor] = useState<string>(() => defaultInk(isManager));
   const inks = useMemo(() => inksFor(isManager), [isManager]);
   const [size, setSize] = useState<StrokeSize>("medium");
-  // Remembered per device: a writer settles on a size that reads from their
-  // stand and should not have to find it again on the next score.
-  const [textScale, setTextScale] = usePersistedScale(TEXT_SCALE_STORAGE_KEY);
-  const [stampScale, setStampScale] = usePersistedScale(STAMP_SCALE_STORAGE_KEY);
+  // Remembered: a writer settles on a size that reads from their stand and
+  // should not have to find it again when the piece comes back.
+  const [textScale, setTextScale] = usePersistedScale(TEXT_SCALE_STORAGE_KEY, editionId);
+  const [stampScale, setStampScale] = usePersistedScale(STAMP_SCALE_STORAGE_KEY, editionId);
   // Remembered with the tool itself: a restored shape tool that forgot WHICH
   // shape would draw an oval where the writer last ruled lines.
   const [shape, setShapeState] = useState<ShapeKind>(() => {
@@ -343,6 +392,13 @@ export const useAnnotationTools = (
     writeStored(SHAPE_STORAGE_KEY, next);
   }, []);
   const [noteDisplay, setNoteDisplay] = useState<NoteDisplay>("inline");
+  const [noteItalic, setNoteItalicState] = useState<boolean>(
+    () => readStored(NOTE_ITALIC_STORAGE_KEY) === "1",
+  );
+  const setNoteItalic = useCallback((next: boolean) => {
+    setNoteItalicState(next);
+    writeStored(NOTE_ITALIC_STORAGE_KEY, next ? "1" : "0");
+  }, []);
   const [stamp, setStamp] = useState<string>(DEFAULT_STAMP);
   const [layer, setLayer] = useState<AnnotationLayer>(initialLayer);
   const [voices, setVoices] = useState<readonly VoiceSection[]>([]);
@@ -377,6 +433,8 @@ export const useAnnotationTools = (
     setShape,
     noteDisplay,
     setNoteDisplay,
+    noteItalic,
+    setNoteItalic,
     stamp,
     setStamp,
     layer,

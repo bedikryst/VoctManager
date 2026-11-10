@@ -57,6 +57,8 @@ export interface FreehandPayload {
 /**
  * Text note anchored at a normalized point; `display` chooses pin, inline or
  * box. `scale` multiplies the base font size (missing ⇒ 1, legacy notes).
+ * `italic` sets the words in the dynamics' face, so a typed "più p" passes for
+ * engraving; missing ⇒ upright.
  */
 export interface CommentPayload {
   x: number;
@@ -64,6 +66,7 @@ export interface CommentPayload {
   text: string;
   display?: NoteDisplay;
   scale?: number;
+  italic?: boolean;
 }
 
 /**

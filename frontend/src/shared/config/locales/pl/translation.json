@@ -176,7 +176,8 @@
       "inline": "Na nucie",
       "pin": "Pinezka",
       "text_label": "Treść notatki",
-      "box": "W ramce"
+      "box": "W ramce",
+      "italic": "Kursywa"
     },
     "panel": {
       "layers": "Widoczność warstw",
@@ -228,7 +229,8 @@
     "quick_phrases": "Szybkie frazy",
     "scale": {
       "stamp": "Rozmiar symbolu",
-      "text": "Rozmiar tekstu"
+      "text": "Rozmiar tekstu",
+      "number": "{{label}} (od {{min}} do {{max}})"
     },
     "size": {
       "bold": "Gruba",
@@ -285,7 +287,12 @@
       "bocca_chiusa": "Bocca chiusa (zamknięte usta)",
       "sharp": "Krzyżyk",
       "flat": "Bemol",
-      "natural": "Kasownik"
+      "natural": "Kasownik",
+      "piu": "Più (więcej)",
+      "meno": "Meno (mniej)",
+      "piu_mosso": "Più mosso (szybciej)",
+      "meno_mosso": "Meno mosso (wolniej)",
+      "staggered": "Oddech naprzemienny (o.n.)"
     },
     "tools": {
       "eraser": "Gumka",

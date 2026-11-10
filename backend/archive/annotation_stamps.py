@@ -78,6 +78,7 @@ STAMPS: tuple[StampDef, ...] = (
         view_box="0 0 16 16",
         paths=("M6 3 C 10 5, 10 9, 5 12", "M2 13.5 L 14 2.5"),
     ),
+    StampDef(id="staggered", glyph="o.n.", size_fraction=0.026),
     StampDef(id="caesura", glyph="//", size_fraction=0.03),
     StampDef(
         id="cutoff", size_fraction=0.03,
@@ -119,6 +120,9 @@ STAMPS: tuple[StampDef, ...] = (
     _dynamic("fff"),
     _dynamic("sfz"),
     _dynamic("fp"),
+    # Set beside a dynamic ("più p"), so a word's size rather than a letter's.
+    StampDef(id="piu", glyph="più", size_fraction=0.026),
+    StampDef(id="meno", glyph="meno", size_fraction=0.026),
     StampDef(
         id="cresc", size_fraction=0.06,
         view_box="0 0 48 16",
@@ -156,6 +160,8 @@ STAMPS: tuple[StampDef, ...] = (
     # Tempo and expression.
     _word("rit", "rit."),
     _word("accel", "accel."),
+    _word("piu_mosso", "più mosso"),
+    _word("meno_mosso", "meno mosso"),
     _word("atempo", "a tempo"),
     _word("subito", "sub."),
     _word("poco", "poco a poco"),

@@ -366,11 +366,15 @@ def _render_comment(mark: PrintMark, box: PlacedBox) -> str:
     fill, alpha = _ink(mark.color)
     base = min(_NOTE_MAX_PT, max(_NOTE_MIN_PT, box[2] * _NOTE_SIZE_FRACTION))
     size = base * _scale(mark.payload)
+    # An italic note stands in for a printed dynamic: `.note` is already in the
+    # book face `.dyn` uses, so the slant is all it takes. The weight stays the
+    # layer's, like any note.
+    slant = " it" if mark.payload.get("italic") is True else ""
     display = mark.payload.get("display")
     if display == "box":
         # Bold whatever the layer: a rehearsal letter is read across the room.
         chip = (
-            f'<span class="note box" style="font-size:{size:.2f}pt;color:{fill};'
+            f'<span class="note box{slant}" style="font-size:{size:.2f}pt;color:{fill};'
             f'border-color:{fill};opacity:{alpha:.3f}">{escape(text)}</span>'
         )
         return _anchor_html(anchor, _note_chip_height(text, size, _BOX_FRAME_PT), chip)
@@ -378,7 +382,7 @@ def _render_comment(mark: PrintMark, box: PlacedBox) -> str:
         size *= _PIN_SIZE_FACTOR
     weight = "700" if mark.heavy else "600"
     chip = (
-        f'<span class="note" style="font-size:{size:.2f}pt;color:{fill};'
+        f'<span class="note{slant}" style="font-size:{size:.2f}pt;color:{fill};'
         f'opacity:{alpha:.3f};font-weight:{weight}">{escape(text)}</span>'
     )
     return _anchor_html(anchor, _note_chip_height(text, size), chip)
@@ -428,6 +432,7 @@ def _overlay_html(pages: Sequence[Sequence[tuple[PrintMark, PlacedBox]]]) -> str
         " border: 0.4pt solid rgba(0,0,0,0.25); border-radius: 2pt; }"
         ".note.box { padding: 1pt 2.5pt; border-width: 0.8pt; border-radius: 0;"
         " font-weight: 700; }"
+        ".note.it { font-style: italic; }"
         f".dyn {{ font-family: {BOOK_FONT_STACK}; font-style: italic;"
         " line-height: 1; display: inline-block; }"
         "</style></head><body>"

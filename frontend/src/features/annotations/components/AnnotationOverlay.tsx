@@ -98,7 +98,7 @@ import {
 } from "../lib/useAnnotationTools";
 import { isPrivateLayer, layerOf, type WriteLayer } from "../lib/layers";
 import type { AnnotationInk } from "../lib/palette";
-import { getStampDef, StampGlyph } from "../lib/stamps";
+import { getStampDef, STAMP_FACE_STYLE, StampGlyph } from "../lib/stamps";
 import { buildShapePaths, type ShapeKind } from "../lib/shapes";
 import { distanceToStroke, isInLoop, markBounds, strokeBounds } from "../lib/markBounds";
 import {
@@ -111,7 +111,7 @@ import {
   type PageShift,
   type SelectionKeys,
 } from "../lib/selection";
-import { pickRecentPhrases, QUICK_PHRASES } from "../lib/quickPhrases";
+import { QUICK_PHRASES, quickPhraseRow, type Phrase } from "../lib/quickPhrases";
 import {
   canonicalVoices,
   layerTakesVoices,
@@ -139,6 +139,13 @@ interface AnnotationOverlayProps {
   /** What the shape tool draws; its weight is the pen's `size`. */
   shape: ShapeKind;
   noteDisplay: NoteDisplay;
+  /** Whether a new note starts italic; its composer's toggle sets it back. */
+  noteItalic: boolean;
+  onNoteItalicChange: (italic: boolean) => void;
+  /** The phrases the writer keeps on this device, front first. */
+  savedPhrases: readonly Phrase[];
+  /** Keep a phrase, or move it to the front: a short note committed, a chip tapped. */
+  onRememberPhrase: (phrase: Phrase, presets: readonly string[]) => void;
   stamp: string;
   layer: AnnotationLayer;
   /** True → a bare finger draws; false → the finger pans and only a stylus draws. */
@@ -264,6 +271,10 @@ export const AnnotationOverlay = ({
   stampScale,
   shape,
   noteDisplay,
+  noteItalic,
+  onNoteItalicChange,
+  savedPhrases,
+  onRememberPhrase,
   stamp,
   layer,
   fingerDraw,
@@ -401,19 +412,23 @@ export const AnnotationOverlay = ({
     setCarried(null);
   }, [carried, pageAnnotations]);
 
-  // Words this writer would otherwise type again tonight: their own short notes
-  // on this edition (newest first), then the standing presets. The history is
-  // derived from marks already in memory — no request, and it narrows itself to
-  // the music in hand.
+  // Words this writer would otherwise type again tonight: what they keep on
+  // this device from every piece, their own short notes on this edition
+  // (newest first; a second device has these too), then the standing presets.
+  // The edition's part is derived from marks already in memory — no request.
+  const phrasePresets = useMemo(
+    () => QUICK_PHRASES.map((phrase) => t(phrase.key, phrase.fallback)),
+    [t],
+  );
   const quickPhrases = useMemo(() => {
-    const presets = QUICK_PHRASES.map((phrase) => t(phrase.key, phrase.fallback));
     const own = annotations
       .filter(isComment)
       .filter((a) => canModify(a))
       .sort((a, b) => b.updated_at.localeCompare(a.updated_at))
-      .map((a) => a.payload.text);
-    return [...pickRecentPhrases(own, presets), ...presets];
-  }, [annotations, canModify, t]);
+      .map((a) => ({ text: a.payload.text, italic: a.payload.italic === true }));
+    return quickPhraseRow(savedPhrases, own, phrasePresets);
+  }, [annotations, canModify, phrasePresets, savedPhrases]);
+  const rememberPhrase = (phrase: Phrase): void => onRememberPhrase(phrase, phrasePresets);
 
   // The note whose composer is open. It is taken OFF the page while it is being
   // written, because the card draws the same note live at the same anchor — two
@@ -484,21 +499,25 @@ export const AnnotationOverlay = ({
     setScaleDraft(null);
   }
 
-  const commitScale = (): void => {
-    if (!scaleDraft || scaleDraft.committed || !actionMark || !isStamp(actionMark)) {
-      return;
-    }
+  /** One resize of the symbol whose card is open, held as a draft until the row catches up. */
+  const writeScale = (scale: number): void => {
+    if (!actionMark || !isStamp(actionMark)) return;
     const current = actionMark.payload;
-    if (clampMarkScale(current.scale) === scaleDraft.scale) {
+    if (clampMarkScale(current.scale) === scale) {
       setScaleDraft(null);
       return;
     }
     onUpdate(
       actionMark.id,
-      { payload: { ...current, scale: scaleDraft.scale } },
+      { payload: { ...current, scale } },
       { payload: { ...current } },
     );
-    setScaleDraft({ ...scaleDraft, committed: actionMark });
+    setScaleDraft({ id: actionMark.id, scale, committed: actionMark });
+  };
+
+  const commitScale = (): void => {
+    if (!scaleDraft || scaleDraft.committed) return;
+    writeScale(scaleDraft.scale);
   };
 
   const toNorm = (clientX: number, clientY: number): NormPoint => {
@@ -1384,6 +1403,7 @@ export const AnnotationOverlay = ({
                   draggable && "touch-none",
                 )}
                 style={{
+                  ...(payload.italic === true ? STAMP_FACE_STYLE : null),
                   color: a.color,
                   backgroundColor: INLINE_MARK_BACKGROUND,
                   fontSize: inlineFontSize(width) * clampMarkScale(payload.scale),
@@ -1449,7 +1469,10 @@ export const AnnotationOverlay = ({
 
             {/* Read-only preview popover for pin notes the user can't edit. */}
             {!modifiable && selectedId === a.id && !inline && (
-              <div className="absolute left-1/2 top-9 z-10 w-48 -translate-x-1/2 rounded-nested border border-hairline-strong bg-ethereal-marble p-3 text-xs leading-relaxed text-ethereal-ink shadow-glass-ethereal">
+              <div
+                className="absolute left-1/2 top-9 z-10 w-48 -translate-x-1/2 rounded-nested border border-hairline-strong bg-ethereal-marble p-3 text-xs leading-relaxed text-ethereal-ink shadow-glass-ethereal"
+                style={payload.italic === true ? STAMP_FACE_STYLE : undefined}
+              >
                 {payload.text}
               </div>
             )}
@@ -1543,21 +1566,32 @@ export const AnnotationOverlay = ({
           anchor={pendingNote}
           color={color}
           phrases={quickPhrases}
+          onTakePhrase={rememberPhrase}
           initialText=""
           initialDisplay={noteDisplay}
           initialScale={textScale}
+          initialItalic={noteItalic}
+          onItalicChange={onNoteItalicChange}
           showDelete={false}
           // A note that does not exist yet takes its reach from the toolbar's
           // write pill; asking again here would be asking twice in one gesture.
           audience={null}
-          onSubmit={(text, display, scale) => {
+          onSubmit={(text, display, scale, italic) => {
             onCreate({
               page_number: pageNumber,
               annotation_type: "CM",
-              payload: { x: pendingNote.x, y: pendingNote.y, text, display, scale },
+              payload: {
+                x: pendingNote.x,
+                y: pendingNote.y,
+                text,
+                display,
+                scale,
+                ...(italic ? { italic } : null),
+              },
               color,
               layer_name: layer,
             });
+            rememberPhrase({ text, italic });
             setPendingNote(null);
           }}
           onCancel={() => setPendingNote(null)}
@@ -1578,11 +1612,13 @@ export const AnnotationOverlay = ({
               anchor={{ x: payload.x, y: payload.y }}
               color={editingNote.color}
               phrases={quickPhrases}
+              onTakePhrase={rememberPhrase}
               initialText={payload.text}
               initialDisplay={
                 payload.display === "inline" || payload.display === "box" ? payload.display : "pin"
               }
               initialScale={clampMarkScale(payload.scale)}
+              initialItalic={payload.italic === true}
               showDelete
               audience={{
                 current: layerOf(editingNote),
@@ -1590,12 +1626,22 @@ export const AnnotationOverlay = ({
                 onChange: (next) => moveMarkLayer(editingNote, next),
               }}
               voices={voicesFor(editingNote)}
-              onSubmit={(text, display, scale) => {
+              onSubmit={(text, display, scale, italic) => {
                 onUpdate(
                   editingNote.id,
-                  { payload: { x: payload.x, y: payload.y, text, display, scale } },
+                  {
+                    payload: {
+                      x: payload.x,
+                      y: payload.y,
+                      text,
+                      display,
+                      scale,
+                      ...(italic ? { italic } : null),
+                    },
+                  },
                   { payload },
                 );
+                rememberPhrase({ text, italic });
                 onSelect(null);
               }}
               onDelete={() => {
@@ -1627,6 +1673,7 @@ export const AnnotationOverlay = ({
             setScaleDraft({ id: actionMark.id, scale: next, committed: null })
           }
           onCommitScale={commitScale}
+          onSetScale={writeScale}
           onDelete={() => {
             onDelete(actionMark.id);
             onSelect(null);

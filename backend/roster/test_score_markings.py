@@ -353,6 +353,18 @@ class PrintTranslationTests(SimpleTestCase):
         self.assertIn('class="note box"', markup)
         self.assertIn("border-color:#2563EB", markup)
 
+    def test_an_italic_note_prints_slanted_in_every_display(self) -> None:
+        for display, chip in (("inline", "note it"), ("pin", "note it"), ("box", "note box it")):
+            markup = self._page(PrintMark(
+                "CM", {"x": 0.5, "y": 0.5, "text": "più p", "display": display, "italic": True},
+                "#1F2933", False,
+            ))
+            self.assertIn(f'class="{chip}"', markup)
+        upright = self._page(PrintMark(
+            "CM", {"x": 0.5, "y": 0.5, "text": "più p", "display": "inline"}, "#1F2933", False,
+        ))
+        self.assertIn('class="note"', upright)
+
     def test_text_is_escaped(self) -> None:
         markup = self._page(PrintMark(
             "CM", {"x": 0.5, "y": 0.5, "text": "<b>forte</b>", "display": "inline"},

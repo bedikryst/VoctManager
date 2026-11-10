@@ -15,7 +15,8 @@
  * one states a single fact about a marking that already exists, and every one of
  * them is undoable with the history the toolbar already carries. The size slider
  * is the one control that moves through values on its way to one: it previews
- * while held and commits on release, so a resize is one edit. Delete goes
+ * while held and commits on release, so a resize is one edit; a size typed into
+ * its number is one edit as it stands. Delete goes
  * unconfirmed for the same reason the eraser does — an arm-then-confirm here
  * would make the card stricter than the tool sitting next to it.
  *
@@ -32,6 +33,7 @@ import { cn } from "@/shared/lib/utils";
 import { Eyebrow } from "@/shared/ui/primitives/typography";
 
 import { MarkAudiencePicker } from "./MarkAudiencePicker";
+import { MarkScaleControl } from "./MarkScaleControl";
 import { MarkVoicePicker, type MarkVoices } from "./MarkVoicePicker";
 import { boundsAnchor, markBounds } from "../lib/markBounds";
 import { placeNoteCard } from "../lib/noteCardPlacement";
@@ -40,12 +42,7 @@ import { getStampDef, stampSampleSize, StampGlyph } from "../lib/stamps";
 import { useMeasuredHeight } from "../lib/useMeasuredHeight";
 import { layerOf, type WriteLayer } from "../lib/layers";
 import type { AnnotationInk } from "../lib/palette";
-import {
-  clampMarkScale,
-  MARK_SCALE_MAX,
-  MARK_SCALE_MIN,
-  MARK_SCALE_STEP,
-} from "../lib/useAnnotationTools";
+import { clampMarkScale } from "../lib/useAnnotationTools";
 import { isFreehand, isStamp, isStroke, type ScoreAnnotation } from "../types/annotations.dto";
 
 interface MarkActionCardProps {
@@ -67,6 +64,8 @@ interface MarkActionCardProps {
   onPreviewScale: (next: number) => void;
   /** The slider was let go: write the previewed size, once. */
   onCommitScale: () => void;
+  /** A size typed and confirmed: write it, once. */
+  onSetScale: (next: number) => void;
   onDelete: () => void;
   onClose: () => void;
 }
@@ -108,6 +107,7 @@ export const MarkActionCard = ({
   previewScale,
   onPreviewScale,
   onCommitScale,
+  onSetScale,
   onDelete,
   onClose,
 }: MarkActionCardProps): React.JSX.Element | null => {
@@ -225,32 +225,22 @@ export const MarkActionCard = ({
       {/* A symbol placed too small to read from a stand used to be a symbol to
           delete and place again — the size control armed the NEXT one only. */}
       {stamp && stampDef && (
-        <div className="mt-2.5 flex items-center gap-2">
-          <span
-            aria-hidden="true"
-            className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden"
-          >
-            <StampGlyph
-              symbol={stamp.symbol}
-              color={annotation.color}
-              size={stampSampleSize(stampDef, 10 + shownScale * 8, SAMPLE_TILE_PX)}
-            />
-          </span>
-          <input
-            type="range"
-            min={MARK_SCALE_MIN}
-            max={MARK_SCALE_MAX}
-            step={MARK_SCALE_STEP}
+        <div className="mt-2.5">
+          <MarkScaleControl
+            surface="card"
             value={shownScale}
-            onChange={(event) => onPreviewScale(Number(event.target.value))}
-            // Release, by any hand: a pointer lifting, an arrow key let go, or
-            // focus leaving. Each is a no-op when nothing is held.
-            onPointerUp={onCommitScale}
-            onPointerCancel={onCommitScale}
-            onKeyUp={onCommitScale}
-            onBlur={onCommitScale}
-            aria-label={t("annotations.scale.stamp", "Rozmiar symbolu")}
-            className="w-full accent-ethereal-ink"
+            onChange={onPreviewScale}
+            // Release is a no-op when nothing is held.
+            onRelease={onCommitScale}
+            onCommit={onSetScale}
+            label={t("annotations.scale.stamp", "Rozmiar symbolu")}
+            sample={
+              <StampGlyph
+                symbol={stamp.symbol}
+                color={annotation.color}
+                size={stampSampleSize(stampDef, 10 + shownScale * 8, SAMPLE_TILE_PX)}
+              />
+            }
           />
         </div>
       )}

@@ -11,14 +11,22 @@
  *
  * The pointer only ever moves to a `content_at` the device drew, never to the
  * device's clock: a phone set an hour fast would otherwise swallow everything
- * the conductor writes in that hour.
+ * the conductor writes in that hour. A mark this build cannot draw is not drawn
+ * either (`isDrawnHere`).
  * @module features/annotations/lib
  */
 
 import type { NewQueuedWrite, QueuedWrite } from "@/shared/offline/useOfflineStore";
 
 import { ANNOTATIONS_ENDPOINT } from "./pendingMarks";
-import type { ScoreAnnotation } from "../types/annotations.dto";
+import { getStampDef } from "./stamps";
+import {
+  isComment,
+  isLink,
+  isStamp,
+  isStroke,
+  type ScoreAnnotation,
+} from "../types/annotations.dto";
 
 export const MARKS_SEEN_ENDPOINT = `${ANNOTATIONS_ENDPOINT}seen/`;
 
@@ -46,6 +54,18 @@ export const isWrittenToReader = (
   mark: ScoreAnnotation,
   userId: string | null,
 ): boolean => ADDRESSED_LAYERS.has(mark.layer_name) && mark.created_by !== userId;
+
+/**
+ * Whether this build puts the mark on the page at all. A kind added after it,
+ * or a symbol missing from its catalogue, arrives as a row and draws nothing.
+ * Announced, it would send the reader to a page with nothing new on it; read
+ * past, it would never be news to the build that can draw it.
+ */
+export const isDrawnHere = (mark: ScoreAnnotation): boolean =>
+  isStroke(mark) ||
+  isComment(mark) ||
+  isLink(mark) ||
+  (isStamp(mark) && getStampDef(mark.payload.symbol) !== undefined);
 
 /** Whether the mark says something later than `since` (an instant). */
 export const isNewSince = (mark: ScoreAnnotation, since: number): boolean => {

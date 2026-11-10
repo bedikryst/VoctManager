@@ -194,6 +194,37 @@ describe("what is new since the reader's last visit", () => {
     // Only as far as what was on screen: the hidden cue stays news.
     expect(onSeen).toHaveBeenCalledExactlyOnceWith("edition-1", AFTER, false);
   });
+
+  it("leaves out a mark this build cannot draw, for the build that can", () => {
+    const LATER = "2026-10-26T15:00:00Z";
+    // A kind added after this build, as a newer client stores it.
+    const newerKind = {
+      ...mark("newer-kind", { content_at: LATER, page_number: 9 }),
+      annotation_type: "XX",
+      payload: { x: 0.5, y: 0.5, tone: "paper" },
+    } as unknown as ScoreAnnotation;
+    const { result, unmount, onSeen } = watch({
+      annotations: [
+        newerKind,
+        mark("newer-symbol", {
+          annotation_type: "ST",
+          payload: { x: 0.5, y: 0.5, symbol: "not_in_this_build" },
+          content_at: LATER,
+          page_number: 8,
+        }),
+        mark("choir", { content_at: AFTER }),
+      ],
+      seenAt: SEEN,
+    });
+
+    // No notice sends the reader to page 8 or 9, where nothing new is drawn.
+    expect(result.current.notice).toEqual({ kind: "since", count: 1, pages: [4] });
+    expect(result.current.newMarks.map((m) => m.id)).toEqual(["choir"]);
+
+    unmount();
+
+    expect(onSeen).toHaveBeenCalledExactlyOnceWith("edition-1", AFTER, false);
+  });
 });
 
 describe("marks that arrive while the stand is open", () => {

@@ -82,6 +82,7 @@ import { useAnnotationHistory } from "./lib/useAnnotationHistory";
 import { useCanDraw } from "./lib/useCanDraw";
 import { useIncomingMarks } from "./lib/useIncomingMarks";
 import { CARD_ATTR } from "./lib/useOverlayInput";
+import { useSavedPhrases } from "./lib/useSavedPhrases";
 import { bookFocusY, bookPageFor, type ScoreBook } from "./lib/scoreBook";
 import { layerOf, WRITE_LAYERS, type WriteLayer } from "./lib/layers";
 import {
@@ -247,9 +248,29 @@ export const useScoreAnnotator = ({
   const { user } = useAuth();
   // Normalised once: the wire's `created_by` is the user's UUID as a string.
   const userId = user ? String(user.id) : null;
+  const [pageApi, setPageApi] = useState<PdfPageApi>({
+    currentPage: 1,
+    numPages: null,
+    goToPage: () => {},
+    turnPage: () => {},
+    pageWidth: null,
+  });
+
+  /**
+   * Whose markings are in play. A single edition answers this once; the binder
+   * answers it per page, because the reader turning from the Kyrie to the
+   * Gloria has walked from one publisher's engraving into another's. Front
+   * matter — title page, table of contents, a divider card — belongs to no
+   * edition, and there the stand is simply a reader with no pencil.
+   */
+  const activeEditionId = book
+    ? (book.frames.get(pageApi.currentPage)?.edition ?? null)
+    : editionId;
+
   const tools = useAnnotationTools(
     isConductor ? "shared" : "personal",
     isConductor,
+    activeEditionId,
   );
   const activeTool = tools.tool;
   const setTool = tools.setTool;
@@ -309,25 +330,6 @@ export const useScoreAnnotator = ({
   useEffect(() => {
     if (!active) setReturnTo(null);
   }, [active]);
-  const [pageApi, setPageApi] = useState<PdfPageApi>({
-    currentPage: 1,
-    numPages: null,
-    goToPage: () => {},
-    turnPage: () => {},
-    pageWidth: null,
-  });
-
-  /**
-   * Whose markings are in play. A single edition answers this once; the binder
-   * answers it per page, because the reader turning from the Kyrie to the
-   * Gloria has walked from one publisher's engraving into another's. Front
-   * matter — title page, table of contents, a divider card — belongs to no
-   * edition, and there the stand is simply a reader with no pencil.
-   */
-  const activeEditionId = book
-    ? (book.frames.get(pageApi.currentPage)?.edition ?? null)
-    : editionId;
-
   // The next mark's voices belong to one piece on one open stand: closing the
   // stand, or turning into the next piece of the book, starts again at tutti.
   const setNextVoices = tools.setVoices;
@@ -890,11 +892,14 @@ export const useScoreAnnotator = ({
     stampScale,
     shape,
     noteDisplay,
+    noteItalic,
+    setNoteItalic,
     stamp,
     layer,
     visibleLayers,
     fingerDraw,
   } = tools;
+  const [savedPhrases, rememberPhrase] = useSavedPhrases(userId);
 
   // Read through a ref: the overlay only needs it at the moment a finger lifts,
   // and the page handle is replaced whenever the page or its width moves — a
@@ -941,6 +946,10 @@ export const useScoreAnnotator = ({
           stampScale={stampScale}
           shape={shape}
           noteDisplay={noteDisplay}
+          noteItalic={noteItalic}
+          onNoteItalicChange={setNoteItalic}
+          savedPhrases={savedPhrases}
+          onRememberPhrase={rememberPhrase}
           stamp={stamp}
           layer={layer}
           fingerDraw={fingerDraw}
@@ -997,6 +1006,10 @@ export const useScoreAnnotator = ({
       stampScale,
       shape,
       noteDisplay,
+      noteItalic,
+      setNoteItalic,
+      savedPhrases,
+      rememberPhrase,
       stamp,
       layer,
       fingerDraw,

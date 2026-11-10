@@ -167,7 +167,8 @@
       "inline": "On score",
       "pin": "Pin",
       "text_label": "Note text",
-      "box": "Boxed"
+      "box": "Boxed",
+      "italic": "Italic"
     },
     "panel": {
       "layers": "Layer visibility",
@@ -219,7 +220,8 @@
     "quick_phrases": "Quick phrases",
     "scale": {
       "stamp": "Symbol size",
-      "text": "Text size"
+      "text": "Text size",
+      "number": "{{label}} ({{min}} to {{max}})"
     },
     "size": {
       "bold": "Bold",
@@ -276,7 +278,12 @@
       "bocca_chiusa": "Bocca chiusa (closed mouth)",
       "sharp": "Sharp sign",
       "flat": "Flat sign",
-      "natural": "Natural sign"
+      "natural": "Natural sign",
+      "piu": "Più (more)",
+      "meno": "Meno (less)",
+      "piu_mosso": "Più mosso (faster)",
+      "meno_mosso": "Meno mosso (slower)",
+      "staggered": "Staggered breathing (o.n.)"
     },
     "tools": {
       "eraser": "Erase",

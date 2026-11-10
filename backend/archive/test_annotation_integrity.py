@@ -541,6 +541,31 @@ class SanitizerTests(_MarksFixture):
         self.assertEqual(response.status_code, 201, response.content)
         self.assertEqual(response.json()["payload"]["display"], "box")
 
+    def test_a_note_keeps_a_boolean_italic_and_drops_anything_else(self) -> None:
+        note = {"x": 0.5, "y": 0.1, "text": "più mosso", "display": "inline"}
+        kept = self._post(annotation_type=AnnotationType.COMMENT, payload={**note, "italic": True})
+        self.assertEqual(kept.status_code, 201, kept.content)
+        self.assertIs(kept.json()["payload"]["italic"], True)
+        for stray in ("false", 1, None):
+            dropped = self._post(
+                annotation_type=AnnotationType.COMMENT, payload={**note, "italic": stray},
+            )
+            self.assertEqual(dropped.status_code, 201, dropped.content)
+            self.assertNotIn("italic", dropped.json()["payload"])
+
+    def test_setting_a_note_italic_is_not_news(self) -> None:
+        note = self._post(
+            annotation_type=AnnotationType.COMMENT,
+            payload={"x": 0.5, "y": 0.1, "text": "p", "display": "inline"},
+        ).json()
+        slanted = self.client.patch(
+            f"{_ENDPOINT}{note['id']}/",
+            {"payload": {**note["payload"], "italic": True}}, format="json",
+        )
+        self.assertEqual(slanted.status_code, 200, slanted.content)
+        self.assertIs(slanted.json()["payload"]["italic"], True)
+        self.assertEqual(slanted.json()["content_at"], note["content_at"])
+
     def _link(self, **payload):
         return self._post(
             annotation_type=AnnotationType.LINK, page_number=2,

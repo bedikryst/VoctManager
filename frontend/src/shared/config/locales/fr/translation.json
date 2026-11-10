@@ -167,7 +167,8 @@
       "inline": "Sur la partition",
       "pin": "Épingle",
       "text_label": "Texte de la note",
-      "box": "Encadré"
+      "box": "Encadré",
+      "italic": "Italique"
     },
     "panel": {
       "layers": "Visibilité des calques",
@@ -219,7 +220,8 @@
     "quick_phrases": "Phrases rapides",
     "scale": {
       "stamp": "Taille du symbole",
-      "text": "Taille du texte"
+      "text": "Taille du texte",
+      "number": "{{label}} (de {{min}} à {{max}})"
     },
     "size": {
       "bold": "Épais",
@@ -276,7 +278,12 @@
       "bocca_chiusa": "Bocca chiusa (bouche fermée)",
       "sharp": "Dièse",
       "flat": "Bémol",
-      "natural": "Bécarre"
+      "natural": "Bécarre",
+      "piu": "Più (plus)",
+      "meno": "Meno (moins)",
+      "piu_mosso": "Più mosso (plus animé)",
+      "meno_mosso": "Meno mosso (moins animé)",
+      "staggered": "Respiration échelonnée (o.n.)"
     },
     "tools": {
       "eraser": "Gomme",

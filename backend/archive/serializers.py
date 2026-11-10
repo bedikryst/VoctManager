@@ -663,13 +663,19 @@ class AnnotationSerializer(serializers.ModelSerializer):
         display = payload.get('display', 'pin')
         if display not in _NOTE_DISPLAY_MODES:
             display = 'pin'
-        return {
+        cleaned: dict[str, Any] = {
             'x': _clamp01(payload.get('x')),
             'y': _clamp01(payload.get('y')),
             'text': text.strip()[:_MAX_TEXT_LEN],
             'display': display,
             'scale': _clamp_scale(payload.get('scale', 1.0)),
         }
+        # Set in the dynamics' face, so a typed "più mosso" passes for engraving.
+        # A strict boolean or nothing: "false" is a truthy string.
+        italic = payload.get('italic')
+        if isinstance(italic, bool):
+            cleaned['italic'] = italic
+        return cleaned
 
     def _clean_stamp(self, payload: Mapping[str, Any]) -> dict[str, Any]:
         symbol = payload.get('symbol')
