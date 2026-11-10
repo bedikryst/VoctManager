@@ -91,7 +91,7 @@ FOUNDATION = Foundation(
         Representative(
             name="Krystian Bugalski",
             function="Wiceprezes Zarządu",
-            user_email="krystbugalski@gmail.com",
+            user_email="krystian.bugalski@voctensemble.com",
         ),
     ),
     privacy_contact="rodo@voctfoundation.com",
