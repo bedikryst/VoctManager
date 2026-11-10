@@ -14,8 +14,8 @@ Description:
     neighbours of a later report.
 
     Prod runs one worker with beat embedded, so a run holds the queue while it
-    lasts: about half a minute typically, and the agent's own five-minute deadline
-    sits inside the soft limit below.
+    lasts: about a minute typically (62 s median over the API), and the agent's
+    own five-minute deadline sits inside the soft limit below.
 
 Standards: SaaS 2026.
 ===============================================================================

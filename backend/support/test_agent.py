@@ -170,6 +170,13 @@ class SupportAgentLoopTests(SimpleTestCase):
         self.assertIsNone(run.outcome)
         self.assertEqual(len(run.turns), 1)
 
+    def test_an_overloaded_api_ends_the_run_with_a_status(self) -> None:
+        response = httpx.Response(529, request=httpx.Request('POST', 'https://example.com'))
+        failure = anthropic.APIStatusError('overloaded', response=response, body=None)
+        run = self._run(_ScriptedClient(_tool_turn(), failure))
+        self.assertEqual(run.status, 'api_error')
+        self.assertIsNone(run.outcome)
+
     def test_a_rejected_request_raises(self) -> None:
         response = httpx.Response(400, request=httpx.Request('POST', 'https://example.com'))
         failure = anthropic.BadRequestError('bad', response=response, body=None)

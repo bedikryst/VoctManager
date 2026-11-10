@@ -140,8 +140,13 @@ class CodeReader:
 
 
 def head_commit(repo: Path) -> str:
-    """The full id HEAD names, for a report whose build stamp does not resolve."""
+    """The full id HEAD names: on the host checkout, the code that is deployed."""
     return _run_git(repo, ['rev-parse', '--verify', 'HEAD^{commit}']).strip()
+
+
+def unchanged_between(repo: Path, old: str, new: str, path: str) -> bool:
+    """Whether `path` holds the same tracked files at both commits."""
+    return not _run_git(repo, ['diff', '--name-only', old, new, '--', path]).strip()
 
 
 def _run_git(repo: Path, arguments: Sequence[str], *, no_match_is_empty: bool = False) -> str:

@@ -25,10 +25,14 @@ Description:
     reporter: the reply is in the report's language and shows no gender. A reply
     that fails one is held and reaches the maintainer only.
 
-    The agent reads the code at the report's build stamp and falls back to HEAD
-    when the stamp does not resolve (a build made without a commit, a shallow
-    clone). The maintainer's mail and note are Polish by construction, like the
-    report notification in `core.services.FeedbackService`.
+    The panel's build stamp names the last commit that touched frontend/, not
+    the deploy, so the backend the reporter used is HEAD of the host checkout.
+    While HEAD's frontend/src matches the stamp's, the agent reads HEAD; a panel
+    older than that (a service worker still serving a past build) is read at its
+    stamp, backend included. A stamp that names no commit here (a build made
+    without one, a shallow clone) falls back to HEAD. The maintainer's mail and
+    note are Polish by construction, like the report notification in
+    `core.services.FeedbackService`.
 
 Standards: SaaS 2026.
 ===============================================================================
@@ -58,7 +62,7 @@ from notifications.email_tasks import send_transactional_email_task
 from notifications.models import NotificationLevel, NotificationType
 from notifications.services import NotificationService
 from support.agent import AgentRun, NeighbourReport, ReportInput, run_support_agent
-from support.code_reader import CodeReader, CodeReaderError, head_commit
+from support.code_reader import CodeReader, CodeReaderError, head_commit, unchanged_between
 from support.reply_form import gendered_forms, in_language_of, language_of
 
 logger = logging.getLogger(__name__)
@@ -148,14 +152,16 @@ def report_input(report: FeedbackReport) -> ReportInput:
 
 
 def code_reader_for(report: FeedbackReport, repo: Path) -> CodeReader:
-    """The code at the report's build, or at HEAD when its stamp names no commit here."""
+    """The code the reporter used: HEAD while their panel is current, else their panel's commit."""
     version = str(report.context.get('app_version', ''))
     stamp = version.split()[-1] if version.split() else ''
+    head = CodeReader(repo, head_commit(repo))
     try:
-        return CodeReader(repo, stamp)
+        built = CodeReader(repo, stamp)
     except CodeReaderError:
         logger.info("support_agent.stamp_unresolved report=%s stamp=%r", report.pk, stamp)
-        return CodeReader(repo, head_commit(repo))
+        return head
+    return head if unchanged_between(repo, built.commit, head.commit, 'frontend/src/') else built
 
 
 def verdict_for(report: FeedbackReport, run: AgentRun) -> Verdict:

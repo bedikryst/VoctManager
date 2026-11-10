@@ -238,11 +238,9 @@ def _request(
     started = time.monotonic()
     try:
         response = client.messages.create(**params, messages=messages)
-    except (
-        anthropic.RateLimitError,
-        anthropic.InternalServerError,
-        anthropic.APIConnectionError,
-    ) as exc:
+    except anthropic.APIError as exc:
+        if not _is_transient(exc):
+            raise
         run.status = 'api_error'
         run.error = f'{type(exc).__name__}: {exc}'
         logger.warning("support_agent.api_error %s", run.error)
@@ -259,6 +257,17 @@ def _request(
         elapsed_seconds=time.monotonic() - started,
     ))
     return response
+
+
+def _is_transient(exc: anthropic.APIError) -> bool:
+    """A dropped connection, a rate limit or a server-side failure, overload included.
+
+    The SDK raises a 529 overload as its own class beside `InternalServerError`, so the
+    status code decides, not the class.
+    """
+    if isinstance(exc, anthropic.APIConnectionError):
+        return True
+    return isinstance(exc, anthropic.APIStatusError) and (exc.status_code == 429 or exc.status_code >= 500)
 
 
 def _execute(tool_uses: list[Any], reader: CodeReader, run: AgentRun) -> list[dict[str, Any]]:

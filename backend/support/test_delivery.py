@@ -4,9 +4,10 @@ Support Agent — Tests: Answering a Stored Report
 ===============================================================================
 Domain: Support
 Description:
-    The agent and git are stubbed, so no call leaves the machine. Covers what the
-    agent is shown (no identity, the burst as neighbours), which replies reach the
-    reporter, and that the maintainer hears of every run, a failed one included.
+    The agent is stubbed, and git runs only against a throwaway repository, so no
+    call leaves the machine. Covers what the agent is shown (no identity, the burst
+    as neighbours), which commit it reads, which replies reach the reporter, and
+    that the maintainer hears of every run, a failed one included.
 
 Standards: SaaS 2026, no network.
 ===============================================================================
@@ -14,19 +15,24 @@ Standards: SaaS 2026, no network.
 from __future__ import annotations
 
 import datetime as dt
+import shutil
+import tempfile
+from pathlib import Path
 from typing import Any
+from unittest import skipUnless
 from unittest.mock import MagicMock, patch
 from uuid import uuid4
 
 from django.contrib.auth import get_user_model
-from django.test import TestCase, override_settings
+from django.test import SimpleTestCase, TestCase, override_settings
 from django.utils import timezone
 
 from core.constants import AppRole
 from core.models import FeedbackKind, FeedbackReport, UserProfile
 from support.agent import AgentOutcome, AgentRun, render_report
-from support.delivery import answer_report, report_input, verdict_for
+from support.delivery import answer_report, code_reader_for, report_input, verdict_for
 from support.tasks import schedule_answer
+from support.test_code_reader import _git, _write
 
 User = get_user_model()
 
@@ -177,3 +183,48 @@ class DeliveryTests(TestCase):
         matching = [item for item in sent if item['recipient_email'] == recipient]
         self.assertEqual(len(matching), 1, sent)
         return matching[0]
+
+
+@skipUnless(shutil.which('git'), 'git is not available')
+class CodeVersionTests(SimpleTestCase):
+    """The panel's stamp names its last frontend commit; the backend behind it is HEAD."""
+    _folder: tempfile.TemporaryDirectory[str]
+    repo: Path
+    old_panel: str
+    panel: str
+    deployed: str
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        super().setUpClass()
+        cls._folder = tempfile.TemporaryDirectory(ignore_cleanup_errors=True)
+        cls.repo = Path(cls._folder.name)
+        _git(cls.repo, 'init', '-q')
+        cls.old_panel = cls._commit('frontend/src/app.tsx', 'panel 1\n')
+        cls.panel = cls._commit('frontend/src/app.tsx', 'panel 2\n')
+        cls.deployed = cls._commit('backend/core/views.py', 'backend 2\n')
+
+    @classmethod
+    def tearDownClass(cls) -> None:
+        cls._folder.cleanup()
+        super().tearDownClass()
+
+    @classmethod
+    def _commit(cls, path: str, text: str) -> str:
+        _write(cls.repo, path, text)
+        _git(cls.repo, 'add', '-A')
+        _git(cls.repo, 'commit', '-q', '-m', path)
+        return _git(cls.repo, 'rev-parse', 'HEAD')
+
+    def _commit_read_for(self, stamp: str) -> str:
+        report = FeedbackReport(context={'app_version': f'2026-11-10 18:00 · {stamp}'})
+        return code_reader_for(report, self.repo).commit
+
+    def test_a_current_panel_reads_the_deployed_backend(self) -> None:
+        self.assertEqual(self._commit_read_for(self.panel[:8]), self.deployed)
+
+    def test_an_outdated_panel_reads_its_own_commit(self) -> None:
+        self.assertEqual(self._commit_read_for(self.old_panel[:8]), self.old_panel)
+
+    def test_a_stamp_without_a_commit_reads_head(self) -> None:
+        self.assertEqual(self._commit_read_for('dev'), self.deployed)
