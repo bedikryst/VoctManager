@@ -133,11 +133,25 @@ export const BottomSheet = ({
           {/* Entrance and exit ride this wrapper as a `transform` string, on
               the compositor. The sheet inside keeps `y` for the drag, which an
               animated `transform` on the same element would override. The
-              wrapper spans the row, so it lets taps through to the scrim. */}
+              wrapper spans the row, so it lets taps through to the scrim.
+
+              The exit sinks and dissolves at once. `100%` is the sheet's own
+              height: from the bottom edge that clears the viewport, but from
+              the centred `sm:` position it stops short of the edge, so the fade
+              is what takes the modal away there. It is a short ease-in, matched
+              to the scrim, not the entrance spring, whose settling tail would
+              hold the sheet on screen after it has visibly arrived. */}
           <motion.div
             initial={{ transform: "translateY(100%)" }}
             animate={{ transform: "translateY(0%)" }}
-            exit={{ transform: "translateY(100%)" }}
+            exit={{
+              opacity: 0,
+              transform: "translateY(100%)",
+              transition: {
+                transform: { duration: 0.22, ease: "circIn" },
+                opacity: { duration: 0.22, ease: "linear" },
+              },
+            }}
             transition={{ type: "spring", stiffness: 320, damping: 34 }}
             className="pointer-events-none relative flex w-full justify-center"
           >
