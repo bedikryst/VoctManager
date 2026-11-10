@@ -24,7 +24,14 @@ from anthropic.types import Message
 from django.test import SimpleTestCase
 
 from archive.infrastructure.ai_client import AIModel
-from support.agent import AgentConfig, NeighbourReport, ReportInput, render_report, run_support_agent
+from support.agent import (
+    EARLIER_REPLY_NOTE,
+    AgentConfig,
+    NeighbourReport,
+    ReportInput,
+    render_report,
+    run_support_agent,
+)
 from support.code_reader import CodeReaderError
 
 REPORT = ReportInput(
@@ -195,3 +202,19 @@ class SupportAgentLoopTests(SimpleTestCase):
         self.assertIn('<primary_report>', text)
         self.assertIn('when="6 minutes later"', text)
         self.assertIn('Found it, thanks.', text)
+        self.assertNotIn('reply_already_sent', text)
+
+    def test_a_reply_already_sent_is_shown_with_its_report(self) -> None:
+        text = render_report(ReportInput(
+            sent=REPORT.sent,
+            filed_as=REPORT.filed_as,
+            screen=REPORT.screen,
+            reporter_role=REPORT.reporter_role,
+            body=REPORT.body,
+            neighbours=(NeighbourReport(
+                '9 minutes earlier', 'Question', '/panel', 'How do I send the plan?',
+                reply_sent='Use the Send button above the list.',
+            ),),
+        ))
+        self.assertIn('<reply_already_sent>\nUse the Send button above the list.\n</reply_already_sent>', text)
+        self.assertTrue(text.endswith(EARLIER_REPLY_NOTE))

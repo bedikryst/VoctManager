@@ -537,6 +537,11 @@ ANTHROPIC_API_KEY = env('ANTHROPIC_API_KEY', default='')
 # checkout's read-only at /repo in the celery container; host-side runs use the repo root.
 SUPPORT_AGENT_REPO = env('SUPPORT_AGENT_REPO', default=str(BASE_DIR.parent))
 
+# Off stops the support agent's automatic runs, queued ones included, and leaves the
+# key to the score pipeline; a run started from the admin still goes. Read per run,
+# so it takes effect once the worker rereads `.env` (`make prod`, not a restart).
+SUPPORT_AGENT_ENABLED = env.bool('SUPPORT_AGENT_ENABLED', default=True)
+
 # Hard ceiling, in USD cents, the ingestion pipeline may spend per ScoreEdition
 # PER RUN. Tasks check this BEFORE each Claude call and refuse to proceed once
 # `ingestion_cost_cents` (this run) hits it. A typical motet runs ~10¢ on

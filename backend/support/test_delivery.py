@@ -6,8 +6,10 @@ Domain: Support
 Description:
     The agent is stubbed, and git runs only against a throwaway repository, so no
     call leaves the machine. Covers what the agent is shown (no identity, the burst
-    as neighbours), which commit it reads, which replies reach the reporter, and
-    that the maintainer hears of every run, a failed one included.
+    as neighbours, the replies they already got), which commit it reads, which
+    replies reach the reporter, that the maintainer hears of every run, a failed
+    one included, that a burst draws one run, and the retry, the switch and the
+    admin's re-run.
 
 Standards: SaaS 2026, no network.
 ===============================================================================
@@ -31,7 +33,8 @@ from core.constants import AppRole
 from core.models import FeedbackKind, FeedbackReport, UserProfile
 from support.agent import AgentOutcome, AgentRun, render_report
 from support.delivery import answer_report, code_reader_for, report_input, verdict_for
-from support.tasks import schedule_answer
+from support.models import SupportReplyChannel, SupportRun, SupportRunResult, SupportRunTrigger
+from support.tasks import answer_feedback_report_task, schedule_answer
 from support.test_code_reader import _git, _write
 
 User = get_user_model()
@@ -130,6 +133,12 @@ class DeliveryTests(TestCase):
         self.assertEqual(sent[0]['context']['summary'], 'Odpowiedź wysłana do zgłaszającego (w aplikacji)')
         self.report.refresh_from_db()
         self.assertIn('Notatka dla dewelopera:\nNothing to fix.', self.report.note)
+        record = SupportRun.objects.get(report=self.report)
+        self.assertEqual(record.result, SupportRunResult.SENT)
+        self.assertEqual(record.channel, SupportReplyChannel.APP)
+        self.assertEqual(record.reply, reply)
+        self.assertEqual(record.commit, 'abc1234def')
+        self.assertIsNotNone(record.finished_at)
 
     @patch('support.delivery.NotificationService')
     @patch('support.delivery.send_transactional_email_task')
@@ -165,6 +174,126 @@ class DeliveryTests(TestCase):
         sent = [call.kwargs for call in mail.delay.call_args_list]
         self.assertEqual([item['recipient_email'] for item in sent], ['dev@voct.test'])
         self.assertIn('credit balance is too low', sent[0]['context']['summary'])
+        self.assertEqual(SupportRun.objects.get(report=self.report).result, SupportRunResult.FAILED)
+
+    @patch('support.delivery.NotificationService')
+    @patch('support.delivery.send_transactional_email_task')
+    @patch('support.delivery.run_support_agent')
+    @patch('support.delivery.code_reader_for')
+    def test_an_addendum_the_first_run_read_gets_no_run_of_its_own(
+        self, reader: MagicMock, agent: MagicMock, mail: MagicMock, notifications: MagicMock,
+    ) -> None:
+        reader.return_value.commit = 'abc1234def'
+        agent.return_value = _run('Plan wysyłasz przyciskiem „Wyślij” nad listą utworów.')
+        question = self._report('Jak wysłać plan próby?', minutes=-3)
+        addendum = self._report('Chodzi o próbę w piątek.', minutes=-2)
+
+        answer_report(str(question.pk), client=MagicMock())
+        answer_report(str(addendum.pk), client=MagicMock())
+
+        self.assertEqual(agent.call_count, 1)
+        self.assertEqual(mail.delay.call_count, 1)
+        covered = SupportRun.objects.get(report=addendum)
+        self.assertEqual(covered.result, SupportRunResult.COVERED)
+        self.assertEqual(covered.covered_by, SupportRun.objects.get(report=question))
+        addendum.refresh_from_db()
+        self.assertIn('Bez osobnego przebiegu', addendum.note)
+
+    @patch('support.delivery.send_transactional_email_task')
+    @patch('support.delivery.run_support_agent')
+    @patch('support.delivery.code_reader_for')
+    def test_a_held_reply_leaves_the_addendum_its_own_run(
+        self, reader: MagicMock, agent: MagicMock, mail: MagicMock,
+    ) -> None:
+        reader.return_value.commit = 'abc1234def'
+        agent.return_value = _run('Jesteś wpisany na tę próbę, więc plan już widzisz.')
+        question = self._report('Czy widzę plan?', minutes=-3)
+        addendum = self._report('Chodzi o próbę w piątek.', minutes=-2)
+
+        answer_report(str(question.pk), client=MagicMock())
+        answer_report(str(addendum.pk), client=MagicMock())
+
+        self.assertEqual(agent.call_count, 2)
+
+    @patch('support.delivery.send_transactional_email_task')
+    @patch('support.delivery.run_support_agent')
+    @patch('support.delivery.code_reader_for')
+    def test_a_run_from_the_admin_goes_although_another_run_read_the_report(
+        self, reader: MagicMock, agent: MagicMock, mail: MagicMock,
+    ) -> None:
+        reader.return_value.commit = 'abc1234def'
+        agent.return_value = _run('', action='no_reply')
+        question = self._report('Jak wysłać plan próby?', minutes=-3)
+        addendum = self._report('Chodzi o próbę w piątek.', minutes=-2)
+        answer_report(str(question.pk), client=MagicMock())
+
+        answer_report(str(addendum.pk), trigger=SupportRunTrigger.MANUAL, client=MagicMock())
+
+        self.assertEqual(agent.call_count, 2)
+        self.assertEqual(SupportRun.objects.get(report=addendum).result, SupportRunResult.SILENT)
+
+    def test_a_later_report_is_shown_the_reply_already_sent(self) -> None:
+        question = self._report('Jak wysłać plan próby?', minutes=-10)
+        earlier = SupportRun.objects.create(
+            report=question, trigger=SupportRunTrigger.AUTO, result=SupportRunResult.SENT,
+            reply='Plan wysyłasz przyciskiem „Wyślij”.',
+        )
+        SupportRun.objects.filter(pk=earlier.pk).update(started_at=timezone.now() - dt.timedelta(minutes=8))
+
+        text = render_report(report_input(self.report))
+
+        self.assertIn('<reply_already_sent>\nPlan wysyłasz przyciskiem „Wyślij”.\n</reply_already_sent>', text)
+
+    @patch('support.delivery.send_transactional_email_task')
+    @patch('support.delivery.run_support_agent')
+    @patch('support.delivery.code_reader_for')
+    def test_an_overloaded_run_is_retried_once(self, reader: MagicMock, agent: MagicMock, mail: MagicMock) -> None:
+        reader.return_value.commit = 'abc1234def'
+        agent.return_value = AgentRun(status='api_error', error='OverloadedError: 529')
+
+        with override_settings(ANTHROPIC_API_KEY='sk-test'), \
+                patch.object(answer_feedback_report_task, 'apply_async') as queued:
+            answer_feedback_report_task(str(self.report.pk))
+            answer_feedback_report_task(str(self.report.pk), trigger=SupportRunTrigger.RETRY.value)
+
+        queued.assert_called_once_with(
+            args=[str(self.report.pk)], kwargs={'trigger': 'RETRY'}, countdown=15 * 60,
+        )
+        self.assertIn('ponowię około', mail.delay.call_args_list[0].kwargs['context']['summary'])
+        self.assertNotIn('ponowię', mail.delay.call_args_list[1].kwargs['context']['summary'])
+
+    @patch('support.tasks.answer_report')
+    def test_the_switch_stops_queued_runs_but_not_the_admin(self, answer: MagicMock) -> None:
+        with override_settings(SUPPORT_AGENT_ENABLED=False):
+            answer_feedback_report_task(str(self.report.pk))
+            self.assertEqual(answer.call_count, 0)
+            answer_feedback_report_task(str(self.report.pk), trigger=SupportRunTrigger.MANUAL.value)
+            self.assertEqual(answer.call_count, 1)
+
+    def test_nothing_is_queued_with_the_switch_off(self) -> None:
+        with override_settings(ANTHROPIC_API_KEY='sk-test', SUPPORT_AGENT_ENABLED=False), \
+                self.captureOnCommitCallbacks() as callbacks:
+            schedule_answer(self.report)
+
+        self.assertEqual(callbacks, [])
+
+    @patch('support.admin.queue_manual_run')
+    def test_the_admin_runs_the_agent_again(self, queue: MagicMock) -> None:
+        admin_user = User.objects.create_superuser(
+            username=str(uuid4()), email='admin@voct.test', password='pw12345678',
+        )
+        self.client.force_login(admin_user)
+
+        with override_settings(ANTHROPIC_API_KEY='sk-test'):
+            response = self.client.post('/admin/core/feedbackreport/', {
+                'action': 'run_agent_again', '_selected_action': [str(self.report.pk)],
+            })
+
+        self.assertEqual(response.status_code, 302)
+        queue.assert_called_once_with(self.report)
+        SupportRun.objects.create(report=self.report, trigger=SupportRunTrigger.AUTO, result=SupportRunResult.SILENT)
+        page = self.client.get(f'/admin/core/feedbackreport/{self.report.pk}/change/')
+        self.assertContains(page, 'No reply')
 
     def test_nothing_is_queued_without_an_api_key(self) -> None:
         with override_settings(ANTHROPIC_API_KEY=''), self.captureOnCommitCallbacks() as callbacks:

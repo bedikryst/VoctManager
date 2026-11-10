@@ -49,6 +49,14 @@ WRAP_UP_NOTE: Final[str] = (
     "if a part they asked about is still open, say so in the developer note instead."
 )
 
+# Rides in the user message, and only when a neighbour carries a reply, so the
+# system prompt and every evaluated input stay byte for byte what the eval scored.
+EARLIER_REPLY_NOTE: Final[str] = (
+    "A neighbouring report above shows the reply_already_sent to it, which they received. Do not "
+    "send it again: reply only with what it left open, and choose no_reply when it already answers "
+    "this report."
+)
+
 OUTCOME_FORMAT: Final[dict[str, Any]] = {
     'type': 'json_schema',
     'schema': {
@@ -77,11 +85,12 @@ class AgentOutcome(BaseModel):
 
 @dataclass(frozen=True)
 class NeighbourReport:
-    """Another report from the same person, shown as context."""
+    """Another report from the same person, shown as context, with the reply it already got."""
     offset: str
     filed_as: str
     screen: str
     body: str
+    reply_sent: str = ''
 
 
 @dataclass(frozen=True)
@@ -167,8 +176,12 @@ def render_report(report: ReportInput) -> str:
             f'<neighbouring_report when="{neighbour.offset}" '
             f'filed_as="{neighbour.filed_as}" screen="{neighbour.screen}">',
             neighbour.body.strip(),
-            '</neighbouring_report>',
         ]
+        if neighbour.reply_sent:
+            parts += ['<reply_already_sent>', neighbour.reply_sent.strip(), '</reply_already_sent>']
+        parts.append('</neighbouring_report>')
+    if any(neighbour.reply_sent for neighbour in report.neighbours):
+        parts.append(EARLIER_REPLY_NOTE)
     return '\n'.join(parts)
 
 
