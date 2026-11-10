@@ -259,7 +259,9 @@ def resolve_call_window(
             crosses_day=False,
         )
 
-    buffer_minutes = int((event_local - call_local).total_seconds() // 60)
+    # Elapsed time, not the clock-face gap: two datetimes sharing one zone
+    # subtract as wall clocks and drop or add the hour of a DST change between.
+    buffer_minutes = int((event_local.timestamp() - call_local.timestamp()) // 60)
     crosses_day = call_local.date() != event_local.date()
 
     if buffer_minutes <= 0:

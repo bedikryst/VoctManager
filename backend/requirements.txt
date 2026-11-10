@@ -69,7 +69,10 @@ pywebpush>=2.0.0
 # SDK behaviour (`thinking`, `output_config.effort`, structured-output parsing).
 # An unpinned floor lets a container rebuild change how scores are analysed.
 anthropic==0.103.1
-pypdf>=5.0.0
+# Pinned exact: a major release changes what may be edited in place (7.0 refuses
+# content edits on a page no writer owns), and a floor took it in unseen on a
+# rebuild. Move it deliberately, with the roster tests.
+pypdf==7.0.1
 # Page rasterisation for the build-cockpit page-trim thumbnails. PDFium binding
 # with a permissive (Apache-2.0/BSD-3) licence; ships self-contained wheels with
 # the native engine bundled, so it needs NO system package (unlike WeasyPrint).

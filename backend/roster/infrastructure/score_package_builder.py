@@ -258,14 +258,22 @@ def _read_edition_pdf(edition: ScoreEdition) -> PdfReader:
 
     Only rotated pages are touched: a no-op bake still prepends a transformation to
     the content stream of every page, which buys nothing.
+
+    pypdf rewrites a page's content only on a page a writer owns (on a reader's
+    page 7.0 raises), so a rotated edition is baked on a clone and read back.
     """
     with edition.pdf_file.open("rb") as handle:
         data = handle.read()
     reader = PdfReader(BytesIO(data))
-    for page in reader.pages:
+    if not any(page.rotation for page in reader.pages):
+        return reader
+    writer = PdfWriter(clone_from=reader)
+    for page in writer.pages:
         if page.rotation:
             page.transfer_rotation_to_content()
-    return reader
+    buffer = BytesIO()
+    writer.write(buffer)
+    return PdfReader(BytesIO(buffer.getvalue()))
 
 
 def _page_window(total: int, start: int | None, end: int | None) -> tuple[int, int]:
@@ -591,13 +599,11 @@ def _place_on_a4(
     per-page provenance stamp — needs exactly that rectangle and nothing else:
     a spot at (u, v) of the source page lands at (x + u·w, y + (1-v)·h).
     """
-    # Bake any /Rotate into the content so the visual orientation is preserved
-    # before we read the box and transform it. Pages arriving from
-    # ``_read_edition_pdf`` are already baked (they must be, so the folio masks are
-    # measured in this same space); the guard keeps this helper correct on its own
-    # for any other caller, at the cost of one integer check.
+    # The source must arrive with any /Rotate already baked, as ``_read_edition_pdf``
+    # hands it out: the folio masks are measured in that space, and pypdf cannot
+    # bake a reader's page in place. Placing it unbaked would turn the music.
     if source_page.rotation:
-        source_page.transfer_rotation_to_content()
+        raise ValueError("Source page still carries /Rotate; read it through _read_edition_pdf.")
     box = source_page.mediabox
     src_w = float(box.width)
     src_h = float(box.height)

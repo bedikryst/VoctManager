@@ -273,13 +273,12 @@ def _baked(pages: list[list[tuple[str, float, float]]], rotation: int) -> PdfRea
     for page in reader.pages:
         page[NameObject("/Rotate")] = NumberObject(rotation)
         writer.add_page(page)
-    buffer = BytesIO()
-    writer.write(buffer)
-    baked = PdfReader(BytesIO(buffer.getvalue()))
-    for page in baked.pages:
+    for page in writer.pages:
         if page.rotation:
             page.transfer_rotation_to_content()
-    return baked
+    buffer = BytesIO()
+    writer.write(buffer)
+    return PdfReader(BytesIO(buffer.getvalue()))
 
 
 def _glyph_position(page) -> tuple[float, float]:

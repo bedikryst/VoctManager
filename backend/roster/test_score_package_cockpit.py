@@ -23,7 +23,7 @@ from django.core.cache import cache
 from django.core.files.base import ContentFile
 from django.test import SimpleTestCase, TestCase, override_settings
 from django.utils import timezone, translation
-from pypdf import PdfWriter
+from pypdf import PdfReader, PdfWriter
 from pypdf.generic import NameObject, NumberObject
 
 from archive.models import (
@@ -78,6 +78,7 @@ from roster.score_package_service import (
     ScorePackageService,
     build_is_abandoned,
 )
+from roster.test_score_source_numbering import build_pdf
 
 _MEDIA = tempfile.mkdtemp(prefix="vm_score_pkg_test_")
 
@@ -99,11 +100,14 @@ def _pdf_bytes(pages: int) -> bytes:
 
 
 def _rotated_pdf_bytes(pages: int, rotation: int = 90) -> bytes:
-    """A portrait sheet stored with /Rotate — how a landscape scan usually arrives."""
+    """A portrait sheet stored with /Rotate — how a landscape scan usually arrives.
+    Every page carries content, as engraving does: a blank page bakes without ever
+    rewriting a content stream, so it cannot show whether pypdf allowed the bake."""
+    source = PdfReader(BytesIO(build_pdf([[("1", 300.0, 400.0)] for _ in range(pages)])))
     writer = PdfWriter()
-    for _ in range(pages):
-        page = writer.add_blank_page(width=595, height=842)
+    for page in source.pages:
         page[NameObject("/Rotate")] = NumberObject(rotation)
+        writer.add_page(page)
     buffer = BytesIO()
     writer.write(buffer)
     return buffer.getvalue()

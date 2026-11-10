@@ -27,6 +27,7 @@ User = get_user_model()
 # tables are named individually below. `finance` goes with `roster`: its ledger
 # holds PROTECT keys into the seats and projects wiped here, so keeping it would
 # fail the closure check below — and a test round's fees are test data.
+# `support` goes with the feedback reports below: every agent run belongs to one.
 WIPE_APP_LABELS = (
     "roster",
     "finance",
@@ -34,6 +35,7 @@ WIPE_APP_LABELS = (
     "notifications",
     "messaging",
     "logistics",
+    "support",
     "admin",
     "sessions",
     "token_blacklist",
