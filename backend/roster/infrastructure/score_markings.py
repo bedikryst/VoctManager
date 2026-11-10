@@ -41,7 +41,7 @@ from typing import Any
 
 from pypdf import PdfReader, PdfWriter
 
-from archive.annotation_palette import highlight_print_ink
+from archive.annotation_palette import highlight_print_ink, paper_tone
 from archive.annotation_sizes import (
     DEFAULT_HIGHLIGHT_WIDTH,
     DEFAULT_PEN_WIDTH,
@@ -70,6 +70,10 @@ _STAMP = "ST"
 # A jump link moves the stand; on paper there is nothing to tap, so it never
 # reaches a printed page.
 _LINK = "LK"
+# A cover hides the engraving under it. It is drawn before every other mark, so
+# it hides print and never another mark, as on screen.
+_COVER = "CV"
+_PAPER_WHITE = "#FFFFFF"
 
 # Layers whose ink is the conductor speaking — to the choir, to himself, or to
 # whoever takes an evening in his place. They print heavier so they remain
@@ -269,6 +273,26 @@ def _render_highlight(mark: PrintMark, box: PlacedBox) -> str:
     return "".join(out)
 
 
+def _render_cover(mark: PrintMark, box: PlacedBox) -> str:
+    """A rectangle of paper over the print, in the paper's own tone when the
+    editor read one, white otherwise. No outline: on paper it is the page."""
+    payload = mark.payload
+    try:
+        x, y = float(payload["x"]), float(payload["y"])
+        w, h = float(payload["w"]), float(payload["h"])
+    except (KeyError, TypeError, ValueError):
+        return ""
+    if w <= 0 or h <= 0:
+        return ""
+    left, top = normalized_to_sheet(box, x, y)
+    right, bottom = normalized_to_sheet(box, x + w, y + h)
+    fill = paper_tone(payload.get("tone")) or _PAPER_WHITE
+    return (
+        f'<rect x="{left:.2f}" y="{top:.2f}" width="{right - left:.2f}"'
+        f' height="{bottom - top:.2f}" fill="{fill}"/>'
+    )
+
+
 def _mark_anchor(payload: dict[str, Any], box: PlacedBox) -> tuple[float, float] | None:
     try:
         return normalized_to_sheet(box, float(payload["x"]), float(payload["y"]))
@@ -397,8 +421,11 @@ def _render_page(marks: Sequence[tuple[PrintMark, PlacedBox]]) -> str:
     text chips as positioned HTML above it."""
     svg_parts: list[str] = []
     html_parts: list[str] = []
-    # Highlights first so ink and text sit above them, mirroring the editor's
-    # own stacking order.
+    # Covers first, straight on the page, then highlights, so ink and text sit
+    # above both, mirroring the editor's own stacking order.
+    for mark, box in marks:
+        if mark.annotation_type == _COVER:
+            svg_parts.append(_render_cover(mark, box))
     for mark, box in marks:
         if mark.annotation_type == _HIGHLIGHT:
             svg_parts.append(_render_highlight(mark, box))

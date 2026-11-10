@@ -21,6 +21,7 @@
 import React, { useCallback, useEffect, useImperativeHandle, useRef } from "react";
 
 import type { NormPoint } from "../types/annotations.dto";
+import { coverFromDrag, coverRect } from "../lib/covers";
 import { buildSmoothPath } from "../lib/smoothing";
 import { buildShapePaths, type ShapeKind } from "../lib/shapes";
 
@@ -36,8 +37,11 @@ export interface LiveStrokeHandle {
 /** How long a held line waits for its mark before it goes anyway. */
 const HOLD_LIMIT_MS = 1000;
 
-/** How the line in progress is drawn: ink, a marker, or a selection's loop. */
-export type LiveStrokeLook = "ink" | "highlight" | "loop";
+/**
+ * How the line in progress is drawn: ink, a marker, a selection's loop, or a
+ * cover's paper, outlined as it is while "Korektor" is in hand.
+ */
+export type LiveStrokeLook = "ink" | "highlight" | "loop" | "cover";
 
 interface LiveStrokeLayerProps {
   ref: React.Ref<LiveStrokeHandle>;
@@ -62,6 +66,13 @@ interface Geometry {
 
 const livePath = (points: readonly NormPoint[], { width, height, look, shape }: Geometry): string => {
   if (points.length < 2) return "";
+  if (look === "cover") {
+    // The box that will land, minimum size included, so lifting changes nothing.
+    const cover = coverFromDrag(points[0], points[points.length - 1], width, height);
+    if (!cover) return "";
+    const box = coverRect(cover, width, height);
+    return `M ${box.left} ${box.top} h ${box.width} v ${box.height} h ${-box.width} Z`;
+  }
   if (shape) {
     return buildShapePaths(shape, points[0], points[points.length - 1], width, height)
       .map((path) => buildSmoothPath(path, width, height))
@@ -138,6 +149,7 @@ export const LiveStrokeLayer = ({
   useEffect(() => stopWaiting, [stopWaiting]);
 
   const loop = look === "loop";
+  const cover = look === "cover";
   const highlight = look === "highlight";
   return (
     <svg
@@ -150,15 +162,21 @@ export const LiveStrokeLayer = ({
     >
       <path
         ref={pathRef}
-        className={loop ? "fill-ethereal-gold/10 stroke-ethereal-gold" : undefined}
-        fill={loop ? undefined : "none"}
-        stroke={loop ? undefined : color}
-        strokeWidth={loop ? 1.5 : strokeWidth}
-        strokeDasharray={loop ? "6 4" : undefined}
+        className={
+          loop
+            ? "fill-ethereal-gold/10 stroke-ethereal-gold"
+            : cover
+              ? "stroke-ethereal-graphite"
+              : undefined
+        }
+        fill={loop ? undefined : cover ? "#ffffff" : "none"}
+        stroke={loop || cover ? undefined : color}
+        strokeWidth={loop ? 1.5 : cover ? 1 : strokeWidth}
+        strokeDasharray={loop ? "6 4" : cover ? "4 3" : undefined}
         strokeLinecap={highlight ? "butt" : "round"}
         strokeLinejoin="round"
         style={{
-          opacity: highlight ? highlightOpacity : loop ? 1 : 0.85,
+          opacity: highlight ? highlightOpacity : loop || cover ? 1 : 0.85,
           mixBlendMode: highlight ? "multiply" : "normal",
         }}
       />

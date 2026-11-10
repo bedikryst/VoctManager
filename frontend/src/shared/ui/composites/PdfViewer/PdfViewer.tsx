@@ -38,7 +38,7 @@ import { Text } from "@/shared/ui/primitives/typography";
 import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
 import { StatePanel } from "@/shared/ui/composites/StatePanel";
 
-import { PdfViewerProps, PdfViewerEvent, LoadErrorReason } from "./types";
+import { PdfViewerProps, PdfViewerEvent, LoadErrorReason, type PdfPageRegion } from "./types";
 import {
   ZOOM_STEP,
   MIN_ZOOM,
@@ -185,6 +185,24 @@ export const PdfViewer = ({
     // Zero size releases the copy's memory at once.
     afterimage.width = 0;
     afterimage.height = 0;
+  }, []);
+
+  /** The overlay's one reader of the page's pixels (`PdfPageGeometry.readPixels`). */
+  const readPagePixels = useCallback((region: PdfPageRegion): ImageData | null => {
+    const canvas = visibleCanvasRef.current;
+    if (!canvas || canvas.width === 0 || canvas.height === 0) return null;
+    const left = Math.max(0, Math.floor(region.x * canvas.width));
+    const top = Math.max(0, Math.floor(region.y * canvas.height));
+    const right = Math.min(canvas.width, Math.ceil((region.x + region.w) * canvas.width));
+    const bottom = Math.min(canvas.height, Math.ceil((region.y + region.h) * canvas.height));
+    if (right <= left || bottom <= top) return null;
+    try {
+      return canvas.getContext("2d")?.getImageData(left, top, right - left, bottom - top) ?? null;
+    } catch {
+      // A canvas the browser will not read back (tainted, or lost with its
+      // context) has nothing to say.
+      return null;
+    }
   }, []);
 
   // Transient page-position chip while performance mode hides the page nav.
@@ -937,6 +955,7 @@ export const PdfViewer = ({
                         width: pageBox.width,
                         height: pageBox.height,
                         scale: zoom,
+                        readPixels: readPagePixels,
                       })}
                     </div>
                   )}

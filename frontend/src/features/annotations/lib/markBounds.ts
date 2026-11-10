@@ -5,7 +5,8 @@
  * rather than on top of it — and which markings a hand has picked out: the ones
  * a loop drawn round the music takes, and the one under a tap.
  *
- * A note, a stamp and a jump link are anchored points and answer this trivially. A stroke
+ * A note, a stamp and a jump link are anchored points and answer this trivially,
+ * and a cover is a box that answers with itself (a loop takes it by its middle). A stroke
  * does not: it is a run of coordinates with no centre of its own, and the only
  * honest anchor is the middle of what it covers. Without that, a card about a
  * crescendo hairpin drawn across half a system would open at the hairpin's
@@ -15,6 +16,7 @@
 
 import {
   isComment,
+  isCover,
   isLink,
   isStamp,
   isStroke,
@@ -22,11 +24,16 @@ import {
   type ScoreAnnotation,
 } from "../types/annotations.dto";
 
-/** Where a note, a stamp or a jump link sits; null for a stroke. */
-const anchorOf = (annotation: ScoreAnnotation): NormPoint | null =>
-  isStamp(annotation) || isComment(annotation) || isLink(annotation)
+/** Where a note, a stamp or a jump link sits, or a cover's middle; null for a stroke. */
+const anchorOf = (annotation: ScoreAnnotation): NormPoint | null => {
+  if (isCover(annotation)) {
+    const { x, y, w, h } = annotation.payload;
+    return [x + w / 2, y + h / 2];
+  }
+  return isStamp(annotation) || isComment(annotation) || isLink(annotation)
     ? [annotation.payload.x, annotation.payload.y]
     : null;
+};
 
 /** A marking's extent, 0..1 against the page box. */
 export interface MarkBounds {
@@ -71,6 +78,10 @@ export const strokeBounds = (
  */
 export const markBounds = (annotation: ScoreAnnotation): MarkBounds | null => {
   if (isStroke(annotation)) return strokeBounds(annotation.payload.paths);
+  if (isCover(annotation)) {
+    const { x, y, w, h } = annotation.payload;
+    return { minX: x, minY: y, maxX: x + w, maxY: y + h };
+  }
   const anchor = anchorOf(annotation);
   if (!anchor) return null;
   const [x, y] = anchor;

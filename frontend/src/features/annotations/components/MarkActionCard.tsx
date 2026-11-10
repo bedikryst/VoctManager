@@ -1,8 +1,9 @@
 /**
  * @file MarkActionCard.tsx
- * @description What a reader can do with the ink, highlight or symbol they just
- * tapped: change who reads it and which voices it is for, change its colour,
- * resize a symbol, throw it away.
+ * @description What a reader can do with the ink, highlight, symbol or cover they
+ * just tapped: change who reads it and which voices it is for, change its colour
+ * (never a cover's, which is the paper's), resize a symbol, throw it away. A
+ * cover is resized by deleting it and drawing it again.
  *
  * Anchored to the marking rather than docked to the toolbar, and that is the
  * whole point. The control this replaces lived in the floating tool pill at the
@@ -91,6 +92,9 @@ const kindLabelKey = (annotation: ScoreAnnotation): [string, string] => {
   }
   if (annotation.annotation_type === "ST") {
     return ["annotations.mark.kind.stamp", "Symbol"];
+  }
+  if (annotation.annotation_type === "CV") {
+    return ["annotations.mark.kind.cover", "Korektor"];
   }
   const shape = isFreehand(annotation) ? annotation.payload.shape : undefined;
   const def = isShapeKind(shape) ? getShapeDef(shape) : undefined;

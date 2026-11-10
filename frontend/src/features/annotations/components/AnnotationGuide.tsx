@@ -40,6 +40,7 @@ import {
   LassoSelect,
   Lock,
   Music,
+  SquareDashed,
   UserCheck,
   Users,
   X,
@@ -273,6 +274,15 @@ export const AnnotationGuide = ({
       body: t(
         "annotations.guide.tools.shapes_body",
         "Wybierz je w Kształtach i przeciągnij od początku do końca frazy. Od lewej do prawej łuk wygina się w górę, a klamra ma haczyki w dół, tak jak nad pięciolinią. Od prawej do lewej oba się odwracają.",
+      ),
+    },
+    {
+      id: "cover",
+      icon: SquareDashed,
+      title: t("annotations.guide.tools.cover_title", "Zakryj druk"),
+      body: t(
+        "annotations.guide.tools.cover_body",
+        "Korektor znajdziesz na końcu Kształtów. Przeciągnij po skosie przez wydrukowany znak, np. „mf”, a potem napisz na nim swoje „p”. Korektor zakrywa tylko druk, nigdy oznaczenia, a gumka go omija. Usuniesz go z jego karty albo narzędziem Zaznacz.",
       ),
     },
     {

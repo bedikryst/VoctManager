@@ -127,6 +127,8 @@
         "select_body": "Narzędziem Zaznacz obwiedź oznaczenia pętlą albo dotykaj ich po kolei. Jedno dotknięcie zaznacza też pojedynczą kreskę czy kształt. Zaznaczenie przesuwasz, przeciągając ramkę albo klawiszami strzałek. Na karcie zmienisz mu kolor, powielisz je, skopiujesz na inną stronę tego utworu albo usuniesz. Każdą z tych zmian cofa jedno „Cofnij”.",
         "shapes_title": "Widełki, łuk i klamra",
         "shapes_body": "Wybierz je w Kształtach i przeciągnij od początku do końca frazy. Od lewej do prawej łuk wygina się w górę, a klamra ma haczyki w dół, tak jak nad pięciolinią. Od prawej do lewej oba się odwracają.",
+        "cover_title": "Zakryj druk",
+        "cover_body": "Korektor znajdziesz na końcu Kształtów. Przeciągnij po skosie przez wydrukowany znak, np. „mf”, a potem napisz na nim swoje „p”. Korektor zakrywa tylko druk, nigdy oznaczenia, a gumka go omija. Usuniesz go z jego karty albo narzędziem Zaznacz.",
         "box_title": "Litery orientacyjne i numery taktów",
         "box_body": "Notatka „W ramce” wygląda jak litera orientacyjna albo numer taktu w nutach: pogrubiona, w prostokącie. Tak samo się drukuje.",
         "link_title": "Skok w inne miejsce",
@@ -316,7 +318,8 @@
       "slur": "Łuk frazy",
       "bracket": "Klamra",
       "wave": "Falka (zwolnij)",
-      "wave_strong": "Mocna falka (mocno zwolnij)"
+      "wave_strong": "Mocna falka (mocno zwolnij)",
+      "cover": "Korektor (zakryj druk)"
     },
     "mark": {
       "audience": "Kto to widzi",
@@ -334,7 +337,8 @@
         "slur": "Łuk",
         "bracket": "Klamra",
         "wave": "Falka",
-        "wave_strong": "Mocna falka"
+        "wave_strong": "Mocna falka",
+        "cover": "Korektor"
       }
     },
     "selection": {

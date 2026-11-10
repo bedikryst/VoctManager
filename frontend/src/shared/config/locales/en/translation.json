@@ -118,6 +118,8 @@
         "select_body": "With Select, draw a loop round the markings or tap them one by one. A single tap also selects a single line or shape. Move a selection by dragging its frame or with the arrow keys. On the card you can recolour it, duplicate it, copy it to another page of this piece or delete it. One Undo takes back each of these.",
         "shapes_title": "Hairpins, slur and bracket",
         "shapes_body": "Pick them under Shapes and drag from the start of the phrase to its end. Drawn left to right, the slur bows upward and the bracket's hooks point down, as above a stave; drawn right to left, both turn over.",
+        "cover_title": "Cover the print",
+        "cover_body": "The cover is the last of the Shapes. Drag diagonally across a printed sign, such as an \"mf\", then write your own \"p\" on it. A cover hides only the print, never a marking, and the eraser passes over it. Remove it from its card or with Select.",
         "box_title": "Rehearsal letters and bar numbers",
         "box_body": "A “Boxed” note looks like a rehearsal letter or a bar number in the score: bold, in a rectangle. It prints the same way.",
         "link_title": "A jump to another place",
@@ -307,7 +309,8 @@
       "slur": "Slur or phrase mark",
       "bracket": "Bracket",
       "wave": "Wavy line (slow down)",
-      "wave_strong": "Deep wavy line (slow down a lot)"
+      "wave_strong": "Deep wavy line (slow down a lot)",
+      "cover": "Cover (hide the print)"
     },
     "mark": {
       "audience": "Who sees this",
@@ -325,7 +328,8 @@
         "slur": "Slur",
         "bracket": "Bracket",
         "wave": "Wavy line",
-        "wave_strong": "Deep wavy line"
+        "wave_strong": "Deep wavy line",
+        "cover": "Cover"
       }
     },
     "selection": {

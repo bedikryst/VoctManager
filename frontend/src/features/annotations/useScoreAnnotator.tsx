@@ -58,6 +58,7 @@ import { isEditableTarget } from "@/shared/lib/dom/editableTarget";
 import type {
   PdfPageApi,
   PdfPageGeometry,
+  PdfPageRegion,
 } from "@/shared/ui/composites/PdfViewer";
 
 import { AnnotationOverlay, type LinkStart } from "./components/AnnotationOverlay";
@@ -924,6 +925,17 @@ export const useScoreAnnotator = ({
       if (frame && frame.edition !== activeEditionId) return null;
 
       const [left, top, width, height] = frame?.box ?? [0, 0, 1, 1];
+      // The page's pixels, asked for in the edition's frame like everything else.
+      const read = geometry.readPixels;
+      const readPixels =
+        read &&
+        ((region: PdfPageRegion) =>
+          read({
+            x: left + region.x * width,
+            y: top + region.y * height,
+            w: region.w * width,
+            h: region.h * height,
+          }));
       const surface = (
         <AnnotationOverlay
           // One surface per page: a line half-drawn or a note half-written when
@@ -936,6 +948,7 @@ export const useScoreAnnotator = ({
             width: geometry.width * width,
             height: geometry.height * height,
             scale: geometry.scale,
+            readPixels,
           }}
           annotations={annotations}
           visibleLayers={visibleLayers}

@@ -1,8 +1,15 @@
 /**
  * @file MarkLayer.tsx
- * @description The finished ink on one page: highlighter and pen strokes, the
- * invisible bands that make a stroke touchable, and the gold washes for what is
- * new and what is selected.
+ * @description The finished ink on one page: covers, highlighter and pen
+ * strokes, the invisible bands that make a stroke touchable, and the gold washes
+ * for what is new and what is selected.
+ *
+ * Covers ("Korektor") come first, straight on the page, so they hide the print
+ * and never a mark: a singer's cover cannot hide the conductor's shared ink,
+ * and hiding a layer brings the printed original back. A cover is invisible on
+ * white paper, so while a tool that changes covers is in hand each one this
+ * reader may change wears a dashed hairline (`outlined`). Its washes are drawn
+ * with it, under the strokes, so a gold wash never tints ink lying over it.
  *
  * Memoised, and so is every stroke in it, because the page re-renders for
  * reasons that are not ink — a card opening, a note being dragged, a selection
@@ -21,10 +28,12 @@
 import React, { memo } from "react";
 
 import type {
+  CoverMark,
   FreehandPayload,
   ScoreAnnotation,
   StrokeMark,
 } from "../types/annotations.dto";
+import { coverRect } from "../lib/covers";
 import { highlightOpacity } from "../lib/palette";
 import { buildSmoothPath } from "../lib/smoothing";
 
@@ -42,6 +51,10 @@ const SELECTION_HALO_OPACITY = 0.45;
 /** The "new since your last visit" wash: wider than the selection, and fainter. */
 const NEW_HALO_PX = 8;
 const NEW_HALO_OPACITY = 0.22;
+/** A cover without a paper tone of its own: the stand never tints the page. */
+const PAPER_WHITE = "#ffffff";
+/** The dashed hairline a cover wears while it can be changed. */
+const COVER_OUTLINE_DASH = "4 3";
 
 /** The two properties a selection drag writes on the overlay's surface. */
 export const CARRY_X = "--carry-x";
@@ -144,14 +157,75 @@ const StrokeInk = memo(function StrokeInk({
   );
 });
 
+interface CoverPaperProps {
+  mark: CoverMark;
+  width: number;
+  height: number;
+  /** A tap on the paper opens the cover's card: browsing, and this reader may change it. */
+  touchable: boolean;
+  outlined: boolean;
+  carried: boolean;
+  onActivate: (mark: ScoreAnnotation) => void;
+}
+
+const CoverPaper = memo(function CoverPaper({
+  mark,
+  width,
+  height,
+  touchable,
+  outlined,
+  carried,
+  onActivate,
+}: CoverPaperProps): React.JSX.Element {
+  const box = coverRect(mark.payload, width, height);
+  return (
+    <g style={carried ? { transform: CARRY_TRANSFORM } : undefined}>
+      {/* Hit on the fill, not an outline: the whole paper answers. It is the
+          lowest thing on the page, so every mark above it takes a tap first. */}
+      <rect
+        x={box.left}
+        y={box.top}
+        width={box.width}
+        height={box.height}
+        fill={mark.payload.tone ?? PAPER_WHITE}
+        style={{
+          pointerEvents: touchable ? "fill" : "none",
+          cursor: touchable ? "pointer" : undefined,
+        }}
+        onClick={touchable ? () => onActivate(mark) : undefined}
+      />
+      {outlined && (
+        <rect
+          x={box.left + 0.5}
+          y={box.top + 0.5}
+          width={Math.max(0, box.width - 1)}
+          height={Math.max(0, box.height - 1)}
+          fill="none"
+          className="stroke-ethereal-graphite"
+          strokeOpacity={0.7}
+          strokeWidth={1}
+          strokeDasharray={COVER_OUTLINE_DASH}
+          style={{ pointerEvents: "none" }}
+        />
+      )}
+    </g>
+  );
+});
+
 interface MarkLayerProps {
   /** The page's visible strokes, in stacking order. */
   strokes: readonly StrokeMark[];
+  /** The page's visible covers, drawn under everything else. */
+  covers: readonly CoverMark[];
   /** Page box, in rendered pixels. */
   width: number;
   height: number;
   /** The armed tool acts on strokes (browse, eraser); only then are bands offered. */
   interactive: boolean;
+  /** Browsing: a tap on a cover this reader may change opens its card. */
+  coversInteractive: boolean;
+  /** A tool that changes covers is in hand: the changeable ones wear an outline. */
+  coversOutlined: boolean;
   erasing: boolean;
   canModify: (mark: ScoreAnnotation) => boolean;
   /** Marks drawn as selected: the one card's mark, or the selection's. */
@@ -166,9 +240,12 @@ interface MarkLayerProps {
 
 export const MarkLayer = memo(function MarkLayer({
   strokes,
+  covers,
   width,
   height,
   interactive,
+  coversInteractive,
+  coversOutlined,
   erasing,
   canModify,
   selected,
@@ -177,7 +254,7 @@ export const MarkLayer = memo(function MarkLayer({
   onActivate,
   onErase,
 }: MarkLayerProps): React.JSX.Element {
-  const isCarried = (mark: StrokeMark): boolean => carried?.get(mark.id) === mark;
+  const isCarried = (mark: ScoreAnnotation): boolean => carried?.get(mark.id) === mark;
   // Highlighter first (under the ink), then opaque pen strokes.
   const ordered = [
     ...strokes.filter((mark) => mark.annotation_type === "HL"),
@@ -205,6 +282,29 @@ export const MarkLayer = memo(function MarkLayer({
     />
   );
 
+  /** The same wash laid over a cover and past its edges, as a symbol's lies
+   *  behind it. A band traced on the edge would swallow a small cover whole
+   *  and leave a sliver of paper in the middle. */
+  const coverHalo = (mark: CoverMark, spread: number, opacity: number, key: string) => {
+    const box = coverRect(mark.payload, width, height);
+    return (
+      <rect
+        key={`${key}-${mark.id}`}
+        className="fill-ethereal-gold"
+        x={box.left - spread}
+        y={box.top - spread}
+        width={box.width + spread * 2}
+        height={box.height + spread * 2}
+        rx={spread}
+        fillOpacity={opacity}
+        style={{
+          pointerEvents: "none",
+          transform: isCarried(mark) ? CARRY_TRANSFORM : undefined,
+        }}
+      />
+    );
+  };
+
   return (
     <svg
       width={width}
@@ -218,6 +318,30 @@ export const MarkLayer = memo(function MarkLayer({
       // rectangle into a target and swallowed text selection across all of it.
       style={{ pointerEvents: "none" }}
     >
+      {covers.map((mark) => {
+        const modifiable = canModify(mark);
+        return (
+          <CoverPaper
+            key={mark.id}
+            mark={mark}
+            width={width}
+            height={height}
+            touchable={coversInteractive && modifiable}
+            outlined={coversOutlined && modifiable}
+            carried={isCarried(mark)}
+            onActivate={onActivate}
+          />
+        );
+      })}
+      {newIds.size > 0 &&
+        covers
+          .filter((mark) => newIds.has(mark.id))
+          .map((mark) => coverHalo(mark, NEW_HALO_PX, NEW_HALO_OPACITY, "new"))}
+      {selected.size > 0 &&
+        covers
+          .filter((mark) => selected.has(mark.id))
+          .map((mark) => coverHalo(mark, SELECTION_HALO_PX, SELECTION_HALO_OPACITY, "halo"))}
+
       {ordered.map((mark) => (
         <StrokeInk
           key={mark.id}

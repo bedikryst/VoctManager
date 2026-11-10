@@ -101,6 +101,25 @@ def highlight_print_ink(value: str) -> str:
     return ink.print_value if ink else value
 
 
+#: The darkest channel a cover's paper tone may have. A scanned page is grey or
+#: cream, never darker than this; a darker "tone" is a black box over the music,
+#: which a cover must never become.
+PAPER_TONE_FLOOR = 0xC0
+
+
+def paper_tone(value: object) -> str:
+    """A cover's paper colour as ``#RRGGBB``, or '' for anything that is not a
+    light paper: not a six-digit hex, or a channel below the floor."""
+    text = _canonical(value)
+    if len(text) != 7 or not text.startswith("#"):
+        return ""
+    try:
+        channels = [int(text[i:i + 2], 16) for i in (1, 3, 5)]
+    except ValueError:
+        return ""
+    return text if min(channels) >= PAPER_TONE_FLOOR else ""
+
+
 def is_reserved_ink(value: object) -> bool:
     """Whether this ink may only be written by a manager. An unknown colour is
     not reserved — it is simply not writable, which the serializer says first."""
@@ -112,10 +131,12 @@ __all__ = [
     "DEFAULT_INK",
     "HIGHLIGHTER",
     "PALETTE",
+    "PAPER_TONE_FLOOR",
     "HighlightInk",
     "Ink",
     "highlight_print_ink",
     "is_highlighter_ink",
     "is_reserved_ink",
     "normalize_ink",
+    "paper_tone",
 ]

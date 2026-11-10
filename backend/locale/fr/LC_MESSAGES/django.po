@@ -6076,6 +6076,10 @@ msgstr ""
 "Les nouvelles annotations ne concernent que les pupitres %(sections)s, et "
 "personne de ces pupitres dans la distribution ne peut encore être prévenu."
 
+#: backend/archive/models.py:667
+msgid "Cover"
+msgstr "Correcteur"
+
 #~ msgid "Review the request"
 #~ msgstr "Examiner la demande"
 

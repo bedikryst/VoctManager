@@ -106,6 +106,7 @@ import {
   type StampGroupId,
 } from "../lib/stamps";
 import { SHAPE_KINDS, type ShapeKind } from "../lib/shapes";
+import { COVER_SHAPE } from "../lib/covers";
 import { useMeasuredWidth } from "../lib/useMeasuredWidth";
 import { layerTakesVoices } from "../lib/voices";
 import type { DelegateLayer, ScoreAnnotatorMode } from "../useScoreAnnotator";
@@ -207,6 +208,23 @@ const drawnShapeIcon = (d: string): ShapeIcon => {
   return DrawnShapeIcon;
 };
 
+/** Paper with the dashed hairline a cover wears while it can be changed. */
+const CoverIcon = ({ size = 24 }: { size?: number }): React.JSX.Element => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth={2}
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden="true"
+  >
+    <rect x="3" y="7" width="18" height="10" fill="currentColor" fillOpacity={0.35} strokeDasharray="3 3" />
+  </svg>
+);
+
 /** The line is drawn slanted: it rules itself level or plumb only near those
  *  angles, and a free diagonal is how a note gets crossed out. */
 const SHAPE_ICONS: Record<ShapeKind, ShapeIcon> = {
@@ -220,6 +238,7 @@ const SHAPE_ICONS: Record<ShapeKind, ShapeIcon> = {
   bracket: drawnShapeIcon("M3 15 L3 8 L21 8 L21 15"),
   wave: drawnShapeIcon("M2 12 Q5 9 8 12 T14 12 T20 12"),
   wave_strong: drawnShapeIcon("M2 12 Q5 4 8 12 T14 12 T20 12"),
+  cover: CoverIcon,
 };
 
 /** A tool's name with the key that arms it, for its tooltip. */
@@ -423,7 +442,10 @@ export const AnnotationToolbar = ({
   const swatches = marking ? highlightInks : inks;
   const swatchColor = marking ? highlightColor : color;
   const pickSwatch = marking ? setHighlightColor : setColor;
-  const showSize = armedTool === "pen" || armedTool === "highlighter" || armedTool === "shape";
+  const drawsByHand = armedTool === "pen" || armedTool === "highlighter" || armedTool === "shape";
+  // A cover is paper: no ink to pick and no line to weigh, only the drag.
+  const covering = armedTool === "shape" && shape === COVER_SHAPE;
+  const showSize = drawsByHand && !covering;
   const showShapes = armedTool === "shape";
   const showNoteMode = armedTool === "note";
   const showStamps = armedTool === "stamp";
@@ -828,7 +850,7 @@ export const AnnotationToolbar = ({
           on by itself), but always overridable — a reader whose "stylus"
           is a rubber-tipped stick reports as a finger and would otherwise
           be left with a pencil that draws nothing. */}
-      {showSize && (
+      {drawsByHand && (
         <div
           className="flex items-center gap-1"
           role="group"
@@ -892,7 +914,7 @@ export const AnnotationToolbar = ({
         </div>
       )}
 
-      {showInk && (
+      {showInk && !covering && (
         <div className="flex flex-col gap-1.5">
           <div
             className="flex flex-wrap items-center gap-1.5"

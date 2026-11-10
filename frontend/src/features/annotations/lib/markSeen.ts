@@ -22,6 +22,7 @@ import { ANNOTATIONS_ENDPOINT } from "./pendingMarks";
 import { getStampDef } from "./stamps";
 import {
   isComment,
+  isCover,
   isLink,
   isStamp,
   isStroke,
@@ -65,6 +66,7 @@ export const isDrawnHere = (mark: ScoreAnnotation): boolean =>
   isStroke(mark) ||
   isComment(mark) ||
   isLink(mark) ||
+  isCover(mark) ||
   (isStamp(mark) && getStampDef(mark.payload.symbol) !== undefined);
 
 /** Whether the mark says something later than `since` (an instant). */

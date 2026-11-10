@@ -10,9 +10,9 @@
 
 /**
  * Backend `Annotation.annotation_type` codes. FH ink · HL highlighter · CM note ·
- * ST musical stamp · LK jump link.
+ * ST musical stamp · LK jump link · CV cover.
  */
-export type AnnotationKind = "FH" | "CM" | "HL" | "ST" | "LK";
+export type AnnotationKind = "FH" | "CM" | "HL" | "ST" | "LK" | "CV";
 
 /**
  * `shared` markings are pushed to every chorister cast in a live project that
@@ -93,7 +93,28 @@ export interface LinkPayload {
   target_y: number;
 }
 
-export type AnnotationPayload = FreehandPayload | CommentPayload | StampPayload | LinkPayload;
+/**
+ * A cover (CV, "Korektor"): a rectangle of paper over the print, top-left
+ * corner and size, so a printed sign can be replaced cleanly. It hides the
+ * engraving and never another mark: every renderer draws covers first. Its
+ * colour is not the writer's (the server stores the default ink); `tone` is the
+ * paper's own colour, read round the box when it was placed or moved, so a
+ * cover on a cream scan is not a white patch. Missing ⇒ white.
+ */
+export interface CoverPayload {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  tone?: string;
+}
+
+export type AnnotationPayload =
+  | FreehandPayload
+  | CommentPayload
+  | StampPayload
+  | LinkPayload
+  | CoverPayload;
 
 /**
  * A mark's kind and the payload that kind carries, as one discriminated pair:
@@ -107,7 +128,8 @@ export type MarkContent =
   | { annotation_type: "HL"; payload: FreehandPayload }
   | { annotation_type: "CM"; payload: CommentPayload }
   | { annotation_type: "ST"; payload: StampPayload }
-  | { annotation_type: "LK"; payload: LinkPayload };
+  | { annotation_type: "LK"; payload: LinkPayload }
+  | { annotation_type: "CV"; payload: CoverPayload };
 
 /** What a writer decides about a new mark; the edition and the identity come later. */
 export type MarkDraft = MarkContent & {
@@ -142,6 +164,7 @@ export type HighlightMark = ScoreAnnotation & { annotation_type: "HL" };
 export type CommentMark = ScoreAnnotation & { annotation_type: "CM" };
 export type StampMark = ScoreAnnotation & { annotation_type: "ST" };
 export type LinkMark = ScoreAnnotation & { annotation_type: "LK" };
+export type CoverMark = ScoreAnnotation & { annotation_type: "CV" };
 /** Ink and highlighter: one payload, and every rule that draws or moves one. */
 export type StrokeMark = FreehandMark | HighlightMark;
 
@@ -244,6 +267,8 @@ export const markContent = (a: MarkContent): MarkContent => {
       return { annotation_type: "ST", payload: a.payload };
     case "LK":
       return { annotation_type: "LK", payload: a.payload };
+    case "CV":
+      return { annotation_type: "CV", payload: a.payload };
   }
 };
 
@@ -267,3 +292,10 @@ export const isLink = (a: ScoreAnnotation): a is LinkMark =>
   typeof a.payload?.target_page === "number" &&
   typeof a.payload.x === "number" &&
   typeof a.payload.y === "number";
+
+export const isCover = (a: ScoreAnnotation): a is CoverMark =>
+  a.annotation_type === "CV" &&
+  typeof a.payload?.x === "number" &&
+  typeof a.payload.y === "number" &&
+  typeof a.payload.w === "number" &&
+  typeof a.payload.h === "number";

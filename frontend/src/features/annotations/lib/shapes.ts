@@ -11,6 +11,10 @@
  * The payload carries the shape's name (`shape`) only so that a card can call a
  * hairpin a hairpin; the server keeps the name and print ignores it.
  *
+ * The one exception is the cover ("Korektor"), last in the picker: it is drawn
+ * by the same drag, but it is paper, not ink, and lands as a mark of its own
+ * (`CV`, see `lib/covers`). It has no paths here.
+ *
  * What makes the result read as ruled rather than hand-drawn is how it is cut
  * into paths. Both renderers (the editor's `buildSmoothPath` and the print
  * mirror's `_smooth_path`) draw a two-point path as a straight segment and pass
@@ -45,7 +49,8 @@ export type ShapeKind =
   | "slur"
   | "bracket"
   | "wave"
-  | "wave_strong";
+  | "wave_strong"
+  | "cover";
 
 interface ShapeDef {
   kind: ShapeKind;
@@ -128,6 +133,13 @@ export const SHAPE_KINDS: ReadonlyArray<ShapeDef> = [
     fallback: "Mocna falka (mocno zwolnij)",
     markKey: "annotations.mark.kind.wave_strong",
     markFallback: "Mocna falka",
+  },
+  {
+    kind: "cover",
+    labelKey: "annotations.shapes.cover",
+    fallback: "Korektor (zakryj druk)",
+    markKey: "annotations.mark.kind.cover",
+    markFallback: "Korektor",
   },
 ];
 
@@ -324,5 +336,7 @@ export const buildShapePaths = (
       }
       return [ring];
     }
+    case "cover":
+      return [];
   }
 };

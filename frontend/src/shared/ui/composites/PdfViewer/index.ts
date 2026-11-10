@@ -13,6 +13,8 @@ export type {
   PdfViewerProps,
   PdfViewerEvent,
   PdfPageGeometry,
+  PdfPageRegion,
+  PdfPagePixels,
   PdfPageApi,
   FitMode,
   PdfKeyScope,

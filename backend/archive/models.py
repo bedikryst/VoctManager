@@ -661,6 +661,10 @@ class AnnotationType(models.TextChoices):
     # A jump the reader taps (D.S., a coda, a repeat across a turn). It moves the
     # stand and says nothing on paper, so print and the cockpit's census skip it.
     LINK      = 'LK', _('Jump link')
+    # A rectangle of paper over the print ("Korektor"), so a printed sign can be
+    # replaced cleanly. It hides the engraving, never another mark: every
+    # renderer draws covers first, under everything else.
+    COVER     = 'CV', _('Cover')
 
 
 # Well-known annotation layers. `layer_name` stays a free CharField (ad-hoc

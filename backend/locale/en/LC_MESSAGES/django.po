@@ -4622,6 +4622,10 @@ msgid ""
 " from them can receive this yet."
 msgstr ""
 
+#: backend/archive/models.py:667
+msgid "Cover"
+msgstr ""
+
 #~ msgid ""
 #~ "%(artist)s is asking to be excused from a run of rehearsals. The dates are "
 #~ "below — approve or decline them in the panel."

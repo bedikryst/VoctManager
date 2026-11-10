@@ -118,6 +118,8 @@
         "select_body": "Avec l’outil Sélection, entourez les annotations d’une boucle ou touchez-les une à une. Un seul toucher sélectionne aussi un trait ou une forme isolés. Déplacez la sélection en faisant glisser son cadre ou avec les flèches du clavier. Sur la carte, vous pouvez changer sa couleur, la dupliquer, la copier sur une autre page de cette œuvre ou la supprimer. Un seul « Annuler » défait chacune de ces actions.",
         "shapes_title": "Soufflets, liaison et crochet",
         "shapes_body": "Choisissez-les dans Formes et faites glisser du début à la fin de la phrase. De gauche à droite, la liaison se courbe vers le haut et le crochet a ses extrémités vers le bas, comme au-dessus d’une portée ; de droite à gauche, les deux se retournent.",
+        "cover_title": "Masquer l’imprimé",
+        "cover_body": "Le correcteur est la dernière des Formes. Faites glisser en diagonale sur un signe imprimé, par exemple un « mf », puis écrivez dessus votre propre « p ». Le correcteur ne masque que l’imprimé, jamais une annotation, et la gomme passe dessus sans l’effacer. Supprimez-le depuis sa carte ou avec Sélection.",
         "box_title": "Lettres de repère et numéros de mesure",
         "box_body": "Une note « Encadré » ressemble à une lettre de repère ou à un numéro de mesure dans la partition : en gras, dans un rectangle. Elle s’imprime de la même façon.",
         "link_title": "Un saut vers un autre endroit",
@@ -307,7 +309,8 @@
       "slur": "Liaison ou phrasé",
       "bracket": "Crochet",
       "wave": "Ligne ondulée (ralentir)",
-      "wave_strong": "Ligne ondulée profonde (ralentir beaucoup)"
+      "wave_strong": "Ligne ondulée profonde (ralentir beaucoup)",
+      "cover": "Correcteur (masquer l’imprimé)"
     },
     "mark": {
       "audience": "Qui le voit",
@@ -325,7 +328,8 @@
         "slur": "Liaison",
         "bracket": "Crochet",
         "wave": "Ligne ondulée",
-        "wave_strong": "Ligne ondulée profonde"
+        "wave_strong": "Ligne ondulée profonde",
+        "cover": "Correcteur"
       }
     },
     "selection": {

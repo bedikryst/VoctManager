@@ -6037,6 +6037,10 @@ msgstr ""
 "Nowe uwagi są tylko dla sekcji %(sections)s, a nikt z obsady w tych sekcjach"
 " nie może jeszcze dostać powiadomienia."
 
+#: backend/archive/models.py:667
+msgid "Cover"
+msgstr "Korektor"
+
 #~ msgid "Review the request"
 #~ msgstr "Rozpatrz prośbę"
 

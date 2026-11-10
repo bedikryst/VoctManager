@@ -587,6 +587,53 @@ class SanitizerTests(_MarksFixture):
         self.assertEqual(self._link(target_page=True).status_code, 400)
         self.assertEqual(self._link(target_page=2.0).status_code, 201)
 
+    def _cover(self, **overrides):
+        payload = {"x": 0.2, "y": 0.3, "w": 0.1, "h": 0.05}
+        return self._post(
+            annotation_type=AnnotationType.COVER,
+            payload={**payload, **overrides.pop("payload", {})},
+            **overrides,
+        )
+
+    def test_a_cover_stays_on_the_page_and_never_shrinks_to_nothing(self) -> None:
+        response = self._cover(payload={"x": 0.95, "y": -0.2, "w": 0.3, "h": 0, "stray": 1})
+        self.assertEqual(response.status_code, 201, response.content)
+        payload = response.json()["payload"]
+        self.assertEqual(set(payload), {"x", "y", "w", "h"})
+        self.assertAlmostEqual(payload["x"] + payload["w"], 1.0)
+        self.assertEqual(payload["y"], 0.0)
+        self.assertGreater(payload["h"], 0)
+        self.assertEqual(self._cover(payload={"w": "wide"}).status_code, 400)
+
+    def test_a_cover_is_paper_whatever_ink_it_arrives_in(self) -> None:
+        blue = self._cover(color="#2563EB")
+        self.assertEqual(blue.status_code, 201, blue.content)
+        self.assertEqual(blue.json()["color"], _PENCIL)
+        # A highlighter colour would be refused on any other mark.
+        yellow = self._cover(color="#FFE14D")
+        self.assertEqual(yellow.status_code, 201, yellow.content)
+        recoloured = self.client.patch(
+            f"{_ENDPOINT}{blue.json()['id']}/", {"color": "#15803D"}, format="json",
+        )
+        self.assertEqual(recoloured.json()["color"], _PENCIL)
+
+    def test_a_cover_keeps_a_light_paper_tone_and_drops_any_other(self) -> None:
+        cream = self._cover(payload={"tone": "#f4ecd8"})
+        self.assertEqual(cream.json()["payload"]["tone"], "#F4ECD8")
+        for stray in ("#1F2933", "#F4ECD", "cream", 255, "#F4ECD8AA"):
+            response = self._cover(payload={"tone": stray})
+            self.assertEqual(response.status_code, 201, response.content)
+            self.assertNotIn("tone", response.json()["payload"], stray)
+
+    def test_moving_a_cover_is_not_news(self) -> None:
+        cover = self._cover().json()
+        moved = self.client.patch(
+            f"{_ENDPOINT}{cover['id']}/",
+            {"payload": {**cover["payload"], "x": 0.5}}, format="json",
+        )
+        self.assertEqual(moved.status_code, 200, moved.content)
+        self.assertEqual(moved.json()["content_at"], cover["content_at"])
+
     def test_retargeting_a_jump_link_is_news_and_moving_it_is_not(self) -> None:
         link = self._link().json()
         stamped = link["content_at"]

@@ -38,7 +38,7 @@ import { placeNoteCard } from "../lib/noteCardPlacement";
 import { useMeasuredHeight } from "../lib/useMeasuredHeight";
 import { isPrivateLayer, layerOf, type WriteLayer } from "../lib/layers";
 import type { AnnotationInk } from "../lib/palette";
-import type { ScoreAnnotation } from "../types/annotations.dto";
+import { isCover, type ScoreAnnotation } from "../types/annotations.dto";
 
 /** A box on the page, in rendered pixels. */
 export interface PageFrame {
@@ -107,12 +107,17 @@ export const SelectionCard = ({
   const layers = new Set(marks.map(layerOf));
   const commonLayer = layers.size === 1 ? [...layers][0] : null;
   const mixesPrivate = layers.size > 1 && marks.some(isPrivateLayer);
-  const commonInk = marks.every((mark) => sameInk(mark.color, marks[0].color))
-    ? marks[0].color
-    : null;
-  const highlights = marks.filter((mark) => mark.annotation_type === "HL").length;
-  const mixesPalettes = highlights > 0 && highlights < marks.length;
-  const swatches = highlights === marks.length ? highlightInks : inks;
+  // A cover's colour is the paper's, so the colour row speaks for the rest;
+  // a selection of covers alone has none.
+  const inked = marks.filter((mark) => !isCover(mark));
+  const commonInk =
+    inked.length > 0 && inked.every((mark) => sameInk(mark.color, inked[0].color))
+      ? inked[0].color
+      : null;
+  const highlights = inked.filter((mark) => mark.annotation_type === "HL").length;
+  const mixesPalettes = highlights > 0 && highlights < inked.length;
+  const swatches =
+    inked.length === 0 ? [] : highlights === inked.length ? highlightInks : inks;
 
   const reach = frame.height / 2 + CARD_CLEARANCE;
   const placement = placeNoteCard({

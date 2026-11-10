@@ -331,6 +331,27 @@ class PrintTranslationTests(SimpleTestCase):
         # y grows downward in this frame, so "lower on the page" is a larger y.
         self.assertAlmostEqual(float(start.group(2)), swept_y + band_pt / 2, places=1)
 
+    def test_a_cover_prints_as_paper_under_every_other_mark(self) -> None:
+        cover = PrintMark("CV", {"x": 0.2, "y": 0.4, "w": 0.1, "h": 0.05}, "#1F2933", True)
+        ink = PrintMark("FH", {"paths": [[[0.2, 0.42], [0.3, 0.42]]], "width": 0.004},
+                        "#DC2626", True)
+        band = PrintMark("HL", {"paths": [[[0.2, 0.42], [0.3, 0.42]]], "width": 0.021},
+                         "#FFE14D", False)
+        # Drawn last in the list, painted first on the sheet.
+        markup = score_markings._render_page([(ink, _BOX), (band, _BOX), (cover, _BOX)])
+        rect = markup.index("<rect")
+        self.assertLess(rect, markup.index('stroke="#DC2626"'))
+        self.assertLess(rect, markup.index('stroke="#A16207"'))
+        self.assertIn('fill="#FFFFFF"', markup)
+        self.assertIn(f'width="{0.1 * _BOX[2]:.2f}"', markup)
+
+    def test_a_cover_prints_in_its_paper_tone_and_never_in_a_dark_one(self) -> None:
+        geometry = {"x": 0.2, "y": 0.4, "w": 0.1, "h": 0.05}
+        cream = self._page(PrintMark("CV", {**geometry, "tone": "#F4ECD8"}, "#1F2933", False))
+        self.assertIn('fill="#F4ECD8"', cream)
+        dark = self._page(PrintMark("CV", {**geometry, "tone": "#000000"}, "#1F2933", False))
+        self.assertIn('fill="#FFFFFF"', dark)
+
     def test_a_highlighter_colour_underlines_in_its_darker_sibling(self) -> None:
         # Yellow on paper is an underline nobody sees; an ink prints as itself.
         payload = {"paths": [[[0.2, 0.5], [0.6, 0.5]]], "width": 0.021}
@@ -824,4 +845,6 @@ class StampParityTests(SimpleTestCase):
             / "frontend" / "src" / "features" / "annotations" / "lib" / "shapes.ts"
         )
         kinds = set(re.findall(r'kind:\s*"([a-z_]+)"', tsx.read_text(encoding="utf-8")))
-        self.assertEqual(kinds, set(_INK_SHAPES))
+        # The cover is in the picker but lands as a mark of its own, never as ink.
+        self.assertIn("cover", kinds)
+        self.assertEqual(kinds - {"cover"}, set(_INK_SHAPES))

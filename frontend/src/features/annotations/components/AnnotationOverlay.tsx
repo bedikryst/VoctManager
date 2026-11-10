@@ -41,6 +41,11 @@
  * A jump link is the one mark a tap does not open: while browsing, a tap
  * follows it. It is placed with two taps through `onLinkTap`, whose first end
  * the stand holds across page turns (`linkStart`).
+ *
+ * A cover ("Korektor", the shape picker's last entry) is paper laid over the
+ * print by the shape tool's drag. It lies under every mark, so it loses every
+ * contest: a tap takes any mark above it first, the eraser passes over it, and
+ * it is removed through its card or a selection (`lib/covers`).
  * @module features/annotations/components
  */
 
@@ -74,6 +79,7 @@ import {
 import { SelectionCard, type PageFrame } from "./SelectionCard";
 import {
   isComment,
+  isCover,
   isLink,
   isStamp,
   isStroke,
@@ -99,6 +105,8 @@ import { isPrivateLayer, layerOf, type WriteLayer } from "../lib/layers";
 import { highlightOpacity, type AnnotationInk } from "../lib/palette";
 import { getStampDef, STAMP_FACE_STYLE, StampGlyph } from "../lib/stamps";
 import { buildShapePaths, type ShapeKind } from "../lib/shapes";
+import { COVER_INK, COVER_SHAPE, coverFromDrag, isOnCover } from "../lib/covers";
+import { tonedContent, withPaperTone } from "../lib/paperTone";
 import { distanceToStroke, isInLoop, markBounds, strokeBounds } from "../lib/markBounds";
 import {
   clampShift,
@@ -232,6 +240,7 @@ export interface LinkStart {
 const clamp01 = (value: number): number => Math.min(1, Math.max(0, value));
 
 const NO_IDS: ReadonlySet<string> = new Set();
+const NO_INKS: readonly AnnotationInk[] = [];
 /** Names a placed mark's wrapper by its id (`data-mark-id`), so a tap can be matched to it. */
 const MARK_ID_ATTR = "data-mark-id";
 /** Slack round a placed mark a selection tap still counts as on it. */
@@ -309,7 +318,7 @@ export const AnnotationOverlay = ({
 }: AnnotationOverlayProps): React.JSX.Element => {
   const { t } = useTranslation();
   const immersive = usePdfImmersive();
-  const { width, height, pageNumber } = geometry;
+  const { width, height, pageNumber, readPixels } = geometry;
   const surfaceRef = useRef<HTMLDivElement | null>(null);
   const liveRef = useRef<LiveStrokeHandle | null>(null);
   const [pendingNote, setPendingNote] = useState<{ x: number; y: number } | null>(null);
@@ -325,6 +334,7 @@ export const AnnotationOverlay = ({
     [annotations, pageNumber, visibleLayers],
   );
   const pageStrokes = useMemo(() => pageAnnotations.filter(isStroke), [pageAnnotations]);
+  const pageCovers = useMemo(() => pageAnnotations.filter(isCover), [pageAnnotations]);
 
   // The line just lifted stays on screen as drawn until its mark is among the
   // marks (see `LiveStrokeLayer`); then it goes in the same commit, before paint.
@@ -341,6 +351,8 @@ export const AnnotationOverlay = ({
   const { drawing, shaping, selecting, placing, stamping, linking, erasing, browsing } =
     surfaceModes(tool, canEdit);
   const tracing = drawing || selecting;
+  /** "Korektor": the shape tool's drag lays paper over the print instead of ink. */
+  const covering = shaping && shape === COVER_SHAPE;
   const surfaceInteractive = tracing || placing || stamping || linking;
   /**
    * Modes in which an EXISTING mark answers to a touch — tap to open, drag to
@@ -538,9 +550,15 @@ export const AnnotationOverlay = ({
   /**
    * The mark this reader may change under a tap, topmost first: a placed mark
    * (measured on screen, where its glyph or words actually sit), then the pen
-   * stroke nearest the point, then the highlighter.
+   * stroke nearest the point, then the highlighter, and a cover last, by its
+   * paper, the topmost of those under the point. The eraser asks without
+   * covers: rubbing out the word written over one must not bring the print
+   * back.
    */
-  const markAt = ([x, y]: NormPoint): ScoreAnnotation | undefined => {
+  const markAt = (
+    [x, y]: NormPoint,
+    { covers }: { covers: boolean },
+  ): ScoreAnnotation | undefined => {
     const candidates = pageAnnotations.filter((a) => canModify(a));
     const byId = new Map(candidates.map((a) => [a.id, a]));
     const surface = surfaceRef.current;
@@ -574,12 +592,16 @@ export const AnnotationOverlay = ({
         best = { mark, distance, pen };
       }
     }
-    return best?.mark;
+    if (best || !covers) return best?.mark;
+    return candidates
+      .filter(isCover)
+      .reverse()
+      .find((mark) => isOnCover(mark.payload, [x, y]));
   };
 
   /** A tap with "Zaznacz": add the mark under it, or take it out; blank paper clears. */
   const toggleAt = (point: NormPoint): void => {
-    const hit = markAt(point);
+    const hit = markAt(point, { covers: true });
     setPicked((current) => {
       if (!hit) return NO_IDS;
       const next = new Set(current);
@@ -611,6 +633,20 @@ export const AnnotationOverlay = ({
       heldStrokeRef.current = id;
       liveRef.current?.hold(points);
     };
+    if (covering) {
+      const cover = coverFromDrag(points[0], points[points.length - 1], width, height);
+      if (!cover) return;
+      holdUntilDrawn(
+        onCreate({
+          page_number: pageNumber,
+          annotation_type: "CV",
+          payload: withPaperTone(cover, readPixels, width, height),
+          color: COVER_INK,
+          layer_name: layer,
+        }),
+      );
+      return;
+    }
     if (shaping) {
       const paths = buildShapePaths(shape, points[0], points[1], width, height);
       if (paths.length === 0) return;
@@ -680,7 +716,7 @@ export const AnnotationOverlay = ({
   const rubbedRef = useRef<Set<string>>(new Set());
   const rubAt = (point: NormPoint, { first }: { first: boolean }): void => {
     if (first) rubbedRef.current = new Set();
-    const hit = markAt(point);
+    const hit = markAt(point, { covers: false });
     if (!hit || rubbedRef.current.has(hit.id)) return;
     rubbedRef.current.add(hit.id);
     onDelete(hit.id);
@@ -776,16 +812,23 @@ export const AnnotationOverlay = ({
   }, [height, selection, width]);
   const frameCarried = carried !== null && selection.some(isCarried);
 
-  /** Write a move of these rows as one step: one request per mark, one undo. */
+  /** Write a move of these rows as one step: one request per mark, one undo.
+   *  A moved cover takes the paper's tone where it lands. */
   const writeMove = (rows: readonly ScoreAnnotation[], shift: PageShift): void => {
     onUpdateMany(
       rows.map((a) => ({
         id: a.id,
         before: { payload: a.payload },
-        after: { payload: shiftedContent(a, shift).payload },
+        after: {
+          payload: tonedContent(shiftedContent(a, shift), readPixels, width, height).payload,
+        },
       })),
     );
   };
+
+  /** Copies of marks written onto this page, each cover toned where it lands. */
+  const writeCopies = (drafts: readonly MarkDraft[]): string[] =>
+    onCreateMany(drafts.map((draft) => tonedContent(draft, readPixels, width, height)));
 
   /** Write the nudge the arrow keys have built up. The rows stay carried until
    *  their moved selves arrive, as after a drag. */
@@ -922,10 +965,11 @@ export const AnnotationOverlay = ({
     writeMove(drag.rows, drag.shift);
   };
 
+  // A cover is paper: a recolour of the marks round it passes it by.
   const recolorSelection = (next: string): void => {
     onUpdateMany(
       selection
-        .filter((a) => a.color.toLowerCase() !== next.toLowerCase())
+        .filter((a) => !isCover(a) && a.color.toLowerCase() !== next.toLowerCase())
         .map((a) => ({ id: a.id, before: { color: a.color }, after: { color: next } })),
     );
   };
@@ -967,7 +1011,7 @@ export const AnnotationOverlay = ({
   })();
   const duplicateSelection = (): void => {
     const shift = duplicateShift(selection, width, height);
-    setPicked(new Set(onCreateMany(copyDrafts(selection, pageNumber, shift, inks))));
+    setPicked(new Set(writeCopies(copyDrafts(selection, pageNumber, shift, inks))));
   };
 
   const copySelection = (): void => {
@@ -1004,7 +1048,7 @@ export const AnnotationOverlay = ({
     const steps = earlier + (clipboard.page === pageNumber ? 1 : 0);
     const shift =
       steps > 0 ? duplicateShift(clipboard.marks, width, height, steps) : { dx: 0, dy: 0 };
-    setPicked(new Set(onCreateMany(copyDrafts(clipboard.marks, pageNumber, shift, inks))));
+    setPicked(new Set(writeCopies(copyDrafts(clipboard.marks, pageNumber, shift, inks))));
   };
 
   // --- Reposition an existing stamp / note (browse mode, own marks only) -----
@@ -1139,7 +1183,13 @@ export const AnnotationOverlay = ({
         ? `translate(-50%, -50%) ${CARRY_TRANSFORM}`
         : "translate(-50%, -50%)";
 
-  const liveLook = selecting ? "loop" : tool === "highlighter" ? "highlight" : "ink";
+  const liveLook = selecting
+    ? "loop"
+    : covering
+      ? "cover"
+      : tool === "highlighter"
+        ? "highlight"
+        : "ink";
   const liveWidth = drawing
     ? Math.max(
         tool === "highlighter" ? 4 : 1.5,
@@ -1148,6 +1198,20 @@ export const AnnotationOverlay = ({
     : 1.5;
   const showPaste =
     selecting && clipboard !== null && clipboard.marks.length > 0 && selection.length === 0;
+
+  // A cover being drawn lies where the finished one will: under every mark.
+  const liveLayer = tracing && (
+    <LiveStrokeLayer
+      ref={liveRef}
+      width={width}
+      height={height}
+      look={liveLook}
+      color={tool === "highlighter" ? highlightColor : color}
+      strokeWidth={liveWidth}
+      shape={shaping && !covering ? shape : null}
+      highlightOpacity={highlightOpacity(highlightColor)}
+    />
+  );
 
   return (
     // Drawing capture lives on this HTML div (not the SVG): an <svg> with
@@ -1173,11 +1237,18 @@ export const AnnotationOverlay = ({
       }}
       {...surfaceHandlers}
     >
+      {covering && liveLayer}
+
       <MarkLayer
         strokes={pageStrokes}
+        covers={pageCovers}
         width={width}
         height={height}
         interactive={strokesInteractive}
+        coversInteractive={browsing}
+        // Never in performance mode: the outline is for arranging the page,
+        // and the stand on show is the page as the choir reads it.
+        coversOutlined={(covering || selecting) && !immersive}
         erasing={erasing}
         canModify={canModify}
         selected={highlighted}
@@ -1187,18 +1258,7 @@ export const AnnotationOverlay = ({
         onErase={eraseStroke}
       />
 
-      {tracing && (
-        <LiveStrokeLayer
-          ref={liveRef}
-          width={width}
-          height={height}
-          look={liveLook}
-          color={tool === "highlighter" ? highlightColor : color}
-          strokeWidth={liveWidth}
-          shape={shaping ? shape : null}
-          highlightOpacity={highlightOpacity(highlightColor)}
-        />
-      )}
+      {!covering && liveLayer}
 
       {/* Musical stamps — pure display until the eraser targets an erasable one,
           or browse mode lets the owner drag it. */}
@@ -1667,7 +1727,14 @@ export const AnnotationOverlay = ({
           annotation={actionMark}
           width={width}
           height={height}
-          inks={actionMark.annotation_type === "HL" ? highlightInks : inks}
+          // A cover's colour is the paper's, never the writer's.
+          inks={
+            actionMark.annotation_type === "HL"
+              ? highlightInks
+              : isCover(actionMark)
+                ? NO_INKS
+                : inks
+          }
           audiences={audiences}
           onChangeLayer={(next) => moveMarkLayer(actionMark, next)}
           voices={voicesFor(actionMark)}

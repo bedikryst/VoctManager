@@ -32,7 +32,24 @@ export interface PdfPageGeometry {
   width: number;
   height: number;
   scale: number;
+  /**
+   * The rendered page's own pixels inside a region — the document only, never
+   * an overlay drawn over it — or null while the page is not on its canvas.
+   * Read once per gesture, never per frame: it copies pixels off the GPU.
+   */
+  readPixels?: (region: PdfPageRegion) => PdfPagePixels | null;
 }
+
+/** A region of the page, as fractions (0..1) of its box from the top-left. */
+export interface PdfPageRegion {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
+/** Pixels read off the page: RGBA, row by row, as a canvas holds them. */
+export type PdfPagePixels = Pick<ImageData, "data" | "width" | "height">;
 
 /**
  * How the page is sized against the viewport.

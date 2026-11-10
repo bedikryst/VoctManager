@@ -124,6 +124,16 @@ export const shiftedContent = (
           y: pageFraction(annotation.payload.y + dy),
         },
       };
+    // A cover keeps its size; `clampShift` has already held it on the page.
+    case "CV":
+      return {
+        annotation_type: "CV",
+        payload: {
+          ...annotation.payload,
+          x: pageFraction(annotation.payload.x + dx),
+          y: pageFraction(annotation.payload.y + dy),
+        },
+      };
     default:
       return annotation;
   }

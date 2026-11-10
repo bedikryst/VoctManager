@@ -33,7 +33,7 @@ from rest_framework import serializers
 from core.constants import VoiceLine
 from core.voice_labels import voice_line_label
 
-from .annotation_palette import is_highlighter_ink, normalize_ink
+from .annotation_palette import DEFAULT_INK, is_highlighter_ink, normalize_ink, paper_tone
 from .annotation_sizes import (
     DEFAULT_HIGHLIGHT_WIDTH,
     DEFAULT_PEN_WIDTH,
@@ -406,6 +406,9 @@ _INK_SHAPES = frozenset({
     'ellipse', 'rect', 'line', 'arrow', 'cresc', 'dim', 'slur', 'bracket',
     'wave', 'wave_strong',
 })
+# A cover's narrowest side, as a share of the page. A drag along a line would
+# otherwise store a box with no height: a cover nothing can see or tap.
+_MIN_COVER_SIDE = 0.002
 # The stored row as a whole, measured as compact JSON. The per-stroke caps above
 # still let one row reach megabytes; a pen line held for a minute is about a
 # tenth of this.
@@ -561,6 +564,12 @@ class AnnotationSerializer(serializers.ModelSerializer):
             edition = attrs.get('edition', getattr(self.instance, 'edition', None))
             if page_number is not None:
                 self._check_page(page_number, edition)
+        # A cover is paper, not ink: its colour is never the writer's to choose,
+        # so whatever arrives is stored as the default and the rule below has
+        # nothing to judge.
+        kind = attrs.get('annotation_type', getattr(self.instance, 'annotation_type', None))
+        if kind == AnnotationType.COVER and ('color' in attrs or 'annotation_type' in attrs):
+            attrs['color'] = DEFAULT_INK
         # A highlighter colour on anything but a highlight is a pale line nobody
         # can read. A highlight takes either palette: the ones written before
         # the highlighter had colours of its own are in inks.
@@ -624,6 +633,8 @@ class AnnotationSerializer(serializers.ModelSerializer):
             return self._clean_stamp(payload)
         if atype == AnnotationType.LINK:
             return self._clean_link(payload, edition)
+        if atype == AnnotationType.COVER:
+            return self._clean_cover(payload)
         raise serializers.ValidationError(
             {'annotation_type': _('Unsupported annotation type.')}
         )
@@ -735,6 +746,30 @@ class AnnotationSerializer(serializers.ModelSerializer):
             'target_page': target,
             'target_y': _clamp01(payload.get('target_y', 0.0)),
         }
+
+    @staticmethod
+    def _clean_cover(payload: Mapping[str, Any]) -> dict[str, Any]:
+        """A rectangle of paper: its top-left corner and its size, on the page
+        and never thinner than a sliver. A side that would run off the page is
+        cut at the edge; one too thin grows back inside the page. `tone` is the
+        paper colour the editor read round the box; anything but a light paper
+        is dropped, and the cover is white."""
+        x = _clamp01(payload.get('x'))
+        y = _clamp01(payload.get('y'))
+        w = _clamp01(payload.get('w'))
+        h = _clamp01(payload.get('h'))
+        w = max(_MIN_COVER_SIDE, min(w, 1.0 - x))
+        h = max(_MIN_COVER_SIDE, min(h, 1.0 - y))
+        cleaned: dict[str, Any] = {
+            'x': min(x, 1.0 - w),
+            'y': min(y, 1.0 - h),
+            'w': w,
+            'h': h,
+        }
+        tone = paper_tone(payload.get('tone'))
+        if tone:
+            cleaned['tone'] = tone
+        return cleaned
 
     def _stored_symbol(self) -> str | None:
         instance = self.instance
