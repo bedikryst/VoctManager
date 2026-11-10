@@ -5,10 +5,14 @@ Support Agent — Answering a Stored Report
 Domain: Support
 Description:
     Runs the agent on one FeedbackReport and delivers what it decided. The reply
-    goes to the reporter by e-mail, marked as written by an AI assistant, with
-    replies to it routed to the maintainer. The maintainer gets every outcome,
-    silences and failures included, with the agent's reading and developer note,
-    and the same text is appended to the report's triage note.
+    reaches the reporter in the app as a direct message (CUSTOM_ADMIN_MESSAGE:
+    the bell, the toast on next open, push and e-mail by their preferences) whose
+    sender is named as the AI assistant. No user account stands behind that name;
+    the sender id is the maintainer's, so a read receipt comes back to him. A
+    reply over that type's length cap goes by e-mail instead, with replies to the
+    mail routed to the maintainer. The maintainer gets every outcome, silences
+    and failures included, with the agent's reading and developer note, and the
+    same text is appended to the report's triage note.
 
     The report reaches the agent in the shape it was evaluated on
     (`support.evaluation.report_for`): Warsaw time, the kind's English label, the
@@ -41,21 +45,29 @@ from zoneinfo import ZoneInfo
 
 import anthropic
 from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.utils import timezone, translation
 
 from core.constants import AppRole
 from core.models import FeedbackReport
 from core.permissions import user_is_manager
 from core.services import FeedbackService
+from notifications.dtos import CustomAdminMessageMetadata, NotificationCreateDTO
 from notifications.email_service import EmailType
 from notifications.email_tasks import send_transactional_email_task
+from notifications.models import NotificationLevel, NotificationType
+from notifications.services import NotificationService
 from support.agent import AgentRun, NeighbourReport, ReportInput, run_support_agent
 from support.code_reader import CodeReader, CodeReaderError, head_commit
 from support.reply_form import gendered_forms, in_language_of, language_of
 
 logger = logging.getLogger(__name__)
 
+User = get_user_model()
+
 BURST: Final[dt.timedelta] = dt.timedelta(minutes=20)
+# `CustomAdminMessageMetadata.message` caps at this; a longer reply goes by e-mail.
+_IN_APP_MESSAGE_LIMIT: Final[int] = 2000
 REQUEST_TIMEOUT_SECONDS: Final[float] = 180.0
 MAX_RETRIES: Final[int] = 4
 
@@ -73,6 +85,7 @@ _DELETED_ROLE: Final[str] = "a former member whose account has since been delete
 # language, not the reporter's profile locale; `reply_form` tells only these two apart.
 _REPLY_CHROME: Final[dict[str, dict[str, str]]] = {
     'pl': {
+        'sender_name': "Asystent AI",
         'subject': "Odpowiedź na Twoje zgłoszenie",
         'eyebrow': "VoctManager · Odpowiedź na zgłoszenie",
         'report_label': "Twoje zgłoszenie",
@@ -82,6 +95,7 @@ _REPLY_CHROME: Final[dict[str, dict[str, str]]] = {
         ),
     },
     'en': {
+        'sender_name': "AI assistant",
         'subject': "A reply to your report",
         'eyebrow': "VoctManager · A reply to your report",
         'report_label': "Your report",
@@ -191,18 +205,8 @@ def answer_report(
 
 def _deliver(report: FeedbackReport, *, run: AgentRun | None, commit: str, error: str) -> None:
     verdict = verdict_for(report, run) if run is not None else Verdict(reply='', sent=False, held_because='')
-    if verdict.sent and report.reporter is not None:
-        chrome = _REPLY_CHROME[language_of(verdict.reply) or 'pl']
-        send_transactional_email_task.delay(
-            recipient_email=report.reporter.email,
-            subject=chrome['subject'],
-            template_name='feedback_reply',
-            context={**chrome, 'reply': verdict.reply, 'body': report.body},
-            fallback_language=language_of(verdict.reply) or 'pl',
-            email_type=EmailType.OPERATIONAL,
-            reply_to=[settings.FEEDBACK_NOTIFICATION_EMAIL],
-        )
-    summary = _summary(run, verdict, error)
+    channel = _send_reply(report, verdict.reply) if verdict.sent else ''
+    summary = _summary(run, verdict, error, channel)
     note = _note(run, verdict, summary, commit)
     report.refresh_from_db(fields=['note'])
     report.note = f'{report.note}\n\n{note}'.strip()
@@ -227,13 +231,48 @@ def _deliver(report: FeedbackReport, *, run: AgentRun | None, commit: str, error
     )
 
 
-def _summary(run: AgentRun | None, verdict: Verdict, error: str) -> str:
+def _send_reply(report: FeedbackReport, reply: str) -> str:
+    """Deliver the reply to the reporter and name the channel it went by."""
+    reporter = report.reporter
+    if reporter is None:
+        return ''
+    language = language_of(reply) or 'pl'
+    chrome = _REPLY_CHROME[language]
+    if len(reply) <= _IN_APP_MESSAGE_LIMIT:
+        maintainer_id = (
+            User.objects.filter(email__iexact=settings.FEEDBACK_NOTIFICATION_EMAIL).values_list('pk', flat=True).first()
+        )
+        NotificationService.create_notification(NotificationCreateDTO(
+            recipient_id=str(reporter.pk),
+            notification_type=NotificationType.CUSTOM_ADMIN_MESSAGE,
+            level=NotificationLevel.INFO,
+            metadata=CustomAdminMessageMetadata(
+                title=chrome['subject'],
+                message=reply,
+                sender_id=str(maintainer_id or ''),
+                sender_name=chrome['sender_name'],
+            ),
+        ))
+        return "w aplikacji"
+    send_transactional_email_task.delay(
+        recipient_email=reporter.email,
+        subject=chrome['subject'],
+        template_name='feedback_reply',
+        context={**chrome, 'reply': reply, 'body': report.body},
+        fallback_language=language,
+        email_type=EmailType.OPERATIONAL,
+        reply_to=[settings.FEEDBACK_NOTIFICATION_EMAIL],
+    )
+    return "mailem, za długa na wiadomość w aplikacji"
+
+
+def _summary(run: AgentRun | None, verdict: Verdict, error: str, channel: str) -> str:
     if run is None:
         return f"Agent nie ruszył: {error}"
     if run.outcome is None:
         return f"Agent nie odpowiedział ({run.status}{': ' + run.error if run.error else ''})"
     if verdict.sent:
-        return "Odpowiedź wysłana do zgłaszającego"
+        return f"Odpowiedź wysłana do zgłaszającego ({channel})"
     if verdict.held_because:
         return f"Odpowiedź wstrzymana: {verdict.held_because}"
     return "Bez odpowiedzi do zgłaszającego"

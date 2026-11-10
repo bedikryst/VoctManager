@@ -93,7 +93,7 @@ Szczegóły: [`docs/archive-ai-ingestion-pipeline.md`](docs/archive-ai-ingestion
 
 ## Agent zgłoszeń
 
-Od listopada na zgłoszenia wysłane przyciskiem uwag odpowiada agent. Widzi zgłoszenie, inne zgłoszenia tej samej osoby z dwudziestu minut przed nim i po nim, ekran i rolę autora, ale nie jego imię ani adres e-mail. Czyta kod aplikacji z commita, z którego zbudowano wersję użytą przy zgłoszeniu, przez trzy narzędzia tylko do odczytu oparte na gicie: wyszukiwanie, czytanie pliku i listę folderu. Potem decyduje, czy zgłoszenie w ogóle wymaga odpowiedzi. Większość pomysłów i podziękowań nie wymaga. Odpowiedź idzie do autora mailem z informacją, że napisał ją asystent AI. Ja dostaję każdy wynik, także milczenie, razem z notatką agenta o wszystkim, co wygląda na błąd.
+Od listopada na zgłoszenia wysłane przyciskiem uwag odpowiada agent. Widzi zgłoszenie, inne zgłoszenia tej samej osoby z dwudziestu minut przed nim i po nim, ekran i rolę autora, ale nie jego imię ani adres e-mail. Czyta kod aplikacji z commita, z którego zbudowano wersję użytą przy zgłoszeniu, przez trzy narzędzia tylko do odczytu oparte na gicie: wyszukiwanie, czytanie pliku i listę folderu. Potem decyduje, czy zgłoszenie w ogóle wymaga odpowiedzi. Większość pomysłów i podziękowań nie wymaga. Odpowiedź przychodzi w aplikacji jako wiadomość od „Asystenta AI”, z powiadomieniem push. Ja dostaję każdy wynik, także milczenie, razem z notatką agenta o wszystkim, co wygląda na błąd.
 
 Dwie zasady sprawdza kod, zanim odpowiedź wyjdzie: musi być w języku zgłoszenia i nie może zdradzać niczyjej płci, która po polsku wchodzi w prawie każdy czasownik w czasie przeszłym („kliknąłeś”). Odpowiedź, która łamie którąś z nich, jest wstrzymywana i trafia tylko do mnie.
 

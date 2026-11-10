@@ -99,27 +99,51 @@ class DeliveryTests(TestCase):
         self.assertFalse(verdict.sent)
         self.assertEqual(verdict.held_because, '')
 
+    @patch('support.delivery.NotificationService')
     @patch('support.delivery.send_transactional_email_task')
     @patch('support.delivery.run_support_agent')
     @patch('support.delivery.code_reader_for')
-    def test_a_sent_reply_reaches_the_reporter_and_the_maintainer(
-        self, reader: MagicMock, agent: MagicMock, mail: MagicMock,
+    def test_a_reply_arrives_in_the_app_from_the_assistant(
+        self, reader: MagicMock, agent: MagicMock, mail: MagicMock, notifications: MagicMock,
     ) -> None:
+        developer = User.objects.create_user(username=str(uuid4()), email='dev@voct.test', password='pw12345678')
         reader.return_value.commit = 'abc1234def'
-        agent.return_value = _run('Plan wysyłasz przyciskiem „Wyślij” nad listą utworów.')
+        reply = 'Plan wysyłasz przyciskiem „Wyślij” nad listą utworów.'
+        agent.return_value = _run(reply)
 
         with override_settings(FEEDBACK_NOTIFICATION_EMAIL='dev@voct.test'):
             answer_report(str(self.report.pk), client=MagicMock())
 
+        dto = notifications.create_notification.call_args.args[0]
+        self.assertEqual(dto.recipient_id, str(self.conductor.pk))
+        self.assertEqual(dto.metadata.message, reply)
+        self.assertEqual(dto.metadata.sender_name, 'Asystent AI')
+        self.assertEqual(dto.metadata.sender_id, str(developer.pk))
+        sent = [call.kwargs for call in mail.delay.call_args_list]
+        self.assertEqual([item['recipient_email'] for item in sent], ['dev@voct.test'])
+        self.assertEqual(sent[0]['context']['summary'], 'Odpowiedź wysłana do zgłaszającego (w aplikacji)')
+        self.report.refresh_from_db()
+        self.assertIn('Notatka dla dewelopera:\nNothing to fix.', self.report.note)
+
+    @patch('support.delivery.NotificationService')
+    @patch('support.delivery.send_transactional_email_task')
+    @patch('support.delivery.run_support_agent')
+    @patch('support.delivery.code_reader_for')
+    def test_a_reply_too_long_for_a_message_goes_by_email(
+        self, reader: MagicMock, agent: MagicMock, mail: MagicMock, notifications: MagicMock,
+    ) -> None:
+        reader.return_value.commit = 'abc1234def'
+        agent.return_value = _run('Plan wysyłasz przyciskiem nad listą utworów. ' * 60)
+
+        with override_settings(FEEDBACK_NOTIFICATION_EMAIL='dev@voct.test'):
+            answer_report(str(self.report.pk), client=MagicMock())
+
+        notifications.create_notification.assert_not_called()
         sent = [call.kwargs for call in mail.delay.call_args_list]
         to_reporter = self._one(sent, 'conductor@voct.test')
         self.assertEqual(to_reporter['template_name'], 'feedback_reply')
         self.assertEqual(to_reporter['reply_to'], ['dev@voct.test'])
         self.assertIn('asystent AI', to_reporter['context']['note'])
-        to_maintainer = self._one(sent, 'dev@voct.test')
-        self.assertEqual(to_maintainer['context']['summary'], 'Odpowiedź wysłana do zgłaszającego')
-        self.report.refresh_from_db()
-        self.assertIn('Notatka dla dewelopera:\nNothing to fix.', self.report.note)
 
     @patch('support.delivery.send_transactional_email_task')
     @patch('support.delivery.run_support_agent')

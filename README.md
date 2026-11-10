@@ -93,7 +93,7 @@ Details: [`docs/archive-ai-ingestion-pipeline.md`](docs/archive-ai-ingestion-pip
 
 ## Support agent
 
-Since November an agent answers the reports sent with the feedback button. It sees the report, the same person's other reports from twenty minutes either side, the screen and the reporter's role, but no name or email address. It reads the app's code at the commit the report's build came from, through three read-only tools over git: search, read a file, list a folder. Then it decides whether the report needs a reply at all. Most suggestions and thanks don't. A reply goes to the reporter by email and says it was written by an AI assistant. I get every outcome, silences included, with the agent's note on anything that looks like a defect.
+Since November an agent answers the reports sent with the feedback button. It sees the report, the same person's other reports from twenty minutes either side, the screen and the reporter's role, but no name or email address. It reads the app's code at the commit the report's build came from, through three read-only tools over git: search, read a file, list a folder. Then it decides whether the report needs a reply at all. Most suggestions and thanks don't. A reply arrives in the app as a direct message from "AI assistant", with a push notification. I get every outcome, silences included, with the agent's note on anything that looks like a defect.
 
 Two rules are checked by code before a reply is sent: it has to be in the language of the report, and it must not show anyone's gender, which in Polish slips into almost every past-tense verb ("kliknąłeś"). A reply that breaks either is held and comes only to me.
 
