@@ -22,6 +22,8 @@ from rest_framework.response import Response
 from rest_framework.serializers import BaseSerializer
 from rest_framework.throttling import ScopedRateThrottle, UserRateThrottle
 
+from support.tasks import schedule_answer
+
 from .avatar_service import AvatarService
 from .dtos import (
     SeasonCalendarToggleDTO,
@@ -728,6 +730,10 @@ class FeedbackReportView(generics.CreateAPIView):
             logger.exception(
                 "Feedback report %s saved but the maintainer notification failed.", report.id
             )
+        try:
+            schedule_answer(report)
+        except Exception:
+            logger.exception("Feedback report %s saved but the support agent was not queued.", report.id)
 
 
 class NoteViewSet(viewsets.ModelViewSet):

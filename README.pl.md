@@ -91,6 +91,16 @@ Jeden ingest kosztuje $0.04–0.20. Partytura w całości po polsku jest na dole
 
 Szczegóły: [`docs/archive-ai-ingestion-pipeline.md`](docs/archive-ai-ingestion-pipeline.md).
 
+## Agent zgłoszeń
+
+Od listopada na zgłoszenia wysłane przyciskiem uwag odpowiada agent. Widzi zgłoszenie, inne zgłoszenia tej samej osoby z dwudziestu minut przed nim i po nim, ekran i rolę autora, ale nie jego imię ani adres e-mail. Czyta kod aplikacji z commita, z którego zbudowano wersję użytą przy zgłoszeniu, przez trzy narzędzia tylko do odczytu oparte na gicie: wyszukiwanie, czytanie pliku i listę folderu. Potem decyduje, czy zgłoszenie w ogóle wymaga odpowiedzi. Większość pomysłów i podziękowań nie wymaga. Odpowiedź idzie do autora mailem z informacją, że napisał ją asystent AI. Ja dostaję każdy wynik, także milczenie, razem z notatką agenta o wszystkim, co wygląda na błąd.
+
+Dwie zasady sprawdza kod, zanim odpowiedź wyjdzie: musi być w języku zgłoszenia i nie może zdradzać niczyjej płci, która po polsku wchodzi w prawie każdy czasownik w czasie przeszłym („kliknąłeś”). Odpowiedź, która łamie którąś z nich, jest wstrzymywana i trafia tylko do mnie.
+
+Zestaw do ewaluacji zbudowałem z 81 zgłoszeń ze skrzynki. 17 to pytania z odpowiedzią wzorcową sprawdzoną w kodzie ich wersji, a 4 z nich odłożyłem i nie używałem przy strojeniu. 11 to zgłoszenia, na które nie należy odpowiadać. Bramka, po trzy przebiegi na każde odłożone pytanie, nie dopuszczała żadnego twierdzenia z listy błędnych odpowiedzi danego pytania, żadnego pominięcia faktu oznaczonego jako krytyczny, odpowiedzi w złym języku ani formy z rodzajem, i wymagała co najmniej 85% wszystkich faktów wzorcowych. Przeszła z wynikiem 27 z 30. Fakty krytyczne jednego z odłożonych pytań oznaczyłem po przeczytaniu wyników, według tej samej reguły co pozostałe; w wersji ustalonej przed przebiegiem bramka nie przeszła przez ten jeden fakt. Przeczytałem też wszystkie dwanaście odpowiedzi na odłożone pytania i każdą wysłałbym bez zmian.
+
+Strojenie szło przez Claude Code na subskrypcji, bo pierwsza ewaluacja przez API wyczerpała saldo $5 po 13 przebiegach. Na produkcji przebieg kosztuje średnio około $0.24 w cenach API i zatrzymuje się na $1.50. Model to Opus 5.5 przy `effort: high`, wybrany w porównaniu, w którym Haiku odpowiedział dobrze na 3 z 7 pytań strojenia, a Opus na 10 z 13. Kod: [`backend/support/`](backend/support/).
+
 ## Plan próby
 
 Dyrygent układa utwory na próbę w kolejności. Każdy wiersz może mieć czas w minutach, notatkę („od t. 40, pierwsze czytanie") i linie głosów, które nie są potrzebne. Sekcyjną definiują litery głosów (S, A, T, B), więc śpiewak dopisany później do obsady jest na nią wołany automatycznie. Z planu każdy śpiewak dostaje własne okno, np. „Twoja część 19:00–20:15", żeby nikt nie czekał na utwory, których nie śpiewa. O to prosił dyrygent. Nazwał to szacunkiem dla czasu ludzi.

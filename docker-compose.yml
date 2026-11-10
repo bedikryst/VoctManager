@@ -130,9 +130,14 @@ services:
       - DB_HOST=db
       - CELERY_BROKER_URL=redis://:${REDIS_PASSWORD:?REDIS_PASSWORD is required (set it in .env)}@redis:6379/0
       - CELERY_RESULT_BACKEND=redis://:${REDIS_PASSWORD:?REDIS_PASSWORD is required (set it in .env)}@redis:6379/0
+      - SUPPORT_AGENT_REPO=/repo
     volumes:
       - ./voct_data/media:/app/media
       - ./voct_data/static:/app/static
+      # The support agent reads the app's code at a report's build through git
+      # (support/code_reader.py). The image excludes .git, so the host checkout's
+      # history is mounted read-only; the agent never sees a worktree.
+      - ./.git:/repo/.git:ro
     healthcheck:
       # Pings this worker's own node through the broker — catches a hung worker
       # that still has a live PID.

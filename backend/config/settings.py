@@ -532,6 +532,11 @@ VOCAL_RANGE_PROMPT = env('VOCAL_RANGE_PROMPT', default='off')
 # when first instantiated. Leave blank to disable ingestion features in dev.
 ANTHROPIC_API_KEY = env('ANTHROPIC_API_KEY', default='')
 
+# Repository the support agent reads the app's code from (`support.code_reader`):
+# only its `.git` is needed. The image excludes `.git`, so compose mounts the host
+# checkout's read-only at /repo in the celery container; host-side runs use the repo root.
+SUPPORT_AGENT_REPO = env('SUPPORT_AGENT_REPO', default=str(BASE_DIR.parent))
+
 # Hard ceiling, in USD cents, the ingestion pipeline may spend per ScoreEdition
 # PER RUN. Tasks check this BEFORE each Claude call and refuse to proceed once
 # `ingestion_cost_cents` (this run) hits it. A typical motet runs ~10¢ on

@@ -1,0 +1,22 @@
+VOCTMANAGER · AGENT WSPARCIA
+
+{{ summary }}
+{% if action %}{{ action }} · {% endif %}{{ stats }}
+=========================================
+
+{{ body }}
+
+-----------------------------------------
+{% if reply %}ODPOWIEDŹ
+{{ reply }}
+
+-----------------------------------------
+{% endif %}{% if developer_note %}NOTATKA DLA DEWELOPERA
+{{ developer_note }}
+
+-----------------------------------------
+{% endif %}{% if reading %}ODCZYTANIE
+{{ reading }}
+
+-----------------------------------------
+{% endif %}Otwórz w adminie: {{ admin_url }}

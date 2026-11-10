@@ -15,10 +15,10 @@ import { Heading, Text } from "@/shared/ui/primitives/typography";
  * it is displayed in the header, sent with the activation request and stored
  * server-side (UserProfile.terms_accepted_at/_version) as acceptance evidence.
  */
-export const LEGAL_DOCS_VERSION = "2026-09-25";
+export const LEGAL_DOCS_VERSION = "2026-11-10";
 
 /** Human display form of {@link LEGAL_DOCS_VERSION} (dd.mm.yyyy). */
-export const LEGAL_DOCS_UPDATED_DISPLAY = "25.09.2026";
+export const LEGAL_DOCS_UPDATED_DISPLAY = "10.11.2026";
 
 /*
  * Privacy policy for the *panel application* (a separate document from the
@@ -31,7 +31,9 @@ export const LEGAL_DOCS_UPDATED_DISPLAY = "25.09.2026";
  *    separate controller and not a processor of ours),
  *  - licensed-score watermarking + access log: backend/archive/score_protection.py
  *    and archive.models.ScoreAccessLog,
- *  - AI sheet-music analysis: Anthropic (backend/archive ingestion pipeline).
+ *  - AI sheet-music analysis: Anthropic (backend/archive ingestion pipeline),
+ *  - AI replies to feedback reports: Anthropic (backend/support/delivery.py sends
+ *    the report, its neighbours, the screen and the reporter's role, no identity).
  *
  * Dietary/allergy data (GDPR art. 9) was deliberately removed from the system
  * (client + server) rather than disclosed — catering is handled off-system.

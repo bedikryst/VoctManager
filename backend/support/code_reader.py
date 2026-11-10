@@ -136,23 +136,32 @@ class CodeReader:
         ]
 
     def _git(self, arguments: Sequence[str], *, no_match_is_empty: bool = False) -> str:
-        command = ['git', '-C', str(self._repo), '-c', 'core.quotepath=false', '--no-pager', *arguments]
-        try:
-            result = subprocess.run(
-                command,
-                capture_output=True,
-                encoding='utf-8',
-                errors='replace',
-                timeout=GIT_TIMEOUT_SECONDS,
-                check=False,
-            )
-        except subprocess.TimeoutExpired as exc:
-            raise CodeReaderError("The search took too long; narrow it.") from exc
-        if no_match_is_empty and result.returncode == 1:
-            return ''
-        if result.returncode != 0:
-            raise CodeReaderError(result.stderr.strip() or f"git exited with {result.returncode}")
-        return result.stdout
+        return _run_git(self._repo, arguments, no_match_is_empty=no_match_is_empty)
+
+
+def head_commit(repo: Path) -> str:
+    """The full id HEAD names, for a report whose build stamp does not resolve."""
+    return _run_git(repo, ['rev-parse', '--verify', 'HEAD^{commit}']).strip()
+
+
+def _run_git(repo: Path, arguments: Sequence[str], *, no_match_is_empty: bool = False) -> str:
+    command = ['git', '-C', str(repo), '-c', 'core.quotepath=false', '--no-pager', *arguments]
+    try:
+        result = subprocess.run(
+            command,
+            capture_output=True,
+            encoding='utf-8',
+            errors='replace',
+            timeout=GIT_TIMEOUT_SECONDS,
+            check=False,
+        )
+    except subprocess.TimeoutExpired as exc:
+        raise CodeReaderError("The search took too long; narrow it.") from exc
+    if no_match_is_empty and result.returncode == 1:
+        return ''
+    if result.returncode != 0:
+        raise CodeReaderError(result.stderr.strip() or f"git exited with {result.returncode}")
+    return result.stdout
 
 
 def _validated_directory(path: str) -> str:

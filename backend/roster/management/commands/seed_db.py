@@ -248,7 +248,7 @@ SEED_DOMAIN = "voctmanager.test"
 TZ = DEFAULT_EVENT_TIMEZONE
 # Mirrors LEGAL_DOCS_VERSION in the frontend's LegalContent — the version every
 # seeded member is recorded as having accepted at activation.
-TERMS_VERSION = "2026-09-25"
+TERMS_VERSION = "2026-11-10"
 # The annotation palette by name. Crimson is the conductor's reserved ink.
 INK: dict[str, str] = {ink.name: ink.value for ink in PALETTE}
 

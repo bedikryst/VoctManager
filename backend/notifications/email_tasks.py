@@ -21,11 +21,13 @@ def send_transactional_email_task(
     template_name: str,
     context: dict[str, Any],
     fallback_language: str = 'en',
-    email_type: str = 'CRITICAL_SECURITY'
+    email_type: str = 'CRITICAL_SECURITY',
+    reply_to: list[str] | None = None,
 ):
     """
     Direct email dispatch — caller supplies already-resolved email, subject and context.
-    Used for account lifecycle emails (activation, welcome, password change, deletion).
+    Used for account lifecycle emails (activation, welcome, password change, deletion)
+    and for mail a person may answer elsewhere than the sender (`reply_to`).
     """
     from .email_service import EmailDispatcherService
 
@@ -35,7 +37,8 @@ def send_transactional_email_task(
         template_name=template_name,
         context=context,
         fallback_language=fallback_language,
-        email_type=email_type
+        email_type=email_type,
+        reply_to=reply_to,
     )
 
 

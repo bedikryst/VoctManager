@@ -91,6 +91,16 @@ An ingest costs $0.04–0.20. A score sung entirely in Polish is at the low end,
 
 Details: [`docs/archive-ai-ingestion-pipeline.md`](docs/archive-ai-ingestion-pipeline.md).
 
+## Support agent
+
+Since November an agent answers the reports sent with the feedback button. It sees the report, the same person's other reports from twenty minutes either side, the screen and the reporter's role, but no name or email address. It reads the app's code at the commit the report's build came from, through three read-only tools over git: search, read a file, list a folder. Then it decides whether the report needs a reply at all. Most suggestions and thanks don't. A reply goes to the reporter by email and says it was written by an AI assistant. I get every outcome, silences included, with the agent's note on anything that looks like a defect.
+
+Two rules are checked by code before a reply is sent: it has to be in the language of the report, and it must not show anyone's gender, which in Polish slips into almost every past-tense verb ("kliknąłeś"). A reply that breaks either is held and comes only to me.
+
+I built the evaluation set from the 81 reports in the mailbox. 17 are questions with a reference answer checked against the code of their build, and 4 of those were held back from tuning. 11 are reports that should get no reply. The gate, three runs per held-back question, allowed no claim from each question's list of wrong answers, no miss on the facts marked critical, no wrong language and no gendered form, and asked for at least 85% of all reference facts. It passed with 27 of 30. I marked the critical facts of one held-back question after reading its results, by the rule the others were marked by; as fixed before the run, the gate failed on that one fact. I also read all twelve held-back replies and would have sent each of them unchanged.
+
+Tuning ran through Claude Code on a subscription, after the first evaluation over the API used up a $5 balance 13 runs in. In production a run averages about $0.24 at API prices and stops at $1.50. The model is Opus 5.5 at `effort: high`, picked in a comparison where Haiku answered 3 of 7 tuning questions correctly and Opus 10 of 13. Code: [`backend/support/`](backend/support/).
+
 ## Rehearsal plans
 
 The conductor lists the pieces for a rehearsal in order. Each row can have a length in minutes, a note ("from bar 40, first read") and the voice lines it doesn't need. A sectional is defined by voice letters (S, A, T, B), so a singer added to the cast later is called automatically. From the plan, every singer gets their own window, for example "your part 19:00–20:15", so nobody sits through pieces they don't sing. That was the conductor's request. He called it respect for people's time.

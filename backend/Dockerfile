@@ -88,7 +88,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     dos2unix \
     gosu \
     gettext \
+    git \
     && rm -rf /var/lib/apt/lists/*
+
+# The support agent runs git over the host checkout mounted at /repo (see the
+# celery service in docker-compose.yml). That checkout belongs to a host user, so
+# git refuses it as "dubious ownership" unless it is declared safe system-wide.
+RUN git config --system --add safe.directory /repo
 
 # Inject pre-compiled wheels from the builder stage and install strictly
 # offline — every dependency (transitive included) must come from /wheels.
