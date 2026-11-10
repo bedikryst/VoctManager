@@ -365,7 +365,6 @@ const MessagesPage: React.FC = () => {
                   <ThreadList
                     threads={visibleThreads}
                     activeId={threadId}
-                    isManager={isManager}
                     onSelect={selectThread}
                   />
                 </div>

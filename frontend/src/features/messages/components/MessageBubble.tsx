@@ -9,7 +9,9 @@
  * A 1:1 thread carries no avatar and no sender name: the header names the one
  * other person and the alignment already says who spoke, so both were the same
  * fact stated a third time — and on a phone they cost 36px of the reading width
- * that was the complaint.
+ * that was the complaint. The exception is a message no account wrote (the
+ * support assistant's reply): the header names the manager, so unnamed, its
+ * words would read as theirs.
  * @module features/messages/components
  */
 
@@ -28,8 +30,11 @@ import type { MessageDTO } from "../types/messages.dto";
 /** Matches `Avatar size="xs"`, so a continuation lines up with the run it joins. */
 const GUTTER_CLASS = "h-7 w-7 shrink-0";
 
+/** What a bubble reads. Only a thread message can carry `author_name`. */
+type BubbleMessage = Omit<MessageDTO, "author_name"> & Partial<Pick<MessageDTO, "author_name">>;
+
 interface MessageBubbleProps {
-  message: MessageDTO;
+  message: BubbleMessage;
   /**
    * Set by a GROUP conversation, where the sender is a real question. The
    * identity is drawn once per run of consecutive messages: twelve rows naming
@@ -52,6 +57,8 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
   const mine = message.is_mine;
   const pending = mine && isOptimisticId(message.id);
   const showIdentity = !!group && !mine;
+  const byline =
+    message.author_name || (showIdentity && group.startsRun ? message.sender?.name : undefined);
 
   const bubble = (
     <div
@@ -68,9 +75,9 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
         pending && "opacity-70",
       )}
     >
-      {showIdentity && group.startsRun && message.sender && (
+      {byline && (
         <Label size="xs" color="muted" weight="semibold" className="mb-0.5 block">
-          {message.sender.name}
+          {byline}
         </Label>
       )}
       <Text
@@ -108,7 +115,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
           <Avatar
             size="xs"
             src={message.sender?.avatar_url}
-            name={message.sender?.name}
+            name={message.sender?.name ?? message.author_name}
             className="mb-0.5"
           />
         ) : (

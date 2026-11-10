@@ -28,14 +28,12 @@ interface ThreadListProps {
   /** Never empty — every caller gates on length and owns its own empty state. */
   threads: ThreadSummary[];
   activeId?: string;
-  isManager: boolean;
   onSelect: (id: string) => void;
 }
 
 export const ThreadList: React.FC<ThreadListProps> = ({
   threads,
   activeId,
-  isManager,
   onSelect,
 }) => {
   const { t } = useTranslation();
@@ -43,7 +41,8 @@ export const ThreadList: React.FC<ThreadListProps> = ({
   return (
     <div className="flex flex-col gap-1.5">
       {threads.map((thread) => {
-        const counterpart = isManager ? thread.artist : thread.assignee;
+        // By side, not by role: a manager can be the artist of a thread.
+        const counterpart = thread.viewer_is_party ? thread.assignee : thread.artist;
         const counterpartName =
           counterpart?.name ?? t("messages.list.management", "Zarząd");
         const isActive = thread.id === activeId;

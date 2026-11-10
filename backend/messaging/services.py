@@ -107,10 +107,52 @@ class MessagingService:
         logger.info("[MessagingService] Message %s posted to thread %s by UID:%s", message.id, thread.id, sender_id)
         return message
 
+    @staticmethod
+    def open_thread(*, artist_id: UUID, subject: str, assignee_id: int | None) -> Thread:
+        """Opens an empty conversation whose first messages the caller files
+        itself (`file_message`, `post_authored_message`). Pings nobody."""
+        return Thread.objects.create(artist_id=artist_id, subject=subject[:160], assignee_id=assignee_id)
+
+    @staticmethod
+    def file_message(*, thread: Thread, sender_id: int, body: str, written_at: datetime) -> Message:
+        """Records words the sender wrote elsewhere, dated when they wrote them.
+
+        Nothing is delivered and no read pointer moves: the words already reached
+        whoever they were for, by the channel they were written in.
+        """
+        message = Message.objects.create(thread=thread, sender_id=sender_id, body=body)
+        # `created_at` is auto_now_add, so the moment can only be written after the insert.
+        Message.objects.filter(pk=message.pk).update(created_at=written_at)
+        message.created_at = written_at
+        if written_at > thread.last_message_at:
+            thread.last_message_at = written_at
+            thread.save(update_fields=['last_message_at', 'updated_at'])
+        return message
+
     @classmethod
-    def mark_read(cls, *, thread: Thread, user_id: int) -> None:
-        """Advances the viewer's read pointer to now."""
-        cls._touch_read_state(thread.id, user_id, when=timezone.now())
+    def post_authored_message(cls, *, thread: Thread, author_name: str, body: str) -> Message:
+        """Appends a message no account wrote, under ``author_name``, and pings the artist.
+
+        It reaches the artist alone, whoever the thread is assigned to: it answers
+        them. With no sender, no sender's read pointer moves. Like a reply, it
+        reopens a RESOLVED thread.
+        """
+        with transaction.atomic():
+            message = Message.objects.create(thread=thread, author_name=author_name, body=body)
+            thread.last_message_at = message.created_at
+            update_fields = ['last_message_at', 'updated_at']
+            if thread.status == ThreadStatus.RESOLVED:
+                thread.status = ThreadStatus.OPEN
+                update_fields.append('status')
+            thread.save(update_fields=update_fields)
+            transaction.on_commit(lambda: cls._emit_for_message(message.id, None))
+        logger.info("[MessagingService] Message %s posted to thread %s as %r", message.id, thread.id, author_name)
+        return message
+
+    @classmethod
+    def mark_read(cls, *, thread: Thread, user_id: int, when: datetime | None = None) -> None:
+        """Advances the viewer's read pointer to ``when``, or to now."""
+        cls._touch_read_state(thread.id, user_id, when=when or timezone.now())
 
     @staticmethod
     def _touch_read_state(thread_id: UUID, user_id: int, *, when: datetime) -> None:
@@ -137,7 +179,7 @@ class MessagingService:
     # ------------------------------------------------------------------ #
 
     @classmethod
-    def _emit_for_message(cls, message_id: UUID, sender_id: int) -> None:
+    def _emit_for_message(cls, message_id: UUID, sender_id: int | None) -> None:
         """Resolves recipients and provisions a MESSAGE_RECEIVED notification each."""
         try:
             message = Message.objects.select_related(
@@ -163,15 +205,15 @@ class MessagingService:
             NotificationService.create_notification(dto)
 
     @staticmethod
-    def _resolve_recipients(thread: Thread, sender_id: int) -> list[int]:
+    def _resolve_recipients(thread: Thread, sender_id: int | None) -> list[int]:
         """
         Artist's message → directed assignee, else the whole management pool.
-        Manager's message → the single artist (if they have a linked account).
-        The sender is always excluded.
+        Manager's message, or one no account wrote (no sender) → the single
+        artist (if they have a linked account). The sender is always excluded.
         """
         artist_user_id = thread.artist.user_id
 
-        if sender_id == artist_user_id:
+        if sender_id is not None and sender_id == artist_user_id:
             if thread.assignee_id:
                 ids: list[int] = [thread.assignee_id]
             else:
@@ -186,20 +228,21 @@ class MessagingService:
         return [uid for uid in ids if uid and uid != sender_id]
 
     @staticmethod
-    def _build_metadata(thread: Thread, message: Message, sender_id: int) -> dict[str, str]:
+    def _build_metadata(thread: Thread, message: Message, sender_id: int | None) -> dict[str, str]:
         """JSON-safe payload for the notification (and email template) — no localized
         strings baked in; the email template renders its own translated CTA label.
 
         It copies the author's words and name into the recipient's inbox, so
         ``sender_id`` travels with them: erasure finds the copies by it
-        (`erase_notification_copies`)."""
+        (`erase_notification_copies`). A message no account wrote carries its
+        ``author_name`` and an empty ``sender_id``: no one's words to erase."""
         site_url = getattr(settings, 'SITE_URL', 'https://voctensemble.com/panel').rstrip('/')
         body = message.body or ''
         return {
             'thread_id': str(thread.id),
             'title': thread.subject,
-            'sender_id': str(sender_id),
-            'sender_name': user_display_name(message.sender),
+            'sender_id': str(sender_id) if sender_id is not None else '',
+            'sender_name': user_display_name(message.sender) or message.author_name,
             'message': body,
             'snippet': body[:_SNIPPET_LEN],
             'cta_url': f"{site_url}/messages/{thread.id}",

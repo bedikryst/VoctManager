@@ -4,16 +4,17 @@ Support Agent — Answering a Stored Report
 ===============================================================================
 Domain: Support
 Description:
-    Runs the agent on one FeedbackReport and delivers what it decided. The reply
-    reaches the reporter in the app as a direct message (CUSTOM_ADMIN_MESSAGE:
-    the bell, the toast on next open, push and e-mail by their preferences) whose
-    sender is named as the AI assistant. No user account stands behind that name;
-    the sender id is the maintainer's, so a read receipt comes back to him. A
-    reply over that type's length cap goes by e-mail instead, with replies to the
-    mail routed to the maintainer. Every run is a `SupportRun` row; the
-    maintainer gets every run's outcome, silences and failures included, with the
-    agent's reading and developer note, and the same text is appended to the
-    report's triage note in Warsaw time.
+    Runs the agent on one FeedbackReport and delivers what it decided. A reporter
+    with an artist profile gets the reply as a conversation in Messages: the
+    report as their own message, the reply under it named as the AI assistant (no
+    account stands behind that name), and the maintainer as the manager on the
+    other end, so an answer back reaches a person. A later reply in the same burst
+    continues that thread. A reporter with no artist profile has no side to take
+    in a conversation and gets the reply by e-mail, with replies to the mail
+    routed to the maintainer. Every run is a `SupportRun` row; the maintainer gets
+    every run's outcome, silences and failures included, with the agent's reading
+    and developer note, and the same text is appended to the report's triage note
+    in Warsaw time.
 
     The report reaches the agent in the shape it was evaluated on
     (`support.evaluation.report_for`): Warsaw time, the kind's English label, the
@@ -66,17 +67,19 @@ from zoneinfo import ZoneInfo
 import anthropic
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.db import transaction
+from django.db.models import Q
 from django.utils import timezone, translation
 
 from core.constants import AppRole
 from core.models import FeedbackReport
 from core.permissions import user_is_manager
 from core.services import FeedbackService
-from notifications.dtos import CustomAdminMessageMetadata, NotificationCreateDTO
+from messaging.models import Thread
+from messaging.services import MessagingService
 from notifications.email_service import EmailType
 from notifications.email_tasks import send_transactional_email_task
-from notifications.models import NotificationLevel, NotificationType
-from notifications.services import NotificationService
+from roster.models import Artist
 from support.agent import AgentRun, NeighbourReport, ReportInput, run_support_agent
 from support.code_reader import CodeReader, CodeReaderError, head_commit, unchanged_between
 from support.models import SupportReplyChannel, SupportRun, SupportRunResult, SupportRunTrigger
@@ -90,8 +93,7 @@ BURST: Final[dt.timedelta] = dt.timedelta(minutes=20)
 RETRY_AFTER: Final[dt.timedelta] = dt.timedelta(minutes=15)
 # The outcomes that settle every report the run read. A held reply reached nobody.
 _SETTLING: Final[tuple[str, ...]] = (SupportRunResult.SENT, SupportRunResult.SILENT)
-# `CustomAdminMessageMetadata.message` caps at this; a longer reply goes by e-mail.
-_IN_APP_MESSAGE_LIMIT: Final[int] = 2000
+_SUBJECT_LENGTH: Final[int] = 80
 REQUEST_TIMEOUT_SECONDS: Final[float] = 180.0
 MAX_RETRIES: Final[int] = 4
 
@@ -106,7 +108,8 @@ _ROLES: Final[dict[str, str]] = {
 _DELETED_ROLE: Final[str] = "a former member whose account has since been deleted"
 
 # The reply's chrome follows the reply, which the agent writes in the report's
-# language, not the reporter's profile locale; `reply_form` tells only these two apart.
+# language, not the reporter's profile locale. `reply_form` tells only Polish and
+# English apart, so a reply it cannot place (French) takes the profile's language.
 _REPLY_CHROME: Final[dict[str, dict[str, str]]] = {
     'pl': {
         'sender_name': "Asystent AI",
@@ -126,6 +129,16 @@ _REPLY_CHROME: Final[dict[str, dict[str, str]]] = {
         'note': (
             "This reply was written by an AI assistant from the app's code. "
             "If something doesn't add up, reply to this email and it will reach the panel's developer."
+        ),
+    },
+    'fr': {
+        'sender_name': "Assistant IA",
+        'subject': "Réponse à votre signalement",
+        'eyebrow': "VoctManager · Réponse à votre signalement",
+        'report_label': "Votre signalement",
+        'note': (
+            "Cette réponse a été rédigée par un assistant IA à partir du code de l'application. "
+            "Si quelque chose ne correspond pas, répondez à cet e-mail : il parviendra au développeur du panel."
         ),
     },
 }
@@ -297,8 +310,8 @@ def _deliver(
     error: str,
 ) -> None:
     verdict = verdict_for(report, run) if run is not None else Verdict(reply='', sent=False, held_because='')
-    channel = _send_reply(report, verdict.reply) if verdict.sent else ''
-    _close(record, run=run, verdict=verdict, channel=channel, commit=commit, error=error)
+    channel, thread = _send_reply(report, record, verdict.reply) if verdict.sent else ('', None)
+    _close(record, run=run, verdict=verdict, channel=channel, thread=thread, commit=commit, error=error)
     summary = _summary(record, run, verdict, error)
     _append_note(report, _note(run, verdict, summary, commit))
     outcome = run.outcome if run is not None else None
@@ -327,6 +340,7 @@ def _close(
     run: AgentRun | None,
     verdict: Verdict,
     channel: str,
+    thread: Thread | None,
     commit: str,
     error: str,
 ) -> None:
@@ -342,6 +356,7 @@ def _close(
     record.finished_at = timezone.now()
     record.reply = verdict.reply
     record.channel = channel
+    record.thread = thread
     record.held_because = verdict.held_because[:200]
     record.commit = commit
     record.error = error or (run.error or '' if run is not None else '')
@@ -372,29 +387,22 @@ def _replies_sent(reports: Iterable[FeedbackReport]) -> dict[uuid.UUID, str]:
     return {report_id: '\n\n'.join(texts) for report_id, texts in replies.items()}
 
 
-def _send_reply(report: FeedbackReport, reply: str) -> str:
-    """Deliver the reply to the reporter and name the channel it went by."""
+def _send_reply(report: FeedbackReport, record: SupportRun, reply: str) -> tuple[str, Thread | None]:
+    """Deliver the reply to the reporter; name the channel it went by and the thread it went into."""
     reporter = report.reporter
     if reporter is None:
-        return ''
-    language = language_of(reply) or 'pl'
+        return '', None
+    language = _reply_language(report, reply)
     chrome = _REPLY_CHROME[language]
-    if len(reply) <= _IN_APP_MESSAGE_LIMIT:
-        maintainer_id = (
-            User.objects.filter(email__iexact=settings.FEEDBACK_NOTIFICATION_EMAIL).values_list('pk', flat=True).first()
+    artist = Artist.objects.filter(user=reporter).first()
+    if artist is not None:
+        thread = _reply_in_thread(
+            report, record, artist, reply,
+            reporter_id=reporter.pk,
+            author_name=chrome['sender_name'],
+            subject=_subject(report.body) or chrome['subject'],
         )
-        NotificationService.create_notification(NotificationCreateDTO(
-            recipient_id=str(reporter.pk),
-            notification_type=NotificationType.CUSTOM_ADMIN_MESSAGE,
-            level=NotificationLevel.INFO,
-            metadata=CustomAdminMessageMetadata(
-                title=chrome['subject'],
-                message=reply,
-                sender_id=str(maintainer_id or ''),
-                sender_name=chrome['sender_name'],
-            ),
-        ))
-        return SupportReplyChannel.APP
+        return SupportReplyChannel.APP, thread
     send_transactional_email_task.delay(
         recipient_email=reporter.email,
         subject=chrome['subject'],
@@ -404,12 +412,100 @@ def _send_reply(report: FeedbackReport, reply: str) -> str:
         email_type=EmailType.OPERATIONAL,
         reply_to=[settings.FEEDBACK_NOTIFICATION_EMAIL],
     )
-    return SupportReplyChannel.EMAIL
+    return SupportReplyChannel.EMAIL, None
+
+
+def _reply_in_thread(
+    report: FeedbackReport,
+    record: SupportRun,
+    artist: Artist,
+    reply: str,
+    *,
+    reporter_id: int,
+    author_name: str,
+    subject: str,
+) -> Thread:
+    """Post the reply into the reporter's thread, after the reports it answers.
+
+    The thread is the one an earlier reply in this burst went into, else a new one
+    assigned to the maintainer (the shared queue when no account has that
+    address). Every report this run read that no earlier reply in the thread
+    read goes in first, as the reporter's own message dated when it was filed;
+    those notify nobody, since the maintainer had them as reports. The reporter
+    has read the thread up to their last report, and the maintainer up to the
+    reply, so the maintainer's badge lights only when someone answers it.
+    """
+    maintainer_id = (
+        User.objects.filter(email__iexact=settings.FEEDBACK_NOTIFICATION_EMAIL).values_list('pk', flat=True).first()
+    )
+    earlier = (
+        SupportRun.objects.filter(
+            report__reporter_id=reporter_id,
+            report__created_at__gte=report.created_at - BURST,
+            report__created_at__lte=report.created_at + BURST,
+            result=SupportRunResult.SENT,
+            thread__isnull=False,
+            thread__is_deleted=False,
+        )
+        .select_related('thread')
+        .order_by('-started_at')
+        .first()
+    )
+    with transaction.atomic():
+        if earlier is not None and earlier.thread is not None:
+            thread = earlier.thread
+        else:
+            thread = MessagingService.open_thread(artist_id=artist.pk, subject=subject, assignee_id=maintainer_id)
+        answered = {
+            read.pk
+            for run in SupportRun.objects.filter(thread=thread, result=SupportRunResult.SENT).select_related('report')
+            for read in _reports_read(run)
+        }
+        filed = [read for read in _reports_read(record) if read.pk not in answered]
+        for read in filed:
+            MessagingService.file_message(
+                thread=thread, sender_id=reporter_id, body=read.body, written_at=read.created_at,
+            )
+        message = MessagingService.post_authored_message(thread=thread, author_name=author_name, body=reply)
+        if filed:
+            MessagingService.mark_read(thread=thread, user_id=reporter_id, when=filed[-1].created_at)
+        if maintainer_id is not None and maintainer_id != reporter_id:
+            MessagingService.mark_read(thread=thread, user_id=maintainer_id, when=message.created_at)
+    return thread
+
+
+def _reports_read(run: SupportRun) -> list[FeedbackReport]:
+    """The reports a run read, oldest first: its own, and the same person's within `BURST` filed before it began."""
+    report = run.report
+    return list(
+        FeedbackReport.objects.filter(
+            Q(pk=report.pk) | Q(created_at__lte=run.started_at),
+            reporter_id=report.reporter_id,
+            created_at__gte=report.created_at - BURST,
+            created_at__lte=report.created_at + BURST,
+        ).order_by('created_at')
+    )
+
+
+def _reply_language(report: FeedbackReport, reply: str) -> str:
+    """The reply's language, or the reporter's profile language for a reply `reply_form` cannot place."""
+    language = language_of(reply)
+    if language is not None:
+        return language
+    profile = getattr(report.reporter, 'profile', None)
+    preferred = profile.language if profile is not None else ''
+    return preferred if preferred in _REPLY_CHROME else 'pl'
+
+
+def _subject(body: str) -> str:
+    """The report's first line, cut to fit a thread's headline."""
+    first = next((line.strip() for line in body.splitlines() if line.strip()), '')
+    return first if len(first) <= _SUBJECT_LENGTH else f'{first[:_SUBJECT_LENGTH - 1].rstrip()}…'
 
 
 _CHANNEL_WORDS: Final[dict[str, str]] = {
-    SupportReplyChannel.APP: "w aplikacji",
-    SupportReplyChannel.EMAIL: "mailem, za długa na wiadomość w aplikacji",
+    SupportReplyChannel.APP: "w Wiadomościach",
+    SupportReplyChannel.EMAIL: "mailem, brak profilu artysty",
 }
 
 

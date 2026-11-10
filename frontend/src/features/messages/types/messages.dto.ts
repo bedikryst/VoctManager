@@ -28,6 +28,11 @@ export interface MessageDTO {
   body: string;
   created_at: string;
   sender: UserBrief | null;
+  /**
+   * Name of an author with no account (the support assistant); empty otherwise.
+   * No sender and no name means the author's account was purged.
+   */
+  author_name: string;
   is_mine: boolean;
 }
 
@@ -42,6 +47,8 @@ export interface ThreadSummary {
   artist: ThreadArtistBrief;
   assignee: UserBrief | null;
   unread: boolean;
+  /** The viewer is the thread's artist — true for a manager who is one, too. */
+  viewer_is_party: boolean;
   snippet: string;
 }
 

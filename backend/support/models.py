@@ -18,6 +18,10 @@ Description:
     What the person was already told. A later run is shown the replies sent to
     its neighbours, so an addendum does not draw the same reply twice.
 
+    Which conversation a reply continues. A reply in Messages names its thread,
+    and a later reply in the same burst goes into it, after only the reports no
+    earlier reply there had read.
+
 Standards: SaaS 2026.
 ===============================================================================
 """
@@ -82,6 +86,14 @@ class SupportRun(models.Model):
     reading = models.TextField(blank=True)
     reply = models.TextField(blank=True, help_text=_("What the agent wrote to the reporter, sent or held."))
     channel = models.CharField(max_length=5, choices=SupportReplyChannel.choices, blank=True)
+    thread = models.ForeignKey(
+        'messaging.Thread',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='+',
+        help_text=_("The conversation the reply went into. Empty for a reply by e-mail."),
+    )
     held_because = models.CharField(max_length=200, blank=True)
     developer_note = models.TextField(blank=True)
     error = models.TextField(blank=True)

@@ -39,7 +39,11 @@ interface MessageComposerProps {
   onChange: (value: string) => void;
   onSend: () => void;
   placeholder: string;
-  /** Stated above the field when sending would change the conversation's state. */
+  /**
+   * Stated above the field when sending does something the writer would not
+   * assume: it reopens a closed thread, or it reaches someone other than the
+   * author of the message being answered.
+   */
   hint?: string;
 }
 

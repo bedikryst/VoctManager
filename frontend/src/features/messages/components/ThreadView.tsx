@@ -127,9 +127,15 @@ export const ThreadView: React.FC<ThreadViewProps> = ({
     );
   }
 
-  const counterpart = isManager ? thread.artist : thread.assignee;
+  // By side, not by role: a manager can be the artist of a thread.
+  const counterpart = thread.viewer_is_party ? thread.assignee : thread.artist;
   const counterpartName = counterpart?.name ?? t("messages.list.management", "Zarząd");
   const isResolved = thread.status === "RESOLVED";
+  // The support assistant answered a report here. A reply goes to the manager, not
+  // to the assistant, and a new problem belongs in a report filed from the screen
+  // it happens on: that is what carries the screen and the app version along.
+  const answersAReport =
+    thread.viewer_is_party && thread.messages.some((message) => message.author_name);
   const ownedByMe = thread.assignee?.id === me.id;
   const groups = groupMessagesByDay(thread.messages);
   // A thread left in the management queue can be answered by several conductors,
@@ -237,7 +243,9 @@ export const ThreadView: React.FC<ThreadViewProps> = ({
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent>
-            {isManager && (
+            {/* Triage is the managing side's. A manager who is this thread's
+                artist reads it as an artist and would only take it from its owner. */}
+            {isManager && !thread.viewer_is_party && (
               <>
                 {ownedByMe ? (
                   <DropdownMenuItem
@@ -311,7 +319,13 @@ export const ThreadView: React.FC<ThreadViewProps> = ({
                 "messages.thread.resolved_hint",
                 "Wątek zamknięty — wysłanie odpowiedzi otworzy go ponownie.",
               )
-            : undefined
+            : answersAReport
+              ? t("messages.thread.assistant_hint", {
+                  name: counterpartName,
+                  defaultValue:
+                    "Odpowiedź przeczyta {{name}}, nie asystent. Nowy problem zgłoś dymkiem na ekranie, na którym go widać.",
+                })
+              : undefined
         }
       />
     </div>

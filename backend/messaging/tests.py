@@ -3,8 +3,9 @@
 @description API-level tests for the messaging domain: thread initiation by both
              parties, the hybrid ping-routing rule (directed assignee vs. management
              pool), thread reuse that keeps to the chosen recipient, queryset
-             isolation, unread accounting (bell rows read with their thread),
-             manager-only triage, channel seats that
+             isolation (a manager who is a thread's artist sees it as its artist),
+             unread accounting (bell rows read with their thread), manager-only
+             triage, a message no account wrote, channel seats that
              close with their source (grant expiry, demotion), and erasure reaching
              the copies in other people's notifications.
              Notification emission is asserted by mocking NotificationService where
@@ -34,10 +35,11 @@ from .models import (
     Message,
     ProjectChannel,
     Thread,
+    ThreadReadState,
     ThreadStatus,
 )
 from .selectors import MESSAGE_PAGE_SIZE
-from .services import ERASED_BODY, ChannelService
+from .services import ERASED_BODY, ChannelService, MessagingService
 
 User = get_user_model()
 
@@ -534,6 +536,70 @@ class MessagingFlowTests(APITestCase):
         self.assertEqual(copy.metadata["snippet"], ERASED_BODY)
         self.assertEqual(copy.metadata["sender_name"], "")
         self.assertEqual(copy.metadata["title"], "Nuty")
+
+    # ------------------------------------------------------------------ #
+    # A manager who is a thread's artist; a message no account wrote     #
+    # ------------------------------------------------------------------ #
+
+    def _conductor(self) -> Artist:
+        user = self._user("dyr", "dyr@test.pl", AppRole.MANAGER)
+        return Artist.objects.create(
+            user=user, first_name="Jan", last_name="Dyrygent", email="dyr@test.pl", voice_type=VoiceType.BASS,
+        )
+
+    def test_a_manager_who_is_the_artist_sees_and_loads_the_thread(self) -> None:
+        conductor = self._conductor()
+        self.client.force_authenticate(user=self.manager)
+        opened = self.client.post(
+            THREADS, {"subject": "Program", "body": "Pytanie", "artist_id": str(conductor.id)}, format="json"
+        )
+        thread_id = opened.json()["id"]
+        self.assertFalse(opened.json()["viewer_is_party"])
+
+        self.client.force_authenticate(user=conductor.user)
+        listed = self.client.get(THREADS).json()
+        self.assertEqual([row["id"] for row in listed], [thread_id])
+        self.assertTrue(listed[0]["viewer_is_party"])
+        self.assertEqual(self.client.get(f"{THREADS}{thread_id}/").status_code, 200)
+
+        self.client.force_authenticate(user=self.manager2)
+        self.assertEqual(self.client.get(THREADS).json(), [])
+        self.assertEqual(self.client.get(f"{THREADS}{thread_id}/").status_code, 404)
+
+    def test_the_artist_side_manager_neither_claims_nor_triages_the_thread(self) -> None:
+        conductor = self._conductor()
+        thread = Thread.objects.create(artist=conductor, subject="Z kolejki")
+        self.client.force_authenticate(user=conductor.user)
+
+        with patch(EMIT) as emit, self.captureOnCommitCallbacks(execute=True):
+            reply = self.client.post(f"{THREADS}{thread.id}/messages/", {"body": "Dopisuję"}, format="json")
+        patched = self.client.patch(f"{THREADS}{thread.id}/", {"status": ThreadStatus.RESOLVED}, format="json")
+
+        self.assertEqual(reply.status_code, 201)
+        thread.refresh_from_db()
+        self.assertIsNone(thread.assignee_id)
+        recipients = {c.args[0].recipient_id for c in emit.call_args_list}
+        self.assertEqual(recipients, {str(self.manager.id), str(self.manager2.id)})
+        self.assertEqual(patched.status_code, 403)
+        self.assertEqual(thread.status, ThreadStatus.OPEN)
+
+    def test_a_message_no_account_wrote_reaches_the_artist_alone_under_its_name(self) -> None:
+        thread = Thread.objects.create(artist=self.artist, subject="Zgłoszenie", assignee=self.manager)
+
+        with patch(ROUTE), self.captureOnCommitCallbacks(execute=True):
+            MessagingService.post_authored_message(thread=thread, author_name="Asystent AI", body="Odpowiedź")
+
+        copy = Notification.objects.get()
+        self.assertEqual(copy.recipient_id, self.artist_user.id)
+        self.assertEqual(copy.metadata["sender_name"], "Asystent AI")
+        self.assertEqual(copy.metadata["sender_id"], "")
+        self.assertFalse(ThreadReadState.objects.exists())
+
+        self.client.force_authenticate(user=self.artist_user)
+        shown = self.client.get(f"{THREADS}{thread.id}/").json()["messages"]
+        self.assertEqual(
+            [(m["sender"], m["author_name"], m["is_mine"]) for m in shown], [(None, "Asystent AI", False)],
+        )
 
 
 class ConversationWindowTests(APITestCase):

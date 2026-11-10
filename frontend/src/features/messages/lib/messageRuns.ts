@@ -12,6 +12,8 @@
 
 interface HasSender {
   readonly sender: { readonly id: number } | null;
+  /** Set on a message no account wrote (the support assistant). */
+  readonly author_name?: string;
 }
 
 /** @param items one day group, in order; `index` a position inside it. */
@@ -22,7 +24,8 @@ export const startsSenderRun = (items: readonly HasSender[], index: number): boo
  * True when a 1:1 thread has been answered by more than one person, which is
  * what an unassigned thread in the management queue looks like. Below that the
  * header already names the one other party and a per-message byline is the same
- * fact a third time.
+ * fact a third time. A message no account wrote names itself on its bubble, so it
+ * is not a second counterpart.
  */
 export const hasSeveralCounterparts = (messages: readonly (HasSender & { is_mine: boolean })[]): boolean =>
-  new Set(messages.filter((m) => !m.is_mine).map((m) => m.sender?.id ?? 0)).size > 1;
+  new Set(messages.filter((m) => !m.is_mine && !m.author_name).map((m) => m.sender?.id ?? 0)).size > 1;

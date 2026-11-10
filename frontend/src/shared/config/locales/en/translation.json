@@ -4028,6 +4028,7 @@
       "reopen": "Reopen",
       "resolve": "Close",
       "resolved_hint": "Thread closed — sending a reply will reopen it.",
+      "assistant_hint": "{{name}} will read this reply, not the assistant. Report a new problem with the speech bubble, on the screen where you see it.",
       "update_failed": "Could not update the thread."
     },
     "time": {

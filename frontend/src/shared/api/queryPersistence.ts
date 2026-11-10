@@ -104,8 +104,13 @@ const IDB_KEY = "client";
  * 2026-10-assistant-plans-door: a schedule row carries `i_plan`. A snapshot
  * from before holds none, so the planner's card would offer only the roll call
  * until the refetch.
+ *
+ * 2026-11-thread-sides: a thread carries `viewer_is_party`, its messages
+ * `author_name`. A snapshot from before holds neither, so an artist's inbox
+ * would name the artist as their own counterpart, and the support assistant's
+ * reply would read as the manager's, until the refetch.
  */
-export const QUERY_CACHE_BUSTER = "2026-10-assistant-plans-door";
+export const QUERY_CACHE_BUSTER = "2026-11-thread-sides";
 
 export const QUERY_CACHE_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 

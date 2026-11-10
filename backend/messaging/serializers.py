@@ -29,13 +29,14 @@ def message_page_meta(page: MessagePage[Any]) -> dict[str, bool]:
 
 
 class MessageSerializer(serializers.ModelSerializer):
-    """A single message with author brief and a viewer-relative ``is_mine`` flag."""
+    """A single message with author brief and a viewer-relative ``is_mine`` flag.
+    ``author_name`` names an author with no account (the support assistant)."""
     sender = serializers.SerializerMethodField()
     is_mine = serializers.SerializerMethodField()
 
     class Meta:
         model = Message
-        fields = ['id', 'body', 'created_at', 'sender', 'is_mine']
+        fields = ['id', 'body', 'created_at', 'sender', 'author_name', 'is_mine']
         read_only_fields = fields
 
     def get_sender(self, obj: Message) -> dict[str, Any] | None:
@@ -47,16 +48,22 @@ class MessageSerializer(serializers.ModelSerializer):
 
 
 class _ThreadBaseSerializer(serializers.ModelSerializer):
-    """Shared read fields for thread list/detail representations."""
+    """Shared read fields for thread list/detail representations.
+
+    ``viewer_is_party`` says which side the viewer is on, so the client picks the
+    counterpart by side rather than by role: a manager can be a thread's artist.
+    """
     artist = serializers.SerializerMethodField()
     assignee = serializers.SerializerMethodField()
     unread = serializers.SerializerMethodField()
+    viewer_is_party = serializers.SerializerMethodField()
 
     class Meta:
         model = Thread
         fields = [
             'id', 'subject', 'context_type', 'context_id', 'status',
             'last_message_at', 'created_at', 'artist', 'assignee', 'unread',
+            'viewer_is_party',
         ]
         read_only_fields = fields
 
@@ -77,6 +84,10 @@ class _ThreadBaseSerializer(serializers.ModelSerializer):
     def get_unread(self, obj: Thread) -> bool:
         last_read = viewer_last_read(self.context, obj.id)
         return last_read is None or obj.last_message_at > last_read
+
+    def get_viewer_is_party(self, obj: Thread) -> bool:
+        request = self.context.get('request')
+        return bool(request and obj.artist.user_id == request.user.id)
 
 
 class ThreadListSerializer(_ThreadBaseSerializer):

@@ -8,8 +8,9 @@ Description:
     call leaves the machine. Covers what the agent is shown (no identity, the burst
     as neighbours, the replies they already got), which commit it reads, which
     replies reach the reporter, that the maintainer hears of every run, a failed
-    one included, that a burst draws one run, and the retry, the switch and the
-    admin's re-run.
+    one included, that a reply becomes a conversation in Messages (or a mail for a
+    reporter with no artist profile), that a burst draws one run and one thread,
+    and the retry, the switch and the admin's re-run.
 
 Standards: SaaS 2026, no network.
 ===============================================================================
@@ -31,6 +32,9 @@ from django.utils import timezone
 
 from core.constants import AppRole
 from core.models import FeedbackKind, FeedbackReport, UserProfile
+from messaging.models import Thread, ThreadReadState
+from notifications.models import Notification
+from roster.models import Artist, VoiceType
 from support.agent import AgentOutcome, AgentRun, render_report
 from support.delivery import answer_report, code_reader_for, report_input, verdict_for
 from support.models import SupportReplyChannel, SupportRun, SupportRunResult, SupportRunTrigger
@@ -38,6 +42,9 @@ from support.tasks import answer_feedback_report_task, schedule_answer
 from support.test_code_reader import _git, _write
 
 User = get_user_model()
+
+# The transport behind a real notification row: the row itself is what the tests read.
+ROUTE = 'notifications.tasks.route_notification_task.delay'
 
 
 def _run(reply: str, action: str = 'answer') -> AgentRun:
@@ -61,15 +68,29 @@ class DeliveryTests(TestCase):
             route='/panel/projects/0f8fad5b-d9cb-469f-a165-70867728950e/rehearsals',
         )
 
-    def _report(self, body: str, *, route: str = '/panel', minutes: int = 0) -> FeedbackReport:
+    def _report(self, body: str, *, route: str = '/panel', minutes: int = 0, reporter: Any = None) -> FeedbackReport:
         report = FeedbackReport.objects.create(
-            reporter=self.conductor, kind=FeedbackKind.CONFUSING, body=body, route=route,
+            reporter=reporter or self.conductor, kind=FeedbackKind.CONFUSING, body=body, route=route,
             context={'app_version': '2026-11-10 18:00 · abc1234'},
         )
         moment = timezone.now() + dt.timedelta(minutes=minutes)
         FeedbackReport.objects.filter(pk=report.pk).update(created_at=moment)
         report.refresh_from_db()
         return report
+
+    def _singer(self, language: str = 'pl') -> Any:
+        """A reporter with an artist profile, unlike the conductor of `setUp`."""
+        singer = User.objects.create_user(username=str(uuid4()), email='singer@voct.test', password='pw12345678')
+        UserProfile.objects.create(user=singer, role=AppRole.ARTIST, language=language)
+        Artist.objects.create(
+            user=singer, first_name='Ola', last_name='Nowak', email='singer@voct.test', voice_type=VoiceType.ALTO,
+        )
+        return singer
+
+    def _developer(self) -> Any:
+        developer = User.objects.create_user(username=str(uuid4()), email='dev@voct.test', password='pw12345678')
+        UserProfile.objects.create(user=developer, role=AppRole.MANAGER)
+        return developer
 
     def test_the_agent_sees_a_role_and_the_burst_but_no_identity(self) -> None:
         self._report('Już znalazłem, dzięki.', minutes=6)
@@ -108,57 +129,116 @@ class DeliveryTests(TestCase):
         self.assertFalse(verdict.sent)
         self.assertEqual(verdict.held_because, '')
 
-    @patch('support.delivery.NotificationService')
+    @patch(ROUTE)
     @patch('support.delivery.send_transactional_email_task')
     @patch('support.delivery.run_support_agent')
     @patch('support.delivery.code_reader_for')
-    def test_a_reply_arrives_in_the_app_from_the_assistant(
-        self, reader: MagicMock, agent: MagicMock, mail: MagicMock, notifications: MagicMock,
+    def test_a_first_reply_opens_a_thread_with_the_report_and_the_reply(
+        self, reader: MagicMock, agent: MagicMock, mail: MagicMock, route: MagicMock,
     ) -> None:
-        developer = User.objects.create_user(username=str(uuid4()), email='dev@voct.test', password='pw12345678')
+        developer = self._developer()
+        singer = self._singer()
         reader.return_value.commit = 'abc1234def'
         reply = 'Plan wysyłasz przyciskiem „Wyślij” nad listą utworów.'
         agent.return_value = _run(reply)
+        question = self._report('Jak wysłać plan próby?\nSzukam od rana.', minutes=-3, reporter=singer)
 
-        with override_settings(FEEDBACK_NOTIFICATION_EMAIL='dev@voct.test'):
-            answer_report(str(self.report.pk), client=MagicMock())
+        with override_settings(FEEDBACK_NOTIFICATION_EMAIL='dev@voct.test'), \
+                self.captureOnCommitCallbacks(execute=True):
+            answer_report(str(question.pk), client=MagicMock())
 
-        dto = notifications.create_notification.call_args.args[0]
-        self.assertEqual(dto.recipient_id, str(self.conductor.pk))
-        self.assertEqual(dto.metadata.message, reply)
-        self.assertEqual(dto.metadata.sender_name, 'Asystent AI')
-        self.assertEqual(dto.metadata.sender_id, str(developer.pk))
+        thread = Thread.objects.get()
+        self.assertEqual(thread.artist.user_id, singer.pk)
+        self.assertEqual(thread.assignee_id, developer.pk)
+        self.assertEqual(thread.subject, 'Jak wysłać plan próby?')
+        messages = list(thread.messages.order_by('created_at'))
+        self.assertEqual([(m.sender_id, m.author_name, m.body) for m in messages], [
+            (singer.pk, '', question.body),
+            (None, 'Asystent AI', reply),
+        ])
+        self.assertEqual(messages[0].created_at, question.created_at)
+        bell = Notification.objects.get()
+        self.assertEqual((bell.recipient_id, bell.metadata['sender_name']), (singer.pk, 'Asystent AI'))
+        read = dict(ThreadReadState.objects.filter(thread=thread).values_list('user_id', 'last_read_at'))
+        self.assertEqual(read, {singer.pk: question.created_at, developer.pk: messages[1].created_at})
         sent = [call.kwargs for call in mail.delay.call_args_list]
         self.assertEqual([item['recipient_email'] for item in sent], ['dev@voct.test'])
-        self.assertEqual(sent[0]['context']['summary'], 'Odpowiedź wysłana do zgłaszającego (w aplikacji)')
-        self.report.refresh_from_db()
-        self.assertIn('Notatka dla dewelopera:\nNothing to fix.', self.report.note)
-        record = SupportRun.objects.get(report=self.report)
+        self.assertEqual(sent[0]['context']['summary'], 'Odpowiedź wysłana do zgłaszającego (w Wiadomościach)')
+        question.refresh_from_db()
+        self.assertIn('Notatka dla dewelopera:\nNothing to fix.', question.note)
+        record = SupportRun.objects.get(report=question)
         self.assertEqual(record.result, SupportRunResult.SENT)
-        self.assertEqual(record.channel, SupportReplyChannel.APP)
+        self.assertEqual((record.channel, record.thread_id), (SupportReplyChannel.APP, thread.pk))
         self.assertEqual(record.reply, reply)
         self.assertEqual(record.commit, 'abc1234def')
         self.assertIsNotNone(record.finished_at)
 
-    @patch('support.delivery.NotificationService')
     @patch('support.delivery.send_transactional_email_task')
     @patch('support.delivery.run_support_agent')
     @patch('support.delivery.code_reader_for')
-    def test_a_reply_too_long_for_a_message_goes_by_email(
-        self, reader: MagicMock, agent: MagicMock, mail: MagicMock, notifications: MagicMock,
+    def test_an_addendum_s_reply_continues_the_thread_without_repeating_reports(
+        self, reader: MagicMock, agent: MagicMock, mail: MagicMock,
+    ) -> None:
+        singer = self._singer()
+        reader.return_value.commit = 'abc1234def'
+        agent.side_effect = [_run('Plan wysyłasz przyciskiem „Wyślij”.'), _run('W piątek plan jest już wysłany.')]
+        question = self._report('Jak wysłać plan próby?', minutes=-10, reporter=singer)
+        answer_report(str(question.pk), client=MagicMock())
+        # The first run and its reply happened before the addendum was written.
+        SupportRun.objects.filter(report=question).update(started_at=timezone.now() - dt.timedelta(minutes=8))
+        Thread.objects.get().messages.filter(sender__isnull=True).update(
+            created_at=timezone.now() - dt.timedelta(minutes=7),
+        )
+        addendum = self._report('Chodzi o próbę w piątek.', minutes=-2, reporter=singer)
+
+        answer_report(str(addendum.pk), client=MagicMock())
+
+        thread = Thread.objects.get()
+        self.assertEqual(SupportRun.objects.get(report=addendum).thread_id, thread.pk)
+        self.assertEqual(list(thread.messages.order_by('created_at').values_list('body', flat=True)), [
+            'Jak wysłać plan próby?',
+            'Plan wysyłasz przyciskiem „Wyślij”.',
+            'Chodzi o próbę w piątek.',
+            'W piątek plan jest już wysłany.',
+        ])
+
+    @patch('support.delivery.send_transactional_email_task')
+    @patch('support.delivery.run_support_agent')
+    @patch('support.delivery.code_reader_for')
+    def test_a_reporter_with_no_artist_profile_gets_the_reply_by_email(
+        self, reader: MagicMock, agent: MagicMock, mail: MagicMock,
     ) -> None:
         reader.return_value.commit = 'abc1234def'
-        agent.return_value = _run('Plan wysyłasz przyciskiem nad listą utworów. ' * 60)
+        agent.return_value = _run('Plan wysyłasz przyciskiem „Wyślij” nad listą utworów.')
 
         with override_settings(FEEDBACK_NOTIFICATION_EMAIL='dev@voct.test'):
             answer_report(str(self.report.pk), client=MagicMock())
 
-        notifications.create_notification.assert_not_called()
+        self.assertFalse(Thread.objects.exists())
         sent = [call.kwargs for call in mail.delay.call_args_list]
         to_reporter = self._one(sent, 'conductor@voct.test')
         self.assertEqual(to_reporter['template_name'], 'feedback_reply')
         self.assertEqual(to_reporter['reply_to'], ['dev@voct.test'])
         self.assertIn('asystent AI', to_reporter['context']['note'])
+        outcome = self._one(sent, 'dev@voct.test')
+        self.assertEqual(outcome['context']['summary'], 'Odpowiedź wysłana do zgłaszającego (mailem, brak profilu artysty)')
+        record = SupportRun.objects.get(report=self.report)
+        self.assertEqual((record.channel, record.thread_id), (SupportReplyChannel.EMAIL, None))
+
+    @patch('support.delivery.send_transactional_email_task')
+    @patch('support.delivery.run_support_agent')
+    @patch('support.delivery.code_reader_for')
+    def test_a_reply_the_checks_cannot_place_is_named_in_the_profile_language(
+        self, reader: MagicMock, agent: MagicMock, mail: MagicMock,
+    ) -> None:
+        singer = self._singer(language='fr')
+        reader.return_value.commit = 'abc1234def'
+        agent.return_value = _run("Le plan s'envoie avec le bouton au-dessus de la liste.")
+        question = self._report('Comment envoyer le plan de répétition ?', reporter=singer)
+
+        answer_report(str(question.pk), client=MagicMock())
+
+        self.assertEqual(Thread.objects.get().messages.get(sender__isnull=True).author_name, 'Assistant IA')
 
     @patch('support.delivery.send_transactional_email_task')
     @patch('support.delivery.run_support_agent')
@@ -176,12 +256,11 @@ class DeliveryTests(TestCase):
         self.assertIn('credit balance is too low', sent[0]['context']['summary'])
         self.assertEqual(SupportRun.objects.get(report=self.report).result, SupportRunResult.FAILED)
 
-    @patch('support.delivery.NotificationService')
     @patch('support.delivery.send_transactional_email_task')
     @patch('support.delivery.run_support_agent')
     @patch('support.delivery.code_reader_for')
     def test_an_addendum_the_first_run_read_gets_no_run_of_its_own(
-        self, reader: MagicMock, agent: MagicMock, mail: MagicMock, notifications: MagicMock,
+        self, reader: MagicMock, agent: MagicMock, mail: MagicMock,
     ) -> None:
         reader.return_value.commit = 'abc1234def'
         agent.return_value = _run('Plan wysyłasz przyciskiem „Wyślij” nad listą utworów.')
@@ -192,7 +271,8 @@ class DeliveryTests(TestCase):
         answer_report(str(addendum.pk), client=MagicMock())
 
         self.assertEqual(agent.call_count, 1)
-        self.assertEqual(mail.delay.call_count, 1)
+        outcomes = [c for c in mail.delay.call_args_list if c.kwargs['template_name'] == 'feedback_agent_outcome']
+        self.assertEqual(len(outcomes), 1)
         covered = SupportRun.objects.get(report=addendum)
         self.assertEqual(covered.result, SupportRunResult.COVERED)
         self.assertEqual(covered.covered_by, SupportRun.objects.get(report=question))

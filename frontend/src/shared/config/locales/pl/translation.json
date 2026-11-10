@@ -4065,6 +4065,7 @@
       "reopen": "Otwórz ponownie",
       "resolve": "Zamknij",
       "resolved_hint": "Wątek zamknięty — wysłanie odpowiedzi otworzy go ponownie.",
+      "assistant_hint": "Odpowiedź przeczyta {{name}}, nie asystent. Nowy problem zgłoś dymkiem na ekranie, na którym go widać.",
       "update_failed": "Nie udało się zmienić stanu wątku."
     },
     "time": {

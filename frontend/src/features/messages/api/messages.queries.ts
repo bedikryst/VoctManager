@@ -198,6 +198,7 @@ export const usePostMessage = (
         body,
         created_at: new Date().toISOString(),
         sender: me,
+        author_name: "",
         is_mine: true,
       };
       queryClient.setQueryData<ThreadDetail>(key, (held) =>

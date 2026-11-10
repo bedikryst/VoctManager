@@ -131,7 +131,6 @@ export const ConductorDeck: React.FC<ConductorDeckProps> = ({
             <SectionLabel>{t("messages.deck.needs_assignment", "Wymaga przydziału")}</SectionLabel>
             <ThreadList
               threads={buckets.needsAssignment}
-              isManager={isManager}
               onSelect={onSelectThread}
             />
           </div>
@@ -146,7 +145,6 @@ export const ConductorDeck: React.FC<ConductorDeckProps> = ({
             {buckets.unreadThreads.length > 0 && (
               <ThreadList
                 threads={buckets.unreadThreads}
-                isManager={isManager}
                 onSelect={onSelectThread}
               />
             )}

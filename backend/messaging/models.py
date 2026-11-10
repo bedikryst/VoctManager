@@ -35,7 +35,8 @@ class Thread(SoftDeleteModel):
     ``assignee`` is the owning manager and gates visibility: a directed or
     claimed thread is visible only to the artist and its assignee. An unassigned
     thread sits in the shared intake queue, visible to every manager until one
-    claims it (by replying or explicitly taking it over).
+    claims it (by replying or explicitly taking it over). A manager who is
+    themselves the artist of a thread sees it as its artist does.
     """
     artist = models.ForeignKey(
         'roster.Artist',
@@ -109,6 +110,12 @@ class Message(SoftDeleteModel):
         null=True,
         related_name='sent_messages',
         help_text=_("Author. SET_NULL preserves the message if the account is purged (GDPR)."),
+    )
+    author_name = models.CharField(
+        max_length=60,
+        blank=True,
+        help_text=_("Name of an author with no account (the support assistant). "
+                    "No sender and no name means the author's account was purged."),
     )
     body = models.TextField(
         help_text=_("Message content. Length is validated at the DTO boundary."),

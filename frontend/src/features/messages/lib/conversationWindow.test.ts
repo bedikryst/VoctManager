@@ -30,6 +30,7 @@ const message = (id: string, created_at: string, body = id): MessageDTO => ({
   body,
   created_at,
   sender: { id: 1, name: "Ada" },
+  author_name: "",
   is_mine: false,
 });
 

@@ -1,8 +1,9 @@
 """
 @file views.py
 @description REST surface for the messaging domain. Role-scoped querysets (artist
-             sees own threads; a manager sees only threads they own plus the shared
-             unassigned queue — assignee gates visibility), thread/message creation
+             sees own threads; a manager sees only threads they own, the shared
+             unassigned queue — assignee gates visibility — and any thread they are
+             the artist of), thread/message creation
              delegated to MessagingService, and lightweight triage (assignee/status)
              for managers. The inbox lists are unpaginated to mirror the notifications
              inbox and the 30s frontend polling model; a CONVERSATION is windowed
@@ -130,8 +131,10 @@ class ThreadViewSet(viewsets.GenericViewSet):
 
         # Privacy gate: a manager sees only threads they own plus the shared intake
         # queue (unassigned). Directed/claimed conversations are private to their
-        # assignee — no cross-manager visibility, and no superuser override.
-        qs = qs.filter(Q(assignee_id=user.id) | Q(assignee__isnull=True))
+        # assignee — no cross-manager visibility, and no superuser override. A
+        # manager with an artist profile (the conductor) is also the artist side
+        # of threads another manager opened to them, and sees those as an artist would.
+        qs = qs.filter(Q(assignee_id=user.id) | Q(assignee__isnull=True) | Q(artist__user_id=user.id))
 
         params = self.request.query_params
         assignee = params.get('assignee')
@@ -321,6 +324,9 @@ class ThreadViewSet(viewsets.GenericViewSet):
             return Response({"detail": "Permission denied."}, status=status.HTTP_403_FORBIDDEN)
 
         thread = get_object_or_404(self.get_queryset(), pk=pk)
+        # Triage is the managing side's: the thread's own artist does not reassign or close it.
+        if thread.artist.user_id == user.id:
+            return Response({"detail": "Permission denied."}, status=status.HTTP_403_FORBIDDEN)
         serializer = ThreadUpdateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
@@ -361,9 +367,10 @@ class ThreadViewSet(viewsets.GenericViewSet):
 
         serializer = MessageCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+        # A manager answering as the thread's artist is not taking the thread over.
         message = MessagingService.post_message(
             thread=thread, sender_id=user.id, body=serializer.validated_data['body'],
-            claim_if_unassigned=self._is_manager(user),
+            claim_if_unassigned=self._is_manager(user) and thread.artist.user_id != user.id,
         )
         return Response(MessageSerializer(message, context={'request': request}).data, status=status.HTTP_201_CREATED)
 
