@@ -16,7 +16,9 @@
     * A highlighter stroke is a translucent band multiplied over the notes. On a
       monochrome printer that is grey mush across the noteheads, so in print it
       becomes an UNDERLINE tracing the same gesture — the passage is still
-      marked, the music is still readable (print canon: verify on mono).
+      marked, the music is still readable (print canon: verify on mono). A
+      highlighter colour is too pale for a hairline and prints in its darker
+      sibling (``archive/annotation_palette.py``).
     * A pinned comment shows only a dot on screen, its text behind a tap. Paper
       has no tap, so a pin prints its text as well, in a smaller chip than an
       inline note. A mark that says nothing on paper is not a mark.
@@ -39,6 +41,7 @@ from typing import Any
 
 from pypdf import PdfReader, PdfWriter
 
+from archive.annotation_palette import highlight_print_ink
 from archive.annotation_sizes import (
     DEFAULT_HIGHLIGHT_WIDTH,
     DEFAULT_PEN_WIDTH,
@@ -249,8 +252,9 @@ def _render_freehand(mark: PrintMark, box: PlacedBox) -> str:
 def _render_highlight(mark: PrintMark, box: PlacedBox) -> str:
     """A highlighter band, printed as the underline it has to become. The curve is
     dropped by half the band so it runs UNDER the passage the singer swept over,
-    not through the noteheads."""
-    fill, alpha = _ink(mark.color)
+    not through the noteheads. A highlighter colour is too pale for a hairline,
+    so the underline takes its darker sibling."""
+    fill, alpha = _ink(highlight_print_ink(mark.color))
     band = _stroke_width(mark.payload, box, DEFAULT_HIGHLIGHT_WIDTH)
     hairline = min(_MAX_UNDERLINE_PT, max(_MIN_UNDERLINE_PT, band * 0.16))
     width = hairline * (_HEAVY_FACTOR if mark.heavy else 1.0)

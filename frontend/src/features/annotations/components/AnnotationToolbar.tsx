@@ -187,7 +187,7 @@ export const TOOL_DEFS: ReadonlyArray<ToolDef> = [
 
 type ShapeIcon = React.ComponentType<{ size?: number }>;
 
-/** The icon set has no hairpin, slur or bracket; these are drawn on its grid. */
+/** The icon set has no hairpin, slur, bracket or wave; these are drawn on its grid. */
 const drawnShapeIcon = (d: string): ShapeIcon => {
   const DrawnShapeIcon = ({ size = 24 }: { size?: number }): React.JSX.Element => (
     <svg
@@ -218,6 +218,8 @@ const SHAPE_ICONS: Record<ShapeKind, ShapeIcon> = {
   dim: drawnShapeIcon("M3 6 L21 12 L3 18"),
   slur: drawnShapeIcon("M3 16 Q12 4 21 16"),
   bracket: drawnShapeIcon("M3 15 L3 8 L21 8 L21 15"),
+  wave: drawnShapeIcon("M2 12 Q5 9 8 12 T14 12 T20 12"),
+  wave_strong: drawnShapeIcon("M2 12 Q5 4 8 12 T14 12 T20 12"),
 };
 
 /** A tool's name with the key that arms it, for its tooltip. */
@@ -364,6 +366,9 @@ export const AnnotationToolbar = ({
   color,
   setColor,
   inks,
+  highlightColor,
+  setHighlightColor,
+  highlightInks,
   size,
   setSize,
   textScale,
@@ -413,6 +418,11 @@ export const AnnotationToolbar = ({
     armedTool === "note" ||
     armedTool === "stamp" ||
     armedTool === "link";
+  // The highlighter keeps its own colours and its own choice among them.
+  const marking = armedTool === "highlighter";
+  const swatches = marking ? highlightInks : inks;
+  const swatchColor = marking ? highlightColor : color;
+  const pickSwatch = marking ? setHighlightColor : setColor;
   const showSize = armedTool === "pen" || armedTool === "highlighter" || armedTool === "shape";
   const showShapes = armedTool === "shape";
   const showNoteMode = armedTool === "note";
@@ -889,17 +899,17 @@ export const AnnotationToolbar = ({
             role="group"
             aria-label={t("annotations.ink_color", "Kolor")}
           >
-            {inks.map(({ value, nameKey, fallback, dark }) => (
+            {swatches.map(({ value, nameKey, fallback, dark }) => (
               <button
                 key={value}
                 type="button"
-                onClick={() => setColor(value)}
+                onClick={() => pickSwatch(value)}
                 aria-label={t(nameKey, fallback)}
-                aria-pressed={color === value}
+                aria-pressed={swatchColor === value}
                 title={t(nameKey, fallback)}
                 className={cn(
                   "h-6 w-6 rounded-full transition-transform hover:scale-110",
-                  color === value
+                  swatchColor === value
                     ? "ring-2 ring-ink-on-inverse ring-offset-1 ring-offset-surface-inverse"
                     : // Pencil on the dark chrome is a hole without an edge.
                       dark
@@ -911,8 +921,9 @@ export const AnnotationToolbar = ({
             ))}
           </div>
           {/* Said once, where the missing swatch is — the palette is short
-              enough that its absence would otherwise read as a bug. */}
-          {mode !== "conductor" && (
+              enough that its absence would otherwise read as a bug. The
+              highlighter has no reserved colour to miss. */}
+          {mode !== "conductor" && !marking && (
             <Caption color="ink-on-inverse-muted">
               {t(
                 "annotations.ink_reserved",

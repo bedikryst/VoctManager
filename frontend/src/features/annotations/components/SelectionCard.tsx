@@ -17,6 +17,11 @@
  * keep out of reach. Such a selection says why the ladder is missing instead.
  * A selection of the writer's own pencil marks gets the ladder with no rung
  * lit (see `MarkAudiencePicker`).
+ *
+ * The colour row follows the same rule. Highlights recolour from the
+ * highlighter's palette and every other mark from the inks, so a selection
+ * holding both says why it has no colour row: either palette would offer one
+ * half of it a colour it cannot wear.
  * @module features/annotations/components
  */
 
@@ -51,8 +56,10 @@ interface SelectionCardProps {
   /** Page box, in rendered pixels. */
   width: number;
   height: number;
-  /** Swatches this writer may use; fewer than two hides the row. */
+  /** Swatches this writer may use on anything but a highlight. */
   inks: readonly AnnotationInk[];
+  /** The highlighter's swatches, which highlights are recoloured from. */
+  highlightInks: readonly AnnotationInk[];
   /** Reaches these marks may move between; fewer than two hides the ladder. */
   audiences: readonly WriteLayer[];
   onChangeLayer: (next: WriteLayer) => void;
@@ -82,6 +89,7 @@ export const SelectionCard = ({
   width,
   height,
   inks,
+  highlightInks,
   audiences,
   onChangeLayer,
   voices,
@@ -102,6 +110,9 @@ export const SelectionCard = ({
   const commonInk = marks.every((mark) => sameInk(mark.color, marks[0].color))
     ? marks[0].color
     : null;
+  const highlights = marks.filter((mark) => mark.annotation_type === "HL").length;
+  const mixesPalettes = highlights > 0 && highlights < marks.length;
+  const swatches = highlights === marks.length ? highlightInks : inks;
 
   const reach = frame.height / 2 + CARD_CLEARANCE;
   const placement = placeNoteCard({
@@ -180,13 +191,20 @@ export const SelectionCard = ({
         </div>
       )}
 
-      {inks.length > 1 && (
+      {mixesPalettes ? (
+        <Caption color="muted" className="mt-2.5 block">
+          {t(
+            "annotations.selection.color_mixed",
+            "W zaznaczeniu są zakreślenia i inne oznaczenia. Żeby zmienić kolor, zaznacz je osobno.",
+          )}
+        </Caption>
+      ) : swatches.length > 1 && (
         <div className="mt-2.5 flex flex-col gap-1">
           <Eyebrow as="p" size="overline-sm" color="muted">
             {t("annotations.ink_color", "Kolor")}
           </Eyebrow>
           <div className="flex items-center gap-1.5">
-            {inks.map(({ value, nameKey, fallback }) => {
+            {swatches.map(({ value, nameKey, fallback }) => {
               const active = commonInk !== null && sameInk(commonInk, value);
               return (
                 <button

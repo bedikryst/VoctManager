@@ -124,7 +124,7 @@
       "tools": {
         "title": "Narzędzia",
         "select_title": "Zaznacz kilka naraz",
-        "select_body": "Narzędziem Zaznacz obwiedź oznaczenia pętlą albo dotykaj ich po kolei. Ramkę przeciągasz, żeby je przesunąć, a na karcie zmienisz im kolor, powielisz je, skopiujesz na inną stronę tego utworu albo usuniesz. Każdą z tych zmian cofa jedno „Cofnij”.",
+        "select_body": "Narzędziem Zaznacz obwiedź oznaczenia pętlą albo dotykaj ich po kolei. Jedno dotknięcie zaznacza też pojedynczą kreskę czy kształt. Zaznaczenie przesuwasz, przeciągając ramkę albo klawiszami strzałek. Na karcie zmienisz mu kolor, powielisz je, skopiujesz na inną stronę tego utworu albo usuniesz. Każdą z tych zmian cofa jedno „Cofnij”.",
         "shapes_title": "Widełki, łuk i klamra",
         "shapes_body": "Wybierz je w Kształtach i przeciągnij od początku do końca frazy. Od lewej do prawej łuk wygina się w górę, a klamra ma haczyki w dół, tak jak nad pięciolinią. Od prawej do lewej oba się odwracają.",
         "box_title": "Litery orientacyjne i numery taktów",
@@ -314,7 +314,9 @@
       "cresc": "Widełki crescendo",
       "dim": "Widełki diminuendo",
       "slur": "Łuk frazy",
-      "bracket": "Klamra"
+      "bracket": "Klamra",
+      "wave": "Falka (zwolnij)",
+      "wave_strong": "Mocna falka (mocno zwolnij)"
     },
     "mark": {
       "audience": "Kto to widzi",
@@ -330,12 +332,15 @@
         "cresc": "Crescendo",
         "dim": "Diminuendo",
         "slur": "Łuk",
-        "bracket": "Klamra"
+        "bracket": "Klamra",
+        "wave": "Falka",
+        "wave_strong": "Mocna falka"
       }
     },
     "selection": {
       "audience_mixed": "Zaznaczone oznaczenia mają różnych odbiorców. Wybierz, kto ma widzieć wszystkie.",
       "audience_private_mixed": "W zaznaczeniu są prywatne oznaczenia i oznaczenia widoczne dla innych. Żeby zmienić odbiorców, zaznacz je osobno.",
+      "color_mixed": "W zaznaczeniu są zakreślenia i inne oznaczenia. Żeby zmienić kolor, zaznacz je osobno.",
       "copied": "Skopiowane. Otwórz inną stronę tego utworu i wklej je narzędziem Zaznacz.",
       "copy": "Kopiuj",
       "count_one": "Zaznaczono {{count}} oznaczenie",
@@ -352,7 +357,11 @@
       "blue": "Niebieski",
       "green": "Zielony",
       "amber": "Bursztynowy",
-      "graphite": "Grafitowy"
+      "graphite": "Grafitowy",
+      "highlight_yellow": "Żółty",
+      "highlight_orange": "Jasnopomarańczowy",
+      "highlight_green": "Jasnozielony",
+      "highlight_blue": "Jasnoniebieski"
     }
   },
   "archive": {

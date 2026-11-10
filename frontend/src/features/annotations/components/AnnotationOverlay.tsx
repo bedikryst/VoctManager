@@ -59,7 +59,6 @@ import {
   CARRY_TRANSFORM,
   CARRY_X,
   CARRY_Y,
-  HIGHLIGHT_OPACITY,
   MarkLayer,
   STROKE_HIT_MIN_WIDTH,
   strokeWidthPx,
@@ -97,7 +96,7 @@ import {
   type StrokeSize,
 } from "../lib/useAnnotationTools";
 import { isPrivateLayer, layerOf, type WriteLayer } from "../lib/layers";
-import type { AnnotationInk } from "../lib/palette";
+import { highlightOpacity, type AnnotationInk } from "../lib/palette";
 import { getStampDef, STAMP_FACE_STYLE, StampGlyph } from "../lib/stamps";
 import { buildShapePaths, type ShapeKind } from "../lib/shapes";
 import { distanceToStroke, isInLoop, markBounds, strokeBounds } from "../lib/markBounds";
@@ -130,7 +129,10 @@ interface AnnotationOverlayProps {
   annotations: ScoreAnnotation[];
   visibleLayers: LayerVisibility;
   tool: AnnotationTool;
+  /** The ink of every new mark but a highlight. */
   color: string;
+  /** The colour of a new highlight. */
+  highlightColor: string;
   size: StrokeSize;
   /** Size multiplier applied to newly placed text notes. */
   textScale: number;
@@ -162,6 +164,8 @@ interface AnnotationOverlayProps {
   canModify: (annotation: ScoreAnnotation) => boolean;
   /** Swatches this writer may use, for recolouring a mark already placed. */
   inks: readonly AnnotationInk[];
+  /** The highlighter's swatches, which a placed highlight is recoloured from. */
+  highlightInks: readonly AnnotationInk[];
   /**
    * Reaches a placed mark may be moved BETWEEN. Empty for a chorister: their
    * mark has exactly one possible audience, so a ladder would name layers that
@@ -266,6 +270,7 @@ export const AnnotationOverlay = ({
   visibleLayers,
   tool,
   color,
+  highlightColor,
   size,
   textScale,
   stampScale,
@@ -282,6 +287,7 @@ export const AnnotationOverlay = ({
   canEdit,
   canModify,
   inks,
+  highlightInks,
   audiences,
   voicing,
   selectedId,
@@ -628,7 +634,7 @@ export const AnnotationOverlay = ({
           paths: [points],
           width: strokeFraction(isHl ? "highlighter" : "pen", size),
         },
-        color,
+        color: isHl ? highlightColor : color,
         layer_name: layer,
       }),
     );
@@ -959,7 +965,6 @@ export const AnnotationOverlay = ({
       ? canonicalVoices(first.voices)
       : null;
   })();
-
   const duplicateSelection = (): void => {
     const shift = duplicateShift(selection, width, height);
     setPicked(new Set(onCreateMany(copyDrafts(selection, pageNumber, shift, inks))));
@@ -1188,10 +1193,10 @@ export const AnnotationOverlay = ({
           width={width}
           height={height}
           look={liveLook}
-          color={color}
+          color={tool === "highlighter" ? highlightColor : color}
           strokeWidth={liveWidth}
           shape={shaping ? shape : null}
-          highlightOpacity={HIGHLIGHT_OPACITY}
+          highlightOpacity={highlightOpacity(highlightColor)}
         />
       )}
 
@@ -1519,6 +1524,7 @@ export const AnnotationOverlay = ({
           width={width}
           height={height}
           inks={inks}
+          highlightInks={highlightInks}
           audiences={audiences}
           onChangeLayer={readdressSelection}
           voices={
@@ -1661,7 +1667,7 @@ export const AnnotationOverlay = ({
           annotation={actionMark}
           width={width}
           height={height}
-          inks={inks}
+          inks={actionMark.annotation_type === "HL" ? highlightInks : inks}
           audiences={audiences}
           onChangeLayer={(next) => moveMarkLayer(actionMark, next)}
           voices={voicesFor(actionMark)}

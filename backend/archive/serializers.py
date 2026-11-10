@@ -33,7 +33,7 @@ from rest_framework import serializers
 from core.constants import VoiceLine
 from core.voice_labels import voice_line_label
 
-from .annotation_palette import normalize_ink
+from .annotation_palette import is_highlighter_ink, normalize_ink
 from .annotation_sizes import (
     DEFAULT_HIGHLIGHT_WIDTH,
     DEFAULT_PEN_WIDTH,
@@ -404,6 +404,7 @@ _NOTE_DISPLAY_MODES = ('pin', 'inline', 'box')
 # refused.
 _INK_SHAPES = frozenset({
     'ellipse', 'rect', 'line', 'arrow', 'cresc', 'dim', 'slur', 'bracket',
+    'wave', 'wave_strong',
 })
 # The stored row as a whole, measured as compact JSON. The per-stroke caps above
 # still let one row reach megabytes; a pen line held for a minute is about a
@@ -519,11 +520,13 @@ class AnnotationSerializer(serializers.ModelSerializer):
         return instance
 
     def validate_color(self, value: str) -> str:
-        """Only the palette's inks, in the palette's own casing. Anything else
+        """Only the palettes' colours, in the palette's own casing. Anything else
         used to persist verbatim — nine characters of whatever the client sent —
         and a colour nothing can render is a mark that prints as a surprise.
-        Rows written before this rule are left exactly as they are."""
-        normalized = normalize_ink(value)
+        Rows written before this rule are left exactly as they are. Which kind
+        may wear a highlighter colour is judged in `validate`, where the kind is
+        known."""
+        normalized = normalize_ink(value, highlight=True)
         if not normalized:
             raise serializers.ValidationError(_('Unsupported marking colour.'))
         return normalized
@@ -558,6 +561,16 @@ class AnnotationSerializer(serializers.ModelSerializer):
             edition = attrs.get('edition', getattr(self.instance, 'edition', None))
             if page_number is not None:
                 self._check_page(page_number, edition)
+        # A highlighter colour on anything but a highlight is a pale line nobody
+        # can read. A highlight takes either palette: the ones written before
+        # the highlighter had colours of its own are in inks.
+        if 'color' in attrs or 'annotation_type' in attrs:
+            color = attrs.get('color', getattr(self.instance, 'color', ''))
+            kind = attrs.get('annotation_type', getattr(self.instance, 'annotation_type', None))
+            if kind != AnnotationType.HIGHLIGHT and is_highlighter_ink(color):
+                raise serializers.ValidationError(
+                    {'color': _('This colour is for the highlighter only.')}
+                )
         # On PATCH either field may be absent; resolve the effective pair so the
         # payload is always validated against the type it will be stored under.
         touches_shape = 'payload' in attrs or 'annotation_type' in attrs

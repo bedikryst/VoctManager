@@ -2,8 +2,8 @@
  * @file shapes.ts
  * @description Geometry for the shape tool — oval, rectangle, line and arrow,
  * and the shapes a score is marked with: crescendo and diminuendo hairpins, a
- * slur or phrase arc, and a bracket. Each is drawn by one drag from corner to
- * corner (or end to end).
+ * slur or phrase arc, a bracket, and a wavy line ("zwolnij") in two depths.
+ * Each is drawn by one drag from corner to corner (or end to end).
  *
  * A shape is stored as ordinary freehand ink (`FH`), not as a kind of its own:
  * the server validator, the print renderer, the eraser, the selection halo and
@@ -18,8 +18,8 @@
  * - every straight edge is its OWN two-point path — a rectangle is four, an
  *   arrow and a bracket three, a hairpin two — and the round line caps meet at
  *   the corners;
- * - an oval and an arc are one path dense enough that the curve through it is
- *   the figure itself.
+ * - an oval, an arc and a wave are one path dense enough that the curve
+ *   through it is the figure itself.
  *
  * The drag's direction says which side of the music a slur or a bracket is
  * on. Drawn left to right, as a phrase is read, the arc bows up and the
@@ -43,7 +43,9 @@ export type ShapeKind =
   | "cresc"
   | "dim"
   | "slur"
-  | "bracket";
+  | "bracket"
+  | "wave"
+  | "wave_strong";
 
 interface ShapeDef {
   kind: ShapeKind;
@@ -113,6 +115,20 @@ export const SHAPE_KINDS: ReadonlyArray<ShapeDef> = [
     markKey: "annotations.mark.kind.bracket",
     markFallback: "Klamra",
   },
+  {
+    kind: "wave",
+    labelKey: "annotations.shapes.wave",
+    fallback: "Falka (zwolnij)",
+    markKey: "annotations.mark.kind.wave",
+    markFallback: "Falka",
+  },
+  {
+    kind: "wave_strong",
+    labelKey: "annotations.shapes.wave_strong",
+    fallback: "Mocna falka (mocno zwolnij)",
+    markKey: "annotations.mark.kind.wave_strong",
+    markFallback: "Mocna falka",
+  },
 ];
 
 export const DEFAULT_SHAPE: ShapeKind = "ellipse";
@@ -151,6 +167,16 @@ const SLUR_SEGMENTS = 24;
 /** A bracket's hook, as a share of page width, capped by the span. */
 const BRACKET_HOOK_FRACTION = 0.012;
 const BRACKET_HOOK_MAX_SHARE = 0.4;
+/**
+ * A wave's nominal length, crest to crest, and how far it swings either side of
+ * its axis, both as a share of page width. The strong wave swings twice as far
+ * at the same length, so a longer drag gives more waves, never wider ones.
+ */
+const WAVE_LENGTH_FRACTION = 0.024;
+const WAVE_AMPLITUDE_FRACTION = 0.004;
+const WAVE_STRONG_FACTOR = 2;
+/** Points per half-wave: enough that the curve through them is the sine itself. */
+const WAVE_POINTS_PER_HALF = 8;
 
 /** Shapes that run from one end to the other, and so rule themselves like a line. */
 const RULED_SHAPES: ReadonlySet<ShapeKind> = new Set<ShapeKind>([
@@ -160,6 +186,8 @@ const RULED_SHAPES: ReadonlySet<ShapeKind> = new Set<ShapeKind>([
   "dim",
   "slur",
   "bracket",
+  "wave",
+  "wave_strong",
 ]);
 
 type Px = readonly [number, number];
@@ -250,6 +278,29 @@ export const buildShapePaths = (
     case "bracket": {
       const hook = Math.min(width * BRACKET_HOOK_FRACTION, length * BRACKET_HOOK_MAX_SHARE);
       return [segment(off(a, -hook), a), segment(a, b), segment(b, off(b, -hook))];
+    }
+    case "wave":
+    case "wave_strong": {
+      // A whole number of half-waves, two at least, stretched to the drag, so
+      // both ends sit on the axis where the hand pressed and lifted: a wave cut
+      // mid-swing is untidy. A stub too short for two nominal half-waves is
+      // held shallower in step, or it reads as a zigzag.
+      const nominalHalf = (width * WAVE_LENGTH_FRACTION) / 2;
+      const halves = Math.max(2, Math.round(length / nominalHalf));
+      const half = length / halves;
+      const amplitude =
+        width *
+        WAVE_AMPLITUDE_FRACTION *
+        (kind === "wave_strong" ? WAVE_STRONG_FACTOR : 1) *
+        Math.min(1, half / nominalHalf);
+      const steps = halves * WAVE_POINTS_PER_HALF;
+      const wave: NormPoint[] = [];
+      for (let i = 0; i <= steps; i++) {
+        const t = i / steps;
+        const along: Px = [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
+        wave.push(norm(off(along, amplitude * Math.sin(Math.PI * halves * t))));
+      }
+      return [wave];
     }
     case "rect": {
       const topRight: Px = [b[0], a[1]];

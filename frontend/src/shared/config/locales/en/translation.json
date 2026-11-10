@@ -115,7 +115,7 @@
       "tools": {
         "title": "Tools",
         "select_title": "Select several at once",
-        "select_body": "With Select, draw a loop round the markings or tap them one by one. Drag the frame to move them; on the card you can recolour them, duplicate them, copy them to another page of this piece or delete them. One Undo takes back each of these.",
+        "select_body": "With Select, draw a loop round the markings or tap them one by one. A single tap also selects a single line or shape. Move a selection by dragging its frame or with the arrow keys. On the card you can recolour it, duplicate it, copy it to another page of this piece or delete it. One Undo takes back each of these.",
         "shapes_title": "Hairpins, slur and bracket",
         "shapes_body": "Pick them under Shapes and drag from the start of the phrase to its end. Drawn left to right, the slur bows upward and the bracket's hooks point down, as above a stave; drawn right to left, both turn over.",
         "box_title": "Rehearsal letters and bar numbers",
@@ -305,7 +305,9 @@
       "cresc": "Crescendo hairpin",
       "dim": "Diminuendo hairpin",
       "slur": "Slur or phrase mark",
-      "bracket": "Bracket"
+      "bracket": "Bracket",
+      "wave": "Wavy line (slow down)",
+      "wave_strong": "Deep wavy line (slow down a lot)"
     },
     "mark": {
       "audience": "Who sees this",
@@ -321,12 +323,15 @@
         "cresc": "Crescendo",
         "dim": "Diminuendo",
         "slur": "Slur",
-        "bracket": "Bracket"
+        "bracket": "Bracket",
+        "wave": "Wavy line",
+        "wave_strong": "Deep wavy line"
       }
     },
     "selection": {
       "audience_mixed": "The selected marks reach different people. Choose who should see all of them.",
       "audience_private_mixed": "The selection holds private marks and marks others can see. Select them separately to change who sees them.",
+      "color_mixed": "The selection holds highlights and other marks. Select them separately to change their colour.",
       "copied": "Copied. Open another page of this piece and paste them with the Select tool.",
       "copy": "Copy",
       "count_one": "{{count}} mark selected",
@@ -343,7 +348,11 @@
       "blue": "Blue",
       "green": "Green",
       "amber": "Amber",
-      "graphite": "Graphite"
+      "graphite": "Graphite",
+      "highlight_yellow": "Yellow",
+      "highlight_orange": "Light orange",
+      "highlight_green": "Light green",
+      "highlight_blue": "Light blue"
     }
   },
   "archive": {

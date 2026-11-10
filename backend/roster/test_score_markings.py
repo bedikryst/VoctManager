@@ -331,6 +331,15 @@ class PrintTranslationTests(SimpleTestCase):
         # y grows downward in this frame, so "lower on the page" is a larger y.
         self.assertAlmostEqual(float(start.group(2)), swept_y + band_pt / 2, places=1)
 
+    def test_a_highlighter_colour_underlines_in_its_darker_sibling(self) -> None:
+        # Yellow on paper is an underline nobody sees; an ink prints as itself.
+        payload = {"paths": [[[0.2, 0.5], [0.6, 0.5]]], "width": 0.021}
+        yellow = self._page(PrintMark("HL", payload, "#ffe14d", False))
+        self.assertIn('stroke="#A16207"', yellow)
+        self.assertNotIn("FFE14D", yellow.upper())
+        amber = self._page(PrintMark("HL", payload, "#B45309", False))
+        self.assertIn('stroke="#B45309"', amber)
+
     def test_conductors_ink_prints_heavier_than_a_personal_pencil(self) -> None:
         payload = {"paths": [[[0.2, 0.5], [0.6, 0.5]]], "width": 0.004}
         heavy = self._page(PrintMark("FH", payload, "#DC2626", True))

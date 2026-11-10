@@ -1,7 +1,7 @@
 /**
  * @file useAnnotationTools.ts
  * @description Local editor state for the annotation tools — held tool, ink
- * colour, stroke weight, the shape in hand, note display mode, the selected
+ * colour and the highlighter's own, stroke weight, the shape in hand, note display mode, the selected
  * musical stamp, the target layer and voices, which layers are visible and
  * whether the reader reads only their own voice. Component-local React state
  * (not a global store) except for the two reading switches: it is ephemeral
@@ -24,7 +24,14 @@ import type { AnnotationLayer, NoteDisplay } from "../types/annotations.dto";
 import { readStored, writeStored } from "./deviceStorage";
 import { DEFAULT_STAMP } from "./stamps";
 import { DEFAULT_SHAPE, isShapeKind, type ShapeKind } from "./shapes";
-import { defaultInk, inksFor, type AnnotationInk } from "./palette";
+import {
+  DEFAULT_HIGHLIGHT_INK,
+  defaultInk,
+  HIGHLIGHT_INKS,
+  inksFor,
+  type AnnotationInk,
+  type HighlightInk,
+} from "./palette";
 import { useStylusPresence, readStylusSeen } from "./useStylusPresence";
 import type { VoiceFilter, VoiceSection } from "./voices";
 
@@ -289,11 +296,19 @@ export interface AnnotationToolState {
   setFingerDraw: (fingerDraw: boolean) => void;
   /** Whether an active stylus has ever touched this device (drives the default). */
   stylusSeen: boolean;
+  /** The ink of every tool but the highlighter. */
   color: string;
   setColor: (color: string) => void;
   /** The swatches this writer may use — the conductor's cue ink is not among a
    *  chorister's. */
   inks: readonly AnnotationInk[];
+  /**
+   * The highlighter's colour, held apart from the ink so that switching between
+   * pen and highlighter returns each to its own.
+   */
+  highlightColor: string;
+  setHighlightColor: (color: string) => void;
+  highlightInks: readonly HighlightInk[];
   size: StrokeSize;
   setSize: (size: StrokeSize) => void;
   /** Size multiplier applied to the NEXT text note placed (see MARK_SCALE_*). */
@@ -376,6 +391,7 @@ export const useAnnotationTools = (
 
   const [color, setColor] = useState<string>(() => defaultInk(isManager));
   const inks = useMemo(() => inksFor(isManager), [isManager]);
+  const [highlightColor, setHighlightColor] = useState<string>(DEFAULT_HIGHLIGHT_INK);
   const [size, setSize] = useState<StrokeSize>("medium");
   // Remembered: a writer settles on a size that reads from their stand and
   // should not have to find it again when the piece comes back.
@@ -423,6 +439,9 @@ export const useAnnotationTools = (
     color,
     setColor,
     inks,
+    highlightColor,
+    setHighlightColor,
+    highlightInks: HIGHLIGHT_INKS,
     size,
     setSize,
     textScale,

@@ -3,8 +3,8 @@
  * @description Pins the promises the shape tool rests on: every straight edge
  * is a two-point path (the only kind both renderers draw straight), snapping is
  * judged in pixels on a page that is not square, the direction of a drag
- * decides which side of the stave a slur or a bracket sits on, and it never
- * turns a crescendo into a diminuendo.
+ * decides which side of the stave a slur or a bracket sits on, it never turns
+ * a crescendo into a diminuendo, and a wave always ends on its axis.
  * @module features/annotations/lib
  */
 
@@ -127,6 +127,40 @@ describe("buildShapePaths", () => {
   it("rules a nearly level hairpin level, like a line", () => {
     const [up, down] = buildShapePaths("cresc", [0.1, 0.5], [0.1 + 200 / W, 0.5 + 4 / H], W, H);
     expect((up[1][1] + down[1][1]) / 2).toBeCloseTo(0.5, 6);
+  });
+
+  it("ends a wave on its axis at both ends, in whole half-waves", () => {
+    const [wave] = buildShapePaths("wave", [0.1, 0.5], [0.5, 0.5], W, H);
+    expect(wave[0][0]).toBeCloseTo(0.1, 6);
+    expect(wave[0][1]).toBeCloseTo(0.5, 6);
+    expect(wave[wave.length - 1][0]).toBeCloseTo(0.5, 6);
+    expect(wave[wave.length - 1][1]).toBeCloseTo(0.5, 6);
+    // Eight points to a half-wave, plus the closing one.
+    expect((wave.length - 1) % 8).toBe(0);
+    expect(wave.length - 1).toBeGreaterThanOrEqual(16);
+  });
+
+  it("gives a longer drag more waves, not wider ones", () => {
+    const swing = (path: readonly (readonly [number, number])[]): number =>
+      Math.max(...path.map(([, y]) => Math.abs(y - 0.5))) * H;
+    const [short] = buildShapePaths("wave", [0.1, 0.5], [0.3, 0.5], W, H);
+    const [long] = buildShapePaths("wave", [0.1, 0.5], [0.7, 0.5], W, H);
+    expect(long.length).toBeGreaterThan(short.length * 2);
+    expect(swing(long)).toBeCloseTo(swing(short), 1);
+  });
+
+  it("swings the strong wave twice as far as the plain one", () => {
+    const swing = (path: readonly (readonly [number, number])[]): number =>
+      Math.max(...path.map(([, y]) => Math.abs(y - 0.5)));
+    const [plain] = buildShapePaths("wave", [0.1, 0.5], [0.5, 0.5], W, H);
+    const [strong] = buildShapePaths("wave_strong", [0.1, 0.5], [0.5, 0.5], W, H);
+    expect(strong).toHaveLength(plain.length);
+    expect(swing(strong) / swing(plain)).toBeCloseTo(2, 3);
+  });
+
+  it("rules a nearly level wave level, like a line", () => {
+    const [wave] = buildShapePaths("wave", [0.1, 0.5], [0.1 + 200 / W, 0.5 + 4 / H], W, H);
+    expect(wave[wave.length - 1][1]).toBeCloseTo(0.5, 6);
   });
 
   it("keeps every point on the page", () => {

@@ -25,9 +25,9 @@ import type {
   ScoreAnnotation,
   StrokeMark,
 } from "../types/annotations.dto";
+import { highlightOpacity } from "../lib/palette";
 import { buildSmoothPath } from "../lib/smoothing";
 
-export const HIGHLIGHT_OPACITY = 0.42;
 /**
  * The invisible band that makes a stroke touchable. A hairline pen line has to
  * grow to something a thumb can find; a bold highlighter must NOT grow past its
@@ -97,7 +97,7 @@ const StrokeInk = memo(function StrokeInk({
         strokeLinecap={highlight ? "butt" : "round"}
         strokeLinejoin="round"
         style={{
-          opacity: highlight ? HIGHLIGHT_OPACITY : 1,
+          opacity: highlight ? highlightOpacity(mark.color) : 1,
           mixBlendMode: highlight ? "multiply" : "normal",
           pointerEvents: "none",
         }}

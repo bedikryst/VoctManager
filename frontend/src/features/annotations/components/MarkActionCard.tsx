@@ -51,7 +51,10 @@ interface MarkActionCardProps {
   /** Page box, in rendered pixels. */
   width: number;
   height: number;
-  /** Swatches this reader may write; fewer than two hides the row. */
+  /**
+   * Swatches this reader may write on this marking (the highlighter's on a
+   * highlight); fewer than two hides the row.
+   */
   inks: readonly AnnotationInk[];
   /** Reaches this marking may move between; fewer than two hides the ladder. */
   audiences: readonly WriteLayer[];

@@ -23,7 +23,13 @@ from django.test import SimpleTestCase, override_settings
 from pypdf import PdfWriter
 from rest_framework.test import APITestCase
 
-from archive.annotation_palette import PALETTE, is_reserved_ink, normalize_ink
+from archive.annotation_palette import (
+    HIGHLIGHTER,
+    PALETTE,
+    highlight_print_ink,
+    is_reserved_ink,
+    normalize_ink,
+)
 from archive.models import (
     PERSONAL_ANNOTATION_LAYER,
     SHARED_ANNOTATION_LAYER,
@@ -67,18 +73,45 @@ class PaletteTests(SimpleTestCase):
         # the serializer says first and in its own words.
         self.assertFalse(is_reserved_ink("#000000"))
 
-    def test_python_and_ts_palettes_hold_the_same_inks(self) -> None:
+    @staticmethod
+    def _ts_list(name: str) -> str:
+        """The body of one exported list in the editor's palette file."""
         source = (
             Path(__file__).resolve().parents[2]
             / "frontend" / "src" / "features" / "annotations" / "lib" / "palette.ts"
         ).read_text(encoding="utf-8")
+        found = re.search(rf"export const {name}\b[^=]*=\s*\[(.*?)\]\s*as const", source, re.S)
+        assert found is not None, name
+        return found.group(1)
+
+    def test_python_and_ts_palettes_hold_the_same_inks(self) -> None:
         found = re.findall(
-            r'value:\s*"(#[0-9A-Fa-f]{6})",\s*managerOnly:\s*(true|false)', source
+            r'value:\s*"(#[0-9A-Fa-f]{6})",\s*managerOnly:\s*(true|false)',
+            self._ts_list("ANNOTATION_INKS"),
         )
         self.assertEqual(
             [(value.upper(), flag == "true") for value, flag in found],
             [(ink.value, ink.manager_only) for ink in PALETTE],
         )
+
+    def test_python_and_ts_highlighters_hold_the_same_colours_and_print_siblings(self) -> None:
+        found = re.findall(
+            r'value:\s*"(#[0-9A-Fa-f]{6})",\s*print:\s*"(#[0-9A-Fa-f]{6})"[^}]*managerOnly:\s*false',
+            self._ts_list("HIGHLIGHT_INKS"),
+        )
+        self.assertEqual(
+            [(value.upper(), printed.upper()) for value, printed in found],
+            [(ink.value, ink.print_value) for ink in HIGHLIGHTER],
+        )
+
+    def test_a_highlighter_colour_is_writable_only_as_a_highlight(self) -> None:
+        yellow = HIGHLIGHTER[0].value
+        self.assertEqual(normalize_ink(yellow.lower()), "")
+        self.assertEqual(normalize_ink(yellow.lower(), highlight=True), yellow)
+        self.assertEqual(normalize_ink(_PENCIL, highlight=True), _PENCIL)
+        self.assertFalse(is_reserved_ink(yellow))
+        self.assertEqual(highlight_print_ink(yellow.lower()), HIGHLIGHTER[0].print_value)
+        self.assertEqual(highlight_print_ink(_PENCIL), _PENCIL)
 
 
 @override_settings(MEDIA_ROOT=_MEDIA)
@@ -165,6 +198,57 @@ class InkWriteRuleTests(APITestCase):
             "/api/archive/annotations/", self._body(color="#2563EB"), format="json",
         )
         self.assertEqual(response.status_code, 201)
+
+    def test_a_highlight_takes_the_highlighters_colours_and_the_inks(self) -> None:
+        self.client.force_authenticate(self.singer_user)
+        for color in ("#ffe14d", "#2563EB"):
+            response = self.client.post(
+                "/api/archive/annotations/",
+                self._body(annotation_type=AnnotationType.HIGHLIGHT, color=color),
+                format="json",
+            )
+            self.assertEqual(response.status_code, 201, color)
+        self.assertEqual(
+            sorted(Annotation.objects.values_list("color", flat=True)),
+            ["#2563EB", "#FFE14D"],
+        )
+
+    def test_no_other_kind_takes_a_highlighter_colour(self) -> None:
+        self.client.force_authenticate(self.manager)
+        response = self.client.post(
+            "/api/archive/annotations/", self._body(color="#FFE14D"), format="json",
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("color", response.json()["errors"])
+
+        # Nor by a recolour that names the colour and not the kind.
+        pen = Annotation.objects.create(
+            edition=self.edition, page_number=1,
+            annotation_type=AnnotationType.FREEHAND,
+            payload={"paths": [[[0.2, 0.3], [0.6, 0.35]]], "width": 0.004},
+            color=_PENCIL, layer_name=PERSONAL_ANNOTATION_LAYER,
+            created_by=self.manager,
+        )
+        response = self.client.patch(
+            f"/api/archive/annotations/{pen.pk}/", {"color": "#FFE14D"}, format="json",
+        )
+        self.assertEqual(response.status_code, 400)
+
+    def test_a_highlight_in_an_ink_can_be_recoloured_yellow(self) -> None:
+        marker = Annotation.objects.create(
+            edition=self.edition, page_number=1,
+            annotation_type=AnnotationType.HIGHLIGHT,
+            payload={"paths": [[[0.2, 0.3], [0.6, 0.35]]], "width": 0.021},
+            color="#B45309", layer_name=PERSONAL_ANNOTATION_LAYER,
+            created_by=self.singer_user,
+        )
+        self.client.force_authenticate(self.singer_user)
+        response = self.client.patch(
+            f"/api/archive/annotations/{marker.pk}/", {"color": "#FFE14D"}, format="json",
+        )
+        self.assertEqual(response.status_code, 200)
+        marker.refresh_from_db()
+        self.assertEqual(marker.color, "#FFE14D")
 
     def test_an_older_mark_in_a_retired_ink_can_still_be_moved(self) -> None:
         # Rows written before the palette existed are left alone; only a patch

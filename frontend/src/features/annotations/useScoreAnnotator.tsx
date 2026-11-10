@@ -887,6 +887,7 @@ export const useScoreAnnotator = ({
 
   const {
     color,
+    highlightColor,
     size,
     textScale,
     stampScale,
@@ -941,6 +942,7 @@ export const useScoreAnnotator = ({
           tool={effectiveTool}
           onTurnPage={turnPage}
           color={color}
+          highlightColor={highlightColor}
           size={size}
           textScale={textScale}
           stampScale={stampScale}
@@ -956,6 +958,7 @@ export const useScoreAnnotator = ({
           canEdit
           canModify={canModify}
           inks={tools.inks}
+          highlightInks={tools.highlightInks}
           audiences={audiences}
           voicing={mode !== "personal"}
           selectedId={selectedId}
@@ -998,9 +1001,11 @@ export const useScoreAnnotator = ({
       mode,
       book,
       tools.inks,
+      tools.highlightInks,
       visibleLayers,
       effectiveTool,
       color,
+      highlightColor,
       size,
       textScale,
       stampScale,

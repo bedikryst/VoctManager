@@ -115,7 +115,7 @@
       "tools": {
         "title": "Outils",
         "select_title": "Sélectionner plusieurs à la fois",
-        "select_body": "Avec l’outil Sélection, entourez les annotations d’une boucle ou touchez-les une à une. Faites glisser le cadre pour les déplacer ; sur la carte, vous pouvez changer leur couleur, les dupliquer, les copier sur une autre page de cette œuvre ou les supprimer. Un seul « Annuler » défait chacune de ces actions.",
+        "select_body": "Avec l’outil Sélection, entourez les annotations d’une boucle ou touchez-les une à une. Un seul toucher sélectionne aussi un trait ou une forme isolés. Déplacez la sélection en faisant glisser son cadre ou avec les flèches du clavier. Sur la carte, vous pouvez changer sa couleur, la dupliquer, la copier sur une autre page de cette œuvre ou la supprimer. Un seul « Annuler » défait chacune de ces actions.",
         "shapes_title": "Soufflets, liaison et crochet",
         "shapes_body": "Choisissez-les dans Formes et faites glisser du début à la fin de la phrase. De gauche à droite, la liaison se courbe vers le haut et le crochet a ses extrémités vers le bas, comme au-dessus d’une portée ; de droite à gauche, les deux se retournent.",
         "box_title": "Lettres de repère et numéros de mesure",
@@ -305,7 +305,9 @@
       "cresc": "Soufflet de crescendo",
       "dim": "Soufflet de diminuendo",
       "slur": "Liaison ou phrasé",
-      "bracket": "Crochet"
+      "bracket": "Crochet",
+      "wave": "Ligne ondulée (ralentir)",
+      "wave_strong": "Ligne ondulée profonde (ralentir beaucoup)"
     },
     "mark": {
       "audience": "Qui le voit",
@@ -321,12 +323,15 @@
         "cresc": "Crescendo",
         "dim": "Diminuendo",
         "slur": "Liaison",
-        "bracket": "Crochet"
+        "bracket": "Crochet",
+        "wave": "Ligne ondulée",
+        "wave_strong": "Ligne ondulée profonde"
       }
     },
     "selection": {
       "audience_mixed": "Les annotations sélectionnées ont des destinataires différents. Choisissez qui doit les voir toutes.",
       "audience_private_mixed": "La sélection réunit des annotations privées et des annotations visibles par d’autres. Sélectionnez-les séparément pour changer qui les voit.",
+      "color_mixed": "La sélection réunit des surlignages et d’autres annotations. Sélectionnez-les séparément pour changer leur couleur.",
       "copied": "Copié. Ouvrez une autre page de cette œuvre et collez avec l’outil Sélection.",
       "copy": "Copier",
       "count_one": "{{count}} annotation sélectionnée",
@@ -343,7 +348,11 @@
       "blue": "Bleu",
       "green": "Vert",
       "amber": "Ambre",
-      "graphite": "Graphite"
+      "graphite": "Graphite",
+      "highlight_yellow": "Jaune",
+      "highlight_orange": "Orange clair",
+      "highlight_green": "Vert clair",
+      "highlight_blue": "Bleu clair"
     }
   },
   "archive": {
