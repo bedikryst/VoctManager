@@ -1221,7 +1221,10 @@ export const AnnotationOverlay = ({
       ref={surfaceRef}
       className={cn(
         "absolute inset-0",
-        tracing && "cursor-crosshair",
+        // A drag that draws is never a text selection: a mouse would otherwise
+        // start one on the press and paint the words of the inline notes
+        // between its two ends as selected.
+        tracing && "cursor-crosshair select-none",
         (placing || stamping || linking) && "cursor-copy",
       )}
       style={{
