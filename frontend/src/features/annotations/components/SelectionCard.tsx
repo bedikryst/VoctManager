@@ -29,10 +29,10 @@ import React, { useId, useRef } from "react";
 import { Copy, CopyPlus, Trash2, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
-import { cn } from "@/shared/lib/utils";
 import { Caption, Eyebrow, Text } from "@/shared/ui/primitives/typography";
 
 import { MarkAudiencePicker } from "./MarkAudiencePicker";
+import { MarkInkRow } from "./MarkInkRow";
 import { MarkVoicePicker, type MarkVoices } from "./MarkVoicePicker";
 import { placeNoteCard } from "../lib/noteCardPlacement";
 import { useMeasuredHeight } from "../lib/useMeasuredHeight";
@@ -204,32 +204,8 @@ export const SelectionCard = ({
           )}
         </Caption>
       ) : swatches.length > 1 && (
-        <div className="mt-2.5 flex flex-col gap-1">
-          <Eyebrow as="p" size="overline-sm" color="muted">
-            {t("annotations.ink_color", "Kolor")}
-          </Eyebrow>
-          <div className="flex items-center gap-1.5">
-            {swatches.map(({ value, nameKey, fallback }) => {
-              const active = commonInk !== null && sameInk(commonInk, value);
-              return (
-                <button
-                  key={value}
-                  type="button"
-                  onClick={() => onChangeColor(value)}
-                  aria-label={t(nameKey, fallback)}
-                  title={t(nameKey, fallback)}
-                  aria-pressed={active}
-                  className={cn(
-                    "h-6 w-6 rounded-full transition-transform hover:scale-110",
-                    active
-                      ? "ring-2 ring-ethereal-ink ring-offset-1 ring-offset-ethereal-marble"
-                      : "ring-1 ring-hairline-strong",
-                  )}
-                  style={{ backgroundColor: value }}
-                />
-              );
-            })}
-          </div>
+        <div className="mt-2.5">
+          <MarkInkRow inks={swatches} current={commonInk} onChange={onChangeColor} />
         </div>
       )}
 

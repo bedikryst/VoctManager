@@ -302,9 +302,13 @@ export const DashboardLayout = ({
           Ambient yields to what the member is doing, and neither one covers the
           other. The column is transparent to pointers: it spans the full width
           and every child re-arms its own hit area, so without this it would
-          swallow taps meant for the page beneath. */}
+          swallow taps meant for the page beneath.
+
+          On a wide shell its right edge stops at a pinned notes rail, the same
+          `--rail-pad` `<main>` reflows by: the feedback button sits beside the
+          rail instead of under it, and the pills centre over the page. */}
       <div
-        className="pointer-events-none floating-dock fixed inset-x-0 z-40 flex flex-col items-center gap-2"
+        className="pointer-events-none floating-dock fixed inset-x-0 z-40 flex flex-col items-center gap-2 wide-shell:right-[var(--rail-pad,0px)]"
         style={{ "--dock-bar-h": `${dockBarHeight}px` } as React.CSSProperties}
       >
         <OfflineStatusBadge {...offlineSync} />

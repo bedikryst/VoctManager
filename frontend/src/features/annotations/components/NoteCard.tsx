@@ -5,7 +5,7 @@
  * The words are TYPED where they will be read — as the mark itself on the stave,
  * or in the bubble a pin opens — so the card beside the anchor carries only
  * controls: the phrases this writer repeats all evening, pin vs on-score and
- * italic, size, reach, delete, save. That card takes whichever side of the
+ * italic, size, reach, colour, delete, save. That card takes whichever side of the
  * anchor leaves the writing visible: a card sitting on the bar it annotates is
  * a card written blind.
  * @module features/annotations/components
@@ -19,9 +19,11 @@ import { cn } from "@/shared/lib/utils";
 import { FIELD_TEXT_SCALE } from "@/shared/ui/primitives/fieldShell";
 
 import { MarkAudiencePicker } from "./MarkAudiencePicker";
+import { MarkInkRow } from "./MarkInkRow";
 import { MarkScaleControl } from "./MarkScaleControl";
 import { MarkVoicePicker, type MarkVoices } from "./MarkVoicePicker";
 import { placeNoteCard } from "../lib/noteCardPlacement";
+import type { AnnotationInk } from "../lib/palette";
 import { appendPhrase, type Phrase } from "../lib/quickPhrases";
 import { STAMP_FACE_STYLE } from "../lib/stamps";
 import { useMeasuredHeight } from "../lib/useMeasuredHeight";
@@ -118,6 +120,14 @@ interface NoteCardProps {
    * `audience` is: the toolbar addressed the next mark already.
    */
   voices?: MarkVoices | null;
+  /**
+   * Swatches an EXISTING note may be recoloured from; absent for a new one,
+   * which takes the toolbar's ink for the reason `audience` is absent. Fewer
+   * than two hides the row.
+   */
+  inks?: readonly AnnotationInk[];
+  /** Commits immediately, like the audience and voice rows. */
+  onChangeColor?: (next: string) => void;
   onSubmit: (text: string, display: NoteDisplay, scale: number, italic: boolean) => void;
   onCancel: () => void;
   onDelete?: () => void;
@@ -249,6 +259,8 @@ export const NoteCard = ({
   showDelete,
   audience,
   voices = null,
+  inks,
+  onChangeColor,
   onSubmit,
   onCancel,
   onDelete,
@@ -508,6 +520,13 @@ export const NoteCard = ({
         {voices && (
           <div className="mt-2.5">
             <MarkVoicePicker current={voices.current} onChange={voices.onChange} surface="card" />
+          </div>
+        )}
+
+        {/* Its ink, committed on tap; the words up on the page recolour with it. */}
+        {inks && onChangeColor && inks.length > 1 && (
+          <div className="mt-2.5">
+            <MarkInkRow inks={inks} current={color} onChange={onChangeColor} />
           </div>
         )}
 

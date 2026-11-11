@@ -187,6 +187,12 @@ STAMPS: tuple[StampDef, ...] = (
         view_box="0 0 12 18",
         paths=("M6 1 L6 16", "M1.5 11 L6 16 L10.5 11"),
     ),
+    # "For all", the tutti shorthand, drawn for the reason the accidentals are.
+    StampDef(
+        id="forall", size_fraction=0.0205,
+        view_box="0 0 16 16",
+        paths=("M2 2 L8 14 L14 2", "M4.1 6.2 L11.9 6.2"),
+    ),
     # Reminder accidentals, drawn: the book's serif has no sharp, flat or natural.
     StampDef(
         id="sharp", size_fraction=0.016,

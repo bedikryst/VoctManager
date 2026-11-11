@@ -130,6 +130,21 @@ export const ThreadView: React.FC<ThreadViewProps> = ({
   // By side, not by role: a manager can be the artist of a thread.
   const counterpart = thread.viewer_is_party ? thread.assignee : thread.artist;
   const counterpartName = counterpart?.name ?? t("messages.list.management", "Zarząd");
+  const avatar = (
+    <Avatar
+      size="md"
+      src={counterpart?.avatar_url}
+      name={counterpartName}
+      tone={counterpart ? "gold" : "neutral"}
+    />
+  );
+  // A manager writing to a singer opens that singer's dossier from the header,
+  // attendance included. The deep link reaches archived singers too: the roster
+  // loads them and starts unfiltered. A singer's counterpart is a manager, who
+  // has no dossier to open.
+  const dossierHref =
+    isManager && !thread.viewer_is_party ? `/panel/artists?focus=${thread.artist.id}` : null;
+  const openProfileLabel = t("messages.thread.open_profile", "Otwórz profil");
   const isResolved = thread.status === "RESOLVED";
   // The support assistant answered a report here. A reply goes to the manager, not
   // to the assistant, and a new problem belongs in a report filed from the screen
@@ -177,12 +192,20 @@ export const ThreadView: React.FC<ThreadViewProps> = ({
             <ArrowLeft size={18} />
           </Button>
         )}
-        <Avatar
-          size="md"
-          src={counterpart?.avatar_url}
-          name={counterpartName}
-          tone={counterpart ? "gold" : "neutral"}
-        />
+        {dossierHref ? (
+          // The name beside it is the same link and the one in the tab order.
+          <Link
+            to={dossierHref}
+            title={openProfileLabel}
+            tabIndex={-1}
+            aria-hidden="true"
+            className="shrink-0 rounded-full transition-opacity hover:opacity-80"
+          >
+            {avatar}
+          </Link>
+        ) : (
+          avatar
+        )}
         <div className="min-w-0 flex-1">
           <Heading as="h3" size="lg" color="graphite" className="truncate">
             {thread.subject}
@@ -190,9 +213,22 @@ export const ThreadView: React.FC<ThreadViewProps> = ({
           {/* One line, and it stays one: wrapping put the counterpart's name on a
               second row the moment a project chip or a narrow phone joined it. */}
           <div className="flex min-w-0 items-center gap-x-2 overflow-hidden">
-            <Label size="xs" color="muted" weight="medium" className="truncate">
-              {counterpartName}
-            </Label>
+            {dossierHref ? (
+              <Link to={dossierHref} title={openProfileLabel} className="group flex min-w-0">
+                <Label
+                  size="xs"
+                  color="muted"
+                  weight="medium"
+                  className="truncate transition-colors group-hover:text-ethereal-gold"
+                >
+                  {counterpartName}
+                </Label>
+              </Link>
+            ) : (
+              <Label size="xs" color="muted" weight="medium" className="truncate">
+                {counterpartName}
+              </Label>
+            )}
             {/* One chip for one fact. Only a manager can open the project, so the
                 link — not a second colour — is what marks it as reachable. */}
             {projectContext &&

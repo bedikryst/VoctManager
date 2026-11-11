@@ -1695,6 +1695,10 @@ export const AnnotationOverlay = ({
                 onChange: (next) => moveMarkLayer(editingNote, next),
               }}
               voices={voicesFor(editingNote)}
+              inks={inks}
+              onChangeColor={(next) =>
+                onUpdate(editingNote.id, { color: next }, { color: editingNote.color })
+              }
               onSubmit={(text, display, scale, italic) => {
                 onUpdate(
                   editingNote.id,

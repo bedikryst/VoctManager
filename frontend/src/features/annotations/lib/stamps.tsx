@@ -373,6 +373,20 @@ export const STAMPS: ReadonlyArray<StampDef> = [
     viewBox: "0 0 12 18",
     paths: ["M6 1 L6 16", "M1.5 11 L6 16 L10.5 11"],
   },
+  // "For all": the conductor's tutti shorthand, a voice letter typed beside it
+  // making it "all basses". Drawn, as the accidentals below are, because the
+  // serif has no math glyphs; its ink is the cap height of a word at medium
+  // size, so the typed letter stands level with it.
+  {
+    id: "forall",
+    group: "cues",
+    kind: "svg",
+    labelKey: "annotations.stamps.forall",
+    fallback: "Wszyscy (tutti)",
+    sizeFraction: 0.0205,
+    viewBox: "0 0 16 16",
+    paths: ["M2 2 L8 14 L14 2", "M4.1 6.2 L11.9 6.2"],
+  },
   // The reminder accidental a singer pencils in before the note they keep
   // missing. Drawn, not typed: the serif the text stamps use has no ♯ ♭ ♮.
   {

@@ -21,8 +21,8 @@
  * unconfirmed for the same reason the eraser does — an arm-then-confirm here
  * would make the card stricter than the tool sitting next to it.
  *
- * A text note is NOT handled here: it opens its own composer, which grew the same
- * audience row. One marking never gets two cards.
+ * A text note is NOT handled here: it opens its own composer, which carries the
+ * same audience, voice and colour rows. One marking never gets two cards.
  * @module features/annotations/components
  */
 
@@ -30,10 +30,10 @@ import React, { useRef } from "react";
 import { Trash2, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
-import { cn } from "@/shared/lib/utils";
 import { Eyebrow } from "@/shared/ui/primitives/typography";
 
 import { MarkAudiencePicker } from "./MarkAudiencePicker";
+import { MarkInkRow } from "./MarkInkRow";
 import { MarkScaleControl } from "./MarkScaleControl";
 import { MarkVoicePicker, type MarkVoices } from "./MarkVoicePicker";
 import { boundsAnchor, markBounds } from "../lib/markBounds";
@@ -203,29 +203,8 @@ export const MarkActionCard = ({
       )}
 
       {inks.length > 1 && (
-        <div className="mt-2.5 flex flex-col gap-1">
-          <Eyebrow as="p" size="overline-sm" color="muted">
-            {t("annotations.ink_color", "Kolor")}
-          </Eyebrow>
-          <div className="flex items-center gap-1.5">
-            {inks.map(({ value, nameKey, fallback }) => (
-              <button
-                key={value}
-                type="button"
-                onClick={() => onChangeColor(value)}
-                aria-label={t(nameKey, fallback)}
-                title={t(nameKey, fallback)}
-                aria-pressed={annotation.color === value}
-                className={cn(
-                  "h-6 w-6 rounded-full transition-transform hover:scale-110",
-                  annotation.color === value
-                    ? "ring-2 ring-ethereal-ink ring-offset-1 ring-offset-ethereal-marble"
-                    : "ring-1 ring-hairline-strong",
-                )}
-                style={{ backgroundColor: value }}
-              />
-            ))}
-          </div>
+        <div className="mt-2.5">
+          <MarkInkRow inks={inks} current={annotation.color} onChange={onChangeColor} />
         </div>
       )}
 

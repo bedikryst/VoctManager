@@ -170,6 +170,12 @@ export const PdfViewer = ({
   // The visible page's canvas, and a copy of it held over the page while a new
   // zoom renders (see the afterimage effect below).
   const visibleCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  /**
+   * The canvas holding the visible page's last whole raster: what a zoom step
+   * copies. Not `visibleCanvasRef`, which a zoom step has already pointed at a
+   * fresh, empty canvas by the time the copy is taken (see the afterimage effect).
+   */
+  const rasterCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const afterimageRef = useRef<HTMLCanvasElement | null>(null);
   /** The page the afterimage is covering, or null while it is put away. */
   const afterimagePageRef = useRef<number | null>(null);
@@ -448,25 +454,32 @@ export const PdfViewer = ({
     parkViewport();
   }, [stablePage, parkViewport]);
 
-  // A new size empties the page's canvas: react-pdf resizes it, which wipes
-  // it, and hides it until the new raster is done, leaving white paper with
-  // the marks floating over it. So before that happens — a layout effect runs
-  // ahead of the Page's own effect that redraws — the old raster is copied
-  // onto a canvas stretched over the page box, and put away once the page
-  // reports its new render. A copy already up stays through further steps:
-  // the page under it is blank. A turned page is a raster of its own, so the
-  // copy goes with the page it was taken from.
+  // A new size takes the page's raster away: react-pdf keys its canvas on the
+  // scale, so the commit swaps in a fresh canvas, which it then sizes and hides
+  // until the new raster is done — white paper with the marks floating over
+  // it. The outgoing canvas keeps its pixels until react-pdf zeroes it in a
+  // passive effect, after this layout effect, so the copy is taken from it
+  // (`rasterCanvasRef`) onto a canvas stretched over the page box, and put away
+  // once the page reports its new render. The copy is laid on white first: a
+  // copy of nothing must read as paper, never as a black page. A copy already
+  // up stays through further steps: the page under it is blank. A turned page
+  // is a raster of its own, so the copy goes with the page it was taken from.
   const rasterKeyRef = useRef({ zoom, width: renderedPageWidth, page: stablePage });
   useLayoutEffect(() => {
     const previous = rasterKeyRef.current;
     rasterKeyRef.current = { zoom, width: renderedPageWidth, page: stablePage };
     if (stablePage !== previous.page) {
       clearAfterimage();
+      // A page turned to was usually rendered ahead, out of sight. One still
+      // rendering, or not yet sized, is recorded when it reports its render.
+      const canvas = visibleCanvasRef.current;
+      rasterCanvasRef.current =
+        canvas && canvas.style.width && canvas.style.visibility !== "hidden" ? canvas : null;
       return;
     }
     if (zoom === previous.zoom && renderedPageWidth === previous.width) return;
     if (afterimagePageRef.current !== null) return;
-    const source = visibleCanvasRef.current;
+    const source = rasterCanvasRef.current;
     const afterimage = afterimageRef.current;
     // Hidden means a render is still under way: there is no whole page to copy.
     if (!source || !afterimage || source.style.visibility === "hidden") return;
@@ -476,6 +489,8 @@ export const PdfViewer = ({
     afterimage.height = Math.max(1, Math.round(source.height * fit));
     const context = afterimage.getContext("2d", { alpha: false });
     if (!context) return;
+    context.fillStyle = "#ffffff";
+    context.fillRect(0, 0, afterimage.width, afterimage.height);
     context.drawImage(source, 0, 0, afterimage.width, afterimage.height);
     afterimage.style.display = "block";
     afterimagePageRef.current = stablePage;
@@ -483,6 +498,7 @@ export const PdfViewer = ({
 
   const handlePageRendered = useCallback((page: number) => {
     markRendered(page);
+    if (page === rasterKeyRef.current.page) rasterCanvasRef.current = visibleCanvasRef.current;
     if (page === afterimagePageRef.current) clearAfterimage();
   }, [markRendered, clearAfterimage]);
 
