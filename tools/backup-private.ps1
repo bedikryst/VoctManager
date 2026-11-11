@@ -40,7 +40,8 @@ $folders = @(
     '.ai',
     '.claude',
     'brand-lab',
-    'web\press-pack\programmes'
+    'web\press-pack\programmes',
+    'frontend\harness'
 )
 $rootFiles = @('AGENTS.md', 'AGENTS.override.md', 'CLAUDE.md')
 

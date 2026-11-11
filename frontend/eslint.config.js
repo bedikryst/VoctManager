@@ -4,7 +4,8 @@ import reactHooks from "eslint-plugin-react-hooks";
 import tseslint from "typescript-eslint";
 
 export default tseslint.config(
-  { ignores: ["dist", "*.tsbuildinfo"] },
+  // `harness/` holds local, untracked screenshot pages that are never built.
+  { ignores: ["dist", "*.tsbuildinfo", "harness"] },
   {
     files: ["**/*.{ts,tsx,js,jsx}"],
     extends: [js.configs.recommended, ...tseslint.configs.recommended],
