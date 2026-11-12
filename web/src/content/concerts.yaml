@@ -582,9 +582,11 @@
       zagubiona pieśń otrzymuje odpowiedź tej samej mocy.
     attribution: "Bernat Vivancos"
     about: "o utworze Le cri des bergers, od którego wieczór wziął nazwę"
-  programLede: "Dwanaście pieśni gór i bis"
+  # The lede states the evening's shape, so the arc starts on the first work instead of saying it
+  # again one line down.
+  programLede: "W górę i z powrotem"
   programArc: >-
-    Kolejność prowadzi w górę i z powrotem. Wieczór otwiera wołanie bez słów, pasterskie „Eee-Ooo”
+    Wieczór otwiera wołanie bez słów, pasterskie „Eee-Ooo”
     z Pirenejów, a zaraz potem to samo wołanie dostaje słowa: Salve Regina pasterzy z Rouergue,
     „Ad te clamamus”, do Ciebie wołamy. Stąd program wspina się przez Ave Maria i trzy hymny
     śpiewane przed Najświętszym Sakramentem aż po nocne niebo Ešenvaldsa; tam wypada przerwa.
@@ -1687,7 +1689,7 @@
       doświadczyli straty, i wyrazem naszej solidarności z narodem ukraińskim.
     attribution: "Anna Kaczka-Marcisz"
     about: "menedżer VoctEnsemble, z zapowiedzi koncertu"
-  programLede: "Modlitwa o pokój: trzynaście ogniw i bis"
+  programLede: "Modlitwa o pokój"
   programArc: >-
     Kolejność jest tu obrzędem. Wieczór zaczyna się organami, a pierwsze słowo, jakie pada,
     jest po ukraińsku. Potem program schodzi tam, gdzie żałoba naprawdę mieszka: do litanii
@@ -2203,7 +2205,9 @@
       jest dziś sprawiedliwość, pamięć i miłosierdzie? Jaki napis wyryć na grobie Gazy?
     attribution: "VoctEnsemble"
     about: "z zapowiedzi koncertu"
-  programLede: "Muzyczna modlitwa: dziewięć ogniw i bis"
+  # The catechism's own wording (the last spiritual work of mercy): the evening opens with the
+  # Introit for the dead and turns to the mothers and to peace for those still living.
+  programLede: "Za żywych i umarłych"
   programArc: >-
     Kolejność jest tu modlitwą. Wieczór otwierają słowa, które Kościół śpiewa
     nad grobem, a zaraz potem schodzi najniżej, jak zejść można: do krzyku matki nad zabitymi
@@ -2896,7 +2900,7 @@
   - { img: kd-stworzenie-16, alt: "Śpiewaczki VoctEnsemble i Radu Ropotan uśmiechnięci po koncercie" }
   - { img: kd-stworzenie-39, alt: "Ewa Gnatkowska z uśmiechem bije brawo wśród słuchaczy po koncercie", caption: "Ewa Gnatkowska, organizatorka festiwalu „Fenomen Człowieka”" }
   - { img: kd-stworzenie-17, alt: "Śpiewacy VoctEnsemble i Radu Ropotan na schodach kościoła Wszystkich Świętych w Warszawie po koncercie" }
-  programLede: "Dziesięć utworów, jedno lustro i bis"
+  programLede: "Droga Pieśni słonecznej"
   # The conductor's own edit of this paragraph, returned 14.09.2026 — so the arc is his reading in
   # his words, which is the one thing the page had been missing since the generated reflection came
   # out of it. Three departures from what he sent, each with a reason:

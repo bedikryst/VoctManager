@@ -20,7 +20,8 @@ concert.aeternam.reflection: "« Épitaphe pour Gaza » est l'expression d'une p
 concert.aeternam.reflectionAttribution: "VoctEnsemble · septembre 2025"
 concert.aeternam.reflectionNote: "Le programme suit un chemin que le christianisme connaît depuis des siècles : de la prière sur la tombe, par la lamentation d'une mère et la demande de paix, par l'image de la Passion, jusqu'à la recommandation à celle qui se tenait au pied de la croix."
 
-concert.aeternam.programLede: "Une prière en musique : neuf maillons et un bis"
+# L'œuvre de miséricorde spirituelle dans la formule du catéchisme, comme le polonais cite la sienne.
+concert.aeternam.programLede: "Pour les vivants et les morts"
 concert.aeternam.programArc: "L'ordre est ici une prière. La soirée s'ouvre sur les mots que l'Église chante au-dessus d'une tombe, et aussitôt après elle descend aussi bas qu'on peut descendre : jusqu'au cri d'une mère sur ses enfants tués. De là elle conduit par trois demandes de paix et par le poids de la croix, jusqu'au lieu où même l'hirondelle a son nid, et jusqu'au dernier refrain, où toute la création se réjouit."
 
 concert.aeternam.movements.epitaphium.gloss: "Épitaphe"

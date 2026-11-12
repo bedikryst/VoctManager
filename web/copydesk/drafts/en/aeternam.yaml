@@ -26,7 +26,8 @@ concert.aeternam.reflection: "“Epitaph for Gaza” is an act of prayer and a g
 concert.aeternam.reflectionAttribution: "VoctEnsemble · September 2025"
 concert.aeternam.reflectionNote: "The programme takes a road Christianity has known for centuries: from the prayer at the grave, through a mother's lament and a plea for peace, through the image of the Passion, to the commending of everything to her who stood beneath the cross."
 
-concert.aeternam.programLede: "A prayer in music: nine links and an encore"
+# The spiritual work of mercy in its English catechism wording, as the Polish quotes its own.
+concert.aeternam.programLede: "For the living and the dead"
 concert.aeternam.programArc: "The order here is a prayer. The evening opens with the words the Church sings over a grave, and immediately afterwards it goes as low as one can go: to a mother's cry over her killed children. From there it leads through three pleas for peace and through the weight of the cross, as far as the place where even the swallow has a nest, and to the last refrain, in which all creation rejoices."
 
 concert.aeternam.movements.epitaphium.gloss: "Epitaph"
