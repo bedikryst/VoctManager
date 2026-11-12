@@ -136,6 +136,11 @@ export interface ConcertChrome {
     readonly listen: string;
     readonly listenPause: string;
   };
+  readonly voces: {
+    /** Summary of the disclosure holding another evening's cast, before its town and day — on a
+        programme sung again by other people. */
+    readonly otherCast: string;
+  };
   /** aria-label on the pull quote, which prints no heading of its own. */
   readonly quoteAria: string;
   readonly gallery: {
@@ -229,6 +234,7 @@ export const CONCERT: Record<Locale, ConcertChrome> = {
       listen: "Posłuchaj",
       listenPause: "Wstrzymaj",
     },
+    voces: { otherCast: "Skład" },
     quoteAria: "Cytat",
     gallery: { allImages: "Obrazy wszystkich wieczorów", give: "Wesprzyj następne koncerty" },
     poster: {
@@ -300,6 +306,7 @@ export const CONCERT: Record<Locale, ConcertChrome> = {
       listen: "Listen",
       listenPause: "Pause",
     },
+    voces: { otherCast: "Line-up" },
     quoteAria: "Quotation",
     gallery: { allImages: "Images from every evening", give: "Support the next concerts" },
     poster: {
@@ -371,6 +378,7 @@ export const CONCERT: Record<Locale, ConcertChrome> = {
       listen: "Écouter",
       listenPause: "Pause",
     },
+    voces: { otherCast: "Distribution" },
     quoteAria: "Citation",
     gallery: { allImages: "Images de toutes les soirées", give: "Soutenir les prochains concerts" },
     poster: {

@@ -2725,6 +2725,22 @@
       posterAlt: Plakat koncertu Pochwała Stworzenia w Poznaniu
       posterCredit: "Anna Marcisz · VoctEnsemble"
       share: share-stworzenie-poznan
+      # Who sings this evening: the panel's confirmed participations in its project (12.11.2026).
+      # Nobody prints a programme with a cast page for it, so within a family the names go by
+      # surname. Same consent scope as the row's roster below.
+      credits:
+        - { role: "Dyrygent", name: "Florent de Bazelaire" }
+        - { role: "Organy", name: "Jakub Kapała" }
+      roster:
+        groups:
+          - { voice: "Soprany", names: ["Klaudia Kita", "Joanna Kosiba", "Paulina Szymańska", "Joanna Trafas"] }
+          - { voice: "Alty", names: ["Natalia Czajkowska", "Natalia Lechwar-Bryniarska"] }
+          - { voice: "Tenory", names: ["Mateusz Solarz", "Michał Wolan"] }
+          - { voice: "Basy", names: ["Jakub Ciępka", "Dawid Janowiak", "Piotr Jewuła", "Szymon Maziarz"] }
+          - { voice: "Skrzypce", names: ["Radu Ropotan"], instrument: true }
+          - { voice: "Organy", names: ["Jakub Kapała"], instrument: true }
+        note: >-
+          Skład wieczoru w Poznaniu, 15 listopada 2026.
   # The passages the conductor chose from the concert recording, in programme order; Lumen and
   # the Méditation are left out by his choice, so no copy may promise a passage of every work.
   # One chapter per work, even where a work gives two passages. `program` is an index into

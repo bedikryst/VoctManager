@@ -96,6 +96,22 @@ const festival = z
   .strict()
   .optional();
 
+/** One named role of an evening (conductor, the opening word, light direction…). The ROLE is copy
+ *  and the name never is. */
+const credit = z.object({ role: z.string(), name: z.string() });
+
+/** One group of an evening's performers: a voice part, or the instrumentalists who played beside
+ *  them. */
+const rosterGroup = z.object({
+  voice: z.string(),
+  names: z.array(z.string()),
+  /** Instrumentalists rather than a voice part — one instrument or an ensemble such as a string
+      quartet: the group prints on its own line under the voices, so a violin never lands mid-row
+      between the basses and the conductor. Groups keep their index in `groups` either way — it is
+      the overlay key. */
+  instrument: z.boolean().optional(),
+});
+
 const concerts = defineCollection({
   loader: file("src/content/concerts.yaml"),
   schema: z.object({
@@ -373,7 +389,7 @@ const concerts = defineCollection({
       .optional(),
     /** Named "obsada" credits for the detail page — role → person (conductor, the Jesuit
         who gives the opening word, light direction…). Rendered as a quiet colophon block. */
-    credits: z.array(z.object({ role: z.string(), name: z.string() })).default([]),
+    credits: z.array(credit).default([]),
     /** The evening's forces as a count and instruments, no names ("12 głosów · skrzypce ·
         organy"), where the cast is confirmed. Printed on the foundation's realisation sheet under
         the named performers; the names themselves stay in `credits` and `realizacja`, so a
@@ -389,18 +405,7 @@ const concerts = defineCollection({
         without fees). */
     roster: z
       .object({
-        groups: z.array(
-          z.object({
-            voice: z.string(),
-            names: z.array(z.string()),
-            detail: z.string().optional(),
-            /** Instrumentalists rather than a voice part — one instrument or an ensemble such as a
-                string quartet: the group prints on its own line under the voices, so a violin
-                never lands mid-row between the basses and the conductor. Groups keep their index
-                in `groups` either way — it is the overlay key. */
-            instrument: z.boolean().optional(),
-          }),
-        ),
+        groups: z.array(rosterGroup.extend({ detail: z.string().optional() })),
         note: z.string().optional(),
       })
       .optional(),
@@ -444,6 +449,17 @@ const concerts = defineCollection({
             posterAlt: z.string().optional(),
             posterCredit: z.string().optional(),
             share: z.string().optional(),
+            /** Who performs THIS evening, for a repeat sung by other people than the row's night:
+                the row's `credits` and `roster` shapes, under the same consent scope. It speaks in
+                the row's labels, never its own: every role and group must be one the row holds,
+                since the page prints it from the row's desk key (refused below otherwise), which
+                is also why a group carries no `detail` gloss here. The concert page leads with
+                this cast while its evening is the one the page announces. */
+            credits: z.array(credit).optional(),
+            roster: z
+              .object({ groups: z.array(rosterGroup), note: z.string().optional() })
+              .strict()
+              .optional(),
           })
           .strict(),
       )
@@ -736,6 +752,39 @@ const concerts = defineCollection({
           `${concert.time ?? "no hour"}, "${concert.venue ?? ""}") — the row is the record of that` +
           ` night and the items after it are its repeats.`,
       });
+    }
+
+    // A repeat's cast speaks in the row's labels (see `dates[].roster`). A role or group the row
+    // does not hold has no desk key, so the English and French pages would print it in Polish
+    // with nothing on the desk to say so. The row's own evening keeps its cast on the row.
+    const rowRoles = new Set(concert.credits.map((cr) => cr.role));
+    const rowGroups = new Set((concert.roster?.groups ?? []).map((g) => g.voice));
+    for (const [index, item] of concert.dates.entries()) {
+      if (item.date === concert.date && (item.credits || item.roster)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["dates", index],
+          message: `${concert.title}: the row's own evening keeps its cast in the row's \`credits\` and \`roster\`.`,
+        });
+      }
+      for (const [at, cr] of (item.credits ?? []).entries()) {
+        if (!rowRoles.has(cr.role)) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ["dates", index, "credits", at, "role"],
+            message: `"${cr.role}" is not a role in ${concert.title}'s own \`credits\`, so it has no translation.`,
+          });
+        }
+      }
+      for (const [at, group] of (item.roster?.groups ?? []).entries()) {
+        if (!rowGroups.has(group.voice)) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ["dates", index, "roster", "groups", at, "voice"],
+            message: `"${group.voice}" is not a group in ${concert.title}'s own \`roster\`, so it has no translation.`,
+          });
+        }
+      }
     }
 
     // A per-date venue is ONE evening in ONE place by definition, so a slash there is a tour

@@ -207,6 +207,12 @@ export const CONCERT_CONTRACT = [
           "word; the city's name follows local usage (Poznań stays Poznań).",
       },
       { path: "posterAlt", key: "posterAlt", label: "plakat · opis alternatywny" },
+      {
+        path: "roster.note",
+        key: "roster.note",
+        label: "skład · nota",
+        note: "Which evening the line-up is, as the concert's own `roster.note` says it for its night.",
+      },
     ],
   },
 
@@ -499,6 +505,13 @@ export const NOT_COPY = {
   "dates[].poster": "asset name",
   "dates[].posterCredit": "the hands that drew the poster — names (see `posterCredit`)",
   "dates[].share": "asset name — the Open Graph frame",
+  "dates[].credits[].role":
+    "a role the concert's own `credits` holds (content.config refuses any other) — printed from that key",
+  "dates[].credits[].name": "a person's name",
+  "dates[].roster.groups[].voice":
+    "a group the concert's own `roster` holds (content.config refuses any other) — printed from that key",
+  "dates[].roster.groups[].names[]": "the performers' names — consent scope is this page only (§ schema)",
+  "dates[].roster.groups[].instrument": "layout flag — the group prints on the instrumentalists' line",
   "links[].href": "URL",
   "gallery[].img": "asset name",
   "gallery[].credit": "the photographer's name",

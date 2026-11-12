@@ -344,21 +344,97 @@ const itinerary = c.dates.map((d) => ({
 // ── Credits: the ROLE is copy and the NAME never is (glossary §1). Keyed by position, which is
 // stable under append — the contract's own rule, and the reason a role that looks like a natural
 // key is not used as one: it is the very value being translated.
-const credits = c.credits.map((cr, i) => ({
-  role: say(`credits.${i}.role`, cr.role),
-  name: cr.name,
-}));
-// ── The conductor stood that evening too: every roster (Voces) closes with the conductor,
-// pulled from the credits so no YAML entry has to repeat him. Program-header obsada keeps
-// its own line — a programme book names the conductor in both places. Matched on the POLISH
-// role, because the corpus is Polish and the translated list is a projection of it.
-const conductorAt = c.credits.findIndex((cr) => /dyrygent/i.test(cr.role));
-const conductorCredit = conductorAt >= 0 ? credits[conductorAt] : undefined;
-// ── Voices and instruments print on separate lines of the Voces band. Each group keeps its
-// index in `roster.groups`, because that index is the overlay key its label is translated under.
-const rosterGroups = (c.roster?.groups ?? []).map((g, key) => ({ ...g, key }));
-const voiceGroups = rosterGroups.filter((g) => !g.instrument);
-const instrumentGroups = rosterGroups.filter((g) => g.instrument);
+//
+// ── Casts: who performed which evening. A programme sung again by other people carries each
+// repeat's cast on its `dates[]` item, in the row's own labels (content.config refuses any other),
+// so a repeat's role or group is printed from the row's key for the same Polish. The page leads
+// with the cast of the evening the door announces — the programme header's credits and the Voces
+// band both follow it — and every other evening's cast stays in the Voces band, closed, as the
+// record it is. A row without such items has one cast, its own, and nothing else changes.
+type CastCredit = { readonly role: string; readonly name: string };
+type CastGroup = {
+  readonly voice: string;
+  readonly names: readonly string[];
+  readonly detail?: string;
+  readonly instrument?: boolean;
+};
+interface Cast {
+  readonly date?: string;
+  readonly town?: string;
+  readonly credits: readonly CastCredit[];
+  /** The conductor stood that evening too: every roster (Voces) closes with him, pulled from the
+      credits so no YAML entry has to repeat him; the programme header keeps its own line, as a
+      programme book names the conductor in both places. Matched on the POLISH role, because the
+      corpus is Polish and the translated list is a projection of it. */
+  readonly conductor?: CastCredit;
+  /** Credited, but not among the performers (the music assistant). The header names them for the
+      lead cast; another evening's cast prints them on its own instrumentalists' line, the one
+      place left that names that night. */
+  readonly offStage: readonly CastCredit[];
+  /** Voices and instruments print on separate lines of the Voces band. */
+  readonly voiceGroups: readonly CastGroup[];
+  readonly instrumentGroups: readonly CastGroup[];
+  readonly note?: string;
+}
+const rowRoleAt = new Map(c.credits.map((cr, i) => [cr.role, i]));
+const rowGroupAt = new Map((c.roster?.groups ?? []).map((g, i) => [g.voice, i]));
+const castOf = (
+  source: { readonly credits: readonly CastCredit[]; readonly groups: readonly CastGroup[] },
+  /** The desk index a role or group is translated under: its own on the row, the row's on a repeat. */
+  keyOf: { readonly role: (role: string, at: number) => number; readonly group: (voice: string, at: number) => number },
+): Pick<Cast, "credits" | "conductor" | "offStage" | "voiceGroups" | "instrumentGroups"> => {
+  const credits = source.credits.map((cr, i) => ({
+    role: say(`credits.${keyOf.role(cr.role, i)}.role`, cr.role),
+    name: cr.name,
+  }));
+  const conductorAt = source.credits.findIndex((cr) => /dyrygent/i.test(cr.role));
+  const groups = source.groups.map((g, i) => {
+    const at = keyOf.group(g.voice, i);
+    return {
+      ...g,
+      voice: say(`roster.groups.${at}.voice`, g.voice),
+      detail: sayIf(`roster.groups.${at}.detail`, g.detail),
+    };
+  });
+  const performers = new Set(source.groups.flatMap((g) => g.names));
+  return {
+    credits,
+    conductor: credits[conductorAt],
+    offStage: credits.filter((cr, i) => i !== conductorAt && !performers.has(cr.name)),
+    voiceGroups: groups.filter((g) => !g.instrument),
+    instrumentGroups: groups.filter((g) => g.instrument),
+  };
+};
+const rowCast: Cast = {
+  date: c.date,
+  town: recordTown,
+  note: sayIf("roster.note", c.roster?.note),
+  ...castOf(
+    { credits: c.credits, groups: c.roster?.groups ?? [] },
+    { role: (_role, at) => at, group: (_voice, at) => at },
+  ),
+};
+const repeatCasts: Cast[] = c.dates
+  .filter((d) => d.credits || d.roster)
+  .map((d) => {
+    const sayDate = (field: string, polish: string | undefined): string | undefined =>
+      polish === undefined ? undefined : withOverlay(concertKey(entry.id, `dates.${d.date}.${field}`), lang, polish);
+    return {
+      date: d.date,
+      town: sayDate("metaPlace", d.metaPlace?.pl ?? d.venue)?.split(",").at(-1)?.trim(),
+      note: sayDate("roster.note", d.roster?.note),
+      ...castOf(
+        { credits: d.credits ?? [], groups: d.roster?.groups ?? [] },
+        { role: (role) => rowRoleAt.get(role) ?? -1, group: (voice) => rowGroupAt.get(voice) ?? -1 },
+      ),
+    };
+  });
+const leadCast = repeatCasts.find((cast) => cast.date === door?.performance) ?? rowCast;
+const otherCasts = [rowCast, ...repeatCasts]
+  .filter((cast) => cast !== leadCast && cast.voiceGroups.length + cast.instrumentGroups.length > 0)
+  .sort((a, b) => (a.date ?? "").localeCompare(b.date ?? ""));
+const { credits, conductor: conductorCredit, voiceGroups, instrumentGroups } = leadCast;
+const hasVoces = voiceGroups.length + instrumentGroups.length > 0;
 // ── THIS EVENING HAS NOT BEEN SUNG YET, and it is one fact with several consequences, so it is
 // named once here. Read off the calendar (`upcoming`, lib/cycle), which means the first deploy
 // after the concert turns this page from an invitation into a record without anyone editing it:
@@ -480,7 +556,7 @@ const tabula: TabulaEntry[] = [
   { when: hasTour, id: "wykonania", title: ui.bands.tour, figure: "Itinerarium" },
   { when: !!(c.reflection || c.reflectionNote), id: "refleksja", title: ui.bands.reflection, figure: "Reflectio" },
   { when: program.length > 0, id: "program", title: ui.bands.program, figure: "Programma" },
-  { when: !!(c.roster && c.roster.groups.length > 0), id: "glosy", title: ui.bands.voces, figure: "Voces" },
+  { when: hasVoces, id: "glosy", title: ui.bands.voces, figure: "Voces" },
   { when: !!(c.video && filmVideoSrc), id: "zapis", title: ui.bands.film, figure: "Imago viva" },
   { when: gallery.length > 0, id: "obrazy", title: ui.bands.gallery, figure: "Imagines" },
 ]
@@ -1329,8 +1405,10 @@ const jsonLd =
           instrumentalists by instrument — a per-evening cast, never the ensemble's fixed roster
           (guests happen, people move on). Names are consent-cleared for concert pages only. The
           cast closes with the conductor (from credits — he stood there too). The quiet factual footnote (`roster.note`) belongs to the whole block.
-          Placed before the film/gallery so the names lead into the images. ── */}
-    {c.roster && c.roster.groups.length > 0 && (
+          Placed before the film/gallery so the names lead into the images. A programme sung by
+          other people on another night prints the lead cast (see `leadCast`) and closes each
+          other evening's cast under a disclosure named by its town and day. ── */}
+    {hasVoces && (
       <section class="kd-band kd-band-soft kd-voces tone-light" id="glosy" aria-label={ui.bands.voces}>
         <div class="kd-wrap">
           <h2 class="kd-section-label micro reveal">
@@ -1352,13 +1430,11 @@ const jsonLd =
               <div class="kd-voces-group reveal" data-d={String((i % 4) + 1)}>
                 {/* The GROUP is copy — the choral convention, not a literal (Soprany → Sopranos)
                     — and the singers under it are names, which stay themselves everywhere. */}
-                <dt class="kd-voces-voice micro">{say(`roster.groups.${g.key}.voice`, g.voice)}</dt>
+                <dt class="kd-voces-voice micro">{g.voice}</dt>
                 {g.names.map((n) => (
                   <dd class="kd-voces-name">{n}</dd>
                 ))}
-                {g.detail && (
-                  <dd class="kd-voces-detail">{say(`roster.groups.${g.key}.detail`, g.detail)}</dd>
-                )}
+                {g.detail && <dd class="kd-voces-detail">{g.detail}</dd>}
               </div>
             ))}
             {/* The conductor stands at step `voiceGroups.length`, so his step continues the
@@ -1378,20 +1454,66 @@ const jsonLd =
             <dl class="kd-voces-grid kd-voces-instruments">
               {instrumentGroups.map((g, i) => (
                 <div class="kd-voces-group reveal" data-d={String(((voiceGroups.length + 1 + i) % 4) + 1)}>
-                  <dt class="kd-voces-voice micro">{say(`roster.groups.${g.key}.voice`, g.voice)}</dt>
+                  <dt class="kd-voces-voice micro">{g.voice}</dt>
                   {g.names.map((n) => (
                     <dd class="kd-voces-name">{n}</dd>
                   ))}
-                  {g.detail && (
-                    <dd class="kd-voces-detail">{say(`roster.groups.${g.key}.detail`, g.detail)}</dd>
-                  )}
+                  {g.detail && <dd class="kd-voces-detail">{g.detail}</dd>}
                 </div>
               ))}
             </dl>
           )}
-          {c.roster.note && (
-            <p class="kd-voces-note reveal reveal-rule">{say("roster.note", c.roster.note)}</p>
-          )}
+          {leadCast.note && <p class="kd-voces-note reveal reveal-rule">{leadCast.note}</p>}
+          {/* Another evening's cast: the record, closed, in the disclosure the programme's texts
+              use. Nothing inside reveals on scroll — it is hidden while the page scrolls past, and
+              the disclosure controller unfolds it. Whoever that night credits beyond its performers
+              stands on its instrumentalists' line, since the programme header names the lead's. */}
+          {otherCasts.map((cast) => (
+            <details class="kd-voces-other">
+              <summary>
+                <span class="kd-text-cue">
+                  {[ui.voces.otherCast, cast.town, cast.date && longDate(cast.date, lang)].filter(Boolean).join(" · ")}
+                </span>
+                <span class="kd-text-icon" aria-hidden="true"></span>
+              </summary>
+              <dl class="kd-voces-grid">
+                {cast.voiceGroups.map((g) => (
+                  <div class="kd-voces-group">
+                    <dt class="kd-voces-voice micro">{g.voice}</dt>
+                    {g.names.map((n) => (
+                      <dd class="kd-voces-name">{n}</dd>
+                    ))}
+                    {g.detail && <dd class="kd-voces-detail">{g.detail}</dd>}
+                  </div>
+                ))}
+                {cast.conductor && (
+                  <div class="kd-voces-group">
+                    <dt class="kd-voces-voice micro">{cast.conductor.role}</dt>
+                    <dd class="kd-voces-name">{cast.conductor.name}</dd>
+                  </div>
+                )}
+              </dl>
+              {cast.instrumentGroups.length + cast.offStage.length > 0 && (
+                <dl class="kd-voces-grid kd-voces-instruments">
+                  {cast.instrumentGroups.map((g) => (
+                    <div class="kd-voces-group">
+                      <dt class="kd-voces-voice micro">{g.voice}</dt>
+                      {g.names.map((n) => (
+                        <dd class="kd-voces-name">{n}</dd>
+                      ))}
+                    </div>
+                  ))}
+                  {cast.offStage.map((cr) => (
+                    <div class="kd-voces-group">
+                      <dt class="kd-voces-voice micro">{cr.role}</dt>
+                      <dd class="kd-voces-name">{cr.name}</dd>
+                    </div>
+                  ))}
+                </dl>
+              )}
+              {cast.note && <p class="kd-voces-note">{cast.note}</p>}
+            </details>
+          ))}
         </div>
       </section>
     )}
@@ -1737,16 +1859,16 @@ const jsonLd =
       light.forEach((el) => toneIO!.observe(el));
     };
 
-    // Both disclosures on the page take one call: a sung text under a work and the transcribed
-    // word under the Verbum are the same gesture at two sizes. Neither `.kd-text-cols` nor
-    // `.kd-verbum-body` can be the animated box itself — both carry a top margin, which sits
+    // Every disclosure on the page takes one call: a sung text under a work, the transcribed word
+    // under the Verbum and another evening's cast are the same gesture at three sizes. Neither
+    // `.kd-text-cols` nor `.kd-verbum-body` can be the animated box itself — both carry a top margin, which sits
     // OUTSIDE the height and would stand under a closed summary as a gap — so the controller
     // wraps them. That wrapper is created at runtime and therefore carries no scope attribute:
     // nothing in this file's <style> can reach it, and nothing needs to.
     const setupKdDisclosures = () => {
       dropDisclosures?.();
       dropDisclosures = setupDisclosure(document, {
-        selector: ".kd-text, .kd-verbum-full",
+        selector: ".kd-text, .kd-verbum-full, .kd-voces-other",
         bodyClass: "kd-disclosure-body",
       });
     };
@@ -2210,9 +2332,12 @@ const jsonLd =
 
   /* Sung text + translation (native <details>) */
   .kd-text { margin: 14px 0 0; }
-  .kd-text summary { list-style: none; display: inline-flex; align-items: center; gap: 10px; cursor: pointer; font-family: var(--capitalis); font-size: 10px; letter-spacing: .2em; text-transform: uppercase; color: var(--candle-ink); padding: 4px 0; transition: color .3s var(--ease, ease); }
-  .kd-text summary::-webkit-details-marker { display: none; }
-  .kd-text summary:hover { color: var(--ink); }
+  .kd-text summary,
+  .kd-voces-other summary { list-style: none; display: inline-flex; align-items: center; gap: 10px; cursor: pointer; font-family: var(--capitalis); font-size: 10px; letter-spacing: .2em; text-transform: uppercase; color: var(--candle-ink); padding: 4px 0; transition: color .3s var(--ease, ease); }
+  .kd-text summary::-webkit-details-marker,
+  .kd-voces-other summary::-webkit-details-marker { display: none; }
+  .kd-text summary:hover,
+  .kd-voces-other summary:hover { color: var(--ink); }
   .kd-text-icon { position: relative; width: 10px; height: 10px; flex-shrink: 0; }
   .kd-text-icon::before,
   .kd-text-icon::after { content: ""; position: absolute; background: currentColor; transition: transform .35s var(--ease, ease), opacity .35s var(--ease, ease); }
@@ -2221,7 +2346,8 @@ const jsonLd =
   /* Both disclosures wear this icon, so both close its vertical stroke. The Verbum used to keep
      a plus sign over an open transcript — the one state the mark exists to distinguish. */
   .kd-text[open] .kd-text-icon::after,
-  .kd-verbum-full[open] .kd-text-icon::after { transform: scaleY(0); opacity: 0; }
+  .kd-verbum-full[open] .kd-text-icon::after,
+  .kd-voces-other[open] .kd-text-icon::after { transform: scaleY(0); opacity: 0; }
   .kd-text-cols { margin: 16px 0 2px; display: grid; grid-template-columns: 1fr 1fr; gap: clamp(20px, 3vw, 48px); max-width: 720px; padding-left: clamp(14px, 2vw, 22px); border-left: 1px solid var(--line, rgba(22,21,20,.16)); }
   .kd-text-cols.is-single { grid-template-columns: 1fr; }
   /* Sung texts are the longest run of small serif on the site, on parchment, and one of
@@ -2337,6 +2463,10 @@ const jsonLd =
   .kd-voces-name { margin: 0 0 6px; font-family: var(--serif); font-weight: 300; font-size: clamp(18px, 1.7vw, 22px); line-height: 1.25; color: var(--ink); }
   .kd-voces-detail { margin: 12px 0 0; max-width: 32ch; font-family: var(--sans); font-weight: 300; font-size: clamp(13px, 1vw, 14px); line-height: 1.65; color: var(--ink-muted, #746d62); }
   .kd-voces-note { margin: clamp(40px, 5vw, 60px) 0 0; padding-top: 18px; border-top: 1px solid var(--line, rgba(22,21,20,.16)); max-width: 56ch; font-family: var(--serif); font-style: italic; font-weight: 300; font-size: clamp(15px, 1.3vw, 17px); line-height: 1.6; color: var(--ink-muted, #746d62); }
+  /* Another evening's cast sits under the lead's note, a step quieter: the summary is the cue the
+     programme's texts wear, and the grid opens one row-gap below it. */
+  .kd-voces-other { margin: clamp(28px, 4vw, 44px) 0 0; }
+  .kd-voces-other .kd-voces-grid:first-of-type { margin-top: clamp(28px, 4vw, 44px); }
 
   /* ── Documentary gallery ───────────────────────────────────────────────── */
   .kd-gallery { background: var(--night, #100f0d); color: var(--paper); }
