@@ -119,7 +119,7 @@ from archive.serializers import AnnotationSerializer
 
 # Core
 from core.constants import AppRole, ClothingSizeChoices, VoiceLine
-from core.models import Note, UserProfile
+from core.models import FeedbackKind, FeedbackReport, FeedbackStatus, Note, UserProfile
 from core.serializers import NoteSerializer
 from core.voice_labels import section_of_seat, voice_family_of
 
@@ -235,6 +235,9 @@ from roster.services import (
     RehearsalDelegationService,
     RehearsalOperationsService,
 )
+
+# Support (the agent answering feedback reports)
+from support.models import SupportReplyChannel, SupportRun, SupportRunResult, SupportRunTrigger
 
 # `get_user_model()` returns a runtime value mypy cannot use as a type. Bind the
 # concrete model under TYPE_CHECKING so annotations resolve, while keeping the
@@ -1021,6 +1024,7 @@ class Command(BaseCommand):
             self._settle_spring_grant()
             self._seed_score_markup()
             self._seed_messaging()
+            self._seed_feedback()
             self._seed_payments()
             self._seed_notifications()
             self._seed_notebook()
@@ -1042,6 +1046,7 @@ class Command(BaseCommand):
         # Ordered child → parent to satisfy RESTRICT/PROTECT foreign keys.
         ordered: list[type[Any]] = [
             Notification, NotificationPreference, PushDevice, PendingAnnouncement,
+            SupportRun, FeedbackReport,
             ChannelMessage, ChannelMembership, ProjectChannel,
             ThreadReadState, Message, Thread,
             Donation, PatronLead, Note,
@@ -2733,6 +2738,130 @@ class Command(BaseCommand):
                     thread=thread, user=artist.user,
                     defaults={"last_read_at": last_at - timedelta(hours=1)},
                 )
+
+    # ----------------------------------------------------------------- #
+    # 11b. Feedback reports and the support agent's runs on them         #
+    # ----------------------------------------------------------------- #
+    def _seed_feedback(self) -> None:
+        """Twelve days of in-app reports, most of them closed: the admin's triage
+        queue as it looks in steady use. Each report carries the agent's run, a
+        reply or a decision to stay silent. The text is English so the portfolio
+        captures of the queue read without translation."""
+        if FeedbackReport.all_objects.exists():
+            return
+        self._log("11b. Feedback reports and support runs...")
+        kind = FeedbackKind
+        # (kind, route, body, the agent's reply or None when it stayed silent)
+        reports: tuple[tuple[str, str, str, str | None], ...] = (
+            (kind.BUG, "/panel/materials", "The score for Ave verum opens on a blank page on my phone.",
+             "The page draws once the whole PDF has arrived, which takes a while on mobile data. "
+             "I'm passing on that it shows nothing in the meantime."),
+            (kind.IDEA, "/panel/schedule/rehearsal", "Could the player remember the speed for each piece?",
+             "It doesn't yet: the speed goes back to 100% when you open another piece. I'm passing the idea on."),
+            (kind.CONFUSING, "/panel/schedule", "Where do I say I can't come on Thursday?",
+             "Open Thursday's rehearsal in Schedule and tap \"I can't come\". The conductor sees it at once."),
+            (kind.PRAISE, "/panel/materials", "Practising with only my voice louder is a game changer.", None),
+            (kind.BUG, "/panel/notes", "When I pin my notes, they cover the feedback button.",
+             "That's a fault: the pinned panel sits on the right edge, over the button that should always "
+             "be within reach. I'm passing it on."),
+            (kind.CONFUSING, "/panel/materials", "How do I change the colour of a note I already wrote?",
+             "Pick Select on the toolbar, tap the note and choose a colour in the row that appears. "
+             "Undo takes it back."),
+            (kind.BUG, "/panel", "The notification about tomorrow's rehearsal came an hour late.",
+             "The reminder went out on time; your phone held it while it was saving battery. "
+             "Allowing VoctManager to run in the background fixes it."),
+            (kind.IDEA, "/panel/schedule", "Could the calendar show the dress rehearsal in a different colour?", None),
+            (kind.BUG, "/panel/messages", "My reply in Messages disappeared after I sent it.",
+             "It was saved; the list showed the older copy until it refreshed. I'm passing that on."),
+            (kind.PRAISE, "/panel/schedule/rehearsal", "Love seeing the plan before the rehearsal!", None),
+            (kind.CONFUSING, "/panel/projects", "Why does the cast list show me twice?",
+             "You sing two parts in this project, the alto line and the solo, and each has its own row."),
+            (kind.BUG, "/panel/materials", "The page turn on the music stand skips two pages.",
+             "A quick double tap counts as two turns. I'm passing on that it should wait for the page."),
+            (kind.IDEA, "/panel/materials", "A metronome inside the player would be great.", None),
+            (kind.CONFUSING, "/panel/finance", "What does \"remaining\" mean on the grant card?",
+             "It is what the grant still owes us: the sum awarded minus what has already arrived."),
+            (kind.BUG, "/panel/settings", "Dark mode makes the pencil marks on the score hard to see.",
+             "The marks keep their colours on a page that stays white, but the grey pencil is pale. "
+             "I'm passing it on."),
+            (kind.PRAISE, "/panel", "The new home screen is so much clearer.", None),
+            (kind.CONFUSING, "/panel/schedule/rehearsal", "What does \"not your voice\" mean in the plan?",
+             "That part of the rehearsal is for other voices, so you can come later or stay quiet."),
+            (kind.BUG, "/panel/materials", "The recording stops when my screen locks.",
+             "Your phone stops the page when it locks. Adding the app to the home screen keeps it playing."),
+            (kind.IDEA, "/panel/messages", "Could I see who has read my message?", None),
+            (kind.BUG, "/panel/projects", "I accepted the invitation but it still says pending.",
+             "Your answer reached us; the badge waited for the page to refresh. I'm passing that on."),
+            (kind.CONFUSING, "/panel", "Is the concert on Saturday in the same church as last time?",
+             "No: Saturday's concert is in the Basilica, and its address is on the project's page under Venue."),
+            (kind.PRAISE, "/panel/notes", "The notebook next to the score is exactly what I needed.", None),
+            (kind.BUG, "/panel/schedule", "Two rehearsals overlap in my calendar export.",
+             "The sectional and the full rehearsal really overlap that evening; the export shows both."),
+            (kind.IDEA, "/panel/projects", "Please let us download all scores for a concert at once.", None),
+            (kind.CONFUSING, "/panel/settings", "Can the developer see everything I do in the app?",
+             "No, the app keeps no log of your clicks. What you write or save is stored, and an admin "
+             "account can read it, apart from your private notes."),
+            (kind.BUG, "/panel/materials", "Lyrics in the Ave Maria translation are cut off at the end.",
+             "The last verse is in the text but the panel stopped a line short. I'm passing it on."),
+            (kind.PRAISE, "/panel/schedule/rehearsal", "Thank you for the attendance reminders.", None),
+            (kind.CONFUSING, "/panel/schedule/rehearsal", "Where can I see my part for the sectional?",
+             "In the rehearsal's plan: rows for your voice are marked \"Your part\"."),
+            (kind.BUG, "/panel/messages", "The unread badge stays after I read everything.",
+             "One thread was opened on your other device and this one hadn't caught up. I'm passing it on."),
+            (kind.IDEA, "/panel/materials", "Could the stand remember the last page I was on?", None),
+            (kind.BUG, "/panel/projects", "The programme shows the wrong composer for Totus Tuus.",
+             "The piece is credited to its arranger in the archive. I'm passing it on to be corrected."),
+            (kind.CONFUSING, "/panel/projects", "Who got the highest fee for the last concert?",
+             "I can't see the ensemble's data, so I won't give a name. You'll find it in Projects, "
+             "the concert, Budget, Fees."),
+            (kind.PRAISE, "/panel", "Everything works on my old phone now.", None),
+            (kind.BUG, "/panel/settings", "I can't switch the language back to Polish.",
+             "The switch saved, but the page kept its old text until it reloaded. I'm passing that on."),
+            (kind.IDEA, "/panel/schedule", "Could the schedule show travel time to the venue?", None),
+            (kind.CONFUSING, "/panel/schedule", "Which entrance do we use at the Basilica?",
+             "The side entrance on the left; it is in the rehearsal's venue note."),
+        )
+        reporters = [*self.managers] + [
+            artist.user for artist in self.artists if artist.user is not None and artist.user.is_active
+        ]
+        start = self.now - timedelta(days=15)
+        # Placed at a local hour first and sorted after, so the newest reports
+        # are the ones still open.
+        moments = sorted(
+            _at_local_time(
+                start + timedelta(days=random.uniform(0, 12)), random.randint(8, 22), random.randint(0, 59),
+            )
+            for _ in range(59)
+        )
+        # 53 of the 59 closed, as on the portfolio's /cv: the newest six still open.
+        dismissed = set(random.sample(range(len(moments) - 6), 6))
+        for index, moment in enumerate(moments):
+            report_kind, route, body, reply = reports[index % len(reports)]
+            from_end = len(moments) - index
+            if from_end <= 2:
+                status = FeedbackStatus.NEW
+            elif from_end <= 6:
+                status = FeedbackStatus.TRIAGED
+            elif index in dismissed:
+                status = FeedbackStatus.DISMISSED
+            else:
+                status = FeedbackStatus.RESOLVED
+            report = FeedbackReport.objects.create(
+                reporter=random.choice(reporters), kind=report_kind, body=body, route=route, status=status,
+                context={"viewport": random.choice(("390x844", "1440x900", "834x1194")), "online": True},
+            )
+            FeedbackReport.all_objects.filter(pk=report.pk).update(created_at=moment, updated_at=moment)
+            run = SupportRun.objects.create(
+                report=report,
+                trigger=SupportRunTrigger.AUTO,
+                result=SupportRunResult.SENT if reply else SupportRunResult.SILENT,
+                reply=reply or "",
+                channel=SupportReplyChannel.APP if reply else "",
+                finished_at=moment + timedelta(minutes=3),
+                tool_rounds=random.randint(2, 9),
+                elapsed_seconds=round(random.uniform(40, 170), 1),
+            )
+            SupportRun.objects.filter(pk=run.pk).update(started_at=moment + timedelta(minutes=2))
 
     # ----------------------------------------------------------------- #
     # 12. Payments (donations + patron leads)                           #

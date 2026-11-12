@@ -88,8 +88,28 @@ export async function stage({ lang = "pl" } = {}) {
   return JSON.parse(line.slice("READMEMEDIA ".length));
 }
 
-export async function launch() {
-  return chromium.launch({ channel: "msedge", headless: true });
+/** Run Python in the web container's Django shell and return what it printed. */
+export function django(code) {
+  return execFileSync("docker", ["exec", "-i", CONTAINER, "python", "manage.py", "shell"], { input: code }).toString();
+}
+
+/**
+ * The dev stack holds an API key, so a report a take files would be answered
+ * by the paid support agent two minutes later. A finished run recorded at once
+ * marks the report as read, and the queued run then stands down as covered.
+ */
+export function settleReports() {
+  django(`
+from django.utils import timezone
+from core.models import FeedbackReport
+from support.models import SupportRun, SupportRunResult, SupportRunTrigger
+for report in FeedbackReport.objects.filter(support_runs__isnull=True):
+    SupportRun.objects.create(report=report, trigger=SupportRunTrigger.AUTO, result=SupportRunResult.SILENT, finished_at=timezone.now())
+`);
+}
+
+export async function launch({ args = [] } = {}) {
+  return chromium.launch({ channel: "msedge", headless: true, args });
 }
 
 /**
@@ -118,12 +138,11 @@ export async function login(browser, email, password) {
 async function freshLogin(browser, email, password) {
   const context = await browser.newContext(VIEWPORTS.desktop);
   const page = await context.newPage();
-  await page.goto(`${BASE}/panel/login`);
+  await page.goto(`${BASE}/login`);
   await page.locator('input[type="email"]').fill(email);
   await page.locator('input[type="password"]').fill(password);
   await Promise.all([
-    // The sign-in page is under /panel too, so wait for the URL to leave it.
-    page.waitForURL((url) => !url.pathname.startsWith("/panel/login"), { timeout: 30_000 }),
+    page.waitForURL((url) => !url.pathname.endsWith("/login"), { timeout: 30_000 }),
     page.locator('button[type="submit"]').click(),
   ]);
   const state = await context.storageState();
@@ -151,18 +170,19 @@ const HIDE_CSS = [
 
 /** A context for one theme at one size, sharing the logged-in cookie jar. */
 export async function themedContext(browser, {
-  state, size, theme, lang = "pl", storage = {}, video, viewport, showFeedback = false,
+  state, size, theme, lang = "pl", storage = {}, video, viewport, showFeedback = false, motion = false, scale, ids,
 }) {
   const frame = viewport ?? VIEWPORTS[size].viewport;
   const context = await browser.newContext({
     ...VIEWPORTS[size],
+    ...(scale ? { deviceScaleFactor: scale } : {}),
     viewport: frame,
     storageState: state,
     colorScheme: theme,
     locale: lang === "en" ? "en-GB" : "pl-PL",
     timezoneId: "Europe/Warsaw",
     serviceWorkers: "block",
-    reducedMotion: video ? "no-preference" : "reduce",
+    reducedMotion: video || motion ? "no-preference" : "reduce",
     ...(video ? { recordVideo: { dir: video, size: frame } } : {}),
   });
   await context.addInitScript(([entries, css]) => {
@@ -179,7 +199,23 @@ export async function themedContext(browser, {
     if (document.head) style();
     else document.addEventListener("DOMContentLoaded", style);
   }, [panelStorage(theme, lang, storage), showFeedback ? "" : HIDE_CSS]);
+  if (ids?.admin_avatar_dir) {
+    await context.route(`**/media/${ids.admin_avatar_dir}/**`, (route) => route.fulfill({
+      contentType: "image/svg+xml",
+      body: initialsAvatar(ids.admin_initials),
+    }));
+  }
   return context;
+}
+
+/** An avatar in the seed's manner: initials on a gold-to-sage gradient. */
+function initialsAvatar(initials) {
+  return '<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">'
+    + '<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">'
+    + '<stop offset="0" stop-color="#c2a878"/><stop offset="1" stop-color="#8f9d80"/></linearGradient></defs>'
+    + '<rect width="256" height="256" fill="url(#g)"/>'
+    + '<text x="128" y="128" dy=".35em" text-anchor="middle" font-family="Georgia, serif" font-size="100" '
+    + `fill="#fffaf0">${initials}</text></svg>`;
 }
 
 /** Wait for data to land and motion to settle before a still. */

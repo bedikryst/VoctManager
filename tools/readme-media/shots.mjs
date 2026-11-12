@@ -24,6 +24,25 @@ const SITE = process.env.README_MEDIA_SITE ?? "http://localhost:4321";
 
 const SHOTS = [
   {
+    // The triage queue for in-app reports, in the Django admin: twelve days of
+    // the seed's reports, most of them closed. The admin keeps its own session,
+    // so this one signs in through the admin's form.
+    name: "feedback-inbox",
+    size: "desktop",
+    langs: ["pl", "en"],
+    go: async (page, ids) => {
+      // The admin's app list folded away, so the report's own words fit the row.
+      await page.addInitScript(() => localStorage.setItem("django.admin.navSidebarIsOpen", "false"));
+      await page.goto(`${BASE}/admin/login/?next=/admin/core/feedbackreport/%3F_facets%3DTrue`);
+      if (await page.locator("#id_username").isVisible().catch(() => false)) {
+        await page.locator("#id_username").fill(ids.admin_email);
+        await page.locator("#id_password").fill("admin123");
+        await Promise.all([page.waitForURL(/feedbackreport/), page.locator('input[type="submit"]').click()]);
+      }
+      await page.locator("#result_list").waitFor();
+    },
+  },
+  {
     name: "admin-dashboard",
     size: "desktop",
     langs: ["pl", "en"],
@@ -280,7 +299,7 @@ try {
     }
     for (const theme of shot.themes ?? ["light", "dark"]) {
       const context = await themedContext(browser, {
-        state: sessions[shot.as ?? "admin"], size: shot.size, theme, lang, showFeedback: shot.showFeedback,
+        state: sessions[shot.as ?? "admin"], size: shot.size, theme, lang, showFeedback: shot.showFeedback, ids,
       });
       const page = await context.newPage();
       await shot.go(page, ids, say);

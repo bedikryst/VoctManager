@@ -144,8 +144,13 @@ def ids(edition: ScoreEdition) -> dict[str, object]:
     admin = get_user_model().objects.get(username="admin")
     language = os.environ.get("READMEMEDIA_LANG", "pl")
     UserProfile.objects.filter(user__in=[admin, tenor.user]).update(language=language)
+    # The kept superuser may wear a photo of its own; the takes show the seed's
+    # kind of initials avatar in its place (lib.mjs routes the image).
+    avatar = admin.profile.avatar.name if admin.profile.avatar else ""
     return {
         "admin_email": admin.email,
+        "admin_avatar_dir": avatar.rsplit("/", 1)[0] if avatar else None,
+        "admin_initials": (admin.first_name[:1] + admin.last_name[:1]).upper() or "A",
         "showcase": str(showcase.id),
         "planned_rehearsal": str(planned.id),
         "rehearsals": [str(r.id) for r in rehearsals],
