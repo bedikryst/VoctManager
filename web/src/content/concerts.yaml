@@ -582,9 +582,9 @@
       zagubiona pieśń otrzymuje odpowiedź tej samej mocy.
     attribution: "Bernat Vivancos"
     about: "o utworze Le cri des bergers, od którego wieczór wziął nazwę"
-  # The lede states the evening's shape, so the arc starts on the first work instead of saying it
-  # again one line down.
-  programLede: "W górę i z powrotem"
+  # The lede is the Sursum corda of the Mass, the evening's rise; the arc tells the climb and the
+  # return itself, starting on the first work.
+  programLede: "W górę serca"
   programArc: >-
     Wieczór otwiera wołanie bez słów, pasterskie „Eee-Ooo”
     z Pirenejów, a zaraz potem to samo wołanie dostaje słowa: Salve Regina pasterzy z Rouergue,
