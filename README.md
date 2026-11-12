@@ -101,6 +101,8 @@ People often send a second report a minute after the first. The run on the first
 
 I built the evaluation set from the 81 reports in the mailbox. 17 are questions with a reference answer written from the code of their build, and 4 of those were held back from tuning. 11 are reports that should get no reply. The gate, three runs per held-back question, allowed no claim from each question's list of wrong answers, no miss on the facts marked critical, no wrong language and no gendered form, and asked for at least 85% of all reference facts. It passed with 27 of 30. I marked the critical facts of one held-back question after reading its results, by the rule the others were marked by; as fixed before the run, the gate failed on that one fact. I also read all twelve held-back replies and would have sent each of them unchanged.
 
+It went live on 10 November. In its first two days it read 13 reports in Polish, Croatian and French. It answered 7, and I read each answer: all were correct. Three of those also came to me flagged as a defect or a gap. It left the other 6, all suggestions or praise, without a reply, which was right each time. Runs cost $0.02 to $0.31, $1.60 in all, and took 3 to 43 seconds.
+
 Tuning ran through Claude Code on a subscription, after the first evaluation over the API used up a $5 balance 13 runs in. A run costs about $0.24 at API prices, by the token counts of the held-back runs, and stops researching at $1.50. The model is Opus 5.5 at `effort: high`, picked in a comparison where Haiku answered 3 of 7 tuning questions correctly and Opus 10 of 13. Code: [`backend/support/`](backend/support/).
 
 ## Rehearsal plans
