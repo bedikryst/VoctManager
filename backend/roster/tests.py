@@ -6345,6 +6345,8 @@ class ConcertDaySheetTests(APITestCase):
     """
 
     def setUp(self) -> None:
+        import zoneinfo
+
         from archive.models import Composer, Piece
         from core.constants import AppRole, VoiceLine
         from core.models import UserProfile
@@ -6358,7 +6360,12 @@ class ConcertDaySheetTests(APITestCase):
         )
 
         User = get_user_model()
-        now = timezone.now()
+        # Midday in Warsaw, so the call an hour before the downbeat falls on the
+        # same local day whenever the suite runs; at "now" a run just before
+        # midnight split the sheet into two days.
+        now = timezone.now().astimezone(zoneinfo.ZoneInfo("Europe/Warsaw")).replace(
+            hour=12, minute=0, second=0, microsecond=0
+        )
 
         # Manager without an artist profile — production export only.
         self.manager = User.objects.create_user(
