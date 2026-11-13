@@ -88,23 +88,23 @@ const JOBS = {
 
   // Open the donation sheet, pick an amount, switch the currency; no further.
   async donate(browser) {
-    const context = await visitor(browser, { scale: 1, motion: true });
+    const context = await visitor(browser, { motion: true });
     await filmable(context);
     await injectCursor(context);
     const page = await context.newPage();
     const film = new Film(page, join(DIR, "donate-frames"));
     await open(page, "/en");
     await film.begin();
-    await film.hold(0.9);
+    await film.hold(1.8);
     await film.click(page.getByText("Support us", { exact: true }).first());
     // The amounts and currencies are radio buttons, so they are found by tag and text.
     const amount = page.locator("button", { hasText: /^\s*200\s*PLN\s*$/ }).filter({ visible: true }).first();
     await film.see(amount);
-    await film.hold(0.9);
-    await film.click(amount, { seconds: 0.5 });
-    await film.hold(0.7);
-    await film.click(page.locator("button", { hasText: /^\s*EUR\s*$/ }).filter({ visible: true }).first(), { seconds: 0.45 });
-    await film.hold(2.2);
+    await film.hold(1.8);
+    await film.click(amount, { seconds: 0.6 });
+    await film.hold(1.2);
+    await film.click(page.locator("button", { hasText: /^\s*EUR\s*$/ }).filter({ visible: true }).first(), { seconds: 0.5 });
+    await film.hold(3.5);
     await context.close();
     const result = film.encode(join(DIR, "ve-donate.mp4"), { poster: join(DIR, "ve-donate.webp") });
     console.log("clip donate", result);

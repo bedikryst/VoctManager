@@ -14,7 +14,7 @@
  * The page's caret blinks on the real clock, so screenshots hide it.
  */
 
-import { mkdirSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, readdirSync, rmSync, statSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import { join } from "node:path";
 
@@ -246,7 +246,9 @@ export async function filmable(context) {
     const quiet = () => {
       document.documentElement.setAttribute("spellcheck", "false");
       const style = document.createElement("style");
-      style.textContent = "* { caret-color: transparent !important; }";
+      // Fields that ask for spellchecking themselves still get no squiggles.
+      style.textContent = "* { caret-color: transparent !important; }"
+        + " ::spelling-error, ::grammar-error { text-decoration: none !important; }";
       document.head.appendChild(style);
     };
     if (document.head) quiet();
@@ -272,7 +274,6 @@ export class Film {
 
   /** Stop the page's clock; from here on time passes only frame by frame. */
   async begin() {
-    this.cdp ??= await this.page.context().newCDPSession(this.page);
     await this.page.evaluate(() => window.__film.freeze());
   }
 
@@ -280,12 +281,14 @@ export class Film {
   async frame(count = 1) {
     for (let i = 0; i < count; i += 1) {
       await this.page.evaluate((ms) => window.__film?.advance(ms), this.dt);
-      const { data } = await this.cdp.send("Page.captureScreenshot", {
-        format: "jpeg",
+      // Playwright's own capture, because it renders at the context's device
+      // scale; the protocol's bare captureScreenshot returns CSS pixels.
+      await this.page.screenshot({
+        path: join(this.dir, `f${String(this.count).padStart(5, "0")}.jpg`),
+        type: "jpeg",
         quality: 95,
-        optimizeForSpeed: true,
+        scale: "device",
       });
-      writeFileSync(join(this.dir, `f${String(this.count).padStart(5, "0")}.jpg`), Buffer.from(data, "base64"));
       this.count += 1;
     }
   }
@@ -389,30 +392,26 @@ export class Film {
   }
 
   /**
-   * Cut the frames into an H.264 MP4 at `width` px and a WebP poster from the
-   * first frame. CRF is raised until the clip fits `maxBytes`.
+   * Cut the frames into an H.264 MP4 at `width` px (the frames' own width by
+   * default) and a WebP poster from the first frame. Quality comes before
+   * weight: the page loads a clip only when it is shown.
    */
-  encode(mp4, { width, crf = 23, maxBytes = 1.5e6, poster } = {}) {
+  encode(mp4, { width, crf = 18, poster } = {}) {
     if (!readdirSync(this.dir).length) throw new Error("film.encode: no frames");
     const input = join(this.dir, "f%05d.jpg");
     const scale = width ? `scale=${width}:-2:flags=lanczos,` : "";
-    let size = Infinity;
-    let quality = crf;
-    while (size > maxBytes && quality <= 34) {
-      execFileSync("ffmpeg", [
-        "-y", "-loglevel", "error", "-framerate", String(this.fps), "-i", input,
-        "-vf", `${scale}format=yuv420p`, "-c:v", "libx264", "-preset", "veryslow", "-tune", "animation",
-        "-crf", String(quality), "-movflags", "+faststart", "-an", mp4,
-      ]);
-      size = Number(execFileSync("node", ["-e", `process.stdout.write(String(require("fs").statSync(${JSON.stringify(mp4)}).size))`]));
-      if (size > maxBytes) quality += 2;
-    }
+    execFileSync("ffmpeg", [
+      "-y", "-loglevel", "error", "-framerate", String(this.fps), "-i", input,
+      "-vf", `${scale}format=yuv420p`, "-c:v", "libx264", "-preset", "slow", "-tune", "animation",
+      "-crf", String(crf), "-movflags", "+faststart", "-an", mp4,
+    ]);
+    const size = statSync(mp4).size;
     if (poster) {
       execFileSync("ffmpeg", [
         "-y", "-loglevel", "error", "-i", join(this.dir, "f00000.jpg"),
         "-vf", `${width ? `scale=${width}:-2:flags=lanczos` : "null"}`, "-c:v", "libwebp", "-quality", "82", poster,
       ]);
     }
-    return { bytes: size, crf: quality, frames: this.count, seconds: this.count / this.fps };
+    return { bytes: size, crf, frames: this.count, seconds: this.count / this.fps };
   }
 }
