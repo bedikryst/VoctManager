@@ -207,13 +207,19 @@ export function ScorePackageItemRow({
           "Twoje oznaczenia ({{n}}) są na innym wydaniu tego utworu. Oprawione wydanie nie ma żadnych, więc książka wyjdzie bez nich.",
           { n: item.markings.other_edition },
         )
-      : item.markings.status === "partial"
+      : item.markings.status === "pending"
         ? t(
-            "projects.score_package.item.markings_outside_range",
-            "Część Twoich oznaczeń ({{n}}) wypada poza oprawionymi stronami — nie trafi do druku.",
-            { n: item.markings.outside_range },
+            "projects.score_package.item.markings_pending",
+            "Oznaczenia dla chóru ({{n}}) są na stronach, których zapisana książka jeszcze nie ma. Trafią do egzemplarzy po ponownym złożeniu.",
+            { n: item.markings.pending_rebuild },
           )
-        : null;
+        : item.markings.status === "partial"
+          ? t(
+              "projects.score_package.item.markings_outside_range",
+              "Część Twoich oznaczeń ({{n}}) wypada poza oprawionymi stronami — nie trafi do druku.",
+              { n: item.markings.outside_range },
+            )
+          : null;
 
   return (
     <div className="rounded-nested border border-hairline-strong bg-ethereal-alabaster/40">
@@ -262,6 +268,15 @@ export function ScorePackageItemRow({
             </Caption>
           )}
         </span>
+
+        {/* The marks' warning lives in the open row; the closed one still has
+            to point at it, or a book-wide count would name no piece. */}
+        {markingsWarning && (
+          <span className="shrink-0 text-ethereal-gold" title={markingsWarning}>
+            <PencilLine size={13} aria-hidden="true" />
+            <span className="sr-only">{markingsWarning}</span>
+          </span>
+        )}
 
         {item.copies_shortfall && (
           <span

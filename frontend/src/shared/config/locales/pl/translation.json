@@ -4746,10 +4746,6 @@
         "description": "{{name}} straci dostęp do notatek i obecności tego projektu. Kopia pobrana wcześniej na urządzenie tej osoby zostanie tam do czasu wyczyszczenia pamięci aplikacji."
       }
     },
-    "score_marks": {
-      "toggle": "Moje oznaczenia",
-      "toggle_hint": "Dorysowuje Twoje własne notatki do tego egzemplarza. Nikt inny ich nie zobaczy."
-    },
     "score_package": {
       "title": "Książka nutowa",
       "settings": "Ustawienia",
@@ -4785,8 +4781,6 @@
       "generate": "Złóż partyturę",
       "download": "Pobierz",
       "download_stale": "Pobierz mimo to",
-      "conductor_copy": "Egzemplarz dyrygencki",
-      "conductor_copy_suffix": "dyrygencka",
       "stale_hint": "Ta partytura nie zawiera ostatnich zmian. Złóż ją ponownie, aby je uwzględnić.",
       "withheld_hint": "Ta książka zawiera jeszcze strony utworu, który stał się instrumentalny. Śpiewacy nie otworzą jej, dopóki nie złożysz jej ponownie.",
       "instrumental_hint": "Poza książką, bo grają tylko instrumentaliści: {{titles}}",
@@ -4817,9 +4811,7 @@
         "hide_source_numbers": "Ukryj numery wydań",
         "hide_source_numbers_hint": "Zakrywa numerację, którą wydania drukują same, żeby w książce została tylko jej własna. Skan bez warstwy tekstowej zostaje bez zmian.",
         "hide_source_numbers_locked": "Wymaga własnej numeracji książki.",
-        "hide_source_numbers_locked_hint": "Bez własnej numeracji książka zostawia numery wydawcy — inaczej wydruk nie miałby żadnych.",
-        "markings": "Wpisz moje oznaczenia",
-        "markings_hint": "Drukuje Twoje oznaczenia z warstwy „dla chóru” na nutach. Zakreślacz wychodzi jako podkreślenie — na czarno-białym wydruku wypełnienie zalałoby nuty. Prywatne notatki śpiewaków zostają ich własne."
+        "hide_source_numbers_locked_hint": "Bez własnej numeracji książka zostawia numery wydawcy — inaczej wydruk nie miałby żadnych."
       },
       "pages": "{{n}} stron",
       "readiness_state": {
@@ -4892,7 +4884,8 @@
         "reset_elements": "Domyślne",
         "binding": "Oprawa",
         "override_count": "Nadpisania: {{count}}",
-        "slot_derived": "Miejsce w liturgii: {{slot}}. Puste pole = to, co z niego wynika."
+        "slot_derived": "Miejsce w liturgii: {{slot}}. Puste pole = to, co z niego wynika.",
+        "markings_pending": "Oznaczenia dla chóru ({{n}}) są na stronach, których zapisana książka jeszcze nie ma. Trafią do egzemplarzy po ponownym złożeniu."
       },
       "empty_title": "Program jest pusty",
       "empty_action": "Otwórz program",
@@ -5788,6 +5781,48 @@
       "after_few": "{{count}} dni później",
       "after_many": "{{count}} dni później",
       "after_other": "{{count}} dnia później"
+    },
+    "score_copy": {
+      "heading": "Egzemplarz",
+      "audience": {
+        "choir": "Dla chóru",
+        "clean": "Czysty",
+        "conductor": "Dyrygencki",
+        "leader": "Dla prowadzącego"
+      },
+      "describe": {
+        "manual": "Plik wgrany ręcznie, dokładnie taki, jak go wgrano. Oznaczeń z aplikacji nie da się na nim umieścić, bo nie ma mapy stron.",
+        "choir_legacy": "Tak pobierają śpiewacy: z oznaczeniami wpisanymi na stałe przy składaniu.",
+        "choir_marked": "Tak pobierają śpiewacy: z oznaczeniami dla chóru ({{n}}).",
+        "choir_clean": "Tak pobierają śpiewacy: same nuty, bez oznaczeń.",
+        "clean": "Same nuty, bez żadnych oznaczeń. Śpiewacy dostają go tylko wtedy, gdy oznaczenia dla chóru są wyłączone.",
+        "conductor": "Na pulpit dyrygenta: oznaczenia dla chóru i Twoje prywatne ({{n}}). Nikt inny go nie dostaje.",
+        "leader": "Dla osoby prowadzącej próbę: oznaczenia dla chóru i dla prowadzącego ({{n}})."
+      },
+      "render_failed": "Nie udało się umieścić oznaczeń w tym egzemplarzu, więc nic nie zostało pobrane. Złóż książkę ponownie albo pobierz czysty egzemplarz.",
+      "download_clean": "Pobierz czysty egzemplarz",
+      "choir_switch": "Oznaczenia dla chóru w pobraniach śpiewaków",
+      "choir_switch_on": "Każde pobranie zawiera oznaczenia dla chóru ({{n}}) na {{s}} str.",
+      "choir_switch_off": "Śpiewacy pobierają książkę bez oznaczeń dla chóru ({{n}}).",
+      "choir_switch_hint": "Zmiana działa od następnego pobrania. Kto pobrał książkę wcześniej, musi pobrać ją ponownie.",
+      "legacy_ink": "Ta książka ma oznaczenia dla chóru wpisane na stałe przy składaniu, w stanie z tamtej chwili. Nie ma czystego egzemplarza, a nowsze oznaczenia nie trafią do pobrań. Złóż ją ponownie.",
+      "pending": "Oznaczenia dla chóru ({{n}}) są na stronach, których ta książka jeszcze nie ma. Trafią do egzemplarzy po ponownym złożeniu. Utwory, których to dotyczy, mają ołówek na liście niżej.",
+      "suffix": {
+        "conductor": "dyrygencka",
+        "leader": "prowadzacy",
+        "personal": "moje_oznaczenia"
+      },
+      "layers_label": "Oznaczenia w tym egzemplarzu",
+      "layer": {
+        "shared": "Dla chóru",
+        "shared_hint": "Oznaczenia dyrygenta dla całego chóru.",
+        "leader": "Dla prowadzącego",
+        "leader_hint": "Oznaczenia dla osoby prowadzącej próbę.",
+        "conductor": "Dyrygenckie",
+        "conductor_hint": "Prywatne oznaczenia dyrygenta. Nikt inny ich nie dostaje.",
+        "personal": "Mój ołówek",
+        "personal_hint": "Twoje własne notatki. Nikt inny ich nie zobaczy."
+      }
     }
   },
   "pwa": {

@@ -1,11 +1,11 @@
 """
 @file roster/management/commands/rebuild_marked_score_books.py
-@description Queues a rebuild of every generated score book whose
-             `include_markings` is on. A book built before the builder stopped
-             baking marks (`BUILD_FORMAT` 2) carries the 'shared' layer in its
-             bytes, and every copy that leaves the app composes that layer again
-             on top of it: doubled marks on paper. Nothing else rebuilds those
-             books in bulk, so this runs once after deploying that builder.
+@description Queues a rebuild of every generated score book that still carries
+             baked ink (`build_format` 1). A book built before the builder
+             stopped baking marks (`BUILD_FORMAT` 2) has the 'shared' layer in its
+             bytes: there is no clean copy of it, and the cockpit and the stand
+             both draw the layer again over it. Nothing else rebuilds those books
+             in bulk.
 
              Skipped: a hand-uploaded book (never baked, and with no page map
              to compose onto), a package with no file yet, and a build still in
@@ -25,7 +25,7 @@ from roster.score_package_service import ScorePackageService, build_is_abandoned
 
 
 class Command(BaseCommand):
-    help = "Queue a rebuild of every generated score book with the conductor's markings on."
+    help = "Queue a rebuild of every generated score book with the conductor's markings baked in."
 
     def add_arguments(self, parser) -> None:
         parser.add_argument(
@@ -38,7 +38,7 @@ class Command(BaseCommand):
         dry_run: bool = options['dry_run']
         packages = (
             ScorePackage.objects
-            .filter(include_markings=True, is_manual_upload=False, project__is_deleted=False)
+            .filter(build_format=1, is_manual_upload=False, project__is_deleted=False)
             .exclude(Q(project__score_pdf='') | Q(project__score_pdf__isnull=True))
             .select_related('project')
             .order_by('project__title')

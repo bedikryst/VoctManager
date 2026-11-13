@@ -730,13 +730,23 @@ class ScorePackage(SoftDeleteModel):
         verbose_name=_("Card Language"),
     )
     include_markings = models.BooleanField(
-        default=False,
+        default=True,
         help_text=_("Copies of the book that leave the app carry the conductor's 'shared' "
                     "markings, composed onto each copy as it is downloaded. Only that layer: "
                     "it is his message to the whole choir. The stored book never carries "
                     "marks, and a reader's own 'personal' pencil is added only to their own "
-                    "copy, when they ask for it."),
+                    "copy, when they ask for it. On for a new book; a clean copy is a "
+                    "separate, explicit download."),
         verbose_name=_("Include Conductor's Markings"),
+    )
+    build_format = models.PositiveSmallIntegerField(
+        default=0,
+        help_text=_("Format of the builder that produced the stored file (see BUILD_FORMAT "
+                    "in score_package_service). 0: no generated file — none yet, or one "
+                    "uploaded by hand. 1: a builder that baked the 'shared' markings into "
+                    "the pages, so the file is not clean and composing that layer again "
+                    "would print it twice. 2 and above: a clean book."),
+        verbose_name=_("Build Format"),
     )
 
     # --- Async build state ---
@@ -806,6 +816,13 @@ class ScorePackage(SoftDeleteModel):
 
     def __str__(self) -> str:
         return f"Score package · {self.project.title} [{self.get_status_display()}]"
+
+    @property
+    def has_legacy_ink(self) -> bool:
+        """The stored file came from a builder that baked the conductor's shared
+        marks into its pages: no copy of it is clean, and none may have that
+        layer composed onto it again. Only a rebuild clears it."""
+        return self.build_format == 1
 
 
 class Participation(SoftDeleteModel):

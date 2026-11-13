@@ -4664,10 +4664,6 @@
         "description": "{{name}} perdra l'accès aux notes et aux présences de ce projet. Une copie déjà téléchargée sur son appareil y restera jusqu'au vidage du stockage de l'application."
       }
     },
-    "score_marks": {
-      "toggle": "Mes annotations",
-      "toggle_hint": "Ajoute vos propres notes sur cet exemplaire. Personne d'autre ne les voit."
-    },
     "score_package": {
       "title": "Recueil de partitions",
       "settings": "Réglages",
@@ -4703,8 +4699,6 @@
       "generate": "Assembler la partition",
       "download": "Télécharger",
       "download_stale": "Télécharger quand même",
-      "conductor_copy": "Exemplaire du chef",
-      "conductor_copy_suffix": "chef",
       "stale_hint": "Cette partition n'inclut pas vos dernières modifications. Régénérez-la pour les appliquer.",
       "withheld_hint": "Ce recueil contient encore les pages d'une pièce devenue instrumentale. Les choristes ne pourront pas l'ouvrir tant que vous ne l'aurez pas régénéré.",
       "instrumental_hint": "Hors du recueil, car seuls des instrumentistes y jouent : {{titles}}",
@@ -4735,9 +4729,7 @@
         "hide_source_numbers": "Masquer les numéros des éditions",
         "hide_source_numbers_hint": "Recouvre la numérotation que les éditions impriment elles-mêmes, pour que le livret ne porte que la sienne. Un scan sans couche de texte reste intact.",
         "hide_source_numbers_locked": "Exige la numérotation propre au livret.",
-        "hide_source_numbers_locked_hint": "Sans numérotation propre, le livret conserve celle de l'éditeur — sinon l'impression n'en aurait aucune.",
-        "markings": "Imprimer mes annotations",
-        "markings_hint": "Imprime votre couche « pour le chœur » sur la musique. Le surligneur devient un soulignement : en noir et blanc, une bande pleine noierait les notes. Les notes privées des choristes restent les leurs."
+        "hide_source_numbers_locked_hint": "Sans numérotation propre, le livret conserve celle de l'éditeur — sinon l'impression n'en aurait aucune."
       },
       "pages": "{{n}} pages",
       "readiness_state": {
@@ -4810,7 +4802,8 @@
         "reset_elements": "Par défaut",
         "binding": "Reliure",
         "override_count": "Remplacements : {{count}}",
-        "slot_derived": "Place dans la liturgie : {{slot}}. Champ vide = ce qui en découle."
+        "slot_derived": "Place dans la liturgie : {{slot}}. Champ vide = ce qui en découle.",
+        "markings_pending": "Des annotations pour le chœur ({{n}}) se trouvent sur des pages que le livre enregistré n'a pas encore. Elles rejoindront les exemplaires après un nouvel assemblage."
       },
       "empty_title": "Le programme est vide",
       "empty_action": "Ouvrir le programme",
@@ -5697,6 +5690,48 @@
       "after_few": "{{count}} jours après",
       "after_many": "{{count}} jours après",
       "after_other": "{{count}} jours après"
+    },
+    "score_copy": {
+      "heading": "Exemplaire",
+      "audience": {
+        "choir": "Pour le chœur",
+        "clean": "Vierge",
+        "conductor": "Du chef",
+        "leader": "Pour le répétiteur"
+      },
+      "describe": {
+        "manual": "Fichier déposé à la main, tel quel. Les annotations de l'application ne peuvent pas y être placées : il n'a pas de plan des pages.",
+        "choir_legacy": "Ce que téléchargent les choristes : avec les annotations fixées dans les pages lors de l'assemblage.",
+        "choir_marked": "Ce que téléchargent les choristes : avec les annotations pour le chœur ({{n}}).",
+        "choir_clean": "Ce que téléchargent les choristes : la musique seule, sans annotations.",
+        "clean": "La musique seule, sans aucune annotation. Les choristes ne le reçoivent que si les annotations pour le chœur sont désactivées.",
+        "conductor": "Pour le pupitre du chef : les annotations pour le chœur et les vôtres, privées ({{n}}). Personne d'autre ne le reçoit.",
+        "leader": "Pour la personne qui dirige la répétition : les annotations pour le chœur et pour le répétiteur ({{n}})."
+      },
+      "render_failed": "Les annotations n'ont pas pu être placées sur cet exemplaire, rien n'a donc été téléchargé. Réassemblez le livre ou téléchargez l'exemplaire vierge.",
+      "download_clean": "Télécharger l'exemplaire vierge",
+      "choir_switch": "Annotations pour le chœur dans les téléchargements des choristes",
+      "choir_switch_on": "Chaque téléchargement contient les annotations pour le chœur ({{n}}) sur {{s}} p.",
+      "choir_switch_off": "Les choristes téléchargent le livre sans les annotations pour le chœur ({{n}}).",
+      "choir_switch_hint": "Effet dès le prochain téléchargement. Qui a téléchargé le livre auparavant doit le télécharger à nouveau.",
+      "legacy_ink": "Ce livre porte les annotations pour le chœur fixées dans ses pages, telles qu'elles étaient à l'assemblage. Il n'existe pas d'exemplaire vierge, et les annotations plus récentes n'atteindront pas les téléchargements. Réassemblez-le.",
+      "pending": "Des annotations pour le chœur ({{n}}) se trouvent sur des pages que ce livre n'a pas encore. Elles rejoindront les exemplaires après un nouvel assemblage. Les œuvres concernées portent un crayon dans la liste ci-dessous.",
+      "suffix": {
+        "conductor": "chef",
+        "leader": "repetiteur",
+        "personal": "mes_annotations"
+      },
+      "layers_label": "Annotations dans cet exemplaire",
+      "layer": {
+        "shared": "Pour le chœur",
+        "shared_hint": "Les annotations du chef pour tout le chœur.",
+        "leader": "Pour le répétiteur",
+        "leader_hint": "Les annotations pour la personne qui dirige la répétition.",
+        "conductor": "Du chef",
+        "conductor_hint": "Les annotations privées du chef. Personne d'autre ne les reçoit.",
+        "personal": "Mon crayon",
+        "personal_hint": "Vos propres notes. Personne d'autre ne les verra."
+      }
     }
   },
   "pwa": {

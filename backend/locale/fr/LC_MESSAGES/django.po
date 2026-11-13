@@ -6080,6 +6080,14 @@ msgstr ""
 msgid "Cover"
 msgstr "Correcteur"
 
+#: roster/views.py
+msgid ""
+"The markings could not be placed on this book. Download the clean copy, or "
+"rebuild the book and try again."
+msgstr ""
+"Les annotations n'ont pas pu être placées dans ce livre. Téléchargez "
+"l'exemplaire vierge, ou réassemblez le livre et réessayez."
+
 #~ msgid "Review the request"
 #~ msgstr "Examiner la demande"
 

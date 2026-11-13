@@ -38,6 +38,7 @@ from archive.models import (
 from roster import score_package_service
 from roster.infrastructure import score_markings
 from roster.infrastructure.score_markings import (
+    MarkingRenderError,
     PrintMark,
     apply_markings,
     marks_from_annotations,
@@ -48,10 +49,11 @@ from roster.models import ProgramItem, Project, ScorePackage
 from roster.score_package_config import resolve_item_page_window
 from roster.score_package_markings import (
     MARKINGS_NONE,
-    MARKINGS_OFF,
     MARKINGS_PARTIAL,
+    MARKINGS_PENDING,
     MARKINGS_READY,
     MARKINGS_WRONG_EDITION,
+    book_layer_census,
     compute_program_markings,
     markings_status,
 )
@@ -509,13 +511,42 @@ class OverlayRegistrationTests(SimpleTestCase):
             writer.add_blank_page(width=A4_WIDTH_PT, height=A4_HEIGHT_PT)
         return writer
 
-    def test_a_short_render_draws_nothing_rather_than_shifted_ink(self) -> None:
-        with mock.patch.object(
-            score_markings, "render_overlay_pages",
-            return_value=_blank_sheets(2),
+    def test_a_short_render_is_refused_rather_than_shifted_ink(self) -> None:
+        with (
+            mock.patch.object(
+                score_markings, "render_overlay_pages",
+                return_value=_blank_sheets(2),
+            ),
+            self.assertRaises(MarkingRenderError),
         ):
-            merged = score_markings.merge_overlay(self._writer(3), self._plan(3))
-        self.assertEqual(merged, 0)
+            score_markings.merge_overlay(self._writer(3), self._plan(3))
+
+    def test_a_sheet_past_the_end_of_the_book_is_refused_before_rendering(self) -> None:
+        with (
+            mock.patch.object(score_markings, "render_overlay_pages") as render,
+            self.assertRaises(MarkingRenderError),
+        ):
+            score_markings.merge_overlay(self._writer(2), self._plan(3))
+        render.assert_not_called()
+
+    def test_a_map_that_describes_another_file_is_refused(self) -> None:
+        page_map = [
+            {"phys": phys, "kind": KIND_MUSIC, "edition": "E1", "src_page": phys + 1,
+             "box": list(_BOX)}
+            for phys in range(3)
+        ]
+        marks = {("E1", 1): [self._plan(1)[0][1][0][0]]}
+        with (
+            mock.patch.object(score_markings, "render_overlay_pages") as render,
+            self.assertRaises(MarkingRenderError),
+        ):
+            apply_markings(_pdf_bytes(2), page_map, marks)
+        render.assert_not_called()
+
+    def test_the_overlay_sheet_has_no_body_margin(self) -> None:
+        # The user-agent margin shifted every mark 8 CSS px right and down.
+        html = score_markings._overlay_html([self._plan(1)[0][1]])
+        self.assertIn("html, body { margin: 0; padding: 0; }", html)
 
     def test_a_matching_render_lands_on_every_planned_page(self) -> None:
         with mock.patch.object(
@@ -574,14 +605,14 @@ class MarkingsCensusTests(_Base):
         self.assertEqual(census.inside, 2)
         self.assertEqual(census.outside, 1)
         self.assertEqual(census.elsewhere, 1)
-        self.assertEqual(markings_status(census, enabled=True), MARKINGS_PARTIAL)
+        self.assertEqual(markings_status(census), MARKINGS_PARTIAL)
 
     def test_personal_marks_are_never_counted(self) -> None:
         edition = self._add_edition(pages=2)
         self._mark(edition, page=1, layer=PERSONAL_ANNOTATION_LAYER)
         census = compute_program_markings([self.item])[self.item.pk]
         self.assertEqual(census.inside, 0)
-        self.assertEqual(markings_status(census, enabled=True), MARKINGS_NONE)
+        self.assertEqual(markings_status(census), MARKINGS_NONE)
 
     def test_leader_marks_are_never_printed_into_the_choirs_book(self) -> None:
         # The census counts what the choir's copies carry. A cue written for
@@ -592,7 +623,7 @@ class MarkingsCensusTests(_Base):
         self._mark(edition, page=1, layer=CONDUCTOR_ANNOTATION_LAYER)
         census = compute_program_markings([self.item])[self.item.pk]
         self.assertEqual(census.inside, 0)
-        self.assertEqual(markings_status(census, enabled=True), MARKINGS_NONE)
+        self.assertEqual(markings_status(census), MARKINGS_NONE)
 
     def test_a_jump_link_is_not_a_mark_the_book_carries(self) -> None:
         edition = self._add_edition(pages=2)
@@ -602,7 +633,7 @@ class MarkingsCensusTests(_Base):
         )
         census = compute_program_markings([self.item])[self.item.pk]
         self.assertEqual(census.inside, 0)
-        self.assertEqual(markings_status(census, enabled=True), MARKINGS_NONE)
+        self.assertEqual(markings_status(census), MARKINGS_NONE)
 
     def test_pinning_an_unmarked_edition_raises_the_alarm(self) -> None:
         annotated = self._add_edition(pages=4, is_default=False, sha="c" * 64)
@@ -613,19 +644,86 @@ class MarkingsCensusTests(_Base):
         census = compute_program_markings([self.item])[self.item.pk]
         self.assertEqual(census.inside, 0)
         self.assertEqual(census.elsewhere, 1)
-        self.assertEqual(markings_status(census, enabled=True), MARKINGS_WRONG_EDITION)
+        self.assertEqual(markings_status(census), MARKINGS_WRONG_EDITION)
 
-    def test_status_is_silent_while_the_book_prints_no_markings(self) -> None:
+    def _stored_map(self, edition: ScoreEdition, pages: list[int]) -> list[dict]:
+        """A stored book binding ``pages`` of ``edition`` for the one item, after
+        one front page."""
+        rows: list[dict] = [{"phys": 0, "kind": KIND_FRONT}]
+        for index, page in enumerate(pages, start=1):
+            rows.append({
+                "phys": index, "kind": KIND_MUSIC, "item": str(self.item.pk),
+                "edition": str(edition.pk), "src_page": page, "box": list(_BOX),
+            })
+        return rows
+
+    def test_the_census_is_taken_while_the_choir_copies_carry_no_marks(self) -> None:
+        # The switch decides what singers receive, not whether the manager may
+        # see what is there to hand out.
         edition = self._add_edition(pages=2)
         self._mark(edition, page=1)
+        self.package.include_markings = False
+        self.package.save()
+        census = compute_program_markings(
+            [self.item], self._stored_map(edition, [1, 2]),
+        )[self.item.pk]
+        self.assertEqual(census.on_book, 1)
+        self.assertEqual(markings_status(census), MARKINGS_READY)
+
+    def test_marks_on_pages_the_stored_book_lacks_wait_for_a_rebuild(self) -> None:
+        edition = self._add_edition(pages=4)
+        self._mark(edition, page=1)
+        self._mark(edition, page=4)
+        # The stored book was trimmed to pages 1 and 2; the draft now binds all four.
+        census = compute_program_markings(
+            [self.item], self._stored_map(edition, [1, 2]),
+        )[self.item.pk]
+        self.assertEqual(census.on_book, 1)
+        self.assertEqual(census.inside, 2)
+        self.assertEqual(census.pending, 1)
+        self.assertEqual(markings_status(census), MARKINGS_PENDING)
+
+    def test_a_newly_chosen_edition_is_pending_not_on_the_book(self) -> None:
+        bound = self._add_edition(pages=2, is_default=False, sha="e" * 64)
+        chosen = self._add_edition(pages=2, sha="f" * 64)
+        self._mark(bound, page=1)
+        self._mark(chosen, page=2)
+        self.item.score_edition = chosen
+        self.item.save()
+        census = compute_program_markings(
+            [self.item], self._stored_map(bound, [1, 2]),
+        )[self.item.pk]
+        self.assertEqual(census.on_book, 1)
+        self.assertEqual(census.pending, 1)
+        self.assertEqual(census.elsewhere, 1)
+
+    def test_every_mark_trimmed_away_is_a_warning_not_silence(self) -> None:
+        edition = self._add_edition(pages=4)
+        self.item.pdf_page_end = 2
+        self.item.save()
+        self._mark(edition, page=4)
         census = compute_program_markings([self.item])[self.item.pk]
-        self.assertEqual(markings_status(census, enabled=False), MARKINGS_OFF)
+        self.assertEqual(markings_status(census), MARKINGS_PARTIAL)
+
+    def test_the_book_census_counts_each_book_wide_layer_on_the_stored_file(self) -> None:
+        edition = self._add_edition(pages=3)
+        self._mark(edition, page=1)
+        self._mark(edition, page=2)
+        self._mark(edition, page=3)  # trimmed out of the stored book
+        self._mark(edition, page=1, layer=CONDUCTOR_ANNOTATION_LAYER)
+        self._mark(edition, page=2, layer=PERSONAL_ANNOTATION_LAYER)
+        census = book_layer_census(self._stored_map(edition, [1, 2]))
+        self.assertEqual(census[SHARED_ANNOTATION_LAYER].marks, 2)
+        self.assertEqual(census[SHARED_ANNOTATION_LAYER].sheets, 2)
+        self.assertEqual(census[CONDUCTOR_ANNOTATION_LAYER].marks, 1)
+        self.assertEqual(census[LEADER_ANNOTATION_LAYER].marks, 0)
+        self.assertNotIn(PERSONAL_ANNOTATION_LAYER, census)
 
     def test_all_marks_landing_is_ready(self) -> None:
         edition = self._add_edition(pages=2)
         self._mark(edition, page=1)
         census = compute_program_markings([self.item])[self.item.pk]
-        self.assertEqual(markings_status(census, enabled=True), MARKINGS_READY)
+        self.assertEqual(markings_status(census), MARKINGS_READY)
 
     def test_edition_without_a_page_count_still_binds_its_marks(self) -> None:
         # An unknown length must not be read as "binds nothing".
@@ -679,7 +777,7 @@ class RebuildMarkedBooksCommandTests(_Base):
         project = Project.objects.create(title=title)
         project.score_pdf.save("book.pdf", ContentFile(_pdf_bytes(1)), save=True)
         package = ScorePackageService.get_or_create(project)
-        for field, value in {"include_markings": True, **package_fields}.items():
+        for field, value in {"build_format": 1, **package_fields}.items():
             setattr(package, field, value)
         package.save()
         return package
@@ -692,14 +790,14 @@ class RebuildMarkedBooksCommandTests(_Base):
             call_command("rebuild_marked_score_books", *args, stdout=StringIO())
         return delay
 
-    def test_only_generated_books_with_markings_on_are_queued(self) -> None:
+    def test_only_generated_books_with_baked_ink_are_queued(self) -> None:
         marked = self._book("Nieszpory", status=ScorePackage.Status.READY)
         self._book("Ręcznie", status=ScorePackage.Status.READY, is_manual_upload=True)
-        self._book("Bez znaków", status=ScorePackage.Status.READY, include_markings=False)
+        self._book("Czysta", status=ScorePackage.Status.READY, build_format=2)
         self._book(
             "W toku", status=ScorePackage.Status.BUILDING, build_started_at=timezone.now(),
         )
-        self.package.include_markings = True  # no file yet
+        self.package.build_format = 1  # no file yet
         self.package.save()
 
         delay = self._run()

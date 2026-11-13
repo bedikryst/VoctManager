@@ -6041,6 +6041,14 @@ msgstr ""
 msgid "Cover"
 msgstr "Korektor"
 
+#: roster/views.py
+msgid ""
+"The markings could not be placed on this book. Download the clean copy, or "
+"rebuild the book and try again."
+msgstr ""
+"Nie udało się umieścić oznaczeń w tej książce. Pobierz czysty egzemplarz "
+"albo złóż książkę ponownie i spróbuj jeszcze raz."
+
 #~ msgid "Review the request"
 #~ msgstr "Rozpatrz prośbę"
 

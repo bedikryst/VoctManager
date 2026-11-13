@@ -4626,6 +4626,12 @@ msgstr ""
 msgid "Cover"
 msgstr ""
 
+#: roster/views.py
+msgid ""
+"The markings could not be placed on this book. Download the clean copy, or "
+"rebuild the book and try again."
+msgstr ""
+
 #~ msgid ""
 #~ "%(artist)s is asking to be excused from a run of rehearsals. The dates are "
 #~ "below — approve or decline them in the panel."

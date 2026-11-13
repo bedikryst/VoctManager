@@ -61,6 +61,24 @@ from roster.score_page_map import (
 
 logger = logging.getLogger(__name__)
 
+#: Names what this module draws. A composed copy is cached under it, so raising it
+#: retires every copy drawn by an older renderer instead of serving it for the
+#: rest of the cache's lifetime. Raise it whenever the same marks start landing
+#: as different ink. 2: the overlay sheet has no body margin, which had shifted
+#: every mark 8 CSS px (about 2.1 mm) right and down.
+RENDERER_VERSION = 2
+
+
+class MarkingRenderError(Exception):
+    """The marks could not be drawn onto this book as planned.
+
+    Raised instead of handing back a partly marked or quietly clean copy: a
+    reader who asked for the conductor's cues and got a file without some of
+    them has no way to notice until the rehearsal. The caller refuses the
+    download and offers the clean copy as a separate, explicit choice.
+    """
+
+
 # Annotation type codes (archive.models.AnnotationType), repeated as plain
 # strings so the renderer stays usable without the ORM.
 _HIGHLIGHT = "HL"
@@ -449,6 +467,9 @@ def _overlay_html(pages: Sequence[Sequence[tuple[PrintMark, PlacedBox]]]) -> str
         "<!DOCTYPE html><html><head><meta charset='utf-8'><style>"
         + font_face_css()
         + "@page { size: A4; margin: 0; }"
+        # The user-agent body margin would offset every sheet by 8 CSS px in both
+        # axes, putting each mark about 2 mm off the bar it was drawn on.
+        "html, body { margin: 0; padding: 0; }"
         ".pg { position: relative; width: 210mm; height: 297mm; }"
         ".pg:not(:first-child) { break-before: page; }"
         ".ink { position: absolute; left: 0; top: 0; width: 210mm; height: 297mm; }"
@@ -511,36 +532,61 @@ def render_overlay_pages(
     return list(PdfReader(BytesIO(overlay_bytes)).pages)
 
 
+def preflight_markings(
+    page_map: list[Any],
+    page_count: int,
+    planned: Sequence[tuple[int, list[tuple[PrintMark, PlacedBox]]]],
+) -> None:
+    """Refuse a composition the stored file cannot take, before anything renders.
+
+    The map is the build's record of THIS file. One whose length disagrees with
+    the file's describes some other book — a replaced upload, a half-written
+    build — and every position read from it would be a guess. Each planned
+    sheet must also name a page the file has.
+    """
+    rows = [row for row in (page_map or []) if isinstance(row, dict)]
+    if rows and len(rows) != page_count:
+        raise MarkingRenderError(
+            f"page map describes {len(rows)} pages, the stored book has {page_count}"
+        )
+    for phys, _ in planned:
+        if not 0 <= phys < page_count:
+            raise MarkingRenderError(
+                f"planned sheet {phys} lies outside a book of {page_count} pages"
+            )
+
+
 def merge_overlay(
     writer: PdfWriter,
     planned: Sequence[tuple[int, list[tuple[PrintMark, PlacedBox]]]],
 ) -> int:
     """Draw the planned marks onto the pages a writer already holds. Returns how
-    many sheets landed."""
+    many sheets landed, which is every planned sheet or an exception: a copy
+    carrying some of the marks it was asked for is never handed back."""
     if not planned:
         return 0
+    total = len(writer.pages)
+    for phys, _ in planned:
+        if not 0 <= phys < total:
+            # The map outlived the file it describes: ink here would land on a
+            # page that means something else now.
+            raise MarkingRenderError(
+                f"planned sheet {phys} lies outside a book of {total} pages"
+            )
     sheets = render_overlay_pages(planned)
     if len(sheets) != len(planned):
         # The overlay is matched to the book by ORDER, so a renderer that emitted
-        # a stray sheet would land every mark after it on the wrong page. A book
-        # missing its markings is a re-run; a book with the conductor's cue over
-        # the wrong bar is a rehearsal going wrong.
+        # a stray sheet would land every mark after it on the wrong page.
         logger.error(
             "score_markings.overlay_page_mismatch sheets=%s planned=%s",
             len(sheets), len(planned),
         )
-        return 0
-    total = len(writer.pages)
-    merged = 0
-    for (phys, _), sheet in zip(planned, sheets, strict=False):
-        if 0 <= phys < total:
-            writer.pages[phys].merge_page(sheet)
-            merged += 1
-        else:
-            # The map outlived the file it describes — draw nothing rather than
-            # ink on a page that means something else now.
-            logger.warning("score_markings.page_out_of_range phys=%s pages=%s", phys, total)
-    return merged
+        raise MarkingRenderError(
+            f"overlay rendered {len(sheets)} sheets for {len(planned)} planned pages"
+        )
+    for (phys, _), sheet in zip(planned, sheets, strict=True):
+        writer.pages[phys].merge_page(sheet)
+    return len(planned)
 
 
 def apply_markings(
@@ -548,17 +594,22 @@ def apply_markings(
     page_map: list[Any],
     marks_by_source: dict[tuple[str, int], list[PrintMark]],
 ) -> bytes:
-    """Return ``pdf_bytes`` with every applicable mark drawn on it.
+    """Return ``pdf_bytes`` with every applicable mark drawn into its page
+    content, so any viewer and any printer shows them.
 
     Returns the input untouched when there is nothing to draw, so a caller may
-    invoke it unconditionally on a book that may carry no marks at all.
+    invoke it unconditionally on a book that may carry no marks at all. Raises
+    `MarkingRenderError` when the map does not describe this file or a planned
+    sheet fails to merge; nothing partial survives the exception.
     """
     planned = plan_markings(page_map, marks_by_source)
     if not planned:
         return pdf_bytes
 
+    reader = PdfReader(BytesIO(pdf_bytes))
+    preflight_markings(page_map, len(reader.pages), planned)
     writer = PdfWriter()
-    writer.append(PdfReader(BytesIO(pdf_bytes)))
+    writer.append(reader)
     merge_overlay(writer, planned)
 
     buffer = BytesIO()
@@ -567,10 +618,13 @@ def apply_markings(
 
 
 __all__ = [
+    "RENDERER_VERSION",
+    "MarkingRenderError",
     "PrintMark",
     "apply_markings",
     "marks_from_annotations",
     "merge_overlay",
     "plan_markings",
+    "preflight_markings",
     "render_overlay_pages",
 ]

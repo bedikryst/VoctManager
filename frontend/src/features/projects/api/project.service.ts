@@ -230,8 +230,9 @@ export interface ScorePackageConfig {
    *  element vocabulary on both surfaces. */
   card_default_elements: CardElement[];
   translation_language: string;
-  /** Print the conductor's `shared` markings onto the music. Only that layer —
-   *  a reader's own pencil marks are composed at download, never baked in. */
+  /** Singers' copies carry the conductor's `shared` markings, composed at
+   *  download. Applies to the next download at once; a file already on a
+   *  singer's device changes only when they download it again. */
   include_markings: boolean;
 }
 
@@ -285,25 +286,53 @@ export interface ScorePackageItemReadiness {
 }
 
 /**
- * How this piece's conductor markings fare in the book. `wrong_edition` is the
- * one that needs shouting about: the marks exist, but on an edition this item no
- * longer binds, so pinning another one silently discarded every cue.
+ * How this piece's choir markings fare in the book, whether or not the singers'
+ * copies currently carry them. `wrong_edition` is the one that needs shouting
+ * about: the marks exist, but on an edition this item no longer binds, so
+ * pinning another one silently discarded every cue. `pending` means a rebuild
+ * would bring marks in that the stored book cannot carry yet.
  */
 export type MarkingsStatus =
-  | "off"
   | "none"
   | "ready"
+  | "pending"
   | "partial"
   | "wrong_edition";
 
 export interface ScorePackageItemMarkings {
   status: MarkingsStatus;
-  /** Marks that land inside the bound page range — the ones that print. */
+  /** Marks on this item's pages of the stored book — what a copy carries now. */
+  on_book: number;
+  /** Marks inside the draft's page range — what the book carries once built. */
   printed: number;
+  /** Inside the draft's range but on pages the stored book lacks. */
+  pending_rebuild: number;
   /** Marks the page trim drops. */
   outside_range: number;
   /** Marks sitting on a different edition of the same piece. */
   other_edition: number;
+}
+
+/** A layer that reads the same for every reader allowed to ask for it. */
+export type BookWideMarkLayer = "shared" | "conductor" | "leader";
+
+export interface BookLayerCensus {
+  /** Marks that land on the stored book, once per sheet they land on. */
+  marks: number;
+  /** Pages of the stored book carrying at least one of them. */
+  sheets: number;
+}
+
+/**
+ * What each copy the cockpit can hand out would carry, measured on the stored
+ * file. `map_available` is false for a book uploaded by hand: no app mark can
+ * be placed on it. `legacy_ink` marks a book whose pages already contain the
+ * choir layer from an older builder — no clean copy exists until a rebuild.
+ */
+export interface ScorePackageBookMarks {
+  map_available: boolean;
+  legacy_ink: boolean;
+  layers: Partial<Record<BookWideMarkLayer, BookLayerCensus>>;
 }
 
 /** One program item as rendered in the build cockpit, with its overrides. */
@@ -380,15 +409,27 @@ export interface ScorePackageItemPatch {
  */
 export type ScoreMarkLayer = "shared" | "personal" | "conductor" | "leader";
 
+/** One layer the reader may ask to have drawn onto their copy. */
+export interface ScoreMarkLayerAvailability {
+  /** How many of its marks would land on the stored book. */
+  count: number;
+  /** Whether asking for it changes this reader's copy at all. */
+  servable: boolean;
+}
+
 /**
- * Whether the reader has marks of their own that the stored book could carry.
- * `count` is how many would actually land: marks on pages the book trimmed away
- * are none of the reader's business to chase, but they must not raise a switch
- * that would hand back an identical file.
+ * What the stored book could carry for this reader. `count` answers for the
+ * asked-for layers together: marks on pages the book trimmed away must not
+ * raise a control that would hand back an identical file. `layers` answers for
+ * every layer this reader may download, so the viewer can offer each by name.
  */
 export interface ScoreMarksAvailability {
   available: boolean;
   count: number;
+  map_available: boolean;
+  legacy_ink: boolean;
+  include_markings: boolean;
+  layers: Partial<Record<ScoreMarkLayer, ScoreMarkLayerAvailability>>;
 }
 
 /**
@@ -484,6 +525,7 @@ export interface ScorePackageState {
   /** The current score_pdf was hand-uploaded, not generated — hide version/staleness. */
   is_manual_upload: boolean;
   error: string;
+  book_marks: ScorePackageBookMarks;
   total_pieces: number;
   bindable_pieces: number;
   pieces_without_pdf: string[];

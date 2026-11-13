@@ -22,9 +22,10 @@ import { PageTransition } from "@/shared/ui/kinematics/PageTransition";
 import { ProjectService } from "@/features/projects/api/project.service";
 import {
   BOOK_COPY_LAYERS,
-  useScoreMarks,
+  bookCopyFileName,
+  useBookCopy,
 } from "@/features/projects/api/project.score-marks";
-import { ScoreMarksToggle } from "@/features/projects/components/ScoreMarksToggle";
+import { ScoreCopyLayers } from "@/features/projects/components/ScoreCopyLayers";
 import { ScheduleService } from "@/features/schedule/api/schedule.service";
 import { ChoristerHubService } from "@/features/chorister-hub/api/chorister-hub.service";
 import {
@@ -198,11 +199,12 @@ const DocumentViewerPage = (): React.JSX.Element => {
     return resolveDocument(docType, decodedId, hint, t);
   }, [decodedId, docType, hint, t]);
 
-  // The concert binder is the one document here a reader can ask to have their
-  // own marks drawn onto. It takes over the fetcher, because the switch and the
-  // bytes on screen have to be the same decision.
+  // The concert binder is the one document here whose copy the reader picks:
+  // which layers of marks are drawn onto it. The selection takes over the
+  // fetcher, the file name and the cache key, because the switches, the bytes
+  // on screen and the file downloaded have to be the same decision.
   const isScore = docType === "project-score";
-  const scoreMarks = useScoreMarks(decodedId, isScore);
+  const bookCopy = useBookCopy(decodedId, isScore);
 
   const canGoBack = location.key !== "default";
 
@@ -231,7 +233,14 @@ const DocumentViewerPage = (): React.JSX.Element => {
     );
   }
 
-  const docKey = `${docType}/${decodedId}${isScore ? scoreMarks.docKeySuffix : ""}`;
+  const docKey = `${docType}/${decodedId}${isScore ? bookCopy.docKeySuffix : ""}`;
+  const fileName = isScore
+    ? bookCopyFileName(
+        resolved.fileName.replace(/\.pdf$/i, ""),
+        bookCopy.layers,
+        t,
+      )
+    : resolved.fileName;
 
   return (
     <PageTransition>
@@ -269,17 +278,24 @@ const DocumentViewerPage = (): React.JSX.Element => {
         </div>
 
         <PdfViewer
-          fetchBlob={isScore ? scoreMarks.fetchBlob : resolved.fetchBlob}
+          fetchBlob={
+            isScore
+              ? bookCopy.ready
+                ? bookCopy.fetchBlob
+                : null
+              : resolved.fetchBlob
+          }
           docKey={docKey}
           volatile={resolved.volatile}
           title={resolved.title}
           subtitle={resolved.subtitle}
-          fileName={resolved.fileName}
+          fileName={fileName}
           toolbarSlot={
-            isScore && scoreMarks.available ? (
-              <ScoreMarksToggle
-                enabled={scoreMarks.enabled}
-                onChange={scoreMarks.setEnabled}
+            isScore && bookCopy.options.length > 0 ? (
+              <ScoreCopyLayers
+                options={bookCopy.options}
+                selected={bookCopy.layers}
+                onToggle={bookCopy.toggle}
               />
             ) : undefined
           }

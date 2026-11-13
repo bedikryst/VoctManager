@@ -33,6 +33,7 @@ from rest_framework.test import APIRequestFactory, APITestCase
 
 from archive.models import (
     CONDUCTOR_ANNOTATION_LAYER,
+    LEADER_ANNOTATION_LAYER,
     PERSONAL_ANNOTATION_LAYER,
     SHARED_ANNOTATION_LAYER,
     Annotation,
@@ -440,6 +441,10 @@ class ReaderMarksServeTests(_ServeBase):
     def marks_url(self) -> str:
         return f"/api/projects/{self.project.pk}/score_marks/"
 
+    def _availability(self, url: str) -> tuple[bool, int]:
+        body = self.client.get(url).json()
+        return body["available"], body["count"]
+
     def test_switch_off_composes_nothing(self) -> None:
         self._prepare()
         self._mark(self.singer_user)
@@ -494,8 +499,8 @@ class ReaderMarksServeTests(_ServeBase):
         self.assertEqual(captured, [])
         self.assertEqual(body, _pdf_bytes(3))
         self.assertEqual(
-            self.client.get(f"{self.marks_url}?layers=shared").json(),
-            {"available": False, "count": 0},
+            self._availability(f"{self.marks_url}?layers=shared"),
+            (False, 0),
         )
 
     def test_the_choirs_copy_is_composed_once_for_everyone(self) -> None:
@@ -529,8 +534,8 @@ class ReaderMarksServeTests(_ServeBase):
         self.assertEqual(captured, [])
         self.assertEqual(body, _pdf_bytes(3))
         self.assertEqual(
-            self.client.get(f"{self.marks_url}?layers=shared").json(),
-            {"available": False, "count": 0},
+            self._availability(f"{self.marks_url}?layers=shared"),
+            (False, 0),
         )
 
     def test_an_edit_in_the_same_second_composes_a_new_copy(self) -> None:
@@ -586,12 +591,12 @@ class ReaderMarksServeTests(_ServeBase):
         self._prepare()
         self.client.force_authenticate(self.singer_user)
         self.assertEqual(
-            self.client.get(self.marks_url).json(), {"available": False, "count": 0}
+            self._availability(self.marks_url), (False, 0)
         )
         self._mark(self.singer_user, page=1)
         self._mark(self.singer_user, page=7)  # outside the pages the book binds
         self.assertEqual(
-            self.client.get(self.marks_url).json(), {"available": True, "count": 1}
+            self._availability(self.marks_url), (True, 1)
         )
 
     def test_the_conductors_copy_carries_his_own_cue_layer(self) -> None:
@@ -643,11 +648,83 @@ class ReaderMarksServeTests(_ServeBase):
         self._mark(self.singer_user)
         self.client.force_authenticate(self.singer_user)
         self.assertEqual(
-            self.client.get(self.marks_url).json(), {"available": False, "count": 0}
+            self._availability(self.marks_url), (False, 0)
         )
         body, captured = self._serve(f"{self.binder_url}?marks=1")
         self.assertEqual(captured, [])
         self.assertEqual(body, _pdf_bytes(3))
+
+    def test_a_managers_own_copy_carries_the_choir_layer_while_it_is_withheld(self) -> None:
+        # The switch governs what singers receive. The conductor's desk copy is
+        # his, and the cockpit asks for the choir's copy by the switch's value.
+        self._prepare(markings=False)
+        self._mark(self.manager, layer=SHARED_ANNOTATION_LAYER)
+        self._mark(self.manager, layer=CONDUCTOR_ANNOTATION_LAYER, page=2)
+        self.client.force_authenticate(self.manager)
+        _, captured = self._serve(f"{self.binder_url}?marks=shared,conductor")
+        self.assertEqual(captured[0].count('class="pg"'), 2)
+        layers = self.client.get(self.marks_url).json()["layers"]
+        self.assertEqual(layers["shared"], {"count": 1, "servable": True})
+        self.assertEqual(layers["conductor"]["count"], 1)
+
+    def test_a_singer_is_offered_only_the_layers_they_may_download(self) -> None:
+        self._prepare(markings=False)
+        self._mark(self.manager, layer=SHARED_ANNOTATION_LAYER)
+        self._mark(self.manager, layer=CONDUCTOR_ANNOTATION_LAYER)
+        self._mark(self.singer_user)
+        self.client.force_authenticate(self.singer_user)
+        body = self.client.get(self.marks_url).json()
+        self.assertEqual(set(body["layers"]), {"shared", "personal"})
+        self.assertFalse(body["layers"]["shared"]["servable"])
+        self.assertEqual(body["layers"]["personal"], {"count": 1, "servable": True})
+
+    def test_a_book_with_baked_ink_never_has_the_choir_layer_composed_again(self) -> None:
+        self._prepare(markings=True)
+        ScorePackage.objects.filter(project=self.project).update(build_format=1)
+        self._mark(self.manager, layer=SHARED_ANNOTATION_LAYER)
+        self.client.force_authenticate(self.manager)
+        body, captured = self._serve(f"{self.binder_url}?marks=shared")
+        self.assertEqual(captured, [])
+        self.assertEqual(body, _pdf_bytes(3))
+        marks = self.client.get(self.marks_url).json()
+        self.assertTrue(marks["legacy_ink"])
+        self.assertFalse(marks["layers"]["shared"]["servable"])
+
+    def test_a_failed_merge_is_an_error_and_leaves_nothing_cached(self) -> None:
+        self._prepare(markings=True)
+        self._mark(self.manager, layer=SHARED_ANNOTATION_LAYER, page=1)
+        self._mark(self.manager, layer=SHARED_ANNOTATION_LAYER, page=2)
+        self.client.force_authenticate(self.singer_user)
+        # A renderer that drops a sheet: the copy must not go out short of marks.
+        with mock.patch.object(
+            score_markings, "_render_pdf", side_effect=lambda html: _pdf_bytes(1),
+        ):
+            response = self.client.get(f"{self.binder_url}?marks=shared")
+        self.assertEqual(response.status_code, 409)
+        self.assertEqual(response.json()["code"], "marks_render_failed")
+        # The next request composes afresh rather than answering from a partial.
+        _, captured = self._serve(f"{self.binder_url}?marks=shared")
+        self.assertEqual(captured[0].count('class="pg"'), 2)
+
+    def test_a_map_from_another_file_is_refused_not_guessed(self) -> None:
+        self._prepare(markings=True)
+        self.project.score_pdf.save("book.pdf", ContentFile(_pdf_bytes(5)), save=True)
+        self._mark(self.manager, layer=SHARED_ANNOTATION_LAYER)
+        self.client.force_authenticate(self.singer_user)
+        response = self.client.get(f"{self.binder_url}?marks=shared")
+        self.assertEqual(response.status_code, 409)
+        # The clean copy stays available as a separate choice.
+        self.assertEqual(self._body(self.client.get(self.binder_url)), _pdf_bytes(5))
+
+    def test_the_rehearsal_leaders_copy_names_itself(self) -> None:
+        self._prepare()
+        self._mark(self.manager, layer=LEADER_ANNOTATION_LAYER)
+        self.client.force_authenticate(self.manager)
+        with mock.patch.object(score_markings, "_render_pdf",
+                               side_effect=lambda html: _pdf_bytes(1)):
+            response = self.client.get(f"{self.binder_url}?marks=leader")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("_prowadzacy.pdf", response["Content-Disposition"])
 
 
 # ---------------------------------------------------------------------------

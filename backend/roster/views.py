@@ -12,6 +12,7 @@ import logging
 import os
 import uuid
 from collections import defaultdict
+from collections.abc import Sequence
 from dataclasses import asdict
 from datetime import datetime
 from typing import Any
@@ -35,6 +36,7 @@ from rest_framework.throttling import UserRateThrottle
 
 from archive.models import (
     CONDUCTOR_ANNOTATION_LAYER,
+    LEADER_ANNOTATION_LAYER,
     PERSONAL_ANNOTATION_LAYER,
     Piece,
     PieceVoiceRequirement,
@@ -103,7 +105,11 @@ from .infrastructure.document_generator import (
     DocumentKind,
     DocumentRenderDependencyError,
 )
-from .infrastructure.score_markings import apply_markings, plan_markings
+from .infrastructure.score_markings import (
+    MarkingRenderError,
+    apply_markings,
+    plan_markings,
+)
 from .infrastructure.score_watermark import stamp_pdf
 from .marks_news import (
     MarksNoticeRefused,
@@ -289,6 +295,22 @@ def _requested_mark_layers(
     if any(READER_MARK_LAYERS[layer] not in allowed for layer in layers):
         raise PermissionDenied("That marking layer is not yours to download.")
     return layers
+
+
+def _book_copy_suffix(layers: Sequence[str]) -> str:
+    """The filename's word for whose copy this is.
+
+    The choir's copy and the clean book carry the plain name. Any copy with a
+    layer meant for one reader or one role says so, because once it is a file
+    in a downloads folder nothing else tells it apart from the choir's book.
+    """
+    if CONDUCTOR_ANNOTATION_LAYER in layers:
+        return "_dyrygencka"
+    if LEADER_ANNOTATION_LAYER in layers:
+        return "_prowadzacy"
+    if PERSONAL_ANNOTATION_LAYER in layers:
+        return "_moje_oznaczenia"
+    return ""
 
 
 def _marked_pdf(
@@ -778,10 +800,12 @@ class ProjectViewSet(viewsets.ModelViewSet):
         GET  — All authenticated users who have access to this project.
                A plain GET is the clean book, which the in-app reader draws
                marks over. ``?marks=`` names the layers composed onto the copy
-               served: ``shared`` (only while the book's ``include_markings`` is
-               on), ``personal``, and the manager-only ``conductor``. Nothing
-               is written back: the stored book is one file, and everything
-               per-recipient happens on the way out.
+               served: ``shared`` (for a singer only while the book's
+               ``include_markings`` is on), ``personal``, ``leader`` and the
+               manager-only ``conductor``. Nothing is written back: the stored
+               book is one file, and everything per-recipient happens on the
+               way out. A composition that cannot place every planned sheet
+               answers 409 ``marks_render_failed`` and caches nothing.
         POST — Managers only. Multipart upload with field name 'score_pdf'.
         DELETE — Managers only. Clears the stored file.
         """
@@ -845,28 +869,33 @@ class ProjectViewSet(viewsets.ModelViewSet):
             # `build_version` scopes the audit trail and the copy numbering;
             # `generated_at` identifies the BYTES (see `_binder_bytes_stamp`). The
             # watermark cache is keyed on the latter — see below.
-            build_version, generated_at, page_map, include_markings = (
+            build_version, generated_at, page_map, include_markings, build_format = (
                 ScorePackage.objects.filter(project=project)
-                .values_list('build_version', 'generated_at', 'page_map', 'include_markings')
+                .values_list(
+                    'build_version', 'generated_at', 'page_map', 'include_markings',
+                    'build_format',
+                )
                 .first()
-            ) or (None, None, [], False)
+            ) or (None, None, [], False, 0)
             decision = record_binder_access(
                 request.user, project,
                 build_version=build_version, protected=protected, is_manager=is_manager,
             )
             # The ink composed for this download and never stored.
-            layers = servable_layers(layers, include_markings=include_markings)
+            layers = servable_layers(
+                layers,
+                include_markings=include_markings,
+                is_manager=is_manager,
+                legacy_ink=bool(page_map) and build_format == 1,
+            )
             marks = (
                 reader_marks_for_book(page_map or [], request.user, layers)
                 if layers
                 else ReaderMarks(by_source={}, fingerprint="0")
             )
-            # The conductor's copy is not the choir's book and must never be
-            # mistaken for it once it is a file in somebody's downloads folder.
-            suffix = (
-                "_dyrygencka" if CONDUCTOR_ANNOTATION_LAYER in layers else ""
+            filename = (
+                f"Score_{project.title.replace(' ', '_')}{_book_copy_suffix(layers)}.pdf"
             )
-            filename = f"Score_{project.title.replace(' ', '_')}{suffix}.pdf"
             marks_stamp = _binder_bytes_stamp(generated_at)
 
             if not decision.watermark and not marks:
@@ -916,6 +945,24 @@ class ProjectViewSet(viewsets.ModelViewSet):
                     # Serving the clean book under a switch that says "with my
                     # marks" would be a quiet lie about what is on the page.
                     raise PdfRenderUnavailable() from None
+                except MarkingRenderError as exc:
+                    # Nothing was cached: the composition raised before its
+                    # bytes existed. The clean copy is the reader's choice to
+                    # make, so it is offered, never substituted.
+                    logger.error(
+                        "score_pdf.marks_render_failed project=%s layers=%s reason=%s",
+                        project.pk, ",".join(layers), exc,
+                    )
+                    return Response(
+                        {
+                            "detail": _(
+                                "The markings could not be placed on this book. "
+                                "Download the clean copy, or rebuild the book and try again."
+                            ),
+                            "code": "marks_render_failed",
+                        },
+                        status=status.HTTP_409_CONFLICT,
+                    )
 
             if not decision.watermark:
                 return _pdf_bytes_response(raw, filename=filename)
@@ -1000,28 +1047,76 @@ class ProjectViewSet(viewsets.ModelViewSet):
         placed on it at all; marks that all sit on trimmed-away pages would make
         an identical file. Both must read as "no control" rather than as one that
         quietly does nothing.
+
+        ``layers`` answers the same question for each layer this caller may ask
+        for at all, one entry apiece, so a reader's copy selector can offer
+        "my pencil", "for the choir" and "for the rehearsal leader" side by side.
+        Authorisation comes first: a layer the caller may not download is not
+        counted, let alone listed.
         """
         project = self.get_object()
         is_manager = user_is_manager(request.user)
+        leads_project = user_leads_project(request.user, project.pk, scope='marks')
         layers = _requested_mark_layers(
             request.query_params.get('layers') or '1',
             is_manager=is_manager,
-            leads_project=user_leads_project(request.user, project.pk, scope='marks'),
+            leads_project=leads_project,
         )
+        empty: dict[str, Any] = {
+            "available": False, "count": 0,
+            "map_available": False, "legacy_ink": False, "layers": {},
+        }
         if not is_manager and project.status in _CLOSED_PROJECT_STATUSES:
-            return Response({"available": False, "count": 0})
+            return Response(empty)
         if not project.score_pdf:
-            return Response({"available": False, "count": 0})
-        page_map, include_markings = (
+            return Response(empty)
+        page_map, include_markings, build_format = (
             ScorePackage.objects.filter(project=project)
-            .values_list('page_map', 'include_markings')
+            .values_list('page_map', 'include_markings', 'build_format')
             .first()
-        ) or ([], False)
-        layers = servable_layers(layers, include_markings=include_markings)
-        marks = reader_marks_for_book(page_map or [], request.user, layers)
-        planned = plan_markings(page_map or [], marks.by_source)
-        count = sum(len(page_marks) for _, page_marks in planned)
-        return Response({"available": count > 0, "count": count})
+        ) or ([], False, 0)
+        page_map = page_map or []
+        legacy_ink = bool(page_map) and build_format == 1
+
+        def landed(asked: Sequence[str]) -> int:
+            servable = servable_layers(
+                asked, include_markings=include_markings,
+                is_manager=is_manager, legacy_ink=legacy_ink,
+            )
+            if not servable:
+                return 0
+            marks = reader_marks_for_book(page_map, request.user, servable)
+            planned = plan_markings(page_map, marks.by_source)
+            return sum(len(page_marks) for _, page_marks in planned)
+
+        allowed = {MarkAudience.ANY}
+        if leads_project:
+            allowed.add(MarkAudience.LEADER)
+        if is_manager:
+            allowed |= {MarkAudience.LEADER, MarkAudience.MANAGER}
+        per_layer = {
+            layer: {
+                "count": landed([layer]),
+                # Whether asking for it changes the copy at all. The choir's
+                # layer is withheld from a singer while the switch is off, and
+                # from everyone on a book that already has it in its pages.
+                "servable": bool(servable_layers(
+                    [layer], include_markings=include_markings,
+                    is_manager=is_manager, legacy_ink=legacy_ink,
+                )),
+            }
+            for layer, audience in READER_MARK_LAYERS.items()
+            if audience in allowed
+        } if page_map else {}
+        count = landed(layers) if page_map else 0
+        return Response({
+            "available": count > 0,
+            "count": count,
+            "map_available": bool(page_map),
+            "legacy_ink": legacy_ink,
+            "include_markings": include_markings,
+            "layers": per_layer,
+        })
 
     def _marks_notifier_project(self) -> Project:
         """The project behind "Powiadom chór", for whoever may press it: a

@@ -7,10 +7,17 @@
  * stacked sentences that used to say "stale" four ways. Settings summarise
  * themselves while collapsed; the hand-upload alternative rides the footer rather
  * than a second card of equal weight.
+ *
+ * Preview and Download hand out one copy, chosen once above both by who it is
+ * for: the choir's (exactly what singers download now), the clean book, the
+ * conductor's desk copy, the rehearsal leader's. Choosing a copy never changes
+ * what singers receive; the choir-marks switch beside it does, from the next
+ * download on.
  * @module features/projects/components/ScorePackagePanel
  */
 
 import React, { useEffect, useRef, useState } from "react";
+import { isAxiosError } from "axios";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
@@ -45,6 +52,7 @@ import { projectKeys } from "../api/project.query-keys";
 import { ProjectService } from "../api/project.service";
 import type {
   CardElement,
+  ScorePackageBookMarks,
   ScorePackageConfig,
   ScoreMarkLayer,
   ScorePackageItem,
@@ -57,16 +65,12 @@ import {
   useUpdateScorePackageItem,
 } from "../api/project.score-package";
 import {
-  BOOK_COPY_LAYERS,
-  CONDUCTOR_MARK_LAYERS,
-  useConductorMarksAvailable,
+  bookCopyAudiences,
+  bookCopyFileName,
+  bookCopyKeySuffix,
+  bookCopyLayers,
+  type BookCopyAudience,
 } from "../api/project.score-marks";
-
-/** The copy for the music desk: the choir's book with his own cues on top. */
-const CONDUCTOR_COPY_LAYERS: readonly ScoreMarkLayer[] = [
-  ...BOOK_COPY_LAYERS,
-  ...CONDUCTOR_MARK_LAYERS,
-];
 import { CardElementPills } from "./CardElementPills";
 import { ScoreManualUploadRail } from "./ScoreManualUploadRail";
 import { ScorePackageItemRow } from "./ScorePackageItemRow";
@@ -112,6 +116,13 @@ const sanitizeFilename = (title: string): string =>
     .replace(/[^\p{L}\p{N} _-]/gu, "")
     .trim()
     .replace(/\s+/g, "_") || "partytura";
+
+/** A cockpit read from before the census existed, or a package with no book. */
+const NO_BOOK_MARKS: ScorePackageBookMarks = {
+  map_available: false,
+  legacy_ink: false,
+  layers: {},
+};
 
 /** A piece the conductor has to look at before the book is trustworthy: no bound
  *  edition, more singers than licensed copies, or card data the AI is unsure of. */
@@ -191,9 +202,28 @@ export function ScorePackagePanel({
   const nothingToBind = state ? state.bindable_pieces === 0 : true;
   const hasProgram = (state?.total_pieces ?? 0) > 0;
   const hasBook = state?.status === "RDY" && state.has_pdf;
-  // His own cue layer — never printed into the choir's book, only into a copy
-  // he pulls for the music desk.
-  const hasConductorMarks = useConductorMarksAvailable(projectId, Boolean(hasBook));
+
+  // The one copy Preview and Download both hand out, its file name included.
+  const bookMarks = state?.book_marks ?? NO_BOOK_MARKS;
+  const includeMarkings = config?.include_markings ?? false;
+  const audiences = bookCopyAudiences(bookMarks);
+  const [chosenAudience, setChosenAudience] = useState<BookCopyAudience>("choir");
+  // A choice the current book no longer offers (its desk layer was erased, a
+  // rebuild baked nothing) falls back to the choir's copy.
+  const audience = audiences.includes(chosenAudience) ? chosenAudience : "choir";
+  const copyLayers = bookCopyLayers(audience, includeMarkings, bookMarks);
+  const fileStem = sanitizeFilename(projectTitle ?? "partytura");
+  const copyFileName = bookCopyFileName(fileStem, copyLayers, t);
+  const sharedOnBook = bookMarks.layers.shared?.marks ?? 0;
+  const sharedSheets = bookMarks.layers.shared?.sheets ?? 0;
+  const pendingMarks = (state?.items ?? []).reduce(
+    (sum, item) => sum + item.markings.pending_rebuild,
+    0,
+  );
+  // Set when the server could not place every mark on the asked-for copy. The
+  // clean book is then offered as its own action, never substituted.
+  const [renderFailed, setRenderFailed] = useState(false);
+  useEffect(() => setRenderFailed(false), [audience, state?.generated_at]);
 
   // CTA escalation: once a current book exists, rebuilding is optional, so quiet
   // it and let Download carry the gold. Rebuild escalates back to primary only
@@ -218,27 +248,82 @@ export function ScorePackagePanel({
   // The gated fetch can legitimately refuse (a closed project, a renderer that
   // cannot stamp a protected book). Unhandled, that reads as a dead button.
   const handleDownload = async (
-    marks: readonly ScoreMarkLayer[] = BOOK_COPY_LAYERS,
+    marks: readonly ScoreMarkLayer[] = copyLayers,
   ): Promise<void> => {
     try {
       const blob = await ProjectService.fetchScorePdfBlob(projectId, marks);
       const url = URL.createObjectURL(blob);
       const anchor = document.createElement("a");
       anchor.href = url;
-      // The conductor's copy names itself, because once it is a file in a
-      // downloads folder nothing else says it is not the choir's book.
-      const suffix = marks.includes("conductor")
-        ? `_${t("projects.score_package.conductor_copy_suffix", "dyrygencka")}`
-        : "";
-      anchor.download = `${sanitizeFilename(projectTitle ?? "partytura")}${suffix}.pdf`;
+      anchor.download = bookCopyFileName(fileStem, marks, t);
       document.body.appendChild(anchor);
       anchor.click();
       anchor.remove();
       URL.revokeObjectURL(url);
     } catch (error) {
+      if (isAxiosError(error) && error.response?.status === 409) {
+        setRenderFailed(true);
+        return;
+      }
       toastApiError(error);
     }
   };
+
+  const audienceLabels: Record<BookCopyAudience, string> = {
+    choir: t("projects.score_copy.audience.choir", "Dla chóru"),
+    clean: t("projects.score_copy.audience.clean", "Czysty"),
+    conductor: t("projects.score_copy.audience.conductor", "Dyrygencki"),
+    leader: t("projects.score_copy.audience.leader", "Dla prowadzącego"),
+  };
+  const audienceItems: ReadonlyArray<SegmentedTabItem<BookCopyAudience>> =
+    audiences.map((id) => ({ id, label: audienceLabels[id] }));
+
+  // What the chosen copy carries, said in terms of who gets it. The counts ride
+  // in parentheses, never in a declined slot (see the item row).
+  const copyDescription = ((): string => {
+    if (!bookMarks.map_available) {
+      return t(
+        "projects.score_copy.describe.manual",
+        "Plik wgrany ręcznie, dokładnie taki, jak go wgrano. Oznaczeń z aplikacji nie da się na nim umieścić, bo nie ma mapy stron.",
+      );
+    }
+    switch (audience) {
+      case "choir":
+        if (bookMarks.legacy_ink) {
+          return t(
+            "projects.score_copy.describe.choir_legacy",
+            "Tak pobierają śpiewacy: z oznaczeniami wpisanymi na stałe przy składaniu.",
+          );
+        }
+        return copyLayers.includes("shared")
+          ? t(
+              "projects.score_copy.describe.choir_marked",
+              "Tak pobierają śpiewacy: z oznaczeniami dla chóru ({{n}}).",
+              { n: sharedOnBook },
+            )
+          : t(
+              "projects.score_copy.describe.choir_clean",
+              "Tak pobierają śpiewacy: same nuty, bez oznaczeń.",
+            );
+      case "clean":
+        return t(
+          "projects.score_copy.describe.clean",
+          "Same nuty, bez żadnych oznaczeń. Śpiewacy dostają go tylko wtedy, gdy oznaczenia dla chóru są wyłączone.",
+        );
+      case "conductor":
+        return t(
+          "projects.score_copy.describe.conductor",
+          "Na pulpit dyrygenta: oznaczenia dla chóru i Twoje prywatne ({{n}}). Nikt inny go nie dostaje.",
+          { n: bookMarks.layers.conductor?.marks ?? 0 },
+        );
+      case "leader":
+        return t(
+          "projects.score_copy.describe.leader",
+          "Dla osoby prowadzącej próbę: oznaczenia dla chóru i dla prowadzącego ({{n}}).",
+          { n: bookMarks.layers.leader?.marks ?? 0 },
+        );
+    }
+  })();
 
   const densityItems: ReadonlyArray<SegmentedTabItem<DensityId>> = [
     { id: "CONCERT", label: t("projects.score_package.density.concert", "Koncert") },
@@ -408,9 +493,31 @@ export function ScorePackagePanel({
                       ? t("projects.score_package.regenerate", "Wygeneruj ponownie")
                       : t("projects.score_package.generate", "Złóż partyturę")}
                 </Button>
+              </div>
+            </div>
 
-                {hasBook && (
-                  <>
+            {/* ── The copy: one choice above both actions ── */}
+            {hasBook && (
+              <div className="flex flex-col gap-2.5 border-t border-hairline pt-4">
+                <div className="flex flex-wrap items-end justify-between gap-3">
+                  <div className="flex min-w-0 flex-col gap-1.5">
+                    <Eyebrow size="overline-sm" color="muted">
+                      {t("projects.score_copy.heading", "Egzemplarz")}
+                    </Eyebrow>
+                    {audienceItems.length > 1 ? (
+                      <SegmentedTabs<BookCopyAudience>
+                        items={audienceItems}
+                        value={audience}
+                        onChange={setChosenAudience}
+                        ariaLabel={t("projects.score_copy.heading", "Egzemplarz")}
+                      />
+                    ) : (
+                      <Text as="span" size="sm" weight="medium">
+                        {audienceLabels[audience]}
+                      </Text>
+                    )}
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
                     <Button
                       variant="secondary"
                       size="sm"
@@ -431,28 +538,92 @@ export function ScorePackagePanel({
                         ? t("projects.score_package.download_stale", "Pobierz mimo to")
                         : t("projects.score_package.download", "Pobierz")}
                     </Button>
-                    {/* Offered only where the conductor has cues of his own:
-                        otherwise it is the choir's book under a name that
-                        claims to be something else. */}
-                    {hasConductorMarks && (
+                  </div>
+                </div>
+                <Caption color="muted">{copyDescription}</Caption>
+
+                {renderFailed && (
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+                    <Caption color="crimson" className="flex items-start gap-1.5">
+                      <AlertTriangle size={13} aria-hidden="true" className="mt-0.5 shrink-0" />
+                      {t(
+                        "projects.score_copy.render_failed",
+                        "Nie udało się umieścić oznaczeń w tym egzemplarzu, więc nic nie zostało pobrane. Złóż książkę ponownie albo pobierz czysty egzemplarz.",
+                      )}
+                    </Caption>
+                    {audiences.includes("clean") && (
                       <Button
                         variant="ghost"
                         size="sm"
-                        leftIcon={<PencilLine size={14} aria-hidden="true" />}
+                        leftIcon={<Download size={14} aria-hidden="true" />}
                         onClick={() => {
-                          void handleDownload(CONDUCTOR_COPY_LAYERS);
+                          setChosenAudience("clean");
+                          void handleDownload([]);
                         }}
                       >
-                        {t(
-                          "projects.score_package.conductor_copy",
-                          "Egzemplarz dyrygencki",
-                        )}
+                        {t("projects.score_copy.download_clean", "Pobierz czysty egzemplarz")}
                       </Button>
                     )}
-                  </>
+                  </div>
+                )}
+
+                {/* What singers receive: the one switch that changes it. */}
+                {bookMarks.map_available && !bookMarks.legacy_ink && sharedOnBook > 0 && config && (
+                  <div className="flex flex-col gap-1.5">
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+                      <TogglePill
+                        label={t(
+                          "projects.score_copy.choir_switch",
+                          "Oznaczenia dla chóru w pobraniach śpiewaków",
+                        )}
+                        active={config.include_markings}
+                        onChange={(v) => setField("include_markings", v)}
+                      />
+                      <Caption color={config.include_markings ? "muted" : "gold"}>
+                        {config.include_markings
+                          ? t(
+                              "projects.score_copy.choir_switch_on",
+                              "Każde pobranie zawiera oznaczenia dla chóru ({{n}}) na {{s}} str.",
+                              { n: sharedOnBook, s: sharedSheets },
+                            )
+                          : t(
+                              "projects.score_copy.choir_switch_off",
+                              "Śpiewacy pobierają książkę bez oznaczeń dla chóru ({{n}}).",
+                              { n: sharedOnBook },
+                            )}
+                      </Caption>
+                    </div>
+                    <Caption color="muted">
+                      {t(
+                        "projects.score_copy.choir_switch_hint",
+                        "Zmiana działa od następnego pobrania. Kto pobrał książkę wcześniej, musi pobrać ją ponownie.",
+                      )}
+                    </Caption>
+                  </div>
+                )}
+
+                {bookMarks.legacy_ink && (
+                  <Caption color="gold" className="flex items-start gap-1.5">
+                    <AlertTriangle size={13} aria-hidden="true" className="mt-0.5 shrink-0" />
+                    {t(
+                      "projects.score_copy.legacy_ink",
+                      "Ta książka ma oznaczenia dla chóru wpisane na stałe przy składaniu, w stanie z tamtej chwili. Nie ma czystego egzemplarza, a nowsze oznaczenia nie trafią do pobrań. Złóż ją ponownie.",
+                    )}
+                  </Caption>
+                )}
+
+                {pendingMarks > 0 && (
+                  <Caption color="gold" className="flex items-start gap-1.5">
+                    <PencilLine size={13} aria-hidden="true" className="mt-0.5 shrink-0" />
+                    {t(
+                      "projects.score_copy.pending",
+                      "Oznaczenia dla chóru ({{n}}) są na stronach, których ta książka jeszcze nie ma. Trafią do egzemplarzy po ponownym złożeniu. Utwory, których to dotyczy, mają ołówek na liście niżej.",
+                      { n: pendingMarks },
+                    )}
+                  </Caption>
                 )}
               </div>
-            </div>
+            )}
 
             {figures.length > 0 && (
               <div className="flex flex-wrap gap-x-10 gap-y-4 border-t border-hairline pt-4">
@@ -702,15 +873,6 @@ export function ScorePackagePanel({
                         }
                         onChange={(v) => setField("hide_source_page_numbers", v)}
                       />
-                      <TogglePill
-                        subtle
-                        label={t(
-                          "projects.score_package.structure.markings",
-                          "Wpisz moje oznaczenia",
-                        )}
-                        active={config.include_markings}
-                        onChange={(v) => setField("include_markings", v)}
-                      />
                     </div>
                     <Caption color="muted">
                       {config.include_page_numbers
@@ -722,12 +884,6 @@ export function ScorePackagePanel({
                             "projects.score_package.structure.hide_source_numbers_locked_hint",
                             "Bez własnej numeracji książka zostawia numery wydawcy — inaczej wydruk nie miałby żadnych.",
                           )}
-                    </Caption>
-                    <Caption color="muted">
-                      {t(
-                        "projects.score_package.structure.markings_hint",
-                        "Drukuje Twoje oznaczenia z warstwy „dla chóru” na nutach. Zakreślacz wychodzi jako podkreślenie — na wydruku czarno-białym wypełnienie zalałoby nuty. Prywatne notatki śpiewaków zostają ich własne.",
-                      )}
                     </Caption>
                   </div>
                 </div>
@@ -795,21 +951,32 @@ export function ScorePackagePanel({
         onClose={() => setPreview(null)}
       />
 
-      {/* The preview is the choir's copy, so it carries the conductor's marks
-          composed per request — and is re-fetched on every open, because he is
-          the one drawing them, often minutes before he looks. The doc key
-          carries the build stamp as well, for the rebuild. */}
+      {/* The preview is the chosen copy, byte for byte what Download hands
+          out, with the same file name — and is re-fetched on every open,
+          because the marks composed into it are often minutes old. The doc
+          key carries the build stamp and the selection as well. */}
       <PdfViewerModal
         isOpen={bookPreviewOpen}
         title={projectTitle ?? t("projects.score_package.title", "Książka nutowa")}
-        subtitle={t("projects.score_package.preview_book_full", "Podgląd partytury")}
-        fileName={`${sanitizeFilename(projectTitle ?? "partytura")}.pdf`}
+        subtitle={`${t("projects.score_package.preview_book_full", "Podgląd partytury")} · ${audienceLabels[audience]}`}
+        fileName={copyFileName}
         fetchBlob={
           bookPreviewOpen
-            ? () => ProjectService.fetchScorePdfBlob(projectId, BOOK_COPY_LAYERS)
+            ? async () => {
+                try {
+                  return await ProjectService.fetchScorePdfBlob(projectId, copyLayers);
+                } catch (error) {
+                  // The preview's own error state says it failed; the cockpit
+                  // says why and offers the clean copy beside the choice.
+                  if (isAxiosError(error) && error.response?.status === 409) {
+                    setRenderFailed(true);
+                  }
+                  throw error;
+                }
+              }
             : null
         }
-        docKey={`book-${projectId}-${state?.build_version ?? 0}-${state?.generated_at ?? ""}`}
+        docKey={`book-${projectId}-${state?.build_version ?? 0}-${state?.generated_at ?? ""}${bookCopyKeySuffix(copyLayers)}`}
         volatile
         onClose={() => setBookPreviewOpen(false)}
       />

@@ -66,7 +66,7 @@ import { useUnsavedChangesWarning } from "@/shared/lib/dom/useUnsavedChangesWarn
 import { useEnrichedProject } from "./hooks/useEnrichedProjects";
 import { useProjectCard } from "./ProjectCard/hooks/useProjectCard";
 import { ProjectService } from "./api/project.service";
-import { BOOK_COPY_LAYERS } from "./api/project.score-marks";
+import { useBookCopy } from "./api/project.score-marks";
 import {
   useAnnouncementReview,
   useDeleteProject,
@@ -264,11 +264,10 @@ export default function ProjectHubLayout(): React.JSX.Element {
   }, [id]);
 
   // A plain viewer with no pencil in it, so the copy it shows and hands out is
-  // the choir's: the conductor's marks composed in.
-  const fetchScorePdfBlob = useCallback(
-    () => ProjectService.fetchScorePdfBlob(id, BOOK_COPY_LAYERS),
-    [id],
-  );
+  // the choir's: the conductor's marks composed in exactly when singers get
+  // them. A manager may compose that layer past the switch, so the hub asks
+  // by the switch's value rather than naming the layer outright.
+  const scoreCopy = useBookCopy(id, isScoreOpen);
 
   const handleStatusToggle = useCallback(async () => {
     if (!project) return;
@@ -727,13 +726,13 @@ export default function ProjectHubLayout(): React.JSX.Element {
           title={t("projects.card.score_pdf_modal_title", "Partytura")}
           subtitle={project.title}
           fileName={`Score_${project.title.replace(/\s+/g, "_")}.pdf`}
-          fetchBlob={fetchScorePdfBlob}
+          fetchBlob={scoreCopy.ready ? scoreCopy.fetchBlob : null}
           // The generator overwrites the file under the same name, so the id
           // alone would serve the previous book for the rest of the session.
           // A completed build saves the project, which moves `updated_at`. The
           // marks composed in move with nothing the client holds, so the copy
           // is fetched again on every open.
-          docKey={`score-pdf-${project.id}-${project.updated_at ?? ""}`}
+          docKey={`score-pdf-${project.id}-${project.updated_at ?? ""}${scoreCopy.docKeySuffix}`}
           volatile
           fullView={{
             type: "project-score",

@@ -109,8 +109,13 @@ const IDB_KEY = "client";
  * `author_name`. A snapshot from before holds neither, so an artist's inbox
  * would name the artist as their own counterpart, and the support assistant's
  * reply would read as the manager's, until the refetch.
+ *
+ * 2026-11-book-copies: the score cockpit carries `book_marks`, a score-marks
+ * answer its per-layer `layers`. A snapshot from before holds neither, so the
+ * cockpit's copy selector would read an undefined census and the viewer would
+ * offer no layer until the refetch.
  */
-export const QUERY_CACHE_BUSTER = "2026-11-thread-sides";
+export const QUERY_CACHE_BUSTER = "2026-11-book-copies";
 
 export const QUERY_CACHE_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 

@@ -61,6 +61,7 @@ from roster.score_package_config import (
 )
 from roster.score_package_markings import (
     ItemMarkings,
+    book_layer_census,
     compute_program_markings,
     markings_status,
 )
@@ -362,10 +363,36 @@ class ScorePackageService:
             # element: it says nothing about the frontispiece, and it must never
             # drag the card's roll-up light down with it.
             "markings": {
-                "status": markings_status(markings, package.include_markings),
+                "status": markings_status(markings),
+                # On this item's pages of the stored book: what a copy carries now.
+                "on_book": markings.on_book,
+                # Inside the draft's pages, so they print once the book holds them.
                 "printed": markings.inside,
+                # Inside the draft but on pages the stored book lacks: a rebuild
+                # brings them in.
+                "pending_rebuild": markings.pending,
                 "outside_range": markings.outside,
                 "other_edition": markings.elsewhere,
+            },
+        }
+
+    @staticmethod
+    def _book_marks(package: ScorePackage, stored_map: list[Any]) -> dict[str, Any]:
+        """What each copy the cockpit can hand out would carry, measured on the
+        STORED book — the file every download is composed from, not the draft.
+
+        ``map_available`` is false for a hand-uploaded book: it shows whatever
+        its author put into it, and no app mark can be placed on it. A book
+        with ``legacy_ink`` has the shared layer in its pages already, so there
+        is no clean copy of it and no layer to add until it is rebuilt.
+        """
+        census = book_layer_census(stored_map) if stored_map else {}
+        return {
+            "map_available": bool(stored_map),
+            "legacy_ink": bool(stored_map) and package.has_legacy_ink,
+            "layers": {
+                layer: {"marks": entry.marks, "sheets": entry.sheets}
+                for layer, entry in census.items()
             },
         }
 
@@ -375,7 +402,10 @@ class ScorePackageService:
         per-item build rows with their readiness."""
         package = ScorePackageService.get_or_create(project)
         items = list(ScorePackageService._ordered_items(project))
-        markings = compute_program_markings(items) if package.include_markings else {}
+        # Counted whether or not the choir's copies carry the marks: a manager
+        # deciding to hand them out has to see what is there while it is withheld.
+        stored_map = list(package.page_map or []) if project.score_pdf else []
+        markings = compute_program_markings(items, stored_map)
         live_hash = ScorePackageService.compute_source_hash(project, package, items=items)
         readiness = compute_program_readiness(project, items, package)
         # Ensemble size drives the "more singers than licensed copies" warning.
@@ -427,6 +457,7 @@ class ScorePackageService:
             # version / staleness (they describe a generated output, not this file).
             "is_manual_upload": package.is_manual_upload and bool(project.score_pdf),
             "error": package.error,
+            "book_marks": ScorePackageService._book_marks(package, stored_map),
             "total_pieces": len(items),
             "bindable_pieces": len(items) - len(missing),
             "pieces_without_pdf": missing,
@@ -793,11 +824,13 @@ class ScorePackageService:
         package.build_version = package.build_version + 1
         package.distributed_at = None
         package.is_manual_upload = False  # this is a generated build, not a hand-upload
+        package.build_format = BUILD_FORMAT
         package.error = ""
         package.save(
             update_fields=[
                 "status", "source_hash", "page_count", "page_map", "generated_at",
-                "build_version", "distributed_at", "is_manual_upload", "error", "updated_at",
+                "build_version", "distributed_at", "is_manual_upload", "build_format",
+                "error", "updated_at",
             ]
         )
 
@@ -846,10 +879,11 @@ class ScorePackageService:
         package.page_map = []
         package.generated_at = timezone.now()
         package.distributed_at = None
+        package.build_format = 0
         package.error = ""
         package.save(update_fields=[
             "status", "is_manual_upload", "source_hash", "page_count", "page_map",
-            "generated_at", "distributed_at", "error", "updated_at",
+            "generated_at", "distributed_at", "build_format", "error", "updated_at",
         ])
 
     @staticmethod
@@ -864,10 +898,11 @@ class ScorePackageService:
         package.page_map = []
         package.generated_at = None
         package.distributed_at = None
+        package.build_format = 0
         package.error = ""
         package.save(update_fields=[
             "status", "is_manual_upload", "source_hash", "page_count", "page_map",
-            "generated_at", "distributed_at", "error", "updated_at",
+            "generated_at", "distributed_at", "build_format", "error", "updated_at",
         ])
 
 
