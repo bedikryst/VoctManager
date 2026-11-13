@@ -75,7 +75,7 @@ export const ANNOTATIONS_PATH = "/api/archive/annotations/";
 export const ANNOTATION_EDITION_PARAM = "edition";
 
 /**
- * Exact match, deliberately. `fingerprint/` — the twenty-second poll that asks
+ * Exact match, deliberately. `fingerprint/` — the open stand's poll that asks
  * whether the page has moved — and `clear/` sit one segment below, and a stored
  * answer to either is worse than none: the first would swear nothing has changed
  * for as long as the entry lives, and the second is a write.

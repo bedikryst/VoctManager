@@ -75,12 +75,23 @@ export const annotationKeys = {
 };
 
 /**
- * How often an open stand asks whether anything changed. Twenty seconds is the
- * span of a conductor saying "zapiszcie sobie" and the singers looking down —
- * short enough to feel like the room, long enough that a phone on a church
- * basement's signal is not paying for it.
+ * How often an open stand asks whether anything changed when the server has
+ * not said. The server answers its own interval with every fingerprint: a few
+ * seconds while someone else is writing on the edition, so a conductor's
+ * "zapiszcie sobie" reaches the choir before they look down, and twenty on a
+ * quiet page, which a phone on a church basement's signal can afford.
  */
 const LIVE_POLL_MS = 20_000;
+
+/** Bounds on the server's interval, so a bad answer can neither hammer nor stall. */
+const MIN_POLL_MS = 2_000;
+const MAX_POLL_MS = 60_000;
+
+const pollInterval = (fingerprint: MarkFingerprint | undefined): number => {
+  const asked = fingerprint?.poll_ms;
+  if (typeof asked !== "number" || !Number.isFinite(asked)) return LIVE_POLL_MS;
+  return Math.min(MAX_POLL_MS, Math.max(MIN_POLL_MS, asked));
+};
 
 interface AnnotationsOptions {
   /**
@@ -368,7 +379,8 @@ const useMarkFingerprintWatch = (
     gcTime: 0,
     staleTime: 0,
     retry: false,
-    refetchInterval: writing ? false : LIVE_POLL_MS,
+    refetchInterval: (query) =>
+      writing ? false : pollInterval(query.state.data),
   });
 
   /** The fingerprint the list on hand is known to match. */

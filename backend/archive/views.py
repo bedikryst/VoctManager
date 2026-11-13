@@ -16,7 +16,7 @@ Standards: SaaS 2026, RFC 7807 (Global Exception Handling), Aggregate Roots.
 import logging
 import uuid
 from collections.abc import Mapping
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any
 
 from django.core.cache import cache
@@ -927,6 +927,16 @@ class ScoreEditionViewSet(viewsets.ModelViewSet):
 #: IN clause with tens of thousands of parameters.
 _MAX_BULK_MARK_IDS = 5000
 
+#: How often an open stand asks whether its marks moved. Quiet: twenty seconds,
+#: which a phone on a church basement's signal can afford all evening. Busy —
+#: someone else touched a mark the reader can see within the window — four
+#: seconds, the span between the conductor's pen lifting and the choir looking
+#: down. The window outlasts a pause in the writing, so a rehearsal's run of
+#: corrections stays fast between them.
+_MARKS_QUIET_POLL_MS = 20_000
+_MARKS_BUSY_POLL_MS = 4_000
+_MARKS_BUSY_WINDOW = timedelta(minutes=5)
+
 
 class AnnotationGone(APIException):
     """A replayed create names a mark its author has since erased.
@@ -1278,21 +1288,32 @@ class AnnotationViewSet(viewsets.ModelViewSet):
         letters their seat on this music answers to (see
         `archive/annotation_voices.py`), so that whichever surface opened the
         score, the stand knows which voice "Mój głos" means.
+
+        And `poll_ms`, how soon the stand should ask again. Someone else
+        writing on this edition right now — the conductor saying "zapiszcie
+        sobie" — makes it short, so the mark reaches the choir in seconds; a
+        quiet page keeps the long interval that spares phones on a weak signal.
+        The reader's own writing does not count: their marks are already on
+        their page.
         """
         edition_id = _edition_param(request.query_params.get('edition'))
+        user = request_user(request)
         stats = self.get_queryset().filter(edition_id=edition_id).aggregate(
-            count=Count('id'), latest=Max('updated_at'),
+            count=Count('id'),
+            latest=Max('updated_at'),
+            latest_by_others=Max('updated_at', filter=~Q(created_by=user)),
         )
         latest = stats['latest']
+        by_others = stats['latest_by_others']
+        busy = by_others is not None and timezone.now() - by_others < _MARKS_BUSY_WINDOW
         seen_at = self._read_pointer(edition_id)
         return Response(
             {
                 'count': stats['count'],
                 'latest': latest.isoformat() if latest else None,
                 'seen_at': seen_at.isoformat() if seen_at else None,
-                'reader_sections': reader_section_letters(
-                    request_user(request), edition_id,
-                ),
+                'reader_sections': reader_section_letters(user, edition_id),
+                'poll_ms': _MARKS_BUSY_POLL_MS if busy else _MARKS_QUIET_POLL_MS,
             },
             status=status.HTTP_200_OK,
         )

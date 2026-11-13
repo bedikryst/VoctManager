@@ -12,7 +12,8 @@
 
     The fingerprint is here for the other half of the same story: an open score
     stand polls it through a whole rehearsal, so it has to answer "did MY view
-    change" — never leaking the existence of another singer's private marks.
+    change" — never leaking the existence of another singer's private marks —
+    and how soon to ask again, short only while someone else is writing.
 
 @module archive/test_annotation_offline
 """
@@ -21,11 +22,13 @@ from __future__ import annotations
 
 import tempfile
 import uuid
+from datetime import timedelta
 from io import BytesIO
 
 from django.contrib.auth import get_user_model
 from django.core.files.base import ContentFile
 from django.test import override_settings
+from django.utils import timezone
 from pypdf import PdfWriter
 from rest_framework.test import APITestCase
 
@@ -239,6 +242,33 @@ class MarkFingerprintTests(ClientMintedIdTests):
         self.client.post(_ENDPOINT, self._body(), format="json")
         self.edition.delete()
         self.assertEqual(self._fingerprint()["count"], 0)
+
+    def _conductor_mark(self) -> Annotation:
+        return Annotation.objects.create(
+            edition=self.edition, page_number=2,
+            annotation_type=AnnotationType.STAMP,
+            payload={"x": 0.4, "y": 0.4, "symbol": "breath", "scale": 1.0},
+            color=_CONDUCTOR_INK, layer_name=SHARED_ANNOTATION_LAYER,
+            created_by=self.manager,
+        )
+
+    def test_a_quiet_page_is_polled_slowly(self) -> None:
+        mark = self._conductor_mark()
+        Annotation.objects.filter(pk=mark.pk).update(
+            updated_at=timezone.now() - timedelta(minutes=30),
+        )
+        self.client.force_authenticate(self.singer_user)
+        self.assertEqual(self._fingerprint()["poll_ms"], 20_000)
+
+    def test_the_conductor_writing_now_speeds_the_poll_up(self) -> None:
+        self._conductor_mark()
+        self.client.force_authenticate(self.singer_user)
+        self.assertEqual(self._fingerprint()["poll_ms"], 4_000)
+
+    def test_the_readers_own_writing_does_not(self) -> None:
+        self.client.force_authenticate(self.singer_user)
+        self.client.post(_ENDPOINT, self._body(), format="json")
+        self.assertEqual(self._fingerprint()["poll_ms"], 20_000)
 
     def test_it_needs_a_real_edition_id(self) -> None:
         self.client.force_authenticate(self.singer_user)

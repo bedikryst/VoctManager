@@ -190,6 +190,12 @@ export interface MarkFingerprint {
    * build has none, and reads as "show everything".
    */
   reader_sections?: string;
+  /**
+   * How soon to ask again: short while someone else is writing on this
+   * edition, long on a quiet page. Optional: a server from before it existed
+   * sends none, and the stand keeps its own interval.
+   */
+  poll_ms?: number;
 }
 
 /**
