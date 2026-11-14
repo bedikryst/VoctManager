@@ -60,6 +60,7 @@ from roster.models import (
     ScorePackage,
     VoiceType,
 )
+from roster.score_book_cache import CompositionBusy
 from roster.score_package_service import ScorePackageService
 
 _MEDIA = tempfile.mkdtemp(prefix="vm_score_protection_test_")
@@ -525,6 +526,70 @@ class ReaderMarksServeTests(_ServeBase):
         self.assertEqual(len(initial_render), 1)
         self.assertEqual(repeated_render, [])
         self.assertEqual(stamp.call_count, 2)
+
+    def test_shared_cache_tracks_added_edited_and_deleted_marks(self) -> None:
+        self._prepare(markings=True)
+        first_mark = self._mark(self.manager, layer=SHARED_ANNOTATION_LAYER)
+        self.client.force_authenticate(self.manager)
+        url = f"{self.binder_url}?marks=shared"
+        self._serve(url)
+        second_mark = self._mark(self.manager, layer=SHARED_ANNOTATION_LAYER, page=2)
+        _, added = self._serve(url)
+        self.assertEqual(added[0].count('class="pg"'), 2)
+        first_mark.color = "#abcdef"
+        first_mark.save()
+        _, edited = self._serve(url)
+        self.assertIn("#abcdef", edited[0])
+        second_mark.is_deleted = True
+        second_mark.save()
+        _, deleted = self._serve(url)
+        self.assertEqual(deleted[0].count('class="pg"'), 1)
+        _, unchanged = self._serve(url)
+        self.assertEqual(unchanged, [])
+        first_mark.is_deleted = True
+        first_mark.save()
+        clean, no_marks = self._serve(url)
+        self.assertEqual(no_marks, [])
+        self.assertEqual(clean, _pdf_bytes(3))
+
+    def test_shared_cache_is_invalidated_when_the_book_is_rebuilt(self) -> None:
+        self._prepare(markings=True)
+        self._mark(self.manager, layer=SHARED_ANNOTATION_LAYER)
+        self.client.force_authenticate(self.manager)
+        url = f"{self.binder_url}?marks=shared"
+        self._serve(url)
+        ScorePackage.objects.filter(project=self.project).update(generated_at=timezone.now())
+        _, rebuilt = self._serve(url)
+        self.assertEqual(len(rebuilt), 1)
+        _, repeated = self._serve(url)
+        self.assertEqual(repeated, [])
+
+    def test_cached_shared_copy_still_obeys_distribution_and_project_access(self) -> None:
+        self._prepare(markings=True)
+        self._mark(self.manager, layer=SHARED_ANNOTATION_LAYER)
+        self.client.force_authenticate(self.manager)
+        url = f"{self.binder_url}?marks=shared"
+        self._serve(url)
+        ScorePackage.objects.filter(project=self.project).update(include_markings=False)
+        self.client.force_authenticate(self.singer_user)
+        clean, rendered = self._serve(url)
+        self.assertEqual(rendered, [])
+        self.assertEqual(clean, _pdf_bytes(3))
+        ScorePackage.objects.filter(project=self.project).update(include_markings=True)
+        Project.objects.filter(pk=self.project.pk).update(status=Project.Status.COMPLETED)
+        self.assertEqual(self.client.get(url).status_code, 403)
+        self.client.force_authenticate(user=None)
+        self.assertEqual(self.client.get(url).status_code, 401)
+
+    def test_composition_timeout_does_not_record_a_download(self) -> None:
+        self._prepare(protected=True, markings=True)
+        self._mark(self.manager, layer=SHARED_ANNOTATION_LAYER)
+        self.client.force_authenticate(self.singer_user)
+        with mock.patch("roster.views.open_choir_copy", side_effect=CompositionBusy):
+            response = self.client.get(f"{self.binder_url}?marks=shared")
+        self.assertEqual(response.status_code, 503)
+        self.assertIsNone(ScorePackage.objects.get(project=self.project).distributed_at)
+        self.assertFalse(ScoreAccessLog.objects.filter(project=self.project).exists())
 
     def test_a_readers_pencil_rides_on_the_choirs_copy(self) -> None:
         self._prepare(markings=True)
