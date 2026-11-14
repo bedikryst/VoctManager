@@ -17,7 +17,7 @@
  * untouched while a line is drawn), the line in progress (`LiveStrokeLayer`,
  * painted per frame outside React), and the placed marks and cards below.
  *
- * EVERY kind of marking answers to a tap, not only the notes: a stroke carries
+ * Outside performance mode, every kind of marking answers to a tap: a stroke carries
  * an invisible hit band, a stamp and a note carry their own buttons, and the
  * tapped one opens the card that says who reads it. That card is anchored to
  * the marking (`MarkActionCard`, or `NoteCard` for words) — the question "who
@@ -322,6 +322,11 @@ export const AnnotationOverlay = ({
   const surfaceRef = useRef<HTMLDivElement | null>(null);
   const liveRef = useRef<LiveStrokeHandle | null>(null);
   const [pendingNote, setPendingNote] = useState<{ x: number; y: number } | null>(null);
+  useEffect(() => {
+    if (!immersive) return;
+    if (selectedId !== null) onSelect(null);
+    setPendingNote(null);
+  }, [immersive, onSelect, selectedId]);
   // A composer opened under one tool closes when the tool changes: an anchor
   // left open under the pen would take the next tap on the page as its own.
   useEffect(() => () => setPendingNote(null), [tool]);
@@ -361,14 +366,14 @@ export const AnnotationOverlay = ({
    * second note on top of the first is never what was asked for.
    */
   const arranging = browsing || placing || stamping;
-  const marksInteractive = arranging || erasing;
+  const marksInteractive = (!immersive && arranging) || erasing;
   /**
    * Modes in which a STROKE answers to a touch. Narrower than `arranging` on
    * purpose: a stroke has no anchor of its own, so while a placement tool is
    * armed a tap on one can only mean "put a mark here" — and writing a word over
    * a highlighted bar is the commonest gesture there is.
    */
-  const strokesInteractive = browsing || erasing;
+  const strokesInteractive = (!immersive && browsing) || erasing;
 
   // --- The selection ("Zaznacz") ----------------------------------------------
   // Ids, not rows: a mark edited by the selection's own card is a new row, and
@@ -386,7 +391,7 @@ export const AnnotationOverlay = ({
     [selectedId],
   );
   /** What is drawn as selected: the selection's marks, or the one card's mark. */
-  const highlighted = selecting ? selectionIds : singleId;
+  const highlighted = immersive ? NO_IDS : selecting ? selectionIds : singleId;
 
   /**
    * The rows a selection drag picked up. A carried row is drawn shifted by the
@@ -452,7 +457,7 @@ export const AnnotationOverlay = ({
   // written, because the card draws the same note live at the same anchor — two
   // copies of one comment on one spot is the reader seeing double.
   const editingNote =
-    canEdit && arranging && !pendingNote
+    !immersive && canEdit && arranging && !pendingNote
       ? pageAnnotations.filter(isComment).find((a) => a.id === selectedId && canModify(a))
       : undefined;
 
@@ -460,7 +465,7 @@ export const AnnotationOverlay = ({
   // note opens the composer above, which carries the same audience row — one
   // mark never gets two cards.
   const actionMark =
-    canEdit && arranging && !pendingNote
+    !immersive && canEdit && arranging && !pendingNote
       ? pageAnnotations.find(
           (a) => a.id === selectedId && !isComment(a) && canModify(a),
         )
@@ -696,7 +701,7 @@ export const AnnotationOverlay = ({
         color,
         layer_name: layer,
       });
-    } else if (placing) {
+    } else if (placing && !immersive) {
       onSelect(null);
       setPendingNote({ x, y });
     }
@@ -1145,6 +1150,7 @@ export const AnnotationOverlay = ({
       if (canModify(a)) onDelete(a.id);
       return;
     }
+    if (immersive) return;
     onSelect(selectedId === a.id ? null : a.id);
   };
 
@@ -1248,7 +1254,7 @@ export const AnnotationOverlay = ({
         width={width}
         height={height}
         interactive={strokesInteractive}
-        coversInteractive={browsing}
+        coversInteractive={browsing && !immersive}
         // Never in performance mode: the outline is for arranging the page,
         // and the stand on show is the page as the choir reads it.
         coversOutlined={(covering || selecting) && !immersive}
@@ -1459,6 +1465,7 @@ export const AnnotationOverlay = ({
                 {...dragHandlers}
                 aria-label={payload.text}
                 aria-pressed={selected}
+                tabIndex={immersive ? -1 : undefined}
                 className={cn(
                   boxed ? BOX_MARK_CLASS : INLINE_MARK_CLASS,
                   "relative transition-shadow",
@@ -1505,6 +1512,7 @@ export const AnnotationOverlay = ({
                 type="button"
                 aria-label={payload.text}
                 aria-pressed={selected}
+                tabIndex={immersive ? -1 : undefined}
                 onClick={onMarkerClick}
                 {...dragHandlers}
                 className={cn(
@@ -1536,7 +1544,7 @@ export const AnnotationOverlay = ({
             )}
 
             {/* Read-only preview popover for pin notes the user can't edit. */}
-            {!modifiable && selectedId === a.id && !inline && (
+            {!immersive && !modifiable && selectedId === a.id && !inline && (
               <div
                 className="absolute left-1/2 top-9 z-10 w-48 -translate-x-1/2 rounded-nested border border-hairline-strong bg-ethereal-marble p-3 text-xs leading-relaxed text-ethereal-ink shadow-glass-ethereal"
                 style={payload.italic === true ? STAMP_FACE_STYLE : undefined}
@@ -1550,7 +1558,7 @@ export const AnnotationOverlay = ({
 
       {/* The selection's frame: the handle that moves it. A press inside it is
           a drag or a tap on a mark, never the start of a new loop. */}
-      {selecting && frame && (
+      {!immersive && selecting && frame && (
         <div
           aria-hidden="true"
           data-annotation-mark
@@ -1580,7 +1588,7 @@ export const AnnotationOverlay = ({
         />
       )}
 
-      {selecting && frame && !frameCarried && selection.length > 0 && (
+      {!immersive && selecting && frame && !frameCarried && selection.length > 0 && (
         <SelectionCard
           marks={selection}
           frame={frame}
@@ -1604,7 +1612,7 @@ export const AnnotationOverlay = ({
       )}
 
       {/* Marks copied from another page wait here, on any page of the piece. */}
-      {showPaste && (
+      {!immersive && showPaste && (
         <div
           data-annotation-mark
           className="absolute left-1/2 top-3 z-20 -translate-x-1/2"
@@ -1628,7 +1636,7 @@ export const AnnotationOverlay = ({
       )}
 
       {/* Pending new-note composer. */}
-      {pendingNote && canEdit && (
+      {!immersive && pendingNote && canEdit && (
         <NoteCard
           width={width}
           height={height}

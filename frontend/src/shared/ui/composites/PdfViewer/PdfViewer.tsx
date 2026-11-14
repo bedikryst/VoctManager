@@ -589,8 +589,14 @@ export const PdfViewer = ({
     turnPage(delta);
   }, [turnPage]);
 
+  const suppressExitClick = useRef(false);
   const handleCenterTap = useCallback(() => {
-    if (isImmersive) exitImmersive();
+    if (isImmersive) {
+      // The browser can dispatch this tap's click after the page has left
+      // performance mode and its annotation buttons have become active.
+      suppressExitClick.current = true;
+      exitImmersive();
+    }
   }, [exitImmersive, isImmersive]);
 
   // Gesture-zoom commit: flushSync so the layout is at the real zoom before the
@@ -874,6 +880,13 @@ export const PdfViewer = ({
     <PdfPageTextProvider value={pageText}>
     <div
       ref={rootRef}
+      onPointerDownCapture={() => { suppressExitClick.current = false; }}
+      onClickCapture={(event) => {
+        if (!suppressExitClick.current || event.detail === 0) return;
+        suppressExitClick.current = false;
+        event.preventDefault();
+        event.stopPropagation();
+      }}
       className={cn("relative flex min-h-0 h-full w-full flex-1 flex-col overflow-hidden bg-surface-inverse text-ink-on-inverse", className)}
     >
       <div className="pointer-events-none absolute inset-0 bg-noise opacity-[0.02] mix-blend-color-burn light-ground-film" aria-hidden="true" />
