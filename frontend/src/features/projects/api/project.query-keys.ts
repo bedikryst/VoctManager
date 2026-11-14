@@ -115,4 +115,8 @@ export const projectKeys = {
         { project: String(projectId), item: itemId, edition: editionId ?? "auto" },
       ] as const,
   },
+  /** An edition's reviewed folio rules and the detector's boxes — the
+   *  edition's, so every project binding it shares the entry. */
+  editionFolioReview: (editionId: string) =>
+    ["edition-folio-review", editionId] as const,
 };

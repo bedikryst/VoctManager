@@ -41,6 +41,7 @@ import type {
   ScorePackageItem,
   ScorePackageItemPatch,
 } from "../api/project.service";
+import { formatPages, type SourceNumberingOff } from "../lib/sourceFolios";
 import { CardElementLegend, CardElementPills } from "./CardElementPills";
 import {
   EditionThumbnailSkeleton,
@@ -53,7 +54,13 @@ interface ScorePackageItemRowProps {
   cardElements: CardElement[];
   onPatch: (patch: Partial<ScorePackageItemPatch>) => void;
   onPreviewCard: (item: ScorePackageItem) => void;
-  onPreviewEdition: (item: ScorePackageItem) => void;
+  /** `review` opens the edition preview with its folio tools out. */
+  onPreviewEdition: (item: ScorePackageItem, review?: boolean) => void;
+  /** Why the book ignores this piece's folio review, or null when it applies. */
+  numberingOff: SourceNumberingOff | null;
+  /** The book prints a frontispiece per piece (concert density); a Mass book
+   *  prints consolidated texts, where a card's note layout changes nothing. */
+  concertCards: boolean;
 }
 
 // Three-state per-item override of a package-level boolean (null = inherit).
@@ -84,6 +91,8 @@ export function ScorePackageItemRow({
   onPatch,
   onPreviewCard,
   onPreviewEdition,
+  numberingOff,
+  concertCards,
 }: ScorePackageItemRowProps): React.JSX.Element {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
@@ -199,6 +208,34 @@ export function ScorePackageItemRow({
       label: t("projects.score_package.item.note_layout_own_page", "Od nowej strony"),
     },
   ];
+
+  // What the book does to this piece's own page numbers, on its bound pages:
+  // the detector's covers, the manager's, and the keeps that cancel them.
+  const folios = item.source_folios;
+  const folioParts = folios
+    ? [
+        folios.automatic_pages === null
+          ? t(
+              "projects.score_package.item.source_folios_auto_unknown",
+              "Automat jeszcze nie sprawdził tego wydania",
+            )
+          : folios.automatic_pages.length > 0
+            ? t("projects.score_package.item.source_folios_auto", "Automat zakrywa s. {{pages}}", {
+                pages: formatPages(folios.automatic_pages),
+              })
+            : t("projects.score_package.item.source_folios_auto_none", "Automat nic nie zakrywa"),
+        ...(folios.manual_pages.length > 0
+          ? [t("projects.score_package.item.source_folios_manual", "ręcznie s. {{pages}}", {
+              pages: formatPages(folios.manual_pages),
+            })]
+          : []),
+        ...(folios.kept_pages.length > 0
+          ? [t("projects.score_package.item.source_folios_kept", "wyjątki s. {{pages}}", {
+              pages: formatPages(folios.kept_pages),
+            })]
+          : []),
+      ]
+    : [];
 
   const lowLabel = t("projects.score_package.readiness_state.low", "Niska pewność");
   const readyLabel = t("projects.score_package.readiness_state.ready", "Gotowe");
@@ -530,26 +567,50 @@ export function ScorePackageItemRow({
             {/* Whose numbering wins on this piece's pages. Sits with the binding
                 controls, not the card ones — it is a property of the bound PDF. */}
             {item.has_pdf && (
-              <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5">
-                <Eyebrow size="overline-sm" color="muted">
-                  {t(
-                    "projects.score_package.item.hide_source_numbers",
-                    "Ukryj numery wydania",
-                  )}
-                </Eyebrow>
-                <SegmentedTabs<InheritTriState>
-                  items={triStateItems}
-                  value={sourceNumbersValue}
-                  onChange={(id) =>
-                    onPatch({
-                      hide_source_page_numbers: id === "inherit" ? null : id === "on",
-                    })
-                  }
-                  ariaLabel={t(
-                    "projects.score_package.item.hide_source_numbers",
-                    "Ukryj numery wydania",
-                  )}
-                />
+              <div className="flex flex-col gap-1.5">
+                <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5">
+                  <Eyebrow size="overline-sm" color="muted">
+                    {t(
+                      "projects.score_package.item.hide_source_numbers",
+                      "Ukryj numery stron wydawcy",
+                    )}
+                  </Eyebrow>
+                  <SegmentedTabs<InheritTriState>
+                    items={triStateItems}
+                    value={sourceNumbersValue}
+                    onChange={(id) =>
+                      onPatch({
+                        hide_source_page_numbers: id === "inherit" ? null : id === "on",
+                      })
+                    }
+                    ariaLabel={t(
+                      "projects.score_package.item.hide_source_numbers",
+                      "Ukryj numery stron wydawcy",
+                    )}
+                  />
+                </div>
+                {folios && item.selected_edition_id && (
+                  <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+                    <div className="flex min-w-0 flex-col">
+                      <Text size="sm" color="muted" className="tabular-nums">
+                        {folioParts.join(" · ")}
+                      </Text>
+                      {numberingOff && (
+                        <Text size="sm" color="crimson">
+                          {t(`folioReview.off.${numberingOff}`)}
+                        </Text>
+                      )}
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => onPreviewEdition(item, true)}
+                    >
+                      {t("projects.score_package.item.source_folios_check", "Sprawdź numery stron")}
+                    </Button>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -620,8 +681,14 @@ export function ScorePackageItemRow({
             <CardElementLegend />
 
             {/* The exception to automatic fitting: a note the conductor wants on a
-                page of its own. Shown only while the card prints a note. */}
-            {cardsActive && elementsSet.has("note") && (
+                page of its own. Shown only where a frontispiece prints a note it
+                could move, and while the break is set, so it can be undone. */}
+            {(item.note_on_new_page ||
+              (concertCards &&
+                cardsActive &&
+                elementsSet.has("note") &&
+                (item.readiness.elements.note === "ready" ||
+                  item.readiness.elements.note === "low"))) && (
               <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5">
                 <Eyebrow size="overline-sm" color="muted">
                   {t("projects.score_package.item.note_layout", "Nota na karcie")}

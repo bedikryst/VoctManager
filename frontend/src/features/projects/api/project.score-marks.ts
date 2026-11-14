@@ -141,6 +141,8 @@ export interface BookCopyControl {
   /** The resolved selection: the one list every consumer reads. */
   layers: readonly ScoreMarkLayer[];
   toggle: (layer: ScoreMarkLayer) => void;
+  /** Switch every layer off: the clean copy, offered when marks cannot be placed. */
+  showClean: () => void;
   fetchBlob: () => Promise<Blob>;
   docKeySuffix: string;
   /** The book has the choir layer in its pages; it cannot be switched off. */
@@ -215,6 +217,16 @@ export const useBookCopy = (
     [layers],
   );
 
+  const showClean = useCallback(
+    () =>
+      setOverrides(
+        Object.fromEntries(options.map(({ layer }) => [layer, false])) as Partial<
+          Record<ScoreMarkLayer, boolean>
+        >,
+      ),
+    [options],
+  );
+
   const fetchBlob = useCallback(
     () => ProjectService.fetchScorePdfBlob(id, layers),
     [id, layers],
@@ -225,11 +237,12 @@ export const useBookCopy = (
       options,
       layers,
       toggle,
+      showClean,
       fetchBlob,
       docKeySuffix: bookCopyKeySuffix(layers),
       legacyInk: data.legacy_ink,
       ready: isFetched,
     }),
-    [options, layers, toggle, fetchBlob, data.legacy_ink, isFetched],
+    [options, layers, toggle, showClean, fetchBlob, data.legacy_ink, isFetched],
   );
 };

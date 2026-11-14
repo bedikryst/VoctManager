@@ -674,6 +674,14 @@ class StateAndHashTests(_Base):
         after = ScorePackageService.compute_source_hash(self.project, self.package)
         self.assertNotEqual(before, after)
 
+    def test_the_default_note_layout_leaves_the_signature_as_before_the_field(self) -> None:
+        # A book built before the note break existed must not read as stale
+        # once it ships: the default contributes no key at all.
+        self._add_edition()
+        self.item.refresh_from_db()
+        signature = ScorePackageService._item_signature(self.item, self.package)
+        self.assertNotIn("note_on_new_page", signature)
+
     def test_hash_changes_on_translation_pin(self) -> None:
         self._add_edition()
         pinned = Translation.objects.create(

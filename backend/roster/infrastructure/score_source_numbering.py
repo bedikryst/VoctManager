@@ -17,7 +17,9 @@
 
     Text-layer only — a pure scan yields nothing and its pages are left
     untouched, which is the correct failure mode: no detection is better than a
-    white patch over engraving.
+    white patch over engraving. A manager covers a scanned number by hand in the
+    edition preview; those reviewed rules, and the keeps that cancel a cover,
+    are resolved here too, in one coordinate frame shared with the editor.
 @module roster/infrastructure/score_source_numbering
 """
 
@@ -71,6 +73,12 @@ _FOLIO_RE = re.compile(
 _ROMAN_VALUES = {"i": 1, "v": 5, "x": 10, "l": 50, "c": 100, "d": 500, "m": 1000}
 
 
+#: Changes whenever detection can return different boxes for the same bytes.
+#: Cached detections are keyed by it, so an older detector's answer is never
+#: shown in the editor as what the next build will cover.
+DETECTOR_VERSION: int = 1
+
+
 @dataclass(frozen=True)
 class FolioBox:
     """One detected page number, in the SOURCE page's own PDF points."""
@@ -82,36 +90,99 @@ class FolioBox:
     tone: str = "#ffffff"
 
 
+@dataclass(frozen=True)
+class VisibleFrame:
+    """The page as a PDF viewer shows it: the crop box clipped to the media box,
+    in the page's own points. The page must already have any ``/Rotate`` baked
+    into its content (``_read_edition_pdf``), which also turns its boxes, so the
+    viewer's top-left is this frame's (left, top) and no axis is swapped."""
+
+    left: float
+    bottom: float
+    width: float
+    height: float
+
+    @property
+    def top(self) -> float:
+        return self.bottom + self.height
+
+
+def visible_frame(page) -> VisibleFrame | None:
+    """The viewer's frame of a rotation-baked page, or None for a degenerate box."""
+    crop, media = page.cropbox, page.mediabox
+    left, right = max(float(crop.left), float(media.left)), min(float(crop.right), float(media.right))
+    bottom, top = max(float(crop.bottom), float(media.bottom)), min(float(crop.top), float(media.top))
+    if right <= left or top <= bottom:
+        return None
+    return VisibleFrame(left, bottom, right - left, top - bottom)
+
+
+def visible_to_source(frame: VisibleFrame, x: float, y: float, w: float, h: float, tone: str) -> FolioBox:
+    """An editor rectangle (fractions of the visible page from its top-left)
+    as a box in the page's own points. Inverse of ``source_to_visible``."""
+    left = frame.left + frame.width * x
+    top = frame.top - frame.height * y
+    return FolioBox(left, top - frame.height * h, left + frame.width * w, top, tone)
+
+
+def source_to_visible(frame: VisibleFrame, box: FolioBox) -> tuple[float, float, float, float] | None:
+    """A box in the page's own points as (x, y, w, h) fractions of the visible
+    page from its top-left, clipped to it. None when nothing of it is visible."""
+    x0 = max(0.0, (box.left - frame.left) / frame.width)
+    x1 = min(1.0, (box.right - frame.left) / frame.width)
+    y0 = max(0.0, (frame.top - box.top) / frame.height)
+    y1 = min(1.0, (frame.top - box.bottom) / frame.height)
+    if x1 <= x0 or y1 <= y0:
+        return None
+    return x0, y0, x1 - x0, y1 - y0
+
+
+def _overlaps(a: FolioBox, b: FolioBox) -> bool:
+    return a.left < b.right and b.left < a.right and a.bottom < b.top and b.bottom < a.top
+
+
+def rule_hits(rule: dict, number: int) -> bool:
+    """Whether a reviewed rule applies to 1-based edition page ``number``."""
+    if not rule["first"] <= number <= rule["last"]:
+        return False
+    return rule["parity"] in ("all", "odd" if number % 2 else "even")
+
+
+def resolve_page_covers(
+    automatic: list[FolioBox], manual: list[FolioBox], keeps: list[FolioBox],
+) -> tuple[list[FolioBox], list[FolioBox]]:
+    """(printed, cancelled) covers of one page. A keep protects everything under
+    it: every cover it touches is cancelled, the detector's and the manager's
+    alike, so an exception drawn in the editor is an exception in print."""
+    printed: list[FolioBox] = []
+    cancelled: list[FolioBox] = []
+    for box in automatic + manual:
+        (cancelled if any(_overlaps(box, keep) for keep in keeps) else printed).append(box)
+    return printed, cancelled
+
+
 def review_source_folios(
     reader: PdfReader, pages: list[int], detected: dict[int, list[FolioBox]], rules: list[dict],
 ) -> None:
-    """Resolve editor rectangles on the visible (rotation-baked) PDF.js page."""
+    """Apply an edition's reviewed rules to the detector's boxes, page by page.
+
+    Rules are drawn on the visible page (``visible_frame``); this resolves them
+    into the page's own points, adds the manual covers and drops every cover a
+    keep touches. ``detected`` is updated in place for each page in ``pages``.
+    """
     for index in pages:
         number = index + 1
-        page = reader.pages[index]
-        crop, media = page.cropbox, page.mediabox
-        left, right = max(crop.left, media.left), min(crop.right, media.right)
-        bottom, top = max(crop.bottom, media.bottom), min(crop.top, media.top)
-        width, height = float(right - left), float(top - bottom)
-        if width <= 0 or height <= 0:
+        frame = visible_frame(reader.pages[index])
+        if frame is None:
             continue
-        covers = []
-        automatic = detected.get(index, [])
+        manual: list[FolioBox] = []
+        keeps: list[FolioBox] = []
         for rule in rules:
-            if not rule["first"] <= number <= rule["last"]:
+            if not rule_hits(rule, number):
                 continue
-            if rule["parity"] not in ("all", "odd" if number % 2 else "even"):
-                continue
-            x = float(left) + width * rule["x"]
-            y = float(top) - height * rule["y"]
-            box = FolioBox(x, y - height * rule["h"], x + width * rule["w"], y, rule["tone"])
-            if rule["mode"] == "cover":
-                covers.append(box)
-            else:
-                automatic = [b for b in automatic if not (
-                    b.left < box.right and box.left < b.right and b.bottom < box.top and box.bottom < b.top
-                )]
-        detected[index] = automatic + covers
+            box = visible_to_source(frame, rule["x"], rule["y"], rule["w"], rule["h"], rule["tone"])
+            (manual if rule["mode"] == "cover" else keeps).append(box)
+        detected[index], _ = resolve_page_covers(detected.get(index, []), manual, keeps)
 
 
 @dataclass(frozen=True)
@@ -354,4 +425,32 @@ def detect_source_folios(
     return masks
 
 
-__all__ = ["FolioBox", "detect_source_folios"]
+def detect_edition_folios(reader: PdfReader) -> dict[int, list[FolioBox]]:
+    """``detect_source_folios`` over every page of the edition, for the editor.
+
+    Asked in blocks the evidence window can hold, each block centred on itself
+    exactly as a bound slice is. Up to ``_MAX_EVIDENCE_PAGES`` pages that is one
+    call and the boxes are the builder's own for any slice; beyond it a slice
+    that straddles two blocks may borrow slightly different evidence.
+    """
+    total = len(reader.pages)
+    masks: dict[int, list[FolioBox]] = {}
+    for start in range(0, total, _MAX_EVIDENCE_PAGES):
+        block = list(range(start, min(total, start + _MAX_EVIDENCE_PAGES)))
+        masks.update(detect_source_folios(reader, block))
+    return masks
+
+
+__all__ = [
+    "DETECTOR_VERSION",
+    "FolioBox",
+    "VisibleFrame",
+    "detect_edition_folios",
+    "detect_source_folios",
+    "resolve_page_covers",
+    "review_source_folios",
+    "rule_hits",
+    "source_to_visible",
+    "visible_frame",
+    "visible_to_source",
+]

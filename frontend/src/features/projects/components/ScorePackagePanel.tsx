@@ -71,6 +71,7 @@ import {
   bookCopyLayers,
   type BookCopyAudience,
 } from "../api/project.score-marks";
+import { sourceNumberingOff } from "../lib/sourceFolios";
 import { CardElementPills } from "./CardElementPills";
 import { EditionFolioPreview } from "./EditionFolioPreview";
 import { ScoreManualUploadRail } from "./ScoreManualUploadRail";
@@ -98,6 +99,8 @@ interface Figure {
 interface PreviewTarget {
   item: ScorePackageItem;
   mode: "card" | "edition";
+  /** The edition preview opens with its folio tools out. */
+  review?: boolean;
 }
 
 const formatTimestamp = (iso: string | null, locale: string): string => {
@@ -851,7 +854,7 @@ export function ScorePackagePanel({
                         subtle
                         label={t(
                           "projects.score_package.structure.hide_source_numbers",
-                          "Ukryj numery wydań",
+                          "Ukryj numery stron wydawcy",
                         )}
                         active={
                           config.hide_source_page_numbers && config.include_page_numbers
@@ -872,7 +875,7 @@ export function ScorePackagePanel({
                       {config.include_page_numbers
                         ? t(
                             "projects.score_package.structure.hide_source_numbers_hint",
-                            "Zakrywa numerację, którą wydania drukują same, żeby w książce została tylko jej własna. Skan bez warstwy tekstowej zostaje bez zmian.",
+                            "Zakrywa numerację, którą wydania drukują same, żeby w książce została tylko jej własna. Automat czyta warstwę tekstową; numer na skanie zakryjesz ręcznie w podglądzie wydania.",
                           )
                         : t(
                             "projects.score_package.structure.hide_source_numbers_locked_hint",
@@ -915,7 +918,11 @@ export function ScorePackagePanel({
                     cardElements={state.card_elements}
                     onPatch={(patch) => updateItem.mutate({ itemId: item.id, patch })}
                     onPreviewCard={(target) => setPreview({ item: target, mode: "card" })}
-                    onPreviewEdition={(target) => setPreview({ item: target, mode: "edition" })}
+                    onPreviewEdition={(target, review) =>
+                      setPreview({ item: target, mode: "edition", review })
+                    }
+                    numberingOff={config ? sourceNumberingOff(item, config) : null}
+                    concertCards={config?.density_mode !== "MASS"}
                   />
                 ))}
               </div>
@@ -926,7 +933,9 @@ export function ScorePackagePanel({
 
       {preview?.mode === "edition" && preview.item.selected_edition_id && <EditionFolioPreview
         key={preview.item.selected_edition_id} edition={preview.item.selected_edition_id}
-        project={projectId} title={preview.item.title} close={() => setPreview(null)} />}
+        project={projectId} title={preview.item.title} startEditing={preview.review}
+        numberingOff={config ? sourceNumberingOff(preview.item, config) : null}
+        close={() => setPreview(null)} />}
       <PdfViewerModal
         isOpen={preview?.mode === "card"}
         title={preview?.item.title ?? ""}

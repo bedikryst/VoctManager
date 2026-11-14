@@ -852,16 +852,6 @@ class ProjectViewSet(viewsets.ModelViewSet):
                 leads_project=leads_project,
             )
 
-            # A singer downloading the book is the moment it "leaves the building";
-            # flag it so the conductor's cockpit warns before a rebuild silently
-            # replaces what is already in their folders. Managers previewing it do
-            # not count as distribution — nor does whoever is running the evening
-            # off it, for the same reason: the book has not reached the choir,
-            # and a false flag here is a rebuild warning about nothing. The
-            # access log still records them; that is the ledger, this is a state.
-            if not is_manager and not leads_project:
-                ScorePackageService.mark_distributed(project)
-
             # The binder physically contains the licensed editions' pages, so it is
             # watermarked whenever ANY bound edition is protected — protecting the
             # single editions without protecting the book they compose is worthless.
@@ -877,10 +867,6 @@ class ProjectViewSet(viewsets.ModelViewSet):
                 )
                 .first()
             ) or (None, None, [], False, 0)
-            decision = record_binder_access(
-                request.user, project,
-                build_version=build_version, protected=protected, is_manager=is_manager,
-            )
             # The ink composed for this download and never stored.
             layers = servable_layers(
                 layers,
@@ -898,27 +884,19 @@ class ProjectViewSet(viewsets.ModelViewSet):
             )
             marks_stamp = _binder_bytes_stamp(generated_at)
 
-            if not decision.watermark and not marks:
-                try:
-                    file_handle = project.score_pdf.open('rb')
-                except OSError:
-                    return Response(
-                        {"detail": "Score PDF file not found on the server."},
-                        status=status.HTTP_404_NOT_FOUND,
-                    )
-                response = FileResponse(
-                    file_handle,
-                    content_type='application/pdf',
-                    filename=filename,
-                )
-                response['Access-Control-Expose-Headers'] = 'Content-Disposition'
-                return response
-
-            # Anything composed per recipient — marks, watermark or both — is read
-            # into memory rather than streamed off disk.
+            # The copy is produced before anything is recorded: a missing file
+            # or marks that cannot be placed must not stamp the book as handed
+            # out, nor consume a copy number for a file nobody received.
+            # Anything composed per recipient — marks, a watermark or both — is
+            # read into memory; a plain copy streams off disk.
+            file_handle = None
+            raw = b""
             try:
-                with project.score_pdf.open('rb') as handle:
-                    raw = handle.read()
+                if marks or protected:
+                    with project.score_pdf.open('rb') as handle:
+                        raw = handle.read()
+                else:
+                    file_handle = project.score_pdf.open('rb')
             except OSError:
                 return Response(
                     {"detail": "Score PDF file not found on the server."},
@@ -963,6 +941,29 @@ class ProjectViewSet(viewsets.ModelViewSet):
                         },
                         status=status.HTTP_409_CONFLICT,
                     )
+
+            # A singer downloading the book is the moment it "leaves the building";
+            # flag it so the conductor's cockpit warns before a rebuild silently
+            # replaces what is already in their folders. Managers previewing it do
+            # not count as distribution — nor does whoever is running the evening
+            # off it, for the same reason: the book has not reached the choir,
+            # and a false flag here is a rebuild warning about nothing. The
+            # access log still records them; that is the ledger, this is a state.
+            if not is_manager and not leads_project:
+                ScorePackageService.mark_distributed(project)
+            decision = record_binder_access(
+                request.user, project,
+                build_version=build_version, protected=protected, is_manager=is_manager,
+            )
+
+            if file_handle is not None:
+                response = FileResponse(
+                    file_handle,
+                    content_type='application/pdf',
+                    filename=filename,
+                )
+                response['Access-Control-Expose-Headers'] = 'Content-Disposition'
+                return response
 
             if not decision.watermark:
                 return _pdf_bytes_response(raw, filename=filename)

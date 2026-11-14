@@ -8,11 +8,12 @@
  * @module pages/app/DocumentViewerPage
  */
 
-import React, { useCallback, useMemo } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { ArrowLeft, FileWarning } from "lucide-react";
 import type { TFunction } from "i18next";
+import { isAxiosError } from "axios";
 
 import { Button } from "@/shared/ui/primitives/Button";
 import { Heading, Text } from "@/shared/ui/primitives/typography";
@@ -205,6 +206,20 @@ const DocumentViewerPage = (): React.JSX.Element => {
   // on screen and the file downloaded have to be the same decision.
   const isScore = docType === "project-score";
   const bookCopy = useBookCopy(decodedId, isScore);
+  // The copy whose marks the server could not place (409). Keyed by the copy,
+  // so choosing another selection clears the notice on its own.
+  const [failedCopy, setFailedCopy] = useState<string | null>(null);
+  const marksFailed = isScore && failedCopy === bookCopy.docKeySuffix;
+  const fetchBookCopy = bookCopy.fetchBlob;
+  const copySuffix = bookCopy.docKeySuffix;
+  const fetchScore = useCallback(async () => {
+    try {
+      return await fetchBookCopy();
+    } catch (error) {
+      if (isAxiosError(error) && error.response?.status === 409) setFailedCopy(copySuffix);
+      throw error;
+    }
+  }, [fetchBookCopy, copySuffix]);
 
   const canGoBack = location.key !== "default";
 
@@ -277,11 +292,25 @@ const DocumentViewerPage = (): React.JSX.Element => {
           </div>
         </div>
 
+        {marksFailed && (
+          <div className="relative z-10 flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-line-on-inverse px-4 py-3 sm:px-6">
+            <Text size="sm" color="ink-on-inverse" className="min-w-0">
+              {t(
+                "document_viewer.marks_failed",
+                "Nie udało się nanieść oznaczeń na tę kopię. Czysta kopia nut jest dostępna.",
+              )}
+            </Text>
+            <Button variant="secondary" size="sm" onClick={bookCopy.showClean}>
+              {t("document_viewer.show_clean_copy", "Pokaż czystą kopię")}
+            </Button>
+          </div>
+        )}
+
         <PdfViewer
           fetchBlob={
             isScore
               ? bookCopy.ready
-                ? bookCopy.fetchBlob
+                ? fetchScore
                 : null
               : resolved.fetchBlob
           }

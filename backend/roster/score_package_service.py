@@ -42,6 +42,7 @@ from roster.infrastructure.score_package_builder import (
     render_item_card_preview,
 )
 from roster.models import ProgramItem, Project, ScorePackage
+from roster.score_folio_review import cached_automatic_folio_boxes, folio_coverage
 from roster.score_package_config import (
     CARD_ELEMENTS,
     active_editions,
@@ -53,6 +54,7 @@ from roster.score_package_config import (
     pinnable_translations,
     resolve_card_config,
     resolve_item_edition,
+    resolve_item_page_window,
     resolve_item_performers,
     resolve_item_translation,
     resolve_source_numbering,
@@ -194,7 +196,9 @@ class ScorePackageService:
             "card_elements": item.card_elements,
             "text_override": item.text_override,
             "note_override": item.note_override,
-            "note_on_new_page": item.note_on_new_page,
+            # Present only when set, so a book built before the field existed
+            # keeps its hash and is not flagged stale by a default it never had.
+            **({"note_on_new_page": True} if item.note_on_new_page else {}),
             "translation_pin": str(item.translation_id) if item.translation_id else None,
             # The line as printed. While the card hides it only the typed field
             # counts — an edit to the item, like the overrides above — so
@@ -362,6 +366,17 @@ class ScorePackageService:
             "note_on_new_page": item.note_on_new_page,
             "hide_source_page_numbers": item.hide_source_page_numbers,
             "hide_source_page_numbers_effective": resolve_source_numbering(item, package),
+            # Which bound pages lose the edition's own number, counted whether or
+            # not the setting is on: the row says both what is set up and
+            # whether it applies.
+            "source_folios": (
+                folio_coverage(
+                    resolved.reviewed_folios(),
+                    cached_automatic_folio_boxes(resolved),
+                    *resolve_item_page_window(item, resolved),
+                ).as_dict()
+                if resolved is not None else None
+            ),
             "readiness": readiness,
             # The conductor's own markings on this piece. Deliberately NOT a card
             # element: it says nothing about the frontispiece, and it must never

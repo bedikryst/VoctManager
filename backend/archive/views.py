@@ -651,8 +651,17 @@ class ScoreEditionViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=["get", "put"], url_path="folio-review")
     def folio_review(self, request, pk=None):
+        from roster.score_folio_review import automatic_folio_boxes
+
+        edition = self.get_object()
+        # The detector reads the whole PDF, so it runs before the row lock and
+        # is cached per file; the editor draws its boxes beside the manager's.
+        detected_sha = edition.sha256
+        automatic = automatic_folio_boxes(edition)
         with transaction.atomic():
-            edition = ScoreEdition.objects.select_for_update().get(pk=self.get_object().pk)
+            edition = ScoreEdition.objects.select_for_update().get(pk=edition.pk)
+            if edition.sha256 != detected_sha:
+                automatic = None
             rules = edition.reviewed_folios()
             if request.method == "PUT":
                 if request.data.get("sha256") != edition.sha256 or request.data.get("previous") != rules:
@@ -665,7 +674,13 @@ class ScoreEditionViewSet(viewsets.ModelViewSet):
                 rules = serializer.validated_data
                 edition.folio_review = {"sha256": edition.sha256, "rules": rules}
                 edition.save(update_fields=["folio_review"])
-            return Response({"sha256": edition.sha256, "rules": rules, "pages": edition.page_count or 0})
+            return Response({
+                "sha256": edition.sha256,
+                "rules": rules,
+                "pages": edition.page_count or 0,
+                # None: the file could not be read, so nothing automatic is known.
+                "automatic": automatic,
+            })
 
     def get_queryset(self):
         return (

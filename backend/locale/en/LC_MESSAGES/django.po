@@ -4632,6 +4632,14 @@ msgid ""
 "rebuild the book and try again."
 msgstr ""
 
+#: archive/views.py
+msgid "The selection must stay inside the edition."
+msgstr ""
+
+#: archive/views.py
+msgid "The edition changed. Reopen the preview."
+msgstr ""
+
 #~ msgid ""
 #~ "%(artist)s is asking to be excused from a run of rehearsals. The dates are "
 #~ "below — approve or decline them in the panel."

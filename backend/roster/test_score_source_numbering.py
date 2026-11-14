@@ -14,7 +14,7 @@ from io import BytesIO
 
 from django.test import SimpleTestCase
 from pypdf import PdfReader, PdfWriter
-from pypdf.generic import NameObject, NumberObject
+from pypdf.generic import NameObject, NumberObject, RectangleObject
 
 from roster.infrastructure.score_package_builder import (
     A4_HEIGHT_PT,
@@ -23,7 +23,17 @@ from roster.infrastructure.score_package_builder import (
     FOLIO_RESERVE_PT,
     _place_on_a4,
 )
-from roster.infrastructure.score_source_numbering import FolioBox, detect_source_folios, review_source_folios
+from roster.infrastructure.score_source_numbering import (
+    FolioBox,
+    VisibleFrame,
+    detect_edition_folios,
+    detect_source_folios,
+    review_source_folios,
+    source_to_visible,
+    visible_frame,
+    visible_to_source,
+)
+from roster.score_folio_review import folio_coverage
 
 MM = 72.0 / 25.4
 A4 = (595.2756, 841.8898)
@@ -320,6 +330,29 @@ class ManualReviewTests(SimpleTestCase):
             3: [FolioBox(660, 410, 700, 430)],
         })
 
+    def test_a_keep_cancels_a_manual_range_cover_under_it(self) -> None:
+        # The editor draws a keep over a range cover as an exception; print must
+        # agree, whichever of the two rules was saved first.
+        edition = reader_for([[] for _ in range(4)])
+        cover = dict(first=1, last=4, parity="all", x=.1, y=.9, w=.1, h=.05, mode="cover", tone="#ffffff")
+        keep = dict(first=3, last=3, parity="all", x=.12, y=.91, w=.02, h=.02, mode="keep", tone="#ffffff")
+        for rules in ([cover, keep], [keep, cover]):
+            with self.subTest(order=[rule["mode"] for rule in rules]):
+                masks: dict[int, list[FolioBox]] = {}
+                review_source_folios(edition, [1, 2, 3], masks, rules)
+                self.assertEqual(len(masks[1]), 1)
+                self.assertEqual(masks[2], [])
+                self.assertEqual(len(masks[3]), 1)
+
+    def test_a_keep_leaves_a_cover_it_does_not_touch(self) -> None:
+        edition = reader_for([[] for _ in range(2)])
+        masks: dict[int, list[FolioBox]] = {}
+        review_source_folios(edition, [0], masks, [
+            dict(first=1, last=1, parity="all", x=.1, y=.1, w=.05, h=.05, mode="cover", tone="#ffffff"),
+            dict(first=1, last=1, parity="all", x=.5, y=.5, w=.05, h=.05, mode="keep", tone="#ffffff"),
+        ])
+        self.assertEqual(len(masks[0]), 1)
+
     def test_raster_cover_leaves_the_neighbouring_scan_intact(self) -> None:
         import pypdfium2 as pdfium
         from PIL import Image, ImageDraw
@@ -352,6 +385,100 @@ class ManualReviewTests(SimpleTestCase):
         self.assertLess(changed[2] - changed[0], 26)
         self.assertEqual(after.crop(changed).getextrema(), (255, 255))
         self.assertGreater(sum(after.histogram()[:40]), 0)
+
+
+class VisibleFrameTests(SimpleTestCase):
+    """The editor shows the detector's boxes on the page PDF.js draws: the crop
+    box of the rotation-baked page, measured from its top-left. The expected
+    spot is worked out by hand from the rotation, not with the module's own
+    transform, so a wrong axis or sign cannot agree with itself."""
+
+    def _visible(self, edition: PdfReader, index: int) -> tuple[float, float, float, float]:
+        detected = detect_edition_folios(edition)
+        frame = visible_frame(edition.pages[index])
+        assert frame is not None
+        visible = source_to_visible(frame, detected[index][0])
+        assert visible is not None
+        return visible
+
+    def _assert_contains(self, rect: tuple[float, float, float, float], u: float, v: float) -> None:
+        x, y, w, h = rect
+        self.assertLess(x, u)
+        self.assertGreater(x + w, u)
+        self.assertLess(y, v)
+        self.assertGreater(y + h, v)
+
+    def test_a_rotated_page_shows_the_number_where_the_reader_sees_it(self) -> None:
+        # Text origin at (540, 34) on a portrait sheet. Shown with /Rotate 90
+        # (clockwise), the sheet's bottom edge becomes the left one: the
+        # number sits at u = 34 / 841.9 from the left, v = 540 / 595.3 down.
+        width, height = A4
+        edition = _baked([[(str(n + 1), 540.0, 34.0)] for n in range(4)], 90)
+        self._assert_contains(self._visible(edition, 1), 34.0 / height, 540.0 / width)
+
+    def test_a_cropped_rotated_page_measures_from_the_crop(self) -> None:
+        width = A4[0]
+        edition = _baked([[(str(n + 1), 540.0, 34.0)] for n in range(4)], 90)
+        # The baked sheet is landscape: the number's origin is at
+        # (34, height_landscape - 540) in its own points.
+        crop = (10.0, 20.0, 800.0, 580.0)
+        for page in edition.pages:
+            page.cropbox = RectangleObject(crop)
+        glyph_x, glyph_y = 34.0, width - 540.0
+        u = (glyph_x - crop[0]) / (crop[2] - crop[0])
+        v = (crop[3] - glyph_y) / (crop[3] - crop[1])
+        self._assert_contains(self._visible(edition, 2), u, v)
+
+    def test_the_editor_rectangle_returns_to_the_same_points(self) -> None:
+        edition = _baked([[(str(n + 1), 540.0, 34.0)] for n in range(4)], 270)
+        for page in edition.pages:
+            page.cropbox = RectangleObject((15.0, 25.0, 820.0, 570.0))
+        detected = detect_edition_folios(edition)
+        frame = visible_frame(edition.pages[0])
+        assert frame is not None
+        box = detected[0][0]
+        visible = source_to_visible(frame, box)
+        assert visible is not None
+        back = visible_to_source(frame, *visible, box.tone)
+        for got, want in zip(
+            (back.left, back.bottom, back.right, back.top),
+            (box.left, box.bottom, box.right, box.top),
+            strict=True,
+        ):
+            self.assertAlmostEqual(got, want, places=6)
+
+    def test_a_box_outside_the_crop_is_not_shown(self) -> None:
+        frame = VisibleFrame(100.0, 100.0, 200.0, 300.0)
+        self.assertIsNone(source_to_visible(frame, FolioBox(10.0, 10.0, 40.0, 40.0)))
+
+    def test_the_whole_edition_is_detected_past_the_evidence_ceiling(self) -> None:
+        # Seventy numbered pages: more than one evidence window, every page found.
+        edition = reader_for([[(str(n + 1), 540.0, 34.0)] for n in range(70)])
+        self.assertEqual(sorted(detect_edition_folios(edition)), list(range(70)))
+
+
+class FolioCoverageTests(SimpleTestCase):
+    """The item row's summary resolves the same keep-wins rule as print."""
+
+    @staticmethod
+    def _auto(page: int) -> dict:
+        return {"page": page, "x": .85, "y": .93, "w": .05, "h": .03}
+
+    def test_keeps_manual_covers_and_detections_over_the_bound_window(self) -> None:
+        automatic = [self._auto(page) for page in range(1, 7)]
+        rules = [
+            dict(first=3, last=3, parity="all", x=.85, y=.93, w=.05, h=.03, mode="keep", tone="#ffffff"),
+            dict(first=1, last=6, parity="even", x=.05, y=.02, w=.05, h=.03, mode="cover", tone="#ffffff"),
+        ]
+        coverage = folio_coverage(rules, automatic, 2, 5)
+        self.assertEqual(coverage.automatic_pages, [2, 4, 5])
+        self.assertEqual(coverage.manual_pages, [2, 4])
+        self.assertEqual(coverage.kept_pages, [3])
+
+    def test_detection_not_yet_run_is_unknown_not_empty(self) -> None:
+        coverage = folio_coverage([], None, 1, 10_000)
+        self.assertIsNone(coverage.automatic_pages)
+        self.assertEqual(coverage.manual_pages, [])
 
 
 class RotatedKnockoutTests(SimpleTestCase):

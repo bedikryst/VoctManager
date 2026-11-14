@@ -112,6 +112,13 @@ export const useUpdateScorePackageConfig = (projectId: string) => {
     },
     onSuccess: (state) => {
       queryClient.setQueryData(key, state);
+      // The markings switch decides which layers a copy may carry, and the hub's
+      // viewer picks its starting copy from that census: without this it keeps
+      // offering the previous copy until the census goes stale on its own. The
+      // key matches partially, so every layer set of this project is refreshed.
+      void queryClient.invalidateQueries({
+        queryKey: ["scorePackage", "myMarks", { project: String(projectId) }],
+      });
     },
   });
 };

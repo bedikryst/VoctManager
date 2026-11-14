@@ -537,12 +537,13 @@ def _fit_card(context: dict) -> tuple[bytes, int]:
     reads better with its air. Two renders at most, measured by the real layout
     engine with the book's own font, and the returned bytes ARE the chosen
     rendering: the book binds them and the cockpit preview shows them, so the two
-    cannot disagree about where a card breaks. A placeholder divider and a card
-    whose note was deliberately sent to its own page are laid out as they are.
+    cannot disagree about where a card breaks. A placeholder divider is laid out
+    as it is. A card whose note was sent to its own page is fitted the same way:
+    the break is kept, and the tight spacing may still save a page before it.
     """
     standard = _render_cards([{**context, "spacing": ""}], section_header=None)
     pages = _page_count(standard)
-    if pages == 1 or context["placeholder"] or context["note_break"]:
+    if pages == 1 or context["placeholder"]:
         return standard, pages
     tight = _render_cards([{**context, "spacing": "tight"}], section_header=None)
     tight_pages = _page_count(tight)

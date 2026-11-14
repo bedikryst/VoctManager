@@ -380,8 +380,53 @@ export interface ScorePackageItem {
   /** Per-item pin; null inherits the package setting. */
   hide_source_page_numbers: boolean | null;
   hide_source_page_numbers_effective: boolean;
+  /** Which bound edition pages lose their own number in print; null without
+   *  an edition. Reported whether or not the setting is effective. */
+  source_folios: ScorePackageSourceFolios | null;
   readiness: ScorePackageItemReadiness;
   markings: ScorePackageItemMarkings;
+}
+
+/** The edition-folio summary of one programme item, in edition page numbers. */
+export interface ScorePackageSourceFolios {
+  /** Pages where a detected number stays covered; null until the edition
+   *  preview has run the detector over this file. */
+  automatic_pages: number[] | null;
+  /** Pages where a manager's cover rectangle prints. */
+  manual_pages: number[];
+  /** Pages where a keep cancels at least one cover. */
+  kept_pages: number[];
+}
+
+/** One reviewed rectangle on the edition's visible page, as fractions of it. */
+export interface EditionFolioRule {
+  first: number;
+  last: number;
+  parity: "all" | "odd" | "even";
+  mode: "cover" | "keep";
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  tone?: string;
+}
+
+/** A number the detector covers on its own, on the visible page. */
+export interface EditionFolioDetection {
+  page: number;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
+/** The edition preview's review state, bound to the file's hash. */
+export interface EditionFolioReview {
+  sha256: string;
+  pages: number;
+  rules: EditionFolioRule[];
+  /** Null when the file could not be read for detection. */
+  automatic: EditionFolioDetection[] | null;
 }
 
 /** Mutable per-item overrides accepted by the cockpit PATCH endpoint. */

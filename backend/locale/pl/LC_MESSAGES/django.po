@@ -6049,6 +6049,14 @@ msgstr ""
 "Nie udało się umieścić oznaczeń w tej książce. Pobierz czysty egzemplarz "
 "albo złóż książkę ponownie i spróbuj jeszcze raz."
 
+#: archive/views.py
+msgid "The selection must stay inside the edition."
+msgstr "Zaznaczenie musi mieścić się w wydaniu."
+
+#: archive/views.py
+msgid "The edition changed. Reopen the preview."
+msgstr "Wydanie się zmieniło. Otwórz podgląd ponownie."
+
 #~ msgid "Review the request"
 #~ msgstr "Rozpatrz prośbę"
 

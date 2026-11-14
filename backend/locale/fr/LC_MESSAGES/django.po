@@ -6088,6 +6088,14 @@ msgstr ""
 "Les annotations n'ont pas pu être placées dans ce livre. Téléchargez "
 "l'exemplaire vierge, ou réassemblez le livre et réessayez."
 
+#: archive/views.py
+msgid "The selection must stay inside the edition."
+msgstr "La sélection doit rester à l’intérieur de l’édition."
+
+#: archive/views.py
+msgid "The edition changed. Reopen the preview."
+msgstr "L’édition a changé. Rouvrez l’aperçu."
+
 #~ msgid "Review the request"
 #~ msgstr "Examiner la demande"
 

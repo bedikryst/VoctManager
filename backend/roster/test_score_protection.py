@@ -702,6 +702,9 @@ class ReaderMarksServeTests(_ServeBase):
             response = self.client.get(f"{self.binder_url}?marks=shared")
         self.assertEqual(response.status_code, 409)
         self.assertEqual(response.json()["code"], "marks_render_failed")
+        # Nobody received a file: the book is not handed out, no copy is counted.
+        self.assertIsNone(ScorePackage.objects.get(project=self.project).distributed_at)
+        self.assertFalse(ScoreAccessLog.objects.filter(project=self.project).exists())
         # The next request composes afresh rather than answering from a partial.
         _, captured = self._serve(f"{self.binder_url}?marks=shared")
         self.assertEqual(captured[0].count('class="pg"'), 2)

@@ -38,7 +38,13 @@ import { Text } from "@/shared/ui/primitives/typography";
 import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
 import { StatePanel } from "@/shared/ui/composites/StatePanel";
 
-import { PdfViewerProps, PdfViewerEvent, LoadErrorReason, type PdfPageRegion } from "./types";
+import {
+  PdfViewerProps,
+  PdfViewerEvent,
+  LoadErrorReason,
+  type BlobFetchError,
+  type PdfPageRegion,
+} from "./types";
 import {
   ZOOM_STEP,
   MIN_ZOOM,
@@ -235,6 +241,13 @@ export const PdfViewer = ({
     // Never on focus: the blob is megabytes and alt-tabbing is not a request
     // for a fresh render.
     refetchOnWindowFocus: false,
+    // A refusal (4xx) answers the same way every time, and a server-assembled
+    // copy would be composed again for each retry; only other failures retry.
+    retry: (failureCount, error) => {
+      const status = (error as BlobFetchError | undefined)?.response?.status;
+      const refused = typeof status === "number" && status >= 400 && status < 500;
+      return !refused && failureCount < 2;
+    },
   });
 
   const resolvedFileName = useMemo(
