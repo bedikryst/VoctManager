@@ -109,6 +109,18 @@ export interface PdfPageApi {
   pageWidth: number | null;
 }
 
+/**
+ * What is printed on one page, for a document whose printed numbering is not
+ * its page order: a bound book opens on unnumbered front matter, so its file
+ * page 16 is the printed page 14.
+ */
+export interface PdfPageLabel {
+  /** The number printed on the page; null where nothing is printed. */
+  folio: number | null;
+  /** What to call a page without a number ("Strona tytułowa"). */
+  name?: string;
+}
+
 export interface PdfViewerProps {
   fetchBlob: (() => Promise<Blob>) | null;
   /**
@@ -170,11 +182,19 @@ export interface PdfViewerProps {
    */
   toolLayout?: PdfToolLayout;
   /**
-   * When the wrapping shell floats its own control in the top-right corner
-   * (e.g. a modal's close button), the utility pill drops one row so the two
-   * never overlap. Only the non-immersive chrome is affected.
+   * The wrapping shell's own controls (a modal's close), placed at the end of
+   * the utility pill so the top-right corner holds one pill, not two stacked.
+   * Shown while the document loads or fails as well: a shell must stay
+   * closable when there is nothing to read.
    */
-  reserveTopRight?: boolean;
+  utilitySlot?: ReactNode;
+  /**
+   * One label per page, in page order, when the printed numbers are not the
+   * page order. The counter, the jump panel, the outline and the page chip
+   * then speak printed numbers. Ignored unless it covers every page: numbers
+   * that drift by one page send a reader to the wrong page.
+   */
+  pageLabels?: readonly PdfPageLabel[];
   /**
    * Whether the document may leave the app as a raw file. When `false` the
    * open-in-browser / share / download controls are hidden — the score is

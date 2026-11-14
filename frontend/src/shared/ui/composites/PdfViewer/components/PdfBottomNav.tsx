@@ -5,7 +5,8 @@
  * question asked once instead of pinched at every turn — and it is spelled out
  * in words in its own panel rather than hidden behind another unlabelled glyph.
  * The page counter opens the jump panel, so "from page 25" is one gesture
- * rather than twenty-four turns.
+ * rather than twenty-four turns. Where the document prints its own page
+ * numbers, the counter and the panel speak those, not the file's page order.
  * @module shared/ui/composites/PdfViewer
  */
 
@@ -28,11 +29,14 @@ import { Divider } from "@/shared/ui/primitives/Divider";
 import { Eyebrow, Text } from "@/shared/ui/primitives/typography";
 
 import type { FitMode, ResolvedFitMode } from "../types";
+import { folioText, pageLabelText, type PageLabelling } from "../pageLabels";
 import { PdfPageJumpPanel } from "./PdfPageJumpPanel";
 
 interface PdfBottomNavProps {
   currentPage: number;
   numPages: number | null;
+  /** Printed page numbers, when the document has its own. */
+  labelling: PageLabelling | null;
   zoom: number;
   minZoom: number;
   maxZoom: number;
@@ -88,6 +92,7 @@ const FIT_OPTIONS: {
 export const PdfBottomNav = ({
   currentPage,
   numPages,
+  labelling,
   zoom,
   minZoom,
   maxZoom,
@@ -111,6 +116,14 @@ export const PdfBottomNav = ({
   const canJump = numPages !== null && numPages > 1;
   const togglePanel = (panel: "page" | "fit"): void =>
     setOpenPanel((open) => (open === panel ? null : panel));
+  // A printed number where the document has them. A page without one shows
+  // the dash the book's own cards print for "no number": its name ("Strona
+  // tytułowa") would widen a pill that already spans a phone, and the jump
+  // panel and the tooltip carry it.
+  const currentFolio = labelling?.folioOf(currentPage) ?? null;
+  const counterTitle = labelling
+    ? pageLabelText(t, labelling, currentPage)
+    : t("pdf_viewer.jump_to_page", "Przejdź do strony");
 
   // Dismissal is a document-level listener rather than a full-bleed backdrop
   // element: the pill carries `backdrop-blur`, and a backdrop-filter makes its
@@ -154,6 +167,7 @@ export const PdfBottomNav = ({
             <PdfPageJumpPanel
               currentPage={currentPage}
               numPages={numPages}
+              labelling={labelling}
               onJump={onJump}
               onClose={() => setOpenPanel(null)}
             />
@@ -179,7 +193,7 @@ export const PdfBottomNav = ({
           disabled={!canJump}
           aria-expanded={openPanel === "page"}
           aria-label={t("pdf_viewer.jump_to_page", "Przejdź do strony")}
-          title={t("pdf_viewer.jump_to_page", "Przejdź do strony")}
+          title={counterTitle}
           className={cn(
             "flex h-8 min-w-16 items-center justify-center rounded-full px-2.5 transition-colors",
             canJump && "bg-ink-on-inverse/10 hover:bg-ink-on-inverse/15",
@@ -191,8 +205,14 @@ export const PdfBottomNav = ({
             color="ink-on-inverse"
             className="text-xs font-medium tabular-nums tracking-wider"
           >
-            {currentPage}{" "}
-            <span className="text-ink-on-inverse/40">/ {numPages ?? "?"}</span>
+            {labelling ? (
+              folioText(t, currentFolio ?? "–")
+            ) : (
+              <>
+                {currentPage}{" "}
+                <span className="text-ink-on-inverse/40">/ {numPages ?? "?"}</span>
+              </>
+            )}
           </Text>
         </button>
 

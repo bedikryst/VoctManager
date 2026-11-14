@@ -11,8 +11,8 @@
  * The reader's marks are LIVE here — drawn, moved and erased on the page — so
  * the "compose my marks into the file" switch is deliberately absent: two ways
  * to see one set of marks, one of them uneditable, is a worse answer than one.
- * That switch belongs on the full document viewer, which is where a reader goes
- * for a copy to keep or to print.
+ * The stand links to no full view either: that page composes the file on the
+ * server, is slow to open, and read to singers as a second stand.
  * @module features/projects/components
  */
 
@@ -87,7 +87,9 @@ export const ProjectScoreBook = ({
 
   const book: ScoreBook = useMemo(
     () =>
-      data?.available ? buildScoreBook(data.pages, data.items) : EMPTY_SCORE_BOOK,
+      data?.available
+        ? buildScoreBook(data.pages, data.items, data.labels ?? [])
+        : EMPTY_SCORE_BOOK,
     [data],
   );
 
@@ -122,11 +124,6 @@ export const ProjectScoreBook = ({
       fileName={fileName}
       mode={mode}
       delegateLayers={delegateLayers}
-      fullView={{
-        type: "project-score",
-        id: projectId,
-        hint: { title, subtitle: projectTitle, fileName },
-      }}
       notifyProjectId={canNotifyChoir ? projectId : null}
       onClose={onClose}
     />

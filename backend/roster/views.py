@@ -173,7 +173,7 @@ from .score_package_markings import (
     servable_layers,
 )
 from .score_package_service import ScorePackageItemError, ScorePackageService
-from .score_page_map import book_frames, book_item_spans
+from .score_page_map import book_frames, book_item_spans, book_page_labels
 
 # Serializers
 from .serializers import (
@@ -1234,11 +1234,15 @@ class ProjectViewSet(viewsets.ModelViewSet):
         disk and a rebuilt one can never be mistaken for it. Map and bytes are
         therefore fetched under one identity — the two can never end up
         describing different builds of the same concert.
+
+        `labels` gives every page its printed folio, so the stand counts pages
+        the way the conductor's printed copy does. A book printed without page
+        numbers answers with none, and the reader keeps the file's page order.
         """
         project = self.get_object()
         is_manager = user_is_manager(request.user)
         empty: dict[str, Any] = {
-            "available": False, "pages": [], "items": [], "stamp": "",
+            "available": False, "pages": [], "items": [], "labels": [], "stamp": "",
         }
         # Same lifecycle gate as the file itself: once the concert is over the
         # singer's access to the binder closes, and a map of a book they may not
@@ -1256,11 +1260,13 @@ class ProjectViewSet(viewsets.ModelViewSet):
         ):
             return Response(empty)
 
-        page_map, generated_at = (
+        page_map, generated_at, is_numbered, has_title_page = (
             ScorePackage.objects.filter(project=project)
-            .values_list('page_map', 'generated_at')
+            .values_list(
+                'page_map', 'generated_at', 'include_page_numbers', 'include_title_page',
+            )
             .first()
-        ) or ([], None)
+        ) or ([], None, False, False)
         page_map = page_map or []
         stamp = _binder_bytes_stamp(generated_at)
         frames = book_frames(page_map)
@@ -1290,8 +1296,17 @@ class ProjectViewSet(viewsets.ModelViewSet):
             )
             if str(item.pk) in spans
         ]
+        # The map records a folio for every content page whether or not the
+        # book prints it; only a numbered book has numbers to speak of.
+        labels = book_page_labels(page_map, has_title_page=has_title_page) if is_numbered else []
         return Response(
-            {"available": True, "pages": frames, "items": items, "stamp": stamp},
+            {
+                "available": True,
+                "pages": frames,
+                "items": items,
+                "labels": labels,
+                "stamp": stamp,
+            },
         )
 
     @action(detail=True, methods=['get', 'post'], url_path='delegates', permission_classes=[IsManager])

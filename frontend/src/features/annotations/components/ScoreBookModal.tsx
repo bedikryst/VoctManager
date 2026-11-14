@@ -18,8 +18,10 @@
  * @module features/annotations/components/ScoreBookModal
  */
 
-import React from "react";
+import React, { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 
+import type { PdfPageLabel } from "@/shared/ui/composites/PdfViewer";
 import { PdfViewerModal } from "@/shared/ui/composites/PdfViewerModal";
 
 import {
@@ -53,13 +55,6 @@ export interface ScoreBookModalProps {
    * never offered here (see below).
    */
   readonly canExport?: boolean;
-  /**
-   * Deep link to the full document viewer — the surface that hands out a copy
-   * to keep or to print, with the conductor's marks (and the reader's own, on
-   * request) composed into the file. Typed off the shell it is forwarded to, so
-   * this stays free of a route import.
-   */
-  readonly fullView?: React.ComponentProps<typeof PdfViewerModal>["fullView"];
   /** The book's project, when the reader may tell its choir about new marks. */
   readonly notifyProjectId?: string | null;
   readonly onClose: () => void;
@@ -76,11 +71,28 @@ export const ScoreBookModal = ({
   mode,
   delegateLayers,
   canExport = true,
-  fullView,
   notifyProjectId = null,
   onClose,
 }: ScoreBookModalProps): React.JSX.Element => {
+  const { t } = useTranslation();
   const hasMap = !!book && book.frames.size > 0;
+  // The conductor calls the printed page, so the stand counts in it. Only the
+  // title page gets a name of its own; every other unnumbered page is just
+  // that, and the viewer says so.
+  const bookLabels = book?.labels;
+  const pageLabels = useMemo<PdfPageLabel[] | undefined>(
+    () =>
+      bookLabels && bookLabels.length > 0
+        ? bookLabels.map((label) => ({
+            folio: label.folio,
+            name:
+              label.kind === "title"
+                ? t("score_book.title_page", "Strona tytułowa")
+                : undefined,
+          }))
+        : undefined,
+    [bookLabels, t],
+  );
   const annotator = useScoreAnnotator({
     // Every edition in the binder takes its turn; which one is in play is the
     // page in front of the reader, so there is no single id to name here.
@@ -117,13 +129,12 @@ export const ScoreBookModal = ({
       onPageApiChange={hasMap ? annotator.onPageApiChange : undefined}
       claimKey={hasMap ? annotator.claimKey : undefined}
       toolLayout="rail"
-      fullView={fullView}
+      pageLabels={pageLabels}
       // With a map, the file on screen is the clean book and every mark is
       // drawn live over it, so handing that file out would hand out a book
-      // with none of them. A copy to keep or print comes from the full view,
-      // which shows exactly the composed file it gives away. Fetching that
-      // copy on the tap instead would break share and open-in-browser: both
-      // must run inside the gesture, and a second download outlasts it.
+      // with none of them. Fetching the composed copy on the tap instead
+      // would break share and open-in-browser: both must run inside the
+      // gesture, and a second download outlasts it.
       canExport={canExport && !hasMap}
       fitScope="score"
       onClose={onClose}

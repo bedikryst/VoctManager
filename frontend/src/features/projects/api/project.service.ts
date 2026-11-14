@@ -508,6 +508,15 @@ export interface ScoreBookItem {
 }
 
 /**
+ * One page's printed number, in page order. `kind` names a page that has
+ * none: `title` is the title page, the rest are the build's own page kinds.
+ */
+export interface ScoreBookPageLabel {
+  folio: number | null;
+  kind: "title" | "front" | "pad" | "spacer" | "card" | "music";
+}
+
+/**
  * The binder's map. `available: false` is the ordinary answer for a book that
  * was uploaded by hand rather than assembled — it has no map, so it has no
  * pencil either, and the reader simply gets the book they had before.
@@ -516,6 +525,12 @@ export interface ScoreBookMap {
   available: boolean;
   pages: ScoreBookFrame[];
   items: ScoreBookItem[];
+  /**
+   * Every page's printed number; empty for a book printed without numbers.
+   * Optional because a map kept on the device (query snapshot, service-worker
+   * copy) may predate it, and such a map still reads, in file pages.
+   */
+  labels?: ScoreBookPageLabel[];
   /**
    * Names the stored file's BYTES. Present even when there is no map (a
    * hand-uploaded book is still a book), empty only when there is nothing to

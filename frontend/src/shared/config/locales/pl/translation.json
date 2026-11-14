@@ -83,6 +83,7 @@
       "offline": "Odkładanie i przywracanie uwag działa tylko z internetem."
     },
     "collapse_tools": "Zwiń narzędzia",
+    "done": "Gotowe",
     "families": {
       "draw": "Rysuj",
       "insert": "Wstaw",
@@ -4721,6 +4722,8 @@
     "open_full_view_short": "Pełny widok",
     "outline_open": "Pokaż spis treści",
     "outline_page": "s. {{page}}",
+    "folio_prefix": "s.",
+    "page_unnumbered": "bez numeru",
     "outline_title": "Spis treści",
     "page_number": "Numer strony",
     "page_short": "Strona",
@@ -6328,6 +6331,7 @@
   "score_book": {
     "encore": "Bis",
     "front_matter": "Początek książki",
+    "title_page": "Strona tytułowa",
     "open_cta": "Otwórz książkę koncertu",
     "piece_next": "Następny utwór",
     "piece_prev": "Poprzedni utwór",

@@ -48,6 +48,7 @@ from roster.score_page_map import (
     KIND_SPACER,
     book_frames,
     book_item_spans,
+    book_page_labels,
     normalized_to_sheet,
 )
 
@@ -124,6 +125,35 @@ class BookFrameTests(SimpleTestCase):
         self.assertEqual(book_item_spans([]), [])
         self.assertEqual(book_item_spans(["nonsense", {"kind": KIND_MUSIC}]), [])
 
+    def test_labels_carry_the_printed_folio_page_by_page(self) -> None:
+        rows = self._map()
+        for row, folio in zip(rows, [None, 1, 2, 3, None, 4], strict=True):
+            row["folio"] = folio
+        labels = book_page_labels(rows, has_title_page=True)
+        self.assertEqual(
+            labels,
+            [
+                {"folio": None, "kind": "title"},
+                {"folio": 1, "kind": KIND_CARD},
+                {"folio": 2, "kind": KIND_MUSIC},
+                {"folio": 3, "kind": KIND_MUSIC},
+                {"folio": None, "kind": KIND_SPACER},
+                {"folio": 4, "kind": KIND_MUSIC},
+            ],
+        )
+
+    def test_front_matter_is_a_title_page_only_when_the_book_has_one(self) -> None:
+        labels = book_page_labels(self._map(), has_title_page=False)
+        self.assertEqual(labels[0], {"folio": None, "kind": KIND_FRONT})
+
+    def test_labels_out_of_page_order_answer_nothing(self) -> None:
+        # A label one page off would send the reader to the wrong page.
+        rows = self._map()
+        rows[2], rows[3] = rows[3], rows[2]
+        self.assertEqual(book_page_labels(rows, has_title_page=True), [])
+        self.assertEqual(book_page_labels(rows[1:], has_title_page=True), [])
+        self.assertEqual(book_page_labels(["nonsense"], has_title_page=True), [])
+
 
 @override_settings(MEDIA_ROOT=_MEDIA)
 class ScoreMapEndpointTests(APITestCase):
@@ -183,6 +213,31 @@ class ScoreMapEndpointTests(APITestCase):
                 "last_page": 3,
             }],
         )
+
+    def test_labels_speak_the_printed_folios_of_a_numbered_book(self) -> None:
+        self.package.page_map[1]["folio"] = 1
+        self.package.page_map[2]["folio"] = 2
+        self.package.include_page_numbers = True
+        self.package.include_title_page = True
+        self.package.save(
+            update_fields=["page_map", "include_page_numbers", "include_title_page"],
+        )
+        data = self.client.get(self.url).json()
+        self.assertEqual(
+            data["labels"],
+            [
+                {"folio": None, "kind": "title"},
+                {"folio": 1, "kind": KIND_MUSIC},
+                {"folio": 2, "kind": KIND_MUSIC},
+            ],
+        )
+
+    def test_a_book_printed_without_numbers_has_no_labels(self) -> None:
+        # The map records folios regardless; nothing is printed to match them.
+        self.package.page_map[1]["folio"] = 1
+        self.package.include_page_numbers = False
+        self.package.save(update_fields=["page_map", "include_page_numbers"])
+        self.assertEqual(self.client.get(self.url).json()["labels"], [])
 
     def test_hand_uploaded_book_has_no_pencil_but_is_not_an_error(self) -> None:
         ScorePackageService.mark_manual_upload(self.project)

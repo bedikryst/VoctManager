@@ -74,6 +74,7 @@
       "offline": "Mettre des annotations de côté ou les restaurer nécessite une connexion."
     },
     "collapse_tools": "Réduire les outils",
+    "done": "Terminé",
     "families": {
       "draw": "Dessiner",
       "insert": "Insérer",
@@ -4639,6 +4640,8 @@
     "open_full_view_short": "Plein écran",
     "outline_open": "Afficher le sommaire",
     "outline_page": "p. {{page}}",
+    "folio_prefix": "p.",
+    "page_unnumbered": "sans numéro",
     "outline_title": "Sommaire",
     "page_number": "Numéro de page",
     "page_short": "Page",
@@ -6231,6 +6234,7 @@
   "score_book": {
     "encore": "Bis",
     "front_matter": "Début du recueil",
+    "title_page": "Page de titre",
     "open_cta": "Ouvrir le recueil du concert",
     "piece_next": "Pièce suivante",
     "piece_prev": "Pièce précédente",

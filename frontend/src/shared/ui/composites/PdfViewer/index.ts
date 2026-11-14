@@ -1,5 +1,5 @@
 export { PdfViewer } from "./PdfViewer";
-export { usePdfImmersive, usePdfCompactTriggers } from "./context";
+export { usePdfImmersive, usePdfCompactTriggers, useClaimPdfTopRow } from "./context";
 export { usePdfToolRail } from "./toolRail";
 /**
  * Where the viewer turns pages on a tap, and which way a swipe turns them.
@@ -18,5 +18,6 @@ export type {
   PdfPageApi,
   FitMode,
   PdfKeyScope,
+  PdfPageLabel,
   PdfToolLayout,
 } from "./types";

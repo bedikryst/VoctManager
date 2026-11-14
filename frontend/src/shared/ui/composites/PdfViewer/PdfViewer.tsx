@@ -8,7 +8,8 @@
  * screen edge to edge). A zoom step holds a copy of the page over it until the
  * new raster is drawn, so the page never blanks between sizes. Annotation
  * features mount through the toolbarSlot / renderPageOverlay / overlaySlot /
- * modalSlot seams.
+ * modalSlot seams, a wrapping shell's close through utilitySlot, and a bound
+ * book's printed page numbers through pageLabels.
  * @module shared/ui/composites/PdfViewer
  */
 
@@ -56,6 +57,7 @@ import {
   LABELED_TRIGGER_GUTTER_PX,
   AFTERIMAGE_MAX_PIXELS,
 } from "./constants";
+import { pageLabelText, resolvePageLabelling } from "./pageLabels";
 import { planScrollTurn, readableScrollRange } from "./scrollTurn";
 import { clampValue, buildPdfFileName, classifyLoadError, createDownloadAnchor } from "./utils";
 import { PdfToolbar } from "./components/PdfToolbar";
@@ -71,6 +73,7 @@ import {
   PdfCompactTriggersProvider,
   PdfImmersiveProvider,
   PdfToolLayoutProvider,
+  PdfTopRowClaimProvider,
 } from "./context";
 
 pdfjs.GlobalWorkerOptions.workerSrc = new URL(
@@ -104,7 +107,8 @@ export const PdfViewer = ({
   claimKey,
   keyScope = "window",
   toolLayout = "row",
-  reserveTopRight = false,
+  utilitySlot,
+  pageLabels,
   canExport = true,
   fitScope,
   preferredFit,
@@ -149,6 +153,8 @@ export const PdfViewer = ({
   const [blobUrl, setBlobUrl] = useState<string | null>(null);
   const [isDownloading, setIsDownloading] = useState(false);
   const [isSharing, setIsSharing] = useState(false);
+  // An open markup bar takes the whole top row (`useClaimPdfTopRow`).
+  const [isTopRowClaimed, setTopRowClaimed] = useState(false);
 
   const zoomRef = useRef(zoom);
   zoomRef.current = zoom;
@@ -448,6 +454,11 @@ export const PdfViewer = ({
   const showLoadingState =
     (isIdle && !blobUrl) || (!isIdle && isFetchingBlob && !isWaitingForNetwork && !blobUrl);
   const showPdfChrome = !!blobUrl && numPages !== null && !isFetchError;
+  // Printed numbers, once the document's length can confirm they fit it.
+  const labelling = useMemo(
+    () => resolvePageLabelling(pageLabels, numPages),
+    [pageLabels, numPages],
+  );
   const errorReason = isFetchError ? classifyLoadError(fetchError) : null;
   const errorMessage = errorReason ? resolveViewerErrorMessage(errorReason) : null;
 
@@ -547,10 +558,16 @@ export const PdfViewer = ({
   immersiveRef.current = isImmersive;
   const numPagesRef = useRef(numPages);
   numPagesRef.current = numPages;
+  const labellingRef = useRef(labelling);
+  labellingRef.current = labelling;
   useEffect(() => {
     if (!immersiveRef.current || !numPagesRef.current) return;
-    showChip(`${stablePage} / ${numPagesRef.current}`, CHIP_PAGE_DURATION_MS);
-  }, [stablePage, showChip]);
+    const labels = labellingRef.current;
+    showChip(
+      labels ? pageLabelText(t, labels, stablePage) : `${stablePage} / ${numPagesRef.current}`,
+      CHIP_PAGE_DURATION_MS,
+    );
+  }, [stablePage, showChip, t]);
 
   const handlePageDelta = useCallback((delta: 1 | -1) => {
     turnPage(delta);
@@ -816,20 +833,25 @@ export const PdfViewer = ({
     <PdfImmersiveProvider value={isImmersive}>
     <PdfCompactTriggersProvider value={compactTriggers}>
     <PdfToolLayoutProvider value={toolLayout}>
+    <PdfTopRowClaimProvider value={setTopRowClaimed}>
     <div
       ref={rootRef}
       className={cn("relative flex min-h-0 h-full w-full flex-1 flex-col overflow-hidden bg-surface-inverse text-ink-on-inverse", className)}
     >
       <div className="pointer-events-none absolute inset-0 bg-noise opacity-[0.02] mix-blend-color-burn light-ground-film" aria-hidden="true" />
 
-      {showPdfChrome && !isImmersive && (
+      {/* Shown before the document too, when the shell has a control in it:
+          a stand that is loading or has failed must still close. Steps aside
+          while an open markup bar holds the top row. */}
+      {!isImmersive && !isTopRowClaimed && (
         <PdfToolbar
+          showDocumentControls={showPdfChrome}
           blobUrl={blobUrl}
           canExport={canExport}
           supportsNativeShare={supportsNativeShare}
           isSharing={isSharing}
           isDownloading={isDownloading}
-          inset={reserveTopRight}
+          utilitySlot={utilitySlot}
           onOpenInBrowser={handleOpenInBrowser}
           onShare={handleShare}
           onDownload={handleDownload}
@@ -838,20 +860,24 @@ export const PdfViewer = ({
       )}
 
       {/* Annotation tools live top-LEFT; the top-right corner is the utility
-          pill (open / share / download). As a row in the top letterbox the
-          width is capped so the two never overlap on a phone. As a rail
-          (`tool-rail:`, see toolRail.ts; only where the host allows it) the
-          slot runs down the left margin and stops above the Kamerton and the
-          programme bar at the bottom; the cap no longer applies, and an
-          outline tab on the left edge pushes it inward. The toolbar owns its
-          own chrome + collapse-to-trigger so it isn't always occupying the
-          corner. Kept in immersive too — the score is annotatable in
+          pill (performance mode, export, the shell's close). As a row in the
+          top letterbox the width is capped so the two never overlap on a
+          phone, until the open bar claims the row and spans it edge to edge.
+          As a rail (`tool-rail:`, see toolRail.ts; only where the host allows
+          it) the slot runs down the left margin and stops above the Kamerton
+          and the programme bar at the bottom; the cap no longer applies, and
+          an outline tab on the left edge pushes it inward. The toolbar owns
+          its own chrome + collapse-to-trigger so it isn't always occupying
+          the corner. Kept in immersive too — the score is annotatable in
           performance mode; the toolbar starts collapsed there for a clean
           stage. */}
       {showPdfChrome && toolbarSlot && (
         <div
           className={cn(
-            "pointer-events-none absolute left-3 top-4 z-20 max-w-[calc(100vw-9rem)] sm:left-6 sm:top-6 sm:max-w-[calc(100vw-13rem)]",
+            "pointer-events-none absolute left-3 top-4 z-20 sm:left-6 sm:top-6",
+            isTopRowClaimed
+              ? "right-3 sm:right-6"
+              : "max-w-[calc(100vw-9rem)] sm:max-w-[calc(100vw-13rem)]",
             toolLayout === "rail" && "tool-rail:bottom-40 tool-rail:max-w-none",
             toolLayout === "rail" && outline.length > 0 && "tool-rail:left-14",
           )}
@@ -1019,6 +1045,7 @@ export const PdfViewer = ({
             <PdfOutlineDrawer
               entries={outline}
               currentPage={currentPage}
+              labelling={labelling}
               onJump={changePage}
             />
           </div>
@@ -1029,6 +1056,7 @@ export const PdfViewer = ({
         <PdfBottomNav
           currentPage={currentPage}
           numPages={numPages}
+          labelling={labelling}
           zoom={zoom}
           minZoom={MIN_ZOOM}
           maxZoom={MAX_ZOOM}
@@ -1076,6 +1104,7 @@ export const PdfViewer = ({
         )}
       </AnimatePresence>
     </div>
+    </PdfTopRowClaimProvider>
     </PdfToolLayoutProvider>
     </PdfCompactTriggersProvider>
     </PdfImmersiveProvider>

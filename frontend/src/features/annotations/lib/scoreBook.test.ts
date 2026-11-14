@@ -17,6 +17,7 @@ import {
   bookPageFor,
   buildScoreBook,
   itemAtPage,
+  itemPageNumber,
   pieceJumpTarget,
   type BookItem,
   type BookPageFrame,
@@ -139,5 +140,31 @@ describe("pieceJumpTarget", () => {
     const bare = buildScoreBook([], []);
     expect(pieceJumpTarget(bare, 1, 1)).toBeNull();
     expect(pieceJumpTarget(bare, 1, -1)).toBeNull();
+  });
+});
+
+describe("itemPageNumber", () => {
+  // Title page, a blank, then "bis" opens on an unnumbered spacer.
+  const labelled = buildScoreBook([], [item("kyrie", 1, 3, 4), item("bis", 2, 5, 7)], [
+    { folio: null, kind: "title" },
+    { folio: null, kind: "pad" },
+    { folio: 1, kind: "card" },
+    { folio: 2, kind: "music" },
+    { folio: null, kind: "spacer" },
+    { folio: 3, kind: "card" },
+    { folio: 4, kind: "music" },
+  ]);
+
+  it("gives a piece the printed number its contents line would", () => {
+    expect(itemPageNumber(labelled, labelled.items[0])).toBe(1);
+  });
+
+  it("skips the blank a piece may open on, as the printed contents does", () => {
+    expect(itemPageNumber(labelled, labelled.items[1])).toBe(3);
+  });
+
+  it("counts file pages in a book printed without numbers", () => {
+    const kyrie = book.items.find((entry) => entry.id === "kyrie");
+    expect(kyrie && itemPageNumber(book, kyrie)).toBe(2);
   });
 });

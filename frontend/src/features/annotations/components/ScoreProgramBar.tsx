@@ -5,6 +5,10 @@
  * the piece after. Page-by-page turning already exists and is the wrong unit
  * when the conductor says "od Gloria": nobody counts pages to get there.
  *
+ * Pieces carry their programme number, the one the printed contents, the
+ * book's bookmarks and the materials page give them, never their position
+ * among the pieces that happen to be bound. Pages are the printed folios.
+ *
  * The programme it lists is the production's, in the production's order. There
  * is deliberately no way to reorder it here — the running order of a concert is
  * data the whole choir shares (edited on the Program tab, and the book is bound
@@ -25,7 +29,12 @@ import { usePdfImmersive } from "@/shared/ui/composites/PdfViewer";
 import { Button } from "@/shared/ui/primitives/Button";
 import { Eyebrow, Text } from "@/shared/ui/primitives/typography";
 
-import { itemAtPage, pieceJumpTarget, type ScoreBook } from "../lib/scoreBook";
+import {
+  itemAtPage,
+  itemPageNumber,
+  pieceJumpTarget,
+  type ScoreBook,
+} from "../lib/scoreBook";
 
 interface ScoreProgramBarProps {
   book: ScoreBook;
@@ -70,9 +79,6 @@ export const ScoreProgramBar = ({
   const current = itemAtPage(book, currentPage);
   const previousPage = pieceJumpTarget(book, currentPage, -1);
   const nextPage = pieceJumpTarget(book, currentPage, 1);
-  const position = current
-    ? book.items.findIndex((item) => item.id === current.id) + 1
-    : 0;
 
   return (
     // Sits clear of the reading controls below it; `bottom-dock` is for the
@@ -115,14 +121,12 @@ export const ScoreProgramBar = ({
               className="block truncate font-medium text-ink-on-inverse"
             >
               {current
-                ? current.title
+                ? `${current.order}. ${current.title}`
                 : t("score_book.front_matter", "Początek książki")}
             </Text>
-            {current && (
+            {current?.composer && (
               <Eyebrow as="span" color="ink-on-inverse-muted" className="block truncate">
-                {[current.composer, `${position}/${book.items.length}`]
-                  .filter(Boolean)
-                  .join(" · ")}
+                {current.composer}
               </Eyebrow>
             )}
           </span>
@@ -156,8 +160,9 @@ export const ScoreProgramBar = ({
                 </Eyebrow>
               </div>
               <ul className="ethereal-scroll min-h-0 flex-1 overflow-y-auto p-1">
-                {book.items.map((item, index) => {
+                {book.items.map((item) => {
                   const isActive = current?.id === item.id;
+                  const pageNumber = itemPageNumber(book, item);
                   return (
                     <li key={item.id}>
                       <button
@@ -179,7 +184,7 @@ export const ScoreProgramBar = ({
                           color={isActive ? "gold" : "ink-on-inverse-muted"}
                           className="w-5 shrink-0 text-right lining-nums"
                         >
-                          {index + 1}
+                          {item.order}
                         </Eyebrow>
                         <span className="min-w-0 flex-1">
                           <Text
@@ -204,15 +209,17 @@ export const ScoreProgramBar = ({
                             {t("score_book.encore", "Bis")}
                           </Eyebrow>
                         )}
-                        <Eyebrow
-                          as="span"
-                          color={isActive ? "gold" : "ink-on-inverse-muted"}
-                          className="shrink-0 lining-nums"
-                        >
-                          {t("pdf_viewer.outline_page", "s. {{page}}", {
-                            page: item.first_page,
-                          })}
-                        </Eyebrow>
+                        {pageNumber !== null && (
+                          <Eyebrow
+                            as="span"
+                            color={isActive ? "gold" : "ink-on-inverse-muted"}
+                            className="shrink-0 lining-nums"
+                          >
+                            {t("pdf_viewer.outline_page", "s. {{page}}", {
+                              page: pageNumber,
+                            })}
+                          </Eyebrow>
+                        )}
                       </button>
                     </li>
                   );

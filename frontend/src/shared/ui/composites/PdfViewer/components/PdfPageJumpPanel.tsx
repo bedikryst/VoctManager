@@ -6,6 +6,11 @@
  * is a couple of pixels. The slider commits on release, not while it moves:
  * every committed page is a render, and a sweep across forty pages on the way
  * to one would be forty renders nobody reads.
+ *
+ * Where the document prints its own page numbers, the number in the field is
+ * the printed one, because that is the number the conductor calls. The slider
+ * still runs over every page, unnumbered ones included, and a page without a
+ * number is named under the field instead.
  * @module shared/ui/composites/PdfViewer
  */
 
@@ -13,21 +18,25 @@ import { useEffect, useRef, useState } from "react";
 import type { ChangeEvent, KeyboardEvent } from "react";
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
-import { Eyebrow, Metric } from "@/shared/ui/primitives/typography";
+import { Eyebrow, Metric, Text } from "@/shared/ui/primitives/typography";
+
+import { pageLabelText, type PageLabelling } from "../pageLabels";
 
 interface PdfPageJumpPanelProps {
   currentPage: number;
   numPages: number;
+  /** Printed page numbers, when the document has its own. */
+  labelling: PageLabelling | null;
   onJump: (page: number) => void;
   onClose: () => void;
 }
 
-const clampPage = (page: number, numPages: number): number =>
-  Math.min(Math.max(page, 1), numPages);
+const clamp = (value: number, max: number): number => Math.min(Math.max(value, 1), max);
 
 export const PdfPageJumpPanel = ({
   currentPage,
   numPages,
+  labelling,
   onJump,
   onClose,
 }: PdfPageJumpPanelProps) => {
@@ -67,17 +76,27 @@ export const PdfPageJumpPanel = ({
     fieldRef.current?.select();
   }, []);
 
+  // What the field counts in: printed numbers, or the file's pages.
+  const highest = labelling ? labelling.lastFolio : numPages;
+  const pageForNumber = (value: number): number | null =>
+    labelling ? labelling.pageOf(value) : value;
+  const draftNumber = labelling ? labelling.folioOf(draft) : draft;
+  const draftText = labelling ? pageLabelText(t, labelling, draft) : `${draft} / ${numPages}`;
+
   const handleFieldChange = (event: ChangeEvent<HTMLInputElement>): void => {
-    const digits = event.target.value.replace(/\D/g, "").slice(0, String(numPages).length);
+    const digits = event.target.value.replace(/\D/g, "").slice(0, String(highest).length);
     setTyped(digits);
-    const page = Number(digits);
-    if (digits && page >= 1 && page <= numPages) setDraft(page);
+    const value = Number(digits);
+    if (!digits || value < 1 || value > highest) return;
+    const page = pageForNumber(value);
+    if (page !== null) setDraft(page);
   };
 
   const handleFieldKeyDown = (event: KeyboardEvent<HTMLInputElement>): void => {
     if (event.key !== "Enter") return;
     event.preventDefault();
-    onJump(typed ? clampPage(Number(typed), numPages) : draft);
+    const page = typed ? pageForNumber(clamp(Number(typed), highest)) : null;
+    onJump(page ?? draft);
     onClose();
   };
 
@@ -96,23 +115,36 @@ export const PdfPageJumpPanel = ({
       </div>
       <div className="px-4 pb-4 pt-3">
         <div className="flex items-baseline justify-center gap-2">
+          {labelling && (
+            <Metric size="xl" color="ink-on-inverse-muted">
+              {t("pdf_viewer.folio_prefix", "s.")}
+            </Metric>
+          )}
           <input
             ref={fieldRef}
             type="text"
             inputMode="numeric"
             enterKeyHint="go"
             autoComplete="off"
-            value={typed ?? String(draft)}
+            value={typed ?? (draftNumber === null ? "" : String(draftNumber))}
+            placeholder="–"
             onChange={handleFieldChange}
             onKeyDown={handleFieldKeyDown}
             onBlur={() => setTyped(null)}
             aria-label={t("pdf_viewer.page_number", "Numer strony")}
-            className="w-20 rounded-control bg-ink-on-inverse/10 px-2 py-0.5 text-center font-serif text-3xl tabular-nums lining-nums tracking-tight text-ink-on-inverse focus:outline-none focus:ring-2 focus:ring-ethereal-gold/60"
+            className="w-20 rounded-control bg-ink-on-inverse/10 px-2 py-0.5 text-center font-serif text-3xl tabular-nums lining-nums tracking-tight text-ink-on-inverse placeholder:text-ink-on-inverse/40 focus:outline-none focus:ring-2 focus:ring-ethereal-gold/60"
           />
           <Metric size="xl" color="ink-on-inverse-muted" className="tabular-nums">
-            / {numPages}
+            / {highest}
           </Metric>
         </div>
+        {/* A page with no printed number is named rather than left blank, so
+            the reader knows where the slider has put them. */}
+        {labelling && draftNumber === null && typed === null && (
+          <Text size="xs" color="ink-on-inverse-muted" className="mt-1.5 block text-center">
+            {draftText}
+          </Text>
+        )}
         <input
           ref={sliderRef}
           type="range"
@@ -125,7 +157,7 @@ export const PdfPageJumpPanel = ({
             setTyped(null);
           }}
           aria-label={t("pdf_viewer.jump_to_page", "Przejdź do strony")}
-          aria-valuetext={`${draft} / ${numPages}`}
+          aria-valuetext={draftText}
           className="mt-3 w-full accent-ethereal-gold"
         />
       </div>

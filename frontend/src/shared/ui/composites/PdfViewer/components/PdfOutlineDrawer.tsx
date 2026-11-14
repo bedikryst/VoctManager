@@ -17,20 +17,32 @@ import { cn } from "@/shared/lib/utils";
 import { Eyebrow, Text } from "@/shared/ui/primitives/typography";
 
 import type { PdfOutlineEntry } from "../hooks/usePdfOutline";
+import { folioText, type PageLabelling } from "../pageLabels";
 
 interface PdfOutlineDrawerProps {
   entries: PdfOutlineEntry[];
   currentPage: number;
+  /** Printed page numbers, when the document has its own. */
+  labelling: PageLabelling | null;
   onJump: (page: number) => void;
 }
 
 export const PdfOutlineDrawer = ({
   entries,
   currentPage,
+  labelling,
   onJump,
 }: PdfOutlineDrawerProps): React.JSX.Element => {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
+
+  // A printed contents gives no number to a page that carries none (the
+  // title page), so neither does this one.
+  const pageText = (page: number): string | null => {
+    if (!labelling) return folioText(t, page);
+    const folio = labelling.folioOf(page);
+    return folio === null ? null : folioText(t, folio);
+  };
 
   // The entry whose section covers the current page (last start ≤ current).
   const activeIndex = useMemo(() => {
@@ -92,15 +104,15 @@ export const PdfOutlineDrawer = ({
                     >
                       {entry.title}
                     </Text>
-                    <Text
-                      as="span"
-                      size="xs"
-                      className="shrink-0 tabular-nums text-ink-on-inverse/50"
-                    >
-                      {t("pdf_viewer.outline_page", "s. {{page}}", {
-                        page: entry.page,
-                      })}
-                    </Text>
+                    {pageText(entry.page) !== null && (
+                      <Text
+                        as="span"
+                        size="xs"
+                        className="shrink-0 tabular-nums text-ink-on-inverse/50"
+                      >
+                        {pageText(entry.page)}
+                      </Text>
+                    )}
                   </button>
                 </li>
               ))}

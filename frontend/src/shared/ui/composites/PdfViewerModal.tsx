@@ -3,10 +3,11 @@
  * @description Full-bleed dialog shell wrapping the headless PdfViewer primitive.
  * Owns Radix Dialog semantics (focus trap, overlay, ARIA, exit animations) but
  * spends no vertical space on chrome: it fills the viewport edge-to-edge and
- * floats only a self-retiring title label and a round close button — styled to
- * match the viewer's utility pill — so the document gets the whole screen. The
- * "Open full view" link to the deep-linkable DocumentViewerPage rides alongside
- * close when callers provide a typed docType + docId.
+ * floats only a self-retiring title label, so the document gets the whole
+ * screen. Close sits at the end of the viewer's own utility pill, one pill in
+ * the corner rather than two stacked. The "Open full view" link to the
+ * deep-linkable DocumentViewerPage rides beside close only where a caller
+ * passes a full view: the manager's hub does, and nothing a singer opens does.
  * @module shared/ui/composites/PdfViewerModal
  */
 
@@ -19,13 +20,13 @@ import { Link } from "react-router-dom";
 
 import { useFullscreenSurface } from "@/shared/lib/dom/fullscreenSurface";
 import { Button } from "@/shared/ui/primitives/Button";
-import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { Heading, Text } from "@/shared/ui/primitives/typography";
 import {
   PdfViewer,
   type PdfViewerEvent,
   type PdfPageGeometry,
   type PdfPageApi,
+  type PdfPageLabel,
   type PdfToolLayout,
   type FitMode,
 } from "@/shared/ui/composites/PdfViewer";
@@ -94,6 +95,8 @@ export interface PdfViewerModalProps {
   fitScope?: string;
   /** Fit the document requires — see `PdfViewerProps.preferredFit`. */
   preferredFit?: FitMode;
+  /** Printed page numbers — see `PdfViewerProps.pageLabels`. */
+  pageLabels?: readonly PdfPageLabel[];
   onClose: () => void;
 }
 
@@ -119,6 +122,7 @@ export const PdfViewerModal = ({
   canExport = true,
   fitScope,
   preferredFit,
+  pageLabels,
   onClose,
 }: PdfViewerModalProps): React.JSX.Element => {
   const { t } = useTranslation();
@@ -176,23 +180,37 @@ export const PdfViewerModal = ({
     fullViewHref ?? (fullView ? buildDocumentViewerPath(fullView) : undefined);
   const resolvedFullViewHint = fullViewHint ?? fullView?.hint;
 
-  const fullViewSlot = resolvedFullViewHref ? (
-    <Button
-      asChild
-      variant="ghost"
-      size="icon"
-      className="h-9 w-9 rounded-full text-ink-on-inverse hover:bg-ink-on-inverse/10"
-    >
-      <Link
-        to={resolvedFullViewHref}
-        state={resolvedFullViewHint}
-        onClick={handleFullViewClick}
-        aria-label={t("pdf_viewer.open_full_view", "Open full view")}
+  const utilitySlot = (
+    <>
+      {resolvedFullViewHref && (
+        <Button
+          asChild
+          variant="ghost"
+          size="icon"
+          className="h-9 w-9 rounded-full text-ink-on-inverse hover:bg-ink-on-inverse/10"
+        >
+          <Link
+            to={resolvedFullViewHref}
+            state={resolvedFullViewHint}
+            onClick={handleFullViewClick}
+            aria-label={t("pdf_viewer.open_full_view", "Open full view")}
+          >
+            <ExternalLink size={18} aria-hidden="true" />
+          </Link>
+        </Button>
+      )}
+      <Button
+        ref={closeButtonRef}
+        variant="ghost"
+        size="icon"
+        onClick={onClose}
+        aria-label={t("common.close_aria", "Close")}
+        className="h-9 w-9 rounded-full text-ink-on-inverse hover:bg-ink-on-inverse/10"
       >
-        <ExternalLink size={18} aria-hidden="true" />
-      </Link>
-    </Button>
-  ) : null;
+        <X size={18} aria-hidden="true" />
+      </Button>
+    </>
+  );
 
   return (
     <Dialog.Root open={isOpen} onOpenChange={(nextOpen) => !nextOpen && onClose()}>
@@ -244,7 +262,8 @@ export const PdfViewerModal = ({
                   onPageApiChange={onPageApiChange}
                   claimKey={claimKey}
                   toolLayout={toolLayout}
-                  reserveTopRight
+                  utilitySlot={utilitySlot}
+                  pageLabels={pageLabels}
                   canExport={canExport}
                   fitScope={fitScope}
                   preferredFit={preferredFit}
@@ -284,35 +303,6 @@ export const PdfViewerModal = ({
                     )}
                   </div>
                 </motion.div>
-
-                {/* Floating close (+ optional full-view), styled to match the
-                    viewer's utility pill. The reserveTopRight prop drops that
-                    pill one row so the two never overlap. */}
-                <div
-                  className="absolute right-4 top-4 z-focus-trap sm:right-6 sm:top-6"
-                  style={{ paddingTop: "env(safe-area-inset-top)" }}
-                >
-                  <GlassCard
-                    variant="surface"
-                    padding="sm"
-                    className="rounded-full p-1.5 shadow-[0_8px_32px_rgba(0,0,0,0.4)]"
-                    isHoverable={false}
-                  >
-                    <div className="flex items-center gap-1">
-                      {fullViewSlot}
-                      <Button
-                        ref={closeButtonRef}
-                        variant="ghost"
-                        size="icon"
-                        onClick={onClose}
-                        aria-label={t("common.close_aria", "Close")}
-                        className="h-9 w-9 rounded-full text-ink-on-inverse hover:bg-ink-on-inverse/10"
-                      >
-                        <X size={18} aria-hidden="true" />
-                      </Button>
-                    </div>
-                  </GlassCard>
-                </div>
               </motion.div>
             </Dialog.Content>
           </Dialog.Portal>

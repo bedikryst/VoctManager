@@ -2,8 +2,9 @@
  * @file AnnotationToolbar.tsx
  * @description Markup toolbar, injected into the PDF viewer's top-left slot.
  * Three parts, each in its own glass:
- * - the tools: collapse · undo · redo │ browse · select · Rysuj · Wstaw ·
- *   eraser │ ⋯. "Rysuj" (pen, highlighter, shapes) and "Wstaw" (note, symbol,
+ * - the tools: undo · redo │ browse · select · Rysuj · Wstaw · eraser │ ⋯,
+ *   with "Gotowe" beside them as a row and collapse heading them as a rail.
+ *   "Rysuj" (pen, highlighter, shapes) and "Wstaw" (note, symbol,
  *   jump) are family slots (see ToolFamilySlot); the guide and "Usuń
  *   wszystkie" live behind ⋯, away from the end of the bar where a destructive
  *   button invited a mis-tap;
@@ -19,10 +20,11 @@
  * under the strip, with the options opening to its right. Elsewhere they are a
  * row in the top letterbox with the strip under it and the options dropping
  * below; in personal mode the strip would hold nothing but "Moje", so that
- * chip heads the row instead. On the narrowest phones the row cannot hold
- * every slot, so collapse and redo move into ⋯ and what is left may wrap to a
- * second line — nothing hides behind a scroll. The options panel's rows wrap
- * for the same reason.
+ * chip heads the row instead. Open as a row, the bar is a mode: it claims the
+ * viewer's whole top row (the utility pill with close steps aside) and
+ * "Gotowe", where the pill stood, leaves it. The row stays one line and
+ * scrolls sideways where a phone cannot hold it; on the narrowest phones redo
+ * moves into ⋯ so less of it scrolls. The options panel's rows wrap.
  *
  * Each tool's tooltip names the key that arms it (`TOOL_KEYS`), and the symbol
  * palette previews every symbol in the ink in hand, on a scrap of paper. A word
@@ -69,6 +71,7 @@ import { useTranslation } from "react-i18next";
 
 import { cn } from "@/shared/lib/utils";
 import { useMediaQuery } from "@/shared/lib/dom/useMediaQuery";
+import { Button } from "@/shared/ui/primitives/Button";
 import { Caption } from "@/shared/ui/primitives/typography";
 import { Divider } from "@/shared/ui/primitives/Divider";
 import {
@@ -79,6 +82,7 @@ import {
   DropdownMenuTrigger,
 } from "@/shared/ui/composites/DropdownMenu";
 import {
+  useClaimPdfTopRow,
   usePdfCompactTriggers,
   usePdfImmersive,
   usePdfToolRail,
@@ -107,6 +111,7 @@ import {
 } from "../lib/stamps";
 import { SHAPE_KINDS, type ShapeKind } from "../lib/shapes";
 import { COVER_SHAPE } from "../lib/covers";
+import { useHiddenRowEnd } from "../lib/useHiddenRowEnd";
 import { useMeasuredWidth } from "../lib/useMeasuredWidth";
 import { layerTakesVoices } from "../lib/voices";
 import type { DelegateLayer, ScoreAnnotatorMode } from "../useScoreAnnotator";
@@ -126,7 +131,6 @@ import {
   glassChrome,
   panelChrome,
   pillButton,
-  wrappingBarChrome,
 } from "./toolbarChrome";
 
 interface AnnotationToolbarProps extends AnnotationToolState {
@@ -286,7 +290,7 @@ const SIZES: ReadonlyArray<{ id: StrokeSize; dot: number; labelKey: string; fall
 
 /**
  * Below Tailwind's `sm` the row cannot hold every slot even with the families
- * folded (360 px leaves it ~216 px), so collapse and redo move into ⋯ there.
+ * folded and scrolls, so redo moves into ⋯ there to keep the scroll short.
  */
 const NARROW_ROW_QUERY = "(max-width: 39.99rem)";
 
@@ -480,6 +484,12 @@ export const AnnotationToolbar = ({
     else setExpanded(readExpanded());
   }, [isImmersive]);
 
+  // Open as a row, the bar is a mode: it takes the whole top row, the
+  // viewer's pill (performance mode, close) steps aside, and "Gotowe" is the
+  // way out. The rail sits in the margin and leaves that row alone.
+  useClaimPdfTopRow(expanded && !isRail);
+  const [attachRow, isRowEndHidden] = useHiddenRowEnd<HTMLDivElement>();
+
   // The guide takes focus as it opens. The closing menu would hand focus back to
   // ⋯ a moment later, and a Space meant for the guide would reopen the menu
   // over it; every other way out of the menu returns focus to ⋯ as usual.
@@ -662,12 +672,6 @@ export const AnnotationToolbar = ({
             <DropdownMenuItem icon={<Redo2 size={14} />} onSelect={onRedo} disabled={!canRedo}>
               {t("annotations.redo", "Ponów")}
             </DropdownMenuItem>
-            <DropdownMenuItem
-              icon={<ChevronLeft size={14} />}
-              onSelect={() => changeExpanded(false)}
-            >
-              {t("annotations.collapse_tools", "Zwiń narzędzia")}
-            </DropdownMenuItem>
             <DropdownMenuSeparator />
           </>
         )}
@@ -708,15 +712,23 @@ export const AnnotationToolbar = ({
     </DropdownMenu>
   );
 
+  // One row that scrolls sideways where a phone cannot hold every slot: a
+  // second line would lie across the top system of the page. Its end fades
+  // while there is more of it, so the cut never reads as the last tool.
   const toolBar = (
     <div
+      ref={isRail ? undefined : attachRow}
       className={
         isRail
           ? cn(
               glassChrome,
               "no-scrollbar flex max-h-full shrink-0 flex-col items-center gap-0.5 overflow-y-auto rounded-full p-1.5",
             )
-          : cn(wrappingBarChrome, "max-w-full gap-0.5 p-1.5")
+          : cn(
+              glassChrome,
+              "no-scrollbar flex min-w-0 items-center gap-0.5 overflow-x-auto rounded-full p-1.5",
+              isRowEndHidden && "mask-r-from-80%",
+            )
       }
     >
       {audienceInRow && (
@@ -725,7 +737,7 @@ export const AnnotationToolbar = ({
           <PendingPill count={pendingCount} />
         </>
       )}
-      {!foldIntoMenu && collapseButton}
+      {isRail && collapseButton}
       <button
         type="button"
         onClick={onUndo}
@@ -1094,9 +1106,28 @@ export const AnnotationToolbar = ({
     );
   }
 
+  // Spelled out where the viewer's pill stood, so leaving the mode is found
+  // where closing the score was a moment ago.
+  const doneButton = (
+    <div className={cn(barChrome, "shrink-0 p-1.5")}>
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => changeExpanded(false)}
+        leftIcon={<Check size={16} aria-hidden="true" />}
+        className="h-9 gap-2 rounded-full px-3 text-ink-on-inverse hover:bg-ink-on-inverse/10"
+      >
+        {t("annotations.done", "Gotowe")}
+      </Button>
+    </div>
+  );
+
   return (
-    <div className="flex flex-col items-start gap-2">
-      {toolBar}
+    <div className="flex w-full flex-col items-start gap-2">
+      <div className="flex w-full items-start justify-between gap-2">
+        {toolBar}
+        {doneButton}
+      </div>
       {!audienceInRow && audienceBar}
       {optionsPanel}
     </div>

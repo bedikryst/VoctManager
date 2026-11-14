@@ -35,18 +35,33 @@ export interface BookItem {
   last_page: number;
 }
 
+/** How a page without a printed number is named — mirrors `ScoreBookPageLabel.kind`. */
+export type BookPageKind = "title" | "front" | "pad" | "spacer" | "card" | "music";
+
+/** One page's printed number — mirrors the server's `ScoreBookPageLabel`. */
+export interface BookPageLabel {
+  folio: number | null;
+  kind: BookPageKind;
+}
+
 export interface ScoreBook {
   /** Book page (1-based) → what it shows. Front matter and cards are absent. */
   frames: ReadonlyMap<number, BookPageFrame>;
   /** `edition#sourcePage` → every book page that bound it, in binding order. */
   bindings: ReadonlyMap<string, readonly number[]>;
   items: readonly BookItem[];
+  /**
+   * Every page's printed number, in page order (row 0 is page 1). Empty for a
+   * book printed without numbers: its pages are then counted as the file's.
+   */
+  labels: readonly BookPageLabel[];
 }
 
 export const EMPTY_SCORE_BOOK: ScoreBook = {
   frames: new Map(),
   bindings: new Map(),
   items: [],
+  labels: [],
 };
 
 const bindingKey = (edition: string, sourcePage: number): string =>
@@ -55,6 +70,7 @@ const bindingKey = (edition: string, sourcePage: number): string =>
 export const buildScoreBook = (
   pages: readonly BookPageFrame[],
   items: readonly BookItem[],
+  labels: readonly BookPageLabel[] = [],
 ): ScoreBook => {
   const bindings = new Map<string, number[]>();
   for (const frame of pages) {
@@ -69,7 +85,25 @@ export const buildScoreBook = (
     // The programme's own order, never the page order: an encore bound in the
     // middle of the book is still last in the concert.
     items: [...items].sort((a, b) => a.order - b.order),
+    labels,
   };
+};
+
+/**
+ * The page number to print beside a piece in a list of the programme: the
+ * first printed number in its span, as the book's own contents gives it. The
+ * span may open on an unnumbered blank, which the contents skips too. A book
+ * without printed numbers answers with the file page the piece opens on, the
+ * same count its page counter then uses. Null only where a numbered book
+ * prints no number anywhere in the piece.
+ */
+export const itemPageNumber = (book: ScoreBook, item: BookItem): number | null => {
+  if (book.labels.length === 0) return item.first_page;
+  for (let page = item.first_page; page <= item.last_page; page += 1) {
+    const folio = book.labels[page - 1]?.folio ?? null;
+    if (folio !== null) return folio;
+  }
+  return null;
 };
 
 /**

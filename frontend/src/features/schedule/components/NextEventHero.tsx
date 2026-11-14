@@ -420,15 +420,6 @@ const ProjectHero = ({ event }: { event: TimelineEvent }): React.JSX.Element => 
       fetchBlob={fetchDaySheetBlob}
       docKey={`day-sheet-hero-${proj.id}`}
       volatile
-      fullView={{
-        type: "project-day-sheet",
-        id: proj.id,
-        hint: {
-          title: daySheetTitle,
-          subtitle: proj.title,
-          fileName: daySheetFileName,
-        },
-      }}
       onClose={() => setDaySheetOpen(false)}
     />
 

@@ -18,6 +18,12 @@ export { ScoreBookModal } from "./components/ScoreBookModal";
 export type { ScoreBookModalProps } from "./components/ScoreBookModal";
 export { NotifyChoirButton } from "./components/NotifyChoirButton";
 export { buildScoreBook, EMPTY_SCORE_BOOK } from "./lib/scoreBook";
-export type { BookItem, BookPageFrame, ScoreBook } from "./lib/scoreBook";
+export type {
+  BookItem,
+  BookPageFrame,
+  BookPageKind,
+  BookPageLabel,
+  ScoreBook,
+} from "./lib/scoreBook";
 export { prefetchEditionAnnotations } from "./api/annotations.prefetch";
 export type { ScoreAnnotation } from "./types/annotations.dto";

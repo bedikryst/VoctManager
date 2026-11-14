@@ -74,6 +74,7 @@
       "offline": "Setting marks aside and bringing them back needs a connection."
     },
     "collapse_tools": "Collapse tools",
+    "done": "Done",
     "families": {
       "draw": "Draw",
       "insert": "Insert",
@@ -4630,6 +4631,8 @@
     "open_full_view_short": "Full view",
     "outline_open": "Show contents",
     "outline_page": "p. {{page}}",
+    "folio_prefix": "p.",
+    "page_unnumbered": "unnumbered",
     "outline_title": "Contents",
     "page_number": "Page number",
     "page_short": "Page",
@@ -6220,6 +6223,7 @@
   "score_book": {
     "encore": "Encore",
     "front_matter": "Front of the book",
+    "title_page": "Title page",
     "open_cta": "Open the concert book",
     "piece_next": "Next piece",
     "piece_prev": "Previous piece",

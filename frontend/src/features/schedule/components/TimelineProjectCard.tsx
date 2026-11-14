@@ -848,15 +848,6 @@ export const TimelineProjectCard = ({
         fetchBlob={fetchDaySheetBlob}
         docKey={`day-sheet-${proj.id}`}
         volatile
-        fullView={{
-          type: "project-day-sheet",
-          id: proj.id,
-          hint: {
-            title: t("schedule.day_sheet.title", "Karta dnia"),
-            subtitle: proj.title,
-            fileName: `Karta_${proj.title.replace(/\s+/g, "_")}.pdf`,
-          },
-        }}
         onClose={handleCloseDaySheetPreview}
       />
 

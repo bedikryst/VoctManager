@@ -54,6 +54,26 @@ class BookPageFrame(TypedDict):
     box: list[float]
 
 
+# What a reader may call a page. The map's own kinds, plus the title page,
+# which a map records only as front matter.
+LabelKind = Literal["title", "front", "pad", "spacer", "card", "music"]
+
+_PAGE_KINDS: frozenset[str] = frozenset({"front", "pad", "spacer", "card", "music"})
+
+
+class BookPageLabel(TypedDict):
+    """What one page of the book is called by the people holding it.
+
+    ``folio`` is the number printed on the page, None where nothing is printed
+    (front matter, blanks). ``kind`` is how a screen names a page that has no
+    number. Labels come as a list in page order, so row ``i`` is book page
+    ``i + 1``.
+    """
+
+    folio: int | None
+    kind: LabelKind
+
+
 class BookItemSpan(TypedDict):
     """Where one programme item lives in the book, front card included.
 
@@ -197,6 +217,39 @@ def book_item_spans(page_map: list[Any]) -> list[BookItemSpan]:
     ]
 
 
+def book_page_labels(page_map: list[Any], *, has_title_page: bool) -> list[BookPageLabel]:
+    """Every page's printed number, so a screen can say "s. 14" where the
+    conductor, holding the printed book, says "strona 14". The file's own page
+    order runs ahead of that by the unnumbered front matter.
+
+    The build writes one row per emitted page, so the rows are the book's pages
+    in order. A map that does not read that way (a gap, a row out of place, a
+    kind nobody wrote) answers with nothing: a label one page off is worse than
+    the file's own page order, which is at least honest.
+
+    ``has_title_page`` names the first front page, which the map records only
+    as front matter.
+    """
+    labels: list[BookPageLabel] = []
+    for index, raw in enumerate(page_map or []):
+        if not isinstance(raw, dict):
+            return []
+        try:
+            phys = int(raw["phys"])
+        except (KeyError, TypeError, ValueError):
+            return []
+        kind = raw.get("kind")
+        if phys != index or kind not in _PAGE_KINDS:
+            return []
+        folio = raw.get("folio")
+        printed = folio if isinstance(folio, int) and not isinstance(folio, bool) and folio > 0 else None
+        label_kind: LabelKind = (
+            "title" if has_title_page and index == 0 and kind == KIND_FRONT else kind
+        )
+        labels.append(BookPageLabel(folio=printed, kind=label_kind))
+    return labels
+
+
 __all__ = [
     "A4_HEIGHT_PT",
     "A4_WIDTH_PT",
@@ -207,11 +260,14 @@ __all__ = [
     "KIND_SPACER",
     "BookItemSpan",
     "BookPageFrame",
+    "BookPageLabel",
+    "LabelKind",
     "PageKind",
     "PageMapRow",
     "PlacedBox",
     "book_frames",
     "book_item_spans",
+    "book_page_labels",
     "music_pages",
     "normalized_to_sheet",
 ]
