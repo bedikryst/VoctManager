@@ -97,14 +97,18 @@
     "queue_label": "Score marking",
     "queue_seen_label": "Score markings read",
     "incoming": {
-      "line_one": "New marking · p. {{page}}",
-      "line_few": "{{count}} new markings · p. {{page}}",
-      "line_many": "{{count}} new markings · p. {{page}}",
-      "line_other": "{{count}} new markings · p. {{page}}",
-      "since_one": "Since your last visit: {{count}} new · p. {{pages}}",
-      "since_few": "Since your last visit: {{count}} new · p. {{pages}}",
-      "since_many": "Since your last visit: {{count}} new · p. {{pages}}",
-      "since_other": "Since your last visit: {{count}} new · p. {{pages}}"
+      "line_one": "New marking · {{page}}",
+      "line_few": "{{count}} new markings · {{page}}",
+      "line_many": "{{count}} new markings · {{page}}",
+      "line_other": "{{count}} new markings · {{page}}",
+      "since_one": "Since your last visit: {{count}} new · {{pages}}",
+      "since_few": "Since your last visit: {{count}} new · {{pages}}",
+      "since_many": "Since your last visit: {{count}} new · {{pages}}",
+      "since_other": "Since your last visit: {{count}} new · {{pages}}",
+      "line_no_page_one": "New marking",
+      "line_no_page_other": "{{count}} new markings",
+      "since_no_page_one": "Since your last visit: {{count}} new marking",
+      "since_no_page_other": "Since your last visit: {{count}} new markings"
     },
     "rejected": {
       "reserved_ink": "Only the conductor writes in this colour. The marking was not saved.",

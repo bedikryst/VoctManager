@@ -748,7 +748,8 @@ export const useScoreAnnotator = ({
    */
   const linkTargetPage = useCallback(
     (sourcePage: number): number | null => {
-      if (!book || !activeEditionId) return sourcePage;
+      if (!book) return sourcePage;
+      if (!activeEditionId) return null;
       return bookPageFor(book, activeEditionId, sourcePage, pageApi.currentPage);
     },
     [activeEditionId, book, pageApi.currentPage],
@@ -811,10 +812,13 @@ export const useScoreAnnotator = ({
   );
 
   const handleGoToIncoming = useCallback(() => {
-    const first = incoming.notice?.pages[0];
-    if (first !== undefined) pageApi.goToPage(displayPage(first));
+    const pages = incoming.notice?.pages.map(linkTargetPage) ?? [];
+    const first = pages[0];
+    if (typeof first === "number" && pages.every((page) => page !== null)) {
+      pageApi.goToPage(first);
+    }
     incoming.dismiss();
-  }, [displayPage, incoming, pageApi]);
+  }, [linkTargetPage, incoming, pageApi]);
 
   // Read through refs by the page's link callbacks: both move with every page
   // turn, and the pages need not be drawn again for it.
@@ -1062,7 +1066,7 @@ export const useScoreAnnotator = ({
     <>
       <IncomingMarksNotice
         count={incoming.notice?.count ?? 0}
-        pages={(incoming.notice?.pages ?? []).map(displayPage)}
+        pages={(incoming.notice?.pages ?? []).map(linkTargetPage)}
         kind={incoming.notice?.kind ?? "live"}
         onGoToPage={handleGoToIncoming}
         onDismiss={incoming.dismiss}

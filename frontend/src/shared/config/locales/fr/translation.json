@@ -97,14 +97,20 @@
     "queue_label": "Annotation de partition",
     "queue_seen_label": "Annotations de partition lues",
     "incoming": {
-      "line_one": "Nouvelle annotation · p. {{page}}",
-      "line_few": "{{count}} nouvelles annotations · p. {{page}}",
-      "line_many": "{{count}} nouvelles annotations · p. {{page}}",
-      "line_other": "{{count}} nouvelles annotations · p. {{page}}",
-      "since_one": "Depuis votre dernière visite : {{count}} nouvelle · p. {{pages}}",
-      "since_few": "Depuis votre dernière visite : {{count}} nouvelles · p. {{pages}}",
-      "since_many": "Depuis votre dernière visite : {{count}} nouvelles · p. {{pages}}",
-      "since_other": "Depuis votre dernière visite : {{count}} nouvelles · p. {{pages}}"
+      "line_one": "Nouvelle annotation · {{page}}",
+      "line_few": "{{count}} nouvelles annotations · {{page}}",
+      "line_many": "{{count}} nouvelles annotations · {{page}}",
+      "line_other": "{{count}} nouvelles annotations · {{page}}",
+      "since_one": "Depuis votre dernière visite : {{count}} nouvelle · {{pages}}",
+      "since_few": "Depuis votre dernière visite : {{count}} nouvelles · {{pages}}",
+      "since_many": "Depuis votre dernière visite : {{count}} nouvelles · {{pages}}",
+      "since_other": "Depuis votre dernière visite : {{count}} nouvelles · {{pages}}",
+      "line_no_page_one": "Nouvelle annotation",
+      "line_no_page_many": "{{count}} nouvelles annotations",
+      "line_no_page_other": "{{count}} nouvelles annotations",
+      "since_no_page_one": "Depuis votre dernière visite : {{count}} nouvelle annotation",
+      "since_no_page_many": "Depuis votre dernière visite : {{count}} nouvelles annotations",
+      "since_no_page_other": "Depuis votre dernière visite : {{count}} nouvelles annotations"
     },
     "rejected": {
       "reserved_ink": "Seul le chef écrit dans cette couleur. L'annotation n'a pas été enregistrée.",

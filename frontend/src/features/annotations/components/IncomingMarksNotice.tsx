@@ -25,6 +25,7 @@ import { PencilLine, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 import { Text } from "@/shared/ui/primitives/typography";
+import { usePdfImmersive, usePdfPageText } from "@/shared/ui/composites/PdfViewer/context";
 
 /** Long enough to read mid-phrase, short enough to stop being furniture. */
 const LINGER_MS = 9000;
@@ -35,8 +36,8 @@ const MAX_PAGES_NAMED = 4;
 interface IncomingMarksNoticeProps {
   /** 0 keeps the notice off screen entirely. */
   count: number;
-  /** Pages the marks are on, ascending, as the reader sees them numbered. */
-  pages: readonly number[];
+  /** Document page indices, or null where an edition page is absent from the book. */
+  pages: readonly (number | null)[];
   /** `since`: what changed while the reader was away. `live`: what just arrived. */
   kind: "since" | "live";
   /** Goes to the first of `pages`. */
@@ -52,14 +53,24 @@ export const IncomingMarksNotice = ({
   onDismiss,
 }: IncomingMarksNoticeProps): React.JSX.Element => {
   const { t } = useTranslation();
-  const named = pages.slice(0, MAX_PAGES_NAMED).join(", ");
+  const pageText = usePdfPageText();
+  const immersive = usePdfImmersive();
+  const first = pages[0];
+  const navigable = typeof first === "number" && pages.every((page) => page !== null);
+  const named = pages
+    .slice(0, MAX_PAGES_NAMED)
+    .map((page) => page === null ? "" : pageText(page))
+    .join(", ");
   const pageList = pages.length > MAX_PAGES_NAMED ? `${named}…` : named;
   // Counted, so the key carries every Polish plural form — there is no honest
   // single wording for "1 oznaczenie" and "5 oznaczeń".
-  const message =
-    kind === "since"
+  const message = navigable
+    ? kind === "since"
       ? t("annotations.incoming.since", { count, pages: pageList })
-      : t("annotations.incoming.line", { count, page: pages[0] ?? 1 });
+      : t("annotations.incoming.line", { count, page: pageText(first) })
+    : t(kind === "since" ? "annotations.incoming.since_no_page" : "annotations.incoming.line_no_page", {
+        count,
+      });
 
   useEffect(() => {
     if (count === 0) return;
@@ -78,7 +89,7 @@ export const IncomingMarksNotice = ({
         {count > 0 ? message : ""}
       </Text>
       <AnimatePresence>
-        {count > 0 && (
+        {count > 0 && !immersive && (
           <motion.div
             initial={{ opacity: 0, transform: "translateY(12px)" }}
             animate={{ opacity: 1, transform: "translateY(0px)" }}
@@ -91,15 +102,21 @@ export const IncomingMarksNotice = ({
               aria-hidden="true"
               className="shrink-0 text-ethereal-gold"
             />
-            <button
-              type="button"
-              onClick={onGoToPage}
-              className="min-w-0 rounded-full px-1.5 py-1 text-left transition-colors hover:bg-ink-on-inverse/10"
-            >
-              <Text as="span" size="sm" color="ink-on-inverse" className="leading-snug">
+            {navigable ? (
+              <button
+                type="button"
+                onClick={onGoToPage}
+                className="min-w-0 rounded-full px-1.5 py-1 text-left transition-colors hover:bg-ink-on-inverse/10"
+              >
+                <Text as="span" size="sm" color="ink-on-inverse" className="leading-snug">
+                  {message}
+                </Text>
+              </button>
+            ) : (
+              <Text as="span" size="sm" color="ink-on-inverse" className="min-w-0 px-1.5 py-1 leading-snug">
                 {message}
               </Text>
-            </button>
+            )}
             <button
               type="button"
               onClick={onDismiss}
