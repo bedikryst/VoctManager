@@ -19,7 +19,6 @@
 import React, { useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
   ArrowLeft,
@@ -46,9 +45,7 @@ import { INERT_SURFACE } from "@/shared/ui/primitives/inertSurface";
 import { isManager } from "@/shared/auth/rbac";
 import { ScoreStandModal, scoreStandAccessFor } from "@/features/annotations";
 import { ProjectScoreBook } from "@/features/projects/components/ProjectScoreBook";
-import { projectKeys } from "@/features/projects/api/project.query-keys";
-import { ProjectService } from "@/features/projects/api/project.service";
-import { boundItemPage } from "@/features/projects/lib/scoreBookOpening";
+import { useBookBindsItem } from "@/features/projects/hooks/useBookBindsItem";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { StatePanel } from "@/shared/ui/composites/StatePanel";
 import { SegmentedTabs } from "@/shared/ui/composites/SegmentedTabs";
@@ -107,7 +104,7 @@ export default function PiecePage({
 }: PiecePageProps): React.JSX.Element {
   const { t } = useTranslation();
   const { user } = useAuth();
-  const queryClient = useQueryClient();
+  const bookBindsItem = useBookBindsItem();
   const { isPreview, artist: previewArtist } = useArtistPreview();
   const params = useParams<{ projectId: string; pieceId: string }>();
   const projectId = previewProjectId ?? params.projectId;
@@ -169,25 +166,12 @@ export default function PiecePage({
   const openPrimaryScore = async () => {
     if (!pdfLinks[0] || openingScore) return;
     setOpeningScore(true);
-    try {
-      if (group.project.has_score_pdf) {
-        const map = await queryClient.fetchQuery({
-          queryKey: projectKeys.scorePackage.map(group.project.id),
-          queryFn: () => ProjectService.getScoreMap(group.project.id),
-          retry: false,
-          networkMode: "always",
-        });
-        if (boundItemPage(map, programItem.order) !== null) {
-          setBookOpen(true);
-          return;
-        }
-      }
-    } catch {
-      // The edition remains available when the book map cannot be read.
-    } finally {
-      setOpeningScore(false);
-    }
-    setOpenEdition(pdfLinks[0]);
+    const inBook =
+      group.project.has_score_pdf &&
+      (await bookBindsItem(group.project.id, programItem.order));
+    setOpeningScore(false);
+    if (inBook) setBookOpen(true);
+    else setOpenEdition(pdfLinks[0]);
   };
   const referenceLinks = getReferenceRecordingLinks({
     recordings: piece.recordings,

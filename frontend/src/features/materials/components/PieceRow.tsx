@@ -2,9 +2,11 @@
  * @file PieceRow.tsx
  * @description Slim, tap-first list row for one piece in the Songbook.
  * The two most frequent actions (open score, play my voice track) are always
- * visible — never hidden behind an accordion. The score opens with the same
- * rehearsal dock (starting pitches + player remote) as on the piece page. The
- * whole row navigates to the piece page for everything else.
+ * visible — never hidden behind an accordion. "Nuty" opens the concert's book
+ * at this piece when the book binds it, so a rehearsal turns from piece to piece
+ * on one stand; otherwise the piece's own edition opens, with the same rehearsal
+ * dock (starting pitches + player remote) as on the piece page. The whole row
+ * navigates to the piece page for everything else.
  */
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -44,6 +46,11 @@ interface PieceRowProps {
   hideReadiness?: boolean;
   /** The reader may tell this project's choir about new marks from the stand. */
   canNotifyChoir?: boolean;
+  /**
+   * Opens the project's book at this programme number and resolves true, or
+   * resolves false when the book does not bind it — the edition opens then.
+   */
+  openInBook?: (order: number) => Promise<boolean>;
 }
 
 export const PieceRow = ({
@@ -54,6 +61,7 @@ export const PieceRow = ({
   isArchived,
   hideReadiness = false,
   canNotifyChoir = false,
+  openInBook,
 }: PieceRowProps): React.JSX.Element => {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -69,6 +77,7 @@ export const PieceRow = ({
   const { isPreview, artist: previewArtist } = useArtistPreview();
   const { engine, snapshot } = usePracticePlayer();
   const [isScoreOpen, setIsScoreOpen] = useState<boolean>(false);
+  const [isOpeningScore, setIsOpeningScore] = useState<boolean>(false);
 
   const pdfLinks = getPiecePdfLinks({ editions: piece.editions });
   const primaryPdf = pdfLinks[0] ?? null;
@@ -97,6 +106,18 @@ export const PieceRow = ({
     }
     const { source, tracks } = buildPracticeSources(piece, projectId);
     engine.load(source, tracks, { autoplay: true });
+  };
+
+  const handleOpenScore = async (event: React.MouseEvent) => {
+    event.stopPropagation();
+    if (isOpeningScore) return;
+    if (openInBook) {
+      setIsOpeningScore(true);
+      const openedBook = await openInBook(order);
+      setIsOpeningScore(false);
+      if (openedBook) return;
+    }
+    setIsScoreOpen(true);
   };
 
   return (
@@ -242,10 +263,8 @@ export const PieceRow = ({
           {primaryPdf && (
             <button
               type="button"
-              onClick={(event) => {
-                event.stopPropagation();
-                setIsScoreOpen(true);
-              }}
+              onClick={(event) => void handleOpenScore(event)}
+              aria-busy={isOpeningScore}
               className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-ethereal-marble bg-ethereal-alabaster px-3 py-2 shadow-glass-solid transition-[transform,background-color] hover:bg-ethereal-marble/50 active:scale-95"
             >
               <FileText size={13} className="text-ethereal-sage" aria-hidden="true" />

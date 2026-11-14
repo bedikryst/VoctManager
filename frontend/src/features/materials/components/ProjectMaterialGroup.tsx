@@ -2,13 +2,14 @@
  * @file ProjectMaterialGroup.tsx
  * @description One project in the songbook: its header (date, readiness ring
  * or the reader's role on it, the offline download), the concert book, "Powiadom
- * chór" for whoever may tell the choir, and the programme's piece rows. Inside a
+ * chór" for whoever may tell the choir, and the programme's piece rows, whose
+ * scores open in that book at their piece wherever it binds them. Inside a
  * member preview it shows what the member has and opens nothing that would act
  * as the manager.
  * @module features/materials/components
  */
 
-import React, { useState } from "react";
+import React, { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Archive,
@@ -21,6 +22,7 @@ import {
 } from "lucide-react";
 
 import { ProjectScoreBook } from "@/features/projects/components/ProjectScoreBook";
+import { useBookBindsItem } from "@/features/projects/hooks/useBookBindsItem";
 import { isClosedProjectStatus } from "@/features/projects/constants/projectDomain";
 import { NotifyChoirButton, scoreStandAccessFor } from "@/features/annotations";
 import { useAuth } from "@/app/providers/AuthProvider";
@@ -52,6 +54,10 @@ export const ProjectMaterialGroup = ({
   // that writes would write as them on a screen that promises only to look.
   const { isPreview } = useArtistPreview();
   const [isBookOpen, setBookOpen] = useState(false);
+  // The programme number a row asked the book to open at; none from the book
+  // button, which resumes where the reader left off.
+  const [bookOrder, setBookOrder] = useState<number | undefined>(undefined);
+  const bookBindsItem = useBookBindsItem();
   const isArchived = group.project.status === "DONE";
   const hasProgram = group.program.length > 0;
 
@@ -85,6 +91,20 @@ export const ProjectMaterialGroup = ({
     !isPreview &&
     !isClosedProjectStatus(group.project.status) &&
     (isManager(user) || group.isConducting);
+  // A row's "Nuty" opens this one book at its piece rather than the piece's
+  // edition, so a rehearsal turns from piece to piece on one stand. Not in a
+  // preview, where the book is not mounted at all.
+  const projectId = group.project.id;
+  const opensRowsInBook = group.project.has_score_pdf && !isPreview;
+  const openBookAt = useCallback(
+    async (order: number): Promise<boolean> => {
+      if (!(await bookBindsItem(projectId, order))) return false;
+      setBookOrder(order);
+      setBookOpen(true);
+      return true;
+    },
+    [bookBindsItem, projectId],
+  );
 
   return (
     <div className={`space-y-4 ${isArchived ? "opacity-70" : "opacity-100"}`}>
@@ -217,7 +237,10 @@ export const ProjectMaterialGroup = ({
               variant="secondary"
               size="touch"
               leftIcon={<BookOpen size={14} aria-hidden="true" />}
-              onClick={() => setBookOpen(true)}
+              onClick={() => {
+                setBookOrder(undefined);
+                setBookOpen(true);
+              }}
               className="w-full sm:w-auto"
             >
               {t("score_book.title", "Książka nutowa")}
@@ -228,6 +251,7 @@ export const ProjectMaterialGroup = ({
               projectId={group.project.id}
               projectTitle={group.project.title}
               isOpen={isBookOpen}
+              initialOrder={bookOrder}
               // The pencil follows the ROLE, not the podium. Standing in front of
               // the choir — whether as the named conductor or as a stand-in — does
               // not make someone a manager. The one exception is a leader whose
@@ -278,6 +302,7 @@ export const ProjectMaterialGroup = ({
             isArchived={isArchived}
             hideReadiness={hasNoSeat}
             canNotifyChoir={canNotifyChoir}
+            openInBook={opensRowsInBook ? openBookAt : undefined}
           />
         ))}
       </div>

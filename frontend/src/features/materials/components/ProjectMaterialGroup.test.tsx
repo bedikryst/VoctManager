@@ -7,11 +7,14 @@
  * only to look — and the concert book opened from it was the manager's stand,
  * with their pencil and the choir's set-aside. And a project that is over or
  * called off has no cast left to tell.
+ *
+ * And where a piece's score opens: in the concert book at that piece whenever
+ * the book binds it, so a rehearsal stays on one stand.
  * @module features/materials/components/ProjectMaterialGroup.test
  */
 
 import { describe, expect, it, vi } from "vitest";
-import { screen } from "@testing-library/react";
+import { act, screen } from "@testing-library/react";
 import { HttpResponse, http } from "msw";
 
 import { ArtistPreviewProvider } from "@/app/providers/ArtistPreviewProvider";
@@ -32,14 +35,19 @@ vi.mock("react-pdf", () => ({
   pdfjs: { GlobalWorkerOptions: {} },
 }));
 
-const { scoreBook } = vi.hoisted(() => ({ scoreBook: vi.fn() }));
+const { scoreBook, pieceRow } = vi.hoisted(() => ({ scoreBook: vi.fn(), pieceRow: vi.fn() }));
 vi.mock("@/features/projects/components/ProjectScoreBook", () => ({
   ProjectScoreBook: (props: unknown) => {
     scoreBook(props);
     return null;
   },
 }));
-vi.mock("./PieceRow", () => ({ PieceRow: () => null }));
+vi.mock("./PieceRow", () => ({
+  PieceRow: (props: unknown) => {
+    pieceRow(props);
+    return null;
+  },
+}));
 vi.mock("./OfflineDownloadControl", () => ({ OfflineDownloadControl: () => null }));
 
 const group = (status = "ACTIVE"): MaterialsDashboardGroup => ({
@@ -130,5 +138,67 @@ describe("Powiadom chór in the songbook", () => {
       );
       unmount();
     }
+  });
+});
+
+type RowProps = { openInBook?: (order: number) => Promise<boolean> };
+
+const arrangeMap = (boundPages: number[]): void => {
+  server.use(
+    http.get("*/api/projects/:projectId/score_map/", () =>
+      HttpResponse.json({
+        available: true,
+        stamp: "build-1",
+        items: [
+          { id: "item-1", order: 1, title: "Ave verum", composer: "", is_encore: false, first_page: 3, last_page: 4 },
+        ],
+        pages: boundPages.map((page) => ({ page, edition: "edition-1", src_page: page - 2, box: [0, 0, 1, 1] })),
+      }),
+    ),
+  );
+};
+
+const lastRow = (): RowProps => pieceRow.mock.lastCall?.[0] as RowProps;
+
+describe("a piece's score in the songbook", () => {
+  it("opens the concert book at that piece when the book binds it", async () => {
+    arrangeNews();
+    arrangeMap([3, 4]);
+    renderWithPanel(<ProjectMaterialGroup group={group()} />);
+
+    let opened = false;
+    await act(async () => {
+      opened = (await lastRow().openInBook?.(1)) ?? false;
+    });
+
+    expect(opened).toBe(true);
+    expect(scoreBook).toHaveBeenLastCalledWith(
+      expect.objectContaining({ isOpen: true, initialOrder: 1 }),
+    );
+  });
+
+  it("leaves the piece to its edition when the book holds no pages for it", async () => {
+    arrangeNews();
+    arrangeMap([]);
+    renderWithPanel(<ProjectMaterialGroup group={group()} />);
+
+    let opened = true;
+    await act(async () => {
+      opened = (await lastRow().openInBook?.(1)) ?? false;
+    });
+
+    expect(opened).toBe(false);
+    expect(scoreBook).toHaveBeenLastCalledWith(expect.objectContaining({ isOpen: false }));
+  });
+
+  it("does not route a member preview's rows into the book", () => {
+    arrangeNews();
+    renderWithPanel(
+      <ArtistPreviewProvider artist={KASIA}>
+        <ProjectMaterialGroup group={group()} />
+      </ArtistPreviewProvider>,
+    );
+
+    expect(lastRow().openInBook).toBeUndefined();
   });
 });
