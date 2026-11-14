@@ -29,7 +29,7 @@ import {
   usePracticePlayer,
 } from "../player/PracticePlayerProvider";
 import { holdsTake } from "../player/practicePlayerEngine";
-import { RehearsalDock } from "../player/RehearsalDock";
+import { RehearsalSection } from "../player/RehearsalSection";
 import { MaterialsService } from "../api/materials.service";
 import { ReadinessDot } from "./ReadinessControl";
 import type { MaterialsPiece } from "../types/materials.dto";
@@ -302,8 +302,8 @@ export const PieceRow = ({
           canExport={primaryPdf.canExport}
           preferredFit={primaryPdf.wholePage ? "page" : undefined}
           notifyProjectId={canNotifyChoir ? projectId : null}
-          extraOverlay={
-            <RehearsalDock
+          sheetSection={
+            <RehearsalSection
               piece={piece}
               projectId={projectId}
               canEditPitches={isManager(user)}

@@ -1,12 +1,14 @@
 /**
- * @file AnnotationSidebar.tsx
- * @description Collapsible right-edge drawer stacked over the whole viewer (via
- * PdfViewer.overlaySlot). A map of the markup you can't see at a glance on a
+ * @file AnnotationMarksPanel.tsx
+ * @description The "Uwagi" tab of the viewer's sheet (via
+ * PdfViewer.sheetTabs). A map of the markup you can't see at a glance on a
  * long score: layer visibility toggles, what is new since the reader's last
  * visit, the pages that carry marks, and a searchable jump-to index of every
  * note and symbol. In conductor mode the layers are choir, leader and private;
  * in personal mode they are the conductor's shared markings, the cues he wrote
- * for whoever runs the evening, and the user's own pencil marks.
+ * for whoever runs the evening, and the user's own pencil marks. Pages are
+ * named as the viewer names them (`usePdfPageText`), so a mark in the book
+ * says the printed page the bottom bar will show on arrival.
  *
  * Everything below the toggles obeys them. Hiding a layer is how a conductor
  * previews what the choir actually receives, so an index that went on listing
@@ -18,32 +20,24 @@
  * obeys it, counts included: the marks for other sections are a different
  * reading of the score, not a hidden layer of it.
  *
- * In conductor mode the drawer ends in "Odłóż uwagi" for the edition in front
+ * In conductor mode the panel ends in "Odłóż uwagi" for the edition in front
  * of the reader, whose count is whole for the same reason: it says what a set
  * would take, whatever is hidden or filtered.
  *
- * The drawer root carries `ANNOTATION_DRAWER_ATTR`, so the stand's Escape can
- * tell the drawer's search field from the page: Escape there leaves the field,
+ * The panel root carries `ANNOTATION_DRAWER_ATTR`, so the stand's Escape can
+ * tell the panel's search field from the page: Escape there leaves the field,
  * not the tool in hand and not the score.
  * @module features/annotations/components
  */
 
 import React, { useCallback, useMemo, useState } from "react";
-import { AnimatePresence, motion } from "framer-motion";
-import {
-  Eye,
-  EyeOff,
-  ListTree,
-  Lock,
-  PanelRightOpen,
-  Search,
-  X,
-} from "lucide-react";
+import { Eye, EyeOff, Lock, Search } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 import { foldDiacritics } from "@/shared/lib/text";
 import { cn } from "@/shared/lib/utils";
-import { Eyebrow, Text } from "@/shared/ui/primitives/typography";
+import { PdfSheetSection, usePdfPageText } from "@/shared/ui/composites/PdfViewer";
+import { Text } from "@/shared/ui/primitives/typography";
 
 import {
   isComment,
@@ -59,7 +53,7 @@ import type { VoiceFilter } from "../lib/voices";
 import type { ScoreAnnotatorMode } from "../useScoreAnnotator";
 import { SetAsideSection } from "./SetAsideSection";
 
-/** The attribute on the drawer's root (see the header). */
+/** The attribute on the panel's root (see the header). */
 export const ANNOTATION_DRAWER_ATTR = "data-annotation-drawer";
 
 /** A note or a symbol, as the index and the "new" list name it. */
@@ -85,7 +79,7 @@ const VOICE_FILTERS: ReadonlyArray<{ filter: VoiceFilter; labelKey: string; fall
 const byPlace = (a: IndexEntry, b: IndexEntry): number =>
   a.mark.page_number - b.mark.page_number || a.y - b.y;
 
-interface AnnotationSidebarProps {
+interface AnnotationMarksPanelProps {
   annotations: ScoreAnnotation[];
   /**
    * Marks new to this reader since their last visit, on visible layers only
@@ -126,7 +120,7 @@ interface AnnotationSidebarProps {
   writesLeader: boolean;
   onSelectMark: (id: string, page: number) => void;
   /**
-   * The edition in front of the reader. With it, a manager's drawer ends in
+   * The edition in front of the reader. With it, a manager's panel ends in
    * "Odłóż uwagi" for that edition (conductor mode only).
    */
   editionId?: string | null;
@@ -137,7 +131,7 @@ interface AnnotationSidebarProps {
 }
 
 
-export const AnnotationSidebar = ({
+export const AnnotationMarksPanel = ({
   annotations,
   newMarks,
   currentPage,
@@ -155,9 +149,9 @@ export const AnnotationSidebar = ({
   editionId = null,
   setAsideCount = 0,
   onMarksReplaced,
-}: AnnotationSidebarProps): React.JSX.Element | null => {
+}: AnnotationMarksPanelProps): React.JSX.Element => {
   const { t } = useTranslation();
-  const [open, setOpen] = useState(false);
+  const pageText = usePdfPageText();
   const [query, setQuery] = useState("");
 
   /**
@@ -191,12 +185,12 @@ export const AnnotationSidebar = ({
         const label =
           target === null
             ? t("annotations.link.unbound", "Strony, na którą prowadzi ten skok, nie ma w książce")
-            : t("annotations.link.entry", "Skok na s. {{page}}", { page: target });
+            : t("annotations.link.entry", "Skok na {{page}}", { page: pageText(target) });
         return { mark, label, y: mark.payload.y };
       }
       return null;
     },
-    [linkTargetPage, t],
+    [linkTargetPage, pageText, t],
   );
 
   const index = useMemo(
@@ -265,38 +259,8 @@ export const AnnotationSidebar = ({
   }, [annotations]);
 
   return (
-    <div className="pointer-events-none absolute inset-y-0 right-0 z-10 flex items-center">
-      <AnimatePresence initial={false} mode="wait">
-        {open ? (
-          <motion.aside
-            key="panel"
-            data-annotation-drawer
-            initial={{ transform: "translateX(40px)", opacity: 0 }}
-            animate={{ transform: "translateX(0px)", opacity: 1 }}
-            exit={{ transform: "translateX(40px)", opacity: 0 }}
-            transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-            className="pointer-events-auto m-3 flex max-h-[calc(100%-7rem)] w-72 flex-col overflow-hidden rounded-3xl border border-line-on-inverse bg-surface-inverse/85 text-ink-on-inverse shadow-[0_8px_32px_rgba(0,0,0,0.45)] backdrop-blur-xl"
-          >
-            <header className="flex items-center justify-between border-b border-line-on-inverse px-4 py-3">
-              <Text as="span" weight="semibold" className="flex items-center gap-2">
-                <ListTree size={15} aria-hidden="true" />
-                {t("annotations.panel.title", "Adnotacje")}
-              </Text>
-              <button
-                type="button"
-                onClick={() => setOpen(false)}
-                aria-label={t("common.close_aria", "Zamknij")}
-                className="rounded-full p-1 text-ink-on-inverse/70 hover:bg-ink-on-inverse/10 hover:text-ink-on-inverse"
-              >
-                <X size={16} aria-hidden="true" />
-              </button>
-            </header>
-
-            <div className="no-scrollbar flex-1 overflow-y-auto px-4 py-3">
-              <section className="mb-4">
-                <Eyebrow as="p" color="ink-on-inverse-muted" className="mb-2">
-                  {t("annotations.panel.layers", "Widoczność warstw")}
-                </Eyebrow>
+    <div data-annotation-drawer>
+              <PdfSheetSection title={t("annotations.panel.layers", "Widoczność warstw")}>
                 <div className="flex flex-col gap-1">
                   {mode === "conductor" ? (
                     <>
@@ -362,13 +326,10 @@ export const AnnotationSidebar = ({
                     </>
                   )}
                 </div>
-              </section>
+              </PdfSheetSection>
 
               {voiceFilter && (
-                <section className="mb-4">
-                  <Eyebrow as="p" color="ink-on-inverse-muted" className="mb-2">
-                    {t("annotations.panel.voices", "Głosy")}
-                  </Eyebrow>
+                <PdfSheetSection title={t("annotations.panel.voices", "Głosy")}>
                   <div
                     className="grid grid-cols-2 gap-1"
                     role="group"
@@ -381,7 +342,7 @@ export const AnnotationSidebar = ({
                         onClick={() => onVoiceFilterChange(filter)}
                         aria-pressed={voiceFilter === filter}
                         className={cn(
-                          "rounded-lg px-2.5 py-1.5 text-xs transition-colors",
+                          "h-10 rounded-chip px-2.5 text-sm transition-colors",
                           voiceFilter === filter
                             ? "bg-ink-on-inverse/20 text-ink-on-inverse"
                             : "text-ink-on-inverse/60 hover:bg-ink-on-inverse/10",
@@ -391,22 +352,19 @@ export const AnnotationSidebar = ({
                       </button>
                     ))}
                   </div>
-                </section>
+                </PdfSheetSection>
               )}
 
               {fresh.length > 0 && (
-                <section className="mb-4">
-                  <Eyebrow as="p" className="mb-2 text-ethereal-gold">
-                    {t("annotations.panel.new", "Nowe")}
-                  </Eyebrow>
-                  <ul className="flex flex-col gap-1">
+                <PdfSheetSection title={t("annotations.panel.new", "Nowe")}>
+                  <ul className="-mx-2 flex flex-col">
                     {fresh.map((entry) =>
                       entry.kind === "mark" ? (
                         <li key={entry.mark.id}>
                           <EntryButton
                             dot="bg-ethereal-gold"
                             label={entry.label}
-                            page={displayPage(entry.mark.page_number)}
+                            pageLabel={pageText(displayPage(entry.mark.page_number))}
                             onClick={() => jumpTo(entry)}
                           />
                         </li>
@@ -415,21 +373,18 @@ export const AnnotationSidebar = ({
                           <EntryButton
                             dot="bg-ethereal-gold"
                             label={t("annotations.panel.new_strokes", { count: entry.count })}
-                            page={displayPage(entry.page)}
+                            pageLabel={pageText(displayPage(entry.page))}
                             onClick={() => goToPage(displayPage(entry.page))}
                           />
                         </li>
                       ),
                     )}
                   </ul>
-                </section>
+                </PdfSheetSection>
               )}
 
               {annotatedPages.length > 0 && (
-                <section className="mb-4">
-                  <Eyebrow as="p" color="ink-on-inverse-muted" className="mb-2">
-                    {t("annotations.panel.pages", "Oznaczone strony")}
-                  </Eyebrow>
+                <PdfSheetSection title={t("annotations.panel.pages", "Oznaczone strony")}>
                   <div className="flex flex-wrap gap-1.5">
                     {annotatedPages.map(([page, count]) => (
                       <button
@@ -438,28 +393,29 @@ export const AnnotationSidebar = ({
                         onClick={() => goToPage(page)}
                         title={t("annotations.panel.page_marks", { count })}
                         className={cn(
-                          "flex h-8 min-w-8 items-center justify-center gap-1 rounded-lg px-2 text-xs font-medium transition-colors",
+                          "flex h-10 min-w-10 items-center justify-center gap-1.5 rounded-chip px-3 transition-colors",
                           page === currentPage
                             ? "bg-ethereal-gold/90 text-surface-inverse"
                             : "bg-ink-on-inverse/10 text-ink-on-inverse hover:bg-ink-on-inverse/20",
                         )}
                       >
-                        {page}
-                        <span className="text-[10px] opacity-70">·{count}</span>
+                        <Text as="span" size="base" weight="medium" color="inherit" className="tabular-nums">
+                          {pageText(page)}
+                        </Text>
+                        <Text as="span" size="sm" color="inherit" className="tabular-nums opacity-70">
+                          {count}
+                        </Text>
                       </button>
                     ))}
                   </div>
-                </section>
+                </PdfSheetSection>
               )}
 
-              <section>
-                <Eyebrow as="p" color="ink-on-inverse-muted" className="mb-2">
-                  {t("annotations.panel.notes", "Notatki i symbole")}
-                </Eyebrow>
+              <PdfSheetSection title={t("annotations.panel.notes", "Notatki i symbole")}>
                 {index.length === 0 ? (
-                  <p className="text-xs text-ink-on-inverse/50">
+                  <Text as="p" size="base" color="ink-on-inverse-muted">
                     {t("annotations.panel.no_notes", "Brak notatek i symboli.")}
-                  </p>
+                  </Text>
                 ) : (
                   <>
                     <label className="mb-2 flex items-center gap-2 rounded-lg bg-ink-on-inverse/10 px-2.5 focus-within:ring-1 focus-within:ring-ethereal-gold/60">
@@ -476,21 +432,21 @@ export const AnnotationSidebar = ({
                         onChange={(event) => setQuery(event.target.value)}
                         placeholder={t("annotations.panel.search", "Szukaj w notatkach")}
                         aria-label={t("annotations.panel.search", "Szukaj w notatkach")}
-                        className="min-w-0 flex-1 bg-transparent py-1.5 text-base text-ink-on-inverse placeholder:text-ink-on-inverse/40 focus:outline-none sm:text-xs"
+                        className="min-w-0 flex-1 bg-transparent py-2 text-base text-ink-on-inverse placeholder:text-ink-on-inverse/40 focus:outline-none sm:text-sm"
                       />
                     </label>
                     {found.length === 0 ? (
-                      <p className="text-xs text-ink-on-inverse/50">
+                      <Text as="p" size="base" color="ink-on-inverse-muted">
                         {t("annotations.panel.no_match", "Nic nie pasuje.")}
-                      </p>
+                      </Text>
                     ) : (
-                      <ul className="flex flex-col gap-1">
+                      <ul className="-mx-2 flex flex-col">
                         {found.map((entry) => (
                           <li key={entry.mark.id}>
                             <EntryButton
                               color={entry.mark.color}
                               label={entry.label}
-                              page={displayPage(entry.mark.page_number)}
+                              pageLabel={pageText(displayPage(entry.mark.page_number))}
                               isPrivate={layerOf(entry.mark) !== "shared"}
                               onClick={() => jumpTo(entry)}
                             />
@@ -500,7 +456,7 @@ export const AnnotationSidebar = ({
                     )}
                   </>
                 )}
-              </section>
+              </PdfSheetSection>
 
               {mode === "conductor" && editionId && (
                 <SetAsideSection
@@ -509,38 +465,14 @@ export const AnnotationSidebar = ({
                   onReplaced={onMarksReplaced}
                 />
               )}
-            </div>
-          </motion.aside>
-        ) : (
-          <motion.button
-            key="tab"
-            type="button"
-            initial={{ transform: "translateX(20px)", opacity: 0 }}
-            animate={{ transform: "translateX(0px)", opacity: 1 }}
-            exit={{ transform: "translateX(20px)", opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            onClick={() => setOpen(true)}
-            aria-label={t("annotations.panel.open", "Pokaż adnotacje")}
-            className="pointer-events-auto flex flex-col items-center gap-1 rounded-l-2xl border border-r-0 border-line-on-inverse bg-surface-inverse/80 px-2 py-3 text-ink-on-inverse shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-xl hover:bg-surface-inverse"
-          >
-            <PanelRightOpen size={16} aria-hidden="true" />
-            {/* Counts what is drawn, like the index inside — a badge over a
-                hidden layer promises rows the panel would then not show. */}
-            {visible.length > 0 && (
-              <span className="rounded-full bg-ethereal-gold/90 px-1.5 text-[10px] font-semibold text-surface-inverse">
-                {visible.length}
-              </span>
-            )}
-          </motion.button>
-        )}
-      </AnimatePresence>
     </div>
   );
 };
 
 interface EntryButtonProps {
   label: string;
-  page: number;
+  /** The page as the viewer names it ("s. 14"). */
+  pageLabel: string;
   onClick: () => void;
   /** The mark's own ink, for the dot. */
   color?: string;
@@ -551,34 +483,35 @@ interface EntryButtonProps {
 
 const EntryButton = ({
   label,
-  page,
+  pageLabel,
   onClick,
   color,
   dot,
   isPrivate = false,
-}: EntryButtonProps): React.JSX.Element => {
-  const { t } = useTranslation();
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="flex w-full items-start gap-2 rounded-lg px-2 py-1.5 text-left transition-colors hover:bg-ink-on-inverse/10"
-    >
-      <span
-        className={cn("mt-1 h-2.5 w-2.5 shrink-0 rounded-full", dot)}
-        style={color ? { backgroundColor: color } : undefined}
-        aria-hidden="true"
-      />
-      <span className="min-w-0 flex-1">
-        <span className="block truncate text-xs text-ink-on-inverse">{label}</span>
-        <span className="mt-0.5 flex items-center gap-1 text-[10px] text-ink-on-inverse/50">
-          {t("annotations.panel.page", "s. {{page}}", { page })}
-          {isPrivate && <Lock size={9} aria-hidden="true" />}
-        </span>
+}: EntryButtonProps): React.JSX.Element => (
+  <button
+    type="button"
+    onClick={onClick}
+    className="flex w-full items-start gap-2.5 rounded-chip px-2 py-2 text-left transition-colors hover:bg-ink-on-inverse/10"
+  >
+    <span
+      className={cn("mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full", dot)}
+      style={color ? { backgroundColor: color } : undefined}
+      aria-hidden="true"
+    />
+    <span className="min-w-0 flex-1">
+      <Text as="span" size="base" color="ink-on-inverse" className="block truncate">
+        {label}
+      </Text>
+      <span className="mt-0.5 flex items-center gap-1 text-ink-on-inverse/50">
+        <Text as="span" size="sm" color="inherit" className="tabular-nums">
+          {pageLabel}
+        </Text>
+        {isPrivate && <Lock size={10} aria-hidden="true" />}
       </span>
-    </button>
-  );
-};
+    </span>
+  </button>
+);
 
 interface LayerToggleProps {
   label: string;
@@ -600,19 +533,23 @@ const LayerToggle = ({
     onClick={onToggle}
     aria-pressed={visible}
     className={cn(
-      "flex items-center justify-between rounded-lg px-2.5 py-1.5 text-xs transition-colors",
+      "flex h-10 items-center justify-between rounded-chip px-3 transition-colors",
       visible
         ? "bg-ink-on-inverse/10 text-ink-on-inverse"
         : "text-ink-on-inverse/40 hover:bg-ink-on-inverse/5",
     )}
   >
     <span className="flex items-center gap-1.5">
-      {isPrivate && <Lock size={11} aria-hidden="true" />}
-      {label}
+      {isPrivate && <Lock size={12} aria-hidden="true" />}
+      <Text as="span" size="base" color="inherit">
+        {label}
+      </Text>
     </span>
-    <span className="flex items-center gap-1.5">
-      <span className="text-[10px] opacity-60">{count}</span>
-      {visible ? <Eye size={14} aria-hidden="true" /> : <EyeOff size={14} aria-hidden="true" />}
+    <span className="flex items-center gap-2">
+      <Text as="span" size="sm" color="inherit" className="tabular-nums opacity-60">
+        {count}
+      </Text>
+      {visible ? <Eye size={16} aria-hidden="true" /> : <EyeOff size={16} aria-hidden="true" />}
     </span>
   </button>
 );

@@ -53,15 +53,14 @@ describe("planScrollTurn", () => {
 });
 
 describe("readableScrollRange", () => {
-  it("reads a whole page whose foot runs on under the nav as one screen", () => {
-    // Outside performance mode the whole-page fit may overrun the box by 50px.
+  it("reads a page that overruns by layout rounding as one screen", () => {
     // A tap spent scrolling those pixels shows no new music and turns no page.
-    expect(readableScrollRange(50, 50)).toBe(0);
-    expect(readableScrollRange(51, 50)).toBe(0); // a pixel of layout rounding
+    expect(readableScrollRange(0)).toBe(0);
+    expect(readableScrollRange(4)).toBe(0);
   });
 
   it("keeps every pixel of an overflow that holds music", () => {
-    expect(readableScrollRange(410, 50)).toBe(410); // zoom, width floor, partial fit
-    expect(readableScrollRange(60, 0)).toBe(60); // performance mode grants nothing
+    expect(readableScrollRange(410)).toBe(410); // zoom, width floor, partial fit
+    expect(readableScrollRange(5)).toBe(5);
   });
 });

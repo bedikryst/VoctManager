@@ -744,6 +744,8 @@ export default function ArchivePieceCardPage(): React.JSX.Element {
                       renderPageOverlay={annotator.renderPageOverlay}
                       overlaySlot={annotator.overlaySlot}
                       modalSlot={annotator.modalSlot}
+                      sheetTabs={annotator.sheetTabs}
+                      mainTabLabel={t("annotations.score_tab", "Nuty")}
                       onPageApiChange={handlePageApiChange}
                       claimKey={annotator.claimKey}
                       // A pane beside the record's form: its keys belong to

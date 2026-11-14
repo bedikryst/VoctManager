@@ -2,12 +2,11 @@
  * @file PdfViewerModal.tsx
  * @description Full-bleed dialog shell wrapping the headless PdfViewer primitive.
  * Owns Radix Dialog semantics (focus trap, overlay, ARIA, exit animations) but
- * spends no vertical space on chrome: it fills the viewport edge-to-edge and
- * floats only a self-retiring title label, so the document gets the whole
- * screen. Close sits at the end of the viewer's own utility pill, one pill in
- * the corner rather than two stacked. The "Open full view" link to the
- * deep-linkable DocumentViewerPage rides beside close only where a caller
- * passes a full view: the manager's hub does, and nothing a singer opens does.
+ * adds no chrome of its own: it fills the viewport edge-to-edge, puts its close
+ * at the end of the viewer's top band, and shows a self-retiring title in the
+ * middle of that band. The "Open full view" link to the deep-linkable
+ * DocumentViewerPage rides beside close only where a caller passes a full
+ * view: the manager's hub does, and nothing a singer opens does.
  * @module shared/ui/composites/PdfViewerModal
  */
 
@@ -19,16 +18,18 @@ import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 
 import { useFullscreenSurface } from "@/shared/lib/dom/fullscreenSurface";
-import { Button } from "@/shared/ui/primitives/Button";
 import { Heading, Text } from "@/shared/ui/primitives/typography";
 import {
   PdfViewer,
+  bandIconButton,
   type PdfViewerEvent,
   type PdfPageGeometry,
   type PdfPageApi,
   type PdfPageLabel,
   type PdfToolLayout,
   type FitMode,
+  type PdfContentsEntry,
+  type PdfSheetTab,
 } from "@/shared/ui/composites/PdfViewer";
 import {
   buildDocumentViewerPath,
@@ -46,8 +47,8 @@ type CloseWatcherWindow = Window & {
 
 /**
  * How long the title label stays on screen. It answers "which document is
- * this?" on open and then retires — the top edge belongs to the viewer's own
- * tools (annotation bar on the left, utility pill on the right).
+ * this?" on open and then retires — the top band belongs to the viewer's own
+ * tools (annotation bar on the left, utility controls on the right).
  */
 const TITLE_DWELL_MS = 4000;
 
@@ -97,6 +98,16 @@ export interface PdfViewerModalProps {
   preferredFit?: FitMode;
   /** Printed page numbers — see `PdfViewerProps.pageLabels`. */
   pageLabels?: readonly PdfPageLabel[];
+  /** The document's contents in the host's words — see `PdfViewerProps.contents`. */
+  contents?: readonly PdfContentsEntry[];
+  contentsTitle?: string;
+  /** Where a page sits, for the bottom bar — see `PdfViewerProps.describePage`. */
+  describePage?: (page: number) => string | null;
+  /** The host's section in the sheet — see `PdfViewerProps.sheetSection`. */
+  sheetSection?: React.ReactNode;
+  /** Further tabs of the sheet — see `PdfViewerProps.sheetTabs`. */
+  sheetTabs?: readonly PdfSheetTab[];
+  mainTabLabel?: string;
   onClose: () => void;
 }
 
@@ -123,6 +134,12 @@ export const PdfViewerModal = ({
   fitScope,
   preferredFit,
   pageLabels,
+  contents,
+  contentsTitle,
+  describePage,
+  sheetSection,
+  sheetTabs,
+  mainTabLabel,
   onClose,
 }: PdfViewerModalProps): React.JSX.Element => {
   const { t } = useTranslation();
@@ -183,32 +200,27 @@ export const PdfViewerModal = ({
   const utilitySlot = (
     <>
       {resolvedFullViewHref && (
-        <Button
-          asChild
-          variant="ghost"
-          size="icon"
-          className="h-9 w-9 rounded-full text-ink-on-inverse hover:bg-ink-on-inverse/10"
+        <Link
+          to={resolvedFullViewHref}
+          state={resolvedFullViewHint}
+          onClick={handleFullViewClick}
+          aria-label={t("pdf_viewer.open_full_view", "Open full view")}
+          title={t("pdf_viewer.open_full_view", "Open full view")}
+          className={bandIconButton}
         >
-          <Link
-            to={resolvedFullViewHref}
-            state={resolvedFullViewHint}
-            onClick={handleFullViewClick}
-            aria-label={t("pdf_viewer.open_full_view", "Open full view")}
-          >
-            <ExternalLink size={18} aria-hidden="true" />
-          </Link>
-        </Button>
+          <ExternalLink size={18} aria-hidden="true" />
+        </Link>
       )}
-      <Button
+      <button
         ref={closeButtonRef}
-        variant="ghost"
-        size="icon"
+        type="button"
         onClick={onClose}
         aria-label={t("common.close_aria", "Close")}
-        className="h-9 w-9 rounded-full text-ink-on-inverse hover:bg-ink-on-inverse/10"
+        title={t("common.close_aria", "Close")}
+        className={bandIconButton}
       >
         <X size={18} aria-hidden="true" />
-      </Button>
+      </button>
     </>
   );
 
@@ -264,27 +276,31 @@ export const PdfViewerModal = ({
                   toolLayout={toolLayout}
                   utilitySlot={utilitySlot}
                   pageLabels={pageLabels}
+                  contents={contents}
+                  contentsTitle={contentsTitle}
+                  describePage={describePage}
+                  sheetSection={sheetSection}
+                  sheetTabs={sheetTabs}
+                  mainTabLabel={mainTabLabel}
                   canExport={canExport}
                   fitScope={fitScope}
                   preferredFit={preferredFit}
                   className="flex-1"
                 />
 
-                {/* Subtle floating title — top-centre, non-interactive, desktop
-                    only (the top edge is busy with tools on a phone). Fades out
-                    after its dwell so it stops covering the annotation trigger.
-                    Never unmounted (on any size, at any opacity) so the dialog
-                    keeps the accessible name Radix reads from Dialog.Title. The
-                    side padding clears the annotation bar on the left and the
-                    utility pill on the right — a tablet-width viewport is
-                    narrow enough that a centred max-w-md pill would otherwise
-                    reach under them. */}
+                {/* The title, in the middle of the top band — non-interactive,
+                    desktop only (a phone's band is full with its tools). Fades
+                    out after its dwell. Never unmounted (on any size, at any
+                    opacity) so the dialog keeps the accessible name Radix
+                    reads from Dialog.Title. The side padding clears the
+                    annotation trigger on the left and the utility controls on
+                    the right. */}
                 <motion.div
                   animate={{ opacity: isTitleShown ? 1 : 0 }}
                   transition={{ duration: 0.4, ease: "easeOut" }}
-                  className="pointer-events-none absolute inset-x-0 top-0 z-focus-trap hidden justify-center px-44 pt-[calc(env(safe-area-inset-top)+0.85rem)] sm:flex"
+                  className="pointer-events-none absolute inset-x-0 top-0 z-focus-trap hidden h-12 items-center justify-center px-56 sm:flex"
                 >
-                  <div className="min-w-0 max-w-md rounded-full border border-line-on-inverse bg-surface-inverse/55 px-4 py-1.5 text-center shadow-[0_8px_32px_rgba(0,0,0,0.35)] backdrop-blur-md">
+                  <div className="min-w-0 max-w-md text-center">
                     <Dialog.Title asChild>
                       <Heading as="h2" size="sm" color="ink-on-inverse" className="truncate">
                         {title}

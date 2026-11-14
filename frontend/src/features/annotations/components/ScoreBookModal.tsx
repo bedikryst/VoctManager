@@ -10,18 +10,28 @@
  * EDITION, so a note made here is the same note when the piece is opened on its
  * own — there is one set of markings, not a binder's set and a piece's set.
  *
- * A hand-uploaded book has no map and therefore no pencil. That is not an error
- * state and gets no warning: the reader is handed the book they always had.
+ * The book's own navigation speaks the conductor's words: the bottom bar names
+ * the piece by its programme number with the printed page ("2 · Locus iste ·
+ * s. 1"), and the sheet's Program tab lists the whole running order — each
+ * piece with the printed pages it spans, and the items the book holds no pages
+ * for marked as such. Its running order is the production's, never editable
+ * here: what comes next on a stage is data the whole choir shares. The host
+ * adds the current piece's own section (its starting pitches) and a copy of the
+ * book to download.
+ *
+ * A hand-uploaded book has no map and therefore no pencil and no programme.
+ * That is not an error state and gets no warning: the reader is handed the
+ * book they always had, with its own bookmarks as contents.
  *
  * FSD: the map and the PDF bytes are INJECTED, so this composite stays free of
  * any projects/materials import (no feature cycle).
  * @module features/annotations/components/ScoreBookModal
  */
 
-import React, { useMemo } from "react";
+import React, { useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
-import type { PdfPageLabel } from "@/shared/ui/composites/PdfViewer";
+import type { PdfContentsEntry, PdfPageLabel } from "@/shared/ui/composites/PdfViewer";
 import { PdfViewerModal } from "@/shared/ui/composites/PdfViewerModal";
 
 import {
@@ -29,13 +39,12 @@ import {
   type DelegateLayer,
   type ScoreAnnotatorMode,
 } from "../useScoreAnnotator";
-import type { ScoreBook } from "../lib/scoreBook";
-import { ScoreProgramBar } from "./ScoreProgramBar";
+import { itemAtPage, itemPageSpan, type ScoreBook } from "../lib/scoreBook";
 
 export interface ScoreBookModalProps {
   readonly isOpen: boolean;
   /**
-   * The binder's map. Null (or an empty one) → no pencil and no programme bar;
+   * The binder's map. Null (or an empty one) → no pencil and no programme;
    * the viewer is the plain reader it was before.
    */
   readonly book: ScoreBook | null;
@@ -51,12 +60,19 @@ export interface ScoreBookModalProps {
   readonly delegateLayers?: readonly DelegateLayer[];
   /**
    * Whether the binder may leave the app; false → in-app only. Honoured only
-   * for a book with no map: with the pencil in it, the export controls are
-   * never offered here (see below).
+   * for a book with no map: with the pencil in it, the file on screen is the
+   * clean book, and `downloadSection` hands out a copy instead (see below).
    */
   readonly canExport?: boolean;
   /** The book's project, when the reader may tell its choir about new marks. */
   readonly notifyProjectId?: string | null;
+  /**
+   * The sheet section for the piece the reader stands in, by its programme
+   * number (its starting pitches). Nothing on a page outside every piece.
+   */
+  readonly pieceSection?: (order: number) => React.ReactNode;
+  /** The sheet section that hands out a copy of the book, for a mapped book. */
+  readonly downloadSection?: React.ReactNode;
   readonly onClose: () => void;
 }
 
@@ -72,10 +88,12 @@ export const ScoreBookModal = ({
   delegateLayers,
   canExport = true,
   notifyProjectId = null,
+  pieceSection,
+  downloadSection,
   onClose,
 }: ScoreBookModalProps): React.JSX.Element => {
   const { t } = useTranslation();
-  const hasMap = !!book && book.frames.size > 0;
+  const mapped = book && book.frames.size > 0 ? book : null;
   // The conductor calls the printed page, so the stand counts in it. Only the
   // title page gets a name of its own; every other unnumbered page is just
   // that, and the viewer says so.
@@ -99,9 +117,69 @@ export const ScoreBookModal = ({
     editionId: null,
     mode,
     delegateLayers,
-    book: isOpen && hasMap ? book : null,
+    book: isOpen ? mapped : null,
     notifyProjectId,
   });
+
+  // The running order, with the pages each piece spans; what the book holds no
+  // pages for keeps its place in the order and says why it cannot be opened.
+  const contents = useMemo<PdfContentsEntry[] | undefined>(() => {
+    if (!mapped) return undefined;
+    const bound = mapped.items.map((item) => {
+      const span = itemPageSpan(mapped, item);
+      const pages = span
+        ? span.from === span.to
+          ? t("pdf_viewer.outline_page", "s. {{page}}", { page: span.from })
+          : t("score_book.page_range", "s. {{from}}–{{to}}", { from: span.from, to: span.to })
+        : null;
+      const note = [item.is_encore ? t("score_book.encore", "Bis") : null, pages]
+        .filter((part): part is string => part !== null)
+        .join(" · ");
+      return {
+        order: item.order,
+        entry: {
+          key: item.id,
+          number: String(item.order),
+          title: item.title,
+          detail: item.composer || undefined,
+          page: item.first_page,
+          lastPage: item.last_page,
+          note: note || undefined,
+        },
+      };
+    });
+    const outside = mapped.unbound.map((item) => ({
+      order: item.order,
+      entry: {
+        key: item.id,
+        number: String(item.order),
+        title: item.title,
+        detail: item.composer || undefined,
+        page: null,
+        note: t("score_book.not_in_book", "poza książką"),
+      },
+    }));
+    return [...bound, ...outside]
+      .sort((a, b) => a.order - b.order)
+      .map(({ entry }) => entry);
+  }, [mapped, t]);
+
+  const describePage = useCallback(
+    (page: number): string | null => {
+      if (!mapped) return null;
+      const item = itemAtPage(mapped, page);
+      return item ? `${item.order} · ${item.title}` : null;
+    },
+    [mapped],
+  );
+
+  const currentItem = mapped ? itemAtPage(mapped, annotator.pageApi.currentPage) : null;
+  const sheetSection = mapped ? (
+    <>
+      {currentItem && pieceSection?.(currentItem.order)}
+      {downloadSection}
+    </>
+  ) : undefined;
 
   return (
     <PdfViewerModal
@@ -111,31 +189,25 @@ export const ScoreBookModal = ({
       fileName={fileName}
       fetchBlob={fetchBlob}
       docKey={docKey}
-      toolbarSlot={hasMap ? annotator.toolbarSlot : undefined}
-      renderPageOverlay={hasMap ? annotator.renderPageOverlay : undefined}
-      overlaySlot={
-        hasMap ? (
-          <>
-            {annotator.overlaySlot}
-            <ScoreProgramBar
-              book={book as ScoreBook}
-              currentPage={annotator.pageApi.currentPage}
-              goToPage={annotator.pageApi.goToPage}
-            />
-          </>
-        ) : undefined
-      }
-      modalSlot={hasMap ? annotator.modalSlot : undefined}
-      onPageApiChange={hasMap ? annotator.onPageApiChange : undefined}
-      claimKey={hasMap ? annotator.claimKey : undefined}
+      toolbarSlot={mapped ? annotator.toolbarSlot : undefined}
+      renderPageOverlay={mapped ? annotator.renderPageOverlay : undefined}
+      overlaySlot={mapped ? annotator.overlaySlot : undefined}
+      modalSlot={mapped ? annotator.modalSlot : undefined}
+      sheetTabs={mapped ? annotator.sheetTabs : undefined}
+      onPageApiChange={mapped ? annotator.onPageApiChange : undefined}
+      claimKey={mapped ? annotator.claimKey : undefined}
       toolLayout="rail"
       pageLabels={pageLabels}
+      contents={contents}
+      contentsTitle={t("score_book.programme", "Program koncertu")}
+      describePage={mapped ? describePage : undefined}
+      sheetSection={sheetSection}
+      mainTabLabel={t("score_book.programme_tab", "Program")}
       // With a map, the file on screen is the clean book and every mark is
       // drawn live over it, so handing that file out would hand out a book
-      // with none of them. Fetching the composed copy on the tap instead
-      // would break share and open-in-browser: both must run inside the
-      // gesture, and a second download outlasts it.
-      canExport={canExport && !hasMap}
+      // with none of them. The host's download section composes a copy with
+      // the marks asked for instead.
+      canExport={canExport && !mapped}
       fitScope="score"
       onClose={onClose}
     />

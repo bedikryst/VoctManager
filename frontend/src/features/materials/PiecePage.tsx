@@ -79,7 +79,7 @@ import {
   practiceTracksOf,
   tempoGiustoTracksOf,
 } from "./player/PracticePlayerProvider";
-import { RehearsalDock } from "./player/RehearsalDock";
+import { RehearsalSection } from "./player/RehearsalSection";
 import type { MaterialsReadinessStatus } from "./types/materials.dto";
 
 type PieceTab = "practice" | "text" | "cast";
@@ -715,10 +715,10 @@ export default function PiecePage({
           }
           canExport={openEdition?.canExport ?? true}
           preferredFit={openEdition?.wholePage ? "page" : undefined}
-          extraOverlay={
+          sheetSection={
             /* Rehearsal instrument: starting pitches + practice-player remote,
-               available while the score is on the stand. */
-            <RehearsalDock
+               in the stand's sheet while the score is open. */
+            <RehearsalSection
               piece={piece}
               projectId={group.project.id}
               canEditPitches={isManager(user)}

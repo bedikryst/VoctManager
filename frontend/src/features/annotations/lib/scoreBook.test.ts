@@ -1,12 +1,10 @@
 /**
  * @file scoreBook.test.ts
- * @description Pins the two things the binder's navigation has to get right and
- * that no type can catch: that "the next piece" follows the BINDING (an encore
- * bound early is reached early, whatever its number in the programme), and that
- * going back from the middle of a piece returns to that piece's own opening
- * first — the way a thumb does in a paper binder — instead of skipping to the
- * one before it. Also that a jump to a mark aims through the rectangle its
- * edition page was bound into.
+ * @description Pins what the binder's navigation has to get right and that no
+ * type can catch: which piece a page stands in, where an edition page was
+ * bound, that a jump to a mark aims through the rectangle its edition page was
+ * bound into, and that a contents line gives a piece the printed numbers the
+ * book's own contents would.
  * @module features/annotations/lib/scoreBook.test
  */
 
@@ -18,7 +16,7 @@ import {
   buildScoreBook,
   itemAtPage,
   itemPageNumber,
-  pieceJumpTarget,
+  itemPageSpan,
   type BookItem,
   type BookPageFrame,
 } from "./scoreBook";
@@ -116,34 +114,7 @@ describe("bookFocusY", () => {
   });
 });
 
-describe("pieceJumpTarget", () => {
-  it("follows the binding, so the encore bound second is reached second", () => {
-    expect(pieceJumpTarget(book, 2, 1)).toBe(4);
-    expect(pieceJumpTarget(book, 4, 1)).toBe(6);
-  });
-
-  it("opens the first piece from the front matter instead of refusing", () => {
-    expect(pieceJumpTarget(book, 1, 1)).toBe(2);
-  });
-
-  it("goes back to the piece in hand before the one before it", () => {
-    expect(pieceJumpTarget(book, 3, -1)).toBe(2); // mid-piece → its own start
-    expect(pieceJumpTarget(book, 2, -1)).toBeNull(); // already at the first
-    expect(pieceJumpTarget(book, 6, -1)).toBe(4);
-  });
-
-  it("has nowhere to go past the last piece", () => {
-    expect(pieceJumpTarget(book, 8, 1)).toBeNull();
-  });
-
-  it("is silent on a book with no programme at all", () => {
-    const bare = buildScoreBook([], []);
-    expect(pieceJumpTarget(bare, 1, 1)).toBeNull();
-    expect(pieceJumpTarget(bare, 1, -1)).toBeNull();
-  });
-});
-
-describe("itemPageNumber", () => {
+describe("itemPageNumber and itemPageSpan", () => {
   // Title page, a blank, then "bis" opens on an unnumbered spacer.
   const labelled = buildScoreBook([], [item("kyrie", 1, 3, 4), item("bis", 2, 5, 7)], [
     { folio: null, kind: "title" },
@@ -166,5 +137,19 @@ describe("itemPageNumber", () => {
   it("counts file pages in a book printed without numbers", () => {
     const kyrie = book.items.find((entry) => entry.id === "kyrie");
     expect(kyrie && itemPageNumber(book, kyrie)).toBe(2);
+    expect(kyrie && itemPageSpan(book, kyrie)).toEqual({ from: 2, to: 3 });
+  });
+
+  it("spans the printed numbers a piece runs over, skipping blanks at its ends", () => {
+    expect(itemPageSpan(labelled, labelled.items[0])).toEqual({ from: 1, to: 2 });
+    expect(itemPageSpan(labelled, labelled.items[1])).toEqual({ from: 3, to: 4 });
+  });
+
+  it("keeps the programme items with no pages apart, in programme order", () => {
+    const withRest = buildScoreBook([], [item("kyrie", 1, 2, 3)], [], [
+      { id: "toccata", order: 3, title: "Toccata", composer: "", is_encore: false },
+      { id: "intrada", order: 2, title: "Intrada", composer: "", is_encore: false },
+    ]);
+    expect(withRest.unbound.map((entry) => entry.id)).toEqual(["intrada", "toccata"]);
   });
 });

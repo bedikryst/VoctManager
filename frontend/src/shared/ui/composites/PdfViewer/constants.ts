@@ -37,23 +37,19 @@ export const AUTO_PARTIAL_GAIN_RATIO = 1.15;
 export const FIT_SCROLL_OVERLAP_PX = 28;
 /** Scroll distance below which the viewport counts as parked at an edge. */
 export const SCROLL_EDGE_TOLERANCE_PX = 4;
-/** Vertical space kept for floating chrome so a fit-to-page render clears the nav. */
-export const FIT_VERTICAL_RESERVE_MOBILE = 0;
-export const FIT_VERTICAL_RESERVE_DESKTOP = -50;
 /**
- * Performance mode floats no chrome at all, so the page is entitled to the
- * whole box — reserving anything there is what leaves a stand-mounted tablet
- * reading a postage stamp inside a black frame.
+ * The scroll box's own vertical padding (`py-2` / `sm:py-3`), which a
+ * fit-to-page render must clear. The chrome is not in the box at all: it sits
+ * in the bands above and below it.
+ */
+export const FIT_VERTICAL_RESERVE_MOBILE = 16;
+export const FIT_VERTICAL_RESERVE_DESKTOP = 24;
+/**
+ * Performance mode drops the bands and the padding, so the page is entitled
+ * to the whole box — reserving anything there is what leaves a stand-mounted
+ * tablet reading a postage stamp inside a black frame.
  */
 export const FIT_VERTICAL_RESERVE_IMMERSIVE = 0;
-/**
- * Free margin left of the page that a labelled floating trigger needs: its
- * 24 px inset, the widest label it carries (an armed tool's name with a mark
- * count and the offline badge, about 200 px) and some air. Narrower than this,
- * triggers fold to 44 px icons, which at most graze the paper's own white
- * margin wherever an unzoomed fit leaves the page.
- */
-export const LABELED_TRIGGER_GUTTER_PX = 240;
 
 // Gesture tuning — instrument-grade ergonomics for a score on a music stand.
 /**

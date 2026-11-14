@@ -1,10 +1,10 @@
 /**
  * @file toolbarChrome.ts
- * @description The glass the annotation toolbar is made of, shared by its
- * parts: the tool row or rail, the "who sees it" strip and the options panel.
- * Each part owns its own chrome (the viewer only lends it a corner), so a
- * collapsed bar is one clean trigger and an open one never wears a pill inside
- * a pill.
+ * @description What the annotation toolbar is made of, shared by its parts.
+ * The row and the collapsed trigger sit in the viewer's top band, which is
+ * reserved above the page, so they are flat. What lies over the music — the
+ * rail in the margin, the "who sees it" strip and the options panel under the
+ * row — keeps dark glass so it reads against the page.
  * @module features/annotations/components
  */
 
@@ -12,8 +12,8 @@
 export const glassChrome =
   "pointer-events-auto border border-line-on-inverse bg-surface-inverse/70 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-xl";
 
-/** A single-row pill: the collapsed trigger and the book's bare bar. */
-export const barChrome = `${glassChrome} flex items-center rounded-full`;
+/** A row in the top band: no glass, the band is its ground. */
+export const bandBar = "pointer-events-auto flex h-10 items-center";
 
 /**
  * A bar that may wrap to a second line on the narrowest phones. Its radius is

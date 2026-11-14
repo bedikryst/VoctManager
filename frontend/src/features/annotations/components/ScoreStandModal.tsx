@@ -4,7 +4,9 @@
  * conductor/personal annotation layer already wired in. Every in-panel score
  * opens through this — the library accordion, the review cockpit's edition
  * list, and the practice cockpit — so annotations are the default everywhere and
- * the PdfViewerModal + useScoreAnnotator wiring lives in exactly one place.
+ * the PdfViewerModal + useScoreAnnotator wiring lives in exactly one place. Its
+ * sheet holds the score's own tab ("Nuty": page, fit, the host's section such
+ * as the starting pitches, the file) beside the marks.
  *
  * FSD: annotations is the feature every score surface already depends on, so it
  * owns this composite. The PDF byte source is INJECTED (`fetchBlob`) rather than
@@ -14,6 +16,7 @@
  */
 
 import React from "react";
+import { useTranslation } from "react-i18next";
 
 import type { FitMode } from "@/shared/ui/composites/PdfViewer";
 import { PdfViewerModal } from "@/shared/ui/composites/PdfViewerModal";
@@ -40,8 +43,8 @@ export interface ScoreStandModalProps {
    */
   readonly mode: ScoreAnnotatorMode;
   readonly delegateLayers?: readonly DelegateLayer[];
-  /** Layer stacked under the annotation index — materials slots RehearsalDock here. */
-  readonly extraOverlay?: React.ReactNode;
+  /** The host's section in the stand's sheet — materials puts the piece's pitches here. */
+  readonly sheetSection?: React.ReactNode;
   /**
    * Whether this score may be exported (open/share/download). Forwarded to the
    * viewer; defaults to `true`. Pass the edition's server-computed `can_export`
@@ -68,12 +71,13 @@ export const ScoreStandModal = ({
   fileName,
   mode,
   delegateLayers,
-  extraOverlay,
+  sheetSection,
   canExport = true,
   preferredFit,
   notifyProjectId = null,
   onClose,
 }: ScoreStandModalProps): React.JSX.Element => {
+  const { t } = useTranslation();
   // A closed stand stays mounted under the page that owns it; it must not poll
   // or take Ctrl+Z from that page while nothing of it is on screen.
   const annotator = useScoreAnnotator({
@@ -94,17 +98,11 @@ export const ScoreStandModal = ({
       docKey={editionId ?? undefined}
       toolbarSlot={annotator.toolbarSlot}
       renderPageOverlay={annotator.renderPageOverlay}
-      overlaySlot={
-        extraOverlay ? (
-          <>
-            {annotator.overlaySlot}
-            {extraOverlay}
-          </>
-        ) : (
-          annotator.overlaySlot
-        )
-      }
+      overlaySlot={annotator.overlaySlot}
       modalSlot={annotator.modalSlot}
+      sheetTabs={annotator.sheetTabs}
+      sheetSection={sheetSection}
+      mainTabLabel={t("annotations.score_tab", "Nuty")}
       onPageApiChange={annotator.onPageApiChange}
       claimKey={annotator.claimKey}
       // The stand has the whole screen, so a landscape tablet's margin can

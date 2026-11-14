@@ -1238,11 +1238,15 @@ class ProjectViewSet(viewsets.ModelViewSet):
         `labels` gives every page its printed folio, so the stand counts pages
         the way the conductor's printed copy does. A book printed without page
         numbers answers with none, and the reader keeps the file's page order.
+
+        `unbound` lists the programme items the book holds no pages for, so the
+        stand's programme is the whole running order, with those marked as
+        outside the book.
         """
         project = self.get_object()
         is_manager = user_is_manager(request.user)
         empty: dict[str, Any] = {
-            "available": False, "pages": [], "items": [], "labels": [], "stamp": "",
+            "available": False, "pages": [], "items": [], "unbound": [], "labels": [], "stamp": "",
         }
         # Same lifecycle gate as the file itself: once the concert is over the
         # singer's access to the binder closes, and a map of a book they may not
@@ -1277,25 +1281,36 @@ class ProjectViewSet(viewsets.ModelViewSet):
         # Titles come from the live programme, spans from the map: a piece
         # renamed since the build keeps its pages and gains its new name, and a
         # piece dropped from the programme since the build has no row here at
-        # all — its pages are still bound, they simply answer to nothing.
-        items = [
-            {
+        # all — its pages are still bound, they simply answer to nothing. A
+        # programme item with no pages in the book (instrumental, no edition,
+        # added since the build) is listed apart, so the stand's programme
+        # still reads as the concert's running order.
+        program = list(
+            ProgramItem.objects
+            .filter(project=project)
+            .select_related('piece__composer')
+            .order_by('order')
+        )
+
+        def describe(item: ProgramItem) -> dict[str, Any]:
+            return {
                 "id": str(item.pk),
                 "order": item.order,
                 "title": item.piece.title,
                 "composer": item.piece.composer.last_name if item.piece.composer else "",
                 "is_encore": item.is_encore,
+            }
+
+        items = [
+            {
+                **describe(item),
                 "first_page": spans[str(item.pk)]["first_page"],
                 "last_page": spans[str(item.pk)]["last_page"],
             }
-            for item in (
-                ProgramItem.objects
-                .filter(project=project)
-                .select_related('piece__composer')
-                .order_by('order')
-            )
+            for item in program
             if str(item.pk) in spans
         ]
+        unbound = [describe(item) for item in program if str(item.pk) not in spans]
         # The map records a folio for every content page whether or not the
         # book prints it; only a numbered book has numbers to speak of.
         labels = book_page_labels(page_map, has_title_page=has_title_page) if is_numbered else []
@@ -1304,6 +1319,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
                 "available": True,
                 "pages": frames,
                 "items": items,
+                "unbound": unbound,
                 "labels": labels,
                 "stamp": stamp,
             },

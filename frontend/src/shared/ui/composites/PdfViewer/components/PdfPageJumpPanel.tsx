@@ -1,11 +1,12 @@
 /**
  * @file PdfPageJumpPanel.tsx
  * @description Straight to a page — "from page 25", said at rehearsal — instead
- * of turning there one page at a time. A slider for the thumb; the page number
- * above it is typable for a keyboard, and for a long book where one slider step
- * is a couple of pixels. The slider commits on release, not while it moves:
- * every committed page is a render, and a sweep across forty pages on the way
- * to one would be forty renders nobody reads.
+ * of turning there one page at a time. A section of the viewer's sheet: a
+ * slider for the thumb, and the page number above it typable for a keyboard
+ * and for a long book where one slider step is a couple of pixels. The slider
+ * commits on release, not while it moves: every committed page is a render,
+ * and a sweep across forty pages on the way to one would be forty renders
+ * nobody reads.
  *
  * Where the document prints its own page numbers, the number in the field is
  * the printed one, because that is the number the conductor calls. The slider
@@ -16,9 +17,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { ChangeEvent, KeyboardEvent } from "react";
-import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
-import { Eyebrow, Metric, Text } from "@/shared/ui/primitives/typography";
+import { Metric, Text } from "@/shared/ui/primitives/typography";
 
 import { pageLabelText, type PageLabelling } from "../pageLabels";
 
@@ -27,8 +27,10 @@ interface PdfPageJumpPanelProps {
   numPages: number;
   /** Printed page numbers, when the document has its own. */
   labelling: PageLabelling | null;
+  /** A page chosen on the slider: the reader goes on looking at the sheet. */
   onJump: (page: number) => void;
-  onClose: () => void;
+  /** A number typed and confirmed: the reader is done here. */
+  onConfirm: (page: number) => void;
 }
 
 const clamp = (value: number, max: number): number => Math.min(Math.max(value, 1), max);
@@ -38,18 +40,16 @@ export const PdfPageJumpPanel = ({
   numPages,
   labelling,
   onJump,
-  onClose,
+  onConfirm,
 }: PdfPageJumpPanelProps) => {
   const { t } = useTranslation();
   const [draft, setDraft] = useState(currentPage);
   /** The field's text while it is being typed; `null` shows the draft. */
   const [typed, setTyped] = useState<string | null>(null);
   const sliderRef = useRef<HTMLInputElement | null>(null);
-  const fieldRef = useRef<HTMLInputElement | null>(null);
 
-  // The page can move under the open panel — the pill's arrows stay live
-  // beside it — so the draft follows the page instead of holding a number the
-  // reader has already left.
+  // The page moves under the open sheet when the slider commits, so the draft
+  // follows the page instead of holding a number the reader has already left.
   const [shownPage, setShownPage] = useState(currentPage);
   if (shownPage !== currentPage) {
     setShownPage(currentPage);
@@ -67,14 +67,6 @@ export const PdfPageJumpPanel = ({
     slider.addEventListener("change", commit);
     return () => slider.removeEventListener("change", commit);
   }, [onJump]);
-
-  // A keyboard reader opened this to type a number. A touch reader came to
-  // drag, and focusing the field there would raise a keyboard over the score.
-  useEffect(() => {
-    if (!window.matchMedia("(pointer: fine)").matches) return;
-    fieldRef.current?.focus();
-    fieldRef.current?.select();
-  }, []);
 
   // What the field counts in: printed numbers, or the file's pages.
   const highest = labelling ? labelling.lastFolio : numPages;
@@ -96,71 +88,56 @@ export const PdfPageJumpPanel = ({
     if (event.key !== "Enter") return;
     event.preventDefault();
     const page = typed ? pageForNumber(clamp(Number(typed), highest)) : null;
-    onJump(page ?? draft);
-    onClose();
+    onConfirm(page ?? draft);
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, transform: "translateY(6px)" }}
-      animate={{ opacity: 1, transform: "translateY(0px)" }}
-      exit={{ opacity: 0, transform: "translateY(6px)" }}
-      transition={{ duration: 0.16, ease: [0.16, 1, 0.3, 1] }}
-      className="absolute bottom-full left-1/2 mb-3 w-72 -translate-x-1/2 overflow-hidden rounded-surface border border-line-on-inverse bg-surface-inverse/95 shadow-[0_8px_32px_rgba(0,0,0,0.5)]"
-    >
-      <div className="border-b border-line-on-inverse px-3 py-2">
-        <Eyebrow color="ink-on-inverse-muted">
-          {t("pdf_viewer.jump_to_page", "Przejdź do strony")}
-        </Eyebrow>
-      </div>
-      <div className="px-4 pb-4 pt-3">
-        <div className="flex items-baseline justify-center gap-2">
-          {labelling && (
-            <Metric size="xl" color="ink-on-inverse-muted">
-              {t("pdf_viewer.folio_prefix", "s.")}
-            </Metric>
-          )}
-          <input
-            ref={fieldRef}
-            type="text"
-            inputMode="numeric"
-            enterKeyHint="go"
-            autoComplete="off"
-            value={typed ?? (draftNumber === null ? "" : String(draftNumber))}
-            placeholder="–"
-            onChange={handleFieldChange}
-            onKeyDown={handleFieldKeyDown}
-            onBlur={() => setTyped(null)}
-            aria-label={t("pdf_viewer.page_number", "Numer strony")}
-            className="w-20 rounded-control bg-ink-on-inverse/10 px-2 py-0.5 text-center font-serif text-3xl tabular-nums lining-nums tracking-tight text-ink-on-inverse placeholder:text-ink-on-inverse/40 focus:outline-none focus:ring-2 focus:ring-ethereal-gold/60"
-          />
-          <Metric size="xl" color="ink-on-inverse-muted" className="tabular-nums">
-            / {highest}
+    <div>
+      <div className="flex items-baseline justify-center gap-2">
+        {labelling && (
+          <Metric size="xl" color="ink-on-inverse-muted">
+            {t("pdf_viewer.folio_prefix", "s.")}
           </Metric>
-        </div>
-        {/* A page with no printed number is named rather than left blank, so
-            the reader knows where the slider has put them. */}
-        {labelling && draftNumber === null && typed === null && (
-          <Text size="xs" color="ink-on-inverse-muted" className="mt-1.5 block text-center">
-            {draftText}
-          </Text>
         )}
         <input
-          ref={sliderRef}
-          type="range"
-          min={1}
-          max={numPages}
-          step={1}
-          value={draft}
-          onChange={(event) => {
-            setDraft(Number(event.target.value));
-            setTyped(null);
-          }}
-          aria-label={t("pdf_viewer.jump_to_page", "Przejdź do strony")}
-          aria-valuetext={draftText}
-          className="mt-3 w-full accent-ethereal-gold"
+          type="text"
+          inputMode="numeric"
+          enterKeyHint="go"
+          autoComplete="off"
+          value={typed ?? (draftNumber === null ? "" : String(draftNumber))}
+          placeholder="–"
+          onChange={handleFieldChange}
+          onKeyDown={handleFieldKeyDown}
+          onBlur={() => setTyped(null)}
+          aria-label={t("pdf_viewer.page_number", "Numer strony")}
+          className="w-20 rounded-control bg-ink-on-inverse/10 px-2 py-0.5 text-center font-serif text-3xl tabular-nums lining-nums tracking-tight text-ink-on-inverse placeholder:text-ink-on-inverse/40 focus:outline-none focus:ring-2 focus:ring-ethereal-gold/60"
         />
+        <Metric size="xl" color="ink-on-inverse-muted" className="tabular-nums">
+          / {highest}
+        </Metric>
       </div>
-    </motion.div>
+      {/* A page with no printed number is named rather than left blank, so
+          the reader knows where the slider has put them. */}
+      {labelling && draftNumber === null && typed === null && (
+        <Text size="sm" color="ink-on-inverse-muted" className="mt-1.5 block text-center">
+          {draftText}
+        </Text>
+      )}
+      <input
+        ref={sliderRef}
+        type="range"
+        min={1}
+        max={numPages}
+        step={1}
+        value={draft}
+        onChange={(event) => {
+          setDraft(Number(event.target.value));
+          setTyped(null);
+        }}
+        aria-label={t("pdf_viewer.jump_to_page", "Przejdź do strony")}
+        aria-valuetext={draftText}
+        className="mt-3 w-full accent-ethereal-gold"
+      />
+    </div>
   );
 };

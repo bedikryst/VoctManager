@@ -18,7 +18,6 @@ import { AnimatePresence, motion } from "framer-motion";
 import { CornerDownRight, CornerUpLeft, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
-import { cn } from "@/shared/lib/utils";
 import { Text } from "@/shared/ui/primitives/typography";
 
 /**
@@ -33,8 +32,6 @@ export type LinkStatus =
 interface LinkStatusChipProps {
   /** Null keeps the chip off screen. */
   status: LinkStatus | null;
-  /** The concert binder floats its programme bar on this same centre line. */
-  lifted?: boolean;
   /** Goes back to the page the last link was followed from. */
   onReturn: () => void;
   onDismiss: () => void;
@@ -42,19 +39,13 @@ interface LinkStatusChipProps {
 
 export const LinkStatusChip = ({
   status,
-  lifted = false,
   onReturn,
   onDismiss,
 }: LinkStatusChipProps): React.JSX.Element => {
   const { t } = useTranslation();
 
   return (
-    <div
-      className={cn(
-        "pointer-events-none absolute inset-x-0 bottom-0 z-10 flex justify-center px-4",
-        lifted ? "pb-56 sm:pb-60" : "pb-36",
-      )}
-    >
+    <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 flex justify-center px-4 pb-36">
       <AnimatePresence>
         {status && (
           <motion.div

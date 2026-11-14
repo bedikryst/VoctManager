@@ -213,6 +213,27 @@ class ScoreMapEndpointTests(APITestCase):
                 "last_page": 3,
             }],
         )
+        self.assertEqual(data["unbound"], [])
+
+    def test_a_programme_item_without_pages_is_listed_apart(self) -> None:
+        # Added since the build, or never bound at all (instrumental): the
+        # stand still shows the concert's whole running order.
+        organ = Piece.objects.create(title="Toccata")
+        added = ProgramItem.objects.create(
+            project=self.project, piece=organ, order=2, is_encore=True,
+        )
+        data = self.client.get(self.url).json()
+        self.assertEqual([item["order"] for item in data["items"]], [1])
+        self.assertEqual(
+            data["unbound"],
+            [{
+                "id": str(added.pk),
+                "order": 2,
+                "title": "Toccata",
+                "composer": "",
+                "is_encore": True,
+            }],
+        )
 
     def test_labels_speak_the_printed_folios_of_a_numbered_book(self) -> None:
         self.package.page_map[1]["folio"] = 1

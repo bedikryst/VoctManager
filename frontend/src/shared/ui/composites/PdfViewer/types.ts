@@ -121,6 +121,37 @@ export interface PdfPageLabel {
   name?: string;
 }
 
+/**
+ * One line of the document's contents in the viewer's sheet, as the host names
+ * it. A host that knows its document (a concert book and its programme) hands
+ * these in; otherwise the sheet lists the PDF's own bookmarks.
+ */
+export interface PdfContentsEntry {
+  key: string;
+  title: string;
+  /** A leading number, as the document numbers its parts (the programme's). */
+  number?: string;
+  /** A second line under the title (the composer). */
+  detail?: string;
+  /** The page it opens on; null for an entry the document does not hold. */
+  page: number | null;
+  /** The last page it covers, which marks it as the one being read. */
+  lastPage?: number;
+  /** A trailing note: the pages it spans, or why it has none. */
+  note?: string;
+  /** Nesting under the entry before it (a bookmark's level). */
+  depth?: number;
+}
+
+/** A tab the host adds to the viewer's sheet beside its own (the marks). */
+export interface PdfSheetTab {
+  id: string;
+  label: string;
+  /** A count beside the label. */
+  count?: number;
+  content: ReactNode;
+}
+
 export interface PdfViewerProps {
   fetchBlob: (() => Promise<Blob>) | null;
   /**
@@ -151,18 +182,40 @@ export interface PdfViewerProps {
    */
   renderPageOverlay?: (geometry: PdfPageGeometry) => ReactNode;
   /**
-   * Layer stacked over the WHOLE viewer (not a single page) — a collapsible
-   * annotation index / page rail. The container is `pointer-events-none`;
-   * interactive content opts back in on its own surface.
+   * Layer stacked over the page area between the bands, not a single page —
+   * transient notices ("new marks", a followed link). The container is
+   * `pointer-events-none`; interactive content opts back in on its own surface.
    */
   overlaySlot?: ReactNode;
   /**
-   * Layer stacked over the whole viewer and every piece of its chrome — the
-   * tool slot, the outline drawer and the bottom nav — for a panel that must
-   * cover them (a guide that dims the score). Same contract as `overlaySlot`:
-   * the container is `pointer-events-none`.
+   * Layer stacked over the whole viewer and every piece of its chrome — both
+   * bands and the tool slot — for a panel that must cover them (a guide that
+   * dims the score). Same contract as `overlaySlot`: the container is
+   * `pointer-events-none`.
    */
   modalSlot?: ReactNode;
+  /**
+   * The document's contents for the sheet, in the host's words. Replaces the
+   * PDF's own bookmarks there.
+   */
+  contents?: readonly PdfContentsEntry[];
+  /** The heading over `contents` in the sheet ("Program koncertu"). */
+  contentsTitle?: string;
+  /**
+   * Where a page sits in the document, in the host's words ("2 · Locus iste"),
+   * put before the page number on the bottom bar. Null for a page that sits in
+   * no part of it.
+   */
+  describePage?: (page: number) => string | null;
+  /**
+   * The host's own section in the sheet's first tab, after the page controls:
+   * the piece's starting pitches, a copy of the book to download.
+   */
+  sheetSection?: ReactNode;
+  /** Further tabs of the sheet (the marks). */
+  sheetTabs?: readonly PdfSheetTab[];
+  /** The name of the sheet's first tab, shown once it has company. */
+  mainTabLabel?: string;
   /** Receives the live page handle (current/total + goToPage) on every change. */
   onPageApiChange?: (api: PdfPageApi) => void;
   /**
@@ -183,14 +236,13 @@ export interface PdfViewerProps {
   toolLayout?: PdfToolLayout;
   /**
    * The wrapping shell's own controls (a modal's close), placed at the end of
-   * the utility pill so the top-right corner holds one pill, not two stacked.
-   * Shown while the document loads or fails as well: a shell must stay
-   * closable when there is nothing to read.
+   * the top band's utility group. Shown while the document loads or fails as
+   * well: a shell must stay closable when there is nothing to read.
    */
   utilitySlot?: ReactNode;
   /**
    * One label per page, in page order, when the printed numbers are not the
-   * page order. The counter, the jump panel, the outline and the page chip
+   * page order. The bottom bar, the sheet, the contents and the page chip
    * then speak printed numbers. Ignored unless it covers every page: numbers
    * that drift by one page send a reader to the wrong page.
    */

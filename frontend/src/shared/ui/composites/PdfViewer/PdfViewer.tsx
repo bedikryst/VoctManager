@@ -6,10 +6,16 @@
  * pinch and ctrl+wheel zoom with a live CSS preview, a screen wake lock and an
  * immersive performance mode (fullscreen, chrome hidden, page filling the
  * screen edge to edge). A zoom step holds a copy of the page over it until the
- * new raster is drawn, so the page never blanks between sizes. Annotation
- * features mount through the toolbarSlot / renderPageOverlay / overlaySlot /
- * modalSlot seams, a wrapping shell's close through utilitySlot, and a bound
- * book's printed page numbers through pageLabels.
+ * new raster is drawn, so the page never blanks between sizes.
+ *
+ * Its chrome lives in two bands reserved above and below the page and never
+ * lies over it: the top band holds the tool slot on the left and performance
+ * mode, export and the shell's close on the right; the bottom band turns pages
+ * around a label that opens the sheet, where contents, page jump, fit, the
+ * file and the host's tabs live. Performance mode removes both bands.
+ * Annotation features mount through the toolbarSlot / renderPageOverlay /
+ * overlaySlot / modalSlot / sheetTabs seams, a wrapping shell's close through
+ * utilitySlot, and a bound book's printed page numbers through pageLabels.
  * @module shared/ui/composites/PdfViewer
  */
 
@@ -54,15 +60,15 @@ import {
   SWIPE_EDGE_TOLERANCE_PX,
   PREFETCH_MAX_ZOOM,
   SCROLL_EDGE_TOLERANCE_PX,
-  LABELED_TRIGGER_GUTTER_PX,
   AFTERIMAGE_MAX_PIXELS,
 } from "./constants";
-import { pageLabelText, resolvePageLabelling } from "./pageLabels";
+import { folioText, pageLabelText, resolvePageLabelling } from "./pageLabels";
 import { planScrollTurn, readableScrollRange } from "./scrollTurn";
 import { clampValue, buildPdfFileName, classifyLoadError, createDownloadAnchor } from "./utils";
 import { PdfToolbar } from "./components/PdfToolbar";
 import { PdfBottomNav } from "./components/PdfBottomNav";
-import { PdfOutlineDrawer } from "./components/PdfOutlineDrawer";
+import { PdfSheet } from "./components/PdfSheet";
+import { PdfReadingPanel } from "./components/PdfReadingPanel";
 import { TapZoneHints } from "./components/TapZoneHints";
 import { usePdfState } from "./hooks/usePdfState";
 import { usePdfOutline, type OutlineCapableDocument } from "./hooks/usePdfOutline";
@@ -70,11 +76,15 @@ import { usePrefetchedPages } from "./hooks/usePrefetchedPages";
 import { useImmersiveMode } from "./hooks/useImmersiveMode";
 import { useViewerGestures } from "./hooks/useViewerGestures";
 import {
-  PdfCompactTriggersProvider,
   PdfImmersiveProvider,
+  PdfPageTextProvider,
   PdfToolLayoutProvider,
   PdfTopRowClaimProvider,
 } from "./context";
+import type { PdfContentsEntry, PdfSheetTab } from "./types";
+
+/** The sheet's own tab, beside the host's. */
+const MAIN_SHEET_TAB = "reading";
 
 pdfjs.GlobalWorkerOptions.workerSrc = new URL(
   "pdfjs-dist/build/pdf.worker.min.mjs",
@@ -109,6 +119,12 @@ export const PdfViewer = ({
   toolLayout = "row",
   utilitySlot,
   pageLabels,
+  contents,
+  contentsTitle,
+  describePage,
+  sheetSection,
+  sheetTabs,
+  mainTabLabel,
   canExport = true,
   fitScope,
   preferredFit,
@@ -144,7 +160,6 @@ export const PdfViewer = ({
     setFitMode,
     resolvedFit,
     renderedPageWidth,
-    overflowAllowance,
     isCompactViewport,
     devicePixelRatio,
     reportPageAspect,
@@ -155,15 +170,11 @@ export const PdfViewer = ({
   const [isSharing, setIsSharing] = useState(false);
   // An open markup bar takes the whole top row (`useClaimPdfTopRow`).
   const [isTopRowClaimed, setTopRowClaimed] = useState(false);
+  const [isSheetOpen, setSheetOpen] = useState(false);
+  const [sheetTab, setSheetTab] = useState(MAIN_SHEET_TAB);
 
   const zoomRef = useRef(zoom);
   zoomRef.current = zoom;
-
-  // Read through a ref by the turn and parking callbacks: entering performance
-  // mode changes it, and a new `parkViewport` identity would re-park the page
-  // the singer is reading.
-  const overflowAllowanceRef = useRef(overflowAllowance);
-  overflowAllowanceRef.current = overflowAllowance;
 
   // The page box mounts only once react-pdf has loaded the document, a render
   // or more after this component, so the observers below follow the node
@@ -295,7 +306,6 @@ export const PdfViewer = ({
     pendingParkRef.current = { mode: "top" };
     const maxScroll = readableScrollRange(
       Math.max(viewport.scrollHeight - viewport.clientHeight, 0),
-      overflowAllowanceRef.current,
     );
     let top = 0;
     if (park.mode === "bottom") {
@@ -330,16 +340,13 @@ export const PdfViewer = ({
    * is the unit is MEASURED, never inferred from the fit: a whole-page fit
    * overflows too, once the reader zooms or where the minimum page width
    * outgrows a short box, and turning past the rest of the page there would
-   * turn past music. The overrun the fit grants itself under the nav is not
-   * music (`readableScrollRange`); the step itself is `planScrollTurn`.
+   * turn past music. Layout rounding is not music (`readableScrollRange`); the
+   * step itself is `planScrollTurn`.
    */
   const turnPage = useCallback((delta: 1 | -1) => {
     const viewport = viewportRef.current;
     if (viewport) {
-      const maxScroll = readableScrollRange(
-        viewport.scrollHeight - viewport.clientHeight,
-        overflowAllowanceRef.current,
-      );
+      const maxScroll = readableScrollRange(viewport.scrollHeight - viewport.clientHeight);
       if (maxScroll > 0) {
         const remaining = delta === 1 ? maxScroll - viewport.scrollTop : viewport.scrollTop;
         const advance = planScrollTurn(remaining, viewport.clientHeight);
@@ -611,10 +618,7 @@ export const PdfViewer = ({
       setIsPannableX(
         viewport.scrollWidth - viewport.clientWidth > SWIPE_EDGE_TOLERANCE_PX,
       );
-      const maxScroll = readableScrollRange(
-        viewport.scrollHeight - viewport.clientHeight,
-        overflowAllowanceRef.current,
-      );
+      const maxScroll = readableScrollRange(viewport.scrollHeight - viewport.clientHeight);
       const next = maxScroll === 0
         ? { atTop: true, atBottom: true }
         : {
@@ -669,9 +673,18 @@ export const PdfViewer = ({
       // A menu open over the viewer (the annotation toolbar's ⋯) closes itself
       // first; putting a tool down or leaving immersive is the next Escape's.
       if (inPopper) return;
+      // The open sheet is the nearest thing to close: a field in it gives up
+      // its focus first, then the sheet goes, and the score stays open.
+      if (isSheetOpen) {
+        event.preventDefault();
+        event.stopPropagation();
+        if (inField) target?.blur();
+        else setSheetOpen(false);
+        return;
+      }
       if (claimKey?.(event)) return;
-      // A field in the viewer's chrome (the annotation drawer's search) keeps
-      // Escape for itself: it gives up its focus, and the score stays open.
+      // A field in the viewer's chrome keeps Escape for itself: it gives up
+      // its focus, and the score stays open.
       // Capture phase + stopPropagation, so a wrapping Radix dialog never sees
       // it. Only the viewer's own fields: this listener is on the window, and a
       // dialog's field elsewhere on the page, or a popover's, closes its own.
@@ -692,6 +705,10 @@ export const PdfViewer = ({
     }
 
     if (inField || inPopper) return;
+
+    // The sheet keeps the reader's keys while it is open: its slider answers
+    // arrows, and a page turning under it would move the score being chosen in.
+    if (isSheetOpen) return;
 
     // An embedded viewer shares the page with a form: a key pressed on one of
     // its buttons is that control's, not a page turn or a tool.
@@ -731,7 +748,7 @@ export const PdfViewer = ({
     if (event.key === "-" || event.key === "_") { event.preventDefault(); changeZoom(-ZOOM_STEP); return; }
     if (event.key === "+" || event.key === "=") { event.preventDefault(); changeZoom(ZOOM_STEP); return; }
     if (event.key === "0") { event.preventDefault(); resetZoom(); }
-  }, [blobUrl, isFetchError, isImmersive, claimKey, keyScope, exitImmersive, changePage, turnPage, numPages, changeZoom, resetZoom]);
+  }, [blobUrl, isFetchError, isImmersive, isSheetOpen, claimKey, keyScope, exitImmersive, changePage, turnPage, numPages, changeZoom, resetZoom]);
 
   useEffect(() => {
     if (docKey) emitEvent({ type: "open", docKey });
@@ -794,33 +811,45 @@ export const PdfViewer = ({
     return () => observer.disconnect();
   }, [hasPageOverlay, pageBoxNode, blobUrl]);
 
-  // Free margin between the viewer's left edge and the page, where the floating
-  // triggers sit. The fit, zoom and the window all move it, so it is read off
-  // the layout instead of derived from any one of them. Divided by the root's
-  // own scale so the modal's entrance transform cannot skew the reading.
-  const [pageGutter, setPageGutter] = useState<number | null>(null);
+  // The sheet opens from the bottom band, and performance mode puts the bands
+  // away: it must not wait under the stage for the reader's return.
   useEffect(() => {
-    const root = rootRef.current;
-    const viewport = viewportRef.current;
-    const page = pageBoxNode;
-    if (!root || !viewport || !page || typeof ResizeObserver === "undefined") return;
-    const measure = (): void => {
-      const rootRect = root.getBoundingClientRect();
-      const scale = root.offsetWidth > 0 ? rootRect.width / root.offsetWidth : 1;
-      const offset = (page.getBoundingClientRect().left - rootRect.left) / (scale || 1);
-      const next = Math.max(0, Math.round(offset));
-      setPageGutter((current) => (current === next ? current : next));
-    };
-    const observer = new ResizeObserver(measure);
-    observer.observe(viewport);
-    observer.observe(page);
-    return () => observer.disconnect();
-  }, [viewportRef, pageBoxNode, stablePage, renderedPageWidth, zoom]);
+    if (isImmersive) setSheetOpen(false);
+  }, [isImmersive]);
 
-  // A phone keeps its labels: there the page letterboxes vertically and the
-  // triggers sit above and below the music rather than beside it.
-  const compactTriggers =
-    !isCompactViewport && pageGutter !== null && pageGutter < LABELED_TRIGGER_GUTTER_PX;
+  const openSheet = useCallback(() => {
+    setSheetTab(MAIN_SHEET_TAB);
+    setSheetOpen(true);
+  }, []);
+  const closeSheet = useCallback(() => setSheetOpen(false), []);
+  const goToAndCloseSheet = useCallback((page: number) => {
+    changePage(page);
+    setSheetOpen(false);
+  }, [changePage]);
+
+  /** A page as every control of this viewer words it. */
+  const pageText = useCallback(
+    (page: number): string => (labelling ? pageLabelText(t, labelling, page) : folioText(t, page)),
+    [labelling, t],
+  );
+
+  // The host's contents where it has them; the PDF's own bookmarks otherwise,
+  // which carry no number for a page that prints none, as a printed contents.
+  const sheetContents = useMemo<readonly PdfContentsEntry[]>(() => {
+    if (contents) return contents;
+    return outline.map((entry, index) => {
+      const folio = labelling ? labelling.folioOf(entry.page) : entry.page;
+      return {
+        key: `${entry.page}-${index}`,
+        title: entry.title,
+        page: entry.page,
+        depth: entry.depth,
+        note: folio === null ? undefined : folioText(t, folio),
+      };
+    });
+  }, [contents, outline, labelling, t]);
+
+  const place = describePage?.(currentPage) ?? null;
 
   // Edge-to-edge in performance mode: a rounded corner over a full-bleed page
   // would clip actual music. Shared by the page and the afterimage over it.
@@ -831,14 +860,19 @@ export const PdfViewer = ({
 
   return (
     <PdfImmersiveProvider value={isImmersive}>
-    <PdfCompactTriggersProvider value={compactTriggers}>
     <PdfToolLayoutProvider value={toolLayout}>
     <PdfTopRowClaimProvider value={setTopRowClaimed}>
+    <PdfPageTextProvider value={pageText}>
     <div
       ref={rootRef}
       className={cn("relative flex min-h-0 h-full w-full flex-1 flex-col overflow-hidden bg-surface-inverse text-ink-on-inverse", className)}
     >
       <div className="pointer-events-none absolute inset-0 bg-noise opacity-[0.02] mix-blend-color-burn light-ground-film" aria-hidden="true" />
+
+      {/* The top band: reserved height, so what sits in it (the tool slot on
+          the left, the utility controls on the right, both positioned over
+          it below) never reaches the page. */}
+      {!isImmersive && <div className="h-12 shrink-0" aria-hidden="true" />}
 
       {/* Shown before the document too, when the shell has a control in it:
           a stand that is loading or has failed must still close. Steps aside
@@ -859,27 +893,23 @@ export const PdfViewer = ({
         />
       )}
 
-      {/* Annotation tools live top-LEFT; the top-right corner is the utility
-          pill (performance mode, export, the shell's close). As a row in the
-          top letterbox the width is capped so the two never overlap on a
-          phone, until the open bar claims the row and spans it edge to edge.
-          As a rail (`tool-rail:`, see toolRail.ts; only where the host allows
-          it) the slot runs down the left margin and stops above the Kamerton
-          and the programme bar at the bottom; the cap no longer applies, and
-          an outline tab on the left edge pushes it inward. The toolbar owns
-          its own chrome + collapse-to-trigger so it isn't always occupying
-          the corner. Kept in immersive too — the score is annotatable in
-          performance mode; the toolbar starts collapsed there for a clean
-          stage. */}
+      {/* Annotation tools live at the left of the top band; its right end is
+          the utility controls (performance mode, export, the shell's close).
+          As a row the width is capped so the two never overlap on a phone,
+          until the open bar claims the row and spans it edge to edge. As a
+          rail (`tool-rail:`, see toolRail.ts; only where the host allows it)
+          the slot runs from the band down the page's left margin and stops
+          above the bottom band; the cap no longer applies. The toolbar owns
+          its own collapse-to-trigger, and in performance mode it shows only
+          what a reader holding a tool needs to put it down. */}
       {showPdfChrome && toolbarSlot && (
         <div
           className={cn(
-            "pointer-events-none absolute left-3 top-4 z-20 sm:left-6 sm:top-6",
+            "pointer-events-none absolute left-2 top-1 z-20 sm:left-4",
             isTopRowClaimed
-              ? "right-3 sm:right-6"
-              : "max-w-[calc(100vw-9rem)] sm:max-w-[calc(100vw-13rem)]",
-            toolLayout === "rail" && "tool-rail:bottom-40 tool-rail:max-w-none",
-            toolLayout === "rail" && outline.length > 0 && "tool-rail:left-14",
+              ? "right-2 sm:right-4"
+              : "max-w-[calc(100%-13rem)] sm:max-w-[calc(100%-16rem)]",
+            toolLayout === "rail" && "tool-rail:bottom-14 tool-rail:max-w-none",
           )}
           data-pdf-gesture-exempt
         >
@@ -895,9 +925,10 @@ export const PdfViewer = ({
           data-pdf-viewport
           className={cn(
             "ethereal-scroll h-full overflow-auto overscroll-contain",
-            // Performance mode floats nothing over the page, so every inset
-            // here is black frame the reader has to squint past.
-            isImmersive ? "p-0" : "px-2 pb-8 pt-4 sm:px-6 sm:pb-32 sm:pt-6",
+            // The fit clears exactly this padding (FIT_VERTICAL_RESERVE_*).
+            // Performance mode has no bands to keep the page off, so every
+            // inset there is black frame the reader has to squint past.
+            isImmersive ? "p-0" : "p-2 sm:px-6 sm:py-3",
           )}
           style={{ touchAction: isPannableX ? "pan-x pan-y" : "pan-y" }}
         >
@@ -1030,48 +1061,87 @@ export const PdfViewer = ({
           />
         )}
 
-        {/* Whole-viewer overlay (annotation index / page rail). Spans the page
-            area only; content opts back into pointer events on its own surface. */}
+        {/* Transient notices over the page area only; content opts back into
+            pointer events on its own surface. */}
         {showPdfChrome && overlaySlot && (
           <div className="pointer-events-none absolute inset-0 z-20" data-pdf-gesture-exempt>
             {overlaySlot}
           </div>
         )}
-
-        {/* Outline drawer — only for documents that carry bookmarks (e.g. the
-            concert score-book): left-edge tab, tap a piece → jump to its page. */}
-        {showPdfChrome && outline.length > 0 && (
-          <div className="pointer-events-none absolute inset-0 z-20" data-pdf-gesture-exempt>
-            <PdfOutlineDrawer
-              entries={outline}
-              currentPage={currentPage}
-              labelling={labelling}
-              onJump={changePage}
-            />
-          </div>
-        )}
       </div>
 
-      {showPdfChrome && !isImmersive && (
-        <PdfBottomNav
-          currentPage={currentPage}
-          numPages={numPages}
-          labelling={labelling}
-          zoom={zoom}
-          minZoom={MIN_ZOOM}
-          maxZoom={MAX_ZOOM}
-          zoomStep={ZOOM_STEP}
-          fitMode={fitMode}
-          resolvedFit={resolvedFit}
-          onFitModeChange={setFitMode}
-          canTurnBack={canTurnBack}
-          canTurnForward={canTurnForward}
-          onTurn={turnPage}
-          onJump={changePage}
-          onZoomChange={changeZoom}
-          onResetZoom={resetZoom}
-        />
+      {/* The bottom band, reserved before the document arrives so the page
+          is fitted once, to the box it will keep. */}
+      {!isImmersive && (
+        <div className="box-content h-12 shrink-0 pb-[env(safe-area-inset-bottom)]">
+          {showPdfChrome && (
+            <PdfBottomNav
+              currentPage={currentPage}
+              numPages={numPages}
+              labelling={labelling}
+              place={place}
+              zoom={zoom}
+              minZoom={MIN_ZOOM}
+              maxZoom={MAX_ZOOM}
+              zoomStep={ZOOM_STEP}
+              canTurnBack={canTurnBack}
+              canTurnForward={canTurnForward}
+              onTurn={turnPage}
+              onZoomChange={changeZoom}
+              onResetZoom={resetZoom}
+              isSheetOpen={isSheetOpen}
+              onOpenSheet={openSheet}
+            />
+          )}
+        </div>
       )}
+
+      <AnimatePresence>
+        {showPdfChrome && isSheetOpen && numPages !== null && (
+          <PdfSheet
+            key="sheet"
+            title={title}
+            activeTab={sheetTab}
+            onTabChange={setSheetTab}
+            onClose={closeSheet}
+            tabs={[
+              {
+                id: MAIN_SHEET_TAB,
+                label: mainTabLabel ?? t("pdf_viewer.sheet_document", "Dokument"),
+                content: (
+                  <PdfReadingPanel
+                    contents={sheetContents}
+                    contentsTitle={contentsTitle ?? t("pdf_viewer.outline_title", "Spis treści")}
+                    currentPage={currentPage}
+                    numPages={numPages}
+                    labelling={labelling}
+                    onGoTo={changePage}
+                    onGoToAndClose={goToAndCloseSheet}
+                    fitMode={fitMode}
+                    resolvedFit={resolvedFit}
+                    onFitModeChange={setFitMode}
+                    hostSection={sheetSection}
+                    file={
+                      canExport
+                        ? {
+                            canOpenInBrowser: !!blobUrl,
+                            supportsNativeShare,
+                            isSharing,
+                            isDownloading,
+                            onDownload: handleDownload,
+                            onShare: handleShare,
+                            onOpenInBrowser: handleOpenInBrowser,
+                          }
+                        : null
+                    }
+                  />
+                ),
+              } satisfies PdfSheetTab,
+              ...(sheetTabs ?? []),
+            ]}
+          />
+        )}
+      </AnimatePresence>
 
       {/* Modal layer (the annotation guide): above every piece of chrome, so
           nothing behind it — the bottom nav's arrows above all — can be
@@ -1104,9 +1174,9 @@ export const PdfViewer = ({
         )}
       </AnimatePresence>
     </div>
+    </PdfPageTextProvider>
     </PdfTopRowClaimProvider>
     </PdfToolLayoutProvider>
-    </PdfCompactTriggersProvider>
     </PdfImmersiveProvider>
   );
 };

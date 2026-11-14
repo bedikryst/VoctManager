@@ -1,6 +1,9 @@
 export { PdfViewer } from "./PdfViewer";
-export { usePdfImmersive, usePdfCompactTriggers, useClaimPdfTopRow } from "./context";
+export { usePdfImmersive, useClaimPdfTopRow, usePdfPageText } from "./context";
 export { usePdfToolRail } from "./toolRail";
+export { bandButton, bandIconButton, sheetButton } from "./bandChrome";
+export { PdfSheetSection } from "./components/PdfSheet";
+export { createDownloadAnchor } from "./utils";
 /**
  * Where the viewer turns pages on a tap, and which way a swipe turns them.
  * Exported so an overlay that captures
@@ -20,4 +23,6 @@ export type {
   PdfKeyScope,
   PdfPageLabel,
   PdfToolLayout,
+  PdfContentsEntry,
+  PdfSheetTab,
 } from "./types";

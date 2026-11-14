@@ -1,18 +1,22 @@
 /**
  * @file PdfToolbar.tsx
- * @description The utility pill in the viewer's top-right corner: performance
- * mode, the export controls a document may offer, and at its end whatever the
- * wrapping shell adds (a modal's close). One pill and one row, so nothing
- * stacks a second row of chrome over the top of the page.
+ * @description The right end of the viewer's top band: performance mode, the
+ * export controls a document may offer, and at its end whatever the wrapping
+ * shell adds (a modal's close). Flat controls in a band reserved above the
+ * page, so nothing here ever lies over the music. Below the `sm` width the
+ * export icons give way to the label and close, and the sheet's file section
+ * carries them instead.
  * @module shared/ui/composites/PdfViewer
  */
 
 import type { ReactNode } from "react";
-import { Download, Globe, Maximize2, Share2 } from "lucide-react";
+import { Download, Globe, Loader2, Maximize2, Share2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { Button } from "@/shared/ui/primitives/Button";
 import { Divider } from "@/shared/ui/primitives/Divider";
-import { GlassCard } from "@/shared/ui/composites/GlassCard";
+import { Text } from "@/shared/ui/primitives/typography";
+import { cn } from "@/shared/lib/utils";
+
+import { bandButton, bandIconButton } from "../bandChrome";
 
 interface PdfToolbarProps {
   /**
@@ -29,7 +33,7 @@ interface PdfToolbarProps {
   supportsNativeShare: boolean;
   isSharing: boolean;
   isDownloading: boolean;
-  /** The shell's own controls, last in the pill — see `PdfViewerProps.utilitySlot`. */
+  /** The shell's own controls, last in the band — see `PdfViewerProps.utilitySlot`. */
   utilitySlot?: ReactNode;
   onOpenInBrowser: () => void;
   onShare: () => void;
@@ -59,79 +63,76 @@ export const PdfToolbar = ({
 
   return (
     <div
-      className="absolute right-4 top-4 z-20 flex items-center sm:right-6 sm:top-6"
+      className="absolute right-2 top-1 z-20 flex items-center gap-0.5 sm:right-4"
       data-pdf-gesture-exempt
     >
-      <GlassCard
-        variant="surface"
-        padding="sm"
-        className="rounded-full p-1.5 shadow-[0_8px_32px_rgba(0,0,0,0.4)]"
-        isHoverable={false}
-      >
-        {/* Single flex-row child: GlassCard's inner wrapper is flex-col, so the
-            buttons must share one row container or they stack vertically. */}
-        <div className="flex items-center gap-1">
-          {/* Spelled out, not a lone glyph: readers were pinch-zooming their way
-              through concerts without ever learning this mode existed, and an
-              unlabelled expand arrow reads as "zoom", which they already had. */}
-          {showDocumentControls && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onEnterImmersive}
-              leftIcon={<Maximize2 size={16} aria-hidden="true" />}
-              aria-label={t("pdf_viewer.immersive_enter", "Performance mode")}
-              title={t("pdf_viewer.immersive_enter", "Performance mode")}
-              className="h-9 gap-2 rounded-full px-3 text-ink-on-inverse hover:bg-ink-on-inverse/10"
-            >
-              {t("pdf_viewer.immersive_enter", "Performance mode")}
-            </Button>
-          )}
+      {/* Spelled out, not a lone glyph: readers were pinch-zooming their way
+          through concerts without ever learning this mode existed, and an
+          unlabelled expand arrow reads as "zoom", which they already had. */}
+      {showDocumentControls && (
+        <button
+          type="button"
+          onClick={onEnterImmersive}
+          title={t("pdf_viewer.immersive_enter", "Performance mode")}
+          className={cn(bandButton, "px-3")}
+        >
+          <Maximize2 size={18} aria-hidden="true" />
+          <Text as="span" size="base" weight="medium" color="inherit" className="whitespace-nowrap">
+            {t("pdf_viewer.immersive_enter", "Performance mode")}
+          </Text>
+        </button>
+      )}
 
-          {exportable && blobUrl && (
-            <Button
-              variant="ghost"
-              size="icon"
+      {exportable && (
+        <div className="hidden items-center gap-0.5 sm:flex">
+          {blobUrl && (
+            <button
+              type="button"
               onClick={onOpenInBrowser}
               aria-label={t("pdf_viewer.open_browser", "Open in browser")}
-              className="h-9 w-9 rounded-full text-ink-on-inverse hover:bg-ink-on-inverse/10"
+              title={t("pdf_viewer.open_browser", "Open in browser")}
+              className={bandIconButton}
             >
-              <Globe size={16} aria-hidden="true" />
-            </Button>
+              <Globe size={18} aria-hidden="true" />
+            </button>
           )}
-
-          {exportable && supportsNativeShare && (
-            <Button
-              variant="ghost"
-              size="icon"
+          {supportsNativeShare && (
+            <button
+              type="button"
               onClick={onShare}
-              isLoading={isSharing}
+              disabled={isSharing}
               aria-label={t("pdf_viewer.share", "Share")}
-              className="h-9 w-9 rounded-full text-ink-on-inverse hover:bg-ink-on-inverse/10"
+              title={t("pdf_viewer.share", "Share")}
+              className={bandIconButton}
             >
-              {!isSharing && <Share2 size={16} aria-hidden="true" />}
-            </Button>
+              {isSharing ? (
+                <Loader2 size={18} className="animate-spin" aria-hidden="true" />
+              ) : (
+                <Share2 size={18} aria-hidden="true" />
+              )}
+            </button>
           )}
-
-          {exportable && (
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={onDownload}
-              isLoading={isDownloading}
-              aria-label={t("pdf_viewer.download", "Download")}
-              className="h-9 w-9 rounded-full text-ink-on-inverse hover:bg-ink-on-inverse/10"
-            >
-              {!isDownloading && <Download size={16} aria-hidden="true" />}
-            </Button>
-          )}
-
-          {showDocumentControls && utilitySlot && (
-            <Divider variant="solid-dark" orientation="vertical" className="mx-0.5 h-5" />
-          )}
-          {utilitySlot}
+          <button
+            type="button"
+            onClick={onDownload}
+            disabled={isDownloading}
+            aria-label={t("pdf_viewer.download", "Download")}
+            title={t("pdf_viewer.download", "Download")}
+            className={bandIconButton}
+          >
+            {isDownloading ? (
+              <Loader2 size={18} className="animate-spin" aria-hidden="true" />
+            ) : (
+              <Download size={18} aria-hidden="true" />
+            )}
+          </button>
         </div>
-      </GlassCard>
+      )}
+
+      {showDocumentControls && utilitySlot && (
+        <Divider variant="solid-dark" orientation="vertical" className="mx-1 h-5" />
+      )}
+      {utilitySlot}
     </div>
   );
 };

@@ -507,6 +507,9 @@ export interface ScoreBookItem {
   last_page: number;
 }
 
+/** A programme item the book binds no page of. */
+export type ScoreBookUnboundItem = Omit<ScoreBookItem, "first_page" | "last_page">;
+
 /**
  * One page's printed number, in page order. `kind` names a page that has
  * none: `title` is the title page, the rest are the build's own page kinds.
@@ -525,6 +528,11 @@ export interface ScoreBookMap {
   available: boolean;
   pages: ScoreBookFrame[];
   items: ScoreBookItem[];
+  /**
+   * Programme items the book holds no pages for, so the stand can list the
+   * whole running order. Optional for a map kept on the device from before.
+   */
+  unbound?: ScoreBookUnboundItem[];
   /**
    * Every page's printed number; empty for a book printed without numbers.
    * Optional because a map kept on the device (query snapshot, service-worker

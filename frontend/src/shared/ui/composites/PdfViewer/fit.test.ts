@@ -6,11 +6,11 @@
  * typecheck and no glance at a desktop browser will ever catch.
  *
  * The landscape numbers are the reason the fit became a mode at all: fitting a
- * whole A4 to a screen 390px tall leaves a 311px page inside 844px of glass,
- * so a third of the width carries the music and two thirds carry nothing.
+ * whole A4 to a box 390px tall leaves a 258px page inside 844px of glass, so
+ * under a third of the width carries the music and the rest carries nothing.
  *
- * Viewport sizes are CSS pixels of the viewer's own box (the modal is
- * full-bleed, so on an installed PWA that is the screen).
+ * Viewport sizes are CSS pixels of the scroll box between the viewer's bands,
+ * padding included.
  * @module shared/ui/composites/PdfViewer/fit.test
  */
 
@@ -53,19 +53,19 @@ describe("resolvePageFit — auto", () => {
     const auto = fit(landscapePhone);
     const whole = fit({ ...landscapePhone, fitMode: "page" });
 
-    // 320 is the minimum width, not a fit: the arithmetic wants 311, and even
-    // that is 37% of an 844px screen. See the floor case below.
+    // 320 is the minimum width, not a fit: the arithmetic wants 258, and even
+    // the floor is 38% of an 844px screen. See the floor case below.
     expect(whole.renderedPageWidth).toBe(320);
     expect(auto.resolvedFit).toBe("two-thirds");
-    expect(auto.renderedPageWidth).toBe(466); // half as large again, same glass
+    expect(auto.renderedPageWidth).toBe(388); // half as large again, same glass
   });
 
   it("switches to two thirds on a tablet on its side", () => {
     const landscapeTablet = { viewportWidth: 1180, viewportHeight: 820 };
     const { resolvedFit, renderedPageWidth } = fit(landscapeTablet);
     expect(resolvedFit).toBe("two-thirds");
-    expect(renderedPageWidth).toBe(922);
-    expect(fit({ ...landscapeTablet, fitMode: "page" }).renderedPageWidth).toBe(615);
+    expect(renderedPageWidth).toBe(844);
+    expect(fit({ ...landscapeTablet, fitMode: "page" }).renderedPageWidth).toBe(562);
   });
 });
 
@@ -77,7 +77,7 @@ describe("resolvePageFit — explicit modes and edges", () => {
   });
 
   it("floors a page that cannot fit, so a short box gets an overhang, not a stamp", () => {
-    // Landscape phone, whole-page fit: the height wants 311px and the floor
+    // Landscape phone, whole-page fit: the height wants 258px and the floor
     // says 320, which makes the page 452px tall inside a 390px box. Deliberate
     // — a page shrunk to fit every box would eventually be unreadable — and the
     // reason `auto` never lands here in the first place.
@@ -110,14 +110,15 @@ describe("resolvePageFit — explicit modes and edges", () => {
       viewportHeight: 200,
       fitMode: "page",
     });
-    expect(renderedPageWidth).toBe(260); // the fit wants 141
+    expect(renderedPageWidth).toBe(260); // the fit wants 130
   });
 
-  it("lets the page run under the nav only where a nav floats over it", () => {
+  it("fits a whole page inside the box's padding, never under the bands", () => {
     const landscapeTablet = { viewportWidth: 1180, viewportHeight: 820, fitMode: "page" as const };
-    expect(fit(landscapeTablet).overflowAllowance).toBe(50);
-    expect(fit({ ...landscapeTablet, immersive: true }).overflowAllowance).toBe(0);
-    expect(fit({ viewportWidth: 390, viewportHeight: 844 }).overflowAllowance).toBe(0);
+    const width = fit(landscapeTablet).renderedPageWidth ?? 0;
+    expect(width * DEFAULT_PAGE_ASPECT).toBeLessThanOrEqual(820 - 24);
+    const immersive = fit({ ...landscapeTablet, immersive: true }).renderedPageWidth ?? 0;
+    expect(Math.round(immersive * DEFAULT_PAGE_ASPECT)).toBeGreaterThanOrEqual(819);
   });
 
   it("reports no width before the viewport has been measured", () => {

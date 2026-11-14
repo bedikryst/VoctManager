@@ -24,7 +24,6 @@ import { AnimatePresence, motion } from "framer-motion";
 import { PencilLine, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
-import { cn } from "@/shared/lib/utils";
 import { Text } from "@/shared/ui/primitives/typography";
 
 /** Long enough to read mid-phrase, short enough to stop being furniture. */
@@ -40,8 +39,6 @@ interface IncomingMarksNoticeProps {
   pages: readonly number[];
   /** `since`: what changed while the reader was away. `live`: what just arrived. */
   kind: "since" | "live";
-  /** The concert binder floats its programme bar on this same centre line. */
-  lifted?: boolean;
   /** Goes to the first of `pages`. */
   onGoToPage: () => void;
   onDismiss: () => void;
@@ -51,7 +48,6 @@ export const IncomingMarksNotice = ({
   count,
   pages,
   kind,
-  lifted = false,
   onGoToPage,
   onDismiss,
 }: IncomingMarksNoticeProps): React.JSX.Element => {
@@ -75,14 +71,9 @@ export const IncomingMarksNotice = ({
 
   return (
     // Lifted clear of the viewer's own transient chip (bottom-8, z-30), which
-    // occupies the same centre line and would otherwise land on top of this —
-    // and clear of the programme bar too, wherever that is on screen.
-    <div
-      className={cn(
-        "pointer-events-none absolute inset-x-0 bottom-0 z-10 flex justify-center px-4",
-        lifted ? "pb-40 sm:pb-44" : "pb-20",
-      )}
-    >
+    // occupies the same centre line in performance mode and would otherwise
+    // land on top of this.
+    <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 flex justify-center px-4 pb-20">
       <Text as="span" role="status" className="sr-only">
         {count > 0 ? message : ""}
       </Text>

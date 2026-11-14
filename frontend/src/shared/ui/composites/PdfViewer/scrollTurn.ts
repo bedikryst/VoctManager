@@ -15,12 +15,11 @@ import { FIT_SCROLL_OVERLAP_PX, SCROLL_EDGE_TOLERANCE_PX } from "./constants";
 
 /**
  * The part of the scroll range a reader pages through. A page that overruns the
- * box by no more than the fit's `overflowAllowance` reads as whole — its foot
- * sits under the floating nav by design — so a turn goes straight to the next
- * page and a turn back lands on the top edge, not a few pixels down.
+ * box by no more than layout rounding reads as whole, so a turn goes straight
+ * to the next page and a turn back lands on the top edge, not a few pixels down.
  */
-export const readableScrollRange = (maxScroll: number, overflowAllowance: number): number =>
-  maxScroll > overflowAllowance + SCROLL_EDGE_TOLERANCE_PX ? maxScroll : 0;
+export const readableScrollRange = (maxScroll: number): number =>
+  maxScroll > SCROLL_EDGE_TOLERANCE_PX ? maxScroll : 0;
 
 /**
  * Scroll distance (CSS px, always positive) of the next turn toward the edge

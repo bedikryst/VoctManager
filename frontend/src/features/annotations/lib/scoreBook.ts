@@ -35,6 +35,9 @@ export interface BookItem {
   last_page: number;
 }
 
+/** A programme item with no pages in the book — mirrors `ScoreBookUnboundItem`. */
+export type UnboundBookItem = Omit<BookItem, "first_page" | "last_page">;
+
 /** How a page without a printed number is named — mirrors `ScoreBookPageLabel.kind`. */
 export type BookPageKind = "title" | "front" | "pad" | "spacer" | "card" | "music";
 
@@ -50,6 +53,8 @@ export interface ScoreBook {
   /** `edition#sourcePage` → every book page that bound it, in binding order. */
   bindings: ReadonlyMap<string, readonly number[]>;
   items: readonly BookItem[];
+  /** The rest of the programme, which the book holds no pages for. */
+  unbound: readonly UnboundBookItem[];
   /**
    * Every page's printed number, in page order (row 0 is page 1). Empty for a
    * book printed without numbers: its pages are then counted as the file's.
@@ -61,6 +66,7 @@ export const EMPTY_SCORE_BOOK: ScoreBook = {
   frames: new Map(),
   bindings: new Map(),
   items: [],
+  unbound: [],
   labels: [],
 };
 
@@ -71,6 +77,7 @@ export const buildScoreBook = (
   pages: readonly BookPageFrame[],
   items: readonly BookItem[],
   labels: readonly BookPageLabel[] = [],
+  unbound: readonly UnboundBookItem[] = [],
 ): ScoreBook => {
   const bindings = new Map<string, number[]>();
   for (const frame of pages) {
@@ -85,6 +92,7 @@ export const buildScoreBook = (
     // The programme's own order, never the page order: an encore bound in the
     // middle of the book is still last in the concert.
     items: [...items].sort((a, b) => a.order - b.order),
+    unbound: [...unbound].sort((a, b) => a.order - b.order),
     labels,
   };
 };
@@ -102,6 +110,27 @@ export const itemPageNumber = (book: ScoreBook, item: BookItem): number | null =
   for (let page = item.first_page; page <= item.last_page; page += 1) {
     const folio = book.labels[page - 1]?.folio ?? null;
     if (folio !== null) return folio;
+  }
+  return null;
+};
+
+/**
+ * The printed numbers a piece runs over, as a contents line gives them
+ * ("s. 3–7"): the first and the last number printed within its span, so an
+ * unnumbered blank at either end is skipped as the book's own contents skips
+ * it. A book without printed numbers answers in file pages. Null only where a
+ * numbered book prints no number anywhere in the piece.
+ */
+export const itemPageSpan = (
+  book: ScoreBook,
+  item: BookItem,
+): { from: number; to: number } | null => {
+  if (book.labels.length === 0) return { from: item.first_page, to: item.last_page };
+  const from = itemPageNumber(book, item);
+  if (from === null) return null;
+  for (let page = item.last_page; page >= item.first_page; page -= 1) {
+    const folio = book.labels[page - 1]?.folio ?? null;
+    if (folio !== null) return { from, to: folio };
   }
   return null;
 };
@@ -162,36 +191,3 @@ export const itemAtPage = (
   book.items.find(
     (item) => page >= item.first_page && page <= item.last_page,
   ) ?? null;
-
-/**
- * The page to open for the next / previous PIECE — which is not the next page
- * and not always the next entry in the programme either.
- *
- * Two rules earn their place here. Going forward from anywhere before the first
- * piece (the title page, the table of contents) opens the first piece rather
- * than refusing. Going back from the middle of a piece returns to ITS OWN
- * opening first, the way a thumb does in a paper binder — only a reader already
- * standing on a piece's first page is asking for the one before it.
- */
-export const pieceJumpTarget = (
-  book: ScoreBook,
-  page: number,
-  delta: 1 | -1,
-): number | null => {
-  const items = book.items;
-  if (items.length === 0) return null;
-
-  // Binding order, because "the next piece" is the next one you reach by
-  // turning pages — not the next number in a programme whose encore may have
-  // been bound elsewhere.
-  const bound = [...items].sort((a, b) => a.first_page - b.first_page);
-  if (delta === 1) {
-    const next = bound.find((item) => item.first_page > page);
-    return next?.first_page ?? null;
-  }
-  const current = bound.filter((item) => item.first_page <= page).pop();
-  if (!current) return null;
-  if (current.first_page < page) return current.first_page;
-  const index = bound.indexOf(current);
-  return index > 0 ? bound[index - 1].first_page : null;
-};

@@ -34,6 +34,7 @@ import { Eyebrow, Text } from "@/shared/ui/primitives/typography";
 import { formatLocalizedDate } from "@/shared/lib/time/intl";
 import { cn } from "@/shared/lib/utils";
 import { PieceRow } from "./PieceRow";
+import { RehearsalSection } from "../player/RehearsalSection";
 import { OfflineDownloadControl } from "./OfflineDownloadControl";
 import { isReadinessWithheld, practisedProgram } from "../lib/readiness";
 import type { MaterialsDashboardGroup } from "../types/materials.dto";
@@ -245,6 +246,18 @@ export const ProjectMaterialGroup = ({
                   group.program.every((item) => item.piece.may_mark_with_conductor === true),
               })}
               canNotifyChoir={canNotifyChoir}
+              // The piece in front of the reader brings its own pitches into
+              // the book's sheet, matched by programme number.
+              pieceSection={(order) => {
+                const entry = group.program.find((item) => item.order === order);
+                return entry ? (
+                  <RehearsalSection
+                    piece={entry.piece}
+                    projectId={group.project.id}
+                    canEditPitches={isManager(user)}
+                  />
+                ) : null;
+              }}
               onClose={() => setBookOpen(false)}
             />
           )}

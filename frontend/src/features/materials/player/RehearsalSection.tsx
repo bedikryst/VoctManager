@@ -1,25 +1,23 @@
 /**
- * @file RehearsalDock.tsx
- * @description The rehearsal instrument inside the open score (mounted through
- * PdfViewer.overlaySlot): a bottom-left pill that expands into a dark glass
- * panel with two sections. Where the page reaches into the left margin the
- * pill folds to its icon, so the label never lies across the music. PITCHES — the piece's starting pitches as playable
- * voice chips plus "Podaj dźwięki", which arpeggiates them top-voice-first the
- * way a conductor reads a pitch pipe (managers edit the list inline; it saves
- * to the piece). TRANSPORT — a compact remote for the multitrack practice
+ * @file RehearsalSection.tsx
+ * @description The rehearsal instrument inside the open score, as sections of
+ * the stand's sheet (mounted through `sheetSection`), so it never floats over
+ * the music. KAMERTON — the piece's starting pitches as playable voice chips
+ * plus "Podaj dźwięki", which arpeggiates them top-voice-first the way a
+ * conductor reads a pitch pipe (managers edit the list inline; it saves to the
+ * piece). Tonic from `musical_key` is the fallback when no pitches are
+ * configured yet. RECORDINGS — a compact remote for the multitrack practice
  * engine (play/pause, seek, one-tap presets), so audio can be driven without
- * closing the score. Tonic from `musical_key` is the fallback when no pitches
- * are configured yet.
+ * closing the score; the engine lives above the sheet, so closing the sheet
+ * does not stop it, while a pitch still sounding stops with the sheet.
  * @module features/materials/player
  */
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Check,
-  ChevronDown,
   Headphones,
   Mic,
-  Music4,
   Pause,
   Pencil,
   Play,
@@ -32,13 +30,11 @@ import {
 import { useTranslation } from "react-i18next";
 
 import { cn } from "@/shared/lib/utils";
-import { Text } from "@/shared/ui/primitives/typography";
 import { Select } from "@/shared/ui/primitives/Select";
 import { FIELD_TEXT_SCALE } from "@/shared/ui/primitives/fieldShell";
 import { PITCH_NOTES, parseMusicalKeyTonic } from "@/shared/ui/instruments/PitchPipe";
-import { usePdfCompactTriggers } from "@/shared/ui/composites/PdfViewer";
+import { PdfSheetSection } from "@/shared/ui/composites/PdfViewer";
 
-import { SectionLabel } from "../components/SectionLabel";
 import { useUpdateStartingPitches } from "../api/materials.queries";
 import type { MaterialsPiece, MaterialsStartingPitch } from "../types/materials.dto";
 import {
@@ -50,7 +46,7 @@ import { formatPlayerTime } from "./PlayerTransport";
 import { playPitchSequence, type PitchSequenceHandle } from "./pitchTones";
 import { holdsTake, type PracticePreset } from "./practicePlayerEngine";
 
-interface RehearsalDockProps {
+interface RehearsalSectionProps {
   piece: MaterialsPiece;
   projectId: string;
   /** Managers may set the piece's starting pitches inline. */
@@ -93,24 +89,15 @@ const PRESETS: readonly {
 const pitchLabel = (pitch: MaterialsStartingPitch): string =>
   `${PITCH_NOTES[pitch.note] ?? "?"}${pitch.octave}`;
 
-/** The dock's sections wear the feature's label, in its dark tone. */
-const DockLabel = ({
-  children,
-}: {
-  children: React.ReactNode;
-}): React.JSX.Element => <SectionLabel tone="dark">{children}</SectionLabel>;
-
-export const RehearsalDock = ({
+export const RehearsalSection = ({
   piece,
   projectId,
   canEditPitches,
-}: RehearsalDockProps): React.JSX.Element => {
+}: RehearsalSectionProps): React.JSX.Element => {
   const { t } = useTranslation();
   const { engine, snapshot } = usePracticePlayer();
   const updatePitches = useUpdateStartingPitches();
-  const compact = usePdfCompactTriggers();
 
-  const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState<MaterialsStartingPitch[]>([]);
   /** "seq" while the full arpeggio sounds, a pitch index for a single chip. */
@@ -173,72 +160,24 @@ export const RehearsalDock = ({
 
   const hasMine = piece.my_casting !== null;
 
-  if (!open) {
-    const triggerLabel = t("materials.rehearsal_dock.pitch_pipe", "Kamerton");
-    return (
-      <div className="pointer-events-none absolute bottom-20 left-3 z-10 sm:bottom-24 sm:left-6">
-        <button
-          type="button"
-          onClick={() => setOpen(true)}
-          aria-label={t("materials.rehearsal_dock.open_aria", "Otwórz instrumenty próby")}
-          title={compact ? triggerLabel : undefined}
-          className={cn(
-            "pointer-events-auto flex h-11 items-center rounded-full border border-line-on-inverse bg-surface-inverse/70 text-ink-on-inverse shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-xl transition-colors hover:bg-surface-inverse/85",
-            compact ? "w-11 justify-center" : "gap-1.5 px-3.5",
-          )}
-        >
-          <Music4 size={17} aria-hidden="true" />
-          {!compact && (
-            <>
-              <span className="text-sm font-medium">{triggerLabel}</span>
-              {hasTracks && <Headphones size={14} className="opacity-70" aria-hidden="true" />}
-            </>
-          )}
-        </button>
-      </div>
-    );
-  }
-
   return (
-    <div className="pointer-events-none absolute bottom-20 left-3 z-10 sm:bottom-24 sm:left-6">
-      <div className="pointer-events-auto flex w-[19.5rem] max-w-[calc(100vw-1.5rem)] flex-col overflow-hidden rounded-3xl border border-line-on-inverse bg-surface-inverse/85 text-ink-on-inverse shadow-[0_8px_32px_rgba(0,0,0,0.45)] backdrop-blur-xl">
-        <header className="flex items-center justify-between border-b border-line-on-inverse px-4 py-3">
-          <Text as="span" weight="semibold" className="flex items-center gap-2">
-            <Music4 size={15} aria-hidden="true" />
-            {t("materials.rehearsal_dock.title", "Instrumenty próby")}
-          </Text>
-          <button
-            type="button"
-            onClick={() => {
-              stopTones();
-              setOpen(false);
-              setEditing(false);
-            }}
-            aria-label={t("common.close_aria", "Zamknij")}
-            className="rounded-full p-1 text-ink-on-inverse/70 hover:bg-ink-on-inverse/10 hover:text-ink-on-inverse"
-          >
-            <ChevronDown size={16} aria-hidden="true" />
-          </button>
-        </header>
-
-        <div className="flex flex-col gap-4 px-4 py-3">
-          {/* ── starting pitches ─────────────────────────────────────── */}
-          <section>
-            <div className="flex items-center justify-between">
-              <DockLabel>
-                {t("materials.rehearsal_dock.starting_pitches", "Dźwięki startowe")}
-              </DockLabel>
-              {canEditPitches && !editing && (
+    <>
+          <PdfSheetSection
+            title={t("materials.rehearsal_dock.pitch_pipe", "Kamerton")}
+            action={
+              canEditPitches && !editing ? (
                 <button
                   type="button"
                   onClick={beginEdit}
                   aria-label={t("materials.rehearsal_dock.edit_pitches", "Edytuj dźwięki startowe")}
-                  className="rounded-full p-1 text-ink-on-inverse/60 hover:bg-ink-on-inverse/10 hover:text-ink-on-inverse"
+                  title={t("materials.rehearsal_dock.edit_pitches", "Edytuj dźwięki startowe")}
+                  className="flex h-8 w-8 items-center justify-center rounded-full text-ink-on-inverse/60 hover:bg-ink-on-inverse/10 hover:text-ink-on-inverse"
                 >
-                  <Pencil size={13} aria-hidden="true" />
+                  <Pencil size={14} aria-hidden="true" />
                 </button>
-              )}
-            </div>
+              ) : undefined
+            }
+          >
 
             {editing ? (
               <div className="flex flex-col gap-1.5">
@@ -417,14 +356,11 @@ export const RehearsalDock = ({
                 )}
               </div>
             )}
-          </section>
+          </PdfSheetSection>
 
           {/* ── practice-player transport ────────────────────────────── */}
           {hasTracks && (
-            <section>
-              <DockLabel>
-                {t("materials.rehearsal_dock.recordings", "Nagrania do ćwiczeń")}
-              </DockLabel>
+            <PdfSheetSection title={t("materials.rehearsal_dock.recordings", "Nagrania do ćwiczeń")}>
               {!isCurrentPiece ? (
                 <button
                   type="button"
@@ -503,10 +439,8 @@ export const RehearsalDock = ({
                   </div>
                 </div>
               )}
-            </section>
+            </PdfSheetSection>
           )}
-        </div>
-      </div>
-    </div>
+    </>
   );
 };

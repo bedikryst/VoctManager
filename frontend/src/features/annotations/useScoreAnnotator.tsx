@@ -2,8 +2,9 @@
  * @file useScoreAnnotator.tsx
  * @description One-call binding that turns an edition id + annotator mode into
  * the slots PdfViewer needs: a `toolbarSlot`, a `renderPageOverlay` (the drawing
- * surface), an `overlaySlot` (the annotation index, the live notice), a
- * `modalSlot` (the guide) and an `onPageApiChange` handler. Three modes: `conductor` (managers — write
+ * surface), an `overlaySlot` (the live notices), a `modalSlot` (the guide),
+ * `sheetTabs` (the marks tab of the sheet: layers and the annotation index) and
+ * an `onPageApiChange` handler. Three modes: `conductor` (managers — write
  * to the choir, leader and private reaches, and may move a placed mark between
  * them), `leader` (a project leader whose grant opens a layer beside their
  * pencil — the choir's, the desk they share with the conductor, or both; the
@@ -25,7 +26,7 @@
  *
  * It also keeps track of what is new to the reader, the conductor included:
  * marks someone else wrote for them since their last visit carry a halo and a
- * "Nowe" list in the drawer, and one dismissible line sums them up on open and
+ * "Nowe" list in the marks tab, and one dismissible line sums them up on open and
  * announces what arrives while the stand is open — the conductor writing
  * mid-rehearsal, or an assistant answering him — because a mark that lands
  * three pages away would otherwise never be found.
@@ -36,7 +37,7 @@
  * the server tells it; a reader with none is shown everything.
  *
  * For the conductor it carries the two gestures over the choir's marks as a
- * whole: the drawer puts an edition's marks aside and brings a set back (which
+ * whole: the marks tab puts an edition's marks aside and brings a set back (which
  * ends that edition's undo history), and a stand opened from a project tells its
  * choir about new marks from the toolbar — in the concert book from its title
  * page too, where there is nothing to draw on.
@@ -52,6 +53,7 @@
  */
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 import { useAuth } from "@/app/providers/AuthProvider";
 import { isEditableTarget } from "@/shared/lib/dom/editableTarget";
@@ -59,12 +61,13 @@ import type {
   PdfPageApi,
   PdfPageGeometry,
   PdfPageRegion,
+  PdfSheetTab,
 } from "@/shared/ui/composites/PdfViewer";
 
 import { AnnotationOverlay, type LinkStart } from "./components/AnnotationOverlay";
 import { LinkStatusChip, type LinkStatus } from "./components/LinkStatusChip";
 import { AnnotationToolbar, BareToolbar } from "./components/AnnotationToolbar";
-import { ANNOTATION_DRAWER_ATTR, AnnotationSidebar } from "./components/AnnotationSidebar";
+import { ANNOTATION_DRAWER_ATTR, AnnotationMarksPanel } from "./components/AnnotationMarksPanel";
 import { AnnotationGuide } from "./components/AnnotationGuide";
 import { IncomingMarksNotice } from "./components/IncomingMarksNotice";
 import { NotifyChoirButton } from "./components/NotifyChoirButton";
@@ -197,6 +200,8 @@ export interface ScoreAnnotatorBindings {
   overlaySlot: React.ReactNode;
   /** The guide, which covers the viewer's chrome — see `PdfViewerProps.modalSlot`. */
   modalSlot: React.ReactNode;
+  /** The marks tab of the viewer's sheet — see `PdfViewerProps.sheetTabs`. */
+  sheetTabs: readonly PdfSheetTab[];
   onPageApiChange: (api: PdfPageApi) => void;
   /** The annotator's first claim on a key — see `PdfViewerProps.claimKey`. */
   claimKey: (event: KeyboardEvent) => boolean;
@@ -233,6 +238,7 @@ export const useScoreAnnotator = ({
   active = true,
   notifyProjectId = null,
 }: UseScoreAnnotatorOptions): ScoreAnnotatorBindings => {
+  const { t } = useTranslation();
   const isConductor = mode === "conductor";
   const isLeader = mode === "leader";
   // Two flags rather than the caller's list, so a list rebuilt on every render
@@ -1054,41 +1060,56 @@ export const useScoreAnnotator = ({
 
   const overlaySlot = (
     <>
-      <AnnotationSidebar
-        annotations={annotations}
-        newMarks={incoming.newMarks}
-        currentPage={pageApi.currentPage}
-        goToPage={pageApi.goToPage}
-        displayPage={displayPage}
-        linkTargetPage={linkTargetPage}
-        displayFocusY={displayFocusY}
-        visibleLayers={visibleLayers}
-        toggleLayerVisibility={tools.toggleLayerVisibility}
-        voiceFilter={readerSections !== "" && hasVoicedMarks ? tools.voiceFilter : null}
-        onVoiceFilterChange={tools.setVoiceFilter}
-        mode={mode}
-        writesLeader={writesLeader}
-        onSelectMark={handleSelectMark}
-        editionId={activeEditionId}
-        setAsideCount={setAsideCount}
-        onMarksReplaced={resetHistory}
-      />
       <IncomingMarksNotice
         count={incoming.notice?.count ?? 0}
         pages={(incoming.notice?.pages ?? []).map(displayPage)}
         kind={incoming.notice?.kind ?? "live"}
-        lifted={!!book}
         onGoToPage={handleGoToIncoming}
         onDismiss={incoming.dismiss}
       />
       <LinkStatusChip
         status={linkStatus}
-        lifted={!!book}
         onReturn={handleReturn}
         onDismiss={dismissLinkStatus}
       />
     </>
   );
+
+  // Counts what is drawn, like the index inside: a count over a hidden layer
+  // promises rows the tab would then not show.
+  const drawnCount = useMemo(
+    () => annotations.filter((mark) => visibleLayers[layerOf(mark)]).length,
+    [annotations, visibleLayers],
+  );
+
+  const sheetTabs: PdfSheetTab[] = [
+    {
+      id: "marks",
+      label: t("annotations.panel.tab", "Uwagi"),
+      count: drawnCount,
+      content: (
+        <AnnotationMarksPanel
+          annotations={annotations}
+          newMarks={incoming.newMarks}
+          currentPage={pageApi.currentPage}
+          goToPage={pageApi.goToPage}
+          displayPage={displayPage}
+          linkTargetPage={linkTargetPage}
+          displayFocusY={displayFocusY}
+          visibleLayers={visibleLayers}
+          toggleLayerVisibility={tools.toggleLayerVisibility}
+          voiceFilter={readerSections !== "" && hasVoicedMarks ? tools.voiceFilter : null}
+          onVoiceFilterChange={tools.setVoiceFilter}
+          mode={mode}
+          writesLeader={writesLeader}
+          onSelectMark={handleSelectMark}
+          editionId={activeEditionId}
+          setAsideCount={setAsideCount}
+          onMarksReplaced={resetHistory}
+        />
+      ),
+    },
+  ];
 
   const modalSlot = (
     <AnnotationGuide
@@ -1135,6 +1156,7 @@ export const useScoreAnnotator = ({
     renderPageOverlay,
     overlaySlot,
     modalSlot,
+    sheetTabs,
     onPageApiChange,
     claimKey,
     annotationCount: annotations.length,

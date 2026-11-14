@@ -9,10 +9,12 @@
  * the book would otherwise have to be added three times.
  *
  * The reader's marks are LIVE here — drawn, moved and erased on the page — so
- * the "compose my marks into the file" switch is deliberately absent: two ways
- * to see one set of marks, one of them uneditable, is a worse answer than one.
- * The stand links to no full view either: that page composes the file on the
- * server, is slow to open, and read to singers as a second stand.
+ * the book on screen is the clean one, never a copy with marks composed in:
+ * two ways to see one set of marks, one of them uneditable, is a worse answer
+ * than one. The stand links to no full view either: that page composes the
+ * file on the server, is slow to open, and read to singers as a second stand.
+ * A file of the book comes from the sheet's "Pobierz PDF" (`ScoreBookDownload`),
+ * which composes the copy only when asked.
  * @module features/projects/components
  */
 
@@ -32,6 +34,7 @@ import { RECONCILING_REFETCH } from "@/shared/api/queryPolicy";
 
 import { projectKeys } from "../api/project.query-keys";
 import { ProjectService } from "../api/project.service";
+import { ScoreBookDownload } from "./ScoreBookDownload";
 
 interface ProjectScoreBookProps {
   readonly projectId: string;
@@ -58,6 +61,11 @@ interface ProjectScoreBookProps {
    * "Powiadom chór".
    */
   readonly canNotifyChoir?: boolean;
+  /**
+   * The sheet section for the piece the reader stands in, by its programme
+   * number — the songbook passes the piece's starting pitches here.
+   */
+  readonly pieceSection?: (order: number) => React.ReactNode;
   readonly onClose: () => void;
 }
 
@@ -69,6 +77,7 @@ export const ProjectScoreBook = ({
   mode = "personal",
   delegateLayers,
   canNotifyChoir = false,
+  pieceSection,
   onClose,
 }: ProjectScoreBookProps): React.JSX.Element => {
   const { t } = useTranslation();
@@ -88,13 +97,14 @@ export const ProjectScoreBook = ({
   const book: ScoreBook = useMemo(
     () =>
       data?.available
-        ? buildScoreBook(data.pages, data.items, data.labels ?? [])
+        ? buildScoreBook(data.pages, data.items, data.labels ?? [], data.unbound ?? [])
         : EMPTY_SCORE_BOOK,
     [data],
   );
 
   const title = t("score_book.title", "Książka nutowa");
-  const fileName = `Score_${projectTitle.replace(/\s+/g, "_")}.pdf`;
+  const fileStem = `Score_${projectTitle.replace(/\s+/g, "_")}`;
+  const fileName = `${fileStem}.pdf`;
 
   const stamp = data?.stamp ?? "";
   // The map answers first, and only then are the bytes asked for. Not an
@@ -125,6 +135,8 @@ export const ProjectScoreBook = ({
       mode={mode}
       delegateLayers={delegateLayers}
       notifyProjectId={canNotifyChoir ? projectId : null}
+      pieceSection={pieceSection}
+      downloadSection={<ScoreBookDownload projectId={projectId} fileStem={fileStem} />}
       onClose={onClose}
     />
   );

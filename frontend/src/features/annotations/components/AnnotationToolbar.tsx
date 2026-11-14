@@ -1,7 +1,7 @@
 /**
  * @file AnnotationToolbar.tsx
  * @description Markup toolbar, injected into the PDF viewer's top-left slot.
- * Three parts, each in its own glass:
+ * Three parts:
  * - the tools: undo · redo │ browse · select · Rysuj · Wstaw · eraser │ ⋯,
  *   with "Gotowe" beside them as a row and collapse heading them as a rail.
  *   "Rysuj" (pen, highlighter, shapes) and "Wstaw" (note, symbol,
@@ -16,25 +16,25 @@
  *   palette (one group at a time).
  *
  * Orientation follows the screen, never the zoom (`usePdfToolRail`). On a
- * landscape tablet or larger the tools are a vertical rail in the left margin
- * under the strip, with the options opening to its right. Elsewhere they are a
- * row in the top letterbox with the strip under it and the options dropping
- * below; in personal mode the strip would hold nothing but "Moje", so that
- * chip heads the row instead. Open as a row, the bar is a mode: it claims the
- * viewer's whole top row (the utility pill with close steps aside) and
- * "Gotowe", where the pill stood, leaves it. The row stays one line and
- * scrolls sideways where a phone cannot hold it; on the narrowest phones redo
- * moves into ⋯ so less of it scrolls. The options panel's rows wrap.
+ * landscape tablet or larger the tools are a vertical rail of glass in the left
+ * margin under the strip, with the options opening to its right. Elsewhere they
+ * are a flat row in the viewer's top band with the strip under it and the
+ * options dropping below in glass; in personal mode the strip would hold
+ * nothing but "Moje", so that chip heads the row instead. Open as a row, the
+ * bar is a mode: it claims the viewer's whole top band (performance mode and
+ * close step aside) and "Gotowe", where close stood, leaves it. The row stays
+ * one line and scrolls sideways where a phone cannot hold it; on the narrowest
+ * phones redo moves into ⋯ so less of it scrolls. The options panel's rows wrap.
  *
  * Each tool's tooltip names the key that arms it (`TOOL_KEYS`), and the symbol
  * palette previews every symbol in the ink in hand, on a scrap of paper. A word
  * spans as many palette cells as its measured width needs.
  *
- * Collapsed, the bar is a trigger that NAMES the tool in hand — a rehearsal is
- * no place to discover that the pencil was armed all along. Whether it opens
- * collapsed is remembered per device, for the same reason. Where the page
- * reaches into the left margin, the trigger folds further to the tool's icon
- * so the name never lies across the start of a system.
+ * Collapsed, the bar is a flat trigger in the band that NAMES the tool in
+ * hand — a rehearsal is no place to discover that the pencil was armed all
+ * along. Whether it opens collapsed is remembered per device, for the same
+ * reason. Performance mode shows nothing over the page, except that trigger
+ * while a tool is in hand, so the reader can always see what a tap will do.
  * @module features/annotations/components
  */
 
@@ -43,7 +43,6 @@ import {
   Check,
   ChevronLeft,
   Circle,
-  CloudOff,
   CornerDownRight,
   Eraser,
   Hand,
@@ -71,8 +70,7 @@ import { useTranslation } from "react-i18next";
 
 import { cn } from "@/shared/lib/utils";
 import { useMediaQuery } from "@/shared/lib/dom/useMediaQuery";
-import { Button } from "@/shared/ui/primitives/Button";
-import { Caption } from "@/shared/ui/primitives/typography";
+import { Caption, Text } from "@/shared/ui/primitives/typography";
 import { Divider } from "@/shared/ui/primitives/Divider";
 import {
   DropdownMenu,
@@ -82,8 +80,8 @@ import {
   DropdownMenuTrigger,
 } from "@/shared/ui/composites/DropdownMenu";
 import {
+  bandButton,
   useClaimPdfTopRow,
-  usePdfCompactTriggers,
   usePdfImmersive,
   usePdfToolRail,
 } from "@/shared/ui/composites/PdfViewer";
@@ -127,7 +125,7 @@ import {
   useFamilyMember,
 } from "./ToolFamilySlot";
 import {
-  barChrome,
+  bandBar,
   glassChrome,
   panelChrome,
   pillButton,
@@ -369,15 +367,16 @@ const StampPalette = ({
 };
 
 /**
- * The same pill with no pencil in it, for a page that belongs to no edition —
- * the concert book's title page and contents, where the book opens. What the
- * project offers as a whole ("Powiadom chór") still has its place there.
+ * The same place in the band with no pencil in it, for a page that belongs to
+ * no edition — the concert book's title page and contents, where the book
+ * opens. What the project offers as a whole ("Powiadom chór") still has its
+ * place there.
  */
 export const BareToolbar = ({
   children,
 }: {
   children: React.ReactNode;
-}): React.JSX.Element => <div className={cn(barChrome, "p-1.5")}>{children}</div>;
+}): React.JSX.Element => <div className={bandBar}>{children}</div>;
 
 export const AnnotationToolbar = ({
   mode,
@@ -421,7 +420,7 @@ export const AnnotationToolbar = ({
   onClearAll,
   onOpenGuide,
   notifySlot,
-}: AnnotationToolbarProps): React.JSX.Element => {
+}: AnnotationToolbarProps): React.JSX.Element | null => {
   const { t } = useTranslation();
   const isRail = usePdfToolRail();
   const isNarrow = useMediaQuery(NARROW_ROW_QUERY);
@@ -467,7 +466,6 @@ export const AnnotationToolbar = ({
   const stampSampleBox = 10 + stampScale * 8;
 
   const isImmersive = usePdfImmersive();
-  const compactTrigger = usePdfCompactTriggers();
 
   // Opens as a single clean trigger — the score is the star; markup is one tap
   // away. A reader who works with the bar open gets it back open next time:
@@ -484,9 +482,9 @@ export const AnnotationToolbar = ({
     else setExpanded(readExpanded());
   }, [isImmersive]);
 
-  // Open as a row, the bar is a mode: it takes the whole top row, the
-  // viewer's pill (performance mode, close) steps aside, and "Gotowe" is the
-  // way out. The rail sits in the margin and leaves that row alone.
+  // Open as a row, the bar is a mode: it takes the whole top band, the
+  // viewer's own controls (performance mode, close) step aside, and "Gotowe"
+  // is the way out. The rail sits in the margin and leaves that band alone.
   useClaimPdfTopRow(expanded && !isRail);
   const [attachRow, isRowEndHidden] = useHiddenRowEnd<HTMLDivElement>();
 
@@ -521,45 +519,9 @@ export const AnnotationToolbar = ({
         })
       : t("annotations.open_tools", "Narzędzia adnotacji");
 
-    if (compactTrigger) {
-      // Folded beside a page that leaves no margin: the icon and the gold ring
-      // still say which tool is armed, the label moves to the tooltip, and one
-      // corner badge keeps the more urgent signal — marks waiting to sync
-      // outrank the mark count.
-      return (
-        <button
-          type="button"
-          onClick={() => changeExpanded(true)}
-          aria-label={triggerName}
-          title={triggerLabel}
-          className={cn(
-            barChrome,
-            "relative h-11 w-11 justify-center text-ink-on-inverse transition-colors hover:bg-surface-inverse/85",
-            armed && "ring-1 ring-ethereal-gold/60",
-          )}
-        >
-          <TriggerIcon size={17} aria-hidden="true" />
-          {pendingCount > 0 ? (
-            <span
-              title={t(
-                "annotations.pending_hint",
-                "Zapisane na tym urządzeniu. Wyślą się same, gdy wróci internet.",
-              )}
-              className="absolute -right-1 -top-1 flex items-center gap-0.5 rounded-full bg-surface-inverse px-1.5 py-0.5 text-[10px] font-semibold text-ethereal-gold ring-1 ring-ethereal-gold/40"
-            >
-              <CloudOff size={10} aria-hidden="true" />
-              {pendingCount}
-            </span>
-          ) : (
-            annotationCount > 0 && (
-              <span className="absolute -right-1 -top-1 rounded-full bg-ethereal-gold/90 px-1.5 text-[10px] font-semibold text-surface-inverse">
-                {annotationCount}
-              </span>
-            )
-          )}
-        </button>
-      );
-    }
+    // Performance mode puts nothing over the page. A tool in hand is the one
+    // exception: a tap on the page would draw, and the reader must see why.
+    if (isImmersive && !armed) return null;
 
     // The bar opens collapsed, so the waiting-to-sync sign has to survive here
     // too — this is the state a reader is actually in when they close the score
@@ -569,18 +531,22 @@ export const AnnotationToolbar = ({
         type="button"
         onClick={() => changeExpanded(true)}
         aria-label={triggerName}
+        title={triggerLabel}
         className={cn(
-          barChrome,
-          "h-11 gap-1.5 px-3.5 text-ink-on-inverse transition-colors hover:bg-surface-inverse/85",
+          bandButton,
+          "pointer-events-auto max-w-full px-3",
           armed && "ring-1 ring-ethereal-gold/60",
+          isImmersive && "bg-surface-inverse/85",
         )}
       >
-        <TriggerIcon size={17} aria-hidden="true" />
-        <span className="text-sm font-medium">{triggerLabel}</span>
+        <TriggerIcon size={18} aria-hidden="true" className="shrink-0" />
+        <Text as="span" size="base" weight="medium" color="inherit" className="min-w-0 truncate">
+          {triggerLabel}
+        </Text>
         {annotationCount > 0 && (
-          <span className="ml-0.5 rounded-full bg-ethereal-gold/90 px-1.5 text-[10px] font-semibold text-surface-inverse">
+          <Text as="span" size="sm" color="ink-on-inverse-muted" className="tabular-nums">
             {annotationCount}
-          </span>
+          </Text>
         )}
         <PendingPill count={pendingCount} />
       </button>
@@ -725,8 +691,8 @@ export const AnnotationToolbar = ({
               "no-scrollbar flex max-h-full shrink-0 flex-col items-center gap-0.5 overflow-y-auto rounded-full p-1.5",
             )
           : cn(
-              glassChrome,
-              "no-scrollbar flex min-w-0 items-center gap-0.5 overflow-x-auto rounded-full p-1.5",
+              bandBar,
+              "no-scrollbar min-w-0 gap-0.5 overflow-x-auto",
               isRowEndHidden && "mask-r-from-80%",
             )
       }
@@ -1106,20 +1072,19 @@ export const AnnotationToolbar = ({
     );
   }
 
-  // Spelled out where the viewer's pill stood, so leaving the mode is found
-  // where closing the score was a moment ago.
+  // Spelled out where close stood, so leaving the mode is found where closing
+  // the score was a moment ago.
   const doneButton = (
-    <div className={cn(barChrome, "shrink-0 p-1.5")}>
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={() => changeExpanded(false)}
-        leftIcon={<Check size={16} aria-hidden="true" />}
-        className="h-9 gap-2 rounded-full px-3 text-ink-on-inverse hover:bg-ink-on-inverse/10"
-      >
+    <button
+      type="button"
+      onClick={() => changeExpanded(false)}
+      className={cn(bandButton, "pointer-events-auto px-3")}
+    >
+      <Check size={18} aria-hidden="true" />
+      <Text as="span" size="base" weight="medium" color="inherit">
         {t("annotations.done", "Gotowe")}
-      </Button>
-    </div>
+      </Text>
+    </button>
   );
 
   return (

@@ -22,9 +22,9 @@ import type { FitMode } from "../types";
 
 interface UsePdfStateArgs {
   /**
-   * Performance mode: no toolbar, no bottom nav, no dialog chrome. The page
-   * then answers to the screen alone — every inset the fit maths keeps for
-   * floating controls is dead space, and the comfort cap on width is a cage.
+   * Performance mode: no bands, no dialog chrome. The page then answers to the
+   * screen alone — every inset the fit maths keeps for the scroll box's padding
+   * is dead space, and the comfort cap on width is a cage.
    */
   immersive?: boolean;
   /**
@@ -101,7 +101,7 @@ export const usePdfState = ({
 
   const isCompactViewport = viewportWidth > 0 && viewportWidth < COMPACT_VIEWPORT_THRESHOLD;
 
-  const { renderedPageWidth, resolvedFit, overflowAllowance } = useMemo(
+  const { renderedPageWidth, resolvedFit } = useMemo(
     () =>
       resolvePageFit({
         viewportWidth,
@@ -163,7 +163,6 @@ export const usePdfState = ({
     setFitMode,
     resolvedFit,
     renderedPageWidth,
-    overflowAllowance,
     isCompactViewport,
     devicePixelRatio,
     reportPageAspect,
