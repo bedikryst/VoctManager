@@ -194,6 +194,7 @@ class ScorePackageService:
             "card_elements": item.card_elements,
             "text_override": item.text_override,
             "note_override": item.note_override,
+            "note_on_new_page": item.note_on_new_page,
             "translation_pin": str(item.translation_id) if item.translation_id else None,
             # The line as printed. While the card hides it only the typed field
             # counts — an edit to the item, like the overrides above — so
@@ -356,6 +357,7 @@ class ScorePackageService:
             "card_elements_effective": [e for e in CARD_ELEMENTS if e in config.elements],
             "text_override": item.text_override,
             "note_override": item.note_override,
+            "note_on_new_page": item.note_on_new_page,
             "hide_source_page_numbers": item.hide_source_page_numbers,
             "hide_source_page_numbers_effective": resolve_source_numbering(item, package),
             "readiness": readiness,
@@ -644,6 +646,8 @@ class ScorePackageService:
             _set("text_override", str(patch["text_override"] or ""))
         if "note_override" in patch:
             _set("note_override", str(patch["note_override"] or ""))
+        if "note_on_new_page" in patch:
+            _set("note_on_new_page", bool(patch["note_on_new_page"]))
 
         if "card_enabled" in patch:
             raw = patch["card_enabled"]

@@ -61,6 +61,10 @@ interface ScorePackageItemRowProps {
 // instead of reading as a stray form <select>.
 type InheritTriState = "inherit" | "on" | "off";
 
+// "fit" lets the builder fit the card to one page where it can; "own_page"
+// starts the programme note on a page of its own.
+type NoteLayout = "fit" | "own_page";
+
 /** Free-text / pinned-selection overrides — the exceptions, counted for the
  *  disclosure that holds them so a set override is never hidden silently. */
 const countOverrides = (item: ScorePackageItem): number =>
@@ -186,6 +190,14 @@ export function ScorePackageItemRow({
     { id: "inherit", label: t("projects.score_package.item.inherit", "Dziedzicz") },
     { id: "on", label: t("common.yes", "Tak") },
     { id: "off", label: t("common.no", "Nie") },
+  ];
+
+  const noteLayoutItems: ReadonlyArray<SegmentedTabItem<NoteLayout>> = [
+    { id: "fit", label: t("projects.score_package.item.note_layout_fit", "Dopasuj") },
+    {
+      id: "own_page",
+      label: t("projects.score_package.item.note_layout_own_page", "Od nowej strony"),
+    },
   ];
 
   const lowLabel = t("projects.score_package.readiness_state.low", "Niska pewność");
@@ -606,6 +618,22 @@ export function ScorePackageItemRow({
               statusFor={(element) => item.readiness.elements[element]}
             />
             <CardElementLegend />
+
+            {/* The exception to automatic fitting: a note the conductor wants on a
+                page of its own. Shown only while the card prints a note. */}
+            {cardsActive && elementsSet.has("note") && (
+              <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5">
+                <Eyebrow size="overline-sm" color="muted">
+                  {t("projects.score_package.item.note_layout", "Nota na karcie")}
+                </Eyebrow>
+                <SegmentedTabs<NoteLayout>
+                  items={noteLayoutItems}
+                  value={item.note_on_new_page ? "own_page" : "fit"}
+                  onChange={(id) => onPatch({ note_on_new_page: id === "own_page" })}
+                  ariaLabel={t("projects.score_package.item.note_layout", "Nota na karcie")}
+                />
+              </div>
+            )}
 
             {/* The overrides are the exception, not the job: six free-text fields
                 open on every row is what made this cockpit read as a form. They

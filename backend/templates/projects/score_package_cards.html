@@ -10,7 +10,15 @@
     hanging indent, so a line that overflows the column wraps into a visually
     subordinate continuation instead of a fake new verse. Original and translation
     are paired stanza-by-stanza (c.rows) so the columns never drift apart, and each
-    stanza pair is an unbreakable print unit.
+    stanza pair is an unbreakable print unit; a pair taller than a page arrives
+    pre-split at corresponding lines (row.cont marks the continuation).
+
+    A frontispiece is as tall as its contents: the note follows the verse under an
+    ordinary rule. The builder renders it with c.spacing "" first and "tight" only
+    when that saves a page, so the spacing below is the whole of the fitting — the
+    type sizes never drop under 9.5pt for verse and 10pt for the note. A page
+    break may fall between stanzas or inside a note paragraph with three lines on
+    each side, never between the title and the opening.
 {% endcomment %}
 <!DOCTYPE html>
 <html lang="{{ doc_lang|default:'pl' }}">
@@ -29,25 +37,27 @@
         /* --- Verse (shared by both densities) --- */
         .stanza { break-inside: avoid; }
         .stanza + .stanza { margin-top: 4.5mm; }
+        .stanza + .stanza.cont { margin-top: 0; }
         .stanza.paired { display: flex; gap: 10mm; }
         .stanza .col { flex: 1; min-width: 0; }
         .col.tr { color: #4a463d; }
         .line { padding-left: 1.5em; text-indent: -1.5em; }
         .tr-credit { margin-top: 4mm; font-size: 9pt; font-style: italic;
-                     color: #6b655a; text-align: right; }
+                     color: #6b655a; text-align: right; break-before: avoid; }
 
         /* --- Frontispiece (CONCERT) --- */
-        .frontispiece { display: flex; flex-direction: column; min-height: 245mm; }
         .frontispiece:not(:first-child) { break-before: page; }
+        .fp-head { break-after: avoid; }
         .fp-rule { width: 42px; height: 1px; margin-top: 12px; background: #c9b48a; }
         .fp-id { margin-top: 16mm; }
+        .fp-id.bare { margin-top: 9mm; }
         .fp-role { font-size: 11pt; letter-spacing: .5px; color: #8a6d3b; margin-bottom: 2px; }
         .fp-title { font-size: 21pt; letter-spacing: .3px; }
         .fp-composer { margin-top: 6px; font-size: 12pt; color: #45413a; }
         .fp-cast { margin-top: 8px; font-size: 10pt; font-style: italic; color: #45413a; }
-        .fp-movements { margin-top: 9mm; }
+        .fp-movements { margin-top: 9mm; break-after: avoid; }
         .fp-movement { font-size: 10.5pt; line-height: 1.8; color: #2e2b25; }
-        .fp-body { flex: 1; margin-top: 12mm; }
+        .fp-body { margin-top: 12mm; }
         .fp-body .line { font-size: 11pt; line-height: 1.7; }
         .fp-body.compact .line { font-size: 10pt; }
         .fp-body.dense .line { font-size: 9.5pt; }
@@ -55,10 +65,29 @@
                   font-size: 9.5pt; line-height: 1.6; color: #6b655a; white-space: pre-line; }
         .fp-ipa-label { font-size: 8pt; letter-spacing: 2px; text-transform: uppercase; color: #a08a5e; margin-bottom: 3px; }
         .fp-note { margin-top: 10mm; padding-top: 6mm; border-top: 1px solid #e7e0d2;
-                   font-size: 10pt; font-style: italic; color: #5a554b; }
+                   font-size: 10pt; line-height: 1.6; font-style: italic; color: #5a554b; }
+        .fp-note p { orphans: 3; widows: 3; }
+        .fp-note p + p { margin-top: 2.5mm; }
+        .fp-note.own-page { break-before: page; margin-top: 0; }
 
-        /* --- Placeholder (music not yet attached) --- */
-        .placeholder { justify-content: center; text-align: center; }
+        /* Tight spacing: the second and last candidate layout, tried only when the
+           standard one overflows. Margins and leading close up; sizes stay. */
+        .tight .fp-id { margin-top: 9mm; }
+        .tight .fp-id.bare { margin-top: 5mm; }
+        .tight .fp-movements { margin-top: 6mm; }
+        .tight .fp-movement { line-height: 1.6; }
+        .tight .fp-body { margin-top: 7mm; }
+        .tight .fp-body .line { line-height: 1.5; }
+        .tight .stanza + .stanza { margin-top: 3mm; }
+        .tight .stanza + .stanza.cont { margin-top: 0; }
+        .tight .tr-credit { margin-top: 2.5mm; }
+        .tight .fp-ipa { margin-top: 5mm; padding-top: 3.5mm; line-height: 1.45; }
+        .tight .fp-note { margin-top: 6mm; padding-top: 4mm; line-height: 1.45; }
+        .tight .fp-note p + p { margin-top: 1.5mm; }
+
+        /* --- Placeholder (music not yet attached): a full-height, centred divider --- */
+        .placeholder { display: flex; flex-direction: column; min-height: 245mm;
+                       justify-content: center; text-align: center; }
         .ph-mark { font-size: 9pt; letter-spacing: 3px; text-transform: uppercase; color: #b0a892; }
         .ph-note { margin-top: 10mm; font-size: 10.5pt; font-style: italic; color: #8a8377; }
 
@@ -77,6 +106,7 @@
         .entry.compact .line { font-size: 9.5pt; }
         .entry.dense .line { font-size: 9pt; }
         .entry .stanza + .stanza { margin-top: 3.5mm; }
+        .entry .stanza + .stanza.cont { margin-top: 0; }
         .entry .tr-credit { margin-top: 2mm; }
     </style>
 </head>
@@ -92,7 +122,7 @@
                 {% if c.page_label %}<span class="entry-page">{{ c.page_label }}</span>{% endif %}
             </div>
             {% for row in c.rows %}
-            <div class="stanza{% if c.two_cols %} paired{% endif %}">
+            <div class="stanza{% if c.two_cols %} paired{% endif %}{% if row.cont %} cont{% endif %}">
                 <div class="col">{% for line in row.original %}<div class="line">{{ line }}</div>{% endfor %}</div>
                 {% if c.two_cols %}<div class="col tr">{% for line in row.translation %}<div class="line">{{ line }}</div>{% endfor %}</div>{% endif %}
             </div>
@@ -103,23 +133,25 @@
     </section>
 {% else %}
     {% for c in cards %}
-    <section class="frontispiece{% if c.placeholder %} placeholder{% endif %}">
-        <div class="fp-top">
-            {% if c.eyebrow %}<div class="eyebrow">{{ c.eyebrow }}</div>{% endif %}
-            <div class="fp-rule"{% if c.placeholder %} style="margin-left:auto;margin-right:auto;"{% endif %}></div>
-        </div>
-        <div class="fp-id">
-            {% if c.role %}<p class="fp-role">{{ c.role }}</p>{% endif %}
-            <h1 class="fp-title">{{ c.title }}</h1>
-            {% if c.composer %}
-            <p class="fp-composer">{{ c.composer }}{% if c.years %} ({{ c.years }}){% endif %}{% if c.arranger %} · oprac. {{ c.arranger }}{% endif %}</p>
-            {% elif c.arranger %}
-            <p class="fp-composer">oprac. {{ c.arranger }}</p>
-            {% endif %}
-            {% if c.meta or c.page_label %}
-            <p class="meta">{% for m in c.meta %}{{ m }}{% if not forloop.last %} · {% endif %}{% endfor %}{% if c.page_label %}{% if c.meta %} · {% endif %}{{ c.page_label }}{% endif %}</p>
-            {% endif %}
-            {% if c.cast %}<p class="fp-cast">{{ c.cast }}</p>{% endif %}
+    <section class="frontispiece{% if c.placeholder %} placeholder{% endif %}{% if c.spacing %} {{ c.spacing }}{% endif %}">
+        <div class="fp-head">
+            <div class="fp-top">
+                {% if c.eyebrow %}<div class="eyebrow">{{ c.eyebrow }}</div>{% endif %}
+                <div class="fp-rule"{% if c.placeholder %} style="margin-left:auto;margin-right:auto;"{% endif %}></div>
+            </div>
+            <div class="fp-id{% if not c.eyebrow and not c.placeholder %} bare{% endif %}">
+                {% if c.role %}<p class="fp-role">{{ c.role }}</p>{% endif %}
+                <h1 class="fp-title">{{ c.title }}</h1>
+                {% if c.composer %}
+                <p class="fp-composer">{{ c.composer }}{% if c.years %} ({{ c.years }}){% endif %}{% if c.arranger %} · oprac. {{ c.arranger }}{% endif %}</p>
+                {% elif c.arranger %}
+                <p class="fp-composer">oprac. {{ c.arranger }}</p>
+                {% endif %}
+                {% if c.meta or c.page_label %}
+                <p class="meta">{% for m in c.meta %}{{ m }}{% if not forloop.last %} · {% endif %}{% endfor %}{% if c.page_label %}{% if c.meta %} · {% endif %}{{ c.page_label }}{% endif %}</p>
+                {% endif %}
+                {% if c.cast %}<p class="fp-cast">{{ c.cast }}</p>{% endif %}
+            </div>
         </div>
         {% if c.placeholder %}
         <div class="ph-block">
@@ -135,7 +167,7 @@
         {% if c.rows %}
         <div class="fp-body{% if c.text_scale %} {{ c.text_scale }}{% endif %}">
             {% for row in c.rows %}
-            <div class="stanza{% if c.two_cols %} paired{% endif %}">
+            <div class="stanza{% if c.two_cols %} paired{% endif %}{% if row.cont %} cont{% endif %}">
                 <div class="col">{% for line in row.original %}<div class="line">{{ line }}</div>{% endfor %}</div>
                 {% if c.two_cols %}<div class="col tr">{% for line in row.translation %}<div class="line">{{ line }}</div>{% endfor %}</div>{% endif %}
             </div>
@@ -144,7 +176,7 @@
         </div>
         {% endif %}
         {% if c.ipa %}<div class="fp-ipa"><div class="fp-ipa-label">Wymowa (IPA)</div>{{ c.ipa }}</div>{% endif %}
-        {% if c.note %}<div class="fp-note">{{ c.note }}</div>{% endif %}
+        {% if c.note_paragraphs %}<div class="fp-note{% if c.note_break %} own-page{% endif %}">{% for para in c.note_paragraphs %}<p>{{ para|linebreaksbr }}</p>{% endfor %}</div>{% endif %}
         {% endif %}
     </section>
     {% endfor %}

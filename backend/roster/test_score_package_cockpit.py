@@ -45,6 +45,7 @@ from roster.infrastructure.print_fonts import BOOK_FONT_STACK, font_face_css
 from roster.infrastructure.score_package_builder import (
     PlannedItem,
     _card_context,
+    _split_tall_rows,
     _stanza_blocks,
     _stanza_rows,
     _text_scale,
@@ -88,6 +89,13 @@ try:  # The rasteriser ships self-contained wheels, but may be absent on a lean 
     _HAS_PDFIUM = True
 except Exception:  # pragma: no cover - environment-dependent
     _HAS_PDFIUM = False
+
+try:  # WeasyPrint needs Pango/Cairo: present in the container and on CI, not on a bare host.
+    from weasyprint import HTML as _WeasyHTML  # noqa: F401
+
+    _HAS_WEASYPRINT = True
+except Exception:  # pragma: no cover - environment-dependent
+    _HAS_WEASYPRINT = False
 
 
 def _pdf_bytes(pages: int) -> bytes:
@@ -310,6 +318,33 @@ class StanzaShapingTests(SimpleTestCase):
         self.assertEqual(rows[1]["translation"], [])
         self.assertEqual(rows[2], {"original": ["C"], "translation": []})
 
+    def test_a_pair_that_fits_a_page_stays_one_unit(self) -> None:
+        rows = _stanza_rows("A1\nA2", "T1\nT2")
+        self.assertEqual(
+            _split_tall_rows(rows, True),
+            [{"original": ["A1", "A2"], "translation": ["T1", "T2"], "cont": False}],
+        )
+
+    def test_a_pair_taller_than_a_page_splits_at_corresponding_lines(self) -> None:
+        original = "\n".join(f"L{n}" for n in range(70))
+        translated = "\n".join(f"T{n}" for n in range(70))
+        shaped = _split_tall_rows(_stanza_rows(original, translated), True)
+        self.assertEqual(len(shaped), 3)
+        self.assertEqual([row["cont"] for row in shaped], [False, True, True])
+        def side(row: dict[str, object], key: str) -> list[str]:
+            value = row[key]
+            assert isinstance(value, list)
+            return value
+
+        for row in shaped:
+            self.assertEqual(
+                [line[1:] for line in side(row, "original")],
+                [line[1:] for line in side(row, "translation")],
+            )
+        # Verbatim: every line once, in order.
+        joined = [line for row in shaped for line in side(row, "original")]
+        self.assertEqual(joined, original.splitlines())
+
 
 class PrintFontTests(SimpleTestCase):
     """The bundled book face must resolve to real repo files — this is what makes
@@ -399,6 +434,28 @@ class CardContextTests(_Base):
         ctx = self._context()
         self.assertEqual(ctx["cast"], "")
         self.assertEqual(ctx["movements"], [])
+
+    def test_a_translation_printed_alone_takes_the_whole_measure(self) -> None:
+        self.item.card_elements = ["translation"]
+        self.item.save()
+        Translation.objects.create(
+            piece=self.piece, target_language="pl", text="To miejsce\nuczynił Bóg",
+        )
+        ctx = self._context()
+        self.assertFalse(ctx["two_cols"])
+        self.assertEqual(ctx["rows"][0]["original"], ["To miejsce", "uczynił Bóg"])
+
+    def test_note_prints_as_paragraphs_and_honours_the_page_break_choice(self) -> None:
+        self.item.note_override = "Pierwszy akapit\nz łamaniem.\n\n\nDrugi akapit."
+        self.item.save()
+        ctx = self._context()
+        self.assertEqual(ctx["note_paragraphs"], ["Pierwszy akapit\nz łamaniem.", "Drugi akapit."])
+        self.assertFalse(ctx["note_break"])
+        self.item.note_on_new_page = True
+        self.assertTrue(self._context()["note_break"])
+        # Without a note there is nothing to send to a page of its own.
+        self.item.card_elements = ["text"]
+        self.assertFalse(self._context()["note_break"])
 
     def test_long_lines_step_the_text_scale_down(self) -> None:
         self.piece.lyrics_original = (
@@ -605,6 +662,15 @@ class StateAndHashTests(_Base):
         before = ScorePackageService.compute_source_hash(self.project, self.package)
         self.item.card_elements = ["text"]
         self.item.save()
+        after = ScorePackageService.compute_source_hash(self.project, self.package)
+        self.assertNotEqual(before, after)
+
+    def test_hash_changes_on_the_note_page_break(self) -> None:
+        self._add_edition()
+        before = ScorePackageService.compute_source_hash(self.project, self.package)
+        ScorePackageService.update_item(self.project, str(self.item.pk), {"note_on_new_page": True})
+        self.item.refresh_from_db()
+        self.assertTrue(self.item.note_on_new_page)
         after = ScorePackageService.compute_source_hash(self.project, self.package)
         self.assertNotEqual(before, after)
 
@@ -1374,3 +1440,224 @@ class PreviewFidelityTests(_Base):
             builder.build_score_package(self.project, self.package)
         self.assertTrue(seen)
         self.assertEqual(set(seen), {"pl"})
+
+
+# --- Real-render regression for the fitted frontispiece ----------------------
+# A card's page breaks are decided by the layout engine, so they are tested on
+# the rendered PDF: where each line landed, at what size. Synthetic text sized
+# like the concert cards that broke (a 13-line stanza pair under a four-paragraph
+# note one page too long), never the concert's own content.
+
+_MM_PER_PT = 25.4 / 72
+_PAGE_MID_MM = 105.0
+_BOTTOM_EDGE_MM = 297.0 - 18.0  # the card's @page bottom margin
+_VERSE = [f"Pie Domine, dona eis {n}" for n in range(1, 14)]
+_PRZEKLAD = [f"Panie łaskawy, daj im spokój {n}" for n in range(1, 14)]
+_NOTE_SENTENCE = (
+    "Altówki zaczynają frazę cicho, a soprany odpowiadają im dopiero w drugiej części utworu. "
+)
+
+
+def _note(paragraphs: int, sentences: int = 5) -> str:
+    return "\n\n".join((_NOTE_SENTENCE * sentences).strip() for _ in range(paragraphs))
+
+
+def _printed_lines(pdf: bytes) -> list[list[dict]]:
+    """Each page's printed lines, top-down: baseline ``y`` and left ``x`` in mm
+    from the top-left corner, the smallest glyph ``size`` in points and the
+    ``text``. The two halves of the measure are kept apart (``side``), so a
+    paired stanza reads as two lines on one baseline."""
+    import ctypes
+
+    import pypdfium2 as pdfium
+    import pypdfium2.raw as pdfium_raw
+
+    pages: list[list[dict]] = []
+    for page in pdfium.PdfDocument(pdf):
+        height = page.get_height()
+        textpage = page.get_textpage()
+        lines: list[dict] = []
+        for index in range(textpage.count_chars()):
+            char = textpage.get_text_range(index, 1)
+            if char in "\r\n\x02":
+                continue
+            x, y = ctypes.c_double(), ctypes.c_double()
+            pdfium_raw.FPDFText_GetCharOrigin(textpage.raw, index, x, y)
+            top = (height - y.value) * _MM_PER_PT
+            left = x.value * _MM_PER_PT
+            side = "left" if left < _PAGE_MID_MM else "right"
+            line = next(
+                (ln for ln in lines if ln["side"] == side and abs(ln["y"] - top) < 0.6), None
+            )
+            if line is None:
+                line = {"y": top, "x": left, "side": side, "size": 99.0, "text": ""}
+                lines.append(line)
+            line["text"] += char
+            if char.strip():
+                # WeasyPrint draws in CSS pixels under a 0.75 matrix; pdfium
+                # reports the size before it.
+                size = pdfium_raw.FPDFText_GetFontSize(textpage.raw, index) * 0.75
+                line["size"] = min(line["size"], round(size, 2))
+        pages.append(sorted(lines, key=lambda ln: (round(ln["y"], 1), ln["x"])))
+    return pages
+
+
+@skipUnless(_HAS_WEASYPRINT and _HAS_PDFIUM, "WeasyPrint's native libraries or pypdfium2 are missing")
+class CardFitRenderTests(_Base):
+    def setUp(self) -> None:
+        super().setUp()
+        self.piece.lyrics_original = "\n".join(_VERSE)
+        self.piece.save()
+        Translation.objects.create(
+            piece=self.piece, target_language="pl", text="\n".join(_PRZEKLAD),
+        )
+        self.item.note_override = _note(4)
+        self.item.save()
+
+    def _context(self) -> dict:
+        planned = PlannedItem(
+            item=self.item, order=self.item.order, title=self.piece.title,
+            composer_label="", piece=self.piece, edition=None, reader=None,
+            start_index=0, bound_page_count=0, is_placeholder=False,
+        )
+        return _card_context(
+            planned, resolve_card_config(self.item, self.package), self.package, self.project,
+            page_label="s. 12", presentation=build_program_presentation([self.item])[0],
+        )
+
+    def test_a_card_one_page_too_long_closes_up_onto_one_page(self) -> None:
+        from roster.infrastructure import score_package_builder as builder
+
+        context = self._context()
+        standard = _printed_lines(builder._render_cards([context], section_header=None))
+        self.assertEqual(len(standard), 2, "the fixture must overflow the standard spacing")
+
+        pdf, pages = builder._fit_card(context)
+        printed = _printed_lines(pdf)
+        self.assertEqual((pages, len(printed)), (1, 1))
+        lines = printed[0]
+        verse = [ln for ln in lines if ln["text"].strip() in _VERSE + _PRZEKLAD]
+        self.assertEqual(len(verse), 26)
+        first_note = next(i for i, ln in enumerate(lines) if ln["text"].startswith("Altówki"))
+        note = lines[first_note:]
+        self.assertGreaterEqual(min(ln["size"] for ln in verse), 9.5)
+        self.assertGreaterEqual(min(ln["size"] for ln in note), 10.0)
+        # The note follows the verse under its rule: no stretched hole between.
+        self.assertLess(note[0]["y"] - max(ln["y"] for ln in verse), 20.0)
+        self.assertLess(lines[-1]["y"], _BOTTOM_EDGE_MM)
+
+    def test_a_longer_note_continues_on_a_second_page_in_whole_lines(self) -> None:
+        from roster.infrastructure import score_package_builder as builder
+
+        self.item.note_override = _note(1, sentences=34)
+        pdf, pages = builder._fit_card(self._context())
+        printed = _printed_lines(pdf)
+        self.assertEqual((pages, len(printed)), (2, 2))
+        first, second = printed
+        # The title stays with the opening, and the whole stanza pair with it.
+        self.assertTrue(any(ln["text"].startswith("Locus iste") for ln in first))
+        self.assertFalse(any(ln["text"].startswith("Locus iste") for ln in second))
+        self.assertEqual(sum(1 for ln in first if ln["text"].strip() in _VERSE + _PRZEKLAD), 26)
+        # One paragraph split across the break, three lines at least on each side.
+        start = next(i for i, ln in enumerate(first) if ln["text"].startswith("Altówki"))
+        self.assertGreaterEqual(len(first[start:]), 3)
+        self.assertGreaterEqual(len(second), 3)
+        self.assertLess(first[-1]["y"], _BOTTOM_EDGE_MM)
+        self.assertGreaterEqual(min(ln["size"] for ln in second), 10.0)
+
+    def test_a_stanza_pair_taller_than_a_page_breaks_between_corresponding_lines(self) -> None:
+        from roster.infrastructure import score_package_builder as builder
+
+        self.piece.lyrics_original = "\n".join(f"Linia {n:02d}" for n in range(70))
+        Translation.objects.filter(piece=self.piece).update(
+            text="\n".join(f"Wers {n:02d}" for n in range(70)),
+        )
+        self.item.note_override = ""
+        pdf, pages = builder._fit_card(self._context())
+        printed = _printed_lines(pdf)
+        self.assertEqual(len(printed), pages)
+        self.assertGreater(pages, 1)
+        seen: list[str] = []
+        for lines in printed:
+            left = {round(ln["y"]): ln["text"].strip() for ln in lines if ln["text"].startswith("Linia")}
+            right = {round(ln["y"]): ln["text"].strip() for ln in lines if ln["text"].startswith("Wers")}
+            # Every baseline carries line N on both sides: the break fell between
+            # lines, at the same place in each column.
+            self.assertEqual(sorted(left), sorted(right))
+            for y, text in left.items():
+                self.assertEqual(text.split()[1], right[y].split()[1])
+            seen += [left[y] for y in sorted(left)]
+            self.assertLess(lines[-1]["y"], _BOTTOM_EDGE_MM)
+        self.assertEqual(seen, [f"Linia {n:02d}" for n in range(70)])
+
+    def test_the_measure_follows_what_prints(self) -> None:
+        from roster.infrastructure import score_package_builder as builder
+
+        long_line = "Ta linia przekładu jest wyraźnie dłuższa niż szpalta połowy strony karty"
+        Translation.objects.filter(piece=self.piece).update(text=long_line)
+        self.piece.lyrics_original = "Krótko"
+        self.item.note_override = ""
+
+        # Paired: the long translation wraps under a hanging indent.
+        paired = _printed_lines(builder._render_cards([self._context()], section_header=None))[0]
+        wrapped = [ln for ln in paired if ln["side"] == "right" and ln["size"] >= 9.5]
+        self.assertGreaterEqual(len(wrapped), 2)
+        self.assertGreater(wrapped[1]["x"] - wrapped[0]["x"], 3.0)
+
+        # Alone: the same line takes the whole measure and does not wrap.
+        self.item.card_elements = ["translation"]
+        alone = _printed_lines(builder._render_cards([self._context()], section_header=None))[0]
+        body = [ln for ln in alone if any(w in ln["text"] for w in ("przekładu", "karty"))]
+        self.assertEqual(len({round(ln["y"]) for ln in body}), 1)
+
+        # No eyebrow: the header closes up instead of keeping its empty line.
+        def title_y(elements: list[str]) -> float:
+            self.item.card_elements = elements
+            lines = _printed_lines(builder._render_cards([self._context()], section_header=None))[0]
+            return float(next(ln["y"] for ln in lines if ln["text"].startswith("Locus iste")))
+
+        self.assertGreater(title_y(["eyebrow", "meta", "text"]) - title_y(["meta", "text"]), 8.0)
+
+    def test_the_book_binds_the_layout_the_preview_shows(self) -> None:
+        from roster.infrastructure import score_package_builder as builder
+
+        self._add_edition(pages=2)
+        result = builder.build_score_package(self.project, self.package)
+        cards = [row for row in result.page_map if row["kind"] == "card"]
+        music = [row for row in result.page_map if row["kind"] == "music"]
+        self.assertEqual(len(cards), 1)
+        self.assertEqual([row["folio"] for row in music], [2, 3])
+        self.assertEqual(len(PdfReader(BytesIO(result.pdf_bytes)).pages), len(result.page_map))
+
+        self.package.page_map = result.page_map
+        self.package.save()
+        preview = _printed_lines(
+            builder.render_item_card_preview(self.project, self.package, self.item)
+        )
+        book = _printed_lines(result.pdf_bytes)[cards[0]["phys"]]
+        self.assertEqual(len(preview), 1)
+        # Same lines in the same places; the book only adds its folio below.
+        self.assertEqual(
+            [(round(ln["y"], 1), ln["text"]) for ln in preview[0]],
+            [(round(ln["y"], 1), ln["text"]) for ln in book if ln["y"] < _BOTTOM_EDGE_MM],
+        )
+
+    def test_duplex_and_cards_off_follow_the_fitted_page_count(self) -> None:
+        from roster.infrastructure import score_package_builder as builder
+
+        self._add_edition(pages=2)
+        self.item.note_override = _note(1, sentences=34)
+        self.item.save()
+        self.package.duplex_mode = True
+        result = builder.build_score_package(self.project, self.package)
+        body = [row for row in result.page_map if row["kind"] in ("card", "music", "spacer")]
+        self.assertEqual([row["kind"] for row in body], ["card", "card", "music", "music"])
+        self.assertEqual([row["folio"] for row in body], [1, 2, 3, 4])
+        self.assertEqual(body[0]["phys"] % 2, 0, "the piece opens on a recto")
+
+        self.package.include_cards = False
+        result = builder.build_score_package(self.project, self.package)
+        self.assertEqual(
+            [(row["kind"], row["folio"]) for row in result.page_map if row["kind"] != "front"],
+            [("music", 1), ("music", 2)],
+        )

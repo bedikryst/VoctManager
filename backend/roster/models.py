@@ -605,6 +605,12 @@ class ProgramItem(models.Model):
         help_text=_("Replaces the programme note on this item's card for this concert."),
         verbose_name=_("Note Override"),
     )
+    note_on_new_page = models.BooleanField(
+        default=False,
+        help_text=_("Start this card's programme note on a page of its own instead of "
+                    "fitting the card automatically."),
+        verbose_name=_("Note on Its Own Page"),
+    )
     translation = models.ForeignKey(
         'archive.Translation', on_delete=models.SET_NULL,
         null=True, blank=True, related_name='+',

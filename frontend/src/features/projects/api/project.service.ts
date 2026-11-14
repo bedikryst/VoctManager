@@ -375,6 +375,8 @@ export interface ScorePackageItem {
   card_elements_effective: CardElement[];
   text_override: string;
   note_override: string;
+  /** The note starts a page of its own instead of the card being fitted. */
+  note_on_new_page: boolean;
   /** Per-item pin; null inherits the package setting. */
   hide_source_page_numbers: boolean | null;
   hide_source_page_numbers_effective: boolean;
@@ -396,6 +398,7 @@ export interface ScorePackageItemPatch {
   card_elements: CardElement[] | null;
   text_override: string;
   note_override: string;
+  note_on_new_page: boolean;
   hide_source_page_numbers: boolean | null;
 }
 

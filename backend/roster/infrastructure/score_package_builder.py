@@ -13,8 +13,10 @@
     the book's folio and the publisher's stacked together. Phase 5 (page map):
     every emitted page is recorded with what it is and, for music, the box the
     source page was placed into, so a position on an edition can still be found
-    in the finished book (see score_page_map). All deterministic WeasyPrint +
-    pypdf — no AI, and nothing drawn over the engraving but a publisher's folio.
+    in the finished book (see score_page_map). A frontispiece is fitted by
+    rendering it (see _fit_card), and the cockpit preview binds the same choice.
+    All deterministic WeasyPrint + pypdf — no AI, and nothing drawn over the
+    engraving but a publisher's folio.
 @module roster/infrastructure/score_package_builder
 """
 
@@ -245,6 +247,57 @@ def _text_scale(rows: list[dict[str, list[str]]], two_cols: bool) -> str:
     return "" if longest <= _ONE_COL_CHARS_AT_11PT else "compact"
 
 
+# A stanza pair is one unbreakable print unit, which holds only while it fits a
+# page: about 38 lines of 11pt verse fill an A4 card page, and a first page also
+# carries the header. Past this many printed lines (wraps estimated at the 11pt
+# column width, the widest type the verse uses) the pair is cut into consecutive
+# pieces at corresponding source lines, so the page break falls between lines on
+# both sides instead of through a flex row WeasyPrint cannot fragment reliably.
+_STANZA_MAX_PRINTED_LINES: int = 30
+
+
+def _printed_lines(lines: list[str], chars_per_line: int) -> int:
+    """Estimated printed lines of one column, wraps included."""
+    return sum(max(1, -(-len(line) // chars_per_line)) for line in lines)
+
+
+def _split_tall_rows(
+    rows: list[dict[str, list[str]]], two_cols: bool
+) -> list[dict[str, object]]:
+    """Stanza rows ready for the template: a pair taller than a page becomes
+    several rows cut at the same fraction of each side's source lines (the same
+    index when the two sides have the same line count), every piece after the
+    first marked ``cont`` so it prints flush under the one before. The text is
+    never altered or reordered."""
+    chars = _TWO_COL_CHARS_AT_11PT if two_cols else _ONE_COL_CHARS_AT_11PT
+    shaped: list[dict[str, object]] = []
+    for row in rows:
+        original, translated = row["original"], row["translation"]
+        height = max(_printed_lines(original, chars), _printed_lines(translated, chars))
+        pieces = -(-height // _STANZA_MAX_PRINTED_LINES)
+        if pieces <= 1:
+            shaped.append({"original": original, "translation": translated, "cont": False})
+            continue
+        for index in range(pieces):
+            shaped.append({
+                "original": original[
+                    round(index * len(original) / pieces):round((index + 1) * len(original) / pieces)
+                ],
+                "translation": translated[
+                    round(index * len(translated) / pieces):round((index + 1) * len(translated) / pieces)
+                ],
+                "cont": index > 0,
+            })
+    return shaped
+
+
+def _note_paragraphs(note: str) -> list[str]:
+    """The programme note as printed paragraphs: blank lines separate them, a
+    single line break inside one is kept. A paragraph is the unit a page break
+    may split, three lines on each side at least."""
+    return ["\n".join(block) for block in _stanza_blocks(note)]
+
+
 def _read_edition_pdf(edition: ScoreEdition) -> PdfReader:
     """Load an edition's PDF fully into memory (storage-agnostic) as a reader, with
     any ``/Rotate`` already baked into the page content.
@@ -377,7 +430,8 @@ def _card_context(
             "page_label": page_label,
             "rows": [], "two_cols": False, "text_scale": "",
             "cast": "", "movements": [], "translator": "",
-            "note": "", "ipa": "",
+            "note": "", "note_paragraphs": [], "note_break": False, "ipa": "",
+            "spacing": "",
             "has_text": False,
         }
 
@@ -421,8 +475,11 @@ def _card_context(
     cast = resolve_item_performers(item) if config.shows("cast") else ""
     movements = movement_titles(piece) if config.shows("movements") else []
 
-    rows = _stanza_rows(text, translation)
-    two_cols = bool(translation)
+    # Two columns only when both languages print: a single populated language
+    # (the original alone, or a translation printed without it) takes the whole
+    # measure instead of leaving an empty column beside it.
+    two_cols = bool(text) and bool(translation)
+    rows = _stanza_rows(text, translation) if two_cols else _stanza_rows(text or translation, "")
     return {
         "placeholder": False,
         "order": planned.order,
@@ -434,14 +491,18 @@ def _card_context(
         "arranger": piece.arranger or "",
         "meta": meta,
         "page_label": page_label,
-        "rows": rows,
+        "rows": _split_tall_rows(rows, two_cols),
         "two_cols": two_cols,
         "text_scale": _text_scale(rows, two_cols),
         "cast": cast,
         "movements": movements,
         "translator": translator,
         "note": note,
+        "note_paragraphs": _note_paragraphs(note),
+        "note_break": bool(note) and item.note_on_new_page,
         "ipa": ipa,
+        # Chosen by _fit_card; the standard layout until it has measured.
+        "spacing": "",
         "has_text": bool(rows),
     }
 
@@ -461,6 +522,46 @@ def _render_cards(cards: list[dict], section_header: str | None) -> bytes:
         },
     )
     return _render_pdf(html)
+
+
+def _page_count(pdf: bytes) -> int:
+    return len(PdfReader(BytesIO(pdf)).pages)
+
+
+def _fit_card(context: dict) -> tuple[bytes, int]:
+    """Render one frontispiece on as few pages as its two candidate layouts allow,
+    returning the chosen PDF and its page count.
+
+    The standard spacing first. Only when it overflows, the tight spacing — kept
+    only if it actually saves a page, because a card that needs two pages anyway
+    reads better with its air. Two renders at most, measured by the real layout
+    engine with the book's own font, and the returned bytes ARE the chosen
+    rendering: the book binds them and the cockpit preview shows them, so the two
+    cannot disagree about where a card breaks. A placeholder divider and a card
+    whose note was deliberately sent to its own page are laid out as they are.
+    """
+    standard = _render_cards([{**context, "spacing": ""}], section_header=None)
+    pages = _page_count(standard)
+    if pages == 1 or context["placeholder"] or context["note_break"]:
+        return standard, pages
+    tight = _render_cards([{**context, "spacing": "tight"}], section_header=None)
+    tight_pages = _page_count(tight)
+    if tight_pages < pages:
+        return tight, tight_pages
+    return standard, pages
+
+
+def _stored_card_label(package: ScorePackage, item: ProgramItem) -> str:
+    """The page label the stored book prints on this item's card, for the preview.
+
+    The label shares a line with the meta strip — or makes one of its own when no
+    meta prints — so a preview without it could fit a card the book overflows.
+    A piece the stored book does not hold yet gets a stand-in of the same shape.
+    """
+    for row in package.page_map or []:
+        if isinstance(row, dict) and row.get("item") == str(item.pk) and row.get("folio"):
+            return f"s. {row['folio']}"
+    return f"s. {EN_DASH}"
 
 
 def _render_front_matter(project: Project, package: ScorePackage, toc_entries: list[dict]) -> bytes | None:
@@ -756,8 +857,7 @@ def _assemble_book(project: Project, package: ScorePackage) -> BuildResult:
                 page_label=f"s. {cursor}",
                 presentation=presentations[planned.item.pk],
             )
-            planned.card_bytes = _render_cards([context], section_header=None)
-            planned.card_count = len(PdfReader(BytesIO(planned.card_bytes)).pages)
+            planned.card_bytes, planned.card_count = _fit_card(context)
         cursor += planned.card_count + planned.bound_page_count
 
     # Plan the physical body: recto-start spacers, each item's printed folio (TOC),
@@ -944,7 +1044,7 @@ def _render_item_card(project: Project, package: ScorePackage, item: ProgramItem
     )
     context = _card_context(
         planned, config, package, project,
-        page_label="",
+        page_label=_stored_card_label(package, item),
         presentation=presentations[item.pk],
     )
     # Mass density prints no frontispiece for a bound piece — its text flows into
@@ -955,10 +1055,11 @@ def _render_item_card(project: Project, package: ScorePackage, item: ProgramItem
     mass_entry = (
         package.density_mode == ScorePackage.Density.MASS and not planned.is_placeholder
     )
-    return _render_cards(
-        [context],
-        section_header=TEXTS_SECTION_HEADER if mass_entry else None,
-    )
+    if mass_entry:
+        return _render_cards([context], section_header=TEXTS_SECTION_HEADER)
+    # The same fitting the assembly runs, so the preview breaks where the book will.
+    pdf, _pages = _fit_card(context)
+    return pdf
 
 
 __all__ = [
