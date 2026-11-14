@@ -23,7 +23,7 @@ from roster.infrastructure.score_package_builder import (
     FOLIO_RESERVE_PT,
     _place_on_a4,
 )
-from roster.infrastructure.score_source_numbering import detect_source_folios
+from roster.infrastructure.score_source_numbering import FolioBox, detect_source_folios, review_source_folios
 
 MM = 72.0 / 25.4
 A4 = (595.2756, 841.8898)
@@ -298,6 +298,60 @@ def _glyph_position(page) -> tuple[float, float]:
 
     page.extract_text(visitor_text=visitor)
     return found[0]
+
+
+class ManualReviewTests(SimpleTestCase):
+    def test_mirrored_scope_crop_and_keep_on_a_short_binding(self) -> None:
+        edition = _baked([[] for _ in range(5)], 90)
+        for page in edition.pages:
+            page.cropbox.lower_left = (20, 30)
+            page.cropbox.upper_right = (820, 530)
+        rules = [
+            dict(first=1, last=5, parity="odd", x=.1, y=.2, w=.05, h=.04, mode="cover", tone="#faf8f2"),
+            dict(first=1, last=5, parity="even", x=.8, y=.2, w=.05, h=.04, mode="cover", tone="#ffffff"),
+            dict(first=3, last=3, parity="all", x=.1, y=.8, w=.1, h=.1, mode="keep", tone="#ffffff"),
+        ]
+        kept = FolioBox(110, 100, 125, 110)
+        other = FolioBox(400, 500, 410, 510)
+        masks = {2: [kept, other]}
+        review_source_folios(edition, [2, 3], masks, rules)
+        self.assertEqual(masks, {
+            2: [other, FolioBox(100, 410, 140, 430, "#faf8f2")],
+            3: [FolioBox(660, 410, 700, 430)],
+        })
+
+    def test_raster_cover_leaves_the_neighbouring_scan_intact(self) -> None:
+        import pypdfium2 as pdfium
+        from PIL import Image, ImageDraw
+
+        scan = Image.new("RGB", (400, 600), "white")
+        draw = ImageDraw.Draw(scan)
+        draw.text((15, 15), "28", fill="black")
+        draw.text((48, 15), "3", fill="black")
+        draw.line((10, 50, 380, 50), fill="black")
+        encoded = BytesIO()
+        scan.save(encoded, "PDF", resolution=72)
+        edition = PdfReader(BytesIO(encoded.getvalue()))
+        masks: dict[int, list[FolioBox]] = {}
+        review_source_folios(edition, [0], masks, [
+            dict(first=1, last=1, parity="all", x=.025, y=.015, w=.065, h=.046, mode="cover", tone="#ffffff"),
+        ])
+        def raster(boxes: list[FolioBox]) -> Image.Image:
+            writer = PdfWriter()
+            _place_on_a4(writer, edition.pages[0], fit=False, masks=boxes)
+            output = BytesIO()
+            writer.write(output)
+            with pdfium.PdfDocument(output.getvalue()) as doc:
+                return doc[0].render(scale=1).to_pil().convert("L")
+
+        from PIL import ImageChops
+        before, after = raster([]), raster(masks[0])
+        changed = ImageChops.difference(before, after).getbbox()
+        self.assertIsNotNone(changed)
+        assert changed is not None
+        self.assertLess(changed[2] - changed[0], 26)
+        self.assertEqual(after.crop(changed).getextrema(), (255, 255))
+        self.assertGreater(sum(after.histogram()[:40]), 0)
 
 
 class RotatedKnockoutTests(SimpleTestCase):

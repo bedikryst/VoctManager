@@ -507,6 +507,8 @@ class ScoreEdition(SoftDeleteModel):
         help_text=_("Hex SHA-256 of the uploaded PDF — used for dedup across uploads"),
         verbose_name=_("SHA-256"),
     )
+    folio_review = models.JSONField(default=dict, blank=True, editable=False)
+
     uploaded_by = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
         null=True, blank=True, related_name='+',
@@ -569,6 +571,12 @@ class ScoreEdition(SoftDeleteModel):
         included). The single predicate behind export gating + watermarking —
         see archive.score_protection for the role-aware policy that consumes it."""
         return self.license_type != ScoreLicenseType.PUBLIC_DOMAIN
+
+    def reviewed_folios(self) -> list[dict]:
+        """Only coordinates reviewed against these exact PDF bytes are usable."""
+        if self.folio_review.get("sha256") == self.sha256:
+            return self.folio_review.get("rules", [])
+        return []
 
 
 class Translation(SoftDeleteModel):

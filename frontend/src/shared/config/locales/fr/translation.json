@@ -1,4 +1,20 @@
 {
+  "folioReview": {
+    "hint": "Tracez un rectangle autour du numéro. Régénérez le recueil pour appliquer les corrections.",
+    "edit": "Masquer un numéro de page",
+    "done": "Terminer la correction",
+    "range": "Pages de l’édition",
+    "first": "Première page",
+    "last": "Dernière page",
+    "all": "Toutes",
+    "odd": "Impaires",
+    "even": "Paires",
+    "cover": "Masquer",
+    "keep": "Conserver ce numéro",
+    "cancel": "Annuler",
+    "remove": "Annuler la correction",
+    "retry": "Recharger les masques"
+  },
   "annotations": {
     "clear_all": "Effacer toutes les annotations",
     "clear_confirm": "Sûr ?",

@@ -41,7 +41,7 @@ from roster.infrastructure.document_generator import (
     _render_pdf,
 )
 from roster.infrastructure.print_fonts import BOOK_FONT_STACK, font_face_css
-from roster.infrastructure.score_source_numbering import FolioBox, detect_source_folios
+from roster.infrastructure.score_source_numbering import FolioBox, detect_source_folios, review_source_folios
 from roster.models import ProgramItem, Project, ScorePackage
 from roster.score_package_config import (
     ResolvedCardConfig,
@@ -651,7 +651,7 @@ def _build_duplex_number_overlay(pages: list[BodyPage]) -> list:
 # pypdf assembly
 # ---------------------------------------------------------------------------
 
-def _paint_knockouts(page, rects: list[tuple[float, float, float, float]]) -> None:
+def _paint_knockouts(page, rects: list[tuple[float, float, float, float, str]]) -> None:
     """Paint opaque white rectangles (in destination points) over an already-merged
     page — used to cover an edition's own printed folio. Appended to the page's
     content stream so it lands on top of the music, inside its own q/Q so the
@@ -661,12 +661,11 @@ def _paint_knockouts(page, rects: list[tuple[float, float, float, float]]) -> No
     contents = page.get_contents()
     if contents is None:
         return
-    ops = ["q", "1 1 1 rg"]
-    ops += [
-        f"{left:.3f} {bottom:.3f} {right - left:.3f} {top - bottom:.3f} re"
-        for left, bottom, right, top in rects
-    ]
-    ops += ["f", "Q"]
+    ops = ["q"]
+    for left, bottom, right, top, tone in rects:
+        rgb = " ".join(f"{int(tone[i:i + 2], 16) / 255:.5g}" for i in (1, 3, 5))
+        ops.extend([f"{rgb} rg", f"{left:.3f} {bottom:.3f} {right-left:.3f} {top-bottom:.3f} re", "f"])
+    ops.append("Q")
     contents.set_data(contents.get_data() + ("\n" + "\n".join(ops) + "\n").encode("latin-1"))
     page.replace_contents(contents)
 
@@ -737,6 +736,7 @@ def _place_on_a4(
                 mask.bottom * scale + ty,
                 mask.right * scale + tx,
                 mask.top * scale + ty,
+                mask.tone,
             )
             for mask in masks
         ])
@@ -815,9 +815,8 @@ def _assemble_book(project: Project, package: ScorePackage) -> BuildResult:
     recto_start = duplex and package.density_mode == ScorePackage.Density.CONCERT
 
     # 1) Locate each edition's own printed page numbers, so the book ends up
-    #    carrying one numbering instead of two. Text-layer evidence only — an
-    #    undetectable (scanned) edition simply keeps its numbering, and the
-    #    reserved folio strip in step 4 still keeps it clear of the book's own.
+    #    carrying one numbering instead of two. Edition review adds scanned
+    #    numbers and protects selected areas from text-based detection.
     for planned in plan:
         if planned.reader is None or not resolve_source_numbering(planned.item, package):
             continue
@@ -832,6 +831,8 @@ def _assemble_book(project: Project, package: ScorePackage) -> BuildResult:
                 project.pk, planned.title,
             )
             planned.source_masks = {}
+        if planned.edition and (rules := planned.edition.reviewed_folios()):
+            review_source_folios(planned.reader, pages, planned.source_masks, rules)
 
     # 2) Render the per-piece cards and count their pages. `cursor` is the printed
     #    folio a card shows ("s. N") — it counts content pages only, so it is the

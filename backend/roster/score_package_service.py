@@ -205,6 +205,8 @@ class ScorePackageService:
                 else item.performers
             ),
             "hide_source_numbers": item.hide_source_page_numbers,
+            **({"folio_rules": rules} if edition and resolve_source_numbering(item, package)
+               and (rules := edition.reviewed_folios()) else {}),
             "content_ts": max(timestamps).isoformat(),
         }
 

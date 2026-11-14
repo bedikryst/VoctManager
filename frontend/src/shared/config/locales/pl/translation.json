@@ -1,4 +1,20 @@
 {
+  "folioReview": {
+    "hint": "Zaznacz numer prostokątem. Korekty pojawią się po ponownym złożeniu książki.",
+    "edit": "Zakryj numer wydania",
+    "done": "Zakończ korektę",
+    "range": "Strony wydania",
+    "first": "Od strony",
+    "last": "Do strony",
+    "all": "Wszystkie",
+    "odd": "Nieparzyste",
+    "even": "Parzyste",
+    "cover": "Zakryj",
+    "keep": "Zachowaj ten numer",
+    "cancel": "Anuluj",
+    "remove": "Cofnij korektę",
+    "retry": "Ponów wczytanie masek"
+  },
   "annotations": {
     "clear_all": "Usuń wszystkie adnotacje",
     "clear_confirm": "Na pewno?",

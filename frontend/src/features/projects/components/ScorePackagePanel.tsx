@@ -72,6 +72,7 @@ import {
   type BookCopyAudience,
 } from "../api/project.score-marks";
 import { CardElementPills } from "./CardElementPills";
+import { EditionFolioPreview } from "./EditionFolioPreview";
 import { ScoreManualUploadRail } from "./ScoreManualUploadRail";
 import { ScorePackageItemRow } from "./ScorePackageItemRow";
 import { TogglePill } from "./TogglePill";
@@ -331,13 +332,6 @@ export function ScorePackagePanel({
   ];
   const languageItems: ReadonlyArray<SegmentedTabItem<AudienceLanguage>> =
     AUDIENCE_LANGUAGES.map((lang) => ({ id: lang, label: lang.toUpperCase() }));
-
-  const previewFetcher =
-    preview === null
-      ? null
-      : preview.mode === "card"
-        ? () => ProjectService.fetchScorePackageCardPreviewBlob(projectId, preview.item.id)
-        : () => ProjectService.fetchScoreEditionBlob(preview.item.selected_edition_id ?? "");
 
   const buildStatusLabel =
     state?.status === "QUED"
@@ -930,24 +924,17 @@ export function ScorePackagePanel({
         </>
       )}
 
+      {preview?.mode === "edition" && preview.item.selected_edition_id && <EditionFolioPreview
+        key={preview.item.selected_edition_id} edition={preview.item.selected_edition_id}
+        project={projectId} title={preview.item.title} close={() => setPreview(null)} />}
       <PdfViewerModal
-        isOpen={preview !== null}
+        isOpen={preview?.mode === "card"}
         title={preview?.item.title ?? ""}
-        subtitle={
-          preview?.mode === "card"
-            ? t("projects.score_package.item.preview_card", "Podgląd karty")
-            : t("projects.score_package.item.show_edition", "Pokaż wydanie")
-        }
-        fetchBlob={previewFetcher}
-        docKey={
-          preview
-            ? `${preview.mode}-${preview.item.id}-${preview.item.selected_edition_id ?? ""}`
-            : undefined
-        }
-        // An edition is a stored file and its id is its version. A card is
-        // rendered from the item's override fields on every request, so editing
-        // the copy and previewing again has to show the new card.
-        volatile={preview?.mode === "card"}
+        subtitle={t("projects.score_package.item.preview_card", "Podgląd karty")}
+        fetchBlob={preview?.mode === "card"
+          ? () => ProjectService.fetchScorePackageCardPreviewBlob(projectId, preview.item.id) : null}
+        docKey={preview?.mode === "card" ? `card-${preview.item.id}` : undefined}
+        volatile
         onClose={() => setPreview(null)}
       />
 

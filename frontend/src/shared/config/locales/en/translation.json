@@ -1,4 +1,20 @@
 {
+  "folioReview": {
+    "hint": "Draw a rectangle around the number. Rebuild the book to apply corrections.",
+    "edit": "Mask edition page number",
+    "done": "Finish review",
+    "range": "Edition pages",
+    "first": "From page",
+    "last": "To page",
+    "all": "All",
+    "odd": "Odd",
+    "even": "Even",
+    "cover": "Cover",
+    "keep": "Keep this number",
+    "cancel": "Cancel",
+    "remove": "Undo correction",
+    "retry": "Reload masks"
+  },
   "annotations": {
     "clear_all": "Clear all annotations",
     "clear_confirm": "Sure?",

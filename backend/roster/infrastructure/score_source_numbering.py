@@ -79,6 +79,39 @@ class FolioBox:
     bottom: float
     right: float
     top: float
+    tone: str = "#ffffff"
+
+
+def review_source_folios(
+    reader: PdfReader, pages: list[int], detected: dict[int, list[FolioBox]], rules: list[dict],
+) -> None:
+    """Resolve editor rectangles on the visible (rotation-baked) PDF.js page."""
+    for index in pages:
+        number = index + 1
+        page = reader.pages[index]
+        crop, media = page.cropbox, page.mediabox
+        left, right = max(crop.left, media.left), min(crop.right, media.right)
+        bottom, top = max(crop.bottom, media.bottom), min(crop.top, media.top)
+        width, height = float(right - left), float(top - bottom)
+        if width <= 0 or height <= 0:
+            continue
+        covers = []
+        automatic = detected.get(index, [])
+        for rule in rules:
+            if not rule["first"] <= number <= rule["last"]:
+                continue
+            if rule["parity"] not in ("all", "odd" if number % 2 else "even"):
+                continue
+            x = float(left) + width * rule["x"]
+            y = float(top) - height * rule["y"]
+            box = FolioBox(x, y - height * rule["h"], x + width * rule["w"], y, rule["tone"])
+            if rule["mode"] == "cover":
+                covers.append(box)
+            else:
+                automatic = [b for b in automatic if not (
+                    b.left < box.right and box.left < b.right and b.bottom < box.top and box.bottom < b.top
+                )]
+        detected[index] = automatic + covers
 
 
 @dataclass(frozen=True)

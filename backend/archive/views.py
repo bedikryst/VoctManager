@@ -29,7 +29,7 @@ from django.utils.dateparse import parse_datetime
 from django.utils.translation import gettext as _
 from django_filters.rest_framework import DjangoFilterBackend
 from pydantic import ValidationError as PydanticValidationError
-from rest_framework import permissions, status, viewsets
+from rest_framework import permissions, serializers, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import APIException, PermissionDenied, ValidationError
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
@@ -617,6 +617,27 @@ class ProgramNoteViewSet(viewsets.ModelViewSet):
 # ViewSet stays focused on the edition + workflow control actions.
 # ===========================================================================
 
+class FolioRuleSerializer(serializers.Serializer):
+    first = serializers.IntegerField(min_value=1)
+    last = serializers.IntegerField(min_value=1)
+    parity = serializers.ChoiceField(choices=("all", "odd", "even"))
+    mode = serializers.ChoiceField(choices=("cover", "keep"))
+    x = serializers.FloatField(min_value=0, max_value=1)
+    y = serializers.FloatField(min_value=0, max_value=1)
+    w = serializers.FloatField(min_value=0.00001, max_value=1)
+    h = serializers.FloatField(min_value=0.00001, max_value=1)
+    tone = serializers.RegexField(r"^#[0-9a-fA-F]{6}$", default="#ffffff")
+
+    def validate(self, attrs):
+        if not (
+            attrs["first"] <= attrs["last"] <= self.context["page_count"]
+            and attrs["x"] + attrs["w"] <= 1.000001
+            and attrs["y"] + attrs["h"] <= 1.000001
+        ):
+            raise ValidationError(_("The selection must stay inside the edition."))
+        return attrs
+
+
 class ScoreEditionViewSet(viewsets.ModelViewSet):
     """
     Edition lifecycle endpoint. Thin controller — delegates ingestion
@@ -627,6 +648,24 @@ class ScoreEditionViewSet(viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['ingestion_status', 'piece']
     parser_classes = [MultiPartParser, FormParser, JSONParser]
+
+    @action(detail=True, methods=["get", "put"], url_path="folio-review")
+    def folio_review(self, request, pk=None):
+        with transaction.atomic():
+            edition = ScoreEdition.objects.select_for_update().get(pk=self.get_object().pk)
+            rules = edition.reviewed_folios()
+            if request.method == "PUT":
+                if request.data.get("sha256") != edition.sha256 or request.data.get("previous") != rules:
+                    return Response({"detail": _("The edition changed. Reopen the preview.")}, status=409)
+                serializer: serializers.ListSerializer = serializers.ListSerializer(
+                    child=FolioRuleSerializer(), max_length=1000, data=request.data.get("rules"),
+                    context={"page_count": edition.page_count or 0},
+                )
+                serializer.is_valid(raise_exception=True)
+                rules = serializer.validated_data
+                edition.folio_review = {"sha256": edition.sha256, "rules": rules}
+                edition.save(update_fields=["folio_review"])
+            return Response({"sha256": edition.sha256, "rules": rules, "pages": edition.page_count or 0})
 
     def get_queryset(self):
         return (
