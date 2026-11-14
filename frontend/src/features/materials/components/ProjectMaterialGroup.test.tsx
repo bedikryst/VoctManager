@@ -114,7 +114,7 @@ describe("Powiadom chór in the songbook", () => {
       </ArtistPreviewProvider>,
     );
 
-    const open = await screen.findByRole("button", { name: "Otwórz książkę koncertu" });
+    const open = await screen.findByRole("button", { name: "Książka nutowa" });
     expect(open.closest("[inert]")).not.toBeNull();
     expect(scoreBook).not.toHaveBeenCalled();
     expect(screen.queryByRole("button", { name: /Powiadom chór/ })).toBeNull();

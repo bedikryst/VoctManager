@@ -153,6 +153,8 @@ export interface PdfSheetTab {
 }
 
 export interface PdfViewerProps {
+  /** Initial file page, applied when the PDF opens. */
+  initialPage?: number;
   fetchBlob: (() => Promise<Blob>) | null;
   /**
    * Cache identity of the BYTES, not of the record they belong to. The blob is

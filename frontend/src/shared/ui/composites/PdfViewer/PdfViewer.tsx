@@ -104,6 +104,7 @@ type PendingPark = { mode: "top" } | { mode: "bottom" } | { mode: "focus"; y: nu
 export const PdfViewer = ({
   fetchBlob,
   docKey,
+  initialPage = 1,
   volatile: isVolatile = false,
   title,
   subtitle,
@@ -166,6 +167,8 @@ export const PdfViewer = ({
   } = usePdfState({ immersive: isImmersive, fitScope, preferredFit });
 
   const [blobUrl, setBlobUrl] = useState<string | null>(null);
+  const [viewerError, setViewerError] = useState<LoadErrorReason | null>(null);
+  const initialisedDocument = useRef<string | number | undefined>(undefined);
   const [isDownloading, setIsDownloading] = useState(false);
   const [isSharing, setIsSharing] = useState(false);
   // An open markup bar takes the whole top row (`useClaimPdfTopRow`).
@@ -242,6 +245,7 @@ export const PdfViewer = ({
   const {
     data: documentBlob,
     isPending: isFetchingBlob,
+    isFetching: isRefetchingBlob,
     fetchStatus: blobFetchStatus,
     isError: isFetchError,
     error: fetchError,
@@ -293,6 +297,7 @@ export const PdfViewer = ({
   const flagViewerError = useCallback((error: unknown) => {
     const reason = classifyLoadError(error);
     const message = error instanceof Error ? error.message : undefined;
+    setViewerError(reason);
     emitEvent({ type: "load_error", reason, message });
   }, [emitEvent]);
 
@@ -385,7 +390,9 @@ export const PdfViewer = ({
 
   const handleRetry = useCallback(() => {
     emitEvent({ type: "retry" });
-    retryFetch();
+    setViewerError(null);
+    setBlobUrl(null);
+    void retryFetch();
   }, [emitEvent, retryFetch]);
 
   // Outline (PDF bookmarks) → in-viewer "jump to piece" navigation.
@@ -394,10 +401,12 @@ export const PdfViewer = ({
   const handleDocumentLoadSuccess = useCallback((pdf: OutlineCapableDocument) => {
     const totalPages = pdf.numPages;
     setNumPages(totalPages);
-    startTransition(() => setCurrentPage((page) => clampValue(page, 1, totalPages)));
+    const firstLoad = initialisedDocument.current !== docKey;
+    setCurrentPage((page) => clampValue(firstLoad ? initialPage : page, 1, totalPages));
+    initialisedDocument.current = docKey;
     emitEvent({ type: "load_success", numPages: totalPages });
     loadOutline(pdf);
-  }, [emitEvent, loadOutline, setCurrentPage, setNumPages]);
+  }, [docKey, emitEvent, initialPage, loadOutline, setCurrentPage, setNumPages]);
 
   const handleOpenInBrowser = useCallback(() => {
     if (!blobUrl) return;
@@ -412,12 +421,12 @@ export const PdfViewer = ({
       createDownloadAnchor(documentBlob, resolvedFileName);
       emitEvent({ type: "download", fileName: resolvedFileName, succeeded: true });
     } catch (error) {
-      flagViewerError(error);
+      emitEvent({ type: "load_error", reason: classifyLoadError(error), message: error instanceof Error ? error.message : undefined });
       emitEvent({ type: "download", fileName: resolvedFileName, succeeded: false });
     } finally {
       setIsDownloading(false);
     }
-  }, [documentBlob, emitEvent, flagViewerError, isDownloading, resolvedFileName]);
+  }, [documentBlob, emitEvent, isDownloading, resolvedFileName]);
 
   const handleShare = useCallback(async () => {
     if (!supportsNativeShare || isSharing || !documentBlob) return;
@@ -436,12 +445,12 @@ export const PdfViewer = ({
       succeeded = true;
     } catch (error) {
       if (error instanceof DOMException && error.name === "AbortError") cancelled = true;
-      else flagViewerError(error);
+      else emitEvent({ type: "load_error", reason: classifyLoadError(error), message: error instanceof Error ? error.message : undefined });
     } finally {
       setIsSharing(false);
       emitEvent({ type: "share", fileName: resolvedFileName, succeeded, cancelled });
     }
-  }, [documentBlob, emitEvent, flagViewerError, handleDownload, isSharing, resolvedFileName, subtitle, supportsNativeShare, title]);
+  }, [documentBlob, emitEvent, handleDownload, isSharing, resolvedFileName, subtitle, supportsNativeShare, title]);
 
   const showChip = useCallback((text: string, durationMs: number) => {
     setChip({ id: Date.now(), text });
@@ -459,14 +468,14 @@ export const PdfViewer = ({
   // query resumes by itself on reconnect and the document opens where it is.
   const isWaitingForNetwork = !isIdle && isFetchingBlob && blobFetchStatus === "paused";
   const showLoadingState =
-    (isIdle && !blobUrl) || (!isIdle && isFetchingBlob && !isWaitingForNetwork && !blobUrl);
-  const showPdfChrome = !!blobUrl && numPages !== null && !isFetchError;
+    (isIdle && !blobUrl) || (!isIdle && (isFetchingBlob || isRefetchingBlob) && !isWaitingForNetwork && !blobUrl);
+  const showPdfChrome = !!blobUrl && numPages !== null && !isFetchError && !viewerError;
   // Printed numbers, once the document's length can confirm they fit it.
   const labelling = useMemo(
     () => resolvePageLabelling(pageLabels, numPages),
     [pageLabels, numPages],
   );
-  const errorReason = isFetchError ? classifyLoadError(fetchError) : null;
+  const errorReason = isFetchError ? classifyLoadError(fetchError) : viewerError;
   const errorMessage = errorReason ? resolveViewerErrorMessage(errorReason) : null;
 
   // An open score on a stand must never sleep mid-rehearsal.
@@ -952,7 +961,7 @@ export const PdfViewer = ({
                   className="w-full max-w-md shadow-glass-ethereal"
                 />
               </div>
-            ) : isFetchError ? (
+            ) : isFetchError || viewerError ? (
               <div className="flex min-h-full w-full items-center justify-center px-6 py-12 sm:px-10">
                 <StatePanel
                   tone="danger"

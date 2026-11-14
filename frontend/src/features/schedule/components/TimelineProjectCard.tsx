@@ -467,7 +467,7 @@ export const TimelineProjectCard = ({
                           >
                             {t(
                               "schedule.card.view_score_pdf",
-                              "Podgląd PDF",
+                              "Otwórz",
                             )}
                           </Button>
                         </div>

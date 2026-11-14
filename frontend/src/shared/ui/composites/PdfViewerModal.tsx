@@ -60,6 +60,7 @@ export interface PdfViewerModalProps {
   fetchBlob: (() => Promise<Blob>) | null;
   /** Cache identity of the bytes — see `PdfViewerProps.docKey`. */
   docKey?: string | number;
+  initialPage?: number;
   /** Server-assembled document, re-rendered on every open — see `PdfViewerProps.volatile`. */
   volatile?: boolean;
   /**
@@ -118,6 +119,7 @@ export const PdfViewerModal = ({
   fileName,
   fetchBlob,
   docKey,
+  initialPage,
   volatile: isVolatile,
   fullViewHref,
   fullViewHint,
@@ -262,6 +264,7 @@ export const PdfViewerModal = ({
                 <PdfViewer
                   fetchBlob={fetchBlob}
                   docKey={docKey}
+                  initialPage={initialPage}
                   volatile={isVolatile}
                   title={title}
                   subtitle={subtitle}

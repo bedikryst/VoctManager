@@ -31,7 +31,7 @@
 import React, { useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
-import type { PdfContentsEntry, PdfPageLabel } from "@/shared/ui/composites/PdfViewer";
+import type { PdfContentsEntry, PdfPageApi, PdfPageLabel } from "@/shared/ui/composites/PdfViewer";
 import { PdfViewerModal } from "@/shared/ui/composites/PdfViewerModal";
 
 import {
@@ -52,6 +52,8 @@ export interface ScoreBookModalProps {
   readonly fetchBlob: (() => Promise<Blob>) | null;
   /** Cache identity of the BYTES — see `PdfViewerProps.docKey`. */
   readonly docKey?: string;
+  readonly initialPage?: number;
+  readonly onPageChange?: (page: number) => void;
   readonly title: string;
   readonly subtitle?: string;
   readonly fileName?: string;
@@ -81,6 +83,8 @@ export const ScoreBookModal = ({
   book,
   fetchBlob,
   docKey,
+  initialPage,
+  onPageChange,
   title,
   subtitle,
   fileName,
@@ -120,6 +124,11 @@ export const ScoreBookModal = ({
     book: isOpen ? mapped : null,
     notifyProjectId,
   });
+  const { onPageApiChange: updateAnnotatorPage } = annotator;
+  const handlePageApiChange = useCallback((api: PdfPageApi) => {
+    if (mapped) updateAnnotatorPage(api);
+    if (api.numPages !== null) onPageChange?.(api.currentPage);
+  }, [mapped, onPageChange, updateAnnotatorPage]);
 
   // The running order, with the pages each piece spans; what the book holds no
   // pages for keeps its place in the order and says why it cannot be opened.
@@ -189,12 +198,13 @@ export const ScoreBookModal = ({
       fileName={fileName}
       fetchBlob={fetchBlob}
       docKey={docKey}
+      initialPage={initialPage}
       toolbarSlot={mapped ? annotator.toolbarSlot : undefined}
       renderPageOverlay={mapped ? annotator.renderPageOverlay : undefined}
       overlaySlot={mapped ? annotator.overlaySlot : undefined}
       modalSlot={mapped ? annotator.modalSlot : undefined}
       sheetTabs={mapped ? annotator.sheetTabs : undefined}
-      onPageApiChange={mapped ? annotator.onPageApiChange : undefined}
+      onPageApiChange={handlePageApiChange}
       claimKey={mapped ? annotator.claimKey : undefined}
       toolLayout="rail"
       pageLabels={pageLabels}

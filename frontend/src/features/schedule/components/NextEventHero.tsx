@@ -50,6 +50,7 @@ import { Caption, Eyebrow, Heading, Text } from "@/shared/ui/primitives/typograp
 import { DualTimeDisplay } from "@/widgets/utility/DualTimeDisplay";
 import { LocationPreview } from "@/features/logistics/components/LocationPreview";
 import { ProjectScoreBook } from "@/features/projects/components/ProjectScoreBook";
+import { RehearsalBookButton } from "@/features/materials/components/RehearsalBookButton";
 import { RehearsalPlanTimeline } from "@/features/rehearsals/components/plan/RehearsalPlanTimeline";
 import { planWindowLabel } from "@/features/rehearsals/lib/planWindow";
 import { PitchPipe } from "@/shared/ui/instruments/PitchPipe";
@@ -663,6 +664,7 @@ const RehearsalHero = ({
                 : t("schedule.rehearsal.plan.open", "Otwórz próbę")}
             </Link>
           </Button>
+          <div className="mt-3"><RehearsalBookButton projectId={event.project_id} /></div>
           {canRsvp && (
             <div
               inert={isPreview}

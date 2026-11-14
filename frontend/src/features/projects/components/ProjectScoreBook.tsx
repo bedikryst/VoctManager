@@ -35,6 +35,7 @@ import { RECONCILING_REFETCH } from "@/shared/api/queryPolicy";
 import { projectKeys } from "../api/project.query-keys";
 import { ProjectService } from "../api/project.service";
 import { ScoreBookDownload } from "./ScoreBookDownload";
+import { bookOpeningPage } from "../lib/scoreBookOpening";
 
 interface ProjectScoreBookProps {
   readonly projectId: string;
@@ -66,6 +67,7 @@ interface ProjectScoreBookProps {
    * number — the songbook passes the piece's starting pitches here.
    */
   readonly pieceSection?: (order: number) => React.ReactNode;
+  readonly initialOrder?: number;
   readonly onClose: () => void;
 }
 
@@ -78,6 +80,7 @@ export const ProjectScoreBook = ({
   delegateLayers,
   canNotifyChoir = false,
   pieceSection,
+  initialOrder,
   onClose,
 }: ProjectScoreBookProps): React.JSX.Element => {
   const { t } = useTranslation();
@@ -107,6 +110,26 @@ export const ProjectScoreBook = ({
   const fileName = `${fileStem}.pdf`;
 
   const stamp = data?.stamp ?? "";
+  const identity = stamp || version;
+  const storageKey = identity ? `voct.score-book.page:${projectId}:${identity}` : null;
+  const initialPage = useMemo(() => {
+    const target = book.items.find((item) => item.order === initialOrder)?.first_page ?? null;
+    let stored: string | null = null;
+    try {
+      if (storageKey) stored = window.localStorage.getItem(storageKey);
+    } catch {
+      // The book remains readable when browser storage is unavailable.
+    }
+    return bookOpeningPage(target, stored, book.items[0]?.first_page);
+  }, [book.items, initialOrder, storageKey]);
+  const rememberPage = useCallback((page: number) => {
+    if (!storageKey) return;
+    try {
+      window.localStorage.setItem(storageKey, String(page));
+    } catch {
+      // Reading does not depend on browser storage.
+    }
+  }, [storageKey]);
   // The map answers first, and only then are the bytes asked for. Not an
   // ordering whim: the map carries the stamp that names the build, and a phone
   // with no signal can only find its stored copy of the book by that name. The
@@ -129,6 +152,8 @@ export const ProjectScoreBook = ({
       book={book}
       fetchBlob={isAwaitingMap ? null : fetchBlob}
       docKey={`score-book-${projectId}-${stamp || version}`}
+      initialPage={initialPage}
+      onPageChange={rememberPage}
       title={title}
       subtitle={projectTitle}
       fileName={fileName}

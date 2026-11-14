@@ -19,6 +19,7 @@
 import React, { useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
   ArrowLeft,
@@ -44,6 +45,10 @@ import {
 import { INERT_SURFACE } from "@/shared/ui/primitives/inertSurface";
 import { isManager } from "@/shared/auth/rbac";
 import { ScoreStandModal, scoreStandAccessFor } from "@/features/annotations";
+import { ProjectScoreBook } from "@/features/projects/components/ProjectScoreBook";
+import { projectKeys } from "@/features/projects/api/project.query-keys";
+import { ProjectService } from "@/features/projects/api/project.service";
+import { boundItemPage } from "@/features/projects/lib/scoreBookOpening";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { StatePanel } from "@/shared/ui/composites/StatePanel";
 import { SegmentedTabs } from "@/shared/ui/composites/SegmentedTabs";
@@ -102,6 +107,7 @@ export default function PiecePage({
 }: PiecePageProps): React.JSX.Element {
   const { t } = useTranslation();
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const { isPreview, artist: previewArtist } = useArtistPreview();
   const params = useParams<{ projectId: string; pieceId: string }>();
   const projectId = previewProjectId ?? params.projectId;
@@ -117,6 +123,8 @@ export default function PiecePage({
   const readinessMutation = useSetPieceReadiness();
   const [tab, setTab] = useState<PieceTab>("practice");
   const [openEdition, setOpenEdition] = useState<PiecePdfLink | null>(null);
+  const [bookOpen, setBookOpen] = useState(false);
+  const [openingScore, setOpeningScore] = useState(false);
 
   if (isLoading) {
     return (
@@ -158,6 +166,29 @@ export default function PiecePage({
   const { piece } = programItem;
   const isArchived = group.project.status === "DONE";
   const pdfLinks = getPiecePdfLinks({ editions: piece.editions });
+  const openPrimaryScore = async () => {
+    if (!pdfLinks[0] || openingScore) return;
+    setOpeningScore(true);
+    try {
+      if (group.project.has_score_pdf) {
+        const map = await queryClient.fetchQuery({
+          queryKey: projectKeys.scorePackage.map(group.project.id),
+          queryFn: () => ProjectService.getScoreMap(group.project.id),
+          retry: false,
+          networkMode: "always",
+        });
+        if (boundItemPage(map, programItem.order) !== null) {
+          setBookOpen(true);
+          return;
+        }
+      }
+    } catch {
+      // The edition remains available when the book map cannot be read.
+    } finally {
+      setOpeningScore(false);
+    }
+    setOpenEdition(pdfLinks[0]);
+  };
   const referenceLinks = getReferenceRecordingLinks({
     recordings: piece.recordings,
   });
@@ -378,7 +409,8 @@ export default function PiecePage({
                 >
                   <button
                     type="button"
-                    onClick={() => setOpenEdition(pdfLinks[0])}
+                    onClick={() => void openPrimaryScore()}
+                    disabled={openingScore}
                     className="flex items-center gap-3 rounded-xl bg-ethereal-sage px-4 py-3.5 shadow-glass-solid transition-all hover:bg-ethereal-sage/90 active:scale-[0.98]"
                   >
                     {/* Sage holds its hue through the theme swap, so the label
@@ -389,9 +421,6 @@ export default function PiecePage({
                       <Eyebrow color="ink-on-inverse" className="block truncate">
                         {t("materials.piece.open_score", "Otwórz partyturę")}
                       </Eyebrow>
-                      <Text size="xs" color="ink-on-inverse-muted" className="mt-0.5 block truncate">
-                        {pdfLinks[0].label}
-                      </Text>
                     </div>
                   </button>
                   {pdfLinks.slice(1).map((pdf) => (
@@ -697,6 +726,7 @@ export default function PiecePage({
           annotations, their watermark, their copy number logged against the
           singer's page. */}
       {!isPreview && (
+        <>
         <ScoreStandModal
           isOpen={openEdition !== null}
           editionId={openEdition?.id ?? null}
@@ -726,6 +756,23 @@ export default function PiecePage({
           }
           onClose={() => setOpenEdition(null)}
         />
+        <ProjectScoreBook
+          projectId={group.project.id}
+          projectTitle={group.project.title}
+          isOpen={bookOpen}
+          initialOrder={programItem.order}
+          {...scoreStandAccessFor({
+            isManager: isManager(user),
+            mayMarkForChoir: group.program.length > 0 && group.program.every((entry) => entry.piece.may_mark_for_choir),
+            mayMarkWithConductor: group.program.length > 0 && group.program.every((entry) => entry.piece.may_mark_with_conductor === true),
+          })}
+          pieceSection={(order) => {
+            const entry = group.program.find((item) => item.order === order);
+            return entry ? <RehearsalSection piece={entry.piece} projectId={group.project.id} canEditPitches={isManager(user)} /> : null;
+          }}
+          onClose={() => setBookOpen(false)}
+        />
+        </>
       )}
     </PageTransition>
   );

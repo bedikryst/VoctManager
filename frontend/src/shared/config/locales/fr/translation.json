@@ -6300,7 +6300,7 @@
         "setlist": "Répertoire"
       },
       "unknown_artist": "Artiste",
-      "view_score_pdf": "Voir le PDF",
+      "view_score_pdf": "Ouvrir",
       "trip_plan_title": "Programme du voyage",
       "joins_on_site_banner": "Vous nous rejoignez sur place — les points grisés concernent uniquement ceux qui voyagent."
     },
@@ -6348,7 +6348,7 @@
       },
       "next_rehearsal": "Prochaine répétition",
       "prepare_cta": "Recueil",
-      "score_cta": "Recueil",
+      "score_cta": "Recueil de partitions",
       "program_loading": "Chargement du répertoire...",
       "rehearsal_mode": "Mode répétition",
       "tonight_program": "Répertoire du projet",

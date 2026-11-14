@@ -52,6 +52,7 @@ import {
 } from "@/shared/ui/kinematics/StaggeredBentoGrid";
 import { DualTimeDisplay } from "@/widgets/utility/DualTimeDisplay";
 import { LocationPreview } from "@/features/logistics/components/LocationPreview";
+import { RehearsalBookButton } from "@/features/materials/components/RehearsalBookButton";
 import { AbsenceReportForm } from "@/features/schedule/components/AbsenceReportForm";
 import { AddToCalendar } from "@/features/schedule/components/AddToCalendar";
 import { useScheduleData } from "@/features/schedule/hooks/useScheduleData";
@@ -298,6 +299,8 @@ const RehearsalSheet = ({
                 </span>
               )}
             </div>
+
+            <div className="mt-4 print-hidden"><RehearsalBookButton projectId={rehearsal.project} /></div>
 
             {/* The reader's own hours. The one number a person plans the
                 evening around, so it sits above the plan rather than under it
