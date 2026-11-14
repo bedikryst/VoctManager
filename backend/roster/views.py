@@ -160,6 +160,7 @@ from .queries.materials_queries import (
 )
 from .queries.plan_editor_queries import plan_editor_payload
 from .queries.plan_queries import plan_readings_for_user, plan_row_context
+from .score_book_cache import CompositionBusy, open_choir_copy
 from .score_package_config import (
     book_binds_instrumental_item,
     books_binding_instrumental_items,
@@ -867,7 +868,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
                 )
                 .first()
             ) or (None, None, [], False, 0)
-            # The ink composed for this download and never stored.
+            # Resolve the layers before looking up a composition.
             layers = servable_layers(
                 layers,
                 include_markings=include_markings,
@@ -887,14 +888,33 @@ class ProjectViewSet(viewsets.ModelViewSet):
             # The copy is produced before anything is recorded: a missing file
             # or marks that cannot be placed must not stamp the book as handed
             # out, nor consume a copy number for a file nobody received.
-            # Anything composed per recipient — marks, a watermark or both — is
-            # read into memory; a plain copy streams off disk.
+            # The shared choir composition can stream directly; personal copies
+            # and the watermark are produced in memory for this reader.
             file_handle = None
             raw = b""
             try:
-                if marks or protected:
-                    with project.score_pdf.open('rb') as handle:
-                        raw = handle.read()
+                if marks:
+                    reader = request.user.pk if marks.per_reader else "any"
+                    if layers == ['shared'] and marks_stamp:
+                        def compose_choir_copy() -> bytes:
+                            with project.score_pdf.open('rb') as source:
+                                return apply_markings(source.read(), page_map or [], marks.by_source)
+
+                        file_handle = open_choir_copy(
+                            project.pk, marks_stamp, marks.fingerprint, compose_choir_copy,
+                        )
+                    else:
+                        with project.score_pdf.open('rb') as source:
+                            raw = source.read()
+                        raw = _marked_pdf(
+                            raw,
+                            cache_key=(
+                                f"score_marks:binder:{project.pk}:{marks_stamp}:"
+                                f"{reader}:{marks.fingerprint}"
+                            ),
+                            page_map=page_map or [],
+                            marks=marks,
+                        )
                 else:
                     file_handle = project.score_pdf.open('rb')
             except OSError:
@@ -902,45 +922,25 @@ class ProjectViewSet(viewsets.ModelViewSet):
                     {"detail": "Score PDF file not found on the server."},
                     status=status.HTTP_404_NOT_FOUND,
                 )
-
-            if marks:
-                # Keyed on the reader only when the copy is theirs alone: the
-                # choir's book with the conductor's marks is one composition for
-                # everyone, and composing it per singer would render it forty
-                # times over. Who may ask was settled above, before any cache.
-                reader = request.user.pk if marks.per_reader else "any"
-                try:
-                    raw = _marked_pdf(
-                        raw,
-                        cache_key=(
-                            f"score_marks:binder:{project.pk}:{marks_stamp}:"
-                            f"{reader}:{marks.fingerprint}"
+            except CompositionBusy:
+                raise PdfRenderUnavailable() from None
+            except DocumentRenderDependencyError:
+                raise PdfRenderUnavailable() from None
+            except MarkingRenderError as exc:
+                logger.error(
+                    "score_pdf.marks_render_failed project=%s layers=%s reason=%s",
+                    project.pk, ",".join(layers), exc,
+                )
+                return Response(
+                    {
+                        "detail": _(
+                            "The markings could not be placed on this book. "
+                            "Download the clean copy, or rebuild the book and try again."
                         ),
-                        page_map=page_map or [],
-                        marks=marks,
-                    )
-                except DocumentRenderDependencyError:
-                    # Serving the clean book under a switch that says "with my
-                    # marks" would be a quiet lie about what is on the page.
-                    raise PdfRenderUnavailable() from None
-                except MarkingRenderError as exc:
-                    # Nothing was cached: the composition raised before its
-                    # bytes existed. The clean copy is the reader's choice to
-                    # make, so it is offered, never substituted.
-                    logger.error(
-                        "score_pdf.marks_render_failed project=%s layers=%s reason=%s",
-                        project.pk, ",".join(layers), exc,
-                    )
-                    return Response(
-                        {
-                            "detail": _(
-                                "The markings could not be placed on this book. "
-                                "Download the clean copy, or rebuild the book and try again."
-                            ),
-                            "code": "marks_render_failed",
-                        },
-                        status=status.HTTP_409_CONFLICT,
-                    )
+                        "code": "marks_render_failed",
+                    },
+                    status=status.HTTP_409_CONFLICT,
+                )
 
             # A singer downloading the book is the moment it "leaves the building";
             # flag it so the conductor's cockpit warns before a rebuild silently
@@ -956,7 +956,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
                 build_version=build_version, protected=protected, is_manager=is_manager,
             )
 
-            if file_handle is not None:
+            if file_handle is not None and not decision.watermark:
                 response = FileResponse(
                     file_handle,
                     content_type='application/pdf',
@@ -964,6 +964,10 @@ class ProjectViewSet(viewsets.ModelViewSet):
                 )
                 response['Access-Control-Expose-Headers'] = 'Content-Disposition'
                 return response
+
+            if file_handle is not None:
+                with file_handle:
+                    raw = file_handle.read()
 
             if not decision.watermark:
                 return _pdf_bytes_response(raw, filename=filename)
@@ -986,7 +990,11 @@ class ProjectViewSet(viewsets.ModelViewSet):
                 f"{marks.fingerprint}:{request.user.pk}:{decision.copy_number}"
             )
             try:
-                stamped = _watermarked_pdf(raw, cache_key=cache_key, footer_text=footer)
+                stamped = (
+                    stamp_pdf(raw, footer)
+                    if layers == ['shared'] and marks and marks_stamp
+                    else _watermarked_pdf(raw, cache_key=cache_key, footer_text=footer)
+                )
             except DocumentRenderDependencyError:
                 raise PdfRenderUnavailable() from None
             return _pdf_bytes_response(stamped, filename=filename)

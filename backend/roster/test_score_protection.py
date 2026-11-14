@@ -513,6 +513,19 @@ class ReaderMarksServeTests(_ServeBase):
         self.assertEqual(captured, [])
         self.assertEqual(first, second)
 
+    def test_protected_choir_copy_is_composed_once_and_stamped_for_each_singer(self) -> None:
+        self._prepare(protected=True, markings=True)
+        self._mark(self.manager, layer=SHARED_ANNOTATION_LAYER)
+        with mock.patch("roster.views.stamp_pdf", side_effect=[b"first", b"second"]) as stamp:
+            self.client.force_authenticate(self.singer_user)
+            first, initial_render = self._serve(f"{self.binder_url}?marks=shared")
+            self.client.force_authenticate(self.singer2_user)
+            second, repeated_render = self._serve(f"{self.binder_url}?marks=shared")
+        self.assertEqual((first, second), (b"first", b"second"))
+        self.assertEqual(len(initial_render), 1)
+        self.assertEqual(repeated_render, [])
+        self.assertEqual(stamp.call_count, 2)
+
     def test_a_readers_pencil_rides_on_the_choirs_copy(self) -> None:
         self._prepare(markings=True)
         self._mark(self.manager, layer=SHARED_ANNOTATION_LAYER)
