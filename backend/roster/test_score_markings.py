@@ -659,16 +659,25 @@ class MarkingsCensusTests(_Base):
 
     def test_the_census_is_taken_while_the_choir_copies_carry_no_marks(self) -> None:
         # The switch decides what singers receive, not whether the manager may
-        # see what is there to hand out.
+        # see what is there to hand out: the cockpit counts the same marks with
+        # the switch off as with it on.
         edition = self._add_edition(pages=2)
         self._mark(edition, page=1)
+        self.project.score_pdf.save("book.pdf", ContentFile(_pdf_bytes(2)), save=True)
+        self.package.page_map = self._stored_map(edition, [1, 2])
         self.package.include_markings = False
         self.package.save()
-        census = compute_program_markings(
-            [self.item], self._stored_map(edition, [1, 2]),
-        )[self.item.pk]
-        self.assertEqual(census.on_book, 1)
-        self.assertEqual(markings_status(census), MARKINGS_READY)
+
+        withheld = ScorePackageService.compute_state(self.project)
+        self.assertFalse(withheld["config"]["include_markings"])
+        markings = withheld["items"][0]["markings"]
+        self.assertEqual(markings["on_book"], 1)
+        self.assertEqual(markings["status"], MARKINGS_READY)
+        self.assertEqual(withheld["book_marks"]["layers"][SHARED_ANNOTATION_LAYER]["marks"], 1)
+
+        handed_out = ScorePackageService.update_config(self.project, {"include_markings": True})
+        self.assertEqual(handed_out["items"][0]["markings"], markings)
+        self.assertEqual(handed_out["book_marks"], withheld["book_marks"])
 
     def test_marks_on_pages_the_stored_book_lacks_wait_for_a_rebuild(self) -> None:
         edition = self._add_edition(pages=4)

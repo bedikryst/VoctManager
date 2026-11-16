@@ -1562,10 +1562,9 @@ class CardFitRenderTests(_Base):
         printed = _printed_lines(pdf)
         self.assertEqual((pages, len(printed)), (2, 2))
         first, second = printed
-        # The title stays with the opening, and the whole stanza pair with it.
-        self.assertTrue(any(ln["text"].startswith("Locus iste") for ln in first))
-        self.assertFalse(any(ln["text"].startswith("Locus iste") for ln in second))
+        # The whole stanza pair stays on the opening page; only the note runs on.
         self.assertEqual(sum(1 for ln in first if ln["text"].strip() in _VERSE + _PRZEKLAD), 26)
+        self.assertFalse(any(ln["text"].strip() in _VERSE + _PRZEKLAD for ln in second))
         # One paragraph split across the break, three lines at least on each side.
         start = next(i for i, ln in enumerate(first) if ln["text"].startswith("Altówki"))
         self.assertGreaterEqual(len(first[start:]), 3)
@@ -1585,6 +1584,12 @@ class CardFitRenderTests(_Base):
         printed = _printed_lines(pdf)
         self.assertEqual(len(printed), pages)
         self.assertGreater(pages, 1)
+        # The title stays with the opening: a pair too tall for one page starts
+        # under the header instead of leaving the title alone on page one.
+        title_y = next(ln["y"] for ln in printed[0] if ln["text"].startswith("Locus iste"))
+        self.assertTrue(any(
+            ln["text"].strip() == "Linia 00" and ln["y"] > title_y for ln in printed[0]
+        ))
         seen: list[str] = []
         for lines in printed:
             left = {round(ln["y"]): ln["text"].strip() for ln in lines if ln["text"].startswith("Linia")}
