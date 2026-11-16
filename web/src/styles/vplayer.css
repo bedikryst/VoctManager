@@ -8,7 +8,9 @@
  *   .is-playing   — affordance recedes, glow brightens
  *   .is-buffering — breathing ring in place of the play/pause glyph (delayed show)
  *   .is-scrubbing — pointer drag in progress: rail thickens, playhead dot shows
- *   .is-idle      — projection-room stillness: scrub + meta fade to a whisper
+ *   .is-awake     — projection room (idle-hide / fullscreen) playing with its chrome up
+ *   .is-idle      — projection-room stillness: scrub + meta fade to a whisper, the play/pause
+ *                   circle and the fullscreen pointer go out
  *   .is-failed    — missing/broken file: poster + quiet mono note
  *  Tokens (--ease, --candle, --line, --night, --paper, --ink*, --mono) are global.
  * @module styles/vplayer
@@ -118,14 +120,36 @@
   height: 24px;
 }
 
-/* While playing the affordance recedes; the frame itself is the pause target. */
+/* While playing the affordance recedes; the frame itself is the pause target. A mouse brings
+   it back over the frame. Only a real hover may: on touch `:hover` sticks to the last tap, so
+   a bare `:hover` rule would pin the circle over a playing film. */
 .vplayer-btn.is-quiet {
   opacity: 0;
 }
 
-.vplayer-stage:hover .vplayer-btn.is-quiet,
+@media (hover: hover) and (pointer: fine) {
+  .vplayer-stage:hover .vplayer-btn.is-quiet {
+    opacity: 0.85;
+  }
+}
+
+/* Touch has no hover, so in the projection room the circle wakes and sleeps with the rest of
+   the chrome: a tap on a sleeping film brings it back as the pause target. */
+@media (hover: none) {
+  .vplayer.is-awake .vplayer-btn.is-quiet {
+    opacity: 0.85;
+  }
+}
+
 .vplayer-btn.is-quiet:focus-visible {
   opacity: 0.85;
+}
+
+/* Stillness outranks every reveal above, hover and focus included (same specificity as the
+   hover rule, so it must stay after it): in fullscreen the frame covers the screen and the
+   pointer always rests on it. */
+.vplayer.is-idle .vplayer-btn.is-quiet {
+  opacity: 0;
 }
 
 /* Buffering — the affordance recedes and a thin ring breathes in its place. The .35s
@@ -325,6 +349,13 @@
 .vplayer.is-idle .vplayer-meta,
 .vplayer.is-idle .vplayer-side {
   opacity: 0.12;
+}
+
+/* In fullscreen the OS pointer is the only cursor (cursor.css), and it sleeps with the chrome;
+   the first mousemove brings both back. */
+.vplayer.is-idle:fullscreen,
+.vplayer.is-idle:fullscreen * {
+  cursor: none;
 }
 
 /* ── Dark chrome (lightbox, /press hero) — and fullscreen, where the room is always

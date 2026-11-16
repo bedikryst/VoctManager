@@ -13,8 +13,10 @@
  *  cursor can become the seek tooltip. Global ←/→ seek ±5 s on the most recently started
  *  player without needing the scrub focused (the focused slider keeps its full keymap).
  *  Registers OS Media Session metadata on play.
- *  `tone="dark"` flips the chrome for night surfaces; `idleHide` fades the chrome after
- *  stillness (projection room — also automatic in fullscreen); `glow` bleeds a blurred
+ *  `tone="dark"` flips the chrome for night surfaces; `idleHide` fades the chrome, the
+ *  play/pause circle and (in fullscreen) the pointer after stillness (projection room — also
+ *  automatic in fullscreen), and there a touch on the sleeping frame wakes the chrome instead
+ *  of pausing the film; `glow` bleeds a blurred
  *  mirror of the frame behind the stage; `portrait` switches to a height-driven 9:16
  *  frame for phone-shot audience documents — their caption + `note` (honest provenance
  *  line) render as a museum plaque BESIDE the frame on wide viewports (stacked below on
@@ -147,6 +149,11 @@ export function VideoPlayer({
   const playingRef = useRef(false);
   playingRef.current = playing;
   const scrubbingRef = useRef(false);
+  const idleRef = useRef(false);
+  idleRef.current = idle;
+  // Set by a touch or pen that lands on a sleeping projection; the click it produces then only
+  // wakes the chrome (see onStageClick).
+  const wakeOnlyRef = useRef(false);
   // A seek issued while the engine still executes the previous one queues here and is
   // applied from the 'seeked' handler — dragging never floods the decoder.
   const pendingFractionRef = useRef<number | null>(null);
@@ -216,6 +223,24 @@ export function VideoPlayer({
     if (playingRef.current) pause();
     else void play();
   }, [failed, pause, play]);
+
+  // Touch has no hover to wake a sleeping projection, so a tap on it wakes the chrome (the
+  // stillness effect's window listener does that) and the film plays on; the next tap, on an
+  // awake frame, pauses. A mouse click always toggles: a mouse has woken the chrome by moving
+  // before it clicks. React runs this before the window listener, so the ref still reads the
+  // state the finger landed on. `detail` is 0 for a keyboard-activated click, which never wakes.
+  const onStagePointerDown = useCallback((event: React.PointerEvent<HTMLDivElement>): void => {
+    wakeOnlyRef.current = event.pointerType !== "mouse" && idleRef.current;
+  }, []);
+
+  const onStageClick = useCallback(
+    (event: React.MouseEvent<HTMLElement>): void => {
+      const wakeOnly = wakeOnlyRef.current && event.detail > 0;
+      wakeOnlyRef.current = false;
+      if (!wakeOnly) toggle();
+    },
+    [toggle],
+  );
 
   // OS media surface (lockscreen, headset keys, media hub) — re-registered on every play,
   // so across surfaces the handlers always belong to the most recently started player.
@@ -633,6 +658,7 @@ export function VideoPlayer({
     buffering ? "is-buffering" : "",
     scrubbing ? "is-scrubbing" : "",
     idle ? "is-idle" : "",
+    (idleHide || fullscreen) && playing && !idle ? "is-awake" : "",
     failed ? "is-failed" : "",
   ]
     .filter(Boolean)
@@ -641,7 +667,7 @@ export function VideoPlayer({
   return (
     <Typo locale={lang ?? documentLang}>
       <figure className={classes} ref={rootRef}>
-        <div className="vplayer-stage">
+        <div className="vplayer-stage" onPointerDown={onStagePointerDown}>
           {glow && (
             <canvas
               className="vplayer-glow"
@@ -656,7 +682,7 @@ export function VideoPlayer({
             poster={poster}
             preload="metadata"
             playsInline
-            onClick={toggle}
+            onClick={onStageClick}
           >
             {srcAv1 && <source src={srcAv1} type={AV1_MIME} />}
             <source src={src} type="video/mp4" />
@@ -675,7 +701,7 @@ export function VideoPlayer({
               className={`vplayer-btn${playing ? " is-quiet" : ""}`}
               aria-label={playing ? t.pause : t.play}
               aria-pressed={playing}
-              onClick={toggle}
+              onClick={onStageClick}
             >
               {playing ? (
                 <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">

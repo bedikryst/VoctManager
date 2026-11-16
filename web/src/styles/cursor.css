@@ -532,6 +532,12 @@ body.has-custom-cursor:has(.vplayer.is-idle) .site-cursor {
   cursor: pointer !important;
 }
 
+/* ...and sleeps with the receded chrome, as the site cursor does outside fullscreen. */
+.has-custom-cursor .vplayer.is-idle:fullscreen,
+.has-custom-cursor .vplayer.is-idle:fullscreen * {
+  cursor: none !important;
+}
+
 /* ── Autoscroll state — middle-click pinned scroll gauge ──────────────────
    Triggered when JS intercepts a middle-button mousedown on inert content.
    The cursor pins to the anchor (lerp skipped) and becomes a *live gauge*:
