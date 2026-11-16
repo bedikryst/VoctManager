@@ -206,6 +206,9 @@ def compute_program_readiness(
     for item in items:
         config = resolve_card_config(item, package)
         statuses = _element_statuses(item, project, piece_prov, tr_prov, language)
+        # Left out on purpose by the piece's preference: nothing to supply.
+        for element in config.withheld:
+            statuses[element] = NOT_APPLICABLE
         has_edition = resolve_item_edition(item) is not None
         result[item.pk] = {
             "overall": _rollup(statuses, config.elements if config.enabled else frozenset(), has_edition),

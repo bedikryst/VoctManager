@@ -283,6 +283,10 @@ class PieceViewSet(viewsets.ModelViewSet):
         serializer.is_valid(raise_exception=True)
         dto = serializer.to_dto()
         piece = services.ArchiveManagementService.create_piece(dto=dto)
+        if 'print_text_choice' in serializer.validated_data:
+            services.ArchiveManagementService.set_print_text_choice(
+                piece, serializer.validated_data['print_text_choice'],
+            )
         return Response(self.get_serializer(piece).data, status=status.HTTP_201_CREATED)
 
     def update(self, request, *args, **kwargs) -> Response:
@@ -293,10 +297,20 @@ class PieceViewSet(viewsets.ModelViewSet):
             context=self.get_serializer_context(),
         )
         serializer.is_valid(raise_exception=True)
-        dto = serializer.to_dto(instance=instance)
-        piece = services.ArchiveManagementService.update_piece(
-            piece=instance, dto=dto, actor_email=_actor_email(request),
-        )
+        piece = instance
+        if 'print_text_choice' in serializer.validated_data:
+            piece = services.ArchiveManagementService.set_print_text_choice(
+                piece, serializer.validated_data['print_text_choice'],
+            )
+        # A PATCH carrying only the print-text choice stops here: the full
+        # metadata save would stamp `updated_at` and age every score book
+        # holding the piece.
+        only_choice = set(serializer.validated_data) == {'print_text_choice'}
+        if not (partial and only_choice):
+            dto = serializer.to_dto(instance=piece)
+            piece = services.ArchiveManagementService.update_piece(
+                piece=piece, dto=dto, actor_email=_actor_email(request),
+            )
         return Response(self.get_serializer(piece).data)
 
     @action(detail=False, methods=['put'], url_path='voice-requirements')

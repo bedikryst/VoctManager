@@ -18,6 +18,7 @@ from datetime import timedelta
 from io import BytesIO
 from unittest import mock, skipUnless
 
+from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
 from django.core.cache import cache
 from django.core.files.base import ContentFile
@@ -25,17 +26,23 @@ from django.test import SimpleTestCase, TestCase, override_settings
 from django.utils import timezone, translation
 from pypdf import PdfReader, PdfWriter
 from pypdf.generic import NameObject, NumberObject
+from rest_framework.test import APIClient
 
 from archive.models import (
     Composer,
     Movement,
     Piece,
+    PrintTextChoice,
     ProgramNote,
     ProvenanceRecord,
     ProvenanceSource,
     ScoreEdition,
     Translation,
 )
+from archive.services.management import ArchiveManagementService
+from archive.services.print_text import lyrics_fingerprint
+from core.constants import AppRole
+from core.models import UserProfile
 from roster.domain.liturgy import build_program_presentation
 from roster.infrastructure.pdf_raster import (
     PdfRasterDependencyError,
@@ -52,6 +59,7 @@ from roster.infrastructure.score_package_builder import (
 )
 from roster.models import ProgramItem, Project, ScorePackage
 from roster.score_package_config import (
+    ResolvedCardConfig,
     movement_titles,
     package_default_elements,
     resolve_card_config,
@@ -176,6 +184,181 @@ class CardConfigTests(_Base):
         self.assertIsNone(sanitize_card_elements("nope"))
         # Canonical order is enforced regardless of input order.
         self.assertEqual(sanitize_card_elements(["ipa", "text", "x"]), ["text", "ipa"])
+
+
+class PiecePrintTextPreferenceTests(_Base):
+    """Precedence of the piece's print-text preference inside the one resolver
+    every consumer reads: item list > manual choice > current suggestion > book."""
+
+    _FULL = ("eyebrow", "meta", "text", "translation", "note", "ipa")
+    _TEXT = frozenset({"text", "translation", "ipa"})
+
+    def setUp(self) -> None:
+        super().setUp()
+        self.package.card_default_elements = list(self._FULL)
+        self.package.save(update_fields=["card_default_elements"])
+
+    def _recommend(self, verdict: str | None, *, lyrics_sha: str | None = None) -> None:
+        self.piece.print_text_recommendation = {
+            "verdict": verdict,
+            "reason": "Wokaliza na samogłoskach.",
+            "source": "ANALYZE_SCORE v-test",
+            "lyrics_sha": lyrics_sha or lyrics_fingerprint(self.piece),
+            "assessed_at": "2026-11-16T10:00:00+00:00",
+        }
+        self.piece.save(update_fields=["print_text_recommendation"])
+
+    def _choose(self, choice: str) -> None:
+        ArchiveManagementService.set_print_text_choice(self.piece, choice)
+
+    def _config(self) -> ResolvedCardConfig:
+        return resolve_card_config(self.item, self.package)
+
+    def _hash(self) -> str:
+        return ScorePackageService.compute_source_hash(self.project, self.package)
+
+    def test_explicit_item_list_wins_over_piece_omit(self) -> None:
+        self._choose(PrintTextChoice.OMIT)
+        self.item.card_elements = ["text", "ipa"]
+        config = self._config()
+        self.assertEqual(config.elements, frozenset({"text", "ipa"}))
+        self.assertEqual(config.withheld, frozenset())
+        self.assertEqual(config.origin, "item")
+
+    def test_empty_item_list_wins_over_piece_keep(self) -> None:
+        self._choose(PrintTextChoice.KEEP)
+        self.item.card_elements = []
+        config = self._config()
+        self.assertEqual(config.elements, frozenset())
+        self.assertEqual(config.origin, "item")
+
+    def test_manual_omit_beats_keep_suggestion(self) -> None:
+        self._recommend("keep")
+        self._choose(PrintTextChoice.OMIT)
+        config = self._config()
+        self.assertEqual(config.withheld, self._TEXT)
+        self.assertEqual(config.elements, frozenset({"eyebrow", "meta", "note"}))
+        self.assertEqual(config.origin, "piece")
+
+    def test_manual_keep_beats_omit_suggestion(self) -> None:
+        self._recommend("omit")
+        self._choose(PrintTextChoice.KEEP)
+        config = self._config()
+        self.assertEqual(config.withheld, frozenset())
+        self.assertEqual(config.elements, frozenset(self._FULL))
+        self.assertEqual(config.origin, "piece")
+
+    def test_current_omit_suggestion_withholds(self) -> None:
+        self._recommend("omit")
+        config = self._config()
+        self.assertEqual(config.withheld, self._TEXT)
+        self.assertEqual(config.origin, "suggestion")
+
+    def test_stale_or_unsure_suggestion_changes_nothing(self) -> None:
+        self._recommend("omit", lyrics_sha="0" * 64)
+        self.assertEqual(self._config().withheld, frozenset())
+        self.assertEqual(self._config().origin, "book")
+
+        self._recommend(None)
+        self.assertEqual(self._config().withheld, frozenset())
+        self.assertEqual(self._config().origin, "book")
+
+        # Assessed on the old words: an edit to the lyrics retires the verdict.
+        self._recommend("omit")
+        self.piece.lyrics_original = "Locus iste a Deo factus est, inaestimabile sacramentum"
+        self.assertEqual(self._config().withheld, frozenset())
+
+    def test_fingerprint_ignores_wrapping_and_case(self) -> None:
+        self._recommend("omit")
+        self.piece.lyrics_original = "LOCUS iste\n  a Deo\nfactus est"
+        self.assertEqual(self._config().origin, "suggestion")
+
+    def test_keep_never_adds_an_element_the_book_disabled(self) -> None:
+        self.package.card_default_elements = ["eyebrow", "text"]
+        self._choose(PrintTextChoice.KEEP)
+        config = self._config()
+        self.assertEqual(config.elements, frozenset({"eyebrow", "text"}))
+        self.assertFalse(config.shows("ipa"))
+
+    def test_preference_is_moot_without_text_elements_in_the_book(self) -> None:
+        self.package.card_default_elements = ["eyebrow", "meta"]
+        self._choose(PrintTextChoice.OMIT)
+        config = self._config()
+        self.assertEqual(config.origin, "book")
+        self.assertEqual(config.withheld, frozenset())
+
+    def test_text_override_and_pinned_translation_survive_an_omit(self) -> None:
+        pinned = Translation.objects.create(piece=self.piece, target_language="en", text="This place")
+        self.item.text_override = "Locus iste (wersja koncertowa)"
+        self.item.translation = pinned
+        self._choose(PrintTextChoice.OMIT)
+        config = self._config()
+        self.assertEqual(config.withheld, frozenset({"ipa"}))
+        self.assertTrue(config.shows("text"))
+        self.assertTrue(config.shows("translation"))
+
+    def test_withheld_reads_not_applicable_and_leaves_rollup_alone(self) -> None:
+        # Latin in a Polish book with no translation and no IPA: two gaps.
+        self.package.card_default_elements = ["eyebrow", "meta", "text", "translation", "ipa"]
+        self.package.save(update_fields=["card_default_elements"])
+        self._add_edition()
+        items = list(ScorePackageService._ordered_items(self.project))
+        before = compute_program_readiness(self.project, items, self.package)[self.item.pk]
+        self.assertEqual(before["elements"]["translation"], MISSING)
+        self.assertEqual(before["overall"], OVERALL_INCOMPLETE)
+
+        self._choose(PrintTextChoice.OMIT)
+        items = list(ScorePackageService._ordered_items(self.project))
+        after = compute_program_readiness(self.project, items, self.package)[self.item.pk]
+        for element in self._TEXT:
+            self.assertEqual(after["elements"][element], NOT_APPLICABLE)
+        self.assertEqual(after["overall"], OVERALL_READY)
+
+    def test_untouched_programme_keeps_its_hash(self) -> None:
+        self._add_edition()
+        signature = ScorePackageService._item_signature(self.item, self.package)
+        self.assertNotIn("withheld", signature)
+        before = self._hash()
+        # A choice that resolves no card differently ages no book: no withheld
+        # key, and the save leaves `updated_at` (the content stamp) alone.
+        stamp = Piece.objects.get(pk=self.piece.pk).updated_at
+        self._choose(PrintTextChoice.KEEP)
+        self.assertEqual(Piece.objects.get(pk=self.piece.pk).updated_at, stamp)
+        self.assertEqual(self._hash(), before)
+
+    def test_hash_changes_when_a_suggestion_starts_withholding(self) -> None:
+        self._add_edition()
+        before = self._hash()
+        self._recommend("omit")
+        self.assertNotEqual(self._hash(), before)
+
+    def test_cockpit_row_reports_withheld_and_origin(self) -> None:
+        self._add_edition()
+        self._recommend("omit")
+        row = ScorePackageService.compute_state(self.project)["items"][0]
+        self.assertEqual(row["withheld_elements"], ["text", "translation", "ipa"])
+        self.assertEqual(row["card_origin"], "suggestion")
+        self.assertNotIn("text", row["card_elements_effective"])
+        self.assertEqual(row["piece_print_text"]["choice"], "")
+        self.assertEqual(
+            row["piece_print_text"]["recommendation"],
+            {"verdict": "omit", "reason": "Wokaliza na samogłoskach.", "is_current": True},
+        )
+
+    def test_manager_patch_sets_choice_without_aging_the_piece(self) -> None:
+        manager = User.objects.create_user(username="mgr", email="mgr@test.pl", password="pw123456")
+        UserProfile.objects.create(user=manager, role=AppRole.MANAGER)
+        client = APIClient()
+        client.force_authenticate(manager)
+        stamp = Piece.objects.get(pk=self.piece.pk).updated_at
+        response = client.patch(
+            f"/api/pieces/{self.piece.pk}/", {"print_text_choice": "omit"}, format="json",
+        )
+        self.assertEqual(response.status_code, 200, response.content)
+        self.assertEqual(response.json()["print_text_choice"], "omit")
+        piece = Piece.objects.get(pk=self.piece.pk)
+        self.assertEqual(piece.print_text_choice, "omit")
+        self.assertEqual(piece.updated_at, stamp)
 
 
 class TranslationApplicabilityTests(SimpleTestCase):

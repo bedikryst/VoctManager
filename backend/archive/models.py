@@ -68,6 +68,14 @@ class LatinPronunciation(models.TextChoices):
     CLASSICAL = 'classical', _('Classical (restored)')
 
 
+class PrintTextChoice(models.TextChoices):
+    """The librarian's decision on whether a score book's card prints the sung
+    text of a piece (with its translation and IPA). Blank means no decision: the
+    current analysis recommendation, if any, applies."""
+    OMIT = 'omit', _('Omit the text')
+    KEEP = 'keep', _('Print the text')
+
+
 class ProgramNoteTone(models.TextChoices):
     """The register a programme note is written in, as `GENERATE_PROGRAM_NOTE`
     defines each one. Chosen per note, because it follows the concert: a church
@@ -223,6 +231,27 @@ class Piece(SoftDeleteModel):
         blank=True,
         help_text=_("Latin pronunciation the IPA guide is written in"),
         verbose_name=_("IPA pronunciation system"),
+    )
+    # Both print-text fields are written with `update_fields` that leave out
+    # `updated_at`: the score book's staleness reads `updated_at`, and only a
+    # change to what a card resolves to may age a book (see
+    # archive.services.print_text).
+    print_text_choice = models.CharField(
+        max_length=4,
+        choices=PrintTextChoice.choices,
+        blank=True,
+        default='',
+        help_text=_("Whether a score book's card prints this piece's sung text, "
+                    "translation and IPA. Blank follows the analysis recommendation."),
+        verbose_name=_("Sung text on the book card"),
+    )
+    print_text_recommendation = models.JSONField(
+        null=True,
+        blank=True,
+        help_text=_("The analysis's view on printing the sung text: verdict, reason, "
+                    "source prompt, fingerprint of the lyrics it read, time. A "
+                    "suggestion only; ignored once the lyrics change."),
+        verbose_name=_("Sung text on the book card — suggested by analysis"),
     )
 
     class Meta:

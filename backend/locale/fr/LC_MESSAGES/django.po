@@ -6096,6 +6096,40 @@ msgstr "La sélection doit rester à l’intérieur de l’édition."
 msgid "The edition changed. Reopen the preview."
 msgstr "L’édition a changé. Rouvrez l’aperçu."
 
+#: archive/models.py
+msgid "Omit the text"
+msgstr "Sans le texte"
+
+#: archive/models.py
+msgid "Print the text"
+msgstr "Imprimer le texte"
+
+#: archive/models.py
+msgid "Sung text on the book card"
+msgstr "Texte chanté sur la fiche du recueil"
+
+#: archive/models.py
+msgid ""
+"Whether a score book's card prints this piece's sung text, translation and "
+"IPA. Blank follows the analysis recommendation."
+msgstr ""
+"Indique si la fiche du recueil imprime le texte chanté, sa traduction et "
+"l'API. Vide : la recommandation de l'analyse s'applique."
+
+#: archive/models.py
+msgid "Sung text on the book card — suggested by analysis"
+msgstr "Texte chanté sur la fiche du recueil — suggéré par l'analyse"
+
+#: archive/models.py
+msgid ""
+"The analysis's view on printing the sung text: verdict, reason, source "
+"prompt, fingerprint of the lyrics it read, time. A suggestion only; ignored "
+"once the lyrics change."
+msgstr ""
+"L'avis de l'analyse sur l'impression du texte chanté : verdict, raison, "
+"prompt source, empreinte du texte évalué, date. Simple suggestion, ignorée "
+"dès que le texte change."
+
 #~ msgid "Review the request"
 #~ msgstr "Examiner la demande"
 

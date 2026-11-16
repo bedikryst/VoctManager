@@ -216,6 +216,21 @@ class ArchiveManagementService:
         )
         return piece
 
+    @staticmethod
+    def set_print_text_choice(piece: Piece, choice: str) -> Piece:
+        """Record whether a score book's card prints the piece's sung text.
+
+        Saved without `updated_at`: score books read that stamp as "the piece's
+        content changed", and a choice that resolves no card differently must
+        not age every book holding the piece. A choice that does change a card
+        reaches the book's hash through its resolved card instead.
+        """
+        if piece.print_text_choice != choice:
+            piece.print_text_choice = choice
+            piece.save(update_fields=['print_text_choice'])
+            logger.info("piece.print_text_choice id=%s choice=%s", piece.id, choice or "-")
+        return piece
+
     @classmethod
     def verify_piece_field(
         cls, *, piece: Piece, field: str, object_id: str = "", actor_email: str = "",

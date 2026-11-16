@@ -6057,6 +6057,40 @@ msgstr "Zaznaczenie musi mieścić się w wydaniu."
 msgid "The edition changed. Reopen the preview."
 msgstr "Wydanie się zmieniło. Otwórz podgląd ponownie."
 
+#: archive/models.py
+msgid "Omit the text"
+msgstr "Bez tekstu"
+
+#: archive/models.py
+msgid "Print the text"
+msgstr "Drukuj tekst"
+
+#: archive/models.py
+msgid "Sung text on the book card"
+msgstr "Tekst na karcie książki"
+
+#: archive/models.py
+msgid ""
+"Whether a score book's card prints this piece's sung text, translation and "
+"IPA. Blank follows the analysis recommendation."
+msgstr ""
+"Czy karta utworu w książce nut drukuje śpiewany tekst, tłumaczenie i IPA. "
+"Puste pole oznacza rekomendację analizy."
+
+#: archive/models.py
+msgid "Sung text on the book card — suggested by analysis"
+msgstr "Tekst na karcie książki — propozycja analizy"
+
+#: archive/models.py
+msgid ""
+"The analysis's view on printing the sung text: verdict, reason, source "
+"prompt, fingerprint of the lyrics it read, time. A suggestion only; ignored "
+"once the lyrics change."
+msgstr ""
+"Ocena analizy, czy drukować śpiewany tekst: werdykt, uzasadnienie, prompt "
+"źródłowy, odcisk ocenionego tekstu, czas. Tylko propozycja; pomijana, gdy "
+"tekst się zmieni."
+
 #~ msgid "Review the request"
 #~ msgstr "Rozpatrz prośbę"
 

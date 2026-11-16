@@ -4640,6 +4640,35 @@ msgstr ""
 msgid "The edition changed. Reopen the preview."
 msgstr ""
 
+#: archive/models.py
+msgid "Omit the text"
+msgstr ""
+
+#: archive/models.py
+msgid "Print the text"
+msgstr ""
+
+#: archive/models.py
+msgid "Sung text on the book card"
+msgstr ""
+
+#: archive/models.py
+msgid ""
+"Whether a score book's card prints this piece's sung text, translation and "
+"IPA. Blank follows the analysis recommendation."
+msgstr ""
+
+#: archive/models.py
+msgid "Sung text on the book card — suggested by analysis"
+msgstr ""
+
+#: archive/models.py
+msgid ""
+"The analysis's view on printing the sung text: verdict, reason, source "
+"prompt, fingerprint of the lyrics it read, time. A suggestion only; ignored "
+"once the lyrics change."
+msgstr ""
+
 #~ msgid ""
 #~ "%(artist)s is asking to be excused from a run of rehearsals. The dates are "
 #~ "below — approve or decline them in the panel."

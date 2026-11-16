@@ -67,6 +67,7 @@ from .score_protection import can_export as edition_can_export
 from .score_protection import user_is_manager
 from .services.audience_jobs import AudienceJob, audience_job
 from .services.ipa import IpaJob, ipa_job, recompute_refusal
+from .services.print_text import PrintTextRecommendationSummary, recommendation_summary
 from .services.voice_scope import tracks_for_edition, voice_scope
 
 
@@ -1008,6 +1009,10 @@ class PieceSerializer(serializers.ModelSerializer):
     # The same for a programme note and a translation the cockpit asked for.
     program_note_job = serializers.SerializerMethodField()
     translation_job = serializers.SerializerMethodField()
+    # The analysis's view on printing the sung text in a score book, with
+    # whether it still speaks for the current lyrics. The manager's own
+    # decision is the writable `print_text_choice`.
+    print_text_recommendation = serializers.SerializerMethodField()
 
     class Meta:
         model = Piece
@@ -1032,6 +1037,8 @@ class PieceSerializer(serializers.ModelSerializer):
             'starting_pitches',
             'text_source',
             'mbid_work',
+            'print_text_choice',
+            'print_text_recommendation',
             # Derived
             'ingestion_status', 'ingestion_status_display',
             'provenance',
@@ -1074,6 +1081,9 @@ class PieceSerializer(serializers.ModelSerializer):
         if not self.context.get('include_provenance'):
             return None
         return audience_job('translation', obj.pk)
+
+    def get_print_text_recommendation(self, obj: Piece) -> PrintTextRecommendationSummary | None:
+        return recommendation_summary(obj)
 
     def get_ingestion_status(self, obj: Piece) -> str:
         return _aggregate_ingestion_status(obj)

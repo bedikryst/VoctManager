@@ -1,8 +1,9 @@
 """
 @file score_package_config.py
 @description Single source of truth for the score-book's per-item content
-    resolution: which card elements exist, how a program item's overrides fold
-    onto the package defaults, which edition binds, which translation /
+    resolution: which card elements exist, how a program item's overrides and
+    its piece's print-text preference fold onto the package defaults, which
+    edition binds, which translation /
     programme note is chosen, and what the performers line says. Pure domain logic — no PDF/AI deps — so it can be
     imported by the builder, the readiness engine, the service and the views
     without dragging in WeasyPrint/pypdf.
@@ -13,12 +14,14 @@ from __future__ import annotations
 
 from collections.abc import Iterable
 from dataclasses import dataclass
+from typing import Literal
 from uuid import UUID
 
 from django.db.models import Prefetch, QuerySet
 
-from archive.models import Piece, ProgramNote, ScoreEdition, Translation
+from archive.models import Piece, PrintTextChoice, ProgramNote, ScoreEdition, Translation
 from archive.services.language import translation_adds_meaning
+from archive.services.print_text import current_recommendation
 from core.constants import VoiceLine
 from roster.domain.solo_duties import solo_credit_line, solo_duties
 from roster.models import (
@@ -47,13 +50,27 @@ CARD_ELEMENTS: tuple[str, ...] = (
 )
 _CARD_ELEMENTS_SET: frozenset[str] = frozenset(CARD_ELEMENTS)
 
+# The elements a piece's print-text preference governs: the sung text and the
+# two aids that only exist to read it.
+TEXT_ELEMENTS: frozenset[str] = frozenset({"text", "translation", "ipa"})
+
+CardOrigin = Literal["item", "piece", "suggestion", "book"]
+
 
 @dataclass(frozen=True)
 class ResolvedCardConfig:
-    """A program item's effective card settings after folding its overrides."""
+    """A program item's effective card settings after folding its overrides.
+
+    ``withheld`` names the elements the book would print but the piece's
+    preference leaves out; they are never in ``elements``. ``origin`` says which
+    layer decided the element set: the item's own list, the piece's manual
+    choice, the analysis suggestion, or the book defaults alone.
+    """
 
     enabled: bool
     elements: frozenset[str]
+    withheld: frozenset[str] = frozenset()
+    origin: CardOrigin = "book"
 
     def shows(self, element: str) -> bool:
         return self.enabled and element in self.elements
@@ -180,14 +197,63 @@ def package_default_elements(package: ScorePackage) -> frozenset[str]:
     return frozenset(sanitize_card_elements(package.card_default_elements) or ())
 
 
+def _piece_text_verdict(piece: Piece) -> tuple[str, CardOrigin] | None:
+    """The piece's print-text decision and who made it: the manual choice wins
+    over a current recommendation; nothing else decides anything."""
+    if piece.print_text_choice:
+        return piece.print_text_choice, "piece"
+    recommendation = current_recommendation(piece)
+    if recommendation is not None and recommendation.verdict is not None:
+        return recommendation.verdict, "suggestion"
+    return None
+
+
+def _protected_text_elements(item: ProgramItem) -> frozenset[str]:
+    """Elements whose content the conductor supplied for this concert, which a
+    piece preference must not suppress: a typed text, and a pinned translation
+    that is still live. IPA has no override, so it is never protected."""
+    protected: set[str] = set()
+    if item.text_override:
+        protected.add("text")
+    if item.translation_id and any(
+        t.pk == item.translation_id and t.movement_id is None
+        for t in item.piece.translations.all()
+    ):
+        protected.add("translation")
+    return frozenset(protected)
+
+
 def resolve_card_config(item: ProgramItem, package: ScorePackage) -> ResolvedCardConfig:
-    """Fold a program item's per-item overrides onto the package defaults."""
+    """Fold a program item's overrides and its piece's print-text preference
+    onto the package defaults.
+
+    An item's own element list (an empty one included) wins outright. Otherwise
+    the book's defaults apply, minus the text elements when the piece's manual
+    choice is ``omit`` or, without a manual choice, its current recommendation
+    is. A preference only ever removes: ``keep`` cannot print what the book
+    turned off. This is the one place the preference folds in, so the preview,
+    the PDF, readiness, the effective settings and the source hash agree.
+    """
     enabled = package.include_cards if item.card_enabled is None else bool(item.card_enabled)
-    if item.card_elements is None:
-        elements = package_default_elements(package)
-    else:
+    if item.card_elements is not None:
         elements = frozenset(e for e in item.card_elements if e in _CARD_ELEMENTS_SET)
-    return ResolvedCardConfig(enabled=enabled, elements=elements)
+        return ResolvedCardConfig(enabled=enabled, elements=elements, origin="item")
+    elements = package_default_elements(package)
+    decision = _piece_text_verdict(item.piece) if elements & TEXT_ELEMENTS else None
+    if decision is None:
+        return ResolvedCardConfig(enabled=enabled, elements=elements)
+    verdict, origin = decision
+    withheld = (
+        (elements & TEXT_ELEMENTS) - _protected_text_elements(item)
+        if verdict == PrintTextChoice.OMIT
+        else frozenset()
+    )
+    return ResolvedCardConfig(
+        enabled=enabled,
+        elements=elements - withheld,
+        withheld=withheld,
+        origin=origin,
+    )
 
 
 def resolve_source_numbering(item: ProgramItem, package: ScorePackage) -> bool:
@@ -431,7 +497,9 @@ def suggested_page_start(piece: Piece) -> int | None:
 
 __all__ = [
     "CARD_ELEMENTS",
+    "TEXT_ELEMENTS",
     "UNKNOWN_PAGE_LIMIT",
+    "CardOrigin",
     "ResolvedCardConfig",
     "active_editions",
     "composer_label",

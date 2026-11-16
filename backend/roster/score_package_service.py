@@ -25,6 +25,7 @@ from django.db.models import QuerySet
 from django.utils import timezone
 
 from archive.models import ScoreEdition, ScoreLicenseType
+from archive.services.print_text import recommendation_summary
 from roster.domain.liturgy import (
     SLOTS_BY_CODE,
     ProgramItemPresentation,
@@ -175,8 +176,12 @@ class ScorePackageService:
         """Everything about one program item that affects the assembled output."""
         piece = item.piece
         edition = resolve_item_edition(item)
+        config = resolve_card_config(item, package)
         # Content signature: any edit to the piece, its translations, movements
         # or programme notes bumps the hash, so the output is flagged stale.
+        # The piece's print-text preference is saved without touching
+        # `updated_at`; it reaches the hash only through `withheld` below, so a
+        # choice that changes no card ages no book.
         timestamps = [piece.updated_at]
         timestamps += [t.updated_at for t in piece.translations.all()]
         timestamps += [n.updated_at for n in piece.program_notes.all()]
@@ -199,13 +204,14 @@ class ScorePackageService:
             # Present only when set, so a book built before the field existed
             # keeps its hash and is not flagged stale by a default it never had.
             **({"note_on_new_page": True} if item.note_on_new_page else {}),
+            **({"withheld": sorted(config.withheld)} if config.withheld else {}),
             "translation_pin": str(item.translation_id) if item.translation_id else None,
             # The line as printed. While the card hides it only the typed field
             # counts — an edit to the item, like the overrides above — so
             # recasting a solo never ages a book that credits nobody.
             "performers": (
                 resolve_item_performers(item)
-                if resolve_card_config(item, package).shows("cast")
+                if config.shows("cast")
                 else item.performers
             ),
             "hide_source_numbers": item.hide_source_page_numbers,
@@ -361,6 +367,13 @@ class ScorePackageService:
             "card_enabled_effective": config.enabled,
             "card_elements": item.card_elements,
             "card_elements_effective": [e for e in CARD_ELEMENTS if e in config.elements],
+            "withheld_elements": [e for e in CARD_ELEMENTS if e in config.withheld],
+            # Which layer decided the element set: item / piece / suggestion / book.
+            "card_origin": config.origin,
+            "piece_print_text": {
+                "choice": piece.print_text_choice,
+                "recommendation": recommendation_summary(piece),
+            },
             "text_override": item.text_override,
             "note_override": item.note_override,
             "note_on_new_page": item.note_on_new_page,
