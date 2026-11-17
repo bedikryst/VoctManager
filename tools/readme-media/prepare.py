@@ -8,7 +8,7 @@ music stand read as an empty page with marks floating on it. This swaps the
 showcase piece's edition for a real engraving (Mutopia Project, CC BY 4.0,
 credited in the README) and moves the seeded marks onto its single page, over
 the staves they would plausibly annotate. Layers, colours and authors stay as
-the seed wrote them. The same piece's audio takes are one-second placeholders;
+the seed wrote them; the notes' words follow `READMEMEDIA_LANG`. The same piece's audio takes are one-second placeholders;
 they become three minutes of silence, so the practice player reads a real length. Safe to run before every take: the engraving is swapped
 once, the marks are laid out again and anything a recorded take drew is removed.
 
@@ -50,15 +50,31 @@ POSITIONS: dict[tuple[str, str], list[dict[str, object]]] = {
     ("conductor", "FH"): [
         {"paths": [[[0.77, 0.149], [0.82, 0.154], [0.88, 0.151], [0.93, 0.147]]]},
     ],
-    # Inline notes are drawn centred on their anchor, so they sit mid-page.
-    ("conductor", "CM"): [{"x": 0.36, "y": 0.700}],
+    # Inline notes are drawn centred on their anchor, so they sit mid-page,
+    # whole inside the zoomed stand of the `stand-insert` clip.
+    ("conductor", "CM"): [{"x": 0.47, "y": 0.700}],
     ("personal", "FH"): [{"paths": [[[0.66, 0.426], [0.72, 0.429], [0.78, 0.425]]]}],
     ("personal", "ST"): [{"x": 0.628, "y": 0.231}],
     ("personal", "CM"): [{"x": 0.62, "y": 0.745}],
 }
 
+# The seed writes its notes in Polish. An English take shows them in English,
+# and the Polish pass that ends every English run puts the Polish back.
+NOTE_TEXT_EN: dict[str, str] = {
+    "Piano subito — cały chór.": "Piano subito, the whole choir.",
+    "Pokaż wejście altom — spóźniają się po pauzie.": "Cue the altos, they come in late after the rest.",
+    "S1 za wysoko w t. 10\u201312 — posłuchać bez fortepianu.": "S1 sharp in bars 10\u201312. Listen without the piano.",
+    "Oddech dopiero po „Maria”.": "No breath until after “Maria”.",
+}
+NOTE_TEXT_PL = {english: polish for polish, english in NOTE_TEXT_EN.items()}
 
-def stage_score() -> ScoreEdition:
+
+def note_text(text: str, language: str) -> str:
+    table = NOTE_TEXT_EN if language == "en" else NOTE_TEXT_PL
+    return table.get(text, text)
+
+
+def stage_score(language: str) -> ScoreEdition:
     edition = ScoreEdition.objects.get(piece__title=SHOWCASE_PIECE, is_default=True)
     data = SCORE_PATH.read_bytes()
     digest = hashlib.sha256(data).hexdigest()
@@ -83,6 +99,8 @@ def stage_score() -> ScoreEdition:
                 continue
             mark.page_number = 1
             mark.payload = {**mark.payload, **slots[index]}
+            if "text" in mark.payload:
+                mark.payload["text"] = note_text(mark.payload["text"], language)
             mark.save(update_fields=["page_number", "payload", "updated_at"])
     return edition
 
@@ -166,6 +184,6 @@ def ids(edition: ScoreEdition) -> dict[str, object]:
     }
 
 
-showcase_edition = stage_score()
+showcase_edition = stage_score(os.environ.get("READMEMEDIA_LANG", "pl"))
 stage_audio(showcase_edition)
 print("READMEMEDIA " + json.dumps(ids(showcase_edition)))

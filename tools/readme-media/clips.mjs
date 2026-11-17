@@ -77,18 +77,48 @@ async function tool(page, name) {
   throw new Error(`no visible toolbar control named ${name}`);
 }
 
-/**
- * Open the showcase piece's score on the stand and return a function that
- * turns fractions of the page into window points.
- */
+/** Open the showcase piece's score on the stand. */
 async function openScore(page, ids, say) {
   await page.goto(`${BASE}/panel/materials/${ids.showcase}/${ids.piece}`);
   await page.getByRole("button", { name: say("Otwórz partyturę", "Open score") }).first().click();
-  const canvas = page.locator(".react-pdf__Page__canvas").first();
-  await canvas.waitFor({ timeout: 30_000 });
+  await page.locator(".react-pdf__Page__canvas").first().waitFor({ timeout: 30_000 });
   await settle(page, 1500);
-  const box = await canvas.boundingBox();
+}
+
+/**
+ * A function that turns fractions of the score's page into window points, at
+ * the page's present zoom and scroll.
+ */
+async function pageAt(page) {
+  const box = await page.locator(".react-pdf__Page__canvas").first().boundingBox();
   return (fx, fy) => ({ x: box.x + box.width * fx, y: box.y + box.height * fy });
+}
+
+// PdfViewer's WHEEL_ZOOM_SENSITIVITY (frontend/src/shared/ui/composites/PdfViewer/constants.ts).
+const WHEEL_ZOOM = 0.0022;
+
+/**
+ * Two fingers spreading (factor > 1) or closing on the stand. The stand reads a
+ * ctrl+wheel as the same gesture: the page scales round the point under it as
+ * the fingers move, and the zoom commits once they rest. The hold lets the
+ * commit fire and the page render sharp at its new size.
+ */
+async function pinch(page, film, focal, factor, seconds = 0.8) {
+  const total = -Math.log(factor) / WHEEL_ZOOM;
+  const steps = Math.round(seconds * 60);
+  await page.mouse.move(focal.x, focal.y);
+  await page.keyboard.down("Control");
+  let done = 0;
+  for (let step = 1; step <= steps; step += 1) {
+    const t = step / steps;
+    const ease = t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2;
+    const to = total * ease;
+    await page.mouse.wheel(0, to - done);
+    done = to;
+    await film.frame();
+  }
+  await page.keyboard.up("Control");
+  await film.hold(0.6);
 }
 
 /** Points along a straight line, for a drag drawn one step per frame. */
@@ -125,6 +155,22 @@ async function tapAt(page, film, point) {
  */
 function clearDesk() {
   django("from copydesk.models import CopyProposal\nCopyProposal.objects.all().delete()\n");
+}
+
+/**
+ * Scroll a scrolling element to `top` along an eased path, one step per frame.
+ * Set directly rather than wheeled: a wheel over a field that scrolls itself
+ * (a long text) would move the field before the form.
+ */
+async function scrollWithin(film, locator, top, seconds = 1.4) {
+  const from = await locator.evaluate((node) => node.scrollTop);
+  const steps = Math.max(1, Math.round(seconds * 60));
+  for (let step = 1; step <= steps; step += 1) {
+    const t = step / steps;
+    const ease = t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2;
+    await locator.evaluate((node, y) => { node.scrollTop = y; }, Math.round(from + (top - from) * ease));
+    await film.frame();
+  }
 }
 
 /** Scroll the window so the element sits `offset` px from the top, before filming. */
@@ -198,59 +244,75 @@ const TAKES = {
     },
   },
 
-  // The stand, first half: the drawing tools. A circle with the pen, a line of
-  // the text highlighted, a crescendo hairpin, and a printed "cresc." covered.
+  // The stand, first half: a singer's own marks, on the layer only he reads,
+  // in any ink but the conductor's red. Two fingers bring the music close; a
+  // circle round the p, the words of a phrase highlighted, a crescendo hairpin
+  // into the printed mf, and the German underlay covered so only the Latin he
+  // sings is left. The fingers close again on the whole page with its marks.
   "stand-draw": {
     size: "tablet",
     viewport: { width: 834, height: 1194 },
     scale: 1,
     theme: "light",
     touch: true,
+    as: "tenor",
     async run(page, film, ids, say) {
-      const at = await openScore(page, ids, say);
+      await openScore(page, ids, say);
       await film.begin();
       await film.hold(1.4);
-      await film.tap(page.getByRole("button", { name: say("Narzędzia adnotacji", "Annotation tools") }));
+      // Spread round the page's top right corner, so the first two systems
+      // fill the screen below the tool panel, which opens over the top left.
+      const whole = await pageAt(page);
+      const focal = whole(0.92, 0.01);
+      await pinch(page, film, focal, 1.5);
+      await film.hold(0.6);
+      const at = await pageAt(page);
+      await film.tap(page.getByRole("button", { name: say(/^Narzędzia adnotacji/, /^Annotation tools/) }));
       await film.hold(0.8);
       await film.tap(await tool(page, /^(Rysuj|Draw):/));
-      await film.hold(1);
-      // A circle round the mf on the second system.
-      const centre = at(0.83, 0.278);
+      await film.hold(0.7);
+      await film.tap(page.getByRole("group", { name: say("Kolor", "Ink colour") }).getByRole("button").first());
+      await film.hold(0.6);
+      // A circle round the p over the second system.
+      const centre = at(0.664, 0.218);
+      const rx = at(0.69, 0).x - at(0.664, 0).x;
+      const ry = at(0, 0.235).y - at(0, 0.218).y;
       await stroke(page, film, Array.from({ length: 61 }, (_, i) => {
         const a = -Math.PI / 2 + (i / 60) * Math.PI * 2.15;
-        return { x: centre.x + Math.cos(a) * 26, y: centre.y + Math.sin(a) * 19 };
+        return { x: centre.x + Math.cos(a) * rx, y: centre.y + Math.sin(a) * ry };
       }));
-      await film.hold(1.1);
-      await film.tap(await tool(page, /^(Rysuj|Draw):/));
-      await film.hold(0.5);
+      await film.hold(1);
       await film.tap(await tool(page, say("Zakreślacz", "Highlighter")));
       await film.hold(0.7);
-      // The right half of the first system's words: the tool palette covers the left.
-      await stroke(page, film, line(at(0.45, 0.134), at(0.86, 0.134), 50));
-      await film.hold(1.1);
-      await film.tap(await tool(page, /^(Rysuj|Draw):/));
-      await film.hold(0.5);
+      // The second system's Latin words, from "in cruce" to the barline.
+      await stroke(page, film, line(at(0.35, 0.264), at(0.945, 0.264), 54));
+      await film.hold(1);
       await film.tap(await tool(page, say("Kształty", "Shapes")));
-      await film.hold(0.9);
+      await film.hold(0.8);
       await film.tap(await tool(page, say("Widełki crescendo", "Crescendo hairpin")));
       await film.hold(0.6);
-      await stroke(page, film, line(at(0.42, 0.465), at(0.6, 0.465), 40));
-      await film.hold(1.1);
-      await film.tap(await tool(page, /^(Rysuj|Draw):/));
-      await film.hold(0.5);
+      // Under the second system's lower staff, into the printed mf.
+      await stroke(page, film, line(at(0.707, 0.341), at(0.833, 0.341), 36));
+      await film.hold(1);
       await film.tap(await tool(page, say("Korektor (zakryj druk)", "Cover (hide the print)")));
       await film.hold(0.6);
-      await stroke(page, film, line(at(0.63, 0.336), at(0.71, 0.357), 36));
+      // The first system's German line, from the window's edge to the barline;
+      // the zoom has already pushed its start off the screen.
+      await stroke(page, film, line({ x: 2, y: at(0, 0.1405).y }, at(0.948, 0.1535), 44));
       await film.hold(1.2);
-      // The palette folded away, so the clip ends on the page and its four marks.
-      await film.tap(page.getByRole("button", { name: say("Zwiń narzędzia", "Collapse tools") }));
-      await film.hold(3.5);
+      // Browse first: a tool still armed would name itself on the closed bar.
+      await film.tap(await tool(page, say("Przeglądaj", "Browse")));
+      await film.hold(0.4);
+      await film.tap(page.getByRole("button", { name: say("Gotowe", "Done"), exact: true }));
+      await film.hold(1);
+      await pinch(page, film, focal, 1 / 1.5);
+      await film.hold(3.4);
     },
   },
 
-  // The stand, second half: opened from the project's materials, where the
-  // conductor may tell the choir; a breath mark, a note, a jump back to the
-  // top, and the choir told about the new marks.
+  // The stand, second half: opened from the concert's materials, where the
+  // conductor may tell the choir. Two fingers bring the music close; a caesura,
+  // a note, a jump back to the top, and the choir told about the new marks.
   "stand-insert": {
     size: "tablet",
     viewport: { width: 834, height: 1194 },
@@ -272,9 +334,15 @@ const TAKES = {
       const canvas = page.locator(".react-pdf__Page__canvas").first();
       await film.see(canvas, { every: 120 });
       await film.hold(1.2);
-      const box = await canvas.boundingBox();
-      const at = (fx, fy) => ({ x: box.x + box.width * fx, y: box.y + box.height * fy });
-      await film.tap(page.getByRole("button", { name: say("Narzędzia adnotacji", "Annotation tools") }));
+      // Every system of the music stays on screen, its left edge given up,
+      // with room under it for the note and its editor; a closer zoom would
+      // push the editor under the bottom band and scroll the music away.
+      const whole = await pageAt(page);
+      const focal = whole(0.92, 0.333);
+      await pinch(page, film, focal, 1.35);
+      await film.hold(0.5);
+      const at = await pageAt(page);
+      await film.tap(page.getByRole("button", { name: say(/^Narzędzia adnotacji/, /^Annotation tools/) }));
       await film.hold(0.8);
       await film.tap(await tool(page, /^(Wstaw|Insert):/));
       await film.hold(0.6);
@@ -284,11 +352,9 @@ const TAKES = {
       await film.hold(0.6);
       await tapAt(page, film, at(0.44, 0.515));
       await film.hold(1.1);
-      await film.tap(await tool(page, /^(Wstaw|Insert):/));
-      await film.hold(0.5);
       await film.tap(await tool(page, say("Notatka", "Note")));
       await film.hold(0.5);
-      await tapAt(page, film, at(0.78, 0.705));
+      await tapAt(page, film, at(0.8, 0.69));
       const text = page.getByLabel(say("Treść notatki", "Note text"));
       await film.see(text);
       await film.hold(0.7);
@@ -297,8 +363,6 @@ const TAKES = {
       await film.hold(1);
       await film.tap(page.getByRole("button", { name: "OK", exact: true }).first());
       await film.hold(1.1);
-      await film.tap(await tool(page, /^(Wstaw|Insert):/));
-      await film.hold(0.5);
       await film.tap(await tool(page, say("Skok", "Jump")));
       await film.hold(0.7);
       await tapAt(page, film, at(0.92, 0.62));
@@ -313,7 +377,13 @@ const TAKES = {
       const send = page.getByRole("button", { name: say(/^Wyślij do/, /^Send to/) }).first();
       await film.see(send);
       await film.tap(send);
-      await film.hold(3.5);
+      await film.hold(2.4);
+      await film.tap(await tool(page, say("Przeglądaj", "Browse")));
+      await film.hold(0.4);
+      await film.tap(page.getByRole("button", { name: say("Gotowe", "Done"), exact: true }));
+      await film.hold(0.8);
+      await pinch(page, film, focal, 1 / 1.35);
+      await film.hold(3);
     },
   },
 
@@ -353,6 +423,52 @@ const TAKES = {
       await film.hold(2.4);
       await film.scroll(420, 1.6);
       await film.hold(3.4);
+    },
+  },
+
+  // The conductor's review of the piece `ingest` catalogued, alone, from the
+  // frame it opens on: the portfolio cuts it onto that take's upload and
+  // progress at the click on "Review and approve", so the pointer starts where
+  // that click left it. Down the form, what the model did beyond reading the
+  // page: the fields still to check, the sung text and its IPA, the composer
+  // matched in MusicBrainz and Wikidata, the edition and its licence, then the
+  // translation, a new one offered in another language, and the programme note
+  // it can write. Needs the piece in the database, so no reseed after `ingest`.
+  "ingest-review": {
+    size: "desktop",
+    scale: 1.5,
+    theme: "dark",
+    async run(page, film, ids, say) {
+      if (!ids.ingested_piece) throw new Error("no catalogued piece awaiting review: record `ingest` first");
+      await page.goto(`${BASE}/panel/archive-management/${ids.ingested_piece}`);
+      await page.getByText(say("Zatwierdź i opublikuj", "Approve & publish")).first().waitFor({ timeout: 30_000 });
+      await page.locator(".react-pdf__Page__canvas").first().waitFor({ timeout: 30_000 });
+      await settle(page, 1500);
+      const click = { x: 1241, y: 516 };
+      await page.mouse.move(click.x, click.y);
+      film.pointer = click;
+      // The drawn pointer eases to the mouse; it must stand there by the first frame.
+      await settle(page, 800);
+      const form = page.locator("div.min-h-0.flex-1.space-y-4.overflow-y-auto").first();
+      await film.begin();
+      await film.hold(2.2);
+      await film.glideTo(1070, 550, 0.5);
+      // The sung text and its IPA.
+      await scrollWithin(film, form, 640);
+      await film.hold(2.2);
+      // The composer, matched.
+      await scrollWithin(film, form, 1150, 1.2);
+      await film.hold(2.4);
+      // The edition and its licence.
+      await scrollWithin(film, form, 1950);
+      await film.hold(1.4);
+      // The translation, and another language to translate into.
+      await scrollWithin(film, form, await form.evaluate((node) => node.scrollHeight - node.clientHeight));
+      await film.hold(1.2);
+      await film.click(page.getByRole("button", { name: say("Notka programowa", "Programme note") }).first());
+      await film.see(page.getByRole("button", { name: say("Generuj notkę programową", "Generate programme note") }).first());
+      await scrollWithin(film, form, await form.evaluate((node) => node.scrollHeight - node.clientHeight), 0.8);
+      await film.hold(3.2);
     },
   },
 
