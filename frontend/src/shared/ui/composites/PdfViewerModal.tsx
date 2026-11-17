@@ -292,16 +292,19 @@ export const PdfViewerModal = ({
                 />
 
                 {/* The title, in the middle of the top band — non-interactive,
-                    desktop only (a phone's band is full with its tools). Fades
-                    out after its dwell. Never unmounted (on any size, at any
+                    from a laptop's width up: a phone's band is full with its
+                    tools, and a portrait tablet's leaves no room between the
+                    annotation trigger and the utility controls. Fades out
+                    after its dwell. Never unmounted (on any size, at any
                     opacity) so the dialog keeps the accessible name Radix
                     reads from Dialog.Title. The side padding clears the
-                    annotation trigger on the left and the utility controls on
-                    the right. */}
+                    utility controls on the right (performance mode spelled
+                    out, three icons, close: about 365 px) and, being
+                    symmetric, the annotation trigger on the left. */}
                 <motion.div
                   animate={{ opacity: isTitleShown ? 1 : 0 }}
                   transition={{ duration: 0.4, ease: "easeOut" }}
-                  className="pointer-events-none absolute inset-x-0 top-0 z-focus-trap hidden h-12 items-center justify-center px-56 sm:flex"
+                  className="pointer-events-none absolute inset-x-0 top-0 z-focus-trap hidden h-12 items-center justify-center px-96 lg:flex"
                 >
                   <div className="min-w-0 max-w-md text-center">
                     <Dialog.Title asChild>
