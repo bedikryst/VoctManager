@@ -16,8 +16,16 @@
  * `comment` and `copydesk` need the corpus on the dev desk, and `comment` the
  * Astro dev server too (see shots.mjs); README_MEDIA_SITE names the server.
  * `ingest` runs the real pipeline on a score the archive does not hold, which
- * costs $0.04–0.20; for its progress to stream rather than arrive whole, run
- * `web` under uvicorn for the take (see gifs.mjs). INGEST_PDF swaps the score.
+ * needs ANTHROPIC_API_KEY in the dev stack and costs $0.04–0.20 a run.
+ * INGEST_PDF swaps the score; a PDF already in the archive is matched by its
+ * SHA-256 and never reaches the model, which makes a free rehearsal, though it
+ * leaves a second edition awaiting review, so reseed before the paid run. The
+ * dev `web` runs runserver (WSGI), which buffers the progress stream whole, so
+ * the drawer reads "Queued" until the end; for the paid run start `web` under
+ * uvicorn with a throwaway override holding
+ *   services: { web: { command: uvicorn config.asgi:application --host 0.0.0.0 --port 8000 } }
+ *   docker compose -f docker-compose.yml -f docker-compose.dev.yml -f <override> up -d --no-deps --no-build web
+ * and run the same command without the override afterwards.
  */
 
 import { mkdirSync, writeFileSync } from "node:fs";

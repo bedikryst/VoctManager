@@ -48,7 +48,7 @@ He ran the end-of-August concert through the app himself, and the singers used i
 
 | On the music stand | Practising at home |
 |:---:|:---:|
-| <img src="docs/assets/annotations-en.gif" width="340" alt="On the music stand the conductor stamps a crescendo, opens the mark and moves it from the choir's layer to the rehearsal leader's"> | <picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/materials-singer-en-dark.png"><img src="docs/assets/materials-singer-en-light.png" width="240" alt="A tenor's practice console on a phone: his own line playing alone, the other voices muted, speed and loop controls below"></picture> |
+| <img src="docs/assets/annotations-en.gif" width="340" alt="A singer marks the score on his own layer of the music stand: two fingers bring the music close, then a circle in pen, the Latin words highlighted, a crescendo hairpin and the German underlay covered"> | <picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/materials-singer-en-dark.png"><img src="docs/assets/materials-singer-en-light.png" width="240" alt="A tenor's practice console on a phone: his own line playing alone, the other voices muted, speed and loop controls below"></picture> |
 
 <sub>The images show the English interface over the ensemble's own data, which is in Polish.</sub>
 
@@ -85,9 +85,9 @@ Retries depend on whether the failed call was billed ([`ai_client.py`](backend/a
 
 An ingest costs $0.04–0.20. A score sung entirely in Polish is at the low end, since it needs no IPA or translation. There are three spend caps: per run, per edition over its lifetime, and a daily budget for the whole organisation that trips a circuit breaker. A PDF that has already been processed is recognised by its SHA-256 and never reaches the model. The system prompt is cached; the PDF deliberately isn't. Each PDF is read once, so a cache write would add 25% to the largest input cost and almost never be read back.
 
-<img src="docs/assets/score-ingestion-en.gif" width="720" alt="A PDF is uploaded, the pipeline reports its progress live, and the review screen opens on the catalogued piece">
+<img src="docs/assets/score-ingestion-en.gif" width="720" alt="A PDF is uploaded, the pipeline reports its progress live, and the review screen opens on the catalogued piece: the fields to check, the sung text with its IPA, the composer matched, the translation and the programme note">
 
-<sub>Recorded from a real run; the pipeline's 41 seconds are shown in three. Score: Giovanni Priuli, <i>Ave dulcissima Maria</i>, engraved by the <a href="https://www.mutopiaproject.org/">Mutopia Project</a> (CC BY-SA 3.0). The music stand above shows Mozart's <i>Ave verum corpus</i> in Carl Reinecke's arrangement, also from Mutopia (CC BY 4.0).</sub>
+<sub>Recorded from a real run; the wait for the pipeline and the scrolling are sped up. Score: Giovanni Priuli, <i>Ave dulcissima Maria</i>, engraved by the <a href="https://www.mutopiaproject.org/">Mutopia Project</a> (CC BY-SA 3.0). The music stand above shows Mozart's <i>Ave verum corpus</i> in Carl Reinecke's arrangement, also from Mutopia (CC BY 4.0).</sub>
 
 Details: [`docs/archive-ai-ingestion-pipeline.md`](docs/archive-ai-ingestion-pipeline.md).
 
