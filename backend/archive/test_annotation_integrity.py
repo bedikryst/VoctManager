@@ -331,7 +331,8 @@ class RestoreTests(_MarksFixture):
         self.assertEqual(response.status_code, 200)
         restored = response.json()["restored"]
         self.assertEqual({row["id"] for row in restored}, {str(first.pk), str(second.pk)})
-        self.assertEqual({row["created_by"] for row in restored}, {self.singer_user.id})
+        # A string on the wire: the client compares it with String(user.id).
+        self.assertEqual({row["created_by"] for row in restored}, {str(self.singer_user.id)})
         self.assertTrue(self._live(first))
         self.assertTrue(self._live(second))
 

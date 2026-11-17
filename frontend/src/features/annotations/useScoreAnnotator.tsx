@@ -253,7 +253,7 @@ export const useScoreAnnotator = ({
     [writesLeader, writesShared],
   );
   const { user } = useAuth();
-  // Normalised once: the wire's `created_by` is the user's UUID as a string.
+  // Normalised once: the wire's `created_by` is the user's id as a string.
   const userId = user ? String(user.id) : null;
   const [pageApi, setPageApi] = useState<PdfPageApi>({
     currentPage: 1,

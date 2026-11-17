@@ -504,6 +504,11 @@ class AnnotationSerializer(serializers.ModelSerializer):
     #: ``AnnotationViewSet.perform_create`` instead, which can tell "mine again"
     #: from "somebody else's id".
     id = serializers.UUIDField(required=False)
+    #: The author as a string, the shape the client compares with its own
+    #: ``String(user.id)``. A number would make every reader's own marks read
+    #: as somebody else's: announced to their author as new, closed to a
+    #: leader's edits, hidden from them under the voice filter.
+    created_by = serializers.CharField(source='created_by_id', read_only=True, allow_null=True)
 
     class Meta:
         model = Annotation
