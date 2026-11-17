@@ -31,7 +31,13 @@
  * lands late by its own seek latency, is seeked again, and stutters and drops
  * out indefinitely. The tick also enforces the A–B practice loop.
  * Consumed by React via useSyncExternalStore (subscribe/getSnapshot).
+ *
+ * Every decision and every media event can be written to the opt-in
+ * diagnostics log (practicePlayerDiagnostics) for measuring a real phone;
+ * with the log off those calls return at once.
  */
+
+import { practiceDiagnostics as diag } from "./practicePlayerDiagnostics";
 
 export interface PracticeTrackSource {
   id: string;
@@ -128,6 +134,27 @@ const RESYNC_SETTLE_MAX_MS = 1500;
 const RESYNC_COOLDOWN_MS = 2000;
 const RESYNC_BACKOFF_RESET_MS = 30000;
 const PREF_KEY_PREFIX = "voct.practice.pref.";
+// Diagnostics only: a clock sample this often shows how coarsely each voice's
+// currentTime advances, which the 250 ms tick cannot.
+const DIAG_SAMPLE_INTERVAL_MS = 50;
+const DIAG_MEDIA_EVENTS = [
+  "play",
+  "playing",
+  "pause",
+  "waiting",
+  "stalled",
+  "seeking",
+  "seeked",
+  "canplay",
+  "canplaythrough",
+  "ended",
+  "error",
+] as const;
+
+type ResyncReason = "seek" | "loop" | "drift";
+
+const errorName = (error: unknown): string =>
+  error instanceof Error ? error.name : String(error);
 
 /**
  * The practice tempos the mixer offers. A choir practises just under tempo —
@@ -162,23 +189,24 @@ const resolveAudioContextCtor = (): AudioContextCtor | null => {
 const isSettled = (el: HTMLAudioElement): boolean =>
   !el.seeking && el.readyState >= HTMLMediaElement.HAVE_FUTURE_DATA;
 
-/** Resolves once every element is settled, or after RESYNC_SETTLE_MAX_MS. */
-const settle = (elements: HTMLAudioElement[]): Promise<void> =>
+/** Resolves true once every element is settled, false when
+ *  RESYNC_SETTLE_MAX_MS runs out first. */
+const settle = (elements: HTMLAudioElement[]): Promise<boolean> =>
   new Promise((resolve) => {
     if (elements.every(isSettled)) {
-      resolve();
+      resolve(true);
       return;
     }
     const watch = new AbortController();
     const timer = window.setTimeout(() => {
       watch.abort();
-      resolve();
+      resolve(false);
     }, RESYNC_SETTLE_MAX_MS);
     const check = (): void => {
       if (!elements.every(isSettled)) return;
       window.clearTimeout(timer);
       watch.abort();
-      resolve();
+      resolve(true);
     };
     elements.forEach((el) => {
       el.addEventListener("seeked", check, { signal: watch.signal });
@@ -232,7 +260,10 @@ type Listener = () => void;
 
 export class PracticePlayerEngine {
   private elements = new Map<string, HTMLAudioElement>();
+  /** Voice codes (S1, A, TUTTI…) by element — the diagnostics log's names. */
+  private voiceLabels = new WeakMap<HTMLAudioElement, string>();
   private tickHandle: number | null = null;
+  private sampleHandle: number | null = null;
   private listeners = new Set<Listener>();
   private snapshot: PracticePlayerSnapshot = EMPTY_SNAPSHOT;
 
@@ -318,6 +349,10 @@ export class PracticePlayerEngine {
       el.addEventListener("playing", () => this.handlePlaying(el), { signal });
       el.addEventListener("play", () => this.handlePlay(el), { signal });
       el.addEventListener("pause", () => this.handlePause(el), { signal });
+      DIAG_MEDIA_EVENTS.forEach((type) => {
+        el.addEventListener(type, () => this.logMediaEvent(el, type), { signal });
+      });
+      this.voiceLabels.set(el, track.voicePart);
       this.elements.set(track.id, el);
       this.connectToGraph(track.id, el);
       volumes[track.id] = 1;
@@ -334,6 +369,15 @@ export class PracticePlayerEngine {
       soloTrackId: options?.soloTrackId ?? null,
       activePreset,
     });
+    if (diag.enabled) {
+      const voices = tracks
+        .map((track) => `${track.voicePart}${track.isMine ? "*" : ""}`)
+        .join(",");
+      diag.event(
+        `load ${piece.take} ${voices} rate=${rate} preset=${activePreset ?? "-"}`,
+      );
+      this.logContext();
+    }
     this.applyMix();
 
     if (options?.autoplay) {
@@ -357,6 +401,7 @@ export class PracticePlayerEngine {
     this.allowImmediateResync();
     const token = this.syncToken;
     const position = this.snapshot.position;
+    diag.event(`play at ${position.toFixed(3)}`);
     this.commit({ ...this.snapshot, isPlaying: true });
     this.startTick();
 
@@ -375,6 +420,7 @@ export class PracticePlayerEngine {
 
   pause(): void {
     const position = this.transportPosition();
+    diag.event(`pause at ${position.toFixed(3)}`);
     this.cancelResync();
     this.elements.forEach((el) => el.pause());
     this.stopTick();
@@ -400,7 +446,7 @@ export class PracticePlayerEngine {
       Math.min(seconds, this.snapshot.duration || seconds),
     );
     if (this.snapshot.isPlaying) {
-      this.resync(clamped);
+      this.resync(clamped, "seek");
       return;
     }
     // Parked voices move now, so they are buffered there by the next play().
@@ -428,6 +474,7 @@ export class PracticePlayerEngine {
     if (tracks.length === 0) return;
     if (preset !== "blend" && !tracks.some((track) => track.isMine)) return;
 
+    diag.mark(`preset ${preset}`);
     this.commit({
       ...this.snapshot,
       muted: mutedForPreset(tracks, preset),
@@ -568,10 +615,20 @@ export class PracticePlayerEngine {
 
   /** Starts one voice at `position`; resolves whether it is playing. */
   private startVoice(el: HTMLAudioElement, position: number): Promise<boolean> {
+    const from = el.currentTime;
     this.placeAt(el, position);
+    const askedAt = performance.now();
     return el.play().then(
-      () => true,
-      () => false,
+      () => {
+        diag.event(
+          `started ${this.label(el)} ${from.toFixed(3)}→${position.toFixed(3)} in ${this.since(askedAt)}`,
+        );
+        return true;
+      },
+      (error: unknown) => {
+        diag.event(`play rejected ${this.label(el)} ${errorName(error)}`);
+        return false;
+      },
     );
   }
 
@@ -586,10 +643,15 @@ export class PracticePlayerEngine {
     if (!this.snapshot.isPlaying) return;
     const position = this.transportPosition();
     const sounding = new Set(this.participantIds());
+    const stopped: string[] = [];
+    const started: string[] = [];
     let joined = false;
     this.elements.forEach((el, id) => {
       if (!sounding.has(id)) {
-        if (!el.paused) el.pause();
+        if (!el.paused) {
+          el.pause();
+          stopped.push(this.label(el));
+        }
         return;
       }
       if (!el.paused) return;
@@ -599,8 +661,14 @@ export class PracticePlayerEngine {
         return;
       }
       joined = true;
+      started.push(this.label(el));
       void this.startVoice(el, position);
     });
+    if (stopped.length > 0 || started.length > 0) {
+      diag.event(
+        `reconcile at ${position.toFixed(3)} stop=${stopped.join(",") || "-"} start=${started.join(",") || "-"}`,
+      );
+    }
     // A voice the chorister just brought in is aligned at once, not after the
     // wait that paces automatic resyncs.
     if (joined) this.allowImmediateResync();
@@ -617,11 +685,12 @@ export class PracticePlayerEngine {
    * line together however long each seek took. A single voice has nothing to
    * align with and simply seeks.
    */
-  private resync(position: number): void {
+  private resync(position: number, reason: ResyncReason): void {
     this.cancelResync();
     const voices = this.participants();
     if (voices.length <= 1) {
       const [voice] = voices;
+      diag.event(`seek ${reason} ${voice ? this.label(voice) : "-"} to ${position.toFixed(3)}`);
       if (voice) {
         voice.currentTime = position;
         if (voice.paused) void voice.play().catch(() => undefined);
@@ -633,20 +702,37 @@ export class PracticePlayerEngine {
     const token = this.syncToken;
     this.resyncing = true;
     this.lastResyncAt = performance.now();
+    diag.noteResync();
+    diag.event(
+      `resync ${reason} to ${position.toFixed(3)} hold ${this.labelsOf(voices)} next-gap=${this.resyncBackoffMs}ms`,
+    );
     voices.forEach((el) => el.pause());
     voices.forEach((el) => {
       el.currentTime = position;
     });
     this.commit({ ...this.snapshot, position, isBuffering: true });
 
-    void settle(voices).then(() => {
-      if (token !== this.syncToken) return;
+    const heldAt = performance.now();
+    void settle(voices).then((settled) => {
+      if (token !== this.syncToken) {
+        diag.event(`resync superseded after ${this.since(heldAt)}`);
+        return;
+      }
       this.resyncing = false;
       if (!this.snapshot.isPlaying) return;
+      diag.noteSettle(Math.round(performance.now() - heldAt));
+      diag.event(
+        `release after ${this.since(heldAt)}${settled ? "" : " TIMEOUT"} ${voices.map((el) => this.describe(el)).join(" ")}`,
+      );
+      const releasedAt = performance.now();
       // Re-read: the mix may have changed while the voices were held.
       this.participants().forEach((el) => {
         this.placeAt(el, position);
-        void el.play().catch(() => undefined);
+        void el.play().then(
+          () => diag.event(`resumed ${this.label(el)} in ${this.since(releasedAt)}`),
+          (error: unknown) =>
+            diag.event(`play rejected ${this.label(el)} ${errorName(error)}`),
+        );
       });
       this.commit({ ...this.snapshot, isBuffering: false });
     });
@@ -657,16 +743,18 @@ export class PracticePlayerEngine {
     this.resyncing = false;
   }
 
-  /** Whether a running, settled voice has slipped off the clock. Voices still
-   *  seeking or buffering are left alone: their time is not where they sound. */
-  private hasDrifted(clock: HTMLAudioElement, position: number): boolean {
-    if (clock.paused || !isSettled(clock)) return false;
-    return this.participants().some(
-      (el) =>
-        el !== clock &&
-        !el.paused &&
-        isSettled(el) &&
-        Math.abs(el.currentTime - position) > DRIFT_TOLERANCE_S,
+  /** How far each running, settled voice sits from the clock, in seconds.
+   *  Voices still seeking or buffering are left out: their time is not where
+   *  they sound. */
+  private driftsFrom(
+    clock: HTMLAudioElement,
+    position: number,
+  ): { el: HTMLAudioElement; drift: number }[] {
+    if (clock.paused || !isSettled(clock)) return [];
+    return this.participants().flatMap((el) =>
+      el !== clock && !el.paused && isSettled(el)
+        ? [{ el, drift: el.currentTime - position }]
+        : [],
     );
   }
 
@@ -676,10 +764,13 @@ export class PracticePlayerEngine {
     const Ctor = resolveAudioContextCtor();
     if (!Ctor) return; // No Web Audio → applyMix falls back to element.volume.
     try {
-      this.audioCtx = new Ctor();
-      this.masterGain = this.audioCtx.createGain();
+      const ctx = new Ctor();
+      this.audioCtx = ctx;
+      this.masterGain = ctx.createGain();
       this.masterGain.gain.value = 1;
-      this.masterGain.connect(this.audioCtx.destination);
+      this.masterGain.connect(ctx.destination);
+      // iOS reports "interrupted" here, a state the DOM typings do not name.
+      ctx.addEventListener("statechange", () => diag.event(`ctx ${ctx.state}`));
     } catch {
       this.audioCtx = null;
       this.masterGain = null;
@@ -752,7 +843,7 @@ export class PracticePlayerEngine {
     if (el !== this.clock() || !this.snapshot.isPlaying) return;
     const { loop } = this.snapshot;
     if (loop.a !== null && loop.b !== null) {
-      this.resync(loop.a);
+      this.resync(loop.a, "loop");
       return;
     }
     this.cancelResync();
@@ -803,12 +894,19 @@ export class PracticePlayerEngine {
   private startTick(): void {
     this.stopTick();
     this.tickHandle = window.setInterval(this.tick, TICK_INTERVAL_MS);
+    if (diag.enabled) {
+      this.sampleHandle = window.setInterval(this.sampleVoices, DIAG_SAMPLE_INTERVAL_MS);
+    }
   }
 
   private stopTick(): void {
     if (this.tickHandle !== null) {
       window.clearInterval(this.tickHandle);
       this.tickHandle = null;
+    }
+    if (this.sampleHandle !== null) {
+      window.clearInterval(this.sampleHandle);
+      this.sampleHandle = null;
     }
   }
 
@@ -821,7 +919,7 @@ export class PracticePlayerEngine {
     const { loop } = this.snapshot;
 
     if (loop.a !== null && loop.b !== null && position >= loop.b) {
-      this.resync(loop.a);
+      this.resync(loop.a, "loop");
       return;
     }
 
@@ -829,14 +927,77 @@ export class PracticePlayerEngine {
     if (sinceResync > RESYNC_BACKOFF_RESET_MS) {
       this.resyncBackoffMs = RESYNC_COOLDOWN_MS;
     }
-    if (sinceResync >= this.resyncBackoffMs && this.hasDrifted(clock, position)) {
+    const drifts = this.driftsFrom(clock, position);
+    const worst = drifts.reduce((max, { drift }) => Math.max(max, Math.abs(drift)), 0);
+    const drifted = worst > DRIFT_TOLERANCE_S;
+    if (diag.enabled && drifts.length > 0) {
+      const readings = drifts
+        .map(({ el, drift }) => `${this.label(el)}${drift >= 0 ? "+" : ""}${drift.toFixed(3)}`)
+        .join(" ");
+      diag.sample(`tick ${this.describe(clock)} drift ${readings}${drifted ? " OVER" : ""}`);
+      if (drifted) diag.noteOverTolerance(worst);
+    }
+    if (drifted && sinceResync >= this.resyncBackoffMs && !diag.observeOnly) {
       this.resyncBackoffMs *= 2;
-      this.resync(position);
+      this.resync(position, "drift");
       return;
     }
 
     this.commit({ ...this.snapshot, position });
   };
+
+  /** Diagnostics: one line with every sounding voice's clock and the mixing
+   *  context's, so currentTime's real resolution shows between ticks. */
+  private sampleVoices = (): void => {
+    const voices = this.participants()
+      .map((el) => this.describe(el))
+      .join("  ");
+    const ctx = this.audioCtx ? `  ctx ${this.audioCtx.currentTime.toFixed(3)}` : "";
+    diag.sample(`${voices}${ctx}`);
+  };
+
+  private logMediaEvent(el: HTMLAudioElement, type: string): void {
+    if (!diag.enabled) return;
+    const sounding = this.participants().includes(el);
+    if ((type === "waiting" || type === "stalled") && !el.paused) diag.noteStall();
+    diag.event(`${type} ${this.describe(el)}${sounding ? "" : " (silent)"}`);
+  }
+
+  private logContext(): void {
+    const ctx = this.audioCtx;
+    if (!ctx) {
+      diag.event("ctx none — element.volume mixing");
+      return;
+    }
+    // Older Safari leaves both latencies undefined despite the DOM typings.
+    const latency = (value: number | undefined): string =>
+      typeof value === "number" ? value.toFixed(4) : "n/a";
+    diag.event(
+      `ctx ${ctx.state} ${ctx.sampleRate}Hz base=${latency(ctx.baseLatency as number | undefined)} out=${latency(ctx.outputLatency as number | undefined)}`,
+    );
+  }
+
+  private label(el: HTMLAudioElement): string {
+    return this.voiceLabels.get(el) ?? "?";
+  }
+
+  private labelsOf(elements: HTMLAudioElement[]): string {
+    return elements.map((el) => this.label(el)).join(",") || "-";
+  }
+
+  /** A voice as the log shows it: its time, then p paused, s seeking, r<n>
+   *  for a readyState below HAVE_FUTURE_DATA. */
+  private describe(el: HTMLAudioElement): string {
+    const flags =
+      (el.paused ? "p" : "") +
+      (el.seeking ? "s" : "") +
+      (el.readyState < HTMLMediaElement.HAVE_FUTURE_DATA ? `r${el.readyState}` : "");
+    return `${this.label(el)} ${el.currentTime.toFixed(3)}${flags}`;
+  }
+
+  private since(start: number): string {
+    return `${Math.round(performance.now() - start)}ms`;
+  }
 
   private applyMix(): void {
     const { volumes, muted, soloTrackId } = this.snapshot;

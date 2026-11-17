@@ -32,6 +32,7 @@ import {
   holdsTake,
   type PracticePreset,
 } from "./practicePlayerEngine";
+import { practiceDiagnostics } from "./practicePlayerDiagnostics";
 import { PlayerTransport, formatPlayerTime } from "./PlayerTransport";
 import type { MaterialsPiece } from "../types/materials.dto";
 
@@ -118,7 +119,13 @@ export const VoiceMixerPanel = ({
     <GlassCard variant="ethereal" padding="none" isHoverable={false}>
       {/* ── practice presets — the one-tap mixes choristers actually reach for ── */}
       <div className="border-b border-ethereal-marble/60 p-3 sm:p-4">
-        <Eyebrow color="muted" className="mb-2 block px-0.5">
+        {/* Five quick taps on this label toggle the engine's diagnostics log —
+            the way in from a home-screen app, which has no address bar. */}
+        <Eyebrow
+          color="muted"
+          className="mb-2 block px-0.5"
+          onClick={practiceDiagnostics.tap}
+        >
           {t("materials.player.presets_label", "Tryb ćwiczeń")}
         </Eyebrow>
         <div role="group" className="grid grid-cols-3 gap-1.5">

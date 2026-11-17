@@ -2,7 +2,8 @@
  * @file PracticePlayerProvider.tsx
  * @description React bridge for the multitrack practice engine. Mounted once
  * at the Songbook layout level so playback survives navigation between the
- * materials list and piece pages (mini-player pattern).
+ * materials list and piece pages (mini-player pattern). Also hosts the
+ * engine's diagnostics overlay, which renders nothing while the log is off.
  */
 import React, {
   createContext,
@@ -21,6 +22,7 @@ import {
   type PracticeTake,
   type PracticeTrackSource,
 } from "./practicePlayerEngine";
+import { PracticeDiagnosticsOverlay } from "./PracticeDiagnosticsOverlay";
 import type { MaterialsPiece, MaterialsTrack } from "../types/materials.dto";
 
 interface PracticePlayerContextValue {
@@ -151,6 +153,7 @@ export const PracticePlayerProvider = ({
   return (
     <PracticePlayerContext.Provider value={value}>
       <MediaSessionBridge engine={value.engine} />
+      <PracticeDiagnosticsOverlay />
       {children}
     </PracticePlayerContext.Provider>
   );
