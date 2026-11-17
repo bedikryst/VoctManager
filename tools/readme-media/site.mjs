@@ -2,13 +2,14 @@
  * @file site.mjs
  * @description The portfolio's captures of the live voctensemble.com: stills
  * of the home page, the printed invitation, the About page and one section in
- * three languages side by side, and the donation clip, which stops before any
- * payment. The site is public and holds no member data, so these are taken
- * from production. A visitor who has already chosen silence and seen the
- * preloader, as on a second page, meets no sound gate.
+ * three languages side by side, and the donation clip, in a desk window and on
+ * a phone, which stops before any payment. The site is public and holds no
+ * member data, so these are taken from production. A visitor who has already
+ * chosen silence and seen the preloader, as on a second page, meets no sound
+ * gate.
  *
- *   node site.mjs                 # everything
- *   node site.mjs donate triptych # only the named ones
+ *   node site.mjs                        # everything
+ *   node site.mjs donate donate-mobile   # only the named ones
  *
  * Files land in out/site/.
  */
@@ -17,17 +18,19 @@ import { execFileSync } from "node:child_process";
 import { mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { Film, filmable } from "./film.mjs";
-import { OUT, injectCursor, launch } from "./lib.mjs";
+import { OUT, VIEWPORTS, injectCursor, launch } from "./lib.mjs";
 
 const DIR = join(OUT, "site");
 const SITE = process.env.README_MEDIA_SITE ?? "https://voctensemble.com";
 const WINDOW = { width: 1440, height: 820 };
 
 /** A visitor's context past the preloader and the sound gate. */
-async function visitor(browser, { viewport = WINDOW, scale = 2, motion = false, locale = "en-GB" } = {}) {
+async function visitor(browser, { viewport = WINDOW, scale = 2, motion = false, locale = "en-GB", touch = false } = {}) {
   const context = await browser.newContext({
     viewport,
     deviceScaleFactor: scale,
+    isMobile: touch,
+    hasTouch: touch,
     locale,
     timezoneId: "Europe/Warsaw",
     colorScheme: "dark",
@@ -109,6 +112,29 @@ const JOBS = {
     const result = film.encode(join(DIR, "ve-donate.mp4"), { poster: join(DIR, "ve-donate.webp") });
     console.log("clip donate", result);
   },
+
+  // The same on a phone, by touch: the home page's opening, "Support us" in its
+  // header, the sheet over the whole screen, an amount, the currency.
+  async donateMobile(browser) {
+    const context = await visitor(browser, { viewport: VIEWPORTS.phone.viewport, motion: true, touch: true });
+    await filmable(context);
+    const page = await context.newPage();
+    const film = new Film(page, join(DIR, "donate-mobile-frames"));
+    await open(page, "/en");
+    await film.begin();
+    await film.hold(1.8);
+    await film.tap(page.getByText("Support us", { exact: true }).filter({ visible: true }).first());
+    const amount = page.locator("button", { hasText: /^\s*200\s*PLN\s*$/ }).filter({ visible: true }).first();
+    await film.see(amount);
+    await film.hold(1.8);
+    await film.tap(amount);
+    await film.hold(1.2);
+    await film.tap(page.locator("button", { hasText: /^\s*EUR\s*$/ }).filter({ visible: true }).first());
+    await film.hold(3.5);
+    await context.close();
+    const result = film.encode(join(DIR, "ve-donate-mobile.mp4"), { poster: join(DIR, "ve-donate-mobile.webp") });
+    console.log("clip donate-mobile", result);
+  },
 };
 
 const wanted = process.argv.slice(2);
@@ -119,6 +145,7 @@ try {
   if (!wanted.length || stills.length) await JOBS.stills(browser, stills);
   if (!wanted.length || wanted.includes("triptych")) await JOBS.triptych(browser);
   if (!wanted.length || wanted.includes("donate")) await JOBS.donate(browser);
+  if (!wanted.length || wanted.includes("donate-mobile")) await JOBS.donateMobile(browser);
 } finally {
   await browser.close();
 }
