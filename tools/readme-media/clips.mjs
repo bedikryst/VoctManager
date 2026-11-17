@@ -592,7 +592,9 @@ const TAKES = {
     desk: true,
     size: "desktop",
     viewport: { width: 1440, height: 820 },
-    scale: 1,
+    // The portfolio cuts the reworded line out of this take at its own size,
+    // so it needs the pixels of a sharp screen, not of a scaled frame.
+    scale: 2,
     theme: "light",
     async run(page, film, ids, say) {
       await page.addInitScript(() => {
@@ -607,7 +609,8 @@ const TAKES = {
       await settle(page, 1200);
       await film.begin();
       await film.hold(1.8);
-      await film.click(line, { dx: 0.3 });
+      // Comment mode takes a press longer than 500 ms for a hold, not a tap.
+      await film.click(line, { dx: 0.3, quick: true });
       const editor = page.locator('[contenteditable="true"]').first();
       await film.see(editor);
       await film.hold(1);

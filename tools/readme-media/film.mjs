@@ -336,19 +336,24 @@ export class Film {
     return box;
   }
 
-  /** A press the viewer can see: down, a few frames, up. */
-  async press() {
+  /**
+   * A press the viewer can see: down, a few frames, up. `quick` puts the
+   * button down and up at once, for a page that times a tap by the event's
+   * own clock: the frames between are real seconds at a high device scale,
+   * which such a page reads as a long press.
+   */
+  async press({ quick = false } = {}) {
     await this.page.mouse.down();
-    await this.frame(4);
+    if (!quick) await this.frame(4);
     await this.page.mouse.up();
-    await this.frame(2);
+    await this.frame(quick ? 6 : 2);
   }
 
-  /** Glide to a locator and click it. */
-  async click(locator, options) {
+  /** Glide to a locator and click it; `quick` as in press(). */
+  async click(locator, { quick = false, ...options } = {}) {
     await this.glide(locator, options);
     await this.frame(6);
-    await this.press();
+    await this.press({ quick });
   }
 
   /** A tap on a touch screen: no pointer travel, a short dot where the finger lands. */
