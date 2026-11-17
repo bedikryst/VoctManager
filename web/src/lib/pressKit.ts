@@ -31,7 +31,12 @@ import { z } from "astro/zod";
 import YAML from "yaml";
 
 import { FOUNDATION } from "../data/foundation.ts";
-import { upcomingStation, type CycleStation, type Upcoming } from "./cycle.ts";
+import {
+  currentPerformance,
+  upcomingStation,
+  type CycleStation,
+  type Upcoming,
+} from "./cycle.ts";
 import { dayMonth, longDate, weekdayName } from "./dates.ts";
 
 /** Inside `web/`. One `<concert-id>.yaml` per kit. */
@@ -446,18 +451,19 @@ export function kitProblems(kit: PressKit, concert: KitConcert | undefined): str
 }
 
 /**
- * The evening a kit speaks for: its concert's next performance while one is ahead — the row with
- * that performance laid over it (lib/cycle) — and the row itself otherwise. A kit for a programme
- * booked again names the repeat's day, so `kitProblems` must hold it to that day and not the
- * record's.
+ * The evening a kit speaks for: its concert's next performance while one is ahead, and the last one
+ * sung once none is — the row with that performance laid over it (lib/cycle `currentPerformance`).
+ * A kit for a programme booked again names the repeat's day, so `kitProblems` must hold it to that
+ * day and not the record's, and must keep doing so after the repeat: the kit stays in the corpus
+ * when its concert passes, and the first deploy after the evening still has to build.
  */
 export function kitConcert<S extends CycleStation>(
   kit: PressKit,
   stations: readonly S[],
   now: Date = new Date(),
 ): S["data"] | undefined {
-  const own = stations.filter((station) => station.id === kit.concert);
-  return (upcomingStation(own, now) ?? own[0])?.data;
+  const own = stations.find((station) => station.id === kit.concert);
+  return own && currentPerformance(own, now).data;
 }
 
 /**
