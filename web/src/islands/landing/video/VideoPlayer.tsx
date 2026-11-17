@@ -12,7 +12,9 @@
  *  Publishes duration on the scrub (`data-cursor="seek"` + `data-duration`) so the site
  *  cursor can become the seek tooltip. Global ←/→ seek ±5 s on the most recently started
  *  player without needing the scrub focused (the focused slider keeps its full keymap).
- *  Registers OS Media Session metadata on play.
+ *  Registers OS Media Session metadata on play. On a touch projection (lightbox / fullscreen)
+ *  a double tap on the frame's right half skips 10 s ahead and on its left half 10 s back; each
+ *  further tap in the streak adds another 10 s, announced by a quiet pill on that side.
  *  `tone="dark"` flips the chrome for night surfaces; `idleHide` fades the chrome, the
  *  play/pause circle and (in fullscreen) the pointer after stillness (projection room — also
  *  automatic in fullscreen), and there a touch on the sleeping frame wakes the chrome instead
@@ -95,8 +97,32 @@ const SEEK_PAGE_S = 30;
 const IDLE_MS = 2500;
 /** Glow sampling cadence — deliberately slow; it's room light, not a second video. */
 const GLOW_INTERVAL_MS = 350;
+/** Touch projection: each tap after the first in a same-side streak skips this far. */
+const TAP_SEEK_S = 10;
+/** Longest gap that still makes two taps a double tap. A lone tap on a projection frame waits
+ *  this long before doing its single-tap work, so it can never be the first half of a seek. */
+const DOUBLE_TAP_MS = 300;
+/** Longest gap between taps that keeps an established seek streak running. */
+const TAP_STREAK_MS = 500;
 
 type FullscreenVideo = HTMLVideoElement & { webkitEnterFullscreen?: () => void };
+
+/** -1 = the frame's left half (back), 1 = its right half (ahead). */
+type TapSide = -1 | 1;
+
+interface TapStreak {
+  readonly side: TapSide;
+  taps: number;
+  timer: number;
+}
+
+interface TapSeekHint {
+  readonly side: TapSide;
+  readonly seconds: number;
+  /** Bumped on every seek tap: keys the label so its pulse replays. */
+  readonly pulse: number;
+  readonly shown: boolean;
+}
 
 // Module-scoped: the most recently started player owns the global arrow shortcuts — one
 // pair of keys, one unambiguous target (only one video sounds at a time anyway). Survives
@@ -138,6 +164,9 @@ export function VideoPlayer({
   const [veiled, setVeiled] = useState(true);
   const [failed, setFailed] = useState(false);
   const [fullscreen, setFullscreen] = useState(false);
+  const [tapHint, setTapHint] = useState<TapSeekHint | null>(null);
+  // Lightbox and fullscreen: the chrome sleeps, and touch taps on the frame can seek.
+  const projection = idleHide || fullscreen;
 
   const rootRef = useRef<HTMLElement | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -154,6 +183,11 @@ export function VideoPlayer({
   // Set by a touch or pen that lands on a sleeping projection; the click it produces then only
   // wakes the chrome (see onStageClick).
   const wakeOnlyRef = useRef(false);
+  // Whether the pointer behind the next click on the stage was a finger or pen.
+  const touchTapRef = useRef(false);
+  // The running tap gesture on a projection frame: one pending lone tap, or a seek streak.
+  const tapStreakRef = useRef<TapStreak | null>(null);
+  const tapPulseRef = useRef(0);
   // A seek issued while the engine still executes the previous one queues here and is
   // applied from the 'seeked' handler — dragging never floods the decoder.
   const pendingFractionRef = useRef<number | null>(null);
@@ -181,6 +215,16 @@ export function VideoPlayer({
       timeRef.current.textContent = `${formatTime(time)} / ${formatTime(total)}`;
     }
   }, [joiner, knownDuration]);
+
+  /** Jump the playhead, stopping a breath before the end so it can't fire 'ended' and reset
+   *  to 0:00. */
+  const seekTo = useCallback((seconds: number): void => {
+    const video = videoRef.current;
+    if (!video || !Number.isFinite(video.duration) || video.duration <= 0) return;
+    const clamped = Math.min(Math.max(seconds, 0), Math.max(video.duration - 0.25, 0));
+    video.currentTime = clamped;
+    paintProgress(clamped, video.duration);
+  }, [paintProgress]);
 
   const pause = useCallback((): void => {
     const video = videoRef.current;
@@ -230,7 +274,8 @@ export function VideoPlayer({
   // before it clicks. React runs this before the window listener, so the ref still reads the
   // state the finger landed on. `detail` is 0 for a keyboard-activated click, which never wakes.
   const onStagePointerDown = useCallback((event: React.PointerEvent<HTMLDivElement>): void => {
-    wakeOnlyRef.current = event.pointerType !== "mouse" && idleRef.current;
+    touchTapRef.current = event.pointerType !== "mouse";
+    wakeOnlyRef.current = touchTapRef.current && idleRef.current;
   }, []);
 
   const onStageClick = useCallback(
@@ -240,6 +285,64 @@ export function VideoPlayer({
       if (!wakeOnly) toggle();
     },
     [toggle],
+  );
+
+  const endTapStreak = useCallback((): void => {
+    tapStreakRef.current = null;
+    setTapHint((hint) => (hint?.shown ? { ...hint, shown: false } : hint));
+  }, []);
+
+  // Touch projection: a double tap on the frame's right half skips TAP_SEEK_S ahead, on its left
+  // half as far back, and each further tap on that side while the streak runs adds a step. A lone
+  // tap there therefore does its single-tap work (pause, or only wake a sleeping frame) once
+  // DOUBLE_TAP_MS has passed without a second one. A tap on the other half starts a fresh gesture
+  // and drops what the earlier lone tap would have done. The play/pause circle stays immediate,
+  // and a mouse, a keyboard-made click or an in-flow player keeps the plain toggle.
+  const onFrameClick = useCallback(
+    (event: React.MouseEvent<HTMLVideoElement>): void => {
+      const video = videoRef.current;
+      if (
+        !video ||
+        failed ||
+        !projection ||
+        !touchTapRef.current ||
+        event.detail === 0 ||
+        !Number.isFinite(video.duration) ||
+        video.duration <= 0
+      ) {
+        onStageClick(event);
+        return;
+      }
+      const wakeOnly = wakeOnlyRef.current;
+      wakeOnlyRef.current = false;
+      const rect = event.currentTarget.getBoundingClientRect();
+      const side: TapSide = event.clientX - rect.left < rect.width / 2 ? -1 : 1;
+      const streak = tapStreakRef.current;
+      if (streak) window.clearTimeout(streak.timer);
+      if (streak && streak.side === side) {
+        streak.taps += 1;
+        tapPulseRef.current += 1;
+        seekTo(video.currentTime + side * TAP_SEEK_S);
+        setTapHint({
+          side,
+          seconds: (streak.taps - 1) * TAP_SEEK_S,
+          pulse: tapPulseRef.current,
+          shown: true,
+        });
+        streak.timer = window.setTimeout(endTapStreak, TAP_STREAK_MS);
+        return;
+      }
+      setTapHint((hint) => (hint?.shown ? { ...hint, shown: false } : hint));
+      tapStreakRef.current = {
+        side,
+        taps: 1,
+        timer: window.setTimeout(() => {
+          tapStreakRef.current = null;
+          if (!wakeOnly) toggle();
+        }, DOUBLE_TAP_MS),
+      };
+    },
+    [endTapStreak, failed, onStageClick, projection, seekTo, toggle],
   );
 
   // OS media surface (lockscreen, headset keys, media hub) — re-registered on every play,
@@ -378,18 +481,11 @@ export function VideoPlayer({
       const video = videoRef.current;
       if (!video || !Number.isFinite(video.duration) || video.duration <= 0) return;
       event.preventDefault();
-      const delta = event.key === "ArrowLeft" ? -SEEK_STEP_S : SEEK_STEP_S;
-      // Clamp a breath before the edge so → can't fire 'ended' and reset to 0:00.
-      const clamped = Math.min(
-        Math.max(video.currentTime + delta, 0),
-        Math.max(video.duration - 0.25, 0),
-      );
-      video.currentTime = clamped;
-      paintProgress(clamped, video.duration);
+      seekTo(video.currentTime + (event.key === "ArrowLeft" ? -SEEK_STEP_S : SEEK_STEP_S));
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [id, paintProgress]);
+  }, [id, seekTo]);
 
   // Scrolled out of view while playing → pause (no sound from nowhere).
   useEffect(() => {
@@ -528,6 +624,8 @@ export function VideoPlayer({
   useEffect(() => {
     return () => {
       if (globalKeysOwnerId === id) globalKeysOwnerId = null;
+      const streak = tapStreakRef.current;
+      if (streak) window.clearTimeout(streak.timer);
       const video = videoRef.current;
       if (video && !video.paused) {
         if (resume) savePosition(src, video.currentTime, video.duration);
@@ -628,12 +726,9 @@ export function VideoPlayer({
           return;
       }
       event.preventDefault();
-      // End stops a breath before the edge so it doesn't fire 'ended' and reset to 0:00.
-      const clamped = Math.min(Math.max(next, 0), Math.max(video.duration - 0.25, 0));
-      video.currentTime = clamped;
-      paintProgress(clamped, video.duration);
+      seekTo(next);
     },
-    [paintProgress],
+    [seekTo],
   );
 
   const onFullscreen = useCallback((): void => {
@@ -658,7 +753,8 @@ export function VideoPlayer({
     buffering ? "is-buffering" : "",
     scrubbing ? "is-scrubbing" : "",
     idle ? "is-idle" : "",
-    (idleHide || fullscreen) && playing && !idle ? "is-awake" : "",
+    projection ? "is-projection" : "",
+    projection && playing && !idle ? "is-awake" : "",
     failed ? "is-failed" : "",
   ]
     .filter(Boolean)
@@ -682,7 +778,7 @@ export function VideoPlayer({
             poster={poster}
             preload="metadata"
             playsInline
-            onClick={onStageClick}
+            onClick={onFrameClick}
           >
             {srcAv1 && <source src={srcAv1} type={AV1_MIME} />}
             <source src={src} type="video/mp4" />
@@ -695,6 +791,18 @@ export function VideoPlayer({
             />
           )}
           <span className="vplayer-buffer" aria-hidden="true" />
+          {tapHint && (
+            <span
+              className={`vplayer-tapseek${tapHint.side < 0 ? " is-back" : ""}${
+                tapHint.shown ? " is-shown" : ""
+              }`}
+              aria-hidden="true"
+            >
+              <span className="vplayer-tapseek-label" key={tapHint.pulse}>
+                {`${tapHint.side < 0 ? "−" : "+"}${tapHint.seconds} s`}
+              </span>
+            </span>
+          )}
           {!failed && (
             <button
               type="button"

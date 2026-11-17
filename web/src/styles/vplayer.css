@@ -8,6 +8,7 @@
  *   .is-playing   — affordance recedes, glow brightens
  *   .is-buffering — breathing ring in place of the play/pause glyph (delayed show)
  *   .is-scrubbing — pointer drag in progress: rail thickens, playhead dot shows
+ *   .is-projection — projection room (idle-hide / fullscreen): touch taps on the frame can seek
  *   .is-awake     — projection room (idle-hide / fullscreen) playing with its chrome up
  *   .is-idle      — projection-room stillness: scrub + meta fade to a whisper, the play/pause
  *                   circle and the fullscreen pointer go out
@@ -188,6 +189,61 @@
 
 .vplayer.is-buffering .vplayer-stage .vplayer-btn {
   opacity: 0;
+}
+
+/* Projection room: a double tap on the frame seeks, so the browser must not take it for a
+   zoom. Pans and pinches stay with the page. */
+.vplayer.is-projection .vplayer-stage {
+  touch-action: manipulation;
+}
+
+/* Tap-seek pill — stands on the tapped half while a seek streak runs and names its sum.
+   Dressed like the play/pause circle; every tap replays the pulse (VideoPlayer re-keys the
+   label), and the pill fades once the streak ends. */
+.vplayer-tapseek {
+  position: absolute;
+  top: 50%;
+  right: 10%;
+  transform: translateY(-50%);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.4s var(--ease);
+}
+
+.vplayer-tapseek.is-back {
+  right: auto;
+  left: 10%;
+}
+
+.vplayer-tapseek.is-shown {
+  opacity: 1;
+  transition-duration: 0.15s;
+}
+
+.vplayer-tapseek-label {
+  display: block;
+  padding: 9px 15px;
+  border: 1px solid rgba(198, 164, 91, 0.65);
+  border-radius: 999px;
+  background: rgba(8, 8, 7, 0.35);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  color: var(--candle);
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  animation: vplayerTapPulse 0.45s var(--ease);
+}
+
+@keyframes vplayerTapPulse {
+  from {
+    transform: scale(0.88);
+  }
+  to {
+    transform: scale(1);
+  }
 }
 
 /* ── Scrub — hairline at rest; intent (hover/focus/drag) thickens the rail and
@@ -568,5 +624,9 @@
   .vplayer.is-buffering .vplayer-buffer {
     animation: none;
     opacity: 0.7;
+  }
+
+  .vplayer-tapseek-label {
+    animation: none;
   }
 }
