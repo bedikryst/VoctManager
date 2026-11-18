@@ -2,6 +2,16 @@
  * @file practicePlayerEngine.ts
  * @description Framework-agnostic multitrack practice engine for the Songbook.
  *
+ * One transport and one snapshot over two ways of playing a take:
+ *  - decoded stems — the practice take on iPhone and iPad ([presetsOnly]).
+ *    WebKit stalls a routed media element after play(), after every seek and
+ *    after every tempo change, which is everything aligning several voices
+ *    needs. There the take loads whole behind a loading state and plays as
+ *    three stems on the mixing context's clock (stretchedPracticeMix); only
+ *    the three presets exist, as gain changes — no per-voice mixer;
+ *  - streaming elements — everywhere else, and every tempo giusto take. The
+ *    rest of this header describes that path.
+ *
  * Plays the voice tracks of a piece together through a pool of streaming
  * HTMLAudioElements (NOT decoded Web Audio buffers) so that:
  *  - audio streams instead of waiting for full downloads (mobile data),
@@ -37,7 +47,17 @@
  * with the log off those calls return at once.
  */
 
+import { isAppleTouchDevice } from "@/shared/pwa/platform";
+
 import { practiceDiagnostics as diag } from "./practicePlayerDiagnostics";
+import {
+  StretchedMix,
+  loadStems,
+  preferPlaybackAudioSession,
+  supportsStretchedMix,
+  type PracticeLoop,
+  type StemSource,
+} from "./stretchedPracticeMix";
 
 export interface PracticeTrackSource {
   id: string;
@@ -98,6 +118,13 @@ export interface PracticePlayerSnapshot {
   soloTrackId: string | null;
   loop: PracticeLoopRange;
   activePreset: PracticePreset | null;
+  /** The stems path is downloading and decoding the take; nothing can sound
+   *  yet. `isPlaying` meanwhile says whether it starts once ready. */
+  isLoading: boolean;
+  /** Share of the take's recordings decoded so far, 0–1. */
+  loadProgress: number;
+  /** The stems path could not load the take; play() tries again. */
+  loadFailed: boolean;
 }
 
 const EMPTY_SNAPSHOT: PracticePlayerSnapshot = {
@@ -113,6 +140,9 @@ const EMPTY_SNAPSHOT: PracticePlayerSnapshot = {
   soloTrackId: null,
   loop: { a: null, b: null },
   activePreset: null,
+  isLoading: false,
+  loadProgress: 0,
+  loadFailed: false,
 };
 
 // Voices started together stay within a few milliseconds of each other; this
@@ -248,6 +278,39 @@ const mutedForPreset = (
   return muted;
 };
 
+/**
+ * The recordings the stems path loads, by the same rules as [mutedForPreset]:
+ * the first tutti take alone carries the whole choir, every take of the
+ * chorister's line goes into "mine", every other take into "rest". A second
+ * tutti take is never heard by any preset and is not downloaded.
+ */
+const stemSourcesOf = (tracks: PracticeTrackSource[]): StemSource[] => {
+  const tutti = tracks.find((track) => track.voicePart === TUTTI_VOICE_PART);
+  const sources: StemSource[] = tutti
+    ? [{ role: "tutti", url: tutti.url, label: tutti.voicePart }]
+    : [];
+  tracks.forEach((track) => {
+    if (track.voicePart === TUTTI_VOICE_PART) return;
+    sources.push({
+      role: track.isMine ? "mine" : "rest",
+      url: track.url,
+      label: track.voicePart,
+    });
+  });
+  return sources;
+};
+
+const stemLoopOf = ({ a, b }: PracticeLoopRange): PracticeLoop | null =>
+  a !== null && b !== null ? { start: a, end: b } : null;
+
+/**
+ * This device plays the practice take as decoded stems with the three presets
+ * only — iPhone and iPad. A fact about the device, fixed for the page's life,
+ * so surfaces outside the engine's subscription can read it too.
+ */
+export const playsPresetsOnly = (): boolean =>
+  isAppleTouchDevice() && supportsStretchedMix();
+
 /** True when the engine holds this piece's `take` — and so its transport is
  *  the one a surface for that take should show and drive. */
 export const holdsTake = (
@@ -259,6 +322,17 @@ export const holdsTake = (
 type Listener = () => void;
 
 export class PracticePlayerEngine {
+  /** [playsPresetsOnly] for this engine; the mixer hides its per-voice strips
+   *  when it is set. */
+  readonly presetsOnly: boolean = playsPresetsOnly();
+
+  /** The loaded take runs on the stems path. */
+  private onStems = false;
+  /** Its stems, once loaded. */
+  private mix: StretchedMix | null = null;
+  /** Aborts the download of a take that was replaced while loading. */
+  private stemsLoad: AbortController | null = null;
+
   private elements = new Map<string, HTMLAudioElement>();
   /** Voice codes (S1, A, TUTTI…) by element — the diagnostics log's names. */
   private voiceLabels = new WeakMap<HTMLAudioElement, string>();
@@ -321,6 +395,17 @@ export class PracticePlayerEngine {
       pref?.preset && (pref.preset === "blend" || hasMine) ? pref.preset : null;
     const activePreset: PracticePreset | null =
       rememberedPreset ?? (isPractice ? "blend" : null);
+
+    if (isPractice && this.presetsOnly && this.audioCtx && this.masterGain) {
+      this.loadStemsTake(
+        piece,
+        tracks,
+        rate,
+        activePreset ?? "blend",
+        options?.autoplay ?? false,
+      );
+      return;
+    }
 
     const volumes: Record<string, number> = {};
     const muted: Record<string, boolean> = activePreset
@@ -386,6 +471,10 @@ export class PracticePlayerEngine {
   }
 
   async play(): Promise<void> {
+    if (this.onStems) {
+      this.playStems();
+      return;
+    }
     if (!this.snapshot.piece || this.elements.size === 0) return;
 
     // On the same gesture that reached play(): every voice runs through the
@@ -419,7 +508,8 @@ export class PracticePlayerEngine {
   }
 
   pause(): void {
-    const position = this.transportPosition();
+    const position =
+      this.onStems && this.mix?.isPlaying ? this.mix.pause() : this.transportPosition();
     diag.event(`pause at ${position.toFixed(3)}`);
     this.cancelResync();
     this.elements.forEach((el) => el.pause());
@@ -445,6 +535,10 @@ export class PracticePlayerEngine {
       0,
       Math.min(seconds, this.snapshot.duration || seconds),
     );
+    if (this.onStems) {
+      this.seekStems(clamped);
+      return;
+    }
     if (this.snapshot.isPlaying) {
       this.resync(clamped, "seek");
       return;
@@ -457,6 +551,8 @@ export class PracticePlayerEngine {
   }
 
   setRate(rate: number): void {
+    diag.event(`rate ${rate}`);
+    this.mix?.setRate(rate);
     this.elements.forEach((el) => {
       el.playbackRate = rate;
     });
@@ -481,17 +577,24 @@ export class PracticePlayerEngine {
       soloTrackId: null,
       activePreset: preset,
     });
-    this.applyMix();
+    if (this.onStems) {
+      // Before the stems are ready the preset waits in the snapshot.
+      this.mix?.setPreset(preset);
+    } else {
+      this.applyMix();
+    }
     this.persistPref();
   }
 
   setVolume(trackId: string, volume: number): void {
+    if (this.onStems) return;
     const volumes = { ...this.snapshot.volumes, [trackId]: volume };
     this.commit({ ...this.snapshot, volumes });
     this.applyMix();
   }
 
   toggleMute(trackId: string): void {
+    if (this.onStems) return;
     const muted = {
       ...this.snapshot.muted,
       [trackId]: !this.snapshot.muted[trackId],
@@ -508,6 +611,7 @@ export class PracticePlayerEngine {
    * take, and a solo on a muted voice would otherwise be silence.
    */
   setSolo(trackId: string | null): void {
+    if (this.onStems) return;
     const soloTrackId =
       trackId && this.snapshot.soloTrackId !== trackId ? trackId : null;
     const muted = soloTrackId
@@ -524,6 +628,7 @@ export class PracticePlayerEngine {
       ...this.snapshot,
       loop: { a: position, b: b !== null && b <= position ? null : b },
     });
+    this.mix?.setLoop(stemLoopOf(this.snapshot.loop));
   }
 
   setLoopPointB(): void {
@@ -531,10 +636,12 @@ export class PracticePlayerEngine {
     const a = this.snapshot.loop.a;
     if (a === null || position <= a) return;
     this.commit({ ...this.snapshot, loop: { a, b: position } });
+    this.mix?.setLoop(stemLoopOf(this.snapshot.loop));
   }
 
   clearLoop(): void {
     this.commit({ ...this.snapshot, loop: { a: null, b: null } });
+    this.mix?.setLoop(null);
   }
 
   /** Stops playback and unloads the piece entirely (mini-player close). */
@@ -590,6 +697,9 @@ export class PracticePlayerEngine {
   /** Where the transport is now: the clock while it runs, else any running
    *  voice, else the last committed position (paused, or held by a resync). */
   private transportPosition(): number {
+    if (this.onStems) {
+      return this.mix?.isPlaying ? this.mix.position() : this.snapshot.position;
+    }
     const clock = this.clock();
     if (clock && !clock.paused) return clock.currentTime;
     for (const el of this.elements.values()) {
@@ -604,6 +714,177 @@ export class PracticePlayerEngine {
     const ctx = this.audioCtx;
     if (!ctx || ctx.state === "running" || ctx.state === "closed") return;
     void ctx.resume().catch(() => undefined);
+  }
+
+  // ── decoded stems (iPhone, iPad) ─────────────────────────────────────────
+
+  /**
+   * Opens a practice take on the stems path: the snapshot is committed at
+   * once — loading, and playing when the tap asked for it — the download and
+   * decode run behind it, and playback starts by itself when they finish if
+   * the chorister still wants it. Runs inside the tap, where iOS lets the
+   * context wake and the audio session change.
+   */
+  private loadStemsTake(
+    piece: PracticePieceSource,
+    tracks: PracticeTrackSource[],
+    rate: number,
+    preset: PracticePreset,
+    autoplay: boolean,
+  ): void {
+    this.onStems = true;
+    preferPlaybackAudioSession();
+    this.wakeContext();
+    const volumes: Record<string, number> = {};
+    tracks.forEach((track) => {
+      volumes[track.id] = 1;
+    });
+    this.commit({
+      ...EMPTY_SNAPSHOT,
+      piece,
+      tracks,
+      rate,
+      volumes,
+      muted: mutedForPreset(tracks, preset),
+      activePreset: preset,
+      isPlaying: autoplay,
+      isBuffering: autoplay,
+      isLoading: true,
+    });
+    const sources = stemSourcesOf(tracks);
+    if (diag.enabled) {
+      const plan = sources.map((source) => `${source.label}→${source.role}`).join(",");
+      diag.event(`load stems ${plan} rate=${rate} preset=${preset}`);
+      this.logContext();
+    }
+    const loading = new AbortController();
+    this.stemsLoad = loading;
+    void this.prepareStems(sources, loading.signal);
+  }
+
+  private async prepareStems(sources: StemSource[], signal: AbortSignal): Promise<void> {
+    const ctx = this.audioCtx;
+    const master = this.masterGain;
+    if (!ctx || !master) return;
+    const startedAt = performance.now();
+    try {
+      if (sources.length === 0) throw new Error("no recordings");
+      const stems = await loadStems(ctx, sources, {
+        signal,
+        onProgress: (done, total) => {
+          if (!signal.aborted) this.commit({ ...this.snapshot, loadProgress: done / total });
+        },
+        onDecoded: (line) => diag.event(line),
+      });
+      const heldMb = (stems.channels.length * stems.duration * ctx.sampleRate * 4) / 1048576;
+      let created: StretchedMix | null = null;
+      const mix = await StretchedMix.create(
+        ctx,
+        master,
+        stems,
+        this.snapshot.activePreset ?? "blend",
+        () => {
+          if (created === null || this.mix !== created) return;
+          diag.event("stems processor error");
+          this.pause();
+          this.commit({ ...this.snapshot, loadFailed: true });
+        },
+      );
+      created = mix;
+      if (signal.aborted) {
+        mix.dispose();
+        return;
+      }
+      mix.setLoop(stemLoopOf(this.snapshot.loop));
+      this.mix = mix;
+      this.stemsLoad = null;
+      diag.event(
+        `stems ready ${stems.roles.join(",")} ${stems.duration.toFixed(1)}s ${heldMb.toFixed(0)}MB lead=${mix.lead.toFixed(3)}s in ${this.since(startedAt)}`,
+      );
+      this.commit({
+        ...this.snapshot,
+        isLoading: false,
+        loadProgress: 1,
+        duration: stems.duration,
+      });
+      if (this.snapshot.isPlaying) this.startStems();
+    } catch (error) {
+      if (signal.aborted) return;
+      this.stemsLoad = null;
+      diag.event(`stems failed ${errorName(error)}: ${error instanceof Error ? error.message : ""}`);
+      this.commit({
+        ...this.snapshot,
+        isLoading: false,
+        loadFailed: true,
+        isPlaying: false,
+        isBuffering: false,
+      });
+    }
+  }
+
+  /** play() on the stems path: starts at once when the stems are ready, else
+   *  records the wish for prepareStems; after a failed load, loads again. */
+  private playStems(): void {
+    this.wakeContext();
+    const { piece, tracks, isPlaying, loadFailed } = this.snapshot;
+    if (loadFailed && piece) {
+      this.load(piece, tracks, { autoplay: true });
+      return;
+    }
+    if (isPlaying) return;
+    if (!this.mix) {
+      this.commit({ ...this.snapshot, isPlaying: true, isBuffering: true });
+      return;
+    }
+    this.startStems();
+  }
+
+  private startStems(): void {
+    const mix = this.mix;
+    if (!mix) return;
+    const { position: held, duration, rate } = this.snapshot;
+    const position = duration > 0 && held >= duration ? 0 : held;
+    diag.event(`play at ${position.toFixed(3)} rate=${rate}`);
+    mix.play(position, rate);
+    this.commit({ ...this.snapshot, isPlaying: true, isBuffering: false, position });
+    this.startTick();
+  }
+
+  private seekStems(position: number): void {
+    const { a, b } = this.snapshot.loop;
+    // At or past the loop's end the loop starts over, as on reaching it.
+    const target = a !== null && b !== null && position >= b ? a : position;
+    diag.event(`seek to ${target.toFixed(3)}`);
+    this.mix?.seek(target);
+    this.commit({ ...this.snapshot, position: target });
+  }
+
+  /** The stems transport's tick: the position for the UI and the end of the
+   *  take. The A–B loop needs nothing here — the node wraps by itself. */
+  private tickStems(): void {
+    const mix = this.mix;
+    if (!mix?.isPlaying) return;
+    const position = mix.position();
+    const { duration, loop } = this.snapshot;
+    if (stemLoopOf(loop) === null && duration > 0 && position >= duration) {
+      mix.pause();
+      this.stopTick();
+      diag.event("ended");
+      this.commit({ ...this.snapshot, isPlaying: false, isBuffering: false, position: 0 });
+      return;
+    }
+    this.commit({ ...this.snapshot, position: Math.min(position, duration) });
+  }
+
+  /**
+   * iOS interrupts the mixing context for a call, Siri or another app's audio.
+   * On the stems path nothing else reports it, so the transport follows the
+   * context rather than claim to play into silence. (Element voices report
+   * the same through their own pause events — handlePause.)
+   */
+  private handleContextState(ctx: AudioContext): void {
+    diag.event(`ctx ${ctx.state}`);
+    if (this.onStems && this.mix?.isPlaying && ctx.state !== "running") this.pause();
   }
 
   /** Moves a voice to `position` unless it is already there. */
@@ -770,7 +1051,7 @@ export class PracticePlayerEngine {
       this.masterGain.gain.value = 1;
       this.masterGain.connect(ctx.destination);
       // iOS reports "interrupted" here, a state the DOM typings do not name.
-      ctx.addEventListener("statechange", () => diag.event(`ctx ${ctx.state}`));
+      ctx.addEventListener("statechange", () => this.handleContextState(ctx));
     } catch {
       this.audioCtx = null;
       this.masterGain = null;
@@ -911,6 +1192,10 @@ export class PracticePlayerEngine {
   }
 
   private tick = (): void => {
+    if (this.onStems) {
+      this.tickStems();
+      return;
+    }
     if (this.resyncing) return;
     const clock = this.clock();
     if (!clock) return;
@@ -949,10 +1234,14 @@ export class PracticePlayerEngine {
   /** Diagnostics: one line with every sounding voice's clock and the mixing
    *  context's, so currentTime's real resolution shows between ticks. */
   private sampleVoices = (): void => {
+    const ctx = this.audioCtx ? `  ctx ${this.audioCtx.currentTime.toFixed(3)}` : "";
+    if (this.onStems) {
+      diag.sample(`stems ${this.mix?.position().toFixed(3) ?? "-"}${ctx}`);
+      return;
+    }
     const voices = this.participants()
       .map((el) => this.describe(el))
       .join("  ");
-    const ctx = this.audioCtx ? `  ctx ${this.audioCtx.currentTime.toFixed(3)}` : "";
     diag.sample(`${voices}${ctx}`);
   };
 
@@ -1015,7 +1304,13 @@ export class PracticePlayerEngine {
     this.reconcile();
   }
 
+  /** Unloads the current take, whichever path it plays on. */
   private disposeElements(): void {
+    this.stemsLoad?.abort();
+    this.stemsLoad = null;
+    this.mix?.dispose();
+    this.mix = null;
+    this.onStems = false;
     this.cancelResync();
     this.stopTick();
     this.elementEvents?.abort();

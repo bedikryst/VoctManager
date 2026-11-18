@@ -81,6 +81,7 @@ import {
   practiceTracksOf,
   tempoGiustoTracksOf,
 } from "./player/PracticePlayerProvider";
+import { playsPresetsOnly } from "./player/practicePlayerEngine";
 import { RehearsalSection } from "./player/RehearsalSection";
 import type { MaterialsReadinessStatus } from "./types/materials.dto";
 
@@ -457,10 +458,15 @@ export default function PiecePage({
                       <VoiceMixerPanel piece={piece} projectId={group.project.id} />
                     </div>
                     <Text size="xs" color="muted" className="mt-2 px-1">
-                      {t(
-                        "materials.piece_page.mixer_hint",
-                        "Wybierz tryb jednym tapnięciem albo dostrój każdy głos osobno — ćwicz swoją partię na tle całego chóru.",
-                      )}
+                      {playsPresetsOnly()
+                        ? t(
+                            "materials.piece_page.mixer_hint_presets",
+                            "Wybierz tryb jednym tapnięciem — ćwicz swoją partię na tle całego chóru.",
+                          )
+                        : t(
+                            "materials.piece_page.mixer_hint",
+                            "Wybierz tryb jednym tapnięciem albo dostrój każdy głos osobno — ćwicz swoją partię na tle całego chóru.",
+                          )}
                     </Text>
                   </div>
                 )}

@@ -4,6 +4,10 @@
  * (play/seek/tempo/A-B loop) plus a channel strip per voice with volume,
  * mute and solo. "Hear the whole choir, lift your own line" — the core
  * practice workflow choristers otherwise emulate with multiple tabs.
+ *
+ * Where the engine plays the take as decoded stems (iPhone, iPad) only the
+ * three presets exist: the strips are left out, and the first play of a piece
+ * shows the recordings loading under the presets.
  */
 import React from "react";
 import { useTranslation } from "react-i18next";
@@ -114,6 +118,8 @@ export const VoiceMixerPanel = ({
   const hasMine = tracks.some((track) => track.isMine);
   const activePreset = isLoaded ? snapshot.activePreset : null;
   const loopActive = snapshot.loop.a !== null && snapshot.loop.b !== null;
+  const isLoading = isLoaded && snapshot.isLoading;
+  const loadFailed = isLoaded && snapshot.loadFailed;
 
   return (
     <GlassCard variant="ethereal" padding="none" isHoverable={false}>
@@ -162,6 +168,30 @@ export const VoiceMixerPanel = ({
             );
           })}
         </div>
+
+        {/* Stems path only: every recording downloads and decodes before the
+            first note, which on mobile data takes a moment. */}
+        {isLoading && (
+          <div role="status" className="mt-3 px-0.5">
+            <Text size="xs" color="muted">
+              {t("materials.player.loading_recordings", "Wczytuję nagrania…")}
+            </Text>
+            <div className="mt-1.5 h-1 w-full overflow-hidden rounded-full bg-ethereal-marble/70">
+              <div
+                className="h-full w-full origin-left rounded-full bg-ethereal-sage transition-transform duration-300"
+                style={{ transform: `scaleX(${snapshot.loadProgress})` }}
+              />
+            </div>
+          </div>
+        )}
+        {loadFailed && (
+          <Text role="alert" size="xs" color="crimson" className="mt-3 block px-0.5">
+            {t(
+              "materials.player.loading_failed",
+              "Nie udało się wczytać nagrań. Naciśnij przycisk odtwarzania, aby spróbować ponownie.",
+            )}
+          </Text>
+        )}
       </div>
 
       {/* ── transport ─────────────────────────────────────────────── */}
@@ -259,116 +289,118 @@ export const VoiceMixerPanel = ({
       </div>
 
       {/* ── channel strips ────────────────────────────────────────── */}
-      <div className="flex flex-col divide-y divide-ethereal-marble/50">
-        {tracks.map((track) => {
-          const volume = isLoaded ? (snapshot.volumes[track.id] ?? 1) : 1;
-          const isMuted = isLoaded ? Boolean(snapshot.muted[track.id]) : false;
-          const isSolo = isLoaded && snapshot.soloTrackId === track.id;
-          const isSilencedBySolo =
-            isLoaded &&
-            snapshot.soloTrackId !== null &&
-            snapshot.soloTrackId !== track.id;
+      {!engine.presetsOnly && (
+        <div className="flex flex-col divide-y divide-ethereal-marble/50">
+          {tracks.map((track) => {
+            const volume = isLoaded ? (snapshot.volumes[track.id] ?? 1) : 1;
+            const isMuted = isLoaded ? Boolean(snapshot.muted[track.id]) : false;
+            const isSolo = isLoaded && snapshot.soloTrackId === track.id;
+            const isSilencedBySolo =
+              isLoaded &&
+              snapshot.soloTrackId !== null &&
+              snapshot.soloTrackId !== track.id;
 
-          return (
-            <div
-              key={track.id}
-              className={cn(
-                "px-4 py-3 transition-colors",
-                track.isMine && "bg-ethereal-sage/5",
-                (isMuted || isSilencedBySolo) && "opacity-55",
-              )}
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-24 shrink-0 sm:w-28">
-                  <Eyebrow
-                    color={track.isMine ? "incense" : "muted"}
-                    className="block truncate"
-                  >
-                    {track.label}
-                  </Eyebrow>
-                  {track.isMine && (
-                    <Eyebrow color="sage" className="block">
-                      {t("materials.player.your_voice_short", "Twój głos")}
+            return (
+              <div
+                key={track.id}
+                className={cn(
+                  "px-4 py-3 transition-colors",
+                  track.isMine && "bg-ethereal-sage/5",
+                  (isMuted || isSilencedBySolo) && "opacity-55",
+                )}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-24 shrink-0 sm:w-28">
+                    <Eyebrow
+                      color={track.isMine ? "incense" : "muted"}
+                      className="block truncate"
+                    >
+                      {track.label}
                     </Eyebrow>
-                  )}
+                    {track.isMine && (
+                      <Eyebrow color="sage" className="block">
+                        {t("materials.player.your_voice_short", "Twój głos")}
+                      </Eyebrow>
+                    )}
+                  </div>
+
+                  <input
+                    type="range"
+                    min={0}
+                    max={1}
+                    step={0.05}
+                    value={volume}
+                    onChange={(event) =>
+                      ensureLoadedThen(() =>
+                        engine.setVolume(track.id, Number(event.target.value)),
+                      )
+                    }
+                    aria-label={t(
+                      "materials.player.volume_for",
+                      "Głośność: {{voice}}",
+                      { voice: track.label },
+                    )}
+                    className="min-w-0 flex-1 accent-ethereal-sage"
+                  />
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      ensureLoadedThen(() => engine.toggleMute(track.id))
+                    }
+                    aria-pressed={isMuted}
+                    aria-label={t("materials.player.mute_for", "Wycisz: {{voice}}", {
+                      voice: track.label,
+                    })}
+                    className={cn(
+                      "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border transition-all active:scale-95",
+                      isMuted
+                        ? "border-ethereal-crimson/30 bg-ethereal-crimson/10 text-ethereal-crimson"
+                        : "border-ethereal-marble bg-ethereal-alabaster text-ethereal-graphite hover:text-ethereal-ink",
+                    )}
+                  >
+                    {isMuted ? (
+                      <VolumeX size={15} aria-hidden="true" />
+                    ) : (
+                      <Volume2 size={15} aria-hidden="true" />
+                    )}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => ensureLoadedThen(() => engine.setSolo(track.id))}
+                    aria-pressed={isSolo}
+                    aria-label={t("materials.player.solo_for", "Solo: {{voice}}", {
+                      voice: track.label,
+                    })}
+                    className={cn(
+                      "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border transition-all active:scale-95",
+                      isSolo
+                        ? "border-ethereal-gold/40 bg-ethereal-gold/15 text-ethereal-gold"
+                        : "border-ethereal-marble bg-ethereal-alabaster text-ethereal-graphite hover:text-ethereal-ink",
+                    )}
+                  >
+                    <Headphones size={15} aria-hidden="true" />
+                  </button>
                 </div>
 
-                <input
-                  type="range"
-                  min={0}
-                  max={1}
-                  step={0.05}
-                  value={volume}
-                  onChange={(event) =>
-                    ensureLoadedThen(() =>
-                      engine.setVolume(track.id, Number(event.target.value)),
-                    )
-                  }
-                  aria-label={t(
-                    "materials.player.volume_for",
-                    "Głośność: {{voice}}",
-                    { voice: track.label },
-                  )}
-                  className="min-w-0 flex-1 accent-ethereal-sage"
-                />
-
-                <button
-                  type="button"
-                  onClick={() =>
-                    ensureLoadedThen(() => engine.toggleMute(track.id))
-                  }
-                  aria-pressed={isMuted}
-                  aria-label={t("materials.player.mute_for", "Wycisz: {{voice}}", {
-                    voice: track.label,
-                  })}
-                  className={cn(
-                    "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border transition-all active:scale-95",
-                    isMuted
-                      ? "border-ethereal-crimson/30 bg-ethereal-crimson/10 text-ethereal-crimson"
-                      : "border-ethereal-marble bg-ethereal-alabaster text-ethereal-graphite hover:text-ethereal-ink",
-                  )}
-                >
-                  {isMuted ? (
-                    <VolumeX size={15} aria-hidden="true" />
-                  ) : (
-                    <Volume2 size={15} aria-hidden="true" />
-                  )}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => ensureLoadedThen(() => engine.setSolo(track.id))}
-                  aria-pressed={isSolo}
-                  aria-label={t("materials.player.solo_for", "Solo: {{voice}}", {
-                    voice: track.label,
-                  })}
-                  className={cn(
-                    "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border transition-all active:scale-95",
-                    isSolo
-                      ? "border-ethereal-gold/40 bg-ethereal-gold/15 text-ethereal-gold"
-                      : "border-ethereal-marble bg-ethereal-alabaster text-ethereal-graphite hover:text-ethereal-ink",
-                  )}
-                >
-                  <Headphones size={15} aria-hidden="true" />
-                </button>
+                {/* The take's own note — where it starts, what tempo it sits at.
+                    It belongs to this strip: two takes of one line are told apart
+                    by nothing else, and the labels above them are identical. */}
+                {track.description && (
+                  <Text
+                    size="xs"
+                    color="graphite"
+                    className="mt-1.5 block pl-0.5 sm:pl-1"
+                  >
+                    {track.description}
+                  </Text>
+                )}
               </div>
-
-              {/* The take's own note — where it starts, what tempo it sits at.
-                  It belongs to this strip: two takes of one line are told apart
-                  by nothing else, and the labels above them are identical. */}
-              {track.description && (
-                <Text
-                  size="xs"
-                  color="graphite"
-                  className="mt-1.5 block pl-0.5 sm:pl-1"
-                >
-                  {track.description}
-                </Text>
-              )}
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      )}
     </GlassCard>
   );
 };
