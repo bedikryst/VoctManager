@@ -4,7 +4,8 @@
  * they live.
  *
  * `logic` — the pure domain helpers (diacritic fold, field shell, inline
- * editing, preference groups, day timeline). No DOM, no setup file, so it stays
+ * editing, preference groups, day timeline) and the practice player's voice
+ * sync, run against fake audio elements. No DOM, no setup file, so it stays
  * fast enough to run on every save. Its glob is `.test.ts`, which is why the
  * component suites had to be `.test.tsx`: adding a DOM to this project would
  * have taxed six fast suites to serve the new ones.
