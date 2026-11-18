@@ -18,7 +18,7 @@ import { execFileSync } from "node:child_process";
 import { mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { Film, filmable } from "./film.mjs";
-import { OUT, VIEWPORTS, injectCursor, launch } from "./lib.mjs";
+import { OUT, injectCursor, launch } from "./lib.mjs";
 
 const DIR = join(OUT, "site");
 const SITE = process.env.README_MEDIA_SITE ?? "https://voctensemble.com";
@@ -114,9 +114,11 @@ const JOBS = {
   },
 
   // The same on a phone, by touch: the home page's opening, "Support us" in its
-  // header, the sheet over the whole screen, an amount, the currency.
+  // header, the sheet over the whole screen, an amount, the currency. The window
+  // is what a large phone's browser leaves the page with its bars showing, 430 by
+  // 740, so the screen stands wider than the app's full-screen 390 by 844.
   async donateMobile(browser) {
-    const context = await visitor(browser, { viewport: VIEWPORTS.phone.viewport, motion: true, touch: true });
+    const context = await visitor(browser, { viewport: { width: 430, height: 740 }, motion: true, touch: true });
     await filmable(context);
     const page = await context.newPage();
     const film = new Film(page, join(DIR, "donate-mobile-frames"));

@@ -1549,6 +1549,12 @@
     .chrome-actions .support-link:not(.support-link--give) {
       display: none;
     }
+    /* The concerts link's register goes with it: left in the row as an empty box, it costs one
+       more gap than the bar's arithmetic in 07-responsive.css counts, and at 390px that gap is
+       what folds SUPPORT US onto two lines. */
+    .chrome-actions .registrum {
+      display: none;
+    }
     .nav-toggle {
       display: inline-flex;
     }
