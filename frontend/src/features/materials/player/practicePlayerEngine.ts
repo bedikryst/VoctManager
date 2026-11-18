@@ -8,7 +8,7 @@
  *  - playbackRate keeps pitch (preservesPitch) — slow practice stays in tune.
  *
  * Only the voices the chorister can hear run. A muted voice, or one silenced
- * by a solo, is paused and joins again as a newcomer (below) when it sounds
+ * by a solo, is paused and rejoins at the transport position when it sounds
  * again. The blend over a tutti take and solo-mine therefore run exactly one
  * element: the everyday practice modes need no synchronisation at all, which
  * is the part phones get wrong.
@@ -23,23 +23,13 @@
  *  - volume is gain, never element.volume, which iOS ignores outright.
  * Where Web Audio is unavailable the engine degrades to element.volume mixing.
  *
- * Nothing the chorister hears is ever seeked to keep time. After any seek iOS
- * plays an element stop-start for up to a second, with no `waiting` event and
- * readyState unchanged (measured 2026-11 on iOS 26 and 27): realigning a
- * running mix by seeking is a hole followed by a stutter, and the stutter
- * leaves the voices apart again, so it never converges.
- *  - A voice that joins a running mix (a preset tap, an unmute) starts muted,
- *    placed ahead by what the previous newcomers lost while settling. Once it
- *    has played steadily for a second it is brought onto the clock by a brief
- *    tempo nudge (pitch preserved) and faded in. The voices it replaces keep
- *    sounding until then — a handover — so a switch never drops to silence.
- *  - A heard voice that slips is nudged back the same way; one that slips
- *    past REJOIN_DRIFT_S fades out and comes back in as a newcomer.
- *  - Only a jump — the slider, the A–B loop — moves every voice at once (hold,
- *    seek, start together). The stutter that follows is the platform's; the
- *    nudges close the spread it leaves.
- * The transport clock is the first heard voice that plays steadily. A 250 ms
- * tick measures steadiness and drift and enforces the A–B practice loop.
+ * The first sounding voice is the transport clock. When several voices sound,
+ * a 250 ms tick watches their drift and realigns them by resync: hold every
+ * voice, seek them all to one position, start them together in one task once
+ * each can play. Seeking one voice to the clock's current time while the rest
+ * play on cannot converge where a seek outlasts the tolerance (iOS) — the voice
+ * lands late by its own seek latency, is seeked again, and stutters and drops
+ * out indefinitely. The tick also enforces the A–B practice loop.
  * Consumed by React via useSyncExternalStore (subscribe/getSnapshot).
  *
  * Every decision and every media event can be written to the opt-in
@@ -125,45 +115,24 @@ const EMPTY_SNAPSHOT: PracticePlayerSnapshot = {
   activePreset: null,
 };
 
-// A voice within this of the clock is in time — well inside the spread of a
-// live choir, well above the noise of currentTime readings.
-const ALIGN_TOLERANCE_S = 0.04;
-// A heard voice this far off fades out and joins again: a tempo nudge would
-// take seconds to close the gap, a muted newcomer's seek goes unheard.
-const REJOIN_DRIFT_S = 0.3;
-// A newcomer this far off is placed again rather than nudged.
-const RESEEK_DRIFT_S = 1;
+// Voices started together stay within a few milliseconds of each other; this
+// is the slip at which two of them begin to sound like a flam.
+const DRIFT_TOLERANCE_S = 0.12;
 const TICK_INTERVAL_MS = 250;
-// After a seek iOS plays stop-start for up to ~1 s, in runs of at most 0.36 s
-// between freezes. A voice counts as steady after this many consecutive ticks
-// (0.75 s, twice the longest run) of advancing at its own rate, and only then
-// is it measured.
-const STEADY_TICKS = 3;
-const STEADY_RATIO_MIN = 0.7;
-const STEADY_RATIO_MAX = 1.3;
-// A tempo nudge closes |drift| over `horizonS`, clamped to [NUDGE_MIN, max].
-// A heard voice moves gently (≤ 8 %); a muted newcomer nobody hears moves at
-// up to half again or half its tempo, so a switch is not held up by it.
-const NUDGE_HEARD = { horizonS: 1.5, max: 0.08 } as const;
-const NUDGE_MUTED = { horizonS: 0.4, max: 0.5 } as const;
-const NUDGE_MIN = 0.02;
-// The ahead-placement of newcomers is learned from what they lose while
-// settling (nothing on a desktop, ~0.5 s on iOS) and capped here.
-const MAX_JOIN_LEAD_S = 1;
-// Longest the replaced voices keep sounding while newcomers settle.
-const HANDOVER_DEADLINE_MS = 4000;
-// Gain ramps (time constants): a hard jump clicks ("zipper noise"). An
-// entrance is softer than a mute so a voice arriving mid-phrase does not pop.
+// Short gain ramp on mute/volume changes — a hard jump clicks ("zipper noise").
 const GAIN_RAMP_S = 0.015;
-const FADE_IN_S = 0.03;
-// When a fading voice is silent enough (six time constants) to pause or seek.
-const FADE_OUT_MS = 90;
 // A voice this close to where it should be is left alone: a seek flushes the
 // decoder, and on iOS it is slow.
 const POSITION_EPSILON_S = 0.05;
 // How long a resync waits for its slowest voice before starting anyway — one
 // stuck stream must not hold the whole choir.
 const RESYNC_SETTLE_MAX_MS = 1500;
+// Spacing of drift resyncs. Each one the tick triggers doubles the wait before
+// the next, so a phone that keeps slipping a voice ends up with a mix slightly
+// apart, never one chopped every few seconds; a quiet half-minute or any tap
+// that moves the transport starts over from the base.
+const RESYNC_COOLDOWN_MS = 2000;
+const RESYNC_BACKOFF_RESET_MS = 30000;
 const PREF_KEY_PREFIX = "voct.practice.pref.";
 // Diagnostics only: a clock sample this often shows how coarsely each voice's
 // currentTime advances, which the 250 ms tick cannot.
@@ -182,14 +151,10 @@ const DIAG_MEDIA_EVENTS = [
   "error",
 ] as const;
 
-type ResyncReason = "seek" | "loop";
+type ResyncReason = "seek" | "loop" | "drift";
 
 const errorName = (error: unknown): string =>
   error instanceof Error ? error.name : String(error);
-
-/** Seconds with an explicit sign, for drift in the diagnostics log. */
-const signed = (seconds: number): string =>
-  `${seconds >= 0 ? "+" : ""}${seconds.toFixed(3)}`;
 
 /**
  * The practice tempos the mixer offers. A choir practises just under tempo —
@@ -293,38 +258,10 @@ export const holdsTake = (
 
 type Listener = () => void;
 
-/**
- * Where a voice stands in the running mix:
- *  - idle     — paused, silent;
- *  - live     — running and heard at its mix level;
- *  - joining  — running muted until it plays steadily on the clock;
- *  - leaving  — replaced, still heard until the newcomers are in (handover),
- *               or fading out once `fadeTimer` is set.
- */
-type VoicePhase = "idle" | "live" | "joining" | "leaving";
-
-interface VoiceState {
-  id: string;
-  /** Voice code (S1, A, TUTTI…) — the diagnostics log's name for it. */
-  label: string;
-  phase: VoicePhase;
-  /** Consecutive ticks this voice advanced at its own rate. */
-  steadyTicks: number;
-  lastSampleMs: number | null;
-  lastSampleTime: number;
-  /** Restores the base tempo when a nudge has closed the drift. */
-  nudgeTimer: number | null;
-  /** Pauses (leaving) or re-places (rejoining) the voice once faded out. */
-  fadeTimer: number | null;
-  /** Ahead-placement of a newcomer, until its first steady reading. */
-  lead: number | null;
-}
-
-type NudgeProfile = { readonly horizonS: number; readonly max: number };
-
 export class PracticePlayerEngine {
   private elements = new Map<string, HTMLAudioElement>();
-  private states = new WeakMap<HTMLAudioElement, VoiceState>();
+  /** Voice codes (S1, A, TUTTI…) by element — the diagnostics log's names. */
+  private voiceLabels = new WeakMap<HTMLAudioElement, string>();
   private tickHandle: number | null = null;
   private sampleHandle: number | null = null;
   private listeners = new Set<Listener>();
@@ -336,11 +273,8 @@ export class PracticePlayerEngine {
    *  resync, another piece — so a late-settling resync never starts voices. */
   private syncToken = 0;
   private resyncing = false;
-  /** How far ahead newcomers are placed — learned from what they lose. */
-  private joinLeadS = 0;
-  private hasLearnedLead = false;
-  /** When replaced voices stop waiting for newcomers (performance.now ms). */
-  private handoverDeadline: number | null = null;
+  private lastResyncAt = Number.NEGATIVE_INFINITY;
+  private resyncBackoffMs = RESYNC_COOLDOWN_MS;
 
   // Web Audio mixing graph — one shared context reused across every load()
   // (browsers cap live AudioContexts, and iOS counts each as an audio channel).
@@ -418,17 +352,7 @@ export class PracticePlayerEngine {
       DIAG_MEDIA_EVENTS.forEach((type) => {
         el.addEventListener(type, () => this.logMediaEvent(el, type), { signal });
       });
-      this.states.set(el, {
-        id: track.id,
-        label: track.voicePart,
-        phase: "idle",
-        steadyTicks: 0,
-        lastSampleMs: null,
-        lastSampleTime: 0,
-        nudgeTimer: null,
-        fadeTimer: null,
-        lead: null,
-      });
+      this.voiceLabels.set(el, track.voicePart);
       this.elements.set(track.id, el);
       this.connectToGraph(track.id, el);
       volumes[track.id] = 1;
@@ -469,11 +393,12 @@ export class PracticePlayerEngine {
     this.wakeContext();
 
     if (this.snapshot.isPlaying) {
-      this.applyMix();
+      this.reconcile();
       return;
     }
 
     this.cancelResync();
+    this.allowImmediateResync();
     const token = this.syncToken;
     const position = this.snapshot.position;
     diag.event(`play at ${position.toFixed(3)}`);
@@ -481,21 +406,10 @@ export class PracticePlayerEngine {
     this.startTick();
 
     // Every voice starts here, inside the gesture: iOS lets an element play
-    // later without one only once it has played inside one. A voice already
-    // at the position starts clean and is heard at once; one that has to seek
-    // first comes in muted behind them, as a newcomer. When every voice has to
-    // seek (a slider move while paused) they all start heard: there is nothing
-    // to hand over from.
-    const voices = this.participants();
-    const inPlace = voices.filter(
-      (el) => Math.abs(el.currentTime - position) <= POSITION_EPSILON_S,
-    );
+    // later without one only once it has played inside one. Voices that come
+    // up at different moments are aligned by the tick's first resync.
     const started = await Promise.all(
-      voices.map((el) =>
-        inPlace.length > 0 && !inPlace.includes(el)
-          ? this.join(el, position)
-          : this.startLive(el, position),
-      ),
+      this.participants().map((el) => this.startVoice(el, position)),
     );
     if (token === this.syncToken && this.snapshot.isPlaying && !started.some(Boolean)) {
       // Nothing would play — show a stopped transport, not a silent running one.
@@ -508,8 +422,7 @@ export class PracticePlayerEngine {
     const position = this.transportPosition();
     diag.event(`pause at ${position.toFixed(3)}`);
     this.cancelResync();
-    this.elements.forEach((el) => this.stopVoice(el));
-    this.handoverDeadline = null;
+    this.elements.forEach((el) => el.pause());
     this.stopTick();
     this.commit({
       ...this.snapshot,
@@ -544,11 +457,10 @@ export class PracticePlayerEngine {
   }
 
   setRate(rate: number): void {
-    // Commit first: a nudge's restore reads the base tempo from the snapshot.
-    this.commit({ ...this.snapshot, rate });
     this.elements.forEach((el) => {
-      this.cancelNudge(this.stateOf(el), el);
+      el.playbackRate = rate;
     });
+    this.commit({ ...this.snapshot, rate });
     this.persistPref();
   }
 
@@ -669,30 +581,10 @@ export class PracticePlayerEngine {
     });
   }
 
-  /**
-   * The transport clock: the first heard voice that plays steadily — a live
-   * one, else one still sounding in a handover. Never a muted newcomer while
-   * anything is heard: one that is still settling must not drag the voices
-   * someone hears. With nothing heard (stopped, or every voice settling) the
-   * first sounding voice stands in.
-   */
+  /** The transport clock: the first sounding voice. Never a silent one — a
+   *  muted voice that stalls must not drag the voices someone hears. */
   private clock(): HTMLAudioElement | null {
-    const heard: HTMLAudioElement[] = [];
-    this.participants().forEach((el) => {
-      if (this.stateOf(el).phase === "live" && !el.paused) heard.push(el);
-    });
-    this.elements.forEach((el) => {
-      const state = this.stateOf(el);
-      if (state.phase === "leaving" && state.fadeTimer === null && !el.paused) {
-        heard.push(el);
-      }
-    });
-    return (
-      heard.find((el) => this.isSteady(el)) ??
-      heard[0] ??
-      this.participants()[0] ??
-      null
-    );
+    return this.participants()[0] ?? null;
   }
 
   /** Where the transport is now: the clock while it runs, else any running
@@ -721,35 +613,15 @@ export class PracticePlayerEngine {
     }
   }
 
-  /** Starts a voice heard at once at `position`; resolves whether it plays. */
-  private startLive(el: HTMLAudioElement, position: number): Promise<boolean> {
-    const state = this.stateOf(el);
-    state.phase = "live";
-    this.setGain(el, this.levelOf(state.id), GAIN_RAMP_S);
-    return this.startVoice(el, position);
-  }
-
-  /**
-   * Starts a voice muted, placed ahead of `position` by the learned lead; the
-   * tick fades it in once it plays steadily on the clock.
-   */
-  private join(el: HTMLAudioElement, position: number): Promise<boolean> {
-    const state = this.stateOf(el);
-    state.phase = "joining";
-    state.lead = this.joinLeadS;
-    this.setGain(el, 0, GAIN_RAMP_S);
-    return this.startVoice(el, position + this.joinLeadS);
-  }
-
+  /** Starts one voice at `position`; resolves whether it is playing. */
   private startVoice(el: HTMLAudioElement, position: number): Promise<boolean> {
     const from = el.currentTime;
     this.placeAt(el, position);
-    this.resetSteadiness(this.stateOf(el));
     const askedAt = performance.now();
     return el.play().then(
       () => {
         diag.event(
-          `started ${this.label(el)} ${this.stateOf(el).phase} ${from.toFixed(3)}→${position.toFixed(3)} in ${this.since(askedAt)}`,
+          `started ${this.label(el)} ${from.toFixed(3)}→${position.toFixed(3)} in ${this.since(askedAt)}`,
         );
         return true;
       },
@@ -760,134 +632,62 @@ export class PracticePlayerEngine {
     );
   }
 
-  /** Pauses a voice and returns it to idle, cancelling its nudge and fade. */
-  private stopVoice(el: HTMLAudioElement): void {
-    const state = this.stateOf(el);
-    this.cancelNudge(state, el);
-    if (state.fadeTimer !== null) {
-      window.clearTimeout(state.fadeTimer);
-      state.fadeTimer = null;
-    }
-    state.phase = "idle";
-    state.lead = null;
-    this.resetSteadiness(state);
-    if (!el.paused) el.pause();
-  }
-
-  /** Fades a replaced voice out, then pauses it. */
-  private fadeOut(el: HTMLAudioElement): void {
-    const state = this.stateOf(el);
-    if (state.fadeTimer !== null) return;
-    state.phase = "leaving";
-    this.setGain(el, 0, GAIN_RAMP_S);
-    state.fadeTimer = window.setTimeout(() => {
-      state.fadeTimer = null;
-      this.stopVoice(el);
-    }, FADE_OUT_MS);
-  }
-
   /**
-   * While playing, makes the running voices match the mix. Runs inside the tap
-   * that changed it, so a voice that never played may still start (iOS
-   * gesture rule).
-   *  - A voice that stays in the mix is not touched: never seeked, never held.
-   *  - A voice that arrives joins muted while anything is heard (see join),
-   *    and starts heard when nothing is.
-   *  - A voice that departs fades out at once if a heard voice stays;
-   *    otherwise it keeps sounding until the newcomers are in — the handover.
+   * While playing, makes the running elements exactly the sounding voices: a
+   * voice that fell silent is paused, one that became audible starts at the
+   * transport position. Runs inside the tap that changed the mix, so a voice
+   * that never played may still start (iOS gesture rule); the tick's resync
+   * then aligns it with the rest.
    */
   private reconcile(): void {
     if (!this.snapshot.isPlaying) return;
     const position = this.transportPosition();
-    const wanted = new Set(this.participantIds());
-    const arriving: HTMLAudioElement[] = [];
-    const departing: HTMLAudioElement[] = [];
-    let carried = false;
+    const sounding = new Set(this.participantIds());
+    const stopped: string[] = [];
+    const started: string[] = [];
+    let joined = false;
     this.elements.forEach((el, id) => {
-      const state = this.stateOf(el);
-      if (wanted.has(id)) {
-        if (state.phase === "leaving") {
-          // Wanted again before it went: back in at its mix level.
-          if (state.fadeTimer !== null) {
-            window.clearTimeout(state.fadeTimer);
-            state.fadeTimer = null;
-          }
-          state.phase = "live";
-        }
-        if (state.phase === "live" && !el.paused) {
-          carried = true;
-        } else if (state.phase !== "joining" || el.paused) {
-          arriving.push(el);
+      if (!sounding.has(id)) {
+        if (!el.paused) {
+          el.pause();
+          stopped.push(this.label(el));
         }
         return;
       }
-      if (state.phase === "joining") {
-        this.stopVoice(el); // Muted: nothing to fade.
-      } else if (state.phase === "live" || state.phase === "leaving") {
-        departing.push(el);
+      if (!el.paused) return;
+      if (this.resyncing) {
+        // The pending resync starts every sounding voice when it releases.
+        this.placeAt(el, position);
+        return;
       }
+      joined = true;
+      started.push(this.label(el));
+      void this.startVoice(el, position);
     });
-
-    if (this.resyncing) {
-      // The pending resync starts every wanted voice when it releases.
-      arriving.forEach((el) => this.placeAt(el, position));
-      departing.forEach((el) => this.stopVoice(el));
-      return;
-    }
-
-    const heard =
-      carried ||
-      departing.some((el) => !el.paused && this.stateOf(el).fadeTimer === null);
-    arriving.forEach((el) => {
-      void (heard ? this.join(el, position) : this.startLive(el, position));
-    });
-    const waiting = this.participants().some(
-      (el) => this.stateOf(el).phase === "joining",
-    );
-    const handover = !carried && waiting;
-    departing.forEach((el) => {
-      if (handover) {
-        this.stateOf(el).phase = "leaving";
-      } else {
-        this.fadeOut(el);
-      }
-    });
-    // A heard voice that stays ends any handover: the newcomers then come in
-    // only once aligned, with nothing to wait for.
-    this.handoverDeadline = handover
-      ? (this.handoverDeadline ?? performance.now() + HANDOVER_DEADLINE_MS)
-      : null;
-
-    if (arriving.length > 0 || departing.length > 0) {
+    if (stopped.length > 0 || started.length > 0) {
       diag.event(
-        `reconcile at ${position.toFixed(3)} ${heard ? "join" : "start"}=${this.labelsOf(arriving)} ${handover ? "hold" : "fade"}=${this.labelsOf(departing)}`,
+        `reconcile at ${position.toFixed(3)} stop=${stopped.join(",") || "-"} start=${started.join(",") || "-"}`,
       );
     }
+    // A voice the chorister just brought in is aligned at once, not after the
+    // wait that paces automatic resyncs.
+    if (joined) this.allowImmediateResync();
+  }
+
+  private allowImmediateResync(): void {
+    this.lastResyncAt = Number.NEGATIVE_INFINITY;
+    this.resyncBackoffMs = RESYNC_COOLDOWN_MS;
   }
 
   /**
-   * A jump: moves every wanted voice to `position` — hold them all, seek them
-   * all, then start them in the same task once each reports settled, so they
-   * leave the line together however long each seek took. A jump replaces
-   * whatever was heard: voices on their way out go now, newcomers are heard
-   * from the jump on. A single voice has nothing to align with and simply
-   * seeks.
+   * Realigns every sounding voice on `position`: hold them all, seek them all,
+   * then start them in the same task once each is settled — so they leave the
+   * line together however long each seek took. A single voice has nothing to
+   * align with and simply seeks.
    */
   private resync(position: number, reason: ResyncReason): void {
     this.cancelResync();
-    this.handoverDeadline = null;
-    this.elements.forEach((el) => {
-      if (this.stateOf(el).phase === "leaving") this.stopVoice(el);
-    });
     const voices = this.participants();
-    voices.forEach((el) => {
-      const state = this.stateOf(el);
-      this.cancelNudge(state, el);
-      state.phase = "live";
-      state.lead = null;
-      this.resetSteadiness(state);
-    });
-    this.applyGains();
     if (voices.length <= 1) {
       const [voice] = voices;
       diag.event(`seek ${reason} ${voice ? this.label(voice) : "-"} to ${position.toFixed(3)}`);
@@ -901,9 +701,10 @@ export class PracticePlayerEngine {
 
     const token = this.syncToken;
     this.resyncing = true;
+    this.lastResyncAt = performance.now();
     diag.noteResync();
     diag.event(
-      `resync ${reason} to ${position.toFixed(3)} hold ${this.labelsOf(voices)}`,
+      `resync ${reason} to ${position.toFixed(3)} hold ${this.labelsOf(voices)} next-gap=${this.resyncBackoffMs}ms`,
     );
     voices.forEach((el) => el.pause());
     voices.forEach((el) => {
@@ -926,9 +727,6 @@ export class PracticePlayerEngine {
       const releasedAt = performance.now();
       // Re-read: the mix may have changed while the voices were held.
       this.participants().forEach((el) => {
-        const state = this.stateOf(el);
-        state.phase = "live";
-        this.resetSteadiness(state);
         this.placeAt(el, position);
         void el.play().then(
           () => diag.event(`resumed ${this.label(el)} in ${this.since(releasedAt)}`),
@@ -936,7 +734,6 @@ export class PracticePlayerEngine {
             diag.event(`play rejected ${this.label(el)} ${errorName(error)}`),
         );
       });
-      this.applyGains();
       this.commit({ ...this.snapshot, isBuffering: false });
     });
   }
@@ -946,223 +743,19 @@ export class PracticePlayerEngine {
     this.resyncing = false;
   }
 
-  /**
-   * Brings every running voice onto the clock once both play steadily — a
-   * reading taken while iOS still stutters after a seek says nothing about
-   * where the voice will settle. A newcomer within tolerance fades in; one
-   * further off is nudged (muted, so hard) or placed again. A heard voice is
-   * nudged gently, or rejoins when too far off. Observe mode only measures.
-   */
-  private align(clock: HTMLAudioElement): void {
-    if (!this.isSteady(clock)) return;
-    if (this.stateOf(clock).phase === "joining") {
-      // Nothing heard to align to: the first steady newcomer is the clock.
-      this.admit(clock, 0);
-    }
-    const reference = clock.currentTime;
-    const readings: string[] = [];
-    this.participants().forEach((el) => {
-      if (el === clock || el.paused) return;
-      const state = this.stateOf(el);
-      if (state.phase !== "live" && state.phase !== "joining") return;
-      const drift = el.currentTime - reference;
-      const steady = this.isSteady(el);
-      readings.push(
-        `${state.label}${state.phase === "joining" ? "~" : ""}${signed(drift)}${steady ? "" : "?"}`,
-      );
-      if (!steady || state.nudgeTimer !== null || state.fadeTimer !== null) return;
-      const off = Math.abs(drift);
-      if (state.phase === "joining") {
-        this.learnLead(state, drift);
-        if (off <= ALIGN_TOLERANCE_S || diag.observeOnly) {
-          this.admit(el, drift);
-        } else if (off > RESEEK_DRIFT_S) {
-          this.place(el, reference, "reseek");
-        } else {
-          this.nudge(el, drift, NUDGE_MUTED);
-        }
-        return;
-      }
-      if (off <= ALIGN_TOLERANCE_S || diag.observeOnly) return;
-      if (off > REJOIN_DRIFT_S) {
-        this.rejoin(el, drift);
-      } else {
-        this.nudge(el, drift, NUDGE_HEARD);
-      }
-    });
-    if (diag.enabled && readings.length > 0) {
-      diag.sample(`tick ${this.describe(clock)} drift ${readings.join(" ")}`);
-    }
-  }
-
-  /** A newcomer's first steady reading teaches the next newcomers' lead: it
-   *  was placed `lead` ahead and landed `drift` off the clock. */
-  private learnLead(state: VoiceState, drift: number): void {
-    if (state.lead === null) return;
-    const lost = Math.min(MAX_JOIN_LEAD_S, Math.max(0, state.lead - drift));
-    this.joinLeadS = this.hasLearnedLead ? (this.joinLeadS + lost) / 2 : lost;
-    this.hasLearnedLead = true;
-    diag.event(
-      `lead ${state.label} placed +${state.lead.toFixed(3)} landed ${signed(drift)} → next +${this.joinLeadS.toFixed(3)}`,
+  /** How far each running, settled voice sits from the clock, in seconds.
+   *  Voices still seeking or buffering are left out: their time is not where
+   *  they sound. */
+  private driftsFrom(
+    clock: HTMLAudioElement,
+    position: number,
+  ): { el: HTMLAudioElement; drift: number }[] {
+    if (clock.paused || !isSettled(clock)) return [];
+    return this.participants().flatMap((el) =>
+      el !== clock && !el.paused && isSettled(el)
+        ? [{ el, drift: el.currentTime - position }]
+        : [],
     );
-    state.lead = null;
-  }
-
-  /** Fades a newcomer in. The last one in ends the handover. */
-  private admit(el: HTMLAudioElement, drift: number): void {
-    const state = this.stateOf(el);
-    this.cancelNudge(state, el);
-    state.phase = "live";
-    state.lead = null;
-    this.setGain(el, this.levelOf(state.id), FADE_IN_S);
-    diag.event(`admit ${state.label} at ${signed(drift)}`);
-    const waiting = this.participants().some(
-      (voice) => this.stateOf(voice).phase === "joining",
-    );
-    if (!waiting) this.endHandover();
-  }
-
-  /** The replaced voices fade out: the newcomers are in, or waited too long. */
-  private endHandover(): void {
-    this.handoverDeadline = null;
-    this.elements.forEach((el) => {
-      if (this.stateOf(el).phase === "leaving") this.fadeOut(el);
-    });
-  }
-
-  /** Past the deadline, steady newcomers come in as they are (heard nudges
-   *  finish the alignment) and the replaced voices go. One still stuttering
-   *  stays muted until it settles. */
-  private expireHandover(): void {
-    diag.event("handover deadline");
-    const clock = this.clock();
-    this.participants().forEach((el) => {
-      if (this.stateOf(el).phase === "joining" && this.isSteady(el)) {
-        this.admit(el, clock ? el.currentTime - clock.currentTime : 0);
-      }
-    });
-    this.endHandover();
-  }
-
-  /**
-   * Closes `drift` by a temporary tempo change (pitch preserved): slower when
-   * ahead, faster when behind, back to the base tempo when the gap should be
-   * closed. The next steady reading checks the result.
-   */
-  private nudge(el: HTMLAudioElement, drift: number, profile: NudgeProfile): void {
-    const state = this.stateOf(el);
-    const base = this.snapshot.rate;
-    const fraction = Math.min(
-      profile.max,
-      Math.max(NUDGE_MIN, Math.abs(drift) / profile.horizonS),
-    );
-    el.playbackRate = base * (drift > 0 ? 1 - fraction : 1 + fraction);
-    const closeMs = (Math.abs(drift) / (fraction * base)) * 1000;
-    state.nudgeTimer = window.setTimeout(() => {
-      state.nudgeTimer = null;
-      el.playbackRate = this.snapshot.rate;
-    }, closeMs);
-    diag.noteNudge(Math.abs(drift));
-    diag.event(
-      `nudge ${state.label} ${signed(drift)} ×${el.playbackRate.toFixed(3)} for ${Math.round(closeMs)}ms`,
-    );
-  }
-
-  private cancelNudge(state: VoiceState, el: HTMLAudioElement): void {
-    if (state.nudgeTimer !== null) {
-      window.clearTimeout(state.nudgeTimer);
-      state.nudgeTimer = null;
-    }
-    if (el.playbackRate !== this.snapshot.rate) el.playbackRate = this.snapshot.rate;
-  }
-
-  /** A heard voice too far off fades out, is placed again once silent, and
-   *  comes back in as a newcomer. */
-  private rejoin(el: HTMLAudioElement, drift: number): void {
-    const state = this.stateOf(el);
-    state.phase = "joining";
-    this.setGain(el, 0, GAIN_RAMP_S);
-    diag.noteRejoin();
-    diag.event(`rejoin ${state.label} at ${signed(drift)}`);
-    state.fadeTimer = window.setTimeout(() => {
-      state.fadeTimer = null;
-      const clock = this.clock();
-      if (clock && clock !== el) this.place(el, clock.currentTime, "rejoin");
-    }, FADE_OUT_MS);
-  }
-
-  /** Seeks a muted newcomer ahead of the clock by the learned lead. */
-  private place(el: HTMLAudioElement, reference: number, why: string): void {
-    const state = this.stateOf(el);
-    const target = reference + this.joinLeadS;
-    state.lead = this.joinLeadS;
-    el.currentTime = target;
-    this.resetSteadiness(state);
-    diag.event(`${why} ${state.label} to ${target.toFixed(3)}`);
-  }
-
-  /** Counts, per running voice, the consecutive ticks it advanced at its own
-   *  rate while settled. A seek, a freeze or a starved buffer starts over. */
-  private measureSteadiness(now: number): void {
-    this.elements.forEach((el) => {
-      const state = this.stateOf(el);
-      if (el.paused) {
-        this.resetSteadiness(state);
-        return;
-      }
-      if (state.lastSampleMs !== null) {
-        const expected = ((now - state.lastSampleMs) / 1000) * el.playbackRate;
-        const ratio =
-          expected > 0 ? (el.currentTime - state.lastSampleTime) / expected : 0;
-        const steady =
-          isSettled(el) && ratio >= STEADY_RATIO_MIN && ratio <= STEADY_RATIO_MAX;
-        state.steadyTicks = steady ? state.steadyTicks + 1 : 0;
-      }
-      state.lastSampleMs = now;
-      state.lastSampleTime = el.currentTime;
-    });
-  }
-
-  private resetSteadiness(state: VoiceState): void {
-    state.steadyTicks = 0;
-    state.lastSampleMs = null;
-  }
-
-  private isSteady(el: HTMLAudioElement): boolean {
-    return this.stateOf(el).steadyTicks >= STEADY_TICKS;
-  }
-
-  private stateOf(el: HTMLAudioElement): VoiceState {
-    const state = this.states.get(el);
-    if (!state) throw new Error("PracticePlayerEngine: element has no voice state");
-    return state;
-  }
-
-  /** A voice's level in the mix: its fader, or 0 when muted or outside a solo. */
-  private levelOf(id: string): number {
-    const { volumes, muted, soloTrackId } = this.snapshot;
-    const soloSilenced = soloTrackId !== null && soloTrackId !== id;
-    return soloSilenced || muted[id] ? 0 : (volumes[id] ?? 1);
-  }
-
-  private setGain(el: HTMLAudioElement, value: number, timeConstant: number): void {
-    const gain = this.gains.get(this.stateOf(el).id);
-    if (gain && this.audioCtx) {
-      gain.gain.setTargetAtTime(value, this.audioCtx.currentTime, timeConstant);
-    } else {
-      el.volume = value; // Fallback: no Web Audio graph for this track.
-    }
-  }
-
-  /** Sets every voice's gain from its phase: live at its mix level, newcomers
-   *  and idle voices silent. A leaving voice keeps its own — it is either
-   *  still carrying a handover or already fading out. */
-  private applyGains(): void {
-    this.elements.forEach((el) => {
-      const state = this.stateOf(el);
-      if (state.phase === "leaving") return;
-      this.setGain(el, state.phase === "live" ? this.levelOf(state.id) : 0, GAIN_RAMP_S);
-    });
   }
 
   /** Lazily builds the shared context + master gain (once per engine life). */
@@ -1255,8 +848,7 @@ export class PracticePlayerEngine {
     }
     this.cancelResync();
     this.stopTick();
-    this.elements.forEach((voice) => this.stopVoice(voice));
-    this.handoverDeadline = null;
+    this.elements.forEach((voice) => voice.pause());
     this.commit({
       ...this.snapshot,
       isPlaying: false,
@@ -1320,7 +912,6 @@ export class PracticePlayerEngine {
 
   private tick = (): void => {
     if (this.resyncing) return;
-    this.measureSteadiness(performance.now());
     const clock = this.clock();
     if (!clock) return;
 
@@ -1332,10 +923,26 @@ export class PracticePlayerEngine {
       return;
     }
 
-    this.align(clock);
-    if (this.handoverDeadline !== null && performance.now() >= this.handoverDeadline) {
-      this.expireHandover();
+    const sinceResync = performance.now() - this.lastResyncAt;
+    if (sinceResync > RESYNC_BACKOFF_RESET_MS) {
+      this.resyncBackoffMs = RESYNC_COOLDOWN_MS;
     }
+    const drifts = this.driftsFrom(clock, position);
+    const worst = drifts.reduce((max, { drift }) => Math.max(max, Math.abs(drift)), 0);
+    const drifted = worst > DRIFT_TOLERANCE_S;
+    if (diag.enabled && drifts.length > 0) {
+      const readings = drifts
+        .map(({ el, drift }) => `${this.label(el)}${drift >= 0 ? "+" : ""}${drift.toFixed(3)}`)
+        .join(" ");
+      diag.sample(`tick ${this.describe(clock)} drift ${readings}${drifted ? " OVER" : ""}`);
+      if (drifted) diag.noteOverTolerance(worst);
+    }
+    if (drifted && sinceResync >= this.resyncBackoffMs && !diag.observeOnly) {
+      this.resyncBackoffMs *= 2;
+      this.resync(position, "drift");
+      return;
+    }
+
     this.commit({ ...this.snapshot, position });
   };
 
@@ -1371,19 +978,17 @@ export class PracticePlayerEngine {
   }
 
   private label(el: HTMLAudioElement): string {
-    return this.states.get(el)?.label ?? "?";
+    return this.voiceLabels.get(el) ?? "?";
   }
 
   private labelsOf(elements: HTMLAudioElement[]): string {
     return elements.map((el) => this.label(el)).join(",") || "-";
   }
 
-  /** A voice as the log shows it: its time, then j joining, l leaving,
-   *  p paused, s seeking, r<n> for a readyState below HAVE_FUTURE_DATA. */
+  /** A voice as the log shows it: its time, then p paused, s seeking, r<n>
+   *  for a readyState below HAVE_FUTURE_DATA. */
   private describe(el: HTMLAudioElement): string {
-    const phase = this.states.get(el)?.phase;
     const flags =
-      (phase === "joining" ? "j" : phase === "leaving" ? "l" : "") +
       (el.paused ? "p" : "") +
       (el.seeking ? "s" : "") +
       (el.readyState < HTMLMediaElement.HAVE_FUTURE_DATA ? `r${el.readyState}` : "");
@@ -1395,8 +1000,19 @@ export class PracticePlayerEngine {
   }
 
   private applyMix(): void {
+    const { volumes, muted, soloTrackId } = this.snapshot;
+    const now = this.audioCtx?.currentTime ?? 0;
+    this.elements.forEach((el, id) => {
+      const soloSilenced = soloTrackId !== null && soloTrackId !== id;
+      const level = soloSilenced || muted[id] ? 0 : (volumes[id] ?? 1);
+      const gain = this.gains.get(id);
+      if (gain && this.audioCtx) {
+        gain.gain.setTargetAtTime(level, now, GAIN_RAMP_S);
+      } else {
+        el.volume = level; // Fallback: no Web Audio graph for this track.
+      }
+    });
     this.reconcile();
-    this.applyGains();
   }
 
   private disposeElements(): void {
@@ -1421,9 +1037,8 @@ export class PracticePlayerEngine {
     });
     this.gains.clear();
     this.sources.clear();
-    this.handoverDeadline = null;
     this.elements.forEach((el) => {
-      this.stopVoice(el);
+      el.pause();
       el.removeAttribute("src");
       el.load();
     });

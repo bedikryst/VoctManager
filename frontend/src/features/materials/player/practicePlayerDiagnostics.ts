@@ -2,10 +2,9 @@
  * @file practicePlayerDiagnostics.ts
  * @description Opt-in measurement log for the practice engine: what a phone
  * actually does when several voices play together. It records every engine
- * decision (preset, reconcile and handover, each tempo nudge or rejoin with the
- * drift behind it, jumps and how long their voices took to settle), every
- * media event of every voice, and the raw currentTime of each sounding voice
- * every 50 ms.
+ * decision (preset, reconcile, resync and the drift that triggered it, how long
+ * the voices took to settle), every media event of every voice, and the raw
+ * currentTime of each sounding voice every 50 ms.
  *
  * Off unless switched on. In a browser: `?audiodebug=1` (log) or
  * `?audiodebug=observe` in the address; `?audiodebug=0` switches it off. An app
@@ -13,10 +12,9 @@
  * mixer's practice-mode label toggle it as well. The choice is kept in
  * localStorage, which on iOS belongs to that one install.
  *
- * "observe" measures the drift and never corrects it — no tempo nudges, no
- * rejoins, newcomers fade in as soon as they play steadily — so what
- * currentTime reports can be held against what the ear hears. The slider and
- * the A–B loop still move every voice together.
+ * "observe" measures the drift and never acts on it: the voices run exactly as
+ * they started, so what currentTime reports can be held against what the ear
+ * hears. Seeks, the A–B loop and taps still realign.
  *
  * PracticeDiagnosticsOverlay shows the counters and the newest events; the full
  * log leaves the phone as a text file through the share sheet. With the log off
@@ -26,15 +24,14 @@
 export type DiagnosticsMode = "off" | "log" | "observe";
 
 export interface DiagnosticsCounters {
-  /** Jumps that moved every voice at once since the last preset tap. */
+  /** Realignments since the last preset tap. */
   resyncs: number;
-  /** Tempo nudges since the last preset tap. */
-  nudges: number;
-  /** Heard voices taken out and brought back in since the last preset tap. */
-  rejoins: number;
+  /** Ticks whose drift exceeded the tolerance since the last preset tap —
+   *  counted in observe mode too, where nothing acts on them. */
+  overTolerance: number;
   /** waiting/stalled events of running voices since the last preset tap. */
   stalls: number;
-  /** |drift| the last nudge set out to close, in seconds. */
+  /** Largest |drift| of the last tick over tolerance, in seconds. */
   lastDrift: number | null;
   /** How long the last resync held the voices before releasing them, in ms. */
   lastSettleMs: number | null;
@@ -59,8 +56,7 @@ const TAP_WINDOW_MS = 2500;
 
 const EMPTY_COUNTERS: DiagnosticsCounters = {
   resyncs: 0,
-  nudges: 0,
-  rejoins: 0,
+  overTolerance: 0,
   stalls: 0,
   lastDrift: null,
   lastSettleMs: null,
@@ -156,12 +152,11 @@ class PracticeDiagnostics {
     this.bump({ resyncs: this.snapshot.counters.resyncs + 1 });
   }
 
-  noteNudge(drift: number): void {
-    this.bump({ nudges: this.snapshot.counters.nudges + 1, lastDrift: drift });
-  }
-
-  noteRejoin(): void {
-    this.bump({ rejoins: this.snapshot.counters.rejoins + 1 });
+  noteOverTolerance(drift: number): void {
+    this.bump({
+      overTolerance: this.snapshot.counters.overTolerance + 1,
+      lastDrift: drift,
+    });
   }
 
   noteStall(): void {
@@ -204,8 +199,7 @@ class PracticeDiagnostics {
       `standalone ${String(isStandalone())}`,
       `ua ${navigator.userAgent}`,
       "times: seconds since the log started; · lines are 50 ms clock samples",
-      "voice flags: j joining (muted), l leaving, p paused, s seeking, r<n> readyState below HAVE_FUTURE_DATA",
-      "tick drift: ~ joining, ? not yet steady",
+      "voice flags: p paused, s seeking, r<n> readyState below HAVE_FUTURE_DATA",
     ];
     return [...header, "", ...this.lines].join("\n");
   }
