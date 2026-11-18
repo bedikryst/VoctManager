@@ -78,7 +78,7 @@ export const PracticeDiagnosticsOverlay = (): React.JSX.Element | null => {
             {`diag · ${mode}`}
           </Eyebrow>
           <OverlayButton
-            label={mode === "observe" ? "allow resync" : "no resync"}
+            label={mode === "observe" ? "correct" : "no correction"}
             onClick={() =>
               practiceDiagnostics.setMode(mode === "observe" ? "log" : "observe")
             }
@@ -102,7 +102,7 @@ export const PracticeDiagnosticsOverlay = (): React.JSX.Element | null => {
           color="ink-on-inverse"
           className="mt-1 font-mono tabular-nums"
         >
-          {`resync ${counters.resyncs} · over ${counters.overTolerance} · stall ${counters.stalls} · drift ${formatDrift(counters.lastDrift)} · settle ${counters.lastSettleMs === null ? "–" : `${counters.lastSettleMs}ms`}`}
+          {`resync ${counters.resyncs} · nudge ${counters.nudges} · rejoin ${counters.rejoins} · stall ${counters.stalls} · drift ${formatDrift(counters.lastDrift)} · settle ${counters.lastSettleMs === null ? "–" : `${counters.lastSettleMs}ms`}`}
         </Text>
         <Text
           as="pre"
