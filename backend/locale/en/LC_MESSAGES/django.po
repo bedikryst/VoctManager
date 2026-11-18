@@ -4669,6 +4669,23 @@ msgid ""
 "once the lyrics change."
 msgstr ""
 
+#: roster/services.py:716
+#, python-format
+msgid "The login %(email)s can still sign in. Archive the singer first."
+msgstr ""
+
+#: roster/admin.py:145
+#, python-format
+msgid ""
+"Login %(email)s is erased like a self-service account deletion, without the "
+"confirmation mail."
+msgstr ""
+
+#: roster/admin.py:150
+#, python-format
+msgid "Solo duties left in the programme without a singer: %(count)s"
+msgstr ""
+
 #~ msgid ""
 #~ "%(artist)s is asking to be excused from a run of rehearsals. The dates are "
 #~ "below — approve or decline them in the panel."

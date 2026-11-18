@@ -62,7 +62,9 @@ def handle_gdpr_artist_deletion(sender, user, **kwargs) -> None:
     """
     Executes GDPR Right to Erasure workflows for the Roster domain.
     Anonymizes contact data while preserving names for historical/legal contracts (e.g., ZAiKS).
-    Soft-deletes the entity to exclude it from active dashboards.
+    Leaves the row archived exactly as `ArtistHRService.archive_artist` would: `is_active`
+    (what every roster surface renders) and `is_deleted` (what the default manager filters on)
+    move together, so an erased singer never reads as active among the archived.
     """
     try:
         artist = Artist.objects.get(user=user, is_deleted=False)
@@ -81,14 +83,15 @@ def handle_gdpr_artist_deletion(sender, user, **kwargs) -> None:
             artist.proposed_extreme_high = None
             artist.vocal_range_comment = ""
             artist.vocal_range_proposed_at = None
+            artist.is_active = False
             artist.save(update_fields=[
                 'email', 'phone_number',
                 'proposed_tessitura_low', 'proposed_tessitura_high',
                 'proposed_extreme_low', 'proposed_extreme_high',
                 'vocal_range_comment', 'vocal_range_proposed_at',
-                'updated_at',
+                'is_active', 'updated_at',
             ])
-            
+
             # 2. Soft-delete to hide from active project rosters
             artist.delete()
             

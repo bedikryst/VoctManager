@@ -10,6 +10,8 @@ Customizes the administrative dashboard for managing artists, projects,
 rehearsals, and cast assignments, with list displays and relational filtering.
 """
 
+from typing import Any
+
 from django.contrib import admin
 from django.contrib.auth import get_user_model
 from django.contrib.auth.admin import UserAdmin as DjangoUserAdmin
@@ -28,6 +30,7 @@ from .models import (
     ProjectPieceCasting,
     Rehearsal,
 )
+from .services import ArtistHRService
 
 User = get_user_model()
 
@@ -101,9 +104,13 @@ class ArtistAdmin(admin.ModelAdmin):
     Choral profiles on their own.
 
     Kept alongside the person screen rather than folded into it, because an
-    Artist outlives its account: GDPR erasure detaches the login (`user` becomes
-    null) and the row survives to keep concert history intact. Reachable only
+    Artist outlives its account: GDPR erasure anonymises the login and archives
+    the row, which survives to keep concert history intact. Reachable only
     from here.
+
+    Deleting here is permanent, unlike everywhere else in the roster: it runs
+    `ArtistHRService.delete_artist_permanently`, and the confirmation page is that
+    service's own plan — what goes with the entry, and what refuses it.
     """
     list_display = ('first_name', 'last_name', 'email', 'voice_type', 'user', 'is_active')
     list_filter = ('voice_type', 'is_active')
@@ -123,6 +130,39 @@ class ArtistAdmin(admin.ModelAdmin):
     def get_queryset(self, request):
         # Detached and archived rows are exactly the ones that need this screen.
         return Artist.all_objects.select_related('user')
+
+    def get_deleted_objects(self, objs, request):
+        # The stock collector would stop at the RESTRICT on every seat and could
+        # not show the login erasure at all; the plan already knows both.
+        to_delete: list[Any] = []
+        model_count: dict[str, int] = {}
+        protected: list[str] = []
+        for artist in objs:
+            plan = ArtistHRService.plan_permanent_deletion(artist)
+            consequences: list[str] = []
+            if plan.account_email:
+                consequences.append(str(_(
+                    "Login %(email)s is erased like a self-service account "
+                    "deletion, without the confirmation mail."
+                ) % {"email": plan.account_email}))
+            if plan.solo_duties_released:
+                consequences.append(str(_(
+                    "Solo duties left in the programme without a singer: %(count)s"
+                ) % {"count": plan.solo_duties_released}))
+            to_delete.append(str(artist))
+            if consequences:
+                to_delete.append(consequences)
+            for label, count in plan.removed.items():
+                model_count[label] = model_count.get(label, 0) + count
+            protected.extend(f"{artist}: {blocker}" for blocker in plan.blockers)
+        return to_delete, model_count, set(), protected
+
+    def delete_model(self, request, obj):
+        ArtistHRService.delete_artist_permanently(obj)
+
+    def delete_queryset(self, request, queryset):
+        for artist in queryset:
+            ArtistHRService.delete_artist_permanently(artist)
 
 
 class ProgramItemInline(admin.TabularInline):

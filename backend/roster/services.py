@@ -15,10 +15,13 @@ from datetime import date, datetime, time, timedelta
 from typing import TYPE_CHECKING, Any, ClassVar
 from uuid import UUID
 
+from django.apps import apps
 from django.contrib.auth import get_user_model
-from django.db import IntegrityError, transaction
+from django.db import IntegrityError, models, router, transaction
 from django.db.models import F
+from django.db.models.deletion import Collector, ProtectedError, RestrictedError
 from django.utils import timezone
+from django.utils.text import capfirst
 from django.utils.translation import gettext_lazy as _
 
 from archive.models import Piece, PieceVoiceRequirement
@@ -90,6 +93,7 @@ from .exceptions import (
     ActivatedEmailChangeException,
     ActivatedPreferenceChangeException,
     ActivationResendException,
+    ArtistDeletionBlockedException,
     ArtistEmailConflictException,
     ArtistMergeException,
     ArtistProvisioningException,
@@ -308,6 +312,24 @@ class ArtistMergeReport:
     # had a fee of its own, or the budget is closed. This says where to go and
     # look — money is not something a cleanup gets to choose between.
     fee_conflicts: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True)
+class ArtistDeletionPlan:
+    """What removing one roster entry for good takes with it, or what stops it.
+
+    Built by the same collector that performs the deletion, so the preview an
+    administrator confirms is the deletion that runs, not an estimate of it.
+    """
+
+    # Rows removed, keyed by the model's plural name, the entry itself included.
+    removed: Mapping[str, int]
+    # Solo duties that stay in their programme without a singer.
+    solo_duties_released: int
+    # The login erased alongside, as it reads before the erasure; None without one.
+    account_email: str | None
+    # Why the deletion cannot run, in words; empty when it can.
+    blockers: tuple[str, ...]
 
 
 class ArtistHRService:
@@ -627,6 +649,121 @@ class ArtistHRService:
                 user.save(update_fields=['is_active'])
 
             logger.info(f"Artist {artist.email} archived and user access revoked.")
+
+    @staticmethod
+    def plan_permanent_deletion(artist: Artist) -> ArtistDeletionPlan:
+        """Previews `delete_artist_permanently` without changing anything."""
+        with transaction.atomic():
+            plan, _collector = ArtistHRService._stage_permanent_deletion(artist)
+            # Staging releases the solo duties so the collector can see past
+            # them; the preview must leave them where they are.
+            transaction.set_rollback(True)
+        return plan
+
+    @staticmethod
+    def delete_artist_permanently(artist: Artist) -> ArtistDeletionPlan:
+        """
+        Removes a roster entry and everything that exists only because of it.
+
+        For a row that should not be in the roster at all — a test entry, a demo,
+        a person who wants no trace left — where archiving keeps too much. It takes
+        the entry's seats in every project (with their castings, readiness and
+        attendance) and its conversations, leaves its solo duties in the programme
+        without a singer, and erases its login the way a self-service account
+        deletion does, without the confirmation mail.
+
+        Two things refuse it, both reported by `plan_permanent_deletion`:
+
+        - **A login that still signs in.** Archive first: that is the deliberate
+          step which takes a current singer's access away, and it keeps a misclick
+          on the wrong row from erasing somebody who is still singing.
+        - **A record the books must keep.** A fee or contract on one of the seats
+          is PROTECTed by finance (Accounting Act, art. 74), and the collector's
+          refusal is surfaced rather than worked around.
+        """
+        with transaction.atomic():
+            plan, collector = ArtistHRService._stage_permanent_deletion(artist)
+            if plan.blockers:
+                raise ArtistDeletionBlockedException(" ".join(plan.blockers))
+            if artist.user is not None:
+                UserIdentityService.erase_account(artist.user)
+            collector.delete()
+
+        logger.info(
+            "Artist %s deleted permanently (%s)",
+            artist.pk, ", ".join(f"{label}: {count}" for label, count in plan.removed.items()),
+        )
+        return plan
+
+    @staticmethod
+    def _stage_permanent_deletion(artist: Artist) -> tuple[ArtistDeletionPlan, Collector]:
+        """Collects a permanent deletion, ready for `collector.delete()`.
+
+        Must run inside a transaction, because staging already writes: it
+        unassigns the entry's solo duties (`ProjectSoloAssignment.participation`
+        is RESTRICT, and the duty belongs to the programme, not to the singer who
+        was given it) and deletes its conversations. Everything else that
+        references a seat is collected explicitly ahead of the seats, since those
+        references are RESTRICT too and the collector clears a restriction only
+        for rows it is deleting in the same operation.
+        """
+        from messaging.models import Thread
+
+        user = artist.user
+        blockers: list[str] = []
+        if user is not None and user.is_active:
+            blockers.append(str(_(
+                "The login %(email)s can still sign in. Archive the singer first."
+            ) % {"email": user.email}))
+
+        # `all_objects` throughout: a soft-deleted seat or conversation is still a
+        # row holding a reference to the entry.
+        seats = Participation.all_objects.filter(artist=artist)
+        solo_duties_released = ProjectSoloAssignment.objects.filter(
+            participation__in=seats,
+        ).update(participation=None)
+
+        removed: dict[str, int] = {}
+
+        def tally(model: type[models.Model], count: int) -> None:
+            label = str(capfirst(model._meta.verbose_name_plural))
+            removed[label] = removed.get(label, 0) + count
+
+        collector = Collector(using=router.db_for_write(Artist))
+        try:
+            # `Thread.artist` is PROTECT, which — unlike RESTRICT — refuses even
+            # when the protected rows go in the same operation. The conversations
+            # therefore leave first, on their own, and take their messages along.
+            _total, per_model = Thread.all_objects.filter(artist=artist).hard_delete()
+            for model_label, count in per_model.items():
+                tally(apps.get_model(model_label), count)
+
+            for footprint in (
+                ProjectPieceCasting.objects.filter(participation__in=seats),
+                Attendance.objects.filter(participation__in=seats),
+                seats,
+            ):
+                collector.collect(footprint, fail_on_restricted=False)
+            collector.collect([artist])
+        except (ProtectedError, RestrictedError) as exc:
+            held = (
+                exc.protected_objects if isinstance(exc, ProtectedError)
+                else exc.restricted_objects
+            )
+            blockers.extend(f"{capfirst(obj._meta.verbose_name)}: {obj}" for obj in held)
+
+        for model, instances in collector.data.items():
+            tally(model, len(instances))
+        for queryset in collector.fast_deletes:
+            tally(queryset.model, queryset.count())
+
+        plan = ArtistDeletionPlan(
+            removed={label: count for label, count in removed.items() if count},
+            solo_duties_released=solo_duties_released,
+            account_email=user.email if user is not None else None,
+            blockers=tuple(blockers),
+        )
+        return plan, collector
 
     @staticmethod
     def merge_artists(primary: Artist, duplicate: Artist, *, actor: "User | None" = None) -> ArtistMergeReport:

@@ -6130,6 +6130,26 @@ msgstr ""
 "prompt source, empreinte du texte évalué, date. Simple suggestion, ignorée "
 "dès que le texte change."
 
+#: roster/services.py:716
+#, python-format
+msgid "The login %(email)s can still sign in. Archive the singer first."
+msgstr ""
+"Le compte %(email)s peut encore se connecter. Archivez d'abord cette fiche."
+
+#: roster/admin.py:145
+#, python-format
+msgid ""
+"Login %(email)s is erased like a self-service account deletion, without the "
+"confirmation mail."
+msgstr ""
+"Le compte %(email)s sera anonymisé comme lors d'une suppression de compte "
+"par la personne elle-même, sans e-mail de confirmation."
+
+#: roster/admin.py:150
+#, python-format
+msgid "Solo duties left in the programme without a singer: %(count)s"
+msgstr "Parties solistes laissées au programme sans interprète : %(count)s"
+
 #~ msgid "Review the request"
 #~ msgstr "Examiner la demande"
 

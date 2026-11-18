@@ -25,6 +25,7 @@ from .duplicates import DuplicateSignal, find_duplicate_groups
 from .exceptions import (
     ActivatedArtistMergeException,
     ActivationResendException,
+    ArtistDeletionBlockedException,
     ArtistMergeException,
     CastingValidationException,
 )
@@ -8584,6 +8585,179 @@ class ArtistLifecycleStateTests(APITestCase):
         resp = self.client.get("/api/artists/?include_archived=true")
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(list(resp.data), [])
+
+    @patch(EMAIL_TASK)
+    def test_account_erasure_leaves_the_row_archived_like_archiving_does(self, _enqueue_mock):
+        """Erasure soft-deletes the row; without `is_active` moving with it, the
+        roster's archived view showed an erased singer as active."""
+        from core.dtos import UserAccountDeletionDTO
+        from core.services import UserIdentityService
+
+        assert self.artist.user is not None
+        with self.captureOnCommitCallbacks(execute=True):
+            UserIdentityService.process_account_soft_deletion(
+                self.artist.user, UserAccountDeletionDTO(current_password="activated-pw"),
+            )
+
+        artist = self._reload()
+        self.assertFalse(artist.is_active)
+        self.assertTrue(artist.is_deleted)
+
+
+class ArtistPermanentDeletionTests(APITestCase):
+    """
+    The one place a roster entry leaves for good: the admin's delete, for a row
+    that should not exist at all (a test entry, a demo, a person who wants no
+    trace). Archiving remains the departure; this takes the seats, castings,
+    attendance and conversations with it and erases the login.
+    """
+
+    @patch(EMAIL_TASK)
+    def setUp(self, _enqueue_mock) -> None:
+        from archive.models import Composer, Piece
+        from core.constants import VoiceLine
+        from messaging.models import Thread
+
+        from .models import Attendance
+
+        User = get_user_model()
+        self.admin_user = User.objects.create_superuser(
+            username="root-delete", email="root-delete@test.pl", password="pw123456"
+        )
+
+        dto = ArtistCreateDTO(
+            first_name="Demo", last_name="Singer",
+            email="demo-delete@example.com", voice_type="BAS",
+        )
+        with self.captureOnCommitCallbacks(execute=True):
+            self.artist = ArtistHRService.provision_artist(dto)
+        assert self.artist.user is not None
+        self.user = self.artist.user
+        self.user.set_password("activated-pw")
+        self.user.is_active = True
+        self.user.save(update_fields=["password", "is_active"])
+
+        self.project = Project.objects.create(
+            title="Gaudete", date_time=timezone.now() + timedelta(days=20),
+            timezone="Europe/Warsaw",
+        )
+        composer = Composer.objects.create(first_name="Anton", last_name="Bruckner")
+        piece = Piece.objects.create(title="Os justi", composer=composer)
+        ProgramItem.objects.create(project=self.project, piece=piece, order=1)
+
+        self.seat = Participation.objects.create(
+            artist=self.artist, project=self.project,
+            status=Participation.Status.CONFIRMED,
+        )
+        ProjectPieceCasting.objects.create(
+            participation=self.seat, piece=piece, voice_line=VoiceLine.BASS_1,
+        )
+        rehearsal = Rehearsal.objects.create(
+            project=self.project, date_time=timezone.now() + timedelta(days=5),
+        )
+        Attendance.objects.create(
+            rehearsal=rehearsal, participation=self.seat, status=Attendance.Status.PRESENT,
+        )
+        self.solo = ProjectSoloAssignment.objects.create(
+            project=self.project, piece=piece, position=0,
+            label="Bass solo", participation=self.seat,
+        )
+        self.thread = Thread.objects.create(artist=self.artist, subject="Nuty")
+
+    def _archive(self) -> None:
+        ArtistHRService.archive_artist(Artist.all_objects.get(pk=self.artist.pk))
+        self.artist = Artist.all_objects.select_related("user").get(pk=self.artist.pk)
+
+    def test_a_login_that_still_signs_in_refuses_it(self):
+        plan = ArtistHRService.plan_permanent_deletion(self.artist)
+        self.assertTrue(any("demo-delete@example.com" in b for b in plan.blockers))
+
+        with self.assertRaises(ArtistDeletionBlockedException):
+            ArtistHRService.delete_artist_permanently(self.artist)
+        self.assertTrue(Artist.all_objects.filter(pk=self.artist.pk).exists())
+
+    def test_the_preview_changes_nothing(self):
+        self._archive()
+
+        plan = ArtistHRService.plan_permanent_deletion(self.artist)
+
+        from django.db.models import Model
+        from django.utils.text import capfirst
+
+        from messaging.models import Thread
+
+        from .models import Attendance
+
+        def removed(model: type[Model]) -> int:
+            return plan.removed.get(str(capfirst(model._meta.verbose_name_plural)), 0)
+
+        self.assertEqual(plan.blockers, ())
+        self.assertEqual(plan.solo_duties_released, 1)
+        self.assertEqual(plan.account_email, "demo-delete@example.com")
+        for model in (Artist, Participation, ProjectPieceCasting, Attendance, Thread):
+            self.assertEqual(removed(model), 1, model.__name__)
+        self.solo.refresh_from_db()
+        self.assertEqual(self.solo.participation_id, self.seat.pk)
+        self.assertTrue(Participation.all_objects.filter(pk=self.seat.pk).exists())
+
+    @patch(EMAIL_TASK)
+    def test_an_archived_entry_goes_with_everything_hanging_off_it(self, enqueue_mock):
+        from messaging.models import Thread
+
+        from .models import Attendance
+
+        self._archive()
+
+        with self.captureOnCommitCallbacks(execute=True):
+            ArtistHRService.delete_artist_permanently(self.artist)
+
+        self.assertFalse(Artist.all_objects.filter(pk=self.artist.pk).exists())
+        self.assertFalse(Participation.all_objects.filter(artist_id=self.artist.pk).exists())
+        self.assertFalse(ProjectPieceCasting.objects.filter(participation_id=self.seat.pk).exists())
+        self.assertFalse(Attendance.objects.filter(participation_id=self.seat.pk).exists())
+        self.assertFalse(Thread.all_objects.filter(pk=self.thread.pk).exists())
+        # The duty belongs to the programme and stays in it, unassigned.
+        self.solo.refresh_from_db()
+        self.assertIsNone(self.solo.participation_id)
+        # The login is erased, not left behind with the name and address on it.
+        self.user.refresh_from_db()
+        self.assertNotIn("demo-delete@example.com", self.user.email)
+        self.assertFalse(self.user.is_active)
+        # Nobody clicked "delete my account", so nobody is mailed about one.
+        enqueue_mock.assert_not_called()
+
+    def test_a_fee_on_a_seat_refuses_it(self):
+        price(self.project, participation=self.seat, amount="300")
+        self._archive()
+
+        plan = ArtistHRService.plan_permanent_deletion(self.artist)
+        self.assertNotEqual(plan.blockers, ())
+        with self.assertRaises(ArtistDeletionBlockedException):
+            ArtistHRService.delete_artist_permanently(self.artist)
+        self.assertTrue(Artist.all_objects.filter(pk=self.artist.pk).exists())
+        self.assertTrue(Participation.all_objects.filter(pk=self.seat.pk).exists())
+
+    @patch(EMAIL_TASK)
+    def test_the_admin_delete_confirms_the_plan_and_runs_it(self, _enqueue_mock):
+        self._archive()
+        self.client.force_login(self.admin_user)
+        url = f"/admin/roster/artist/{self.artist.pk}/delete/"
+
+        page = self.client.get(url)
+        self.assertEqual(page.status_code, 200)
+        self.assertContains(page, "demo-delete@example.com")
+
+        with self.captureOnCommitCallbacks(execute=True):
+            done = self.client.post(url, {"post": "yes"})
+        self.assertEqual(done.status_code, 302)
+        self.assertFalse(Artist.all_objects.filter(pk=self.artist.pk).exists())
+
+    def test_the_admin_refuses_a_singer_who_can_still_sign_in(self):
+        self.client.force_login(self.admin_user)
+        url = f"/admin/roster/artist/{self.artist.pk}/delete/"
+
+        self.client.post(url, {"post": "yes"})
+        self.assertTrue(Artist.all_objects.filter(pk=self.artist.pk).exists())
 
 
 class ArtistPiiSyncTests(TestCase):

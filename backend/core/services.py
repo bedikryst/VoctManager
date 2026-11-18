@@ -473,10 +473,40 @@ class UserIdentityService:
         if not user.check_password(dto.current_password):
             logger.warning(f"Failed account deletion attempt (invalid password) for user: {user.email}")
             raise InvalidCredentialsException("invalid_current_password")
-        
+
         original_email = user.email
         fallback_lang = user.profile.language if hasattr(user, 'profile') else 'en'
 
+        with transaction.atomic():
+            UserIdentityService.erase_account(user)
+
+            # Confirmation to the address the person signed in with, which the
+            # erasure has just overwritten.
+            with override(fallback_lang):
+                translated_subject = str(_("Your VoctManager Account has been successfully deleted"))
+
+            transaction.on_commit(
+                lambda: send_transactional_email_task.delay(
+                    recipient_email=original_email,
+                    subject=translated_subject,
+                    template_name="account_deleted",
+                    context={"user_email": original_email},
+                    fallback_language=fallback_lang,
+                    email_type=EmailType.CRITICAL_SECURITY
+                )
+            )
+
+    @staticmethod
+    def erase_account(user: User) -> None:
+        """
+        The erasure itself, without the re-authentication or the confirmation mail.
+
+        The self-service request above wraps it in both. An administrator removing a
+        roster entry for good (`ArtistHRService.delete_artist_permanently`) calls it
+        directly: nobody is re-authenticating there, and a mail announcing a deletion
+        the person did not click is not theirs to receive. Safe to run on an account
+        that is already erased — every step rewrites or removes the same rows again.
+        """
         with transaction.atomic():
             # 1. GDPR Anonymization (Freeing up unique constraints)
             anonymized_id = str(user.id)
@@ -532,22 +562,7 @@ class UserIdentityService:
 
             # 4. Emit Domain Event (Handled by Roster to soft-delete Artist)
             account_soft_deleted.send(sender=UserIdentityService, user=user)
-            
-            # 5. Dispatch confirmation email (using the original email we stored)
-            with override(fallback_lang):
-                translated_subject = str(_("Your VoctManager Account has been successfully deleted"))
-                
-            transaction.on_commit(
-                lambda: send_transactional_email_task.delay(
-                    recipient_email=original_email,
-                    subject=translated_subject,
-                    template_name="account_deleted",
-                    context={"user_email": original_email},
-                    fallback_language=fallback_lang,
-                    email_type=EmailType.CRITICAL_SECURITY
-                )
-            )
-            
+
         logger.info(f"Account soft-deleted and GDPR-anonymized for user ID: {anonymized_id}")
         
 class UserPreferencesService:

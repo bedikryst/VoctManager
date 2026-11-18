@@ -82,6 +82,13 @@ class ActivatedArtistMergeException(ArtistMergeException):
         "another one. Merge the entry nobody has signed in to."
     )
 
+class ArtistDeletionBlockedException(RosterDomainException):
+    """Raised when a roster entry cannot be deleted permanently: its login still
+    signs in, or a record the books must keep hangs off one of its seats. The
+    message lists what stands in the way, as `plan_permanent_deletion` reports it."""
+    code = "artist_deletion_blocked"
+    default_message = "This roster entry cannot be deleted permanently."
+
 class AttendanceValidationException(RosterDomainException):
     pass
 

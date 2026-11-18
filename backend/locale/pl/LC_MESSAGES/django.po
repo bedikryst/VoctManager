@@ -6091,6 +6091,26 @@ msgstr ""
 "źródłowy, odcisk ocenionego tekstu, czas. Tylko propozycja; pomijana, gdy "
 "tekst się zmieni."
 
+#: roster/services.py:716
+#, python-format
+msgid "The login %(email)s can still sign in. Archive the singer first."
+msgstr ""
+"Konto %(email)s wciąż może się logować. Najpierw przenieś wpis do archiwum."
+
+#: roster/admin.py:145
+#, python-format
+msgid ""
+"Login %(email)s is erased like a self-service account deletion, without the "
+"confirmation mail."
+msgstr ""
+"Konto %(email)s zostanie zanonimizowane jak przy samodzielnym usunięciu "
+"konta, bez maila z potwierdzeniem."
+
+#: roster/admin.py:150
+#, python-format
+msgid "Solo duties left in the programme without a singer: %(count)s"
+msgstr "Partie solowe, które zostaną w programie bez wykonawcy: %(count)s"
+
 #~ msgid "Review the request"
 #~ msgstr "Rozpatrz prośbę"
 
