@@ -492,6 +492,14 @@
     @apply text-ethereal-ink font-sans antialiased selection:bg-ethereal-gold/20 selection:text-ethereal-ink;
   }
 
+  /* A bleed route (`widgets/panel-shell/routeHandle.ts`) paints its ground to
+     every edge, and the scrollbar gutter `html` always reserves shows the
+     body's: it takes the route's alabaster, or a canvas strip runs down the
+     right edge. */
+  body.theme-panel.bleed-ground {
+    background-color: var(--color-ethereal-alabaster);
+  }
+
   /* Neutralise the browser autofill wash (Chrome's blue / Safari's yellow) so
      saved credentials keep the Ethereal input surface instead of a foreign
      tint. The 9999s transition is the canonical hack to defer the UA repaint. */

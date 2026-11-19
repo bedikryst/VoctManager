@@ -156,6 +156,14 @@ export const DashboardLayout = ({
     rememberWorkspace("panel");
   }, []);
 
+  // `html` always reserves its scrollbar gutter (panel.css), and the gutter
+  // shows the body's ground: on a bleed route that has to be the route's own,
+  // or a strip of canvas runs down the right edge.
+  useEffect(() => {
+    document.body.classList.toggle("bleed-ground", isBleed);
+    return () => document.body.classList.remove("bleed-ground");
+  }, [isBleed]);
+
   useEffect(() => {
     if (routePreloaders.length === 0) return;
 
