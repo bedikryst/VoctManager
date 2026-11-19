@@ -39,6 +39,9 @@
  *  THE KIT SHOWS ONLY WHILE ITS CONCERT IS AHEAD, by the build-time rule every announcement on
  *  this site follows (`upcomingStation`): the deploy after the concert takes it down.
  *
+ *  THE PAGE SCROLLS NATIVELY (`nativeScroll`): an editor comes to take files, so the wheel moves
+ *  the page as the editor's own browser does, and the index's anchors land by `scroll-margin-top`.
+ *
  *  POLISH-ONLY FOR NOW. `lang` is a real prop and the chrome exists in three locales, but there are
  *  no `/en/press` and `/fr/press` route files and `/press` is NOT in TRANSLATED_ROUTES. The kit is
  *  Polish by nature: it is what a Polish editor takes. Where the board's PDFs carry English beside
@@ -480,6 +483,7 @@ const jsonLd = {
   path={path}
   image={ogImage}
   bodyClass="page-press"
+  nativeScroll
   lang={lang}
   alternates={alternates}
 >
@@ -1341,10 +1345,6 @@ const jsonLd = {
 
     import { setupDisclosure } from "../../scripts/disclosure";
 
-    type LenisJump = {
-      scrollTo: (target: number, options: { immediate: boolean; force: boolean }) => void;
-    };
-
     /* The kept index (`.press-index`). It shows once the head's foot has passed under the bar,
        marks the section whose top has passed under the index itself, and takes that section's
        ground, night over the contact band and paper everywhere else. One scroll reader per frame:
@@ -1377,35 +1377,13 @@ const jsonLd = {
         if (!frame) frame = requestAnimationFrame(update);
       };
 
-      // Its rows are hit mid-scroll by construction, and where Lenis owns the scroll it reasserts
-      // its own position on the next frame, undoing the anchor's jump. So there the jump goes
-      // through Lenis, as a cut, to where the anchor would have landed: the target's own
-      // `scroll-margin-top`, which the stylesheet sets to clear the bar and this index.
-      const jump = (event: MouseEvent) => {
-        const link = (event.target as Element | null)?.closest<HTMLAnchorElement>("a[href^='#']");
-        const lenis = (window as unknown as { __lenis?: LenisJump }).__lenis;
-        if (!link || !lenis || event.defaultPrevented) return;
-        if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
-        const target = document.getElementById(link.hash.slice(1));
-        if (!target) return;
-        event.preventDefault();
-        const margin = Number.parseFloat(getComputedStyle(target).scrollMarginTop) || 0;
-        lenis.scrollTo(window.scrollY + target.getBoundingClientRect().top - margin, {
-          immediate: true,
-          force: true,
-        });
-        window.history.pushState(null, "", link.hash);
-      };
-
       update();
       window.addEventListener("scroll", schedule, { passive: true });
       window.addEventListener("resize", schedule, { passive: true });
-      index.addEventListener("click", jump);
       return () => {
         cancelAnimationFrame(frame);
         window.removeEventListener("scroll", schedule);
         window.removeEventListener("resize", schedule);
-        index.removeEventListener("click", jump);
       };
     };
 

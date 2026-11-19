@@ -880,8 +880,9 @@ const langOptions = showLang
     // Position is read from Lenis's own float when it drives the scroll: `window.scrollY` is
     // rounded, so on the tail of an ease it stalls and stutters between integers, which is
     // exactly where a naive direction test flips sign. Direction comes from Lenis for the same
-    // reason. Both fall back to the document for touch and reduced motion, where Lenis is not
-    // mounted at all (BaseLayout gates it on `pointer: fine` + motion).
+    // reason. Both fall back to the document for touch, reduced motion and a page that scrolls
+    // natively, where Lenis is not mounted at all (BaseLayout gates it on `pointer: fine` +
+    // motion and on `<html data-native-scroll>`).
     const tabY = (): number => lenisRead()?.scroll ?? window.scrollY;
 
     const openTabula = () => {

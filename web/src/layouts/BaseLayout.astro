@@ -3,7 +3,8 @@
  * @file BaseLayout.astro
  * @description Document shell for every public page. Owns <head> (per-page SEO/OG/canonical),
  *  global styles, native cross-document transitions (<ClientRouter />), and the Lenis
- *  smooth-scroll lifecycle (fine-pointer + motion-allowed only, re-anchored on navigation).
+ *  smooth-scroll lifecycle (fine-pointer + motion-allowed only, off on a page that asks for
+ *  native scroll, re-anchored on navigation).
  * @module layouts/BaseLayout
  */
 import type { ImageMetadata } from "astro";
@@ -73,6 +74,13 @@ interface Props {
    * movements. Every other page omits it and gets the plain scrollbar (islands/landing/ScrollRail).
    */
   railNames?: RailNames;
+  /**
+   * The page scrolls natively: Lenis never runs on it, also when a navigation arrives from a
+   * page where it ran. For a page whose readers come to work rather than to look (/press).
+   * Surfaces as `<html data-native-scroll>`, which the Lenis lifecycle below reads after every
+   * swap.
+   */
+  nativeScroll?: boolean;
   /** Page locale — drives `<html lang>` and og:locale. Defaults to Polish (the un-prefixed site). */
   lang?: Locale;
   /** hreflang alternates for a translated page (absolute URLs incl. x-default). Empty on
@@ -103,6 +111,7 @@ const {
   reveal = true,
   rite = false,
   railNames,
+  nativeScroll = false,
   lang = "pl",
   alternates = [],
   breadcrumb,
@@ -134,6 +143,7 @@ const breadcrumbLd = breadcrumb ? breadcrumbList(breadcrumb, lang) : undefined;
   lang={LOCALE_META[lang].htmlLang}
   data-reveal={reveal ? "on" : undefined}
   data-rite={rite ? "on" : undefined}
+  data-native-scroll={nativeScroll ? "" : undefined}
 >
   <head>
     <meta charset="utf-8" />
@@ -348,9 +358,10 @@ const breadcrumbLd = breadcrumb ? breadcrumbList(breadcrumb, lang) : undefined;
     </script>
 
     <script>
-      // Lenis smooth scroll — only on fine pointers with motion allowed.
-      // Resilient to ClientRouter navigations: one RAF loop, instance recreated
-      // and scroll re-anchored on swap.
+      // Lenis smooth scroll — only on fine pointers with motion allowed, and never on a page
+      // that asks for native scroll (`<html data-native-scroll>`). Resilient to ClientRouter
+      // navigations: the instance is unmounted on a swap into such a page, mounted again on the
+      // way out of it, and otherwise re-anchored on swap.
       import Lenis from "lenis";
       import { setupReveal } from "../scripts/reveal";
 
@@ -370,29 +381,42 @@ const breadcrumbLd = breadcrumb ? breadcrumbList(breadcrumb, lang) : undefined;
         // NB: this whole block is gated behind `(pointer: fine) and (hover: hover)`, so Lenis
         // never runs on touch — mobile keeps fully native momentum scroll. No touch-tuning here
         // on purpose; any `touch*` option would be dead config.
-        let lenis = new Lenis({
-          lerp: 0.085,
-          duration: 1.6,
-          easing: (t: number) => (t === 1 ? 1 : 1 - Math.pow(2, -10 * t)),
-          wheelMultiplier: 0.9,
-          smoothWheel: true,
-        });
-        // Expose the shared instance so page scripts (e.g. landing anchor smooth-scroll)
-        // route through it instead of spawning a second, fighting RAF loop.
-        (window as unknown as { __lenis?: Lenis }).__lenis = lenis;
-        const raf = (time: number) => {
-          lenis.raf(time);
-          requestAnimationFrame(raf);
+        // Page scripts (e.g. landing anchor smooth-scroll) reach the shared instance through
+        // `window.__lenis` at call time, never caching it, so the instance can come and go.
+        const host = window as unknown as { __lenis?: Lenis };
+        let lenis: Lenis | undefined;
+        const wanted = () => !document.documentElement.hasAttribute("data-native-scroll");
+        const mount = () => {
+          // Lenis reads the document's scroll position on construction, so a mount after a
+          // swap starts wherever Astro has put the page.
+          lenis = new Lenis({
+            lerp: 0.085,
+            duration: 1.6,
+            easing: (t: number) => (t === 1 ? 1 : 1 - Math.pow(2, -10 * t)),
+            wheelMultiplier: 0.9,
+            smoothWheel: true,
+            autoRaf: true,
+          });
+          host.__lenis = lenis;
         };
-        requestAnimationFrame(raf);
+        // destroy() cancels the frame loop and drops the classes Lenis set on <html>.
+        const unmount = () => {
+          lenis?.destroy();
+          lenis = undefined;
+          delete host.__lenis;
+        };
+        if (wanted()) mount();
 
         // Astro (history.scrollRestoration = "manual") has ALREADY applied the correct scroll
         // target by the time astro:after-swap fires — 0 for forward navigations, the saved
-        // position for back/forward history traversal. Sync Lenis's virtual position to whatever
-        // the document scroll now is, rather than forcing the top: forcing 0 discarded the
-        // restored position and made "back" jump to the top (the reported "przeskakiwanie").
+        // position for back/forward history traversal — and has copied the incoming <html>
+        // attributes. Sync Lenis's virtual position to whatever the document scroll now is,
+        // rather than forcing the top: forcing 0 discarded the restored position and made "back"
+        // jump to the top (the reported "przeskakiwanie").
         document.addEventListener("astro:after-swap", () => {
-          lenis.scrollTo(window.scrollY, { immediate: true, force: true });
+          if (!wanted()) unmount();
+          else if (!lenis) mount();
+          else lenis.scrollTo(window.scrollY, { immediate: true, force: true });
         });
       }
 
