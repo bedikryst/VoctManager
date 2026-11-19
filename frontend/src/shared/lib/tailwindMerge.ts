@@ -40,12 +40,15 @@ export const etherealTwMerge = extendTailwindMerge({
       // swap — resolving them by fallback is a property nobody declared.
       // The piano's two materials hold for the same reason: a keyboard's
       // white keys stay light on either ground.
+      // The score desk is a material in the same sense: the ground a page lies
+      // on beside its record, in both themes.
       color: [
         "surface-inverse",
         "ink-on-inverse",
         "line-on-inverse",
         "piano-ivory",
         "piano-ebony",
+        "score-desk",
       ],
       // --text-* → the uppercase overline role. The one that was being deleted.
       text: ["overline", "overline-sm"],
@@ -59,6 +62,7 @@ export const etherealTwMerge = extendTailwindMerge({
         "glass-outline-hover",
         "button-primary",
         "button-primary-hover",
+        "paper",
       ],
       // --blur-* → the shared backdrop radius (blur-* and backdrop-blur-*).
       blur: ["ethereal"],

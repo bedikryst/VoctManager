@@ -929,7 +929,10 @@
       "fields_hint_catalog": "L'époque, l'année de composition et le numéro d'opus figurent rarement sur une partition — l'IA les a pris dans un catalogue ou dans ses propres connaissances, et ce sont eux qu'elle invente le plus souvent.",
       "year_invalid": "Année de composition : un nombre entier entre 500 et 2100.",
       "score_widen": "Élargir l'aperçu de la partition",
-      "score_narrow": "Réduire l'aperçu de la partition"
+      "score_narrow": "Réduire l'aperçu de la partition",
+      "score_sheet_title": "Édition",
+      "approve_short": "Valider",
+      "review_bar_aria": "Révision de l'œuvre"
     },
     "review": {
       "delete": "Supprimer",

@@ -52,14 +52,15 @@ const resolvedInput = (variant: InlineEditableVariant): ReadonlySet<string> =>
       "w-auto rounded-chip px-1.5 py-0.5",
       variant === "title" && "font-semibold text-base",
       variant === "display" && "font-serif font-semibold text-2xl tracking-tight",
+      variant === "headline" && "font-serif font-medium tracking-tight",
       variant === "subtitle" && "font-serif italic text-base",
       variant === "subtle" && "text-xs",
     ),
   );
 
 describe("inlineEditableTextProps — what survives onto the label span", () => {
-  it("sets `display` and `subtitle` in the serif, with the sans dropped", () => {
-    for (const variant of ["display", "subtitle"] as const) {
+  it("sets `display`, `headline` and `subtitle` in the serif, with the sans dropped", () => {
+    for (const variant of ["display", "headline", "subtitle"] as const) {
       const label = resolvedLabel(variant);
       expect(label).toContain("font-serif");
       expect(label).not.toContain("font-sans");
@@ -90,6 +91,11 @@ describe("inlineEditableTextProps — what survives onto the label span", () => 
     expect(resolvedLabel("default")).toContain("font-normal");
     expect(resolvedLabel("subtle")).toContain("font-normal");
   });
+
+  it("sets `headline` at medium, past Text's font-normal", () => {
+    expect(resolvedLabel("headline")).toContain("font-medium");
+    expect(resolvedLabel("headline")).not.toContain("font-normal");
+  });
 });
 
 describe("display mode and edit mode agree", () => {
@@ -98,10 +104,11 @@ describe("display mode and edit mode agree", () => {
       expect(resolvedLabel(variant)).toContain("font-semibold");
       expect(resolvedInput(variant)).toContain("font-semibold");
     }
+    expect(resolvedInput("headline")).toContain("font-medium");
   });
 
   it("does not change family when a serif variant is clicked into its input", () => {
-    for (const variant of ["display", "subtitle"] as const) {
+    for (const variant of ["display", "headline", "subtitle"] as const) {
       expect(resolvedLabel(variant)).toContain("font-serif");
       expect(resolvedInput(variant)).toContain("font-serif");
     }

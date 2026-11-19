@@ -10,15 +10,20 @@
  */
 
 import {
+  BAND_HEIGHT_PX,
   COMPACT_VIEWPORT_THRESHOLD,
   MOBILE_MIN_PAGE_WIDTH,
   DESKTOP_MIN_PAGE_WIDTH,
   DESKTOP_PAGE_WIDTH_CAP,
+  FIT_HORIZONTAL_RESERVE_MOBILE,
+  FIT_HORIZONTAL_RESERVE_DESKTOP,
   FIT_VERTICAL_RESERVE_MOBILE,
   FIT_VERTICAL_RESERVE_DESKTOP,
   FIT_VERTICAL_RESERVE_IMMERSIVE,
   PARTIAL_PAGE_FRACTION,
   AUTO_PARTIAL_GAIN_RATIO,
+  VIEWPORT_PADDING_X_DESKTOP,
+  VIEWPORT_PADDING_Y_DESKTOP,
 } from "./constants";
 import type { FitMode, ResolvedFitMode } from "./types";
 
@@ -53,7 +58,11 @@ export const resolvePageFit = ({
   }
 
   const isCompactViewport = viewportWidth < COMPACT_VIEWPORT_THRESHOLD;
-  const horizontalPadding = immersive ? 0 : isCompactViewport ? 16 : 72;
+  const horizontalPadding = immersive
+    ? 0
+    : isCompactViewport
+      ? FIT_HORIZONTAL_RESERVE_MOBILE
+      : FIT_HORIZONTAL_RESERVE_DESKTOP;
   const availableWidth = Math.max(0, viewportWidth - horizontalPadding);
   const fitWidth =
     immersive || isCompactViewport
@@ -100,4 +109,49 @@ export const resolvePageFit = ({
     ),
     resolvedFit,
   };
+};
+
+export interface ViewerWidthInput {
+  /** The viewer's whole height, both bands included. */
+  viewerHeight: number;
+  /** Page height / width. */
+  pageAspect: number;
+  /**
+   * Narrowest page the host accepts. Where fitting the whole page to the
+   * height would draw it narrower, the page is drawn this wide instead and
+   * scrolls.
+   */
+  minPageWidth: number;
+}
+
+/**
+ * The inverse of `resolvePageFit`, for a host that sizes the viewer around the
+ * page: how wide a viewer of this height must be for the whole page to fit its
+ * height, so the page fills its pane with no empty stage beside or below it.
+ *
+ * A pane is often narrower than the compact threshold even on a desktop
+ * screen, and the fit's reserves change across it, so the width is worked out
+ * in the regime it will actually land in. Desktop-width screens only: the
+ * scroll box's padding is its `sm:` one and the safe-area inset is zero.
+ */
+export const viewerWidthForPage = ({
+  viewerHeight,
+  pageAspect,
+  minPageWidth,
+}: ViewerWidthInput): number => {
+  const viewportHeight = viewerHeight - 2 * BAND_HEIGHT_PX - VIEWPORT_PADDING_Y_DESKTOP;
+  /** The viewport's content width at which the page fills the height. */
+  const contentWidthIn = (compact: boolean): number => {
+    const verticalReserve = compact ? FIT_VERTICAL_RESERVE_MOBILE : FIT_VERTICAL_RESERVE_DESKTOP;
+    const availableHeight = Math.max(0, viewportHeight - verticalReserve);
+    const wholePageWidth = pageAspect > 0 ? Math.floor(availableHeight / pageAspect) : 0;
+    const horizontalReserve = compact
+      ? FIT_HORIZONTAL_RESERVE_MOBILE
+      : FIT_HORIZONTAL_RESERVE_DESKTOP;
+    return Math.max(minPageWidth, wholePageWidth) + horizontalReserve;
+  };
+  const desktop = contentWidthIn(false);
+  const contentWidth =
+    desktop >= COMPACT_VIEWPORT_THRESHOLD ? desktop : contentWidthIn(true);
+  return contentWidth + VIEWPORT_PADDING_X_DESKTOP;
 };

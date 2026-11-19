@@ -72,8 +72,9 @@ const DARK = declarations(DARK_CSS);
  *
  * What is listed is everything whose job is to MOVE: the six ladder rungs, the
  * two accents that cannot clear AA unchanged, the inverse trio, the piano pair
- * (which dims rather than inverts), the hairlines, the glass pair, the five
- * shadow colours and the five aura colours.
+ * (which dims rather than inverts), the score desk, the hairlines, the glass
+ * pair, the five glass shadow colours, the paper's two and the five aura
+ * colours.
  */
 const MUST_FLIP = [
   "--color-ethereal-marble",
@@ -90,6 +91,7 @@ const MUST_FLIP = [
   "--color-line-on-inverse",
   "--color-piano-ivory",
   "--color-piano-ebony",
+  "--color-score-desk",
   "--color-hairline",
   "--color-hairline-strong",
   "--color-glass-surface",
@@ -99,6 +101,8 @@ const MUST_FLIP = [
   "--glass-shade",
   "--glass-shade-lifted",
   "--glass-shade-strong",
+  "--paper-contact",
+  "--paper-shade",
   "--aura-light",
   "--aura-shaft",
   "--aura-shaft-soft",
@@ -141,6 +145,7 @@ describe("panel.css theme parity", () => {
       "line-on-inverse",
       "piano-ivory",
       "piano-ebony",
+      "score-desk",
     ]) {
       expect(ledger).toContain(`"${token}"`);
     }

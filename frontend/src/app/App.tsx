@@ -28,6 +28,7 @@ import {
   DashboardLayout,
   type DashboardRoutePreloader,
 } from "@/widgets/panel-shell/DashboardLayout";
+import { BLEED_ROUTE_HANDLE } from "@/widgets/panel-shell/routeHandle";
 
 import { CSRFProvider } from "@/app/providers/CSRFProvider";
 
@@ -189,6 +190,12 @@ const ArchiveManagement = lazyWithPreload(
 );
 const ArchivePieceCardPage = lazyWithPreload(
   () => import("@features/archive/ArchivePieceCardPage"),
+);
+// The redesigned piece card, built beside the current one on an unlinked
+// route until it replaces it (docs/specs/piece-card-redesign-2026-11.md).
+// Not preloaded: nothing links to it.
+const PieceCardPage = lazyWithPreload(
+  () => import("@features/archive/piece-card/PieceCardPage"),
 );
 const ArchiveNewPiecePage = lazyWithPreload(
   () => import("@features/archive/ArchiveNewPiecePage"),
@@ -456,6 +463,11 @@ export const router = createBrowserRouter(
             <Route
               path="archive-management/:id"
               element={<ArchivePieceCardPage />}
+            />
+            <Route
+              path="archive-management/:id/next"
+              element={<PieceCardPage />}
+              handle={BLEED_ROUTE_HANDLE}
             />
             {/* Legacy deep-links (notifications, older bookmarks) — the edit +
                 verify screens are now one Piece Card at /:id. */}

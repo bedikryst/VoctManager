@@ -80,6 +80,16 @@ export type PdfToolLayout = "rail" | "row";
 export type PdfKeyScope = "window" | "viewer";
 
 /**
+ * What the page lies on. `inverse` is the stand's island: a stage dark in both
+ * themes, light ink in the bands, a rounded page. `desk` is for a viewer laid
+ * beside a record on a light or dark page: the stage is the score desk, the
+ * page is paper (square, its own shadow, dimmed on the dark theme), and the
+ * bands keep their layout but write in the page's ink. The sheet and anything
+ * glass over the music stay islands on either ground.
+ */
+export type PdfGround = "inverse" | "desk";
+
+/**
  * Imperative page handle surfaced to callers that render an `overlaySlot`
  * needing to drive navigation (e.g. an annotation index that jumps to the page
  * a comment lives on). Re-emitted whenever the page or page-count changes.
@@ -272,5 +282,14 @@ export interface PdfViewerProps {
    * own fit holds, and this is never written into the stored habit.
    */
   preferredFit?: FitMode;
+  /** What the page lies on — see `PdfGround`. Defaults to `inverse`. */
+  ground?: PdfGround;
+  /**
+   * Receives the page's height / width once a page has loaded, for a host
+   * that sizes the viewer around the page rather than the page to the viewer
+   * (see `viewerWidthForPage`). Not called with the A4 guess the fit starts
+   * from.
+   */
+  onPageAspectChange?: (aspect: number) => void;
   className?: string;
 }

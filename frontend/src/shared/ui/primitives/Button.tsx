@@ -59,11 +59,24 @@ export const buttonVariants = cva(
       fullWidth: {
         true: "w-full",
       },
+      // `label` is the panel's control type above. `sentence` is the piece
+      // card pilot's: sentence case at reading size, no tracking, for a screen
+      // whose only uppercase is its breadcrumb (`.ai/04_design_system.md`,
+      // "Piece card pilot"). Declared after `size`, so its type size wins.
+      casing: {
+        label: "",
+        sentence: "normal-case tracking-normal text-sm font-medium",
+      },
     },
+    compoundVariants: [
+      // The one primary action keeps a heavier weight than its neighbours.
+      { variant: "primary", casing: "sentence", class: "font-semibold" },
+    ],
     defaultVariants: {
       variant: "primary",
       size: "default",
       fullWidth: false,
+      casing: "label",
     },
   },
 );
@@ -94,6 +107,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       variant,
       size,
       fullWidth,
+      casing,
       isLoading = false,
       leftIcon,
       rightIcon,
@@ -161,7 +175,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     return (
       <Comp
         ref={ref}
-        className={cn(buttonVariants({ variant, size, fullWidth, className }))}
+        className={cn(buttonVariants({ variant, size, fullWidth, casing, className }))}
         disabled={isDisabled}
         aria-disabled={isDisabled}
         // A loading button is disabled, and a disabled control announces nothing

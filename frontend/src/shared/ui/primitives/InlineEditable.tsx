@@ -35,7 +35,8 @@ export type InlineEditableVariant =
   | "title"
   | "subtle"
   | "display"
-  | "subtitle";
+  | "subtitle"
+  | "headline";
 
 /**
  * Typography the inner `Text` has to carry on its own element.
@@ -49,10 +50,12 @@ export type InlineEditableVariant =
  */
 export const inlineEditableTextProps = (
   variant: InlineEditableVariant,
-): { weight?: "semibold"; className?: string } => {
+): { weight?: "semibold" | "medium"; className?: string } => {
   switch (variant) {
     case "display":
       return { weight: "semibold", className: "font-serif" };
+    case "headline":
+      return { weight: "medium", className: "font-serif" };
     case "subtitle":
       return { className: "font-serif italic" };
     case "title":
@@ -84,6 +87,11 @@ export interface InlineEditableProps {
    * `subtitle` is the serif italic a rehearsal's topic line is set in under its
    * date (`RehearsalInspector`): normal weight, the `md` step the static line
    * uses for the same x-height reason, in the graphite of a subordinate line.
+   *
+   * `headline` is a record's own title as the page's h1 (the piece card): the
+   * serif at medium weight, which a semibold Cormorant at display size
+   * overweights. It sets no size; the caller's `className` gives it, in both
+   * modes.
    */
   readonly variant?: InlineEditableVariant;
   readonly disabled?: boolean;
@@ -190,6 +198,7 @@ export const InlineEditable = ({
           isEmpty && "text-ethereal-graphite/60 italic",
           variant === "title" && "text-base",
           variant === "display" && "text-2xl tracking-tight",
+          variant === "headline" && "tracking-tight",
           variant === "subtle" && "text-xs text-ethereal-graphite",
           variant === "subtitle" && "text-base text-ethereal-graphite",
           className,
@@ -238,6 +247,7 @@ export const InlineEditable = ({
     "w-auto rounded-chip px-1.5 py-0.5",
     variant === "title" && "font-semibold text-base",
     variant === "display" && "font-serif font-semibold text-2xl tracking-tight",
+    variant === "headline" && "font-serif font-medium tracking-tight",
     variant === "subtitle" && "font-serif italic text-base",
     variant === "subtle" && FIELD_TEXT_SCALE.xs,
     className,

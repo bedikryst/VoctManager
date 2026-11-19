@@ -8,9 +8,13 @@
  * @module features/annotations/components
  */
 
-/** Dark glass over the score, without its shape. */
+/**
+ * Dark glass over the score, without its shape. `pdf-island` keeps its ink the
+ * island's own where the viewer's band writes in the page's ink (the score
+ * desk), since this glass lies over the music, not in the band.
+ */
 export const glassChrome =
-  "pointer-events-auto border border-line-on-inverse bg-surface-inverse/70 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-xl";
+  "pdf-island pointer-events-auto border border-line-on-inverse bg-surface-inverse/70 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-xl";
 
 /** A row in the top band: no glass, the band is its ground. */
 export const bandBar = "pointer-events-auto flex h-10 items-center";

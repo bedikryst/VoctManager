@@ -12,6 +12,8 @@ export { createDownloadAnchor } from "./utils";
  */
 export { resolveTapZone, type TapZone } from "./tapZone";
 export { resolveSwipeTurn } from "./swipeTurn";
+/** For a host that sizes the viewer around the page (`ground="desk"` panes). */
+export { viewerWidthForPage } from "./fit";
 export type {
   PdfViewerProps,
   PdfViewerEvent,
@@ -21,6 +23,7 @@ export type {
   PdfPageApi,
   FitMode,
   PdfKeyScope,
+  PdfGround,
   PdfPageLabel,
   PdfToolLayout,
   PdfContentsEntry,

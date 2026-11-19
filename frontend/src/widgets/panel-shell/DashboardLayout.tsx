@@ -4,11 +4,13 @@
  * Implements the Persistent App Shell pattern. Delegates background kinetics to
  * isolated persistent layers, and the entrance of a route to the page itself
  * (`PageTransition`) — the shell decides only WHEN a route is a new mount.
+ * A route whose `handle` asks to bleed (`routeHandle.ts`) gets no ambient
+ * field, page padding or width cap: it paints its own ground edge to edge.
  * @module widgets/panel-shell/DashboardLayout
  */
 
 import React, { Suspense, useEffect, useState } from "react";
-import { useLocation, useOutlet } from "react-router-dom";
+import { useLocation, useMatches, useOutlet } from "react-router-dom";
 import { useQueryClient, type QueryClient } from "@tanstack/react-query";
 
 import { useAuth } from "@/app/providers/AuthProvider";
@@ -16,6 +18,7 @@ import type { AuthUser } from "@/shared/auth/auth.types";
 import { isArtist, isManager } from "@/shared/auth/rbac";
 import { DesktopSidebar } from "./DesktopSidebar";
 import { MobileNavigation } from "./mobile/MobileNavigation";
+import { isBleedRoute } from "./routeHandle";
 import { PanelErrorBoundary } from "@/app/router/PanelErrorBoundary";
 import { CommandPaletteProvider } from "./command/CommandPaletteProvider";
 import { NotesPanelProvider } from "./notes/NotesPanelProvider";
@@ -129,6 +132,8 @@ export const DashboardLayout = ({
   }
 
   const outlet = useOutlet();
+  // A work surface that paints its own ground edge to edge (`routeHandle.ts`).
+  const isBleed = isBleedRoute(useMatches());
 
   // Collapse hubs whose sub-routes render inside the page (project hub tabs,
   // settings sections, the messages inbox where the route only picks which
@@ -239,14 +244,27 @@ export const DashboardLayout = ({
     <NotesPanelProvider>
     <CommandPaletteProvider user={user}>
     <div className="relative flex min-h-screen w-full bg-transparent font-sans text-ethereal-ink antialiased">
-      <EtherealBackground />
+      {/* A bleed route is opaque from edge to edge, so the field behind it
+          would only be painted to be covered; on a work screen its stave read
+          as a rendering glitch through the gutters. */}
+      {!isBleed && <EtherealBackground />}
       <DesktopSidebar user={user} logout={logout} />
       <MobileNavigation user={user} logout={logout} />
       <main
-        className="relative z-10 flex min-w-0 flex-1 flex-col px-4 pt-5 pb-nav-dock transition-[padding] duration-300 ease-out sm:px-6 fine-pointer:pl-[calc(var(--sidebar-pad,var(--spacing-sidebar))+1.5rem)] fine-pointer:pt-6 wide-shell:pr-[calc(var(--rail-pad,0px)+1.5rem)]"
+        className={
+          isBleed
+            ? "relative z-10 flex min-w-0 flex-1 flex-col bg-ethereal-alabaster wide-shell:pr-[var(--rail-pad,0px)]"
+            : "relative z-10 flex min-w-0 flex-1 flex-col px-4 pt-5 pb-nav-dock transition-[padding] duration-300 ease-out sm:px-6 fine-pointer:pl-[calc(var(--sidebar-pad,var(--spacing-sidebar))+1.5rem)] fine-pointer:pt-6 wide-shell:pr-[calc(var(--rail-pad,0px)+1.5rem)]"
+        }
         id="main-content"
       >
-        <div className="relative mx-auto flex h-full w-full max-w-[1500px] flex-col">
+        <div
+          className={
+            isBleed
+              ? "relative flex h-full w-full flex-col"
+              : "relative mx-auto flex h-full w-full max-w-[1500px] flex-col"
+          }
+        >
           <PanelErrorBoundary resetKey={location.pathname}>
             <Suspense fallback={<DashboardRouteFallback />}>
               {/* The key is the remount boundary and NOTHING ELSE — see the

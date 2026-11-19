@@ -13,6 +13,9 @@
  * mode, export and the shell's close on the right; the bottom band turns pages
  * around a label that opens the sheet, where contents, page jump, fit, the
  * file and the host's tabs live. Performance mode removes both bands.
+ * The stage is the inverse island by default; `ground="desk"` lays the page on
+ * the score desk as square paper, with the bands' controls unchanged but
+ * written in the page's ink.
  * Annotation features mount through the toolbarSlot / renderPageOverlay /
  * overlaySlot / modalSlot / sheetTabs seams, a wrapping shell's close through
  * utilitySlot, and a bound book's printed page numbers through pageLabels.
@@ -129,6 +132,8 @@ export const PdfViewer = ({
   canExport = true,
   fitScope,
   preferredFit,
+  ground = "inverse",
+  onPageAspectChange,
   className,
 }: PdfViewerProps): React.JSX.Element => {
   const { t } = useTranslation();
@@ -867,11 +872,20 @@ export const PdfViewer = ({
   const place = describePage?.(currentPage) ?? null;
 
   // Edge-to-edge in performance mode: a rounded corner over a full-bleed page
-  // would clip actual music. Shared by the page and the afterimage over it.
+  // would clip actual music. Paper on the desk is square in every mode. Shared
+  // by the page and the afterimage over it, which must read as the same sheet.
+  const isDesk = ground === "desk";
   const pageCornerClass = cn(
-    !isImmersive && "rounded-surface",
-    !isImmersive && isCompactViewport && "rounded-nested",
+    !isDesk && !isImmersive && "rounded-surface",
+    !isDesk && !isImmersive && isCompactViewport && "rounded-nested",
+    isDesk && "paper-dim-dark",
   );
+  // The bands' region on the desk: the same controls, in the page's ink. Not in
+  // performance mode, which has no bands and keeps only island chrome. On the
+  // island nothing is added, not even a wrapper.
+  const bandInkClass = isDesk && !isImmersive ? "pdf-band-ink" : undefined;
+  const inBandInk = (node: React.ReactNode): React.ReactNode =>
+    bandInkClass ? <div className={cn("contents", bandInkClass)}>{node}</div> : node;
 
   return (
     <PdfImmersiveProvider value={isImmersive}>
@@ -887,9 +901,15 @@ export const PdfViewer = ({
         event.preventDefault();
         event.stopPropagation();
       }}
-      className={cn("relative flex min-h-0 h-full w-full flex-1 flex-col overflow-hidden bg-surface-inverse text-ink-on-inverse", className)}
+      className={cn(
+        "relative flex min-h-0 h-full w-full flex-1 flex-col overflow-hidden",
+        isDesk ? "bg-score-desk text-ethereal-ink" : "bg-surface-inverse text-ink-on-inverse",
+        className,
+      )}
     >
-      <div className="pointer-events-none absolute inset-0 bg-noise opacity-[0.02] mix-blend-color-burn light-ground-film" aria-hidden="true" />
+      {!isDesk && (
+        <div className="pointer-events-none absolute inset-0 bg-noise opacity-[0.02] mix-blend-color-burn light-ground-film" aria-hidden="true" />
+      )}
 
       {/* The top band: reserved height, so what sits in it (the tool slot on
           the left, the utility controls on the right, both positioned over
@@ -898,8 +918,10 @@ export const PdfViewer = ({
 
       {/* Shown before the document too, when the shell has a control in it:
           a stand that is loading or has failed must still close. Steps aside
-          while an open markup bar holds the top row. */}
-      {!isImmersive && !isTopRowClaimed && (
+          while an open markup bar holds the top row. The wrapper only carries
+          the band's ink; `contents` keeps the toolbar positioned against the
+          viewer. */}
+      {!isImmersive && !isTopRowClaimed && inBandInk(
         <PdfToolbar
           showDocumentControls={showPdfChrome}
           blobUrl={blobUrl}
@@ -912,7 +934,7 @@ export const PdfViewer = ({
           onShare={handleShare}
           onDownload={handleDownload}
           onEnterImmersive={enterImmersive}
-        />
+        />,
       )}
 
       {/* Annotation tools live at the left of the top band; its right end is
@@ -932,6 +954,7 @@ export const PdfViewer = ({
               ? "right-2 sm:right-4"
               : "max-w-[calc(100%-13rem)] sm:max-w-[calc(100%-16rem)]",
             toolLayout === "rail" && "tool-rail:bottom-14 tool-rail:max-w-none",
+            bandInkClass,
           )}
           data-pdf-gesture-exempt
         >
@@ -1021,7 +1044,9 @@ export const PdfViewer = ({
                             isVisible
                               ? (loaded) => {
                                   if (loaded.originalWidth > 0) {
-                                    reportPageAspect(loaded.originalHeight / loaded.originalWidth);
+                                    const aspect = loaded.originalHeight / loaded.originalWidth;
+                                    reportPageAspect(aspect);
+                                    onPageAspectChange?.(aspect);
                                   }
                                 }
                               : undefined
@@ -1034,7 +1059,7 @@ export const PdfViewer = ({
                           className={cn(
                             "overflow-hidden bg-white",
                             pageCornerClass,
-                            !isImmersive && "shadow-glass-ethereal",
+                            !isImmersive && (isDesk ? "shadow-paper" : "shadow-glass-ethereal"),
                           )}
                         />
                       </div>
@@ -1095,7 +1120,7 @@ export const PdfViewer = ({
       {/* The bottom band, reserved before the document arrives so the page
           is fitted once, to the box it will keep. */}
       {!isImmersive && (
-        <div className="box-content h-12 shrink-0 pb-[env(safe-area-inset-bottom)]">
+        <div className={cn("box-content h-12 shrink-0 pb-[env(safe-area-inset-bottom)]", bandInkClass)}>
           {showPdfChrome && (
             <PdfBottomNav
               currentPage={currentPage}

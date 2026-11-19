@@ -922,7 +922,10 @@
       "fields_hint_catalog": "Epoch, composition year and opus number are rarely printed in a score — the AI took them from a catalogue or from its own knowledge, and they are the ones it invents most often.",
       "year_invalid": "Composition year: a whole number between 500 and 2100.",
       "score_widen": "Widen the score preview",
-      "score_narrow": "Narrow the score preview"
+      "score_narrow": "Narrow the score preview",
+      "score_sheet_title": "Edition",
+      "approve_short": "Approve",
+      "review_bar_aria": "Piece review"
     },
     "review": {
       "delete": "Delete",

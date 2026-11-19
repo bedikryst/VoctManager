@@ -96,6 +96,13 @@
   --color-piano-ivory: #faf6ed;
   --color-piano-ebony: #1f1b17;
 
+  /* The desk a score lies on beside its record (the piece card's score pane,
+     `PdfViewer ground="desk"`). One step off the record's alabaster: warm grey
+     on light, a step darker on dark, never black, so the paper on it is the
+     only object on the screen with depth. Mirrored in
+     `shared/lib/tailwindMerge.ts`. */
+  --color-score-desk: #e3ddd1;
+
   /* Hairlines. Every 1px rule inside an in-flow surface — card headers, list
      dividers, form section splits — comes from these two and nothing else.
      `strong` is for structural splits that must survive a busy background
@@ -164,6 +171,12 @@
     inset 0 1px 0 rgba(255, 255, 255, 0.6),
     inset 0 -1px 0 rgba(22, 20, 18, 0.16),
     0 12px 28px -6px rgba(194, 168, 120, 0.5);
+
+  /* A sheet of paper on the score desk: a tight contact line and one soft
+     cast, no glass highlight, because paper is not glass. */
+  --shadow-paper:
+    0 1px 2px var(--paper-contact),
+    0 12px 32px -12px var(--paper-shade);
 
   /* =========================================
      RADIUS SCALE
@@ -276,6 +289,21 @@
     --glass-shade: rgba(120, 104, 82, 0.14);
     --glass-shade-lifted: rgba(120, 104, 82, 0.22);
     --glass-shade-strong: rgba(120, 104, 82, 0.45);
+
+    /* The paper's own two shadow colours (`--shadow-paper`): warmer and a
+       little stronger than glass, since white paper on a light desk separates
+       by its shadow and almost nothing else. */
+    --paper-contact: rgba(60, 48, 32, 0.1);
+    --paper-shade: rgba(60, 48, 32, 0.28);
+
+    /* The inverse island's ink and hairline, resolved once here so a subtree
+       that re-points `--color-ink-on-inverse` (the viewer's bands on the score
+       desk, `pdf-band-ink`) can hand a dark surface inside it the island's own
+       values back (`pdf-island`). A custom property is inherited as its
+       computed value, so these keep the theme's island colours whatever a
+       descendant re-declares. */
+    --island-ink: var(--color-ink-on-inverse);
+    --island-line: var(--color-line-on-inverse);
 
     /* "Nawa światła" — the ambient field the whole panel is painted on, and the
        one surface no token could reach: it is drawn with arbitrary gradients,
@@ -397,6 +425,10 @@
     --color-piano-ivory: #d9d2c4;
     --color-piano-ebony: #15120f;
 
+    /* A step under the record's alabaster (#221e1a): the desk recedes and the
+       paper on it comes forward. */
+    --color-score-desk: #1a1714;
+
     /* A dark hairline is not the light one inverted at the same alpha: light
        ink on a dark ground reads weaker than dark ink on a light one, so both
        steps gain a few points (.08/.14 against .06/.10). */
@@ -423,6 +455,8 @@
     --glass-shade: rgba(0, 0, 0, 0.45);
     --glass-shade-lifted: rgba(0, 0, 0, 0.55);
     --glass-shade-strong: rgba(0, 0, 0, 0.6);
+    --paper-contact: rgba(0, 0, 0, 0.4);
+    --paper-shade: rgba(0, 0, 0, 0.7);
 
     /* The nave at night. The light keeps its warm hue and loses an order of
        magnitude of strength — 55% of a near-white over #14120F is not "light
@@ -611,6 +645,33 @@
 
   [data-theme="dark"] & {
     mix-blend-mode: normal;
+  }
+}
+
+/* The viewer's bands on the score desk (`PdfViewer ground="desk"`). Their
+   controls are written once, for the inverse island (`text-ink-on-inverse`,
+   its hover wash, its divider), and on the desk they keep that layout exactly:
+   only what the island tokens point at changes, so the bands write in the
+   page's own ink. Applied to the band regions alone, never to the sheet or the
+   glass that lies over the music, which stay islands. */
+@utility pdf-band-ink {
+  --color-ink-on-inverse: var(--color-ethereal-ink);
+  --color-line-on-inverse: var(--color-hairline-strong);
+}
+
+/* A dark surface inside a band region (the annotation tools' glass panels):
+   hands it the island's own ink back, whatever the band re-pointed. Identity
+   anywhere else. */
+@utility pdf-island {
+  --color-ink-on-inverse: var(--island-ink);
+  --color-line-on-inverse: var(--island-line);
+}
+
+/* Paper under a night lamp: a white page is the brightest thing on a dark
+   screen, so on the dark theme it dims a step and warms. */
+@utility paper-dim-dark {
+  [data-theme="dark"] & {
+    filter: brightness(0.88) sepia(0.06);
   }
 }
 

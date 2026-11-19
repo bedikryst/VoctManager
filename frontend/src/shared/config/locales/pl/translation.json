@@ -953,7 +953,10 @@
       "fields_hint_catalog": "Epoki, roku kompozycji i numeru opusu w nutach zwykle nie ma — AI wziął je z katalogu albo z własnej wiedzy i to one najczęściej bywają zmyślone.",
       "year_invalid": "Rok kompozycji: liczba całkowita od 500 do 2100.",
       "score_widen": "Poszerz podgląd partytury",
-      "score_narrow": "Zwęź podgląd partytury"
+      "score_narrow": "Zwęź podgląd partytury",
+      "score_sheet_title": "Wydanie",
+      "approve_short": "Zatwierdź",
+      "review_bar_aria": "Przegląd utworu"
     },
     "review": {
       "delete": "Usuń",
