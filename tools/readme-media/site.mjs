@@ -4,7 +4,8 @@
  * of the home page, the printed invitation, the About page and one section in
  * three languages side by side, and the donation clip: in a desk window up to
  * the currency, and on a phone through the whole sheet to the thank-you, with
- * no request ever reaching the bank. The site is public and holds no
+ * no request ever reaching the bank; and the press counter's composer, three
+ * photographs ticked and saved as one archive. The site is public and holds no
  * member data, so these are taken from production. A visitor who has already
  * chosen silence and seen the preloader, as on a second page, meets no sound
  * gate.
@@ -189,6 +190,76 @@ const JOBS = {
     const result = film.encode(join(DIR, "ve-donate-mobile.mp4"), { poster: join(DIR, "ve-donate-mobile.webp") });
     console.log("clip donate-mobile", result);
   },
+
+  // The press counter in a desk window, with the site's own cursor: the head,
+  // down to the press photographs, two of the first row and one of the second
+  // ticked while the bar at the foot counts them, "Pobierz wybrane", and the
+  // archive built in the browser until the bar counts the selection again. The
+  // composer reports a saved archive to Plausible, which `visitor` aborts, so
+  // the board's download numbers stay clean.
+  async press(browser) {
+    const context = await visitor(browser, { motion: true, locale: "pl-PL" });
+    await filmable(context);
+    const page = await context.newPage();
+    const film = new Film(page, join(DIR, "press-frames"));
+    await open(page, "/press");
+    // The page scrolls natively (BaseLayout's `nativeScroll`). A deploy that predates it still
+    // mounts Lenis, which eases each wheel step away from where the take sends it.
+    await page.evaluate(() => window.__lenis?.destroy());
+    // The site's cursor trails the pointer, so it is given time to settle between the head's
+    // two columns before the clock stops.
+    await page.mouse.move(820, 430);
+    await page.waitForTimeout(1200);
+    film.pointer = { x: 820, y: 430 };
+    await film.begin();
+    await film.hold(1.6);
+
+    // A tile's box shows under the pointer, and on every tile once one is ticked. With the
+    // group's heading 160 px down, its first row stands whole and the second row's boxes
+    // clear the bar that rises at the foot.
+    const box = (group, n) => page.locator(`label.press-pick--tile:has(input[data-basket-group="${group}"])`).nth(n);
+    const heading = page.locator("#zdjecia h3").first();
+    const under = await heading.evaluate((el) => el.getBoundingClientRect().top);
+    await film.scroll(under - 160, 1.4);
+    await film.hold(0.7);
+    await film.click(box("landscape", 0));
+    await film.hold(0.8);
+    await film.click(box("landscape", 2), { seconds: 0.7 });
+    await film.hold(0.6);
+    await film.click(box("landscape", 4), { seconds: 0.6 });
+    await film.hold(1.0);
+
+    // The archive fetches its files one after another and the bar shows the share that
+    // has arrived. A frame here takes real time, so the line is slowed until those bytes
+    // take about 1.4 s of clip, measured against the frames just recorded.
+    const bytes = await page.evaluate(() => {
+      const manifest = JSON.parse(document.getElementById("press-basket-data").textContent);
+      const ticked = [...document.querySelectorAll("input[data-basket-item]:checked")];
+      return ticked.reduce(
+        (sum, input) => sum + manifest.items[input.dataset.basketItem].reduce((n, file) => n + file.bytes, 0),
+        manifest.readme.bytes,
+      );
+    });
+    const started = Date.now();
+    await film.hold(0.5);
+    const perFrame = (Date.now() - started) / 30;
+    const cdp = await context.newCDPSession(page);
+    await cdp.send("Network.enable");
+    await cdp.send("Network.emulateNetworkConditions", {
+      offline: false,
+      latency: 0,
+      uploadThroughput: -1,
+      downloadThroughput: Math.round(bytes / ((1.4 * film.fps * perFrame) / 1000)),
+    });
+    const get = page.locator("[data-basket-get]");
+    await film.click(get, { seconds: 0.6 });
+    await film.until(() => page.locator("[data-basket-bar]").evaluate((el) => !el.hasAttribute("aria-busy")), { seconds: 20 });
+    await cdp.send("Network.emulateNetworkConditions", { offline: false, latency: 0, uploadThroughput: -1, downloadThroughput: -1 });
+    await film.hold(2.4);
+    await context.close();
+    const result = film.encode(join(DIR, "ve-press.mp4"), { poster: join(DIR, "ve-press.webp") });
+    console.log("clip press", result, { bytes, perFrame });
+  },
 };
 
 const wanted = process.argv.slice(2);
@@ -200,6 +271,7 @@ try {
   if (!wanted.length || wanted.includes("triptych")) await JOBS.triptych(browser);
   if (!wanted.length || wanted.includes("donate")) await JOBS.donate(browser);
   if (!wanted.length || wanted.includes("donate-mobile")) await JOBS.donateMobile(browser);
+  if (!wanted.length || wanted.includes("press")) await JOBS.press(browser);
 } finally {
   await browser.close();
 }
