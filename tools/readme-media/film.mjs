@@ -405,9 +405,15 @@ export class Film {
     if (!readdirSync(this.dir).length) throw new Error("film.encode: no frames");
     const input = join(this.dir, "f%05d.jpg");
     const scale = width ? `scale=${width}:-2:flags=lanczos,` : "";
+    // JPEG frames are full range, and `format=yuv420p` keeps that range. A browser on
+    // Windows reads a full-range clip as limited a moment into playback and the light
+    // theme's off-white clips to white, so the clip is converted to limited-range BT.709;
+    // `setparams` writes the tags, which ffmpeg drops from the output options.
+    const pixels = "scale=out_range=tv:out_color_matrix=bt709,format=yuv420p,"
+      + "setparams=range=tv:colorspace=bt709:color_primaries=bt709:color_trc=bt709";
     execFileSync("ffmpeg", [
       "-y", "-loglevel", "error", "-framerate", String(this.fps), "-i", input,
-      "-vf", `${scale}format=yuv420p`, "-c:v", "libx264", "-preset", "slow", "-tune", "animation",
+      "-vf", `${scale}${pixels}`, "-c:v", "libx264", "-preset", "slow", "-tune", "animation",
       "-crf", String(crf), "-movflags", "+faststart", "-an", mp4,
     ]);
     const size = statSync(mp4).size;
