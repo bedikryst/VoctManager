@@ -32,7 +32,7 @@ from archive.models import (
 from archive.serializers import ScoreEditionUploadSerializer
 from archive.services.audience_jobs import audience_job, mark_audience_job_running
 from archive.services.ingestion import IngestionPreconditionError, start_ingestion
-from archive.services.ipa import ipa_job
+from archive.services.ipa import ipa_job, ipa_revision
 from archive.services.language import translation_adds_meaning
 from archive.tasks import (
     build_ingestion_chain,
@@ -120,7 +120,7 @@ class UploadLatinSystemTests(TestCase):
         # The German guide stays until the recompute lands.
         self.assertEqual(piece.lyrics_ipa, _GERMAN_IPA)
         self.assertEqual(piece.lyrics_ipa_system, LatinPronunciation.GERMANIC)
-        task.delay.assert_called_once_with(str(piece.pk), LatinPronunciation.ITALIANATE)
+        task.delay.assert_called_once_with(str(piece.pk), LatinPronunciation.ITALIANATE, ipa_revision(piece))
         job = ipa_job(piece.pk)
         assert job is not None
         self.assertEqual(job["state"], "running")

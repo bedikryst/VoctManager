@@ -623,6 +623,7 @@ export interface Movement {
   duration_seconds?: number | null;
   voicing_override?: string;
   starts_on_page?: number | null;
+  starts_on_edition?: string | null;
 }
 
 export interface Translation {

@@ -284,6 +284,7 @@ const PieceCard = ({ id }: { id: string }): React.JSX.Element => {
               scorePdf={scorePdf}
               annotator={annotator}
               isWide={scorePane.isWide}
+              canToggleWide={scorePane.canToggleWide}
               onToggleWide={scorePane.toggleWide}
               onPageAspectChange={scorePane.onPageAspectChange}
               onPageApiChange={handleScorePageApi}
@@ -331,7 +332,7 @@ const PieceCard = ({ id }: { id: string }): React.JSX.Element => {
 
           <div className="px-4 pb-16 lg:px-10">
             <header className="mx-auto w-full max-w-170 pb-6 pt-3 lg:pt-9">
-              <div className="hidden min-h-10 items-center justify-between gap-4 lg:flex">
+              <div className="hidden min-h-10 flex-wrap items-center justify-between gap-x-4 gap-y-2 lg:flex">
                 <Link
                   to={LIBRARY_PATH}
                   className="inline-flex items-center gap-2 rounded-chip text-ethereal-graphite transition-colors hover:text-ethereal-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40"
@@ -341,11 +342,12 @@ const PieceCard = ({ id }: { id: string }): React.JSX.Element => {
                     {t("archive.piece_card.back_btn", "Biblioteka")}
                   </Eyebrow>
                 </Link>
-                <div className="flex shrink-0 items-center gap-2">
+                <div className="ml-auto flex max-w-full flex-wrap items-center justify-end gap-2">
                   {nextAwaiting && (
                     <Button
                       variant="ghost"
                       casing="sentence"
+                      className="max-w-full whitespace-normal"
                       rightIcon={<ArrowRight size={16} aria-hidden="true" />}
                       onClick={goToNext}
                     >
@@ -356,6 +358,7 @@ const PieceCard = ({ id }: { id: string }): React.JSX.Element => {
                     <Button
                       variant="primary"
                       casing="sentence"
+                      className="max-w-full whitespace-normal"
                       isLoading={approveEdition.isPending}
                       onClick={() => setIsApproveOpen(true)}
                     >
@@ -369,7 +372,7 @@ const PieceCard = ({ id }: { id: string }): React.JSX.Element => {
                 <div key={pieceId} className="pointer-events-none absolute -left-4 top-4 lg:-left-5 lg:top-5">
                   {titleReview.marker}
                 </div>
-                <Heading as="h1" size={null} ref={isTwoPane ? undefined : titleRef}>
+                <Heading as="h1" size={null} aria-label={piece.title} ref={isTwoPane ? undefined : titleRef}>
                   <InlineEditable
                     key={pieceId}
                     id={titleId}
@@ -439,7 +442,7 @@ const PieceCard = ({ id }: { id: string }): React.JSX.Element => {
                 key={pieceId}
                 piece={piece}
                 autosave={autosave}
-                onGoToPage={scorePdf ? goToScorePage : undefined}
+                score={scorePdf ? { editionId: scorePdf.id, goToPage: goToScorePage } : undefined}
               />
             </div>
           </div>

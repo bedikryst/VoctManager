@@ -133,10 +133,12 @@ export const PdfViewer = ({
   fitScope,
   preferredFit,
   ground = "inverse",
+  deskWide = false,
   onPageAspectChange,
   className,
 }: PdfViewerProps): React.JSX.Element => {
   const { t } = useTranslation();
+  const isDesk = ground === "desk";
 
   const rootRef = useRef<HTMLDivElement | null>(null);
 
@@ -169,9 +171,18 @@ export const PdfViewer = ({
     isCompactViewport,
     devicePixelRatio,
     reportPageAspect,
-  } = usePdfState({ immersive: isImmersive, fitScope, preferredFit });
+  } = usePdfState({
+    immersive: isImmersive,
+    fitScope,
+    preferredFit,
+    desk: isDesk ? (deskWide ? "wide" : "fitted") : undefined,
+  });
 
   const [blobUrl, setBlobUrl] = useState<string | null>(null);
+  const [pageAspects, setPageAspects] = useState<{
+    url: string;
+    byPage: Record<number, number>;
+  } | null>(null);
   const [viewerError, setViewerError] = useState<LoadErrorReason | null>(null);
   const initialisedDocument = useRef<string | number | undefined>(undefined);
   const [isDownloading, setIsDownloading] = useState(false);
@@ -493,6 +504,14 @@ export const PdfViewer = ({
     prefetchNeighbors: zoom <= PREFETCH_MAX_ZOOM,
   });
 
+  // A prefetched page can become visible without react-pdf loading it again.
+  const visibleAspect = pageAspects?.url === blobUrl ? pageAspects.byPage[stablePage] : undefined;
+  useLayoutEffect(() => {
+    if (visibleAspect === undefined) return;
+    reportPageAspect(visibleAspect);
+    onPageAspectChange?.(visibleAspect);
+  }, [visibleAspect, reportPageAspect, onPageAspectChange]);
+
   // A turned page opens at its top edge, like turning paper — unless the turn
   // that brought us here asked for somewhere else.
   useEffect(() => {
@@ -688,11 +707,13 @@ export const PdfViewer = ({
     const target = event.target as HTMLElement | null;
     const inField = isEditableTarget(event.target);
     const inPopper = Boolean(target?.closest?.("[data-radix-popper-content-wrapper]"));
+    const inViewer = Boolean(target && rootRef.current?.contains(target));
+    const outsideScope = keyScope === "viewer" && target !== document.body && !inViewer;
 
     if (event.key === "Escape") {
       // A menu open over the viewer (the annotation toolbar's ⋯) closes itself
       // first; putting a tool down or leaving immersive is the next Escape's.
-      if (inPopper) return;
+      if (inPopper || (outsideScope && !isImmersive)) return;
       // The open sheet is the nearest thing to close: a field in it gives up
       // its focus first, then the sheet goes, and the score stays open.
       if (isSheetOpen) {
@@ -708,7 +729,7 @@ export const PdfViewer = ({
       // Capture phase + stopPropagation, so a wrapping Radix dialog never sees
       // it. Only the viewer's own fields: this listener is on the window, and a
       // dialog's field elsewhere on the page, or a popover's, closes its own.
-      if (inField && !inPopper && rootRef.current?.contains(target)) {
+      if (inField && inViewer) {
         event.preventDefault();
         event.stopPropagation();
         target?.blur();
@@ -732,13 +753,7 @@ export const PdfViewer = ({
 
     // An embedded viewer shares the page with a form: a key pressed on one of
     // its buttons is that control's, not a page turn or a tool.
-    if (
-      keyScope === "viewer" &&
-      target !== document.body &&
-      !(target && rootRef.current?.contains(target))
-    ) {
-      return;
-    }
+    if (outsideScope) return;
 
     // An overlay's own keys (annotation tools, undo, a selection's nudge) come
     // before the page turns that share them.
@@ -874,7 +889,6 @@ export const PdfViewer = ({
   // Edge-to-edge in performance mode: a rounded corner over a full-bleed page
   // would clip actual music. Paper on the desk is square in every mode. Shared
   // by the page and the afterimage over it, which must read as the same sheet.
-  const isDesk = ground === "desk";
   const pageCornerClass = cn(
     !isDesk && !isImmersive && "rounded-surface",
     !isDesk && !isImmersive && isCompactViewport && "rounded-nested",
@@ -973,7 +987,7 @@ export const PdfViewer = ({
             // The fit clears exactly this padding (FIT_VERTICAL_RESERVE_*).
             // Performance mode has no bands to keep the page off, so every
             // inset there is black frame the reader has to squint past.
-            isImmersive ? "p-0" : "p-2 sm:px-6 sm:py-3",
+            isImmersive ? "p-0" : isDesk ? "px-5 py-9" : "p-2 sm:px-6 sm:py-3",
           )}
           style={{ touchAction: isPannableX ? "pan-x pan-y" : "pan-y" }}
         >
@@ -1040,17 +1054,16 @@ export const PdfViewer = ({
                           renderAnnotationLayer
                           renderTextLayer
                           onRenderSuccess={() => handlePageRendered(page)}
-                          onLoadSuccess={
-                            isVisible
-                              ? (loaded) => {
-                                  if (loaded.originalWidth > 0) {
-                                    const aspect = loaded.originalHeight / loaded.originalWidth;
-                                    reportPageAspect(aspect);
-                                    onPageAspectChange?.(aspect);
-                                  }
-                                }
-                              : undefined
-                          }
+                          onLoadSuccess={({ originalWidth, originalHeight }) => {
+                            const aspect = originalHeight / originalWidth;
+                            if (!Number.isFinite(aspect) || aspect <= 0) return;
+                            setPageAspects((current) => {
+                              const byPage = current?.url === blobUrl ? current.byPage : {};
+                              return byPage[page] === aspect
+                                ? current
+                                : { url: blobUrl, byPage: { ...byPage, [page]: aspect } };
+                            });
+                          }}
                           onLoadError={flagViewerError}
                           onRenderError={(error) => handlePageRenderError(page, error)}
                           loading={isVisible

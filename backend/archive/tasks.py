@@ -121,6 +121,8 @@ from archive.services.audience_jobs import clear_audience_job, mark_audience_job
 from archive.services.ipa import (
     IpaRecomputeRefused,
     clear_ipa_job,
+    ipa_is_hand_edited,
+    ipa_revision,
     ipa_system_for,
     mark_ipa_job_failed,
     mark_ipa_job_running,
@@ -690,9 +692,12 @@ def persist_analysis(self, payload: dict) -> dict:
     _set_progress(payload['edition_id'], IngestionProgress.PERSISTING)
     analysis = ScoreAnalysisResult.model_validate(payload['analysis'])
     version = payload.get('analysis_prompt_version', ANALYZE_SCORE.version)
+    requested_system = payload.get('latin_system', '')
+    guide_revision: str | None = None
 
     with transaction.atomic():
         piece = Piece.objects.select_for_update().get(id=payload['piece_id'])
+        edition = ScoreEdition.objects.filter(id=payload['edition_id'], piece=piece).first()
         # Movements (skip if already populated).
         if not piece.movements.exists() and analysis.movements:
             for mv in analysis.movements:
@@ -702,6 +707,7 @@ def persist_analysis(self, payload: dict) -> dict:
                     title=mv.title,
                     tempo_marking=mv.tempo_marking or '',
                     starts_on_page=mv.starts_on_page,
+                    starts_on_edition=edition if mv.starts_on_page is not None else None,
                 )
                 provenance.record_ai(
                     target=movement, field_name='title',
@@ -776,11 +782,6 @@ def persist_analysis(self, payload: dict) -> dict:
         # did not answer leaves a previous suggestion in place. An edition
         # deleted mid-run is skipped, never raised on: a raise here would roll
         # back the piece data above, which the piece's other editions share.
-        edition = (
-            ScoreEdition.objects.filter(id=payload['edition_id']).first()
-            if analysis.single_system_pages is not None
-            else None
-        )
         if edition is not None and analysis.single_system_pages is not None:
             edition.stand_whole_page_suggested = analysis.single_system_pages
             edition.save(update_fields=['stand_whole_page_suggested', 'updated_at'])
@@ -790,15 +791,16 @@ def persist_analysis(self, payload: dict) -> dict:
                 confidence=analysis.confidence,
             )
 
+        if wrote_ipa and piece.lyrics_ipa_system and requested_system not in ('', piece.lyrics_ipa_system):
+            guide_revision = ipa_revision(piece)
+
     # The upload's pronunciation choice applies only to a guide this run wrote:
     # a guide the piece already had may carry a conductor's corrections, and the
     # card's own recompute is the way to replace that one. The German guide
     # stays in place until the recompute lands, so a failed call loses nothing.
-    requested_system = payload.pop('latin_system', '')
-    if wrote_ipa and piece.lyrics_ipa_system and requested_system not in (
-        '', piece.lyrics_ipa_system,
-    ):
-        _queue_ipa_recompute(piece, requested_system)
+    if guide_revision is not None:
+        _queue_ipa_recompute(piece, requested_system, guide_revision)
+    payload.pop('latin_system', None)
 
     # The full analysis (sung text + line-aligned IPA + translations) is now
     # persisted. Drop it from the Celery payload so the four remaining tasks
@@ -809,7 +811,7 @@ def persist_analysis(self, payload: dict) -> dict:
     return payload
 
 
-def _queue_ipa_recompute(piece: Piece, system: str) -> None:
+def _queue_ipa_recompute(piece: Piece, system: str, revision: str) -> None:
     """Hand the upload's Latin system to `recompute_ipa`, marking the piece's
     job running first so the card shows progress from its next read. A failed
     enqueue leaves the German guide and logs; it never fails the ingestion."""
@@ -818,7 +820,7 @@ def _queue_ipa_recompute(piece: Piece, system: str) -> None:
         return
     mark_ipa_job_running(piece.pk, system)
     try:
-        recompute_ipa.delay(str(piece.pk), system)
+        recompute_ipa.delay(str(piece.pk), system, revision)
     except Exception:
         clear_ipa_job(piece.pk)
         logger.exception("ipa.upload_recompute_enqueue_failed piece=%s system=%s", piece.pk, system)
@@ -986,7 +988,7 @@ class IpaRecomputeOutcome:
 
 
 def recompute_piece_ipa(
-    piece: Piece, system: str, *, client: AIClient | None = None,
+    piece: Piece, system: str, *, expected_revision: str | None = None, client: AIClient | None = None,
 ) -> IpaRecomputeOutcome:
     """Re-derive `piece.lyrics_ipa` from its stored sung text in one Latin
     pronunciation system, and record which system and which call produced it.
@@ -1001,6 +1003,9 @@ def recompute_piece_ipa(
     """
     if system not in LATIN_SYSTEM_HEADINGS:
         raise ValueError(f"Unknown Latin pronunciation system {system!r}.")
+    revision = ipa_revision(piece)
+    if expected_revision is not None and revision != expected_revision:
+        raise IpaRecomputeRefused('superseded')
     refusal = recompute_refusal(piece)
     if refusal is not None:
         raise IpaRecomputeRefused(refusal)
@@ -1040,11 +1045,14 @@ def recompute_piece_ipa(
         raise AIClientError("Claude returned an empty pronunciation guide.")
     ipa_lines = ipa.count('\n') + 1
     with transaction.atomic():
-        piece.lyrics_ipa = ipa
-        piece.lyrics_ipa_system = system
-        piece.save(update_fields=['lyrics_ipa', 'lyrics_ipa_system', 'updated_at'])
+        locked_piece = Piece.objects.select_for_update().filter(pk=piece.pk).first()
+        if locked_piece is None or ipa_revision(locked_piece) != revision:
+            raise IpaRecomputeRefused('superseded')
+        locked_piece.lyrics_ipa = ipa
+        locked_piece.lyrics_ipa_system = system
+        locked_piece.save(update_fields=['lyrics_ipa', 'lyrics_ipa_system', 'updated_at'])
         provenance.record_ai(
-            target=piece, field_name='lyrics_ipa',
+            target=locked_piece, field_name='lyrics_ipa',
             model_id=AIModel.SONNET, prompt_version=TRANSCRIBE_IPA.version,
         )
 
@@ -1068,19 +1076,25 @@ def recompute_piece_ipa(
 
 
 @shared_task(name='archive.recompute_ipa', bind=True, max_retries=IPA_OVERLOAD_MAX_RETRIES)
-def recompute_ipa(self, piece_id: str, system: str) -> None:
+def recompute_ipa(self, piece_id: str, system: str, expected_revision: str | None = None) -> None:
     """The piece card's "Przelicz wymowę", run off the request.
 
     Not `_guarded`: that contract fails an edition, and a pronunciation guide is
     no part of any edition's ingestion. Every exit either clears the card's job
     entry or marks it failed, so the card never waits on a task that is gone.
     """
-    piece = Piece.objects.filter(pk=piece_id).first()
-    if piece is None:
-        clear_ipa_job(piece_id)
-        return
     try:
-        recompute_piece_ipa(piece, system)
+        with transaction.atomic():
+            piece = Piece.objects.select_for_update().filter(pk=piece_id).first()
+            if piece is None:
+                clear_ipa_job(piece_id)
+                return
+            # Jobs queued before revision tracking cannot authorise overwriting a manual guide.
+            if expected_revision is None:
+                if ipa_is_hand_edited(piece):
+                    raise IpaRecomputeRefused('superseded')
+                expected_revision = ipa_revision(piece)
+        recompute_piece_ipa(piece, system, expected_revision=expected_revision)
     except AIClientOverloadedError as exc:
         # Unbilled, and capacity blips clear in minutes: wait, then retry.
         try:

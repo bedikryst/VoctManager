@@ -45,6 +45,7 @@ from archive.services.ipa import (
     clear_ipa_job,
     ipa_is_hand_edited,
     ipa_job,
+    ipa_revision,
     mark_ipa_job_running,
     recompute_refusal,
 )
@@ -319,7 +320,7 @@ def dispatch_ipa_recompute(
 
     mark_ipa_job_running(piece.pk, system)
     try:
-        async_result = recompute_ipa.delay(str(piece.pk), system)
+        async_result = recompute_ipa.delay(str(piece.pk), system, ipa_revision(piece))
     except Exception:
         # Nothing was queued, so nothing will ever clear the running state.
         clear_ipa_job(piece.pk)

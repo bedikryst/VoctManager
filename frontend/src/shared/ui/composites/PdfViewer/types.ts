@@ -284,6 +284,8 @@ export interface PdfViewerProps {
   preferredFit?: FitMode;
   /** What the page lies on — see `PdfGround`. Defaults to `inverse`. */
   ground?: PdfGround;
+  /** Let the desk's automatic fit use the full width of an expanded pane. */
+  deskWide?: boolean;
   /**
    * Receives the page's height / width once a page has loaded, for a host
    * that sizes the viewer around the page rather than the page to the viewer

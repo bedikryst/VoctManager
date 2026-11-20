@@ -19,10 +19,13 @@ import type { PieceAutosave } from "./usePieceAutosave";
 interface PieceMovementsProps {
   readonly piece: Piece;
   readonly autosave: PieceAutosave;
-  readonly onGoToPage?: (page: number) => void;
+  readonly score?: {
+    readonly editionId: string;
+    readonly goToPage: (page: number) => void;
+  };
 }
 
-const MovementRow = ({ piece, autosave, onGoToPage, movement }: PieceMovementsProps & { movement: Movement }) => {
+const MovementRow = ({ piece, autosave, score, movement }: PieceMovementsProps & { movement: Movement }) => {
   const { t } = useTranslation();
   const titleId = useId();
   const tempoId = useId();
@@ -55,7 +58,7 @@ const MovementRow = ({ piece, autosave, onGoToPage, movement }: PieceMovementsPr
         } />
       </div>
       <div className="ml-auto flex flex-wrap items-center gap-1 pt-0.5">
-        {!!page && (onGoToPage ? (
+        {score && typeof page === "number" && page > 0 && movement.starts_on_edition === score.editionId && (
           <Button
             type="button"
             variant="ghost"
@@ -63,13 +66,11 @@ const MovementRow = ({ piece, autosave, onGoToPage, movement }: PieceMovementsPr
             casing="sentence"
             className="min-h-8 px-2"
             aria-label={t("archive.review.go_to_page", { page })}
-            onClick={() => onGoToPage(page)}
+            onClick={() => score.goToPage(page)}
           >
             {t("archive.review.page_short")} {page}
           </Button>
-        ) : (
-          <Text size="sm" color="muted">{t("archive.review.page_short")} {page}</Text>
-        ))}
+        )}
         {action}
         <RecordRemove label={t("archive.review.delete_movement")} autosave={autosave} remove={() => remove.mutateAsync({ pieceId, id })} />
       </div>
@@ -77,7 +78,7 @@ const MovementRow = ({ piece, autosave, onGoToPage, movement }: PieceMovementsPr
   );
 };
 
-export const PieceMovements = ({ piece, autosave, onGoToPage }: PieceMovementsProps) => {
+export const PieceMovements = ({ piece, autosave, score }: PieceMovementsProps) => {
   const { t } = useTranslation();
   const create = useCreateMovement();
   const movements = piece.movements ?? [];
@@ -95,7 +96,7 @@ export const PieceMovements = ({ piece, autosave, onGoToPage }: PieceMovementsPr
     <div className="space-y-1">
       {movements.length > 0 && (
         <ol className="border-b border-hairline">
-          {movements.map((movement) => <MovementRow key={movement.id} {...{ piece, autosave, onGoToPage, movement }} />)}
+          {movements.map((movement) => <MovementRow key={movement.id} {...{ piece, autosave, score, movement }} />)}
         </ol>
       )}
       <RecordAdd label={t("archive.piece_card.add_movement")} draftKey="new_movement" autosave={autosave} onSubmit={createMovement}>

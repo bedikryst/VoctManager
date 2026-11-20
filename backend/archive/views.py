@@ -494,6 +494,7 @@ class PieceViewSet(viewsets.ModelViewSet):
         return Response(self.get_serializer(piece).data)
 
     @action(detail=True, methods=['post'], url_path='recompute_ipa')
+    @transaction.atomic
     def recompute_ipa(self, request, pk=None):
         """Re-derive a Latin piece's IPA guide in a chosen pronunciation system
         — the card's "Przelicz wymowę". Runs in Celery; answers 202 with the
@@ -505,7 +506,7 @@ class PieceViewSet(viewsets.ModelViewSet):
         ``replace_manual``. Every refusal carries an ``error_code`` the card
         words itself.
         """
-        piece = self.get_object()
+        piece = self._locked_piece(request, pk)
         data = request.data if hasattr(request.data, 'get') else {}
         system = str(data.get('system') or DEFAULT_LATIN_SYSTEM)
         try:
@@ -626,8 +627,14 @@ class MovementViewSet(viewsets.ModelViewSet):
     @transaction.atomic
     def perform_update(self, serializer) -> None:
         serializer.instance = get_object_or_404(Movement.objects.select_for_update(), pk=serializer.instance.pk)
-        previous = serializer.instance.title
-        movement = serializer.save()
+        current = serializer.instance
+        previous = current.title
+        piece = serializer.validated_data.get('piece')
+        page = serializer.validated_data.get('starts_on_page', current.starts_on_page)
+        stays_with_piece = piece is None or piece.pk == current.piece_id
+        movement = serializer.save(
+            starts_on_edition_id=current.starts_on_edition_id if stays_with_piece and page else None,
+        )
         if movement.title != previous:
             provenance.record_manual(target=movement, field_name='title', actor_email=_actor_email(self.request))
 

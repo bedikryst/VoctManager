@@ -32,6 +32,7 @@ interface ScorePaneProps {
   readonly scorePdf: PiecePdfLink | null;
   readonly annotator: ScoreAnnotatorBindings;
   readonly isWide: boolean;
+  readonly canToggleWide: boolean;
   readonly onToggleWide: () => void;
   readonly onPageAspectChange: (aspect: number) => void;
   readonly onPageApiChange: (api: PdfPageApi) => void;
@@ -43,6 +44,7 @@ export const ScorePane = ({
   scorePdf,
   annotator,
   isWide,
+  canToggleWide,
   onToggleWide,
   onPageAspectChange,
   onPageApiChange,
@@ -83,27 +85,30 @@ export const ScorePane = ({
           {t("archive.piece_card.page_count", { count: scorePdf.page_count })}
         </Text>
       ) : null}
-      <button
-        type="button"
-        onClick={onToggleWide}
-        aria-pressed={isWide}
-        className={cn(sheetButton, "mt-3 px-4")}
-      >
-        {isWide ? (
-          <ChevronsLeft size={18} aria-hidden="true" />
-        ) : (
-          <ChevronsRight size={18} aria-hidden="true" />
-        )}
-        <Text as="span" size="base" weight="medium" color="inherit">
-          {widthLabel}
-        </Text>
-      </button>
+      {canToggleWide && (
+        <button
+          type="button"
+          onClick={onToggleWide}
+          aria-pressed={isWide}
+          className={cn(sheetButton, "mt-3 px-4")}
+        >
+          {isWide ? (
+            <ChevronsLeft size={18} aria-hidden="true" />
+          ) : (
+            <ChevronsRight size={18} aria-hidden="true" />
+          )}
+          <Text as="span" size="base" weight="medium" color="inherit">
+            {widthLabel}
+          </Text>
+        </button>
+      )}
     </PdfSheetSection>
   );
 
   return (
     <PdfViewer
       ground="desk"
+      deskWide={isWide}
       fetchBlob={() => MaterialsService.fetchScoreEditionBlob(scorePdf.id)}
       docKey={scorePdf.id}
       title={pieceTitle}

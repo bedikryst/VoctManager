@@ -26,9 +26,12 @@ Standards: SaaS 2026, a human's correction is never overwritten silently.
 """
 from __future__ import annotations
 
+import hashlib
+import json
 from typing import Literal, TypedDict, cast
 from uuid import UUID
 
+from django.contrib.contenttypes.models import ContentType
 from django.core.cache import cache
 
 from archive.models import LatinPronunciation, Piece, ProvenanceRecord, ProvenanceSource
@@ -36,7 +39,7 @@ from archive.services.language import is_latin
 
 DEFAULT_LATIN_SYSTEM: str = LatinPronunciation.GERMANIC
 
-RefusalCode = Literal['not_latin', 'no_text']
+RefusalCode = Literal['not_latin', 'no_text', 'superseded']
 JobFailure = Literal['overloaded', 'budget', 'failed']
 
 
@@ -79,14 +82,28 @@ def ipa_system_for(language: str | None) -> str:
 def ipa_is_hand_edited(piece: Piece) -> bool:
     """True when the latest provenance of the guide is a human's — the same
     signal that turns the field's chip to "verified" on the card."""
-    latest_source = (
+    latest = _latest_ipa_provenance(piece)
+    return latest is not None and latest.source == ProvenanceSource.MANUAL
+
+
+def _latest_ipa_provenance(piece: Piece) -> ProvenanceRecord | None:
+    return (
         ProvenanceRecord.objects
-        .filter(object_id=piece.pk, field_name='lyrics_ipa')
-        .order_by('-retrieved_at')
-        .values_list('source', flat=True)
+        .filter(
+            content_type=ContentType.objects.get_for_model(piece),
+            object_id=piece.pk, field_name='lyrics_ipa',
+        )
+        .order_by('-retrieved_at', '-pk')
         .first()
     )
-    return latest_source == ProvenanceSource.MANUAL
+
+
+def ipa_revision(piece: Piece) -> str:
+    """Identify the source text and guide a recompute was authorised to use."""
+    latest = _latest_ipa_provenance(piece)
+    state = (piece.language, piece.lyrics_original, piece.lyrics_ipa, piece.lyrics_ipa_system,
+             str(latest.pk) if latest is not None else None)
+    return hashlib.sha256(json.dumps(state).encode()).hexdigest()
 
 
 def _job_key(piece_id: UUID | str) -> str:

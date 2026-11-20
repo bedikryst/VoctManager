@@ -22,8 +22,9 @@ import {
   FIT_VERTICAL_RESERVE_IMMERSIVE,
   PARTIAL_PAGE_FRACTION,
   AUTO_PARTIAL_GAIN_RATIO,
-  VIEWPORT_PADDING_X_DESKTOP,
-  VIEWPORT_PADDING_Y_DESKTOP,
+  DESK_HORIZONTAL_RESERVE,
+  DESK_MIN_PAGE_WIDTH,
+  DESK_VERTICAL_RESERVE,
 } from "./constants";
 import type { FitMode, ResolvedFitMode } from "./types";
 
@@ -35,6 +36,8 @@ export interface PageFitInput {
   /** Performance mode: no bands, so no inset and no comfort cap. */
   immersive: boolean;
   fitMode: FitMode;
+  /** Desk fits measure the scroll box before padding and use one set of margins. */
+  desk?: "fitted" | "wide";
 }
 
 export interface PageFitResult {
@@ -49,12 +52,29 @@ export const resolvePageFit = ({
   pageAspect,
   immersive,
   fitMode,
+  desk,
 }: PageFitInput): PageFitResult => {
   if (viewportWidth <= 0) {
     return {
       renderedPageWidth: undefined,
       resolvedFit: fitMode === "auto" ? "page" : fitMode,
     };
+  }
+
+  if (desk && !immersive) {
+    const fitWidth = Math.max(0, viewportWidth - DESK_HORIZONTAL_RESERVE);
+    const fitHeight = Math.max(0, viewportHeight - DESK_VERTICAL_RESERVE);
+    const pageWidth = deskPageWidth(fitHeight, pageAspect);
+    const autoWidth = desk === "wide" ? fitWidth : Math.max(pageWidth, DESK_MIN_PAGE_WIDTH);
+    const resolvedFit = fitMode === "auto"
+      ? Math.min(fitWidth, autoWidth) > pageWidth ? "width" : "page"
+      : fitMode;
+    const targetWidth = fitMode === "auto" ? autoWidth : {
+      page: pageWidth,
+      width: fitWidth,
+      "two-thirds": pageWidth / PARTIAL_PAGE_FRACTION,
+    }[resolvedFit];
+    return { renderedPageWidth: Math.floor(Math.min(fitWidth, targetWidth)), resolvedFit };
   }
 
   const isCompactViewport = viewportWidth < COMPACT_VIEWPORT_THRESHOLD;
@@ -111,47 +131,19 @@ export const resolvePageFit = ({
   };
 };
 
-export interface ViewerWidthInput {
+interface ViewerWidthInput {
   /** The viewer's whole height, both bands included. */
   viewerHeight: number;
   /** Page height / width. */
   pageAspect: number;
-  /**
-   * Narrowest page the host accepts. Where fitting the whole page to the
-   * height would draw it narrower, the page is drawn this wide instead and
-   * scrolls.
-   */
-  minPageWidth: number;
 }
 
-/**
- * The inverse of `resolvePageFit`, for a host that sizes the viewer around the
- * page: how wide a viewer of this height must be for the whole page to fit its
- * height, so the page fills its pane with no empty stage beside or below it.
- *
- * A pane is often narrower than the compact threshold even on a desktop
- * screen, and the fit's reserves change across it, so the width is worked out
- * in the regime it will actually land in. Desktop-width screens only: the
- * scroll box's padding is its `sm:` one and the safe-area inset is zero.
- */
-export const viewerWidthForPage = ({
-  viewerHeight,
-  pageAspect,
-  minPageWidth,
-}: ViewerWidthInput): number => {
-  const viewportHeight = viewerHeight - 2 * BAND_HEIGHT_PX - VIEWPORT_PADDING_Y_DESKTOP;
-  /** The viewport's content width at which the page fills the height. */
-  const contentWidthIn = (compact: boolean): number => {
-    const verticalReserve = compact ? FIT_VERTICAL_RESERVE_MOBILE : FIT_VERTICAL_RESERVE_DESKTOP;
-    const availableHeight = Math.max(0, viewportHeight - verticalReserve);
-    const wholePageWidth = pageAspect > 0 ? Math.floor(availableHeight / pageAspect) : 0;
-    const horizontalReserve = compact
-      ? FIT_HORIZONTAL_RESERVE_MOBILE
-      : FIT_HORIZONTAL_RESERVE_DESKTOP;
-    return Math.max(minPageWidth, wholePageWidth) + horizontalReserve;
-  };
-  const desktop = contentWidthIn(false);
-  const contentWidth =
-    desktop >= COMPACT_VIEWPORT_THRESHOLD ? desktop : contentWidthIn(true);
-  return contentWidth + VIEWPORT_PADDING_X_DESKTOP;
-};
+const deskPageWidth = (height: number, aspect: number): number =>
+  aspect > 0 ? height / aspect : 0;
+
+/** Width needed by a fitted desk, including both side margins. */
+export const viewerWidthForPage = ({ viewerHeight, pageAspect }: ViewerWidthInput): number =>
+  Math.max(DESK_MIN_PAGE_WIDTH, Math.floor(deskPageWidth(
+    Math.max(0, viewerHeight - 2 * BAND_HEIGHT_PX - DESK_VERTICAL_RESERVE),
+    pageAspect,
+  ))) + DESK_HORIZONTAL_RESERVE;

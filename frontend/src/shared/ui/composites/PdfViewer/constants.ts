@@ -10,21 +10,16 @@ export const DESKTOP_PAGE_WIDTH_CAP = 1080;
 export const DEFAULT_PAGE_ASPECT = 1.414;
 /** Each of the two reserved bands, above and below the page (`h-12`). */
 export const BAND_HEIGHT_PX = 48;
+/** Desk geometry includes room for the scrollbar inside the side margins. */
+export const DESK_HORIZONTAL_RESERVE = 56;
+export const DESK_VERTICAL_RESERVE = 72;
+export const DESK_MIN_PAGE_WIDTH = 520;
 /**
  * Width the fit keeps clear beside the page: the scroll box's own horizontal
  * padding (`p-2` / `sm:px-6`) and, on a wide box, a margin for the scrollbar.
  */
 export const FIT_HORIZONTAL_RESERVE_MOBILE = 16;
 export const FIT_HORIZONTAL_RESERVE_DESKTOP = 72;
-/**
- * The scroll box's padding on a desktop-width screen (`sm:px-6 sm:py-3`), both
- * sides together. The viewport is measured by its content box (the resize
- * observer's `contentRect`), so the fit's reserves are taken from what is left
- * inside this padding, and a host sizing the viewer has to add it back.
- */
-export const VIEWPORT_PADDING_X_DESKTOP = 48;
-export const VIEWPORT_PADDING_Y_DESKTOP = 24;
-
 /**
  * Fitting the WHOLE page to the shorter side is right for a tablet held
  * upright and wrong everywhere else: a portrait A4 dropped into a landscape

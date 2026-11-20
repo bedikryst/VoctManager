@@ -8,6 +8,7 @@
 @module archive/test_ipa_recompute
 """
 from decimal import Decimal
+from hashlib import sha256
 from io import StringIO
 from unittest.mock import MagicMock, patch
 
@@ -37,6 +38,7 @@ from archive.services.ipa import (
     IpaRecomputeRefused,
     ipa_is_hand_edited,
     ipa_job,
+    ipa_revision,
     mark_ipa_job_running,
 )
 from archive.services.language import is_latin
@@ -133,6 +135,36 @@ class RecomputePieceIpaTests(TestCase):
         self.piece.refresh_from_db()
         self.assertEqual(self.piece.lyrics_ipa, before)
 
+    def test_refuses_a_guide_confirmed_after_dispatch(self) -> None:
+        revision = ipa_revision(self.piece)
+        _stamp(self.piece, ProvenanceSource.MANUAL)
+        client = _fake_client()
+
+        with self.assertRaises(IpaRecomputeRefused) as ctx:
+            recompute_piece_ipa(
+                self.piece, LatinPronunciation.GERMANIC, expected_revision=revision, client=client,
+            )
+
+        self.assertEqual(ctx.exception.code, "superseded")
+        client.parse.assert_not_called()
+
+    def test_keeps_a_guide_edited_while_the_model_is_running(self) -> None:
+        client = _fake_client()
+
+        def edit_guide(**_kwargs: object) -> tuple[IpaTranscriptionResult, CallCost]:
+            Piece.objects.filter(pk=self.piece.pk).update(lyrics_ipa="manual guide")
+            _stamp(self.piece, ProvenanceSource.MANUAL)
+            return client.parse.return_value
+
+        client.parse.side_effect = edit_guide
+        with self.assertRaises(IpaRecomputeRefused) as ctx:
+            recompute_piece_ipa(self.piece, LatinPronunciation.GERMANIC, client=client)
+
+        self.assertEqual(ctx.exception.code, "superseded")
+        self.piece.refresh_from_db()
+        self.assertEqual(self.piece.lyrics_ipa, "manual guide")
+        self.assertTrue(ipa_is_hand_edited(self.piece))
+
 
 @override_settings(ANTHROPIC_API_KEY="test-key")
 class RecomputeIpaEndpointTests(APITestCase):
@@ -165,7 +197,7 @@ class RecomputeIpaEndpointTests(APITestCase):
         resp = self.client.post(self.url, {"system": "italianate"}, format="json")
 
         self.assertEqual(resp.status_code, 202)
-        task.delay.assert_called_once_with(str(self.piece.pk), "italianate")
+        task.delay.assert_called_once_with(str(self.piece.pk), "italianate", ipa_revision(self.piece))
         self.assertEqual(resp.json()["lyrics_ipa_job"]["state"], "running")
         self.assertEqual(resp.json()["lyrics_ipa_job"]["system"], "italianate")
 
@@ -261,10 +293,11 @@ class RecomputeIpaTaskTests(TestCase):
         self.assertEqual(job["reason"], "overloaded")
 
 
-class IngestionRecordsTheSystemTests(TestCase):
-    def _persist(self, piece: Piece, language: str) -> None:
+class PersistAnalysisTests(TestCase):
+    def _persist(self, piece: Piece, language: str, filename: str = "x.pdf") -> ScoreEdition:
         edition = ScoreEdition.objects.create(
-            piece=piece, original_filename="x.pdf", sha256=str(piece.pk).replace("-", "")[:32] * 2,
+            piece=piece, original_filename=filename,
+            sha256=sha256(f"{piece.pk}/{filename}".encode()).hexdigest(),
         )
         persist_analysis({
             "edition_id": str(edition.id),
@@ -276,9 +309,14 @@ class IngestionRecordsTheSystemTests(TestCase):
                 "sung_text": _SUNG,
                 "ipa_transcription": _GERMAN_IPA,
                 "sung_text_language": language,
+                "movements": [
+                    {"order_index": 0, "title": "Gloria", "starts_on_page": 2},
+                    {"order_index": 1, "title": "Credo"},
+                ],
             },
         })
         piece.refresh_from_db()
+        return edition
 
     def test_a_latin_guide_is_recorded_as_german(self) -> None:
         piece = Piece.objects.create(title="Gloria")
@@ -289,6 +327,15 @@ class IngestionRecordsTheSystemTests(TestCase):
         piece = Piece.objects.create(title="Lied")
         self._persist(piece, "de")
         self.assertEqual(piece.lyrics_ipa_system, "")
+
+    def test_movement_anchors_belong_to_the_edition_that_supplied_them(self) -> None:
+        piece = Piece.objects.create(title="Gloria")
+        source = self._persist(piece, "la")
+        self._persist(piece, "la", "other.pdf")
+        self.assertEqual(
+            list(piece.movements.values_list("starts_on_page", "starts_on_edition_id")),
+            [(2, source.pk), (None, None)],
+        )
 
 
 class RecomputeIpaCommandTests(TestCase):

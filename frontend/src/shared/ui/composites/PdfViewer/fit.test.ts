@@ -143,42 +143,41 @@ describe("resolvePageFit — explicit modes and edges", () => {
 });
 
 describe("viewerWidthForPage — a pane sized around its page", () => {
-  // The pane's viewer as the fit then measures it: both 48px bands off the
-  // height, and the scroll box's padding off both sides of its content box.
-  const fitInPane = (viewerWidth: number, viewerHeight: number, pageAspect: number) =>
-    fit({
-      viewportWidth: viewerWidth - 48,
-      viewportHeight: viewerHeight - 96 - 24,
-      pageAspect,
-    });
   const LETTER = 792 / 612;
+  const fitInPane = (viewerWidth: number, viewerHeight: number, options: Partial<PageFitInput> = {}) =>
+    fit({
+      viewportWidth: viewerWidth,
+      viewportHeight: viewerHeight - 96,
+      pageAspect: LETTER,
+      desk: "fitted",
+      ...options,
+    });
 
   it("gives a 900px window the width at which the whole page fills the height", () => {
-    const width = viewerWidthForPage({ viewerHeight: 900, pageAspect: LETTER, minPageWidth: 520 });
-    expect(width).toBe(704);
-    const { resolvedFit, renderedPageWidth } = fitInPane(width, 900, LETTER);
+    const width = viewerWidthForPage({ viewerHeight: 900, pageAspect: LETTER });
+    expect(width).toBe(621);
+    const { resolvedFit, renderedPageWidth } = fitInPane(width, 900);
     expect(resolvedFit).toBe("page");
-    expect(renderedPageWidth).toBe(584);
+    expect(renderedPageWidth).toBe(565);
   });
 
-  it("works a narrow pane out in the compact regime it lands in", () => {
-    // A pane under 640px of content is compact even on a desktop screen, and
-    // the fit's reserves shrink with it.
-    const width = viewerWidthForPage({ viewerHeight: 860, pageAspect: LETTER, minPageWidth: 520 });
-    expect(width).toBe(623);
-    const { resolvedFit, renderedPageWidth } = fitInPane(width, 860, LETTER);
-    expect(resolvedFit).toBe("page");
-    expect(renderedPageWidth).toBe(559);
+  it("grows continuously through the viewer's compact breakpoint", () => {
+    const heights = [922, 923, 924, 925];
+    const widths = heights.map((viewerHeight) => viewerWidthForPage({ viewerHeight, pageAspect: LETTER }));
+    expect(widths).toEqual([638, 639, 640, 640]);
+    expect(widths.map((width, index) => fitInPane(width, heights[index]).renderedPageWidth))
+      .toEqual([582, 583, 584, 584]);
   });
 
-  it("leaves room for the legibility floor where the whole page would come out narrower", () => {
-    const width = viewerWidthForPage({ viewerHeight: 768, pageAspect: LETTER, minPageWidth: 520 });
-    expect(width).toBe(584);
-    const { renderedPageWidth } = fitInPane(width, 768, LETTER);
-    expect(renderedPageWidth).toBe(488);
-    expect(
-      fit({ viewportWidth: width - 48, viewportHeight: 768 - 120, pageAspect: LETTER, fitMode: "width" })
-        .renderedPageWidth,
-    ).toBe(520);
+  it("renders the legibility floor in auto and honours an explicit whole-page fit", () => {
+    const width = viewerWidthForPage({ viewerHeight: 768, pageAspect: LETTER });
+    expect(width).toBe(576);
+    expect(fitInPane(width, 768)).toEqual({ renderedPageWidth: 520, resolvedFit: "width" });
+    expect(fitInPane(width, 768, { fitMode: "page" })).toEqual({ renderedPageWidth: 463, resolvedFit: "page" });
+  });
+
+  it("honours the pane cap and uses extra room when the desk is expanded", () => {
+    expect(fitInPane(455, 768).renderedPageWidth).toBe(399);
+    expect(fitInPane(663, 900, { desk: "wide" }).renderedPageWidth).toBe(607);
   });
 });

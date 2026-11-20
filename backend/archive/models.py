@@ -449,6 +449,10 @@ class Movement(SoftDeleteModel):
         help_text=_("Page in the source PDF where this movement begins"),
         verbose_name=_("Starts On Page"),
     )
+    starts_on_edition = models.ForeignKey(
+        'ScoreEdition', on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='+', verbose_name=_("Source Edition"),
+    )
 
     class Meta:
         verbose_name = _("Movement")

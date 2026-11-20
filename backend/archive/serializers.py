@@ -309,7 +309,7 @@ class MovementSerializer(serializers.ModelSerializer):
     class Meta:
         model = Movement
         fields = ['id', 'order_index', 'title', 'tempo_marking',
-                  'duration_seconds', 'voicing_override', 'starts_on_page']
+                  'duration_seconds', 'voicing_override', 'starts_on_page', 'starts_on_edition']
         read_only_fields = fields
 
 
@@ -354,8 +354,8 @@ class MovementWriteSerializer(serializers.ModelSerializer):
     class Meta:
         model = Movement
         fields = ['id', 'piece', 'order_index', 'title', 'tempo_marking',
-                  'duration_seconds', 'voicing_override', 'starts_on_page']
-        read_only_fields = ['id']
+                  'duration_seconds', 'voicing_override', 'starts_on_page', 'starts_on_edition']
+        read_only_fields = ['id', 'starts_on_edition']
 
 
 class TranslationWriteSerializer(serializers.ModelSerializer):

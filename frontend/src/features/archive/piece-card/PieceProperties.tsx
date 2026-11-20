@@ -3,7 +3,7 @@
  * @description Editable metadata laid out in the piece's record sections.
  */
 
-import { useId, type ReactNode } from "react";
+import { useId, type ComponentProps, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 
 import { cn } from "@/shared/lib/utils";
@@ -95,8 +95,8 @@ const RowSelect = ({ id, value, options, onValueChange }: {
   );
 };
 
-export const PieceProperties = ({ piece, autosave, onGoToPage }: PiecePropertiesProps & {
-  readonly onGoToPage?: (page: number) => void;
+export const PieceProperties = ({ piece, autosave, score }: PiecePropertiesProps & {
+  readonly score?: ComponentProps<typeof PieceMovements>["score"];
 }) => {
   const { t } = useTranslation();
   const notesId = useId();
@@ -190,7 +190,7 @@ export const PieceProperties = ({ piece, autosave, onGoToPage }: PieceProperties
         </RecordSection>
       )}
       <RecordSection title={t("archive.piece_card.movements_section")}>
-        <PieceMovements piece={piece} autosave={autosave} onGoToPage={onGoToPage} />
+        <PieceMovements piece={piece} autosave={autosave} score={score} />
       </RecordSection>
       <RecordSection title={t("archive.piece_card.program_note_section")}>
         <PieceProgramNote piece={piece} autosave={autosave} />

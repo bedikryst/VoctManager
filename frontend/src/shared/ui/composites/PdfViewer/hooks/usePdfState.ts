@@ -17,7 +17,7 @@ import {
   COMPACT_VIEWPORT_THRESHOLD,
   DEFAULT_PAGE_ASPECT,
 } from "../constants";
-import { resolvePageFit } from "../fit";
+import { resolvePageFit, type PageFitInput } from "../fit";
 import type { FitMode } from "../types";
 
 interface UsePdfStateArgs {
@@ -39,6 +39,7 @@ interface UsePdfStateArgs {
    * stored: it is the edition's requirement, not the reader's habit.
    */
   preferredFit?: FitMode;
+  desk?: PageFitInput["desk"];
 }
 
 const FIT_STORAGE_PREFIX = "voct.pdf.fit_mode";
@@ -71,6 +72,7 @@ export const usePdfState = ({
   immersive = false,
   fitScope = "document",
   preferredFit,
+  desk,
 }: UsePdfStateArgs = {}) => {
   const viewportRef = useRef<HTMLDivElement | null>(null);
 
@@ -109,8 +111,9 @@ export const usePdfState = ({
         pageAspect,
         immersive,
         fitMode: effectiveFit,
+        desk,
       }),
-    [effectiveFit, immersive, viewportWidth, viewportHeight, pageAspect],
+    [effectiveFit, immersive, viewportWidth, viewportHeight, pageAspect, desk],
   );
 
   const devicePixelRatio = useMemo(() => {
@@ -118,13 +121,14 @@ export const usePdfState = ({
     return Math.min(window.devicePixelRatio || 1, 2);
   }, []);
 
+  const measureOuterBox = Boolean(desk && !immersive);
   useEffect(() => {
     if (!viewportRef.current) return;
     const element = viewportRef.current;
 
     const updateViewportSize = () => {
-      setViewportWidth(element.clientWidth);
-      setViewportHeight(element.clientHeight);
+      setViewportWidth(measureOuterBox ? element.offsetWidth : element.clientWidth);
+      setViewportHeight(measureOuterBox ? element.offsetHeight : element.clientHeight);
     };
     updateViewportSize();
 
@@ -134,13 +138,17 @@ export const usePdfState = ({
     }
 
     const observer = new ResizeObserver((entries) => {
+      if (measureOuterBox) {
+        updateViewportSize();
+        return;
+      }
       const entry = entries[0];
       setViewportWidth(entry?.contentRect.width ?? element.clientWidth);
       setViewportHeight(entry?.contentRect.height ?? element.clientHeight);
     });
     observer.observe(element);
     return () => observer.disconnect();
-  }, []);
+  }, [measureOuterBox]);
 
   // Fed from the rendered page's intrinsic dimensions; ignores noise so an
   // identical aspect never churns the layout.

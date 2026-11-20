@@ -13,8 +13,6 @@ import { useCallback, useRef, useState } from "react";
 
 import { viewerWidthForPage } from "@/shared/ui/composites/PdfViewer";
 
-/** Narrowest page the pane sizes itself for, in CSS px. */
-export const SCORE_PAGE_FLOOR_PX = 520;
 /** A4 portrait (height / width) until the page reports its own. */
 const INITIAL_PAGE_ASPECT = 1.414;
 const WIDE_STORAGE_KEY = "voct.pieceCard.wideScore";
@@ -23,34 +21,6 @@ interface PaneBox {
   readonly width: number;
   readonly height: number;
 }
-
-export interface ScorePaneInput {
-  /** Width of the panes together: everything right of the rail. */
-  readonly contentWidth: number;
-  /** Height of the pane, which is the viewer's whole height. */
-  readonly contentHeight: number;
-  /** Page height / width. */
-  readonly pageAspect: number;
-  readonly isWide: boolean;
-}
-
-export const scorePaneWidth = ({
-  contentWidth,
-  contentHeight,
-  pageAspect,
-  isWide,
-}: ScorePaneInput): number => {
-  const cap = Math.floor(contentWidth / 2);
-  if (isWide) return cap;
-  return Math.min(
-    cap,
-    viewerWidthForPage({
-      viewerHeight: contentHeight,
-      pageAspect,
-      minPageWidth: SCORE_PAGE_FLOOR_PX,
-    }),
-  );
-};
 
 const readWide = (): boolean => {
   try {
@@ -66,6 +36,7 @@ export interface ScorePane {
   /** Null until the panes have been measured once. */
   readonly paneWidth: number | null;
   readonly isWide: boolean;
+  readonly canToggleWide: boolean;
   readonly toggleWide: () => void;
   /** Hand to `PdfViewer`'s `onPageAspectChange`. */
   readonly onPageAspectChange: (aspect: number) => void;
@@ -114,14 +85,19 @@ export const useScorePane = (): ScorePane => {
     });
   }, []);
 
-  const paneWidth = box
-    ? scorePaneWidth({
-        contentWidth: box.width,
-        contentHeight: box.height,
-        pageAspect,
-        isWide,
-      })
+  const cap = box ? Math.floor(box.width / 2) : null;
+  const fittedWidth = box && cap !== null
+    ? Math.min(cap, viewerWidthForPage({ viewerHeight: box.height, pageAspect }))
     : null;
+  const canToggleWide = fittedWidth !== null && cap !== null && fittedWidth < cap;
+  const wide = canToggleWide && isWide;
 
-  return { contentRef, paneWidth, isWide, toggleWide, onPageAspectChange };
+  return {
+    contentRef,
+    paneWidth: wide ? cap : fittedWidth,
+    isWide: wide,
+    canToggleWide,
+    toggleWide,
+    onPageAspectChange,
+  };
 };
