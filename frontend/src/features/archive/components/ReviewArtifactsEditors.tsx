@@ -13,7 +13,7 @@
  * @module features/archive/components/ReviewArtifactsEditors
  */
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useId, useRef, useState } from "react";
 import type { TFunction } from "i18next";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
@@ -25,7 +25,7 @@ import { Button } from "@/shared/ui/primitives/Button";
 import { Input } from "@/shared/ui/primitives/Input";
 import { Select } from "@/shared/ui/primitives/Select";
 import { Textarea } from "@/shared/ui/primitives/Textarea";
-import { Caption, Text } from "@/shared/ui/primitives/typography";
+import { Caption, Label, Text } from "@/shared/ui/primitives/typography";
 import { cn } from "@/shared/lib/utils";
 import {
   AUDIENCE_LANGUAGES,
@@ -379,10 +379,27 @@ const translationDispatchMessage = (code: string | null, t: TFunction): string =
 // in; an existing translation is edited above, never regenerated here.
 // ---------------------------------------------------------------------------
 
-const TranslationGenerator = ({
+type ScheduleGeneration = (dispatch: () => Promise<Piece>) => Promise<Piece>;
+
+const AudienceSelect = ({ compact, label, ...props }: React.ComponentProps<typeof Select> & {
+  readonly compact?: boolean;
+}) => {
+  const id = useId();
+  if (!compact) return <Select label={label} {...props} />;
+  return (
+    <div className="flex flex-wrap items-center gap-1">
+      <Label as="label" htmlFor={id} size="base" color="graphite">{label}</Label>
+      <Select {...props} id={id} ariaLabel={label} variant="property" className="w-fit" />
+    </div>
+  );
+};
+
+export const TranslationGenerator = ({
   piece,
+  schedule,
 }: {
   readonly piece: Piece;
+  readonly schedule?: ScheduleGeneration;
 }): React.JSX.Element | null => {
   const { t } = useTranslation();
   const generate = useGenerateTranslation();
@@ -402,27 +419,27 @@ const TranslationGenerator = ({
       !pieceTranslationIn(piece, lang) && translationAddsMeaning(piece.language, lang),
   );
   const [picked, setPicked] = useState<AudienceLanguage | null>(null);
+  const [dispatching, setDispatching] = useState(false);
   const language =
     runningLanguage(job) ?? (picked && missing.includes(picked) ? picked : missing[0]);
 
   const hasText = Boolean(piece.lyrics_original?.trim());
   if (!hasText || language === undefined) return null;
 
-  const busy = generate.isPending || job?.state === "running";
+  const busy = dispatching || job?.state === "running";
   const run = (): void => {
-    generate.mutate(
-      { pieceId, language },
-      {
-        onError: (error) =>
-          toast.error(translationDispatchMessage(parseApiError(error).code, t)),
-      },
-    );
+    setDispatching(true);
+    const dispatch = () => generate.mutateAsync({ pieceId, language });
+    void (schedule ? schedule(dispatch) : dispatch())
+      .catch((error: unknown) => toast.error(translationDispatchMessage(parseApiError(error).code, t)))
+      .finally(() => setDispatching(false));
   };
 
   return (
-    <div className="flex flex-wrap items-end gap-2">
-      <div className="w-40">
-        <Select
+    <div className={cn("flex flex-wrap gap-2", schedule ? "items-center" : "items-end")}>
+      <div className={schedule ? undefined : "w-40"}>
+        <AudienceSelect
+          compact={Boolean(schedule)}
           size="sm"
           label={t("archive.review.translate_language", "Nowe tłumaczenie")}
           value={language}
@@ -438,8 +455,9 @@ const TranslationGenerator = ({
       </div>
       <Button
         variant="outline"
+        casing={schedule ? "sentence" : undefined}
         size="sm"
-        leftIcon={<Languages size={14} aria-hidden="true" />}
+        leftIcon={schedule ? <Sparkles size={14} aria-hidden="true" /> : <Languages size={14} aria-hidden="true" />}
         isLoading={busy}
         disabled={busy}
         onClick={run}
@@ -788,16 +806,20 @@ const ProgramNoteEditor = ({
   );
 };
 
-export const ProgramNoteSection = ({
+export const ProgramNoteGenerator = ({
   piece,
+  schedule,
+  renderManual,
+  manualOpen,
 }: {
   readonly piece: Piece;
+  readonly schedule?: ScheduleGeneration;
+  readonly renderManual?: (language: AudienceLanguage, tone: ProgramNoteToneCode, busy: boolean) => React.ReactNode;
+  readonly manualOpen?: boolean;
 }): React.JSX.Element => {
   const { t } = useTranslation();
   const generate = useGenerateProgramNote();
   const pieceId = String(piece.id);
-
-  const notes = piece.program_notes ?? [];
 
   // A regenerate keeps the tone the note was written in unless it is changed.
   const toneOf = (note: ProgramNote | undefined): ProgramNoteToneCode =>
@@ -806,6 +828,7 @@ export const ProgramNoteSection = ({
   const [tone, setTone] = useState<ProgramNoteToneCode>(() =>
     toneOf(canonicalNoteIn(piece, DEFAULT_AUDIENCE_LANGUAGE)),
   );
+  const [dispatching, setDispatching] = useState(false);
 
   // The note job also runs without this section asking — approval writes the
   // Polish note — so progress and outcome come from the piece, not the click.
@@ -821,38 +844,22 @@ export const ProgramNoteSection = ({
   const note = canonicalNoteIn(piece, language);
 
   const run = (): void => {
-    generate.mutate(
-      { pieceId, force: Boolean(note), language, tone },
-      {
-        onError: () =>
-          toast.error(
-            t("archive.review.note_failed", "Nie udało się uruchomić generowania."),
-          ),
-      },
-    );
+    setDispatching(true);
+    const dispatch = () => generate.mutateAsync({ pieceId, force: Boolean(note), language, tone });
+    void (schedule ? schedule(dispatch) : dispatch())
+      .catch(() => toast.error(t("archive.review.note_failed", "Nie udało się uruchomić generowania.")))
+      .finally(() => setDispatching(false));
   };
 
-  const busy = generate.isPending || job?.state === "running";
+  const busy = dispatching || job?.state === "running";
+  const controlsDisabled = busy || manualOpen;
 
   return (
-    <div className="space-y-3">
-      {notes.length > 0 ? (
-        <ul role="list" className="space-y-3">
-          {notes.map((n) => (
-            <ProgramNoteEditor key={n.id} piece={piece} note={n} />
-          ))}
-        </ul>
-      ) : (
-        <Text size="sm" color="muted">
-          {t(
-            "archive.review.no_note_hint",
-            "Brak notki programowej. Powstanie automatycznie po zatwierdzeniu utworu — albo wygeneruj ją teraz (AI, ~30 s).",
-          )}
-        </Text>
-      )}
-      <div className="flex flex-wrap items-end gap-2">
-        <div className="w-40">
-          <Select
+    <>
+      <div className={cn("flex flex-wrap gap-2", schedule ? "items-center" : "items-end")}>
+        <div className={schedule ? undefined : "w-40"}>
+          <AudienceSelect
+            compact={Boolean(schedule)}
             size="sm"
             label={t("archive.review.note_language", "Język notki")}
             value={language}
@@ -865,11 +872,12 @@ export const ProgramNoteSection = ({
               value: lang,
               label: getAudienceLanguageLabel(lang, t),
             }))}
-            disabled={busy}
+            disabled={controlsDisabled}
           />
         </div>
-        <div className="w-40">
-          <Select
+        <div className={schedule ? undefined : "w-40"}>
+          <AudienceSelect
+            compact={Boolean(schedule)}
             size="sm"
             label={t("archive.review.note_tone", "Ton")}
             value={tone}
@@ -880,15 +888,16 @@ export const ProgramNoteSection = ({
               value: code,
               label: getProgramNoteToneLabel(code, t),
             }))}
-            disabled={busy}
+            disabled={controlsDisabled}
           />
         </div>
         <Button
-          variant={note ? "outline" : "primary"}
+          variant={note || schedule ? "outline" : "primary"}
+          casing={schedule ? "sentence" : undefined}
           size="sm"
           leftIcon={<Sparkles size={14} aria-hidden="true" />}
           isLoading={busy}
-          disabled={busy}
+          disabled={controlsDisabled}
           onClick={run}
         >
           {busy
@@ -898,6 +907,31 @@ export const ProgramNoteSection = ({
               : t("archive.review.generate_note", "Generuj notkę programową")}
         </Button>
       </div>
+      {renderManual?.(language, tone, busy)}
+    </>
+  );
+};
+
+export const ProgramNoteSection = ({ piece }: { readonly piece: Piece }): React.JSX.Element => {
+  const { t } = useTranslation();
+  const notes = piece.program_notes ?? [];
+  return (
+    <div className="space-y-3">
+      {notes.length > 0 ? (
+        <ul role="list" className="space-y-3">
+          {notes.map((note) => (
+            <ProgramNoteEditor key={note.id} piece={piece} note={note} />
+          ))}
+        </ul>
+      ) : (
+        <Text size="sm" color="muted">
+          {t(
+            "archive.review.no_note_hint",
+            "Brak notki programowej. Powstanie automatycznie po zatwierdzeniu utworu — albo wygeneruj ją teraz (AI, ~30 s).",
+          )}
+        </Text>
+      )}
+      <ProgramNoteGenerator piece={piece} />
     </div>
   );
 };

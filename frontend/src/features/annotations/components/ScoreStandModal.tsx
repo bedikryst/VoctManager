@@ -33,6 +33,7 @@ export interface ScoreStandModalProps {
   readonly editionId: string | null;
   /** Streams the gated score PDF — injected so this stays domain-free. */
   readonly fetchBlob: (() => Promise<Blob>) | null;
+  readonly initialPage?: number;
   readonly title: string;
   readonly subtitle?: string;
   readonly fileName?: string;
@@ -66,6 +67,7 @@ export const ScoreStandModal = ({
   isOpen,
   editionId,
   fetchBlob,
+  initialPage,
   title,
   subtitle,
   fileName,
@@ -95,6 +97,7 @@ export const ScoreStandModal = ({
       subtitle={subtitle}
       fileName={fileName}
       fetchBlob={fetchBlob}
+      initialPage={initialPage}
       docKey={editionId ?? undefined}
       toolbarSlot={annotator.toolbarSlot}
       renderPageOverlay={annotator.renderPageOverlay}

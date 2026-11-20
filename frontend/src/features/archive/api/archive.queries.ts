@@ -654,10 +654,11 @@ export const useReingestEdition = () => {
 // Each mutation refetches the parent piece (so the chip flips AI → verified and
 // the edited value re-renders) plus the pieces list (status badges).
 
-const invalidatePiece = (qc: ReturnType<typeof useQueryClient>, pieceId: string) => {
-  qc.invalidateQueries({ queryKey: archiveKeys.pieces.details(pieceId) });
-  qc.invalidateQueries({ queryKey: archiveKeys.pieces.all });
-};
+const invalidatePiece = (qc: ReturnType<typeof useQueryClient>, pieceId: string) =>
+  Promise.all([
+    qc.invalidateQueries({ queryKey: archiveKeys.pieces.details(pieceId), exact: true, refetchType: "all" }),
+    qc.invalidateQueries({ queryKey: archiveKeys.pieces.all, exact: true }),
+  ]);
 
 /**
  * Mark one AI-extracted field as human-verified (stamp MANUAL provenance, no
@@ -702,6 +703,14 @@ export const useRecomputeIpa = () => {
   });
 };
 
+export const useCreateMovement = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ArchiveService.createMovement,
+    onSuccess: (_movement, { piece }) => invalidatePiece(qc, piece),
+  });
+};
+
 export const useUpdateMovement = () => {
   const qc = useQueryClient();
   return useMutation<
@@ -742,6 +751,14 @@ export const useDeleteTranslation = () => {
   });
 };
 
+export const useCreateRecording = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ArchiveService.createRecording,
+    onSuccess: (_recording, { piece }) => invalidatePiece(qc, piece),
+  });
+};
+
 export const useUpdateRecording = () => {
   const qc = useQueryClient();
   return useMutation<
@@ -759,6 +776,14 @@ export const useDeleteRecording = () => {
   return useMutation<void, Error, { id: string; pieceId: string }>({
     mutationFn: ({ id }) => ArchiveService.deleteRecording(id),
     onSuccess: (_d, { pieceId }) => invalidatePiece(qc, pieceId),
+  });
+};
+
+export const useCreateProgramNote = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ArchiveService.createProgramNote,
+    onSuccess: (_note, { piece }) => invalidatePiece(qc, piece),
   });
 };
 

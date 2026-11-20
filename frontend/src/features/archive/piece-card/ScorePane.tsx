@@ -16,6 +16,7 @@ import {
   PdfSheetSection,
   PdfViewer,
   sheetButton,
+  type PdfPageApi,
 } from "@/shared/ui/composites/PdfViewer";
 import { StatePanel } from "@/shared/ui/composites/StatePanel";
 import { Text } from "@/shared/ui/primitives/typography";
@@ -33,6 +34,7 @@ interface ScorePaneProps {
   readonly isWide: boolean;
   readonly onToggleWide: () => void;
   readonly onPageAspectChange: (aspect: number) => void;
+  readonly onPageApiChange: (api: PdfPageApi) => void;
 }
 
 export const ScorePane = ({
@@ -43,6 +45,7 @@ export const ScorePane = ({
   isWide,
   onToggleWide,
   onPageAspectChange,
+  onPageApiChange,
 }: ScorePaneProps): React.JSX.Element => {
   const { t } = useTranslation();
 
@@ -114,7 +117,7 @@ export const ScorePane = ({
       sheetTabs={annotator.sheetTabs}
       sheetSection={editionSection}
       mainTabLabel={t("annotations.score_tab", "Nuty")}
-      onPageApiChange={annotator.onPageApiChange}
+      onPageApiChange={onPageApiChange}
       onPageAspectChange={onPageAspectChange}
       claimKey={annotator.claimKey}
       // A pane beside the record: its keys belong to the record unless focus

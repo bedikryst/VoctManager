@@ -11,11 +11,13 @@ import { toast } from "sonner";
 import { toastApiError } from "@/shared/api/errors";
 import type { Piece } from "@/shared/types";
 import { archiveKeys, useUpdatePiece, useVerifyPieceField } from "../api/archive.queries";
-import { isAiProvenance, pieceFieldProvenance } from "../components/ProvenanceChip";
+import { childFieldProvenance, isAiProvenance, pieceFieldProvenance } from "../components/ProvenanceChip";
 import type { PiecePatchDTO } from "../types/archive.dto";
 
 type EditableFields = Omit<PiecePatchDTO, "starting_pitches" | "voice_requirements">;
 type Field = keyof EditableFields;
+type ReviewField = Field | "text";
+type SavedValue = string | number | boolean | null;
 
 const readField = <K extends Field>(piece: Piece, field: K): EditableFields[K] => {
   const values: EditableFields = {
@@ -63,45 +65,60 @@ export const usePieceAutosave = (pieceId: string) => {
     fallbackDescription: t("archive.piece_card.autosave_failed"),
   });
 
-  const save = <K extends Field>(field: K, next: Exclude<EditableFields[K], undefined>): Promise<void> =>
+  const saveValue = <T extends SavedValue>(
+    key: string,
+    next: T,
+    read: (piece: Piece) => T | undefined,
+    write: (value: T) => Promise<T>,
+  ): Promise<void> =>
     enqueue(async () => {
       const piece = getPiece();
-      if (!piece) throw new Error("Piece missing from the detail cache");
-      const previous = readField(piece, field) ?? (field === "composer_id" ||
-        field === "composition_year" || field === "estimated_duration" ? null : "");
+      const previous = piece && read(piece);
+      if (previous === undefined) throw new Error("Editable value missing from the detail cache");
       if (previous === next) return;
 
-      const saved = await update({ id: pieceId, data: { [field]: next } });
-      const savedValue = readField(saved, field);
-      const toastId = `piece-field:${pieceId}:${field}`;
+      const savedValue = await write(next);
       toast.success(t("common.autosave.saved"), {
-        id: toastId,
+        id: `piece-field:${pieceId}:${key}`,
         action: {
           label: t("common.actions.undo"),
           onClick: () => {
             void enqueue(async () => {
               const current = getPiece();
-              if (!current || readField(current, field) !== savedValue) {
+              if (!current || read(current) !== savedValue) {
                 toast.info(t("archive.piece_card.undo_superseded"));
                 return;
               }
-              await update({ id: pieceId, data: { [field]: previous } });
+              await write(previous);
             }).catch(showSaveError);
           },
         },
       });
     });
 
-  const confirm = (field: Field): void => {
-    const key = `${pieceId}:${field}`;
+  const save = <K extends Field>(field: K, next: Exclude<EditableFields[K], undefined>): Promise<void> => {
+    const read = (piece: Piece) => readField(piece, field) ?? (field === "composer_id" ||
+      field === "composition_year" || field === "estimated_duration" ? null : "");
+    return saveValue<SavedValue>(field, next, read, async (value) =>
+      read(await update({ id: pieceId, data: { [field]: value } })),
+    );
+  };
+
+  const confirmationKey = (field: ReviewField, objectId?: string) => `${objectId ?? pieceId}:${field}`;
+  const confirm = (field: ReviewField, objectId?: string): void => {
+    const key = confirmationKey(field, objectId);
     if (confirmations.current.has(key)) return;
     confirmations.current.add(key);
     setConfirming(new Set(confirmations.current));
     void enqueue(async () => {
       const piece = getPiece();
-      if (!piece || !isAiProvenance(pieceFieldProvenance(piece, field))) return;
+      if (!piece) return;
+      const entry = objectId
+        ? childFieldProvenance(piece, objectId, field)
+        : pieceFieldProvenance(piece, field);
+      if (!isAiProvenance(entry)) return;
       await qc.cancelQueries({ queryKey: detailKey });
-      await verify({ pieceId, field });
+      await verify({ pieceId, field, objectId });
     }).catch(() => {
       toast.error(t("archive.piece_card.verify_failed"));
     }).finally(() => {
@@ -112,8 +129,10 @@ export const usePieceAutosave = (pieceId: string) => {
 
   return {
     save,
+    saveValue,
+    enqueue,
     confirm,
-    isConfirming: (field: Field) => confirming.has(`${pieceId}:${field}`),
+    isConfirming: (field: ReviewField, objectId?: string) => confirming.has(confirmationKey(field, objectId)),
     showSaveError,
     isSaving: status.pending > 0,
     saveFailed: status.failed,

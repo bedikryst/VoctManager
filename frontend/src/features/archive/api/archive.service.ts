@@ -387,6 +387,11 @@ export const ArchiveService = {
   // ---- AI artifacts (inline correction in the Review cockpit) -----------
   // Movements / translations / recordings are the AI's most error-prone
   // outputs; these let the conductor fix or drop a bad one during review.
+  createMovement: async (data: Pick<Movement, "order_index" | "title" | "tempo_marking"> & { piece: string }): Promise<Movement> => {
+    const response = await api.post<Movement>(MOVEMENTS_URL, data);
+    return response.data;
+  },
+
   updateMovement: async (id: string, data: Partial<Movement>): Promise<Movement> => {
     const response = await api.patch<Movement>(`${MOVEMENTS_URL}${id}/`, data);
     return response.data;
@@ -408,6 +413,11 @@ export const ArchiveService = {
     await api.delete(`${TRANSLATIONS_URL}${id}/`);
   },
 
+  createRecording: async (data: Pick<Recording, "url" | "performer" | "source" | "external_id"> & { piece: string }): Promise<Recording> => {
+    const response = await api.post<Recording>(RECORDINGS_URL, data);
+    return response.data;
+  },
+
   updateRecording: async (
     id: string,
     data: Partial<Recording>,
@@ -422,6 +432,11 @@ export const ArchiveService = {
 
   // The AI note is occasionally marred by a factual slip or a repeated phrase;
   // this lets the conductor correct the text by hand instead of regenerating.
+  createProgramNote: async (data: Pick<ProgramNote, "language" | "target_tone" | "content"> & { piece: string }): Promise<ProgramNote> => {
+    const response = await api.post<ProgramNote>(PROGRAM_NOTES_URL, data);
+    return response.data;
+  },
+
   updateProgramNote: async (
     id: string,
     data: Partial<ProgramNote>,

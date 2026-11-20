@@ -9,7 +9,7 @@ import { useTranslation } from "react-i18next";
 
 import { Button } from "@/shared/ui/primitives/Button";
 import type { Piece } from "@/shared/types";
-import { isAiProvenance, pieceFieldProvenance } from "../components/ProvenanceChip";
+import { childFieldProvenance, isAiProvenance, pieceFieldProvenance } from "../components/ProvenanceChip";
 import type { PieceAutosave } from "./usePieceAutosave";
 
 interface ReviewProps {
@@ -17,6 +17,8 @@ interface ReviewProps {
   readonly field: Parameters<PieceAutosave["confirm"]>[0];
   readonly label: string;
   readonly autosave: PieceAutosave;
+  readonly objectId?: string;
+  readonly disabled?: boolean;
 }
 
 const ReviewMarker = ({ pending }: { pending: boolean }) => {
@@ -51,9 +53,12 @@ const ReviewMarker = ({ pending }: { pending: boolean }) => {
   );
 };
 
-export const usePieceFieldReview = ({ piece, field, label, autosave }: ReviewProps) => {
+export const usePieceFieldReview = ({ piece, field, label, autosave, objectId, disabled }: ReviewProps) => {
   const { t } = useTranslation();
-  const pending = Boolean(piece && isAiProvenance(pieceFieldProvenance(piece, field)));
+  const entry = piece && (objectId
+    ? childFieldProvenance(piece, objectId, field)
+    : pieceFieldProvenance(piece, field));
+  const pending = isAiProvenance(entry);
 
   return {
     marker: <ReviewMarker pending={pending} />,
@@ -64,10 +69,11 @@ export const usePieceFieldReview = ({ piece, field, label, autosave }: ReviewPro
         casing="sentence"
         size="sm"
         aria-label={t("archive.provenance.verify_aria", { label })}
-        aria-disabled={autosave.isConfirming(field)}
+        disabled={disabled}
+        aria-disabled={disabled || autosave.isConfirming(field, objectId)}
         leftIcon={<Check size={14} aria-hidden="true" />}
         className="h-8 min-h-8 px-2 text-sm"
-        onClick={() => autosave.confirm(field)}
+        onClick={() => autosave.confirm(field, objectId)}
       >
         {t("archive.piece_card.confirm_field")}
       </Button>

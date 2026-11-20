@@ -16,11 +16,14 @@ interface CommitTextProps {
   readonly value: string;
   readonly onCommit: (value: string) => Promise<void> | string;
   readonly multiline?: boolean;
-  readonly inputMode?: "numeric" | "text";
+  readonly inputMode?: "numeric" | "text" | "url";
+  readonly className?: string;
+  readonly readOnly?: boolean;
+  readonly ariaLabel?: string;
 }
 
 export const CommitText = ({
-  id, value, onCommit, multiline = false, inputMode,
+  id, value, onCommit, multiline = false, inputMode, className, readOnly, ariaLabel,
 }: CommitTextProps) => {
   const { t } = useTranslation();
   const [draft, setDraft] = useState<string | null>(null);
@@ -49,7 +52,9 @@ export const CommitText = ({
       () => {
         if (revision.current !== currentRevision) return;
         submitted.current = undefined;
-        setError(t("archive.piece_card.field_save_failed"));
+        setError(multiline
+          ? t("archive.piece_card.text_save_failed")
+          : t("archive.piece_card.field_save_failed"));
       },
     );
   };
@@ -71,7 +76,9 @@ export const CommitText = ({
   const controlProps = {
     id,
     value: displayed,
+    readOnly,
     placeholder: "—",
+    "aria-label": ariaLabel,
     "aria-invalid": Boolean(error),
     "aria-describedby": error ? errorId : undefined,
     onBlur: commit,
@@ -84,18 +91,19 @@ export const CommitText = ({
     className: cn(
       fieldShellVariants({ variant: "property", hasError: Boolean(error) }),
       PROPERTY_CONTROL_CLASS,
+      className,
     ),
   };
   const textBlockClass = "col-start-1 row-start-1 whitespace-pre-wrap wrap-anywhere leading-relaxed";
 
   return (
-    <>
+    <div className="min-w-0" data-commit-draft={draft === null ? undefined : ""}>
       {multiline ? (
         <div className="grid">
           {/* The mirror supplies the height even on browsers without field-sizing. */}
           <div
             aria-hidden="true"
-            className={cn(PROPERTY_CONTROL_CLASS, textBlockClass, "invisible border")}
+            className={cn(PROPERTY_CONTROL_CLASS, className, textBlockClass, "invisible border")}
           >
             {`${displayed}\u00a0`}
           </div>
@@ -113,6 +121,6 @@ export const CommitText = ({
           {error}
         </Text>
       )}
-    </>
+    </div>
   );
 };

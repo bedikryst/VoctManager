@@ -31,6 +31,7 @@ import { Portal } from "@/shared/lib/dom/Portal";
 import { cn } from "@/shared/lib/utils";
 import { AutosaveStatus } from "@/shared/ui/composites/AutosaveStatus";
 import { ConfirmModal } from "@/shared/ui/composites/ConfirmModal";
+import type { PdfPageApi } from "@/shared/ui/composites/PdfViewer";
 import { StatePanel } from "@/shared/ui/composites/StatePanel";
 import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
 import { Button } from "@/shared/ui/primitives/Button";
@@ -119,7 +120,7 @@ export default function PieceCardPage(): React.JSX.Element {
   const dockBarHeight = useBottomBarHeight();
 
   const [isApproveOpen, setIsApproveOpen] = useState(false);
-  const [isStandOpen, setIsStandOpen] = useState(false);
+  const [standPage, setStandPage] = useState<number | null>(null);
 
   const scorePdf = piece ? getReviewPdf(piece) : null;
   // Conductor markup on the desk. Idle on a phone, where the stand carries
@@ -129,6 +130,16 @@ export default function PieceCardPage(): React.JSX.Element {
     mode: "conductor",
     active: isTwoPane,
   });
+  const pageApi = useRef<PdfPageApi | null>(null);
+  const updateAnnotatorPage = annotator.onPageApiChange;
+  const handleScorePageApi = useCallback((api: PdfPageApi): void => {
+    pageApi.current = api;
+    updateAnnotatorPage(api);
+  }, [updateAnnotatorPage]);
+  const goToScorePage = (page: number): void => {
+    if (isTwoPane) pageApi.current?.goToPage(page);
+    else setStandPage(page);
+  };
 
   // The phone's top bar names the piece once its title has scrolled under it.
   const [isTitleAway, setIsTitleAway] = useState(false);
@@ -260,6 +271,7 @@ export default function PieceCardPage(): React.JSX.Element {
               isWide={scorePane.isWide}
               onToggleWide={scorePane.toggleWide}
               onPageAspectChange={scorePane.onPageAspectChange}
+              onPageApiChange={handleScorePageApi}
             />
           </section>
         )}
@@ -396,7 +408,7 @@ export default function PieceCardPage(): React.JSX.Element {
                     variant="outline"
                     size="sm"
                     casing="sentence"
-                    onClick={() => setIsStandOpen(true)}
+                    onClick={() => setStandPage(1)}
                   >
                     {t("archive.piece_card.open_score", "Otwórz partyturę")}
                   </Button>
@@ -404,7 +416,12 @@ export default function PieceCardPage(): React.JSX.Element {
               )}
             </header>
             <div className="mx-auto w-full max-w-170">
-              <PieceProperties key={pieceId} piece={piece} autosave={autosave} />
+              <PieceProperties
+                key={pieceId}
+                piece={piece}
+                autosave={autosave}
+                onGoToPage={scorePdf ? goToScorePage : undefined}
+              />
             </div>
           </div>
 
@@ -439,7 +456,8 @@ export default function PieceCardPage(): React.JSX.Element {
 
       {!isTwoPane && (
         <ScoreStandModal
-          isOpen={isStandOpen}
+          isOpen={standPage !== null}
+          initialPage={standPage ?? undefined}
           editionId={scorePdf?.id ?? null}
           mode="conductor"
           title={piece.title}
@@ -450,7 +468,7 @@ export default function PieceCardPage(): React.JSX.Element {
           }
           canExport={scorePdf?.canExport ?? true}
           preferredFit={scorePdf?.wholePage ? "page" : undefined}
-          onClose={() => setIsStandOpen(false)}
+          onClose={() => setStandPage(null)}
         />
       )}
     </div>

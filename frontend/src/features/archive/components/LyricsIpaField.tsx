@@ -16,7 +16,7 @@
  * @module features/archive/components/LyricsIpaField
  */
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useId, useRef, useState } from "react";
 import { useFormState, type UseFormReturn } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
@@ -28,7 +28,7 @@ import { ConfirmModal } from "@/shared/ui/composites/ConfirmModal";
 import { Button } from "@/shared/ui/primitives/Button";
 import { Select } from "@/shared/ui/primitives/Select";
 import { Textarea } from "@/shared/ui/primitives/Textarea";
-import { Caption } from "@/shared/ui/primitives/typography";
+import { Caption, Label } from "@/shared/ui/primitives/typography";
 import type {
   IpaRecomputeJob,
   LatinPronunciationCode,
@@ -90,23 +90,23 @@ interface LyricsIpaFieldProps {
   readonly chip: React.ReactNode;
 }
 
-export const LyricsIpaField = ({
-  piece,
-  form,
-  chip,
-}: LyricsIpaFieldProps): React.JSX.Element => {
+type ScheduleIpa = (dispatch: () => Promise<Piece>) => Promise<Piece>;
+
+export const useIpaRecompute = (
+  piece: Piece,
+  onDone?: () => void,
+  schedule?: ScheduleIpa,
+) => {
   const { t } = useTranslation();
   const recompute = useRecomputeIpa();
-  const [system, setSystem] = useState<LatinPronunciationCode>(
-    DEFAULT_LATIN_PRONUNCIATION,
-  );
+  const [pickedSystem, setSystem] = useState<LatinPronunciationCode>();
+  const savedSystem = schedule ? piece.lyrics_ipa_system : undefined;
+  const system = pickedSystem || savedSystem || DEFAULT_LATIN_PRONUNCIATION;
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
-
-  const { dirtyFields, errors } = useFormState({ control: form.control });
-  const inputDirty = RECOMPUTE_INPUT_FIELDS.some((field) => Boolean(dirtyFields[field]));
+  const [dispatching, setDispatching] = useState(false);
 
   const job = piece.lyrics_ipa_job ?? null;
-  const isRunning = job?.state === "running" || recompute.isPending;
+  const isRunning = job?.state === "running" || dispatching;
   const isHandEdited = pieceFieldProvenance(piece, "lyrics_ipa")?.source === "MAN";
   const options = getLatinPronunciationOptions(t);
   const selected = options.find((option) => option.value === system);
@@ -114,76 +114,76 @@ export const LyricsIpaField = ({
   // A settled job is read off the transition, not the state: a failure lingers
   // on the server for minutes and must not re-toast on every refetch.
   const previousJobState = useRef<IpaRecomputeJob["state"] | null>(job?.state ?? null);
-  const savedIpa = piece.lyrics_ipa ?? "";
-  const { resetField } = form;
   useEffect(() => {
     const before = previousJobState.current;
     const now = job?.state ?? null;
     previousJobState.current = now;
     if (before !== "running" || now === "running") return;
     if (job === null) {
-      resetField("lyrics_ipa", { defaultValue: savedIpa });
+      onDone?.();
       toast.success(t("archive.piece_card.ipa.done", "Wymowa przeliczona."));
     } else {
       toast.error(jobFailureMessage(job.reason, t));
     }
-  }, [job, savedIpa, resetField, t]);
+  }, [job, onDone, t]);
 
   const dispatch = (replaceManual: boolean): void => {
-    recompute.mutate(
-      { pieceId: String(piece.id), system, replaceManual },
-      {
-        onSuccess: () => setIsConfirmOpen(false),
-        onError: (error) => {
-          const { code } = parseApiError(error);
-          // Someone corrected the guide after this card loaded: ask now.
-          if (code === "hand_edited") {
-            setIsConfirmOpen(true);
-            return;
-          }
-          setIsConfirmOpen(false);
-          toast.error(dispatchErrorMessage(code, t));
-        },
+    setDispatching(true);
+    const write = () => recompute.mutateAsync({ pieceId: String(piece.id), system, replaceManual });
+    void (schedule ? schedule(write) : write()).then(
+      () => setIsConfirmOpen(false),
+      (error: unknown) => {
+        const { code } = parseApiError(error);
+        // The server may have received a manual correction while the job was queued.
+        setIsConfirmOpen(code === "hand_edited");
+        if (code !== "hand_edited") toast.error(dispatchErrorMessage(code, t));
       },
-    );
+    ).finally(() => setDispatching(false));
   };
 
-  const fieldLabel = t("archive.piece_card.fields.lyrics_ipa", "Transkrypcja IPA");
-  const systemLabel = getLatinPronunciationLabel(piece.lyrics_ipa_system, t);
+  return {
+    job, system, options, selected, setSystem, isRunning, isConfirmOpen,
+    setIsConfirmOpen, isHandEdited, dispatch, dispatching,
+  };
+};
 
+export const IpaRecomputeActions = ({ piece, ipa, inputDirty, compact }: {
+  piece: Piece;
+  ipa: ReturnType<typeof useIpaRecompute>;
+  inputDirty?: boolean;
+  compact?: boolean;
+}) => {
+  const { t } = useTranslation();
+  const selectId = useId();
+  const pronunciationLabel = t("archive.piece_card.ipa.system_pick", "Wymowa łaciny");
+  const {
+    job, system, options, selected, setSystem, isRunning, isConfirmOpen,
+    setIsConfirmOpen, isHandEdited, dispatch, dispatching,
+  } = ipa;
   return (
-    <LabeledField
-      label={systemLabel ? `${fieldLabel} · ${systemLabel}` : fieldLabel}
-      chip={chip}
-    >
-      <Textarea
-        aria-label={fieldLabel}
-        rows={3}
-        readOnly={isRunning}
-        error={errors.lyrics_ipa?.message}
-        {...form.register("lyrics_ipa")}
-      />
+    <>
       {piece.lyrics_ipa_recomputable ? (
         <div className="space-y-1.5">
           <div className="flex flex-wrap items-center gap-2">
-            <div className="w-56">
+            {compact && <Label as="label" htmlFor={selectId} size="base" color="graphite">{pronunciationLabel}</Label>}
+            <div className={compact ? "min-w-28" : "w-56"}>
               <Select
+                id={selectId}
                 size="sm"
-                ariaLabel={t(
-                  "archive.piece_card.ipa.system_pick",
-                  "Wymowa łaciny",
-                )}
+                ariaLabel={pronunciationLabel}
                 value={system}
                 onValueChange={(value) => {
                   if (isLatinPronunciationCode(value)) setSystem(value);
                 }}
                 options={options.map(({ value, label }) => ({ value, label }))}
                 disabled={isRunning}
+                variant={compact ? "property" : undefined}
               />
             </div>
             <Button
               size="sm"
               variant="outline"
+              casing={compact ? "sentence" : undefined}
               leftIcon={<RefreshCw size={14} aria-hidden="true" />}
               isLoading={isRunning}
               disabled={isRunning || inputDirty}
@@ -191,7 +191,9 @@ export const LyricsIpaField = ({
             >
               {isRunning
                 ? t("archive.piece_card.ipa.recomputing", "Przeliczam…")
-                : t("archive.piece_card.ipa.recompute", "Przelicz wymowę")}
+                : compact
+                  ? t("archive.piece_card.recompute_pronunciation_short")
+                  : t("archive.piece_card.ipa.recompute", "Przelicz wymowę")}
             </Button>
           </div>
           {selected ? (
@@ -228,8 +230,35 @@ export const LyricsIpaField = ({
         confirmText={t("archive.piece_card.ipa.confirm_replace", "Zastąp")}
         onConfirm={() => dispatch(true)}
         onCancel={() => setIsConfirmOpen(false)}
-        isLoading={recompute.isPending}
+        isLoading={dispatching}
       />
+    </>
+  );
+};
+
+export const LyricsIpaField = ({ piece, form, chip }: LyricsIpaFieldProps): React.JSX.Element => {
+  const { t } = useTranslation();
+  const { dirtyFields, errors } = useFormState({ control: form.control });
+  const inputDirty = RECOMPUTE_INPUT_FIELDS.some((field) => Boolean(dirtyFields[field]));
+  const ipa = useIpaRecompute(piece, () => {
+    form.resetField("lyrics_ipa", { defaultValue: piece.lyrics_ipa ?? "" });
+  });
+  const fieldLabel = t("archive.piece_card.fields.lyrics_ipa", "Transkrypcja IPA");
+  const systemLabel = getLatinPronunciationLabel(piece.lyrics_ipa_system, t);
+
+  return (
+    <LabeledField
+      label={systemLabel ? `${fieldLabel} · ${systemLabel}` : fieldLabel}
+      chip={chip}
+    >
+      <Textarea
+        aria-label={fieldLabel}
+        rows={3}
+        readOnly={ipa.isRunning}
+        error={errors.lyrics_ipa?.message}
+        {...form.register("lyrics_ipa")}
+      />
+      <IpaRecomputeActions piece={piece} ipa={ipa} inputDirty={inputDirty} />
     </LabeledField>
   );
 };

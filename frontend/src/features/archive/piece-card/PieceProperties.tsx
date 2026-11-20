@@ -10,13 +10,18 @@ import { cn } from "@/shared/lib/utils";
 import type { Piece } from "@/shared/types";
 import { PropertyRow, PROPERTY_CONTROL_CLASS } from "@/shared/ui/composites/PropertyRow";
 import { Select, type SelectOption } from "@/shared/ui/primitives/Select";
-import { Label, Text } from "@/shared/ui/primitives/typography";
+import { Text } from "@/shared/ui/primitives/typography";
 import { pieceCardSchema } from "../components/PieceMetadataForm";
 import { getArchiveEpochLabel, getArchiveEpochOptions } from "../constants/archiveEpochs";
 import { getArchiveLanguageChoices } from "../constants/archiveLanguages";
 import { CommitText } from "./CommitText";
 import { ComposerProperty } from "./ComposerProperty";
+import { PieceProgramNote, PieceTranslations } from "./PieceAudienceText";
 import { usePieceFieldReview } from "./PieceFieldReview";
+import { PieceLyrics } from "./PieceLyrics";
+import { PieceMovements } from "./PieceMovements";
+import { PieceRecordings } from "./PieceRecordings";
+import { RecordText, RecordTextLabel } from "./RecordText";
 import { pieceDuration } from "./pieceDuration";
 import type { PieceAutosave } from "./usePieceAutosave";
 
@@ -89,7 +94,9 @@ const RowSelect = ({ id, value, options, onValueChange }: {
   );
 };
 
-export const PieceProperties = ({ piece, autosave }: PiecePropertiesProps) => {
+export const PieceProperties = ({ piece, autosave, onGoToPage }: PiecePropertiesProps & {
+  readonly onGoToPage?: (page: number) => void;
+}) => {
   const { t } = useTranslation();
   const notesId = useId();
   const epochOptions = getArchiveEpochOptions(t);
@@ -158,17 +165,8 @@ export const PieceProperties = ({ piece, autosave }: PiecePropertiesProps) => {
           )}
         </PropertyRow>
         <div className="mt-4">
-          <Label as="label" htmlFor={notesId} size="base" color="graphite" className="mb-1 block">
-            {t("archive.piece_card.fields.description")}
-          </Label>
-          <div className="-ml-2">
-            <CommitText
-              id={notesId}
-              value={piece.description ?? ""}
-              multiline
-              onCommit={(next) => autosave.save("description", next)}
-            />
-          </div>
+          <RecordTextLabel id={notesId} label={t("archive.piece_card.fields.description")} />
+          <RecordText id={notesId} value={piece.description ?? ""} onCommit={(next) => autosave.save("description", next)} />
         </div>
       </RecordSection>
       <RecordSection title={t("archive.piece_card.fields.voicing")}>
@@ -176,6 +174,21 @@ export const PieceProperties = ({ piece, autosave }: PiecePropertiesProps) => {
       </RecordSection>
       <RecordSection title={t("archive.piece_card.group.text")}>
         <TextProperty piece={piece} autosave={autosave} field="text_source" label={t("archive.piece_card.fields.text_source")} />
+        <PieceLyrics piece={piece} autosave={autosave} />
+      </RecordSection>
+      {(Boolean(piece.translations?.length) || Boolean(piece.lyrics_original?.trim())) && (
+        <RecordSection title={t("archive.piece_card.translations_section")}>
+          <PieceTranslations piece={piece} autosave={autosave} />
+        </RecordSection>
+      )}
+      <RecordSection title={t("archive.piece_card.movements_section")}>
+        <PieceMovements piece={piece} autosave={autosave} onGoToPage={onGoToPage} />
+      </RecordSection>
+      <RecordSection title={t("archive.piece_card.program_note_section")}>
+        <PieceProgramNote piece={piece} autosave={autosave} />
+      </RecordSection>
+      <RecordSection title={t("archive.piece_card.recordings_section")}>
+        <PieceRecordings piece={piece} autosave={autosave} />
       </RecordSection>
     </div>
   );
