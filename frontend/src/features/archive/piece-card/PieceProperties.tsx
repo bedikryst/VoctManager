@@ -21,6 +21,7 @@ import { usePieceFieldReview } from "./PieceFieldReview";
 import { PieceLyrics } from "./PieceLyrics";
 import { PieceMovements } from "./PieceMovements";
 import { PieceRecordings } from "./PieceRecordings";
+import { PieceVoices } from "./PieceVoices";
 import { RecordText, RecordTextLabel } from "./RecordText";
 import { pieceDuration } from "./pieceDuration";
 import type { PieceAutosave } from "./usePieceAutosave";
@@ -181,6 +182,7 @@ export const PieceProperties = ({ piece, autosave, score, editions }: PiecePrope
       </RecordSection>
       <RecordSection title={t("archive.piece_card.fields.voicing")}>
         <TextProperty piece={piece} autosave={autosave} field="voicing" label={t("archive.piece_card.fields.scoring")} />
+        <PieceVoices piece={piece} autosave={autosave} />
       </RecordSection>
       <RecordSection title={t("archive.piece_card.group.text")}>
         <TextProperty piece={piece} autosave={autosave} field="text_source" label={t("archive.piece_card.fields.text_source")} />

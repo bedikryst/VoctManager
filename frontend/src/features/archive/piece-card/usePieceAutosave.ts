@@ -95,6 +95,15 @@ export const usePieceAutosave = (pieceId: string) => {
     return result.receipt;
   };
 
+  /**
+   * A list-valued piece write, outside the field-edit endpoint and its undo
+   * receipts. Call it inside `enqueue`: the server merges the PATCH into the
+   * full record, so it must not overtake another write to the same piece.
+   */
+  const patchPiece = async (patch: Pick<PiecePatchDTO, "voice_requirements">): Promise<void> => {
+    await applyEdit(async () => ({ piece: await ArchiveService.updatePiece(pieceId, patch), receipt: null }));
+  };
+
   const commitDraft = <T,>(key: string, write: () => Promise<T>): Promise<T> => {
     const draft = draftMap.current.get(key);
     return enqueue(async () => {
@@ -166,7 +175,7 @@ export const usePieceAutosave = (pieceId: string) => {
   };
 
   return {
-    save, saveField, saveChoice, track, drafts, enqueue, commitDraft, afterFieldsSaved, confirm, showSaveError,
+    save, saveField, saveChoice, patchPiece, track, drafts, enqueue, commitDraft, afterFieldsSaved, confirm, showSaveError,
     isConfirming: (field: ReviewField, objectId?: string) => confirming.has(fieldKey(field, objectId)),
     isSaving: status.pending > 0,
     saveFailed: status.failed || drafts.length > 0,
