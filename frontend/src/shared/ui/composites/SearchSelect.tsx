@@ -230,7 +230,7 @@ export const SearchSelect = ({
     }
   };
 
-  const textSize = size === "sm" ? "sm" : "base";
+  const textSize = variant === "property" ? "md" : size === "sm" ? "sm" : "base";
 
   const triggerContent = (
     <>
@@ -274,7 +274,7 @@ export const SearchSelect = ({
         <Text
           as="span"
           size={textSize}
-          color="incense"
+          color={variant === "property" ? "graphite" : "incense"}
           truncate
           className="min-w-0 flex-1"
         >

@@ -25,9 +25,9 @@ import { Eyebrow, Text } from "@/shared/ui/primitives/typography";
  */
 const CLEAR_VALUE = "__select_clear__";
 
-/** Layout and placeholder colour; the surface itself comes from `fieldShell`. */
+/** Layout; the surface itself comes from `fieldShell`. */
 const TRIGGER_LAYOUT =
-  "relative flex items-center justify-between gap-2 data-placeholder:text-ethereal-incense";
+  "relative flex items-center justify-between gap-2";
 
 /**
  * `sm` is for a control packed into a dense strip — a dock, a toolbar row —
@@ -135,6 +135,7 @@ export const Select = ({
           className={cn(
             fieldShellVariants({ variant, hasError }),
             TRIGGER_LAYOUT,
+            variant === "property" ? "data-placeholder:text-ethereal-graphite/70" : "data-placeholder:text-ethereal-incense",
             TRIGGER_SIZE[size],
             // The icon is hidden on phones, so its inset is only reserved from
             // sm up — same contract as `Input`.
@@ -161,7 +162,9 @@ export const Select = ({
           )}
 
           <span className="min-w-0 flex-1 truncate text-left">
-            <RadixSelect.Value placeholder={placeholder} />
+            <RadixSelect.Value placeholder={placeholder}>
+              {variant === "property" ? options.find((option) => option.value === value)?.label : undefined}
+            </RadixSelect.Value>
           </span>
 
           <RadixSelect.Icon asChild>
@@ -187,6 +190,7 @@ export const Select = ({
             sideOffset={8}
             className={cn(
               "z-popover max-h-(--radix-select-content-available-height) w-(--radix-select-trigger-width) origin-(--radix-select-content-transform-origin) overflow-hidden rounded-nested border border-ethereal-incense/15 bg-ethereal-alabaster/95 p-1.5 shadow-glass-ethereal",
+              variant === "property" && "min-w-44 max-w-(--radix-select-content-available-width)",
               "popover-motion",
             )}
           >

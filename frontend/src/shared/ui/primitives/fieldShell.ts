@@ -72,6 +72,8 @@ export const fieldShellVariants = cva(
         // ledger's underline) adds its own side.
         ghost:
           "bg-transparent border border-transparent hover:bg-ethereal-parchment/40 focus:bg-ethereal-marble/80 focus:border-ethereal-gold/40 focus:ring-ethereal-gold/20",
+        property:
+          "border border-transparent bg-transparent placeholder:text-ethereal-graphite/70 hover:bg-ethereal-parchment/50 focus:border-ethereal-gold/40 focus:bg-ethereal-marble/80 focus:ring-ethereal-gold/20 data-[state=open]:bg-ethereal-marble/80",
       },
       // The fill is tinted and the placeholder goes crimson, but the value stays
       // ink: what the user typed or picked is not the alarm — the border, the

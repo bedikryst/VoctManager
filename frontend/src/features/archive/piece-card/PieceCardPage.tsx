@@ -10,8 +10,7 @@
  *
  * The header carries each state's actions: "Następne do przeglądu" while
  * another piece waits, "Zatwierdź i opublikuj" while an edition of this one
- * does. The title saves itself when committed. The record column holds the
- * header alone so far; the record's sections are added under it.
+ * does. The title and individual record properties save when committed.
  *
  * Mounted at `/panel/archive-management/:id/next` with a bleed handle, so the
  * shell leaves the whole surface to it. Default export: lazily loaded by
@@ -30,6 +29,7 @@ import { useBottomBarHeight, useBottomBarSlot } from "@/shared/lib/dom/useBottom
 import { useMediaQuery } from "@/shared/lib/dom/useMediaQuery";
 import { Portal } from "@/shared/lib/dom/Portal";
 import { cn } from "@/shared/lib/utils";
+import { AutosaveStatus } from "@/shared/ui/composites/AutosaveStatus";
 import { ConfirmModal } from "@/shared/ui/composites/ConfirmModal";
 import { StatePanel } from "@/shared/ui/composites/StatePanel";
 import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
@@ -44,13 +44,16 @@ import {
   useApproveEdition,
   usePiece,
   usePieces,
-  useUpdatePiece,
 } from "../api/archive.queries";
 import { pieceReviewBreakdown, type ReviewProgress as ReviewProgressCounts } from "../components/ProvenanceChip";
+import { pieceCardSchema } from "../components/PieceMetadataForm";
 import { getReviewPdf } from "../constants/piecePdfs";
 import { CompactReviewProgress, ReviewProgress } from "./ReviewProgress";
+import { usePieceFieldReview } from "./PieceFieldReview";
+import { PieceProperties } from "./PieceProperties";
 import { ScorePane } from "./ScorePane";
 import { findNextAwaiting } from "./reviewQueue";
+import { usePieceAutosave } from "./usePieceAutosave";
 import { useScorePane } from "./useScorePane";
 
 const LIBRARY_PATH = "/panel/archive-management";
@@ -108,7 +111,9 @@ export default function PieceCardPage(): React.JSX.Element {
 
   const { data: piece, isLoading, isError, error } = usePiece(id);
   const { data: allPieces = [] } = usePieces();
-  const updatePiece = useUpdatePiece();
+  const autosave = usePieceAutosave(id);
+  const titleLabel = t("archive.piece_card.edit_title", "Tytuł utworu");
+  const titleReview = usePieceFieldReview({ piece, field: "title", label: titleLabel, autosave });
   const approveEdition = useApproveEdition();
   const scorePane = useScorePane();
   const dockBarHeight = useBottomBarHeight();
@@ -196,10 +201,6 @@ export default function PieceCardPage(): React.JSX.Element {
 
   const goToNext = (): void => {
     if (nextAwaiting) navigate(cardPath(nextAwaiting.id));
-  };
-
-  const saveTitle = async (next: string): Promise<void> => {
-    await updatePiece.mutateAsync({ id: pieceId, data: { title: next } });
   };
 
   const handleApprove = (): void => {
@@ -302,7 +303,7 @@ export default function PieceCardPage(): React.JSX.Element {
           )}
 
           <div className="px-4 pb-16 lg:px-10">
-            <header className="mx-auto w-full max-w-170 pb-5 pt-3 lg:pt-9">
+            <header className="mx-auto w-full max-w-170 pb-6 pt-3 lg:pt-9">
               <div className="hidden min-h-10 items-center justify-between gap-4 lg:flex">
                 <Link
                   to={LIBRARY_PATH}
@@ -337,31 +338,38 @@ export default function PieceCardPage(): React.JSX.Element {
                 </div>
               </div>
 
-              {/* The record's identity is edited where it is stated. */}
-              <Heading
-                as="h1"
-                size={null}
-                ref={isTwoPane ? undefined : titleRef}
-                className="mt-1.5 lg:mt-4.5"
-              >
-                <InlineEditable
-                  value={piece.title}
-                  onSave={saveTitle}
-                  validate={(next) =>
-                    next.length > 0
-                      ? null
-                      : t("archive.piece_card.title_required", "Tytuł jest wymagany.")
-                  }
-                  ariaLabel={t("archive.piece_card.edit_title", "Tytuł utworu")}
-                  variant="headline"
-                  className="text-4xl leading-tight lg:text-5xl"
+              <div className="relative mt-1.5 lg:mt-4.5">
+                <div key={pieceId} className="pointer-events-none absolute -left-4 top-4 lg:-left-5 lg:top-5">
+                  {titleReview.marker}
+                </div>
+                <Heading as="h1" size={null} ref={isTwoPane ? undefined : titleRef}>
+                  <InlineEditable
+                    key={pieceId}
+                    value={piece.title}
+                    onSave={(next) => autosave.save("title", next)}
+                    validate={(next) => {
+                      if (!next) return t("archive.piece_card.title_required", "Tytuł jest wymagany.");
+                      return pieceCardSchema.shape.title.safeParse(next).success
+                        ? null
+                        : t("archive.piece_card.field_too_long");
+                    }}
+                    ariaLabel={titleLabel}
+                    variant="headline"
+                    className="text-4xl leading-tight lg:text-5xl"
+                  />
+                </Heading>
+              </div>
+              <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1">
+                {byline && <Text as="p" size="md" color="graphite">{byline}</Text>}
+                {titleReview.action}
+                <AutosaveStatus
+                  key={pieceId}
+                  placement="inline"
+                  isSaving={autosave.isSaving}
+                  saveFailed={autosave.saveFailed}
+                  className="ml-auto"
                 />
-              </Heading>
-              {byline && (
-                <Text as="p" size="md" color="graphite" className="mt-1.5">
-                  {byline}
-                </Text>
-              )}
+              </div>
               {/* In review the phone states progress in its bottom bar. */}
               <div className={cn(isReviewing && "hidden lg:block")}>
                 <ReviewProgress progress={progress} isReviewing={isReviewing} />
@@ -395,6 +403,9 @@ export default function PieceCardPage(): React.JSX.Element {
                 </div>
               )}
             </header>
+            <div className="mx-auto w-full max-w-170">
+              <PieceProperties key={pieceId} piece={piece} autosave={autosave} />
+            </div>
           </div>
 
           {/* Room for the phone's bottom bar, which floats over the column. */}
@@ -421,7 +432,7 @@ export default function PieceCardPage(): React.JSX.Element {
         )}
         confirmText={t("archive.piece_card.approve_btn", "Zatwierdź i opublikuj")}
         cancelText={t("common.actions.cancel", "Anuluj")}
-        isLoading={approveEdition.isPending}
+        isLoading={approveEdition.isPending || autosave.isSaving}
         onCancel={() => setIsApproveOpen(false)}
         onConfirm={handleApprove}
       />

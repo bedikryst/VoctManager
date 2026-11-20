@@ -1,13 +1,14 @@
 import type { TFunction } from "i18next";
+import type { Epoch } from "@/shared/types";
 
 interface ArchiveEpochDefinition {
-  value: string;
+  value: Epoch;
   labelKey: string;
   defaultLabel: string;
 }
 
 export interface ArchiveEpochOption {
-  value: string;
+  value: Epoch;
   label: string;
 }
 
@@ -71,7 +72,7 @@ export const getArchiveEpochOptions = (t: TFunction): ArchiveEpochOption[] => {
   }));
 };
 
-const EPOCH_DEFINITION_BY_VALUE = new Map(
+const EPOCH_DEFINITION_BY_VALUE = new Map<string, ArchiveEpochDefinition>(
   ARCHIVE_EPOCH_DEFINITIONS.map((definition) => [definition.value, definition]),
 );
 

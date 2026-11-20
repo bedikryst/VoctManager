@@ -827,6 +827,17 @@
       "live_movement_count_other": "{{count}} mouvements"
     },
     "piece_card": {
+      "autosave_failed": "Impossible d’enregistrer la modification.",
+      "clear_field": "Effacer le champ",
+      "composer_info": "À propos du compositeur et de l’œuvre",
+      "composer_musicbrainz": "Compositeur sur MusicBrainz",
+      "composer_search": "Rechercher un compositeur",
+      "confirm_field": "Confirmer",
+      "duration_invalid": "Saisissez des minutes ou une durée comme 28:00 ou 1:02:30.",
+      "field_save_failed": "Échec de l’enregistrement. Appuyez sur Entrée dans le champ ou quittez-le pour réessayer.",
+      "field_too_long": "Cette valeur est trop longue.",
+      "undo_superseded": "Ce champ a déjà une autre valeur.",
+      "year_invalid": "Saisissez une année entre 500 et 2100.",
       "add_edition_hint": "Ajouter une autre édition (Bärenreiter, IMSLP, votre propre arrangement)",
       "approve_btn": "Valider et publier",
       "approve_failed": "Impossible de valider.",
@@ -845,6 +856,7 @@
       "fetch_error": "Impossible de charger les détails de la pièce",
       "fetch_unknown": "erreur inconnue",
       "fields": {
+        "scoring": "Effectif vocal",
         "arranger": "Arrangement",
         "composition_year": "Année de composition",
         "description": "Notes du chef (internes)",
@@ -907,6 +919,7 @@
       "save_btn": "Enregistrer les modifications",
       "save_first": "Enregistrez d'abord vos modifications.",
       "section": {
+        "properties": "Informations",
         "details": "Détails de la pièce",
         "metadata": "Métadonnées"
       },

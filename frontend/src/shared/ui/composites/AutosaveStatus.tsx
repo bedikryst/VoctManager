@@ -1,6 +1,6 @@
 /**
  * @file AutosaveStatus.tsx
- * @description Passive, bottom-center save-state pill for instant-save work areas.
+ * @description Passive save status for instant-save work areas.
  * Shares the anchor of `EditorActionBar` so a single screen region answers
  * "is my work saved?" across the whole hub: deferred surfaces show the action
  * bar ("Unsaved changes → Save"), instant surfaces show this autosave pill
@@ -18,11 +18,15 @@ import { cn } from "@/shared/lib/utils";
 import { Portal } from "@/shared/lib/dom/Portal";
 import { useBottomBarSlot } from "@/shared/lib/dom/useBottomBarSlot";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
-import { Eyebrow } from "@/shared/ui/primitives/typography";
+import { Eyebrow, Text } from "@/shared/ui/primitives/typography";
 
 export interface AutosaveStatusProps {
   /** True while at least one autosave mutation for this surface is in flight. */
   isSaving: boolean;
+  /** Suppress the success confirmation when a save in the batch failed. */
+  saveFailed?: boolean;
+  /** Document headers can render the status in flow. */
+  placement?: "dock" | "inline";
   /** How long the "Saved" confirmation lingers after saving settles (ms). */
   savedLingerMs?: number;
   /** Optional extra class for the floating wrapper. */
@@ -35,13 +39,14 @@ const SPRING = { type: "spring" as const, stiffness: 320, damping: 28, mass: 0.9
 
 export const AutosaveStatus = ({
   isSaving,
+  saveFailed = false,
+  placement = "dock",
   savedLingerMs = 1800,
   className,
 }: AutosaveStatusProps): React.JSX.Element => {
   const { t } = useTranslation();
   const [phase, setPhase] = useState<Phase>("idle");
   const wasSaving = useRef(false);
-  const slotRef = useBottomBarSlot();
 
   useEffect(() => {
     if (isSaving) {
@@ -56,11 +61,33 @@ export const AutosaveStatus = ({
 
     // Saving just settled — show a brief confirmation, then fade to idle.
     wasSaving.current = false;
-    setPhase("saved");
+    setPhase(saveFailed ? "idle" : "saved");
     const timeoutId = window.setTimeout(() => setPhase("idle"), savedLingerMs);
     return () => window.clearTimeout(timeoutId);
-  }, [isSaving, savedLingerMs]);
+  }, [isSaving, saveFailed, savedLingerMs]);
 
+  const isSavingPhase = phase === "saving";
+  const label = isSavingPhase
+    ? t("common.autosave.saving", "Zapisywanie…")
+    : t("common.autosave.saved", "Zapisano");
+
+  if (placement === "inline") {
+    return (
+      <Text as="span" size="sm" color="graphite" role="status" className={className}>
+        {phase !== "idle" ? label : null}
+      </Text>
+    );
+  }
+
+  return <DockAutosaveStatus phase={phase} label={label} className={className} />;
+};
+
+const DockAutosaveStatus = ({ phase, label, className }: {
+  phase: Phase;
+  label: string;
+  className?: string;
+}): React.JSX.Element => {
+  const slotRef = useBottomBarSlot();
   const isSavingPhase = phase === "saving";
 
   return (
@@ -111,9 +138,7 @@ export const AutosaveStatus = ({
               size="overline-sm"
               color={isSavingPhase ? "graphite" : "sage"}
             >
-              {isSavingPhase
-                ? t("common.autosave.saving", "Zapisywanie…")
-                : t("common.autosave.saved", "Zapisano")}
+              {label}
             </Eyebrow>
           </GlassCard>
         </motion.div>

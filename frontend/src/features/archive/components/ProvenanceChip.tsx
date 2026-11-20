@@ -42,6 +42,8 @@ const TONE_CLASS: Record<Tone, string> = {
 };
 
 const AI_SOURCES = new Set(["AIS", "AIH", "AIO"]);
+export const isAiProvenance = (entry: ProvenanceEntry | undefined): boolean =>
+  entry !== undefined && AI_SOURCES.has(entry.source);
 const CANONICAL_SOURCES = new Set(["MBZ", "WKD", "IMS"]);
 
 interface ChipMeta {
@@ -216,7 +218,7 @@ const rollup = (
   for (const entry of entries) {
     if (!entry) continue;
     total += 1;
-    if (AI_SOURCES.has(entry.source)) pending += 1;
+    if (isAiProvenance(entry)) pending += 1;
   }
   return { total, verified: total - pending, pending };
 };
