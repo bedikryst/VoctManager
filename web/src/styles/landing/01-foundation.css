@@ -665,6 +665,19 @@
     opacity: 0.45;
   }
 
+  /* The question alone, from the first frame (`html.rite-question`, armed by DocumentGates):
+     before the island hydrates the overlay already stands as `.is-choice` will leave it —
+     rite and hold gone, rings dimmed — so the question enters onto its own ground instead of
+     dropping over a page that has already painted. */
+  html.rite-question .preloader .rite,
+  html.rite-question .preloader .preloader-hold {
+    opacity: 0;
+  }
+
+  html.rite-question .preloader .preloader-rings {
+    opacity: 0.45;
+  }
+
   /* ── The hinge: the mark itself carries into the question ──────────────────
      A cross-fade between the full-height rite mark and the question's small one
      was two objects trading places, however identical the artwork — the eye

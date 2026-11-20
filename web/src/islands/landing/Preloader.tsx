@@ -112,7 +112,8 @@ const SKIP_CLICK_GUARD = 450;
 const SEEN_KEY = "voct.preloader.seen";
 // The full rite is spent for a day once met, watched or skipped: a later session inside that day
 // gets the question without the ceremony. The session flag alone does not hold it, because a
-// reload clears that flag (DocumentGates) and a phone that unloaded the tab reloads it on return.
+// reload or an arrival from another site clears that flag (DocumentGates) and a phone that
+// unloaded the tab reloads it on return.
 // DocumentGates reads the same key and TTL before paint — change both together.
 const RITE_AT_KEY = "voct.preloader.rite-at";
 const RITE_TTL_MS = 24 * 60 * 60 * 1000;
@@ -324,7 +325,8 @@ export function Preloader({ copy, chrome, lang }: PreloaderProps): React.JSX.Ele
 
     // Same session: never replay the rite. Reduced motion: never play it at all. Either
     // way the saved choice decides whether the question is still owed. (DocumentGates
-    // arms `preloader-skip` for both cases before paint, so nothing flashes.)
+    // arms `preloader-skip` for both cases before paint, and `rite-question` where the
+    // question is owed, so the overlay stands from the first frame and nothing flashes.)
     if (prefersReducedMotion() || seenThisSession()) {
       markSeenThisSession();
       if (read() === null) {
@@ -348,7 +350,7 @@ export function Preloader({ copy, chrome, lang }: PreloaderProps): React.JSX.Ele
     }
 
     // The full rite was met within the day and the choice has since expired: the question
-    // alone. (DocumentGates arms `preloader-skip` for this case too.)
+    // alone. (DocumentGates arms `preloader-skip` and `rite-question` for this case too.)
     if (fullRiteMetRecently()) {
       markSeenThisSession();
       wentChoice.current = true;

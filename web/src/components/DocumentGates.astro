@@ -4,9 +4,11 @@
  * @description Owner of the `<html>` gate classes every hidden-then-revealed state on the site
  *  is keyed on: `voct-motion` (JS is live and motion is allowed — also what the entrance
  *  registers hide behind), `reveal-ready` (BaseLayout drives this page's reveal controller;
- *  the landing runs the same controller itself), `preloader-skip` (the rite is spent) and
- *  `rite-brief` (a remembered audio choice: the rite plays its brief form — the cadence alone —
- *  from the first painted frame, before the Preloader island hydrates).
+ *  the landing runs the same controller itself), `preloader-skip` (the rite is spent),
+ *  `rite-question` (the rite is spent but the audio question is still owed: the overlay stands
+ *  as its ground from the first frame) and `rite-brief` (a remembered audio choice: the rite
+ *  plays its brief form — the cadence alone — from the first painted frame, before the
+ *  Preloader island hydrates).
  *  Content ships visible and only these classes arm the hidden state, so no-JS and
  *  reduced-motion visitors read the page exactly as it was served.
  *
@@ -43,14 +45,26 @@
     var RITE_TTL_MS = 24 * 60 * 60 * 1000;
 
     // Within a session the rite never replays: sessionStorage carries "seen" across ClientRouter
-    // returns to "/". A reload starts a fresh session, so the brief rite can bow again; whether
-    // the FULL rite plays is the daily stamp's call. This script runs exactly once per real
-    // document load, so a reload-typed navigation into the landing is precisely the moment to
-    // forget the session flag — no stamp bookkeeping needed to tell a reload from a swap.
+    // returns to "/". A session is one stay on the site, not one tab, and sessionStorage lives
+    // as long as the tab: a visitor who leaves for another site and follows a link back in the
+    // same tab would otherwise find the landing without its rite. So a reload, and an arrival
+    // from anywhere but this site (another site's link, a typed address, a bookmark), start a
+    // fresh session and the rite can bow again; whether the FULL rite plays is the daily stamp's
+    // call. History steps keep the session: Back onto the landing is a return, not an entrance.
+    // This script runs exactly once per real document load, so these navigation types are
+    // precisely the moments to forget the flag; a ClientRouter swap never reaches this line.
+    function arrivedFromThisSite() {
+      try {
+        return new URL(document.referrer).origin === window.location.origin;
+      } catch (e) {
+        return false;
+      }
+    }
     if (document.documentElement.getAttribute("data-rite") === "on") {
       try {
         var nav = performance.getEntriesByType("navigation")[0];
-        if (nav && nav.type === "reload") window.sessionStorage.removeItem(SEEN);
+        var entered = nav && nav.type === "navigate" && !arrivedFromThisSite();
+        if (nav && (nav.type === "reload" || entered)) window.sessionStorage.removeItem(SEEN);
       } catch (e) {
         /* private mode — the rite will just play again */
       }
@@ -88,13 +102,20 @@
 
     // `url` is the address the document will live at. At before-swap time `location` is still
     // the OUTGOING page, so the target must be passed in rather than read off the window.
-    function riteIsSpent(url) {
+    // Intent-carrying URLs (donation deep links, gateway returns, synthetic auditors) skip the
+    // rite AND the question — mirrors wantsRiteSkipFromUrl in Preloader.tsx.
+    function urlSkipsRite(url) {
       try {
-        // Intent-carrying URLs (donation deep links, gateway returns, synthetic auditors) skip
-        // the rite before paint — mirrors wantsRiteSkipFromUrl in Preloader.tsx.
         if (url.hash === "#wesprzyj" || url.hash === "#przelew") return true;
         var params = new URLSearchParams(url.search);
-        if (params.has("donate") || params.has("donated") || params.has("nogate")) return true;
+        return params.has("donate") || params.has("donated") || params.has("nogate");
+      } catch (e) {
+        return false;
+      }
+    }
+
+    function seenThisSession() {
+      try {
         return window.sessionStorage.getItem(SEEN) === "1";
       } catch (e) {
         return false;
@@ -118,13 +139,21 @@
       // session with a remembered choice instead gets the BRIEF rite (cadence only,
       // fixed length) — armed pre-paint so the pen starts writing on the first frame.
       // Without a choice, a full rite met within the day leaves only the question owed.
+      // Wherever the rite is skipped but the question is still owed, `rite-question` keeps
+      // the overlay standing as the question's ground from the first frame: otherwise the
+      // page paints, its fonts swap in, and the question drops over it once the island
+      // hydrates.
       if (root.getAttribute("data-rite") === "on") {
-        if (reduced || riteIsSpent(url)) {
+        if (urlSkipsRite(url)) {
           root.classList.add("preloader-skip");
+        } else if (reduced || seenThisSession()) {
+          root.classList.add("preloader-skip");
+          if (!audioChoiceIsValid()) root.classList.add("rite-question");
         } else if (audioChoiceIsValid()) {
           root.classList.add("rite-brief");
         } else if (fullRiteMetRecently()) {
           root.classList.add("preloader-skip");
+          root.classList.add("rite-question");
         }
       }
     }
