@@ -194,7 +194,7 @@ export const ComposerProperty = ({ piece, autosave }: { piece: Piece; autosave: 
             placeholder="—"
             clearLabel={t("archive.form.composer_none")}
             searchPlaceholder={t("archive.piece_card.composer_search")}
-            onValueChange={(value) => void autosave.save("composer_id", value || null).catch(autosave.showSaveError)}
+            onValueChange={(value) => void autosave.saveChoice({ field: "composer_id" }, value || null, id, label).catch(autosave.showSaveError)}
             action={{
               label: t("archive.composers.add_form_title"),
               icon: <Plus size={16} aria-hidden="true" />,
@@ -205,7 +205,7 @@ export const ComposerProperty = ({ piece, autosave }: { piece: Piece; autosave: 
             <CreateComposer
               initialLastName={newComposer}
               pickerId={id}
-              onAssign={(value) => autosave.save("composer_id", value)}
+              onAssign={(value) => autosave.saveChoice({ field: "composer_id" }, value, id, label)}
               onClose={() => setNewComposer(null)}
             />
           )}

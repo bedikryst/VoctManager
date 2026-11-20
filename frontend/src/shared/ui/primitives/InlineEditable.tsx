@@ -66,8 +66,10 @@ export const inlineEditableTextProps = (
 };
 
 export interface InlineEditableProps {
+  readonly id?: string;
   readonly value: InlineEditableValue;
   readonly onSave: (next: string) => Promise<unknown> | void;
+  readonly onDraftChange?: (discard: (() => void) | null) => void;
   /** Validation hook — return error message string to block save, null to allow. */
   readonly validate?: (next: string) => string | null;
   readonly type?: "text" | "number";
@@ -101,8 +103,10 @@ export interface InlineEditableProps {
 }
 
 export const InlineEditable = ({
+  id,
   value,
   onSave,
+  onDraftChange,
   validate,
   type = "text",
   placeholder,
@@ -116,6 +120,7 @@ export const InlineEditable = ({
   const [draft, setDraft] = useState<string>(value == null ? "" : String(value));
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState<boolean>(false);
+  const saving = useRef(false);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const { t } = useTranslation();
 
@@ -136,7 +141,8 @@ export const InlineEditable = ({
   const exit = useCallback(() => {
     setIsEditing(false);
     setError(null);
-  }, []);
+    onDraftChange?.(null);
+  }, [onDraftChange]);
 
   const cancel = useCallback(() => {
     setDraft(value == null ? "" : String(value));
@@ -145,6 +151,7 @@ export const InlineEditable = ({
 
   const commit = useCallback(
     async (next: string) => {
+      if (saving.current) return;
       const trimmed = next.trim();
       const original = value == null ? "" : String(value);
       if (trimmed === original) {
@@ -159,6 +166,7 @@ export const InlineEditable = ({
         }
       }
       setError(null);
+      saving.current = true;
       setIsSaving(true);
       try {
         await onSave(trimmed);
@@ -170,6 +178,7 @@ export const InlineEditable = ({
         // truthy, so passing it through is how a fallback key goes unreachable.
         setError(resolveErrorCopy(parseApiError(err), t).detail);
       } finally {
+        saving.current = false;
         setIsSaving(false);
       }
     },
@@ -182,6 +191,7 @@ export const InlineEditable = ({
   if (!isEditing) {
     return (
       <button
+        id={id}
         type="button"
         disabled={disabled}
         onClick={(event) => {
@@ -259,10 +269,14 @@ export const InlineEditable = ({
       onClick={(event) => event.stopPropagation()}
     >
       <input
+        id={id}
         ref={inputRef}
         type={type}
         value={draft}
-        onChange={(event) => setDraft(event.target.value)}
+        onChange={(event) => {
+          setDraft(event.target.value);
+          onDraftChange?.(cancel);
+        }}
         onKeyDown={handleKeyDown}
         onBlur={handleBlur}
         disabled={isSaving}

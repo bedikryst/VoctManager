@@ -39,6 +39,9 @@ export interface ConfirmModalProps {
   onConfirm: () => void;
   onCancel: () => void;
   isLoading?: boolean;
+  confirmDisabled?: boolean;
+  children?: React.ReactNode;
+  onExitComplete?: () => void;
   confirmTextKey?: string;
   cancelTextKey?: string;
   confirmText?: string;
@@ -53,6 +56,9 @@ export const ConfirmModal = ({
   onConfirm,
   onCancel,
   isLoading = false,
+  confirmDisabled = false,
+  children,
+  onExitComplete,
   confirmTextKey = "common.actions.delete",
   cancelTextKey = "common.actions.cancel",
   confirmText,
@@ -92,7 +98,7 @@ export const ConfirmModal = ({
   const resolvedCancelText = cancelText ?? t(cancelTextKey);
 
   return createPortal(
-    <AnimatePresence>
+    <AnimatePresence onExitComplete={onExitComplete}>
       {isOpen && (
         <div className="fixed inset-0 z-focus-trap flex items-center justify-center p-4">
           <motion.div
@@ -133,6 +139,7 @@ export const ConfirmModal = ({
                   </Text>
                 </div>
               </div>
+              {children}
             </div>
 
             <div className="bg-ethereal-alabaster px-6 py-4 flex justify-end gap-3 border-t border-ethereal-incense/10">
@@ -143,6 +150,7 @@ export const ConfirmModal = ({
                 variant={isDestructive ? "destructive" : "primary"}
                 onClick={onConfirm}
                 isLoading={isLoading}
+                disabled={confirmDisabled}
               >
                 {resolvedConfirmText}
               </Button>

@@ -15,8 +15,6 @@ import {
   useCreateProgramNote,
   useDeleteProgramNote,
   useDeleteTranslation,
-  useUpdateProgramNote,
-  useUpdateTranslation,
 } from "../api/archive.queries";
 import { ProgramNoteGenerator, TranslationGenerator } from "../components/ReviewArtifactsEditors";
 import { getLanguageLabel } from "../constants/archiveLanguages";
@@ -25,7 +23,7 @@ import { CommitText } from "./CommitText";
 import { usePieceFieldReview } from "./PieceFieldReview";
 import { formText, RecordAdd, RecordRemove } from "./RecordActions";
 import { READING_TEXT, RecordText, RecordTextLabel } from "./RecordText";
-import type { PieceAutosave } from "./usePieceAutosave";
+import { fieldKey, type PieceAutosave } from "./usePieceAutosave";
 
 interface AudienceTextProps {
   readonly piece: Piece;
@@ -35,20 +33,15 @@ interface AudienceTextProps {
 const TranslationBlock = ({ translation, piece, autosave }: AudienceTextProps & { translation: Translation }) => {
   const { t } = useTranslation();
   const textId = useId();
-  const update = useUpdateTranslation();
   const remove = useDeleteTranslation();
   const pieceId = String(piece.id);
   const id = translation.id;
   const label = getLanguageLabel(translation.target_language, t);
+  const translatorLabel = t("archive.review.translator");
   const { marker, action } = usePieceFieldReview({ piece, autosave, label, field: "text", objectId: id });
   const movement = piece.movements?.find((row) => row.id === translation.movement);
   const save = (field: "text" | "translator", next: string) =>
-    autosave.saveValue(
-      `${id}:${field}`,
-      next,
-      (current) => current.translations.find((row) => row.id === id)?.[field],
-      async (value) => (await update.mutateAsync({ pieceId, id, data: { [field]: value } }))[field],
-    );
+    autosave.saveField({ kind: "translation", object_id: id, field }, next);
 
   return (
     <li className="min-w-0 space-y-1">
@@ -66,10 +59,10 @@ const TranslationBlock = ({ translation, piece, autosave }: AudienceTextProps & 
         </div>
       </div>
       {movement && <Text size="sm" color="muted">{movement.title}</Text>}
-      <RecordText id={textId} value={translation.text} className={READING_TEXT} onCommit={(next) => save("text", next)} />
-      <PropertyRow label={t("archive.review.translator")}>
+      <RecordText id={textId} value={translation.text} draftField={autosave.track("text", label, id)} className={READING_TEXT} onCommit={(next) => save("text", next)} />
+      <PropertyRow label={translatorLabel}>
         {(controlId) => (
-          <CommitText id={controlId} value={translation.translator} onCommit={(next) => save("translator", next)} />
+          <CommitText id={controlId} value={translation.translator} draftField={autosave.track("translator", translatorLabel, id)} onCommit={(next) => save("translator", next)} />
         )}
       </PropertyRow>
     </li>
@@ -85,7 +78,7 @@ export const PieceTranslations = ({ piece, autosave }: AudienceTextProps) => {
           {translations.map((translation) => <TranslationBlock key={translation.id} {...{ translation, piece, autosave }} />)}
         </ul>
       )}
-      <TranslationGenerator piece={piece} schedule={autosave.enqueue} />
+      <TranslationGenerator piece={piece} schedule={(dispatch) => autosave.afterFieldsSaved(["lyrics_original", "language"], dispatch)} />
     </div>
   );
 };
@@ -93,19 +86,13 @@ export const PieceTranslations = ({ piece, autosave }: AudienceTextProps) => {
 const ProgramNoteBlock = ({ note, piece, autosave }: AudienceTextProps & { note: ProgramNote }) => {
   const { t } = useTranslation();
   const textId = useId();
-  const update = useUpdateProgramNote();
   const remove = useDeleteProgramNote();
   const pieceId = String(piece.id);
   const id = note.id;
   const label = getLanguageLabel(note.language, t);
   const save = (next: string) => {
     if (!next) return t("archive.review.note_empty");
-    return autosave.saveValue(
-      `${id}:content`,
-      next,
-      (current) => current.program_notes.find((row) => row.id === id)?.content,
-      async (content) => (await update.mutateAsync({ pieceId, id, data: { content } })).content,
-    );
+    return autosave.saveField({ kind: "program_note", object_id: id, field: "content" }, next);
   };
 
   return (
@@ -119,7 +106,7 @@ const ProgramNoteBlock = ({ note, piece, autosave }: AudienceTextProps & { note:
           <RecordRemove label={t("archive.review.delete_note")} autosave={autosave} remove={() => remove.mutateAsync({ pieceId, id })} />
         </div>
       </div>
-      <RecordText id={textId} value={note.content} onCommit={save} />
+      <RecordText id={textId} value={note.content} draftField={autosave.track("content", label, id)} onCommit={save} />
     </li>
   );
 };
@@ -138,7 +125,11 @@ export const PieceProgramNote = ({ piece, autosave }: AudienceTextProps) => {
       )}
       <ProgramNoteGenerator
         piece={piece}
-        schedule={autosave.enqueue}
+        schedule={(dispatch, noteId) => autosave.afterFieldsSaved([
+          "composer_id", "arranger", "title", "composition_year", "epoch", "voicing",
+          "musical_key", "language", "text_source", "lyrics_original",
+          ...(noteId ? [fieldKey("content", noteId)] : []),
+        ], dispatch)}
         manualOpen={manualOpen}
         renderManual={(language, tone, busy) => {
           const hasNote = notes.some((note) => !note.project && note.language === language);
@@ -146,13 +137,15 @@ export const PieceProgramNote = ({ piece, autosave }: AudienceTextProps) => {
           return (
             <RecordAdd
               label={t("archive.piece_card.write_note")}
+              autosave={autosave}
+              draftKey="new_program_note"
               disabled={busy}
               onOpenChange={setManualOpen}
               onSubmit={(data) => {
                 if (hasNote) return t("archive.piece_card.note_exists");
                 const content = formText(data, "content");
                 if (!content) return t("archive.review.note_empty");
-                return autosave.enqueue(() => create.mutateAsync({ piece: String(piece.id), language, target_tone: tone, content }));
+                return () => create.mutateAsync({ piece: String(piece.id), language, target_tone: tone, content });
               }}
             >
               <Textarea

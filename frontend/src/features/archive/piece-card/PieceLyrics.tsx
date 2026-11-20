@@ -96,7 +96,8 @@ export const PieceLyrics = ({ piece, autosave }: { piece: Piece; autosave: Piece
   const lyrics = piece.lyrics_original ?? "";
   const guide = piece.lyrics_ipa ?? "";
   const pairs = pairLyrics(lyrics, guide);
-  const ipa = useIpaRecompute(piece, undefined, autosave.enqueue);
+  const ipa = useIpaRecompute(piece, undefined, (dispatch) =>
+    autosave.afterFieldsSaved(["lyrics_original", "lyrics_ipa", "language"], dispatch));
   const originalLabel = t("archive.piece_card.fields.lyrics_original");
   const ipaLabel = t("archive.piece_card.fields.lyrics_ipa");
   const pronunciation = getLatinPronunciationLabel(piece.lyrics_ipa_system, t);
@@ -115,13 +116,13 @@ export const PieceLyrics = ({ piece, autosave }: { piece: Piece; autosave: Piece
         <div>
           <RecordTextLabel id={originalId} label={originalLabel} {...originalReview} />
           <div ref={originalEditor} className={editorClass}>
-            <RecordText id={originalId} value={lyrics} onCommit={(next) => autosave.save("lyrics_original", next)} className={READING_TEXT} />
+            <RecordText id={originalId} value={lyrics} draftField={autosave.track("lyrics_original", originalLabel)} onCommit={(next) => autosave.save("lyrics_original", next)} className={READING_TEXT} />
           </div>
         </div>
         <div>
           <RecordTextLabel id={ipaId} label={ipaLabel} {...ipaReview} />
           <div ref={ipaEditor} className={editorClass}>
-            <RecordText id={ipaId} value={guide} onCommit={(next) => autosave.save("lyrics_ipa", next)} className={IPA_TEXT} readOnly={ipa.isRunning} />
+            <RecordText id={ipaId} value={guide} draftField={autosave.track("lyrics_ipa", ipaLabel)} onCommit={(next) => autosave.save("lyrics_ipa", next)} className={IPA_TEXT} readOnly={ipa.isRunning} />
           </div>
         </div>
         {pairs && (

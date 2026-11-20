@@ -3,6 +3,7 @@
  * @description Reference recording links, featured choices and manual additions.
  */
 
+import { useEffect, useId } from "react";
 import { ArrowUpRight, Star } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
@@ -11,7 +12,7 @@ import type { Piece, Recording } from "@/shared/types";
 import { Button } from "@/shared/ui/primitives/Button";
 import { Input } from "@/shared/ui/primitives/Input";
 import { Text } from "@/shared/ui/primitives/typography";
-import { useCreateRecording, useDeleteRecording, useUpdateRecording } from "../api/archive.queries";
+import { useCreateRecording, useDeleteRecording } from "../api/archive.queries";
 import { formText, RecordAdd, RecordRemove } from "./RecordActions";
 import type { PieceAutosave } from "./usePieceAutosave";
 
@@ -32,16 +33,15 @@ const parseRecordingUrl = (value: string): string | null => {
 const RecordingRow = ({ piece, recording, autosave }: PieceRecordingsProps & { recording: Recording }) => {
   const { t } = useTranslation();
   const remove = useDeleteRecording();
-  const update = useUpdateRecording();
+  const buttonId = useId();
   const pieceId = String(piece.id);
   const { id, is_featured: featured } = recording;
+  const label = t(featured ? "archive.review.unfeature" : "archive.review.feature");
+  const { key, setDraft } = autosave.track("is_featured", label, id);
+  useEffect(() => () => setDraft(key, null), [key, setDraft]);
   const toggleFeatured = () => {
-    void autosave.saveValue(
-      `${id}:is_featured`,
-      !featured,
-      (current) => current.recordings.find((row) => row.id === id)?.is_featured,
-      async (is_featured) => (await update.mutateAsync({ pieceId, id, data: { is_featured } })).is_featured,
-    ).catch(autosave.showSaveError);
+    void autosave.saveChoice({ kind: "recording", object_id: id, field: "is_featured" }, !featured, buttonId, label)
+      .catch(autosave.showSaveError);
   };
   return (
     <li className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1 border-t border-hairline py-2">
@@ -53,11 +53,12 @@ const RecordingRow = ({ piece, recording, autosave }: PieceRecordingsProps & { r
       </div>
       <div className="flex items-center gap-1">
         <Button
+          id={buttonId}
           type="button"
           variant="ghost"
           size="sm"
           className={cn("min-h-8 px-2", featured && "text-ethereal-gold")}
-          aria-label={featured ? t("archive.review.unfeature") : t("archive.review.feature")}
+          aria-label={label}
           aria-pressed={featured}
           onClick={toggleFeatured}
         >
@@ -87,19 +88,19 @@ export const PieceRecordings = ({ piece, autosave }: PieceRecordingsProps) => {
           {recordings.map((recording) => <RecordingRow key={recording.id} {...{ piece, recording, autosave }} />)}
         </ul>
       )}
-      <RecordAdd label={t("archive.piece_card.add_recording")} onSubmit={(data) => {
+      <RecordAdd label={t("archive.piece_card.add_recording")} draftKey="new_recording" autosave={autosave} onSubmit={(data) => {
         const url = parseRecordingUrl(formText(data, "url"));
         if (!url) return t("archive.piece_card.recording_url_invalid");
         if (recordings.some((recording) => parseRecordingUrl(recording.url) === url)) {
           return t("archive.piece_card.recording_exists");
         }
-        return autosave.enqueue(() => create.mutateAsync({
+        return () => create.mutateAsync({
           piece: String(piece.id),
           url,
           performer: formText(data, "performer"),
           source: "OTH",
           external_id: crypto.randomUUID(),
-        }));
+        });
       }}>
         <Input name="url" label={t("archive.piece_card.recording_url")} type="url" variant="property" required maxLength={200} autoFocus />
         <Input name="performer" label={t("archive.piece_card.recording_performer")} variant="property" maxLength={200} />

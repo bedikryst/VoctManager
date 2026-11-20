@@ -54,6 +54,7 @@ const TextProperty = ({ piece, autosave, field, label }: Omit<ReviewRowProps, "c
         <CommitText
           id={id}
           value={piece[field] ?? ""}
+          draftField={autosave.track(field, label)}
           onCommit={(next) => schema.safeParse(next).success
             ? autosave.save(field, next)
             : t("archive.piece_card.field_too_long")}
@@ -99,6 +100,11 @@ export const PieceProperties = ({ piece, autosave, onGoToPage }: PieceProperties
 }) => {
   const { t } = useTranslation();
   const notesId = useId();
+  const languageLabel = t("archive.piece_card.fields.language");
+  const epochLabel = t("archive.piece_card.fields.epoch");
+  const yearLabel = t("archive.piece_card.fields.composition_year");
+  const durationLabel = t("archive.piece_card.fields.duration");
+  const notesLabel = t("archive.piece_card.fields.description");
   const epochOptions = getArchiveEpochOptions(t);
   const epoch = piece.epoch ?? "";
   const epochChoices = epoch && !epochOptions.some((option) => option.value === epoch)
@@ -112,17 +118,17 @@ export const PieceProperties = ({ piece, autosave, onGoToPage }: PieceProperties
         <TextProperty piece={piece} autosave={autosave} field="arranger" label={t("archive.piece_card.fields.arranger")} />
         <TextProperty piece={piece} autosave={autosave} field="opus_catalog" label={t("archive.piece_card.fields.opus")} />
         <TextProperty piece={piece} autosave={autosave} field="musical_key" label={t("archive.piece_card.fields.key")} />
-        <ReviewRow piece={piece} autosave={autosave} field="language" label={t("archive.piece_card.fields.language")}>
+        <ReviewRow piece={piece} autosave={autosave} field="language" label={languageLabel}>
           {(id) => (
             <RowSelect
               id={id}
               value={piece.language ?? ""}
               options={getArchiveLanguageChoices(piece.language, t)}
-              onValueChange={(next) => void autosave.save("language", next).catch(autosave.showSaveError)}
+              onValueChange={(next) => void autosave.saveChoice({ field: "language" }, next, id, languageLabel).catch(autosave.showSaveError)}
             />
           )}
         </ReviewRow>
-        <ReviewRow piece={piece} autosave={autosave} field="epoch" label={t("archive.piece_card.fields.epoch")}>
+        <ReviewRow piece={piece} autosave={autosave} field="epoch" label={epochLabel}>
           {(id) => (
             <RowSelect
               id={id}
@@ -130,16 +136,17 @@ export const PieceProperties = ({ piece, autosave, onGoToPage }: PieceProperties
               options={epochChoices}
               onValueChange={(next) => {
                 const value = epochChoices.find((option) => option.value === next)?.value ?? "";
-                void autosave.save("epoch", value).catch(autosave.showSaveError);
+                void autosave.saveChoice({ field: "epoch" }, value, id, epochLabel).catch(autosave.showSaveError);
               }}
             />
           )}
         </ReviewRow>
-        <ReviewRow piece={piece} autosave={autosave} field="composition_year" label={t("archive.piece_card.fields.composition_year")}>
+        <ReviewRow piece={piece} autosave={autosave} field="composition_year" label={yearLabel}>
           {(id) => (
             <CommitText
               id={id}
               value={piece.composition_year?.toString() ?? ""}
+              draftField={autosave.track("composition_year", yearLabel)}
               inputMode="numeric"
               onCommit={(next) => {
                 const year = pieceCardSchema.shape.composition_year.safeParse(next);
@@ -150,11 +157,12 @@ export const PieceProperties = ({ piece, autosave, onGoToPage }: PieceProperties
             />
           )}
         </ReviewRow>
-        <PropertyRow label={t("archive.piece_card.fields.duration")}>
+        <PropertyRow label={durationLabel}>
           {(id) => (
             <CommitText
               id={id}
               value={pieceDuration(piece.estimated_duration)}
+              draftField={autosave.track("estimated_duration", durationLabel)}
               onCommit={(next) => {
                 const duration = pieceDuration(next);
                 return duration.valid
@@ -165,8 +173,8 @@ export const PieceProperties = ({ piece, autosave, onGoToPage }: PieceProperties
           )}
         </PropertyRow>
         <div className="mt-4">
-          <RecordTextLabel id={notesId} label={t("archive.piece_card.fields.description")} />
-          <RecordText id={notesId} value={piece.description ?? ""} onCommit={(next) => autosave.save("description", next)} />
+          <RecordTextLabel id={notesId} label={notesLabel} />
+          <RecordText id={notesId} value={piece.description ?? ""} draftField={autosave.track("description", notesLabel)} onCommit={(next) => autosave.save("description", next)} />
         </div>
       </RecordSection>
       <RecordSection title={t("archive.piece_card.fields.voicing")}>

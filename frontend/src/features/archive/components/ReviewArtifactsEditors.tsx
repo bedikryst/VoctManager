@@ -379,7 +379,7 @@ const translationDispatchMessage = (code: string | null, t: TFunction): string =
 // in; an existing translation is edited above, never regenerated here.
 // ---------------------------------------------------------------------------
 
-type ScheduleGeneration = (dispatch: () => Promise<Piece>) => Promise<Piece>;
+type ScheduleGeneration = (dispatch: () => Promise<Piece>, noteId?: string) => Promise<Piece | undefined>;
 
 const AudienceSelect = ({ compact, label, ...props }: React.ComponentProps<typeof Select> & {
   readonly compact?: boolean;
@@ -846,7 +846,7 @@ export const ProgramNoteGenerator = ({
   const run = (): void => {
     setDispatching(true);
     const dispatch = () => generate.mutateAsync({ pieceId, force: Boolean(note), language, tone });
-    void (schedule ? schedule(dispatch) : dispatch())
+    void (schedule ? schedule(dispatch, note?.id) : dispatch())
       .catch(() => toast.error(t("archive.review.note_failed", "Nie udało się uruchomić generowania.")))
       .finally(() => setDispatching(false));
   };

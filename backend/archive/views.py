@@ -32,6 +32,7 @@ from pydantic import ValidationError as PydanticValidationError
 from rest_framework import permissions, serializers, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import APIException, PermissionDenied, ValidationError
+from rest_framework.generics import get_object_or_404
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -82,6 +83,7 @@ from .serializers import (
     TranslationWriteSerializer,
 )
 from .services import enrichment, provenance
+from .services.field_edits import EditSuperseded, FieldEdit, Scalar
 from .services.ingestion import (
     DispatchRefused,
     IngestionPreconditionError,
@@ -93,6 +95,7 @@ from .services.ingestion import (
     start_ingestion,
 )
 from .services.ipa import DEFAULT_LATIN_SYSTEM
+from .services.management import PROVENANCE_TRACKED_FIELDS
 from .signals import piece_material_updated_event
 from .tasks import live_preview_cache_key
 
@@ -244,6 +247,14 @@ class ComposerViewSet(viewsets.ModelViewSet):
         return super().destroy(request, *args, **kwargs)
 
 
+_CHILD_EDITS = {
+    'movement': (Movement, MovementWriteSerializer, ('title', 'tempo_marking'), 'title'),
+    'translation': (Translation, TranslationWriteSerializer, ('text', 'translator'), 'text'),
+    'program_note': (ProgramNote, ProgramNoteWriteSerializer, ('content',), None),
+    'recording': (Recording, RecordingWriteSerializer, ('is_featured',), None),
+}
+
+
 class PieceViewSet(viewsets.ModelViewSet):
     """
     Core aggregate root endpoint for managing the musical repertoire.
@@ -274,7 +285,7 @@ class PieceViewSet(viewsets.ModelViewSet):
         # surfaces (detail / write responses) need it, never the list.
         ctx['include_provenance'] = self.action in (
             'retrieve', 'create', 'update', 'partial_update', 'verify_field',
-            'recompute_ipa', 'generate_program_note', 'generate_translation',
+            'recompute_ipa', 'generate_program_note', 'generate_translation', 'edit_field',
         )
         return ctx
 
@@ -289,9 +300,15 @@ class PieceViewSet(viewsets.ModelViewSet):
             )
         return Response(self.get_serializer(piece).data, status=status.HTTP_201_CREATED)
 
+    def _locked_piece(self, request: Request, pk: str) -> Piece:
+        piece = get_object_or_404(Piece.objects.select_for_update(), pk=pk)
+        self.check_object_permissions(request, piece)
+        return piece
+
+    @transaction.atomic
     def update(self, request, *args, **kwargs) -> Response:
         partial = kwargs.pop('partial', False)
-        instance = self.get_object()
+        instance = self._locked_piece(request, kwargs['pk'])
         serializer = PieceSerializer(
             instance, data=request.data, partial=partial,
             context=self.get_serializer_context(),
@@ -312,6 +329,63 @@ class PieceViewSet(viewsets.ModelViewSet):
                 piece=piece, dto=dto, actor_email=_actor_email(request),
             )
         return Response(self.get_serializer(piece).data)
+
+    def _field_edit(self, piece: Piece, kind: str, field: str, object_id: str) -> tuple[
+        FieldEdit, type[serializers.ModelSerializer],
+    ]:
+        if kind == 'piece' and not object_id and field in (*PROVENANCE_TRACKED_FIELDS, 'composer_id'):
+            return FieldEdit(piece, field, field in PROVENANCE_TRACKED_FIELDS), PieceSerializer
+        if kind in _CHILD_EDITS and object_id:
+            model, serializer, fields, tracked = _CHILD_EDITS[kind]
+            if field in fields:
+                target = get_object_or_404(
+                    model._default_manager.select_for_update(), pk=object_id, piece=piece,
+                )
+                return FieldEdit(target, field, field == tracked), serializer
+        raise ValidationError({'field': _('That field cannot be edited here.')})
+
+    @action(detail=True, methods=['patch', 'post'])
+    @transaction.atomic
+    def edit_field(self, request: Request, pk: str) -> Response:
+        """Commit one scalar or redeem the receipt from that exact commit."""
+        piece = self._locked_piece(request, pk)
+        data = client_payload(request.data)
+        field = str(data.get('field') or '')
+        kind = str(data.get('kind') or 'piece')
+        object_id = str(data.get('object_id') or '')
+        try:
+            edit, serializer_class = self._field_edit(piece, kind, field, object_id)
+        except DjangoValidationError as exc:
+            raise ValidationError({'object_id': _('Invalid object identifier.')}) from exc
+
+        user_id = str(request_user(request).pk)
+        receipt = None
+        if request.method == 'POST':
+            try:
+                edit.undo(piece, user_id, str(data.get('receipt') or ''))
+            except EditSuperseded:
+                return make_error_response(
+                    request, status_code=status.HTTP_409_CONFLICT, error_code='edit_superseded',
+                    detail=_('The edit can no longer be undone.'),
+                )
+        else:
+            if 'value' not in data:
+                raise ValidationError({'value': _('A value is required.')})
+            serializer = serializer_class(edit.target, data={field: data['value']}, partial=True)
+            serializer.is_valid(raise_exception=True)
+            if field == 'composer_id':
+                composer = serializer.validated_data['composer']
+                value: Scalar = str(composer.pk) if composer else None
+            else:
+                value = serializer.validated_data[field]
+            if edit.value() != value:
+                previous = edit.previous()
+                edit.write(value)
+                if edit.tracked:
+                    provenance.record_manual(target=edit.target, field_name=field, actor_email=_actor_email(request))
+                receipt = edit.receipt(piece, user_id, previous)
+
+        return Response({'piece': self.get_serializer(piece).data, 'receipt': receipt})
 
     @action(detail=False, methods=['put'], url_path='voice-requirements')
     def voice_requirements(self, request) -> Response:
@@ -388,6 +462,7 @@ class PieceViewSet(viewsets.ModelViewSet):
         return Response(self.get_serializer(piece).data, status=status.HTTP_202_ACCEPTED)
 
     @action(detail=True, methods=['post'], url_path='verify_field')
+    @transaction.atomic
     def verify_field(self, request, pk=None):
         """Mark one AI-extracted field as human-verified — the review cockpit's
         "this is already correct" affordance. Stamps MANUAL provenance without
@@ -396,7 +471,7 @@ class PieceViewSet(viewsets.ModelViewSet):
         Body: ``{"field": "<name>", "object_id": "<uuid>"?}``. ``object_id``
         defaults to the piece; pass a movement/translation id to verify a child.
         """
-        piece = self.get_object()
+        piece = self._locked_piece(request, pk)
         data = request.data if hasattr(request.data, 'get') else {}
         field = str(data.get('field') or '').strip()
         object_id = str(data.get('object_id') or '').strip()
@@ -548,12 +623,13 @@ class MovementViewSet(viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['piece']
 
+    @transaction.atomic
     def perform_update(self, serializer) -> None:
+        serializer.instance = get_object_or_404(Movement.objects.select_for_update(), pk=serializer.instance.pk)
+        previous = serializer.instance.title
         movement = serializer.save()
-        provenance.record_manual(
-            target=movement, field_name='title',
-            actor_email=_actor_email(self.request),
-        )
+        if movement.title != previous:
+            provenance.record_manual(target=movement, field_name='title', actor_email=_actor_email(self.request))
 
     def perform_destroy(self, instance) -> None:
         instance.delete()  # SoftDeleteModel soft-delete
@@ -567,12 +643,13 @@ class TranslationViewSet(viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['piece', 'target_language']
 
+    @transaction.atomic
     def perform_update(self, serializer) -> None:
+        serializer.instance = get_object_or_404(Translation.objects.select_for_update(), pk=serializer.instance.pk)
+        previous = serializer.instance.text
         translation = serializer.save()
-        provenance.record_manual(
-            target=translation, field_name='text',
-            actor_email=_actor_email(self.request),
-        )
+        if translation.text != previous:
+            provenance.record_manual(target=translation, field_name='text', actor_email=_actor_email(self.request))
 
     def perform_destroy(self, instance) -> None:
         instance.delete()  # SoftDeleteModel soft-delete

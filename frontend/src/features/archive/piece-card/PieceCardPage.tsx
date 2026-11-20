@@ -18,7 +18,7 @@
  * @module features/archive/piece-card/PieceCardPage
  */
 
-import React, { useCallback, useRef, useState } from "react";
+import React, { useCallback, useId, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
@@ -106,6 +106,10 @@ const PhoneReviewBar = ({
 
 export default function PieceCardPage(): React.JSX.Element {
   const { id = "" } = useParams<{ id: string }>();
+  return <PieceCard key={id} id={id} />;
+}
+
+const PieceCard = ({ id }: { id: string }): React.JSX.Element => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const isTwoPane = useMediaQuery("(min-width: 1024px)");
@@ -113,13 +117,16 @@ export default function PieceCardPage(): React.JSX.Element {
   const { data: piece, isLoading, isError, error } = usePiece(id);
   const { data: allPieces = [] } = usePieces();
   const autosave = usePieceAutosave(id);
+  const titleId = useId();
   const titleLabel = t("archive.piece_card.edit_title", "Tytuł utworu");
+  const titleDraft = autosave.track("title", titleLabel);
   const titleReview = usePieceFieldReview({ piece, field: "title", label: titleLabel, autosave });
   const approveEdition = useApproveEdition();
   const scorePane = useScorePane();
   const dockBarHeight = useBottomBarHeight();
 
   const [isApproveOpen, setIsApproveOpen] = useState(false);
+  const fieldToFocus = useRef<string | null>(null);
   const [standPage, setStandPage] = useState<number | null>(null);
 
   const scorePdf = piece ? getReviewPdf(piece) : null;
@@ -216,30 +223,38 @@ export default function PieceCardPage(): React.JSX.Element {
 
   const handleApprove = (): void => {
     if (!awaitingEdition) return;
-    approveEdition.mutate(String(awaitingEdition.id), {
-      onSuccess: () => {
-        setIsApproveOpen(false);
-        toast.success(
-          t(
-            "archive.piece_card.approved",
-            "Zatwierdzono — materiały są gotowe do udostępnienia.",
-          ),
-        );
-        // A second awaiting edition of the same work keeps the record in
-        // review, so the page stays on it.
-        if (awaitingEditions.length > 1) return;
-        navigate(nextAwaiting ? cardPath(nextAwaiting.id) : LIBRARY_PATH);
-      },
-      onError: (err) => {
-        setIsApproveOpen(false);
-        toastApiError(err, t, {
-          fallbackDescription: t(
-            "archive.piece_card.approve_failed",
-            "Nie udało się zatwierdzić.",
-          ),
-        });
-      },
+    void autosave.afterFieldsSaved(null, async () => {
+      await approveEdition.mutateAsync(String(awaitingEdition.id));
+      setIsApproveOpen(false);
+      toast.success(
+        t(
+          "archive.piece_card.approved",
+          "Zatwierdzono — materiały są gotowe do udostępnienia.",
+        ),
+      );
+      // A second awaiting edition keeps the piece in review.
+      if (awaitingEditions.length > 1) return;
+      navigate(nextAwaiting ? cardPath(nextAwaiting.id) : LIBRARY_PATH);
+    }).catch((err: unknown) => {
+      setIsApproveOpen(false);
+      toastApiError(err, t, {
+        fallbackDescription: t(
+          "archive.piece_card.approve_failed",
+          "Nie udało się zatwierdzić.",
+        ),
+      });
     });
+  };
+
+  const leaveApprovalForField = (fieldId: string): void => {
+    fieldToFocus.current = fieldId;
+    setIsApproveOpen(false);
+  };
+
+  const focusDraftField = (): void => {
+    const fieldId = fieldToFocus.current;
+    fieldToFocus.current = null;
+    if (fieldId) requestAnimationFrame(() => document.getElementById(fieldId)?.focus());
   };
 
   const nextLabel = t("archive.piece_card.next_awaiting", "Następne do przeglądu");
@@ -357,8 +372,12 @@ export default function PieceCardPage(): React.JSX.Element {
                 <Heading as="h1" size={null} ref={isTwoPane ? undefined : titleRef}>
                   <InlineEditable
                     key={pieceId}
+                    id={titleId}
                     value={piece.title}
                     onSave={(next) => autosave.save("title", next)}
+                    onDraftChange={(discard) => titleDraft.setDraft(titleDraft.key, discard ? {
+                      id: titleId, label: titleLabel, discard,
+                    } : null)}
                     validate={(next) => {
                       if (!next) return t("archive.piece_card.title_required", "Tytuł jest wymagany.");
                       return pieceCardSchema.shape.title.safeParse(next).success
@@ -450,9 +469,35 @@ export default function PieceCardPage(): React.JSX.Element {
         confirmText={t("archive.piece_card.approve_btn", "Zatwierdź i opublikuj")}
         cancelText={t("common.actions.cancel", "Anuluj")}
         isLoading={approveEdition.isPending || autosave.isSaving}
+        confirmDisabled={autosave.drafts.length > 0}
         onCancel={() => setIsApproveOpen(false)}
         onConfirm={handleApprove}
-      />
+        onExitComplete={focusDraftField}
+      >
+        {autosave.drafts.length > 0 && (
+          <div className="mt-4 border-t border-hairline pt-3">
+            <Text as="p" role="status" weight="medium">
+              {t("archive.piece_card.approve_unresolved")}
+            </Text>
+            <ul className="mt-2 max-h-48 space-y-1 overflow-y-auto">
+              {autosave.drafts.map((draft) => (
+                <li key={draft.id} className="flex flex-wrap items-center justify-between gap-1">
+                  <Button type="button" variant="ghost" size="sm" casing="sentence" disabled={autosave.isSaving}
+                    onClick={draft.retry ?? (() => leaveApprovalForField(draft.id))}
+                  >
+                    {t(draft.retry ? "archive.piece_card.retry_draft" : "archive.piece_card.edit_draft", { field: draft.label })}
+                  </Button>
+                  <Button type="button" variant="ghost" size="sm" casing="sentence" disabled={autosave.isSaving}
+                    onClick={draft.discard}
+                  >
+                    {t("archive.piece_card.discard_draft", { field: draft.label })}
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </ConfirmModal>
 
       {!isTwoPane && (
         <ScoreStandModal
@@ -473,4 +518,4 @@ export default function PieceCardPage(): React.JSX.Element {
       )}
     </div>
   );
-}
+};

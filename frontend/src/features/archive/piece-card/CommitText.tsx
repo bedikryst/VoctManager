@@ -3,17 +3,19 @@
  * @description A typed property that retains its draft until its commit succeeds.
  */
 
-import { useRef, useState, type KeyboardEvent } from "react";
+import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { useTranslation } from "react-i18next";
 
 import { cn } from "@/shared/lib/utils";
 import { PROPERTY_CONTROL_CLASS } from "@/shared/ui/composites/PropertyRow";
 import { fieldShellVariants } from "@/shared/ui/primitives/fieldShell";
 import { Text } from "@/shared/ui/primitives/typography";
+import type { DraftField } from "./usePieceAutosave";
 
 interface CommitTextProps {
   readonly id: string;
   readonly value: string;
+  readonly draftField: DraftField;
   readonly onCommit: (value: string) => Promise<void> | string;
   readonly multiline?: boolean;
   readonly inputMode?: "numeric" | "text" | "url";
@@ -23,7 +25,7 @@ interface CommitTextProps {
 }
 
 export const CommitText = ({
-  id, value, onCommit, multiline = false, inputMode, className, readOnly, ariaLabel,
+  id, value, draftField, onCommit, multiline = false, inputMode, className, readOnly, ariaLabel,
 }: CommitTextProps) => {
   const { t } = useTranslation();
   const [draft, setDraft] = useState<string | null>(null);
@@ -32,6 +34,16 @@ export const CommitText = ({
   const submitted = useRef<number | undefined>(undefined);
   const displayed = draft ?? value;
   const errorId = `${id}-error`;
+  const { key, label, setDraft: reportDraft } = draftField;
+
+  useEffect(() => () => reportDraft(key, null), [key, reportDraft]);
+
+  const discard = () => {
+    revision.current += 1;
+    setDraft(null);
+    setError(undefined);
+    reportDraft(key, null);
+  };
 
   const commit = () => {
     if (draft === null || submitted.current === revision.current) return;
@@ -63,9 +75,7 @@ export const CommitText = ({
     if (event.nativeEvent.isComposing) return;
     if (event.key === "Escape" && draft !== null) {
       event.stopPropagation();
-      revision.current += 1;
-      setDraft(null);
-      setError(undefined);
+      discard();
     }
     if (event.key === "Enter" && (!multiline || event.ctrlKey || event.metaKey)) {
       event.preventDefault();
@@ -87,6 +97,7 @@ export const CommitText = ({
       revision.current += 1;
       setDraft(event.target.value);
       setError(undefined);
+      reportDraft(key, { id, label, discard });
     },
     className: cn(
       fieldShellVariants({ variant: "property", hasError: Boolean(error) }),

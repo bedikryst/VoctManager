@@ -228,7 +228,7 @@ export const useRefreshComposerFromMb = () => {
  * pieces list so the conductor sees changes land instantly; rolls back on
  * server error.
  */
-export const useUpdatePiece = ({ primeDetail = false } = {}) => {
+export const useUpdatePiece = () => {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({
@@ -255,9 +255,6 @@ export const useUpdatePiece = ({ primeDetail = false } = {}) => {
       if (context?.previous) {
         qc.setQueryData(archiveKeys.pieces.all, context.previous);
       }
-    },
-    onSuccess: (piece, { id }) => {
-      if (primeDetail) qc.setQueryData(archiveKeys.pieces.details(id), piece);
     },
     onSettled: () => {
       qc.invalidateQueries({ queryKey: archiveKeys.pieces.all });

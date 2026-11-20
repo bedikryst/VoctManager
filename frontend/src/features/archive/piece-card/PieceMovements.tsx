@@ -10,7 +10,7 @@ import type { Movement, Piece } from "@/shared/types";
 import { Button } from "@/shared/ui/primitives/Button";
 import { Input } from "@/shared/ui/primitives/Input";
 import { Text } from "@/shared/ui/primitives/typography";
-import { useCreateMovement, useDeleteMovement, useUpdateMovement } from "../api/archive.queries";
+import { useCreateMovement, useDeleteMovement } from "../api/archive.queries";
 import { CommitText } from "./CommitText";
 import { usePieceFieldReview } from "./PieceFieldReview";
 import { formText, RecordAdd, RecordRemove } from "./RecordActions";
@@ -26,24 +26,16 @@ const MovementRow = ({ piece, autosave, onGoToPage, movement }: PieceMovementsPr
   const { t } = useTranslation();
   const titleId = useId();
   const tempoId = useId();
-  const update = useUpdateMovement();
   const remove = useDeleteMovement();
   const pieceId = String(piece.id);
   const id = movement.id;
   const order = movement.order_index + 1;
   const page = movement.starts_on_page;
   const titleLabel = t("archive.piece_card.movement_title_numbered", { number: order });
+  const tempoLabel = t("archive.review.tempo");
   const { marker, action } = usePieceFieldReview({ piece, autosave, field: "title", objectId: id, label: titleLabel });
   const save = (field: "title" | "tempo_marking", next: string) =>
-    autosave.saveValue(
-      `${id}:${field}`,
-      next,
-      (current) => {
-        const row = current.movements.find((item) => item.id === id);
-        return row && (row[field] ?? "");
-      },
-      async (value) => (await update.mutateAsync({ pieceId, id, data: { [field]: value } }))[field] ?? "",
-    );
+    autosave.saveField({ kind: "movement", object_id: id, field }, next);
 
   return (
     <li className="flex flex-wrap items-start gap-x-2 border-t border-hairline py-2">
@@ -52,13 +44,13 @@ const MovementRow = ({ piece, autosave, onGoToPage, movement }: PieceMovementsPr
         <Text size="sm" color="muted" className="tabular-nums">{order}.</Text>
       </div>
       <div className="min-w-40 flex-1">
-        <CommitText id={titleId} ariaLabel={titleLabel} value={movement.title} onCommit={(next) => {
+        <CommitText id={titleId} ariaLabel={titleLabel} value={movement.title} draftField={autosave.track("title", titleLabel, id)} onCommit={(next) => {
           if (!next) return t("archive.piece_card.movement_title_required");
           return next.length <= 200 ? save("title", next) : t("archive.piece_card.field_too_long");
         }} />
       </div>
       <div className="w-24">
-        <CommitText id={tempoId} ariaLabel={t("archive.review.tempo")} value={movement.tempo_marking ?? ""} onCommit={(next) =>
+        <CommitText id={tempoId} ariaLabel={tempoLabel} value={movement.tempo_marking ?? ""} draftField={autosave.track("tempo_marking", tempoLabel, id)} onCommit={(next) =>
           next.length <= 80 ? save("tempo_marking", next) : t("archive.piece_card.field_too_long")
         } />
       </div>
@@ -92,12 +84,12 @@ export const PieceMovements = ({ piece, autosave, onGoToPage }: PieceMovementsPr
   const createMovement = (data: FormData) => {
     const title = formText(data, "title");
     if (!title) return t("archive.piece_card.movement_title_required");
-    return autosave.enqueue(() => create.mutateAsync({
+    return () => create.mutateAsync({
       piece: String(piece.id),
       order_index: movements.reduce((last, movement) => Math.max(last, movement.order_index), -1) + 1,
       title,
       tempo_marking: formText(data, "tempo_marking"),
-    }));
+    });
   };
   return (
     <div className="space-y-1">
@@ -106,7 +98,7 @@ export const PieceMovements = ({ piece, autosave, onGoToPage }: PieceMovementsPr
           {movements.map((movement) => <MovementRow key={movement.id} {...{ piece, autosave, onGoToPage, movement }} />)}
         </ol>
       )}
-      <RecordAdd label={t("archive.piece_card.add_movement")} onSubmit={createMovement}>
+      <RecordAdd label={t("archive.piece_card.add_movement")} draftKey="new_movement" autosave={autosave} onSubmit={createMovement}>
         <Input name="title" label={t("archive.review.movement_title")} variant="property" required maxLength={200} autoFocus />
         <Input name="tempo_marking" label={t("archive.review.tempo")} variant="property" maxLength={80} />
       </RecordAdd>

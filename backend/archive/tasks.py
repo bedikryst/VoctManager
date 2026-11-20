@@ -688,11 +688,11 @@ def persist_analysis(self, payload: dict) -> dict:
     stand-layout suggestion that the single analysis call produced. No AI here;
     idempotent."""
     _set_progress(payload['edition_id'], IngestionProgress.PERSISTING)
-    piece = Piece.objects.get(id=payload['piece_id'])
     analysis = ScoreAnalysisResult.model_validate(payload['analysis'])
     version = payload.get('analysis_prompt_version', ANALYZE_SCORE.version)
 
     with transaction.atomic():
+        piece = Piece.objects.select_for_update().get(id=payload['piece_id'])
         # Movements (skip if already populated).
         if not piece.movements.exists() and analysis.movements:
             for mv in analysis.movements:

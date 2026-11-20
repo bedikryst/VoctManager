@@ -90,7 +90,7 @@ interface LyricsIpaFieldProps {
   readonly chip: React.ReactNode;
 }
 
-type ScheduleIpa = (dispatch: () => Promise<Piece>) => Promise<Piece>;
+type ScheduleIpa = (dispatch: () => Promise<Piece>) => Promise<Piece | undefined>;
 
 export const useIpaRecompute = (
   piece: Piece,

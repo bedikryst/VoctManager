@@ -37,6 +37,15 @@ import type {
 } from "../types/archive.dto";
 
 const PIECES_URL = "/api/pieces/";
+
+export type PieceFieldTarget =
+  | { field: string; kind?: "piece"; object_id?: never }
+  | { field: string; kind: "movement" | "translation" | "program_note" | "recording"; object_id: string };
+
+interface PieceFieldEdit {
+  piece: Piece;
+  receipt: string | null;
+}
 const COMPOSERS_URL = "/api/composers/";
 const TRACKS_URL = "/api/tracks/";
 const EDITIONS_URL = "/api/archive/editions/";
@@ -130,6 +139,12 @@ export const ArchiveService = {
     const response = await api.patch<Piece>(`${PIECES_URL}${id}/`, data);
     return response.data;
   },
+
+  editPieceField: async (id: string, target: PieceFieldTarget, value: string | number | boolean | null) =>
+    (await api.patch<PieceFieldEdit>(`${PIECES_URL}${id}/edit_field/`, { ...target, value })).data,
+
+  undoPieceField: async (id: string, target: PieceFieldTarget, receipt: string) =>
+    (await api.post<PieceFieldEdit>(`${PIECES_URL}${id}/edit_field/`, { ...target, receipt })).data,
 
   deletePiece: async (id: string): Promise<void> => {
     await api.delete(`${PIECES_URL}${id}/`);

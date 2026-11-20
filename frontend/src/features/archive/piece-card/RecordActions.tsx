@@ -3,7 +3,7 @@
  * @description Inline creation and confirmed removal of child records.
  */
 
-import { useRef, useState, type FormEvent, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { Plus, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
@@ -33,11 +33,13 @@ export const RecordRemove = ({ label, remove, autosave }: {
   );
 };
 
-export const RecordAdd = ({ label, disabled, children, onSubmit, onOpenChange }: {
+export const RecordAdd = ({ label, draftKey, autosave, disabled, children, onSubmit, onOpenChange }: {
   label: string;
+  draftKey: string;
+  autosave: PieceAutosave;
   disabled?: boolean;
   children: ReactNode;
-  onSubmit: (data: FormData) => Promise<unknown> | string;
+  onSubmit: (data: FormData) => (() => Promise<unknown>) | string;
   onOpenChange?: (open: boolean) => void;
 }) => {
   const { t } = useTranslation();
@@ -45,11 +47,15 @@ export const RecordAdd = ({ label, disabled, children, onSubmit, onOpenChange }:
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string>();
   const trigger = useRef<HTMLButtonElement>(null);
-  const close = () => {
+  const id = useId();
+  const { setDraft } = autosave.track(draftKey, label);
+  useEffect(() => () => setDraft(draftKey, null), [draftKey, setDraft]);
+  const close = (focusTrigger = true) => {
+    setDraft(draftKey, null);
     setOpen(false);
     onOpenChange?.(false);
     setError(undefined);
-    requestAnimationFrame(() => trigger.current?.focus());
+    if (focusTrigger) requestAnimationFrame(() => trigger.current?.focus());
   };
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -61,10 +67,14 @@ export const RecordAdd = ({ label, disabled, children, onSubmit, onOpenChange }:
     }
     setError(undefined);
     setPending(true);
-    void result.then(close, () => setError(t("archive.review.save_failed"))).finally(() => setPending(false));
+    void autosave.commitDraft(draftKey, result)
+      .then(() => close(), () => setError(t("archive.review.save_failed")))
+      .finally(() => setPending(false));
   };
   return open ? (
-    <form className="space-y-2 border-t border-hairline py-3" onSubmit={submit}>
+    <form id={id} tabIndex={-1} className="space-y-2 border-t border-hairline py-3" onSubmit={submit}
+      onChange={() => setDraft(draftKey, { id, label, discard: () => close(false) })}
+    >
       <fieldset disabled={disabled || pending} className="space-y-2">
         {children}
       </fieldset>
@@ -73,7 +83,7 @@ export const RecordAdd = ({ label, disabled, children, onSubmit, onOpenChange }:
         <Button type="submit" casing="sentence" size="sm" variant="outline" isLoading={pending} disabled={disabled}>
           {t("archive.review.save_row")}
         </Button>
-        <Button type="button" casing="sentence" size="sm" variant="ghost" onClick={close} disabled={pending}>
+        <Button type="button" casing="sentence" size="sm" variant="ghost" onClick={() => close()} disabled={pending}>
           {t("common.actions.cancel")}
         </Button>
       </div>

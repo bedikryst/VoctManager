@@ -36,7 +36,7 @@ logger = logging.getLogger(__name__)
 # the fields the AI extracts and the review cockpit shows a source chip for.
 # Editing one by hand flips its chip "AI · do sprawdzenia" → "Zweryfikowane".
 # Composer (FK) and voice_requirements (sub-entities) are handled elsewhere.
-_PROVENANCE_TRACKED_FIELDS: tuple[str, ...] = (
+PROVENANCE_TRACKED_FIELDS: tuple[str, ...] = (
     'title',
     'arranger',
     'language',
@@ -130,7 +130,7 @@ class ArchiveManagementService:
         changed, so the caller can stamp MANUAL provenance for exactly those —
         an untouched field keeps its original AI / external-source chip.
         """
-        before = {name: getattr(piece, name) for name in _PROVENANCE_TRACKED_FIELDS}
+        before = {name: getattr(piece, name) for name in PROVENANCE_TRACKED_FIELDS}
 
         piece.title = dto.title
         piece.arranger = cls._normalize_blank_text(dto.arranger)
@@ -154,7 +154,7 @@ class ArchiveManagementService:
 
         return {
             name
-            for name in _PROVENANCE_TRACKED_FIELDS
+            for name in PROVENANCE_TRACKED_FIELDS
             if getattr(piece, name) != before[name]
         }
 
@@ -250,7 +250,7 @@ class ArchiveManagementService:
         target: Model
         allowed: tuple[str, ...]
         if not object_id or str(object_id) == str(piece.pk):
-            target, allowed = piece, _PROVENANCE_TRACKED_FIELDS
+            target, allowed = piece, PROVENANCE_TRACKED_FIELDS
         else:
             target, allowed = cls._resolve_child_provenance_target(piece, object_id)
         if field not in allowed:
@@ -270,10 +270,10 @@ class ArchiveManagementService:
         """Find the piece's own movement/translation by id and return it with
         the fields that carry a review chip. Rejects ids that don't belong to
         this piece (or aren't a chip-bearing child) with ``ValueError``."""
-        movement = piece.movements.filter(pk=object_id).first()
+        movement = piece.movements.select_for_update().filter(pk=object_id).first()
         if movement is not None:
             return movement, ("title",)
-        translation = piece.translations.filter(pk=object_id).first()
+        translation = piece.translations.select_for_update().filter(pk=object_id).first()
         if translation is not None:
             return translation, ("text",)
         raise ValueError("Object is not a verifiable child of this piece.")

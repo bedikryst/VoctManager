@@ -1,16 +1,17 @@
 /**
  * @file usePieceAutosave.ts
- * @description Serial commits and field-scoped undo for piece card edits.
+ * @description Serial commits, unresolved drafts, and conditional undo on the piece card.
  */
 
-import { useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 
-import { toastApiError } from "@/shared/api/errors";
+import { parseApiError, toastApiError } from "@/shared/api/errors";
 import type { Piece } from "@/shared/types";
-import { archiveKeys, useUpdatePiece, useVerifyPieceField } from "../api/archive.queries";
+import { archiveKeys, useVerifyPieceField } from "../api/archive.queries";
+import { ArchiveService, type PieceFieldTarget } from "../api/archive.service";
 import { childFieldProvenance, isAiProvenance, pieceFieldProvenance } from "../components/ProvenanceChip";
 import type { PiecePatchDTO } from "../types/archive.dto";
 
@@ -19,30 +20,43 @@ type Field = keyof EditableFields;
 type ReviewField = Field | "text";
 type SavedValue = string | number | boolean | null;
 
-const readField = <K extends Field>(piece: Piece, field: K): EditableFields[K] => {
-  const values: EditableFields = {
-    ...piece,
-    composer_id: piece.composer ? String(piece.composer.id) : null,
-    composition_year: piece.composition_year ?? null,
-    estimated_duration: piece.estimated_duration ?? null,
-  };
-  return values[field];
-};
+interface Draft {
+  label: string;
+  id: string;
+  discard: () => void;
+  retry?: () => void;
+}
 
-// PATCH merges with the stored piece on the server. Two requests for the same
-// piece must not read the same starting state, even if the route remounts.
+export interface DraftField {
+  key: string;
+  label: string;
+  setDraft: (key: string, draft: Draft | null) => void;
+}
+
+export const fieldKey = (field: string, objectId?: string) => objectId ? `${objectId}:${field}` : field;
+
 const tails = new Map<string, Promise<void>>();
 
 export const usePieceAutosave = (pieceId: string) => {
   const { t } = useTranslation();
   const qc = useQueryClient();
-  const { mutateAsync: update } = useUpdatePiece({ primeDetail: true });
   const { mutateAsync: verify } = useVerifyPieceField();
   const [status, setStatus] = useState({ pending: 0, failed: false });
   const confirmations = useRef(new Set<string>());
   const [confirming, setConfirming] = useState<ReadonlySet<string>>(new Set());
   const detailKey = archiveKeys.pieces.details(pieceId);
-  const getPiece = () => qc.getQueryData<Piece>(detailKey);
+  const draftMap = useRef(new Map<string, Draft>());
+  const [drafts, setDrafts] = useState<readonly Draft[]>([]);
+
+  const setDraft = useCallback<DraftField["setDraft"]>((key, draft) => {
+    if (draft) draftMap.current.set(key, draft);
+    else if (!draftMap.current.delete(key)) return;
+    setDrafts([...draftMap.current.values()]);
+  }, []);
+
+  const track = (field: string, label: string, objectId?: string): DraftField => ({
+    key: fieldKey(field, objectId), label, setDraft,
+  });
 
   const enqueue = <T,>(write: () => Promise<T>): Promise<T> => {
     setStatus(({ pending, failed }) => ({ pending: pending + 1, failed: pending > 0 && failed }));
@@ -61,57 +75,81 @@ export const usePieceAutosave = (pieceId: string) => {
       });
   };
 
+  const afterFieldsSaved = <T,>(fields: readonly string[] | null, write: () => Promise<T>) =>
+    enqueue(async () => {
+      const blocked = fields ? fields.some((key) => draftMap.current.has(key)) : draftMap.current.size > 0;
+      if (!blocked) return write();
+      toast.error(t("archive.piece_card.resolve_drafts_first"));
+    });
+
   const showSaveError = (error: unknown) => toastApiError(error, t, {
     fallbackDescription: t("archive.piece_card.autosave_failed"),
   });
 
-  const saveValue = <T extends SavedValue>(
-    key: string,
-    next: T,
-    read: (piece: Piece) => T | undefined,
-    write: (value: T) => Promise<T>,
-  ): Promise<void> =>
-    enqueue(async () => {
-      const piece = getPiece();
-      const previous = piece && read(piece);
-      if (previous === undefined) throw new Error("Editable value missing from the detail cache");
-      if (previous === next) return;
+  const applyEdit = async (write: () => Promise<{ piece: Piece; receipt: string | null }>) => {
+    await qc.cancelQueries({ queryKey: detailKey });
+    const result = await write();
+    await qc.cancelQueries({ queryKey: detailKey });
+    qc.setQueryData(detailKey, result.piece);
+    void qc.invalidateQueries({ queryKey: archiveKeys.pieces.all, exact: true });
+    return result.receipt;
+  };
 
-      const savedValue = await write(next);
+  const commitDraft = <T,>(key: string, write: () => Promise<T>): Promise<T> => {
+    const draft = draftMap.current.get(key);
+    return enqueue(async () => {
+      const result = await write();
+      if (draft && draftMap.current.get(key) === draft) setDraft(key, null);
+      return result;
+    });
+  };
+
+  const saveField = (target: PieceFieldTarget, next: SavedValue): Promise<void> => {
+    const key = fieldKey(target.field, target.object_id);
+    return commitDraft(key, async () => {
+      const receipt = await applyEdit(() => ArchiveService.editPieceField(pieceId, target, next));
+      if (!receipt) return;
+
       toast.success(t("common.autosave.saved"), {
         id: `piece-field:${pieceId}:${key}`,
         action: {
           label: t("common.actions.undo"),
           onClick: () => {
-            void enqueue(async () => {
-              const current = getPiece();
-              if (!current || read(current) !== savedValue) {
+            void afterFieldsSaved([key], async () => {
+              try {
+                await applyEdit(() => ArchiveService.undoPieceField(pieceId, target, receipt));
+              } catch (error) {
+                if (parseApiError(error).code !== "edit_superseded") throw error;
+                void qc.invalidateQueries({ queryKey: detailKey });
                 toast.info(t("archive.piece_card.undo_superseded"));
-                return;
               }
-              await write(previous);
             }).catch(showSaveError);
           },
         },
       });
     });
-
-  const save = <K extends Field>(field: K, next: Exclude<EditableFields[K], undefined>): Promise<void> => {
-    const read = (piece: Piece) => readField(piece, field) ?? (field === "composer_id" ||
-      field === "composition_year" || field === "estimated_duration" ? null : "");
-    return saveValue<SavedValue>(field, next, read, async (value) =>
-      read(await update({ id: pieceId, data: { [field]: value } })),
-    );
   };
 
-  const confirmationKey = (field: ReviewField, objectId?: string) => `${objectId ?? pieceId}:${field}`;
+  const save = <K extends Field>(field: K, next: Exclude<EditableFields[K], undefined>) => saveField({ field }, next);
+
+  const saveChoice = (target: PieceFieldTarget, next: SavedValue, id: string, label: string) => {
+    const key = fieldKey(target.field, target.object_id);
+    const write = () => saveField(target, next);
+    setDraft(key, {
+      id, label,
+      discard: () => setDraft(key, null),
+      retry: () => void write().catch(showSaveError),
+    });
+    return write();
+  };
+
   const confirm = (field: ReviewField, objectId?: string): void => {
-    const key = confirmationKey(field, objectId);
+    const key = fieldKey(field, objectId);
     if (confirmations.current.has(key)) return;
     confirmations.current.add(key);
     setConfirming(new Set(confirmations.current));
-    void enqueue(async () => {
-      const piece = getPiece();
+    void afterFieldsSaved([key], async () => {
+      const piece = qc.getQueryData<Piece>(detailKey);
       if (!piece) return;
       const entry = objectId
         ? childFieldProvenance(piece, objectId, field)
@@ -128,14 +166,10 @@ export const usePieceAutosave = (pieceId: string) => {
   };
 
   return {
-    save,
-    saveValue,
-    enqueue,
-    confirm,
-    isConfirming: (field: ReviewField, objectId?: string) => confirming.has(confirmationKey(field, objectId)),
-    showSaveError,
+    save, saveField, saveChoice, track, drafts, enqueue, commitDraft, afterFieldsSaved, confirm, showSaveError,
+    isConfirming: (field: ReviewField, objectId?: string) => confirming.has(fieldKey(field, objectId)),
     isSaving: status.pending > 0,
-    saveFailed: status.failed,
+    saveFailed: status.failed || drafts.length > 0,
   };
 };
 
