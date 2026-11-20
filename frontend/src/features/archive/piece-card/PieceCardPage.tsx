@@ -12,6 +12,10 @@
  * another piece waits, "Zatwierdź i opublikuj" while an edition of this one
  * does. The title and individual record properties save when committed.
  *
+ * The desk shows the edition under review, or the primary one, until the
+ * edition list or a movement's page link asks for another. A PDF dragged over
+ * the page lands on a drop target over the record pane and joins the list.
+ *
  * Mounted at `/panel/archive-management/:id/next` with a bleed handle, so the
  * shell leaves the whole surface to it. Default export: lazily loaded by
  * App.tsx.
@@ -19,10 +23,11 @@
  */
 
 import React, { useCallback, useId, useRef, useState } from "react";
+import { useDropzone, type FileRejection } from "react-dropzone";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { ArrowLeft, ArrowRight, CircleAlert, FileText } from "lucide-react";
+import { ArrowLeft, ArrowRight, CircleAlert, FileText, UploadCloud } from "lucide-react";
 
 import { toastApiError } from "@/shared/api/errors";
 import { useBottomBarHeight, useBottomBarSlot } from "@/shared/lib/dom/useBottomBarSlot";
@@ -48,8 +53,11 @@ import {
 } from "../api/archive.queries";
 import { pieceReviewBreakdown, type ReviewProgress as ReviewProgressCounts } from "../components/ProvenanceChip";
 import { pieceCardSchema } from "../components/PieceMetadataForm";
-import { getReviewPdf } from "../constants/piecePdfs";
+import { DEFAULT_LATIN_PRONUNCIATION } from "../constants/latinPronunciation";
+import { getPiecePdfLinks, getReviewPdf } from "../constants/piecePdfs";
+import { SCORE_DROP_OPTIONS, useEditionUploads } from "../hooks/useEditionUploads";
 import { CompactReviewProgress, ReviewProgress } from "./ReviewProgress";
+import { PieceEditions, uploadAsksPronunciation, type EditionDesk } from "./PieceEditions";
 import { usePieceFieldReview } from "./PieceFieldReview";
 import { PieceProperties } from "./PieceProperties";
 import { ScorePane } from "./ScorePane";
@@ -63,6 +71,39 @@ const cardPath = (pieceId: string | number): string =>
 
 /** Height of the phone's top bar, which the title has to clear to count as gone. */
 const TOP_BAR_CLEARANCE = "-52px 0px 0px 0px";
+
+/** An edition asked onto the screen, and the page it opens at. */
+interface ShownEdition {
+  readonly editionId: string;
+  readonly page: number;
+}
+
+/**
+ * Covers the record pane while a file is dragged over the page. It never takes
+ * pointer events, so the drop reaches the page's drop target beneath it.
+ */
+const RecordDropOverlay = ({ isActive }: { isActive: boolean }): React.JSX.Element => {
+  const { t } = useTranslation();
+  return (
+    <div
+      aria-hidden="true"
+      className={cn(
+        "pointer-events-none fixed inset-0 z-20 flex items-center justify-center bg-ethereal-alabaster p-8 ring-2 ring-inset ring-ethereal-gold/60 transition-opacity duration-150 lg:absolute",
+        isActive ? "opacity-100" : "opacity-0",
+      )}
+    >
+      <div className="flex max-w-sm flex-col items-center gap-2 text-center">
+        <UploadCloud size={32} strokeWidth={1.6} className="text-ethereal-gold" />
+        <Text as="p" size="lg" weight="semibold">
+          {t("archive.piece_card.drop_title")}
+        </Text>
+        <Text as="p" size="sm" color="graphite">
+          {t("archive.piece_card.drop_hint")}
+        </Text>
+      </div>
+    </div>
+  );
+};
 
 interface PhoneReviewBarProps {
   readonly progress: ReviewProgressCounts;
@@ -127,9 +168,35 @@ const PieceCard = ({ id }: { id: string }): React.JSX.Element => {
 
   const [isApproveOpen, setIsApproveOpen] = useState(false);
   const fieldToFocus = useRef<string | null>(null);
-  const [standPage, setStandPage] = useState<number | null>(null);
+  const [deskEdition, setDeskEdition] = useState<ShownEdition | null>(null);
+  // Kept after the stand closes, so it leaves with the edition it showed.
+  const [standEdition, setStandEdition] = useState<ShownEdition | null>(null);
+  const [isStandOpen, setIsStandOpen] = useState(false);
 
-  const scorePdf = piece ? getReviewPdf(piece) : null;
+  const pdfLinks = piece ? getPiecePdfLinks(piece) : [];
+  // An edition asked for by name stays until it is deleted.
+  const requestedPdf = deskEdition
+    ? pdfLinks.find((link) => link.id === deskEdition.editionId)
+    : undefined;
+  const scorePdf = requestedPdf ?? (piece ? getReviewPdf(piece) : null);
+  const deskStartPage = requestedPdf && deskEdition ? deskEdition.page : 1;
+  const standPdf = standEdition
+    ? (pdfLinks.find((link) => link.id === standEdition.editionId) ?? null)
+    : null;
+
+  const uploads = useEditionUploads(id);
+  const { reject: rejectFiles, add: addFiles } = uploads;
+  const asksPronunciation = piece ? uploadAsksPronunciation(piece) : false;
+  const onDrop = useCallback((accepted: File[], rejections: FileRejection[]): void => {
+    rejectFiles(rejections);
+    addFiles(accepted, asksPronunciation ? null : DEFAULT_LATIN_PRONUNCIATION);
+  }, [rejectFiles, addFiles, asksPronunciation]);
+  const dropzone = useDropzone({
+    ...SCORE_DROP_OPTIONS,
+    onDrop,
+    noClick: true,
+    noKeyboard: true,
+  });
   // Conductor markup on the desk. Idle on a phone, where the stand carries
   // its own annotator.
   const annotator = useScoreAnnotator({
@@ -143,9 +210,17 @@ const PieceCard = ({ id }: { id: string }): React.JSX.Element => {
     pageApi.current = api;
     updateAnnotatorPage(api);
   }, [updateAnnotatorPage]);
-  const goToScorePage = (page: number): void => {
-    if (isTwoPane) pageApi.current?.goToPage(page);
-    else setStandPage(page);
+  // Beside the record an edition comes onto the desk; on a phone it opens the
+  // stand.
+  const showEdition = (editionId: string, page = 1): void => {
+    if (!isTwoPane) {
+      setStandEdition({ editionId, page });
+      setIsStandOpen(true);
+    } else if (editionId === scorePdf?.id) {
+      pageApi.current?.goToPage(page);
+    } else {
+      setDeskEdition({ editionId, page });
+    }
   };
 
   // The phone's top bar names the piece once its title has scrolled under it.
@@ -259,9 +334,19 @@ const PieceCard = ({ id }: { id: string }): React.JSX.Element => {
 
   const nextLabel = t("archive.piece_card.next_awaiting", "Następne do przeglądu");
   const backLabel = t("archive.piece_card.back", "Wróć do biblioteki");
+  const desk: EditionDesk = {
+    editionId: scorePdf?.id ?? null,
+    isTwoPane,
+    show: showEdition,
+  };
 
   return (
-    <div className="flex flex-col pb-nav-dock lg:h-[calc(100dvh-var(--nav-dock-h))] lg:flex-row lg:pb-0">
+    <div
+      {...dropzone.getRootProps({
+        className: "flex flex-col pb-nav-dock lg:h-[calc(100dvh-var(--nav-dock-h))] lg:flex-row lg:pb-0",
+      })}
+    >
+      <input {...dropzone.getInputProps()} />
       {/* The desk runs under the floating rail to the window's edge, so the
           rail floats on it and the page centres in the room right of it. */}
       <div
@@ -279,9 +364,10 @@ const PieceCard = ({ id }: { id: string }): React.JSX.Element => {
             style={{ width: scorePane.paneWidth ?? undefined }}
           >
             <ScorePane
-              pieceId={pieceId}
               pieceTitle={piece.title}
               scorePdf={scorePdf}
+              initialPage={deskStartPage}
+              onAddEdition={dropzone.open}
               annotator={annotator}
               isWide={scorePane.isWide}
               canToggleWide={scorePane.canToggleWide}
@@ -292,164 +378,176 @@ const PieceCard = ({ id }: { id: string }): React.JSX.Element => {
           </section>
         )}
 
-        <section
-          aria-label={t("archive.piece_card.form_panel_aria", "Dane utworu")}
-          className="min-w-0 flex-1 lg:overflow-y-auto lg:border-l lg:border-hairline-strong"
-        >
-          {!isTwoPane && (
-            <div className="sticky top-0 z-20 flex h-13 items-center gap-1 border-b border-hairline bg-ethereal-alabaster px-1">
-              <Button asChild variant="icon" size="icon" aria-label={backLabel} title={backLabel}>
-                <Link to={LIBRARY_PATH}>
-                  <ArrowLeft size={20} aria-hidden="true" />
-                </Link>
-              </Button>
-              <Text
-                as="span"
-                size={null}
-                weight="medium"
-                truncate
-                aria-hidden={!isTitleAway}
-                className={cn(
-                  "min-w-0 flex-1 font-serif text-xl transition-opacity duration-200",
-                  isTitleAway ? "opacity-100" : "opacity-0",
-                )}
-              >
-                {piece.title}
-              </Text>
-              {nextAwaiting && (
-                <Button
-                  variant="icon"
-                  size="icon"
-                  onClick={goToNext}
-                  aria-label={nextLabel}
-                  title={nextLabel}
-                >
-                  <ArrowRight size={20} aria-hidden="true" />
+        <div className="relative flex min-w-0 flex-1 flex-col">
+          <section
+            aria-label={t("archive.piece_card.form_panel_aria", "Dane utworu")}
+            className="min-h-0 min-w-0 flex-1 lg:overflow-y-auto lg:border-l lg:border-hairline-strong"
+          >
+            {!isTwoPane && (
+              <div className="sticky top-0 z-20 flex h-13 items-center gap-1 border-b border-hairline bg-ethereal-alabaster px-1">
+                <Button asChild variant="icon" size="icon" aria-label={backLabel} title={backLabel}>
+                  <Link to={LIBRARY_PATH}>
+                    <ArrowLeft size={20} aria-hidden="true" />
+                  </Link>
                 </Button>
-              )}
-            </div>
-          )}
-
-          <div className="px-4 pb-16 lg:px-10">
-            <header className="mx-auto w-full max-w-170 pb-6 pt-3 lg:pt-9">
-              <div className="hidden min-h-10 flex-wrap items-center justify-between gap-x-4 gap-y-2 lg:flex">
-                <Link
-                  to={LIBRARY_PATH}
-                  className="inline-flex items-center gap-2 rounded-chip text-ethereal-graphite transition-colors hover:text-ethereal-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40"
+                <Text
+                  as="span"
+                  size={null}
+                  weight="medium"
+                  truncate
+                  aria-hidden={!isTitleAway}
+                  className={cn(
+                    "min-w-0 flex-1 font-serif text-xl transition-opacity duration-200",
+                    isTitleAway ? "opacity-100" : "opacity-0",
+                  )}
                 >
-                  <ArrowLeft size={14} strokeWidth={2} aria-hidden="true" />
-                  <Eyebrow color="inherit">
-                    {t("archive.piece_card.back_btn", "Biblioteka")}
-                  </Eyebrow>
-                </Link>
-                <div className="ml-auto flex max-w-full flex-wrap items-center justify-end gap-2">
-                  {nextAwaiting && (
-                    <Button
-                      variant="ghost"
-                      casing="sentence"
-                      className="max-w-full whitespace-normal"
-                      rightIcon={<ArrowRight size={16} aria-hidden="true" />}
-                      onClick={goToNext}
-                    >
-                      {nextLabel}
-                    </Button>
-                  )}
-                  {isReviewing && (
-                    <Button
-                      variant="primary"
-                      casing="sentence"
-                      className="max-w-full whitespace-normal"
-                      isLoading={approveEdition.isPending}
-                      onClick={() => setIsApproveOpen(true)}
-                    >
-                      {t("archive.piece_card.approve_btn", "Zatwierdź i opublikuj")}
-                    </Button>
-                  )}
-                </div>
+                  {piece.title}
+                </Text>
+                {nextAwaiting && (
+                  <Button
+                    variant="icon"
+                    size="icon"
+                    onClick={goToNext}
+                    aria-label={nextLabel}
+                    title={nextLabel}
+                  >
+                    <ArrowRight size={20} aria-hidden="true" />
+                  </Button>
+                )}
               </div>
+            )}
 
-              <div className="relative mt-1.5 lg:mt-4.5">
-                <div key={pieceId} className="pointer-events-none absolute -left-4 top-4 lg:-left-5 lg:top-5">
-                  {titleReview.marker}
+            <div className="px-4 pb-16 lg:px-10">
+              <header className="mx-auto w-full max-w-170 pb-6 pt-3 lg:pt-9">
+                <div className="hidden min-h-10 flex-wrap items-center justify-between gap-x-4 gap-y-2 lg:flex">
+                  <Link
+                    to={LIBRARY_PATH}
+                    className="inline-flex items-center gap-2 rounded-chip text-ethereal-graphite transition-colors hover:text-ethereal-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40"
+                  >
+                    <ArrowLeft size={14} strokeWidth={2} aria-hidden="true" />
+                    <Eyebrow color="inherit">
+                      {t("archive.piece_card.back_btn", "Biblioteka")}
+                    </Eyebrow>
+                  </Link>
+                  <div className="ml-auto flex max-w-full flex-wrap items-center justify-end gap-2">
+                    {nextAwaiting && (
+                      <Button
+                        variant="ghost"
+                        casing="sentence"
+                        className="max-w-full whitespace-normal"
+                        rightIcon={<ArrowRight size={16} aria-hidden="true" />}
+                        onClick={goToNext}
+                      >
+                        {nextLabel}
+                      </Button>
+                    )}
+                    {isReviewing && (
+                      <Button
+                        variant="primary"
+                        casing="sentence"
+                        className="max-w-full whitespace-normal"
+                        isLoading={approveEdition.isPending}
+                        onClick={() => setIsApproveOpen(true)}
+                      >
+                        {t("archive.piece_card.approve_btn", "Zatwierdź i opublikuj")}
+                      </Button>
+                    )}
+                  </div>
                 </div>
-                <Heading as="h1" size={null} aria-label={piece.title} ref={isTwoPane ? undefined : titleRef}>
-                  <InlineEditable
+
+                <div className="relative mt-1.5 lg:mt-4.5">
+                  <div key={pieceId} className="pointer-events-none absolute -left-4 top-4 lg:-left-5 lg:top-5">
+                    {titleReview.marker}
+                  </div>
+                  <Heading as="h1" size={null} aria-label={piece.title} ref={isTwoPane ? undefined : titleRef}>
+                    <InlineEditable
+                      key={pieceId}
+                      id={titleId}
+                      value={piece.title}
+                      onSave={(next) => autosave.save("title", next)}
+                      onDraftChange={(discard) => titleDraft.setDraft(titleDraft.key, discard ? {
+                        id: titleId, label: titleLabel, discard,
+                      } : null)}
+                      validate={(next) => {
+                        if (!next) return t("archive.piece_card.title_required", "Tytuł jest wymagany.");
+                        return pieceCardSchema.shape.title.safeParse(next).success
+                          ? null
+                          : t("archive.piece_card.field_too_long");
+                      }}
+                      ariaLabel={titleLabel}
+                      variant="headline"
+                      className="text-4xl leading-tight lg:text-5xl"
+                    />
+                  </Heading>
+                </div>
+                <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1">
+                  {byline && <Text as="p" size="md" color="graphite">{byline}</Text>}
+                  {titleReview.action}
+                  <AutosaveStatus
                     key={pieceId}
-                    id={titleId}
-                    value={piece.title}
-                    onSave={(next) => autosave.save("title", next)}
-                    onDraftChange={(discard) => titleDraft.setDraft(titleDraft.key, discard ? {
-                      id: titleId, label: titleLabel, discard,
-                    } : null)}
-                    validate={(next) => {
-                      if (!next) return t("archive.piece_card.title_required", "Tytuł jest wymagany.");
-                      return pieceCardSchema.shape.title.safeParse(next).success
-                        ? null
-                        : t("archive.piece_card.field_too_long");
-                    }}
-                    ariaLabel={titleLabel}
-                    variant="headline"
-                    className="text-4xl leading-tight lg:text-5xl"
+                    placement="inline"
+                    isSaving={autosave.isSaving}
+                    saveFailed={autosave.saveFailed}
+                    className="ml-auto"
                   />
-                </Heading>
-              </div>
-              <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1">
-                {byline && <Text as="p" size="md" color="graphite">{byline}</Text>}
-                {titleReview.action}
-                <AutosaveStatus
+                </div>
+                {/* In review the phone states progress in its bottom bar. */}
+                <div className={cn(isReviewing && "hidden lg:block")}>
+                  <ReviewProgress progress={progress} isReviewing={isReviewing} />
+                </div>
+
+                {!isTwoPane && scorePdf && (
+                  <div className="mt-4 flex items-center gap-3 border-y border-hairline py-3">
+                    <FileText
+                      size={18}
+                      className="shrink-0 text-ethereal-graphite"
+                      aria-hidden="true"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <Text as="p" size="base" weight="medium" truncate>
+                        {scorePdf.label}
+                      </Text>
+                      {scorePdf.page_count ? (
+                        <Text as="p" size="sm" color="graphite">
+                          {t("archive.piece_card.page_count", { count: scorePdf.page_count })}
+                        </Text>
+                      ) : null}
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      casing="sentence"
+                      onClick={() => showEdition(scorePdf.id)}
+                    >
+                      {t("archive.piece_card.open_score", "Otwórz partyturę")}
+                    </Button>
+                  </div>
+                )}
+              </header>
+              <div className="mx-auto w-full max-w-170">
+                <PieceProperties
                   key={pieceId}
-                  placement="inline"
-                  isSaving={autosave.isSaving}
-                  saveFailed={autosave.saveFailed}
-                  className="ml-auto"
+                  piece={piece}
+                  autosave={autosave}
+                  score={scorePdf ? { editionId: scorePdf.id, editions: pdfLinks, show: showEdition } : undefined}
+                  editions={
+                    <PieceEditions
+                      piece={piece}
+                      autosave={autosave}
+                      desk={desk}
+                      uploads={uploads}
+                      onAddEdition={dropzone.open}
+                    />
+                  }
                 />
               </div>
-              {/* In review the phone states progress in its bottom bar. */}
-              <div className={cn(isReviewing && "hidden lg:block")}>
-                <ReviewProgress progress={progress} isReviewing={isReviewing} />
-              </div>
-
-              {!isTwoPane && scorePdf && (
-                <div className="mt-4 flex items-center gap-3 border-y border-hairline py-3">
-                  <FileText
-                    size={18}
-                    className="shrink-0 text-ethereal-graphite"
-                    aria-hidden="true"
-                  />
-                  <div className="min-w-0 flex-1">
-                    <Text as="p" size="base" weight="medium" truncate>
-                      {scorePdf.label}
-                    </Text>
-                    {scorePdf.page_count ? (
-                      <Text as="p" size="sm" color="graphite">
-                        {t("archive.piece_card.page_count", { count: scorePdf.page_count })}
-                      </Text>
-                    ) : null}
-                  </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    casing="sentence"
-                    onClick={() => setStandPage(1)}
-                  >
-                    {t("archive.piece_card.open_score", "Otwórz partyturę")}
-                  </Button>
-                </div>
-              )}
-            </header>
-            <div className="mx-auto w-full max-w-170">
-              <PieceProperties
-                key={pieceId}
-                piece={piece}
-                autosave={autosave}
-                score={scorePdf ? { editionId: scorePdf.id, goToPage: goToScorePage } : undefined}
-              />
             </div>
-          </div>
 
-          {/* Room for the phone's bottom bar, which floats over the column. */}
-          {!isTwoPane && <div aria-hidden="true" style={{ height: dockBarHeight }} />}
-        </section>
+            {/* Room for the phone's bottom bar, which floats over the column. */}
+            {!isTwoPane && <div aria-hidden="true" style={{ height: dockBarHeight }} />}
+          </section>
+          <RecordDropOverlay isActive={dropzone.isDragActive} />
+        </div>
       </div>
 
       {!isTwoPane && isReviewing && (
@@ -504,19 +602,19 @@ const PieceCard = ({ id }: { id: string }): React.JSX.Element => {
 
       {!isTwoPane && (
         <ScoreStandModal
-          isOpen={standPage !== null}
-          initialPage={standPage ?? undefined}
-          editionId={scorePdf?.id ?? null}
+          isOpen={isStandOpen && standPdf !== null}
+          initialPage={standEdition?.page}
+          editionId={standPdf?.id ?? null}
           mode="conductor"
           title={piece.title}
-          subtitle={scorePdf?.label}
-          fileName={scorePdf?.label}
+          subtitle={standPdf?.label}
+          fileName={standPdf?.label}
           fetchBlob={
-            scorePdf ? () => MaterialsService.fetchScoreEditionBlob(scorePdf.id) : null
+            standPdf ? () => MaterialsService.fetchScoreEditionBlob(standPdf.id) : null
           }
-          canExport={scorePdf?.canExport ?? true}
-          preferredFit={scorePdf?.wholePage ? "page" : undefined}
-          onClose={() => setStandPage(null)}
+          canExport={standPdf?.canExport ?? true}
+          preferredFit={standPdf?.wholePage ? "page" : undefined}
+          onClose={() => setIsStandOpen(false)}
         />
       )}
     </div>

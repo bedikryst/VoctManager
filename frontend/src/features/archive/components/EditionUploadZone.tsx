@@ -14,10 +14,13 @@
  * dropped after the pick. The analysis always writes German Latin, so any
  * other choice costs one extra recompute, and only for a Latin piece whose
  * guide this upload writes; the piece card's recompute covers the rest.
+ *
+ * Sending and each file's state live in `useEditionUploads`, which the piece
+ * card's edition list shares with its own rows.
  * @module features/archive/components/EditionUploadZone
  */
 
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import {
@@ -25,7 +28,6 @@ import {
   type FileRejection,
 } from "react-dropzone";
 import { useTranslation } from "react-i18next";
-import { toast } from "sonner";
 import {
   ArrowRight,
   CheckCircle2,
@@ -37,7 +39,6 @@ import {
   X,
 } from "lucide-react";
 
-import { parseApiError, resolveErrorCopy } from "@/shared/api/errors";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { SectionHeader } from "@/shared/ui/composites/SectionHeader";
 import { Button } from "@/shared/ui/primitives/Button";
@@ -46,7 +47,7 @@ import { Caption, Heading, Text } from "@/shared/ui/primitives/typography";
 import { cn } from "@/shared/lib/utils";
 import { INGESTION_STATUS, type LatinPronunciationCode } from "@/shared/types";
 
-import { useLiveIngestion, useUploadEdition } from "../api/archive.queries";
+import { useLiveIngestion } from "../api/archive.queries";
 import { formatIngestionCost } from "../constants/ingestionCost";
 import {
   DEFAULT_LATIN_PRONUNCIATION,
@@ -59,20 +60,12 @@ import {
   liveAnalysisDetail,
   liveIngestionLabel,
 } from "../constants/ingestionProgress";
-
-const MAX_FILE_BYTES = 50 * 1024 * 1024;
-
-type UploadPhase = "queued" | "uploading" | "succeeded" | "failed";
-
-interface PendingUpload {
-  readonly localId: string;
-  readonly file: File;
-  phase: UploadPhase;
-  progress: number;
-  errorMessage?: string;
-  /** Set once the PDF is accepted — keys the live ingestion-progress poll. */
-  editionId?: string;
-}
+import {
+  SCORE_DROP_OPTIONS,
+  formatFileSize,
+  useEditionUploads,
+  type PendingUpload,
+} from "../hooks/useEditionUploads";
 
 interface EditionUploadZoneProps {
   /** Pre-attach to an existing piece (used inside the AI Review tab). */
@@ -81,143 +74,38 @@ interface EditionUploadZoneProps {
   readonly compact?: boolean;
 }
 
-const newLocalId = (): string =>
-  typeof crypto !== "undefined" && "randomUUID" in crypto
-    ? crypto.randomUUID()
-    : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
-
-const fmtSizeMB = (bytes: number): string =>
-  bytes >= 1_048_576
-    ? `${(bytes / 1_048_576).toFixed(1)} MB`
-    : `${Math.max(1, Math.round(bytes / 1024))} KB`;
-
 export const EditionUploadZone = ({
   pieceId,
   compact = false,
 }: EditionUploadZoneProps): React.JSX.Element => {
   const { t } = useTranslation();
-  const [uploads, setUploads] = useState<readonly PendingUpload[]>([]);
+  const {
+    uploads,
+    add,
+    reject,
+    remove: removeRow,
+    clearFinished,
+    hasFinished,
+    inFlightCount,
+  } = useEditionUploads(pieceId);
   const [latinSystem, setLatinSystem] = useState<LatinPronunciationCode>(
     DEFAULT_LATIN_PRONUNCIATION,
   );
-  const { mutateAsync: uploadEdition } = useUploadEdition();
   const latinOptions = getLatinPronunciationOptions(t);
   const latinSample = latinOptions.find((option) => option.value === latinSystem)?.sample;
 
-  const updateUpload = useCallback(
-    (localId: string, patch: Partial<PendingUpload>): void => {
-      setUploads((current) =>
-        current.map((u) => (u.localId === localId ? { ...u, ...patch } : u)),
-      );
-    },
-    [],
-  );
-
-  const startUpload = useCallback(
-    async (entry: PendingUpload): Promise<void> => {
-      updateUpload(entry.localId, { phase: "uploading", progress: 0 });
-      try {
-        const created = await uploadEdition({
-          dto: {
-            pdf_file: entry.file,
-            original_filename: entry.file.name,
-            piece_id: pieceId,
-            latin_system:
-              latinSystem === DEFAULT_LATIN_PRONUNCIATION ? undefined : latinSystem,
-          },
-          onProgress: (loaded, total) => {
-            updateUpload(entry.localId, {
-              progress: Math.min(100, Math.round((loaded / total) * 100)),
-            });
-          },
-        });
-        // `succeeded` here means the PDF reached the server and the AI pipeline
-        // was dispatched — not that ingestion finished. Stash the edition id so
-        // the row can poll and surface the live AI step.
-        updateUpload(entry.localId, {
-          phase: "succeeded",
-          progress: 100,
-          editionId: created.id,
-        });
-        toast.success(
-          t(
-            "archive.upload.toast_success",
-            "{{name}} — pipeline uruchomiony",
-            { name: entry.file.name },
-          ),
-        );
-      } catch (err) {
-        // Translate the server's real reason into the UI language (stable code →
-        // curated copy, single rejected field → its message) instead of axios's
-        // opaque "Request failed with status code 400". Persisted on the row +
-        // toast so a failed ingest reads clearly at a glance.
-        const normalized = parseApiError(err);
-        const { detail } = resolveErrorCopy(normalized, t);
-        updateUpload(entry.localId, { phase: "failed", errorMessage: detail });
-        toast.error(`${entry.file.name} — ${detail}`);
-      }
-    },
-    [pieceId, latinSystem, uploadEdition, updateUpload, t],
-  );
-
   const onDrop = useCallback(
     (accepted: File[], rejections: FileRejection[]): void => {
-      for (const rej of rejections) {
-        const reason = rej.errors[0];
-        const message =
-          reason?.code === "file-too-large"
-            ? t("archive.upload.error_too_large", "Plik przekracza limit 50 MB")
-            : reason?.code === "file-invalid-type"
-              ? t(
-                  "archive.upload.error_wrong_type",
-                  "Tylko pliki PDF są akceptowane",
-                )
-              : (reason?.message ??
-                t("archive.upload.error_generic", "Plik odrzucony"));
-        toast.error(`${rej.file.name} — ${message}`);
-      }
-      if (accepted.length === 0) return;
-
-      const entries: PendingUpload[] = accepted.map((file) => ({
-        localId: newLocalId(),
-        file,
-        phase: "queued",
-        progress: 0,
-      }));
-      setUploads((current) => [...entries, ...current]);
-      entries.forEach((entry) => {
-        void startUpload(entry);
-      });
+      reject(rejections);
+      add(accepted, latinSystem);
     },
-    [startUpload, t],
+    [add, reject, latinSystem],
   );
 
   const { getRootProps, getInputProps, isDragActive, isFocused } = useDropzone({
+    ...SCORE_DROP_OPTIONS,
     onDrop,
-    accept: { "application/pdf": [".pdf"] },
-    maxSize: MAX_FILE_BYTES,
-    multiple: true,
-    useFsAccessApi: false,
   });
-
-  const removeRow = (localId: string): void =>
-    setUploads((current) => current.filter((u) => u.localId !== localId));
-
-  const clearFinished = (): void =>
-    setUploads((current) =>
-      current.filter((u) => u.phase !== "succeeded" && u.phase !== "failed"),
-    );
-
-  const hasFinished = useMemo(
-    () => uploads.some((u) => u.phase === "succeeded" || u.phase === "failed"),
-    [uploads],
-  );
-  const inFlightCount = useMemo(
-    () =>
-      uploads.filter((u) => u.phase === "uploading" || u.phase === "queued")
-        .length,
-    [uploads],
-  );
 
   const zoneTitle = isDragActive
     ? t("archive.upload.drop_active", "Upuść tutaj, by dodać do kolejki")
@@ -389,7 +277,7 @@ const UploadRow = ({ entry, onRemove }: UploadRowProps): React.JSX.Element => {
   const liveCost = formatIngestionCost(live?.ingestion_cost_cents_lifetime);
 
   const view: RowView =
-    phase === "queued"
+    phase === "queued" || phase === "held"
       ? "queued"
       : phase === "uploading"
         ? "uploading"
@@ -450,7 +338,7 @@ const UploadRow = ({ entry, onRemove }: UploadRowProps): React.JSX.Element => {
           {file.name}
         </Text>
         <div className="mt-1 flex items-center gap-3">
-          <Caption color="muted">{fmtSizeMB(file.size)}</Caption>
+          <Caption color="muted">{formatFileSize(file.size)}</Caption>
           {view === "uploading" && <Caption color="muted">{progress}%</Caption>}
           {view === "ingesting" && (
             <Caption color={overloaded ? "gold" : "muted"}>

@@ -95,8 +95,10 @@ const RowSelect = ({ id, value, options, onValueChange }: {
   );
 };
 
-export const PieceProperties = ({ piece, autosave, score }: PiecePropertiesProps & {
+export const PieceProperties = ({ piece, autosave, score, editions }: PiecePropertiesProps & {
   readonly score?: ComponentProps<typeof PieceMovements>["score"];
+  /** The edition list, owned by the page because its drop target covers the page. */
+  readonly editions: ReactNode;
 }) => {
   const { t } = useTranslation();
   const notesId = useId();
@@ -197,6 +199,9 @@ export const PieceProperties = ({ piece, autosave, score }: PiecePropertiesProps
       </RecordSection>
       <RecordSection title={t("archive.piece_card.recordings_section")}>
         <PieceRecordings piece={piece} autosave={autosave} />
+      </RecordSection>
+      <RecordSection title={t("archive.piece_card.editions_section")}>
+        {editions}
       </RecordSection>
     </div>
   );

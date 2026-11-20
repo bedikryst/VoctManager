@@ -3,13 +3,14 @@
  * @description The piece card's score, laid on the desk (`PdfViewer
  * ground="desk"`) with the conductor's annotation tools. The card adds no bar
  * of its own: the edition's name, its page count and the wider view live in
- * the viewer's sheet. Without a PDF the desk asks for one.
+ * the viewer's sheet. Without a PDF the desk asks for one through the page's
+ * drop target, which also takes a file dropped on the desk.
  * @module features/archive/piece-card/ScorePane
  */
 
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { ChevronsLeft, ChevronsRight, FileText } from "lucide-react";
+import { ChevronsLeft, ChevronsRight, FileText, Plus } from "lucide-react";
 
 import { cn } from "@/shared/lib/utils";
 import {
@@ -19,17 +20,20 @@ import {
   type PdfPageApi,
 } from "@/shared/ui/composites/PdfViewer";
 import { StatePanel } from "@/shared/ui/composites/StatePanel";
+import { Button } from "@/shared/ui/primitives/Button";
 import { Text } from "@/shared/ui/primitives/typography";
 import type { ScoreAnnotatorBindings } from "@/features/annotations";
 import { MaterialsService } from "@/features/materials/api/materials.service";
 
-import { EditionUploadZone } from "../components/EditionUploadZone";
 import type { PiecePdfLink } from "../constants/piecePdfs";
 
 interface ScorePaneProps {
-  readonly pieceId: string;
   readonly pieceTitle: string;
   readonly scorePdf: PiecePdfLink | null;
+  /** The page the edition opens at when it comes onto the desk. */
+  readonly initialPage: number;
+  /** Opens the file picker of the page's drop target. */
+  readonly onAddEdition: () => void;
   readonly annotator: ScoreAnnotatorBindings;
   readonly isWide: boolean;
   readonly canToggleWide: boolean;
@@ -39,9 +43,10 @@ interface ScorePaneProps {
 }
 
 export const ScorePane = ({
-  pieceId,
   pieceTitle,
   scorePdf,
+  initialPage,
+  onAddEdition,
   annotator,
   isWide,
   canToggleWide,
@@ -53,19 +58,23 @@ export const ScorePane = ({
 
   if (!scorePdf) {
     return (
-      <div className="flex h-full flex-col items-center justify-center gap-4 p-8">
+      <div className="flex h-full flex-col items-center justify-center p-8">
         <StatePanel
           variant="inline"
           icon={<FileText size={32} aria-hidden="true" />}
           title={t("archive.piece_card.no_pdf", "Brak PDF dla tego utworu")}
-          description={t(
-            "archive.piece_card.no_pdf_hint",
-            "Wgraj partyturę poniżej — AI uzupełni metadane, IPA i tłumaczenia.",
-          )}
+          description={t("archive.piece_card.no_pdf_hint_desk")}
+          actions={
+            <Button
+              variant="outline"
+              casing="sentence"
+              leftIcon={<Plus size={16} aria-hidden="true" />}
+              onClick={onAddEdition}
+            >
+              {t("archive.piece_card.add_edition")}
+            </Button>
+          }
         />
-        <div className="w-full max-w-md">
-          <EditionUploadZone pieceId={pieceId} compact />
-        </div>
       </div>
     );
   }
@@ -111,6 +120,7 @@ export const ScorePane = ({
       deskWide={isWide}
       fetchBlob={() => MaterialsService.fetchScoreEditionBlob(scorePdf.id)}
       docKey={scorePdf.id}
+      initialPage={initialPage}
       title={pieceTitle}
       subtitle={scorePdf.label}
       fileName={scorePdf.label}

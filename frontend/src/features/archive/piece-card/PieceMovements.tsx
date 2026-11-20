@@ -1,6 +1,10 @@
 /**
  * @file PieceMovements.tsx
  * @description Editable movement rows with links to the score's page anchors.
+ * A page number belongs to the edition whose analysis read it
+ * (`starts_on_edition`): the link turns the score on screen when that edition
+ * is there, and otherwise names the edition it brings up. A page with no known
+ * edition, or one whose edition is gone, offers no link.
  */
 
 import { useId } from "react";
@@ -11,6 +15,7 @@ import { Button } from "@/shared/ui/primitives/Button";
 import { Input } from "@/shared/ui/primitives/Input";
 import { Text } from "@/shared/ui/primitives/typography";
 import { useCreateMovement, useDeleteMovement } from "../api/archive.queries";
+import { formatEditionLabel, type PiecePdfLink } from "../constants/piecePdfs";
 import { CommitText } from "./CommitText";
 import { usePieceFieldReview } from "./PieceFieldReview";
 import { formText, RecordAdd, RecordRemove } from "./RecordActions";
@@ -20,10 +25,46 @@ interface PieceMovementsProps {
   readonly piece: Piece;
   readonly autosave: PieceAutosave;
   readonly score?: {
+    /** The edition on screen. */
     readonly editionId: string;
-    readonly goToPage: (page: number) => void;
+    /** Every edition with a PDF, for pages read from another one. */
+    readonly editions: readonly PiecePdfLink[];
+    readonly show: (editionId: string, page: number) => void;
   };
 }
+
+const PageLink = ({ score, editionId, page }: {
+  score: NonNullable<PieceMovementsProps["score"]>;
+  editionId: string | null | undefined;
+  page: number | null | undefined;
+}) => {
+  const { t } = useTranslation();
+  if (typeof page !== "number" || page < 1 || !editionId) return null;
+  const isOnScreen = editionId === score.editionId;
+  const edition = isOnScreen ? null : score.editions.find((link) => link.id === editionId);
+  if (!isOnScreen && !edition) return null;
+  const editionLabel = edition ? formatEditionLabel(edition) : "";
+  return (
+    <Button
+      type="button"
+      variant="ghost"
+      size="sm"
+      casing="sentence"
+      className="min-h-8 max-w-56 px-2"
+      aria-label={edition
+        ? t("archive.piece_card.go_to_page_in_edition", { page, edition: editionLabel })
+        : t("archive.review.go_to_page", { page })}
+      title={edition ? editionLabel : undefined}
+      onClick={() => score.show(editionId, page)}
+    >
+      <span className="truncate">
+        {edition
+          ? t("archive.piece_card.page_in_edition", { page, edition: editionLabel })
+          : `${t("archive.review.page_short")} ${page}`}
+      </span>
+    </Button>
+  );
+};
 
 const MovementRow = ({ piece, autosave, score, movement }: PieceMovementsProps & { movement: Movement }) => {
   const { t } = useTranslation();
@@ -58,19 +99,7 @@ const MovementRow = ({ piece, autosave, score, movement }: PieceMovementsProps &
         } />
       </div>
       <div className="ml-auto flex flex-wrap items-center gap-1 pt-0.5">
-        {score && typeof page === "number" && page > 0 && movement.starts_on_edition === score.editionId && (
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            casing="sentence"
-            className="min-h-8 px-2"
-            aria-label={t("archive.review.go_to_page", { page })}
-            onClick={() => score.goToPage(page)}
-          >
-            {t("archive.review.page_short")} {page}
-          </Button>
-        )}
+        {score && <PageLink score={score} editionId={movement.starts_on_edition} page={page} />}
         {action}
         <RecordRemove label={t("archive.review.delete_movement")} autosave={autosave} remove={() => remove.mutateAsync({ pieceId, id })} />
       </div>

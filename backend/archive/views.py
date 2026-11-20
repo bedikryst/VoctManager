@@ -890,8 +890,19 @@ class ScoreEditionViewSet(viewsets.ModelViewSet):
             instance, data=request.data, partial=True, context={'request': request},
         )
         serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        # Write only the columns this request names. The ingestion worker writes
+        # status, progress, cost and the analysis suggestion on the same row while
+        # the card stays open, and a full-row save would put back what
+        # `get_object` read before the worker's last step.
+        changed = list(serializer.validated_data)
+        for field, value in serializer.validated_data.items():
+            setattr(instance, field, value)
+        if changed:
+            instance.save(update_fields=[*changed, 'updated_at'])
+        return Response(
+            ScoreEditionDetailSerializer(instance, context={'request': request}).data,
+            status=status.HTTP_200_OK,
+        )
 
     def perform_destroy(self, instance: ScoreEdition) -> None:
         # Inherit SoftDeleteModel soft-delete (sets is_deleted=True).
