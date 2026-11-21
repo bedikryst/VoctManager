@@ -47,8 +47,12 @@ export interface ConfirmModalProps {
   confirmText?: string;
   cancelText?: string;
   isDestructive?: boolean;
-  /** Replaces the warning triangle; tinted by `isDestructive` like it. */
-  icon?: React.ReactNode;
+  /**
+   * Replaces the warning triangle; tinted by `isDestructive` like it. `null`
+   * drops the icon, and the title, then the only head of the dialog, is set a
+   * step larger.
+   */
+  icon?: React.ReactNode | null;
   /** The buttons' casing; a screen whose buttons are sentence case passes it. */
   casing?: ButtonProps["casing"];
 }
@@ -133,11 +137,18 @@ export const ConfirmModal = ({
           >
             <div className="p-6">
               <div className="flex gap-4 items-start">
-                <div className={iconContainerVariants({ isDestructive })}>
-                  {icon ?? <AlertTriangle size={24} aria-hidden="true" />}
-                </div>
-                <div className="pt-1">
-                  <Heading as="h3" id={titleId} size="lg" weight="bold">
+                {icon !== null && (
+                  <div className={iconContainerVariants({ isDestructive })}>
+                    {icon ?? <AlertTriangle size={24} aria-hidden="true" />}
+                  </div>
+                )}
+                <div className={icon === null ? undefined : "pt-1"}>
+                  <Heading
+                    as="h3"
+                    id={titleId}
+                    size={icon === null ? "2xl" : "lg"}
+                    weight={icon === null ? "medium" : "bold"}
+                  >
                     {title}
                   </Heading>
                   <Text id={descriptionId} className="mt-2" color="muted">

@@ -12,16 +12,19 @@ import { CommitText } from "./CommitText";
 export const READING_TEXT = "font-serif text-xl font-medium leading-relaxed fine-pointer:text-xl";
 export const IPA_TEXT = "fine-pointer:text-sm leading-relaxed";
 
-export const RecordTextLabel = ({ id, label, marker, action, prefix }: {
+/**
+ * A text block's label line, its check at the line's end. The block's review
+ * edge is rendered by the caller on the `relative` element that holds the
+ * label and the text together, so the edge runs down the whole block.
+ */
+export const RecordTextLabel = ({ id, label, action, prefix }: {
   id: string;
   label: string;
-  marker?: ReactNode;
   action?: ReactNode;
   prefix?: ReactNode;
 }) => (
-  <div className="relative flex min-h-8 flex-wrap items-center gap-x-3 gap-y-2 lg:justify-between">
-    <div className="relative flex items-center gap-2">
-      <div className="absolute right-full pe-0.5">{marker}</div>
+  <div className="flex min-h-11 items-center justify-between gap-x-3 fine-pointer:min-h-9">
+    <div className="flex min-w-0 items-center gap-2">
       {prefix}
       <Label as="label" htmlFor={id} size="base" color="graphite">{label}</Label>
     </div>

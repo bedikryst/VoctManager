@@ -22,7 +22,6 @@ import type {
   Recording,
   ScoreEditionSummary,
   Track,
-  Translation,
 } from "@/shared/types";
 import type {
   ComposerWriteDTO,
@@ -399,29 +398,15 @@ export const ArchiveService = {
     return response.data;
   },
 
-  // ---- AI artifacts (inline correction in the Review cockpit) -----------
-  // Movements / translations / recordings are the AI's most error-prone
-  // outputs; these let the conductor fix or drop a bad one during review.
+  // ---- AI artifacts -------------------------------------------------------
+  // Field edits go through `editPieceField`; these add and remove rows.
   createMovement: async (data: Pick<Movement, "order_index" | "title" | "tempo_marking"> & { piece: string }): Promise<Movement> => {
     const response = await api.post<Movement>(MOVEMENTS_URL, data);
     return response.data;
   },
 
-  updateMovement: async (id: string, data: Partial<Movement>): Promise<Movement> => {
-    const response = await api.patch<Movement>(`${MOVEMENTS_URL}${id}/`, data);
-    return response.data;
-  },
-
   deleteMovement: async (id: string): Promise<void> => {
     await api.delete(`${MOVEMENTS_URL}${id}/`);
-  },
-
-  updateTranslation: async (
-    id: string,
-    data: Partial<Translation>,
-  ): Promise<Translation> => {
-    const response = await api.patch<Translation>(`${TRANSLATIONS_URL}${id}/`, data);
-    return response.data;
   },
 
   deleteTranslation: async (id: string): Promise<void> => {
@@ -433,30 +418,13 @@ export const ArchiveService = {
     return response.data;
   },
 
-  updateRecording: async (
-    id: string,
-    data: Partial<Recording>,
-  ): Promise<Recording> => {
-    const response = await api.patch<Recording>(`${RECORDINGS_URL}${id}/`, data);
-    return response.data;
-  },
-
   deleteRecording: async (id: string): Promise<void> => {
     await api.delete(`${RECORDINGS_URL}${id}/`);
   },
 
-  // The AI note is occasionally marred by a factual slip or a repeated phrase;
-  // this lets the conductor correct the text by hand instead of regenerating.
+  // A hand-written note, when the conductor would rather not generate one.
   createProgramNote: async (data: Pick<ProgramNote, "language" | "target_tone" | "content"> & { piece: string }): Promise<ProgramNote> => {
     const response = await api.post<ProgramNote>(PROGRAM_NOTES_URL, data);
-    return response.data;
-  },
-
-  updateProgramNote: async (
-    id: string,
-    data: Partial<ProgramNote>,
-  ): Promise<ProgramNote> => {
-    const response = await api.patch<ProgramNote>(`${PROGRAM_NOTES_URL}${id}/`, data);
     return response.data;
   },
 

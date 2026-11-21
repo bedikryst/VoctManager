@@ -70,7 +70,12 @@ export const MobileNavTrigger = ({
       transition={BAR_TRANSITION}
       className={cn(
         "fixed inset-x-0 bottom-0 z-nav-dock fine-pointer:hidden",
-        "border-t border-glass-border bg-ethereal-alabaster/94",
+        // As tall as the token every page clears it by, so a bar seated at
+        // `--nav-dock-h` meets the dock's edge with no seam between them.
+        "min-h-[var(--nav-dock-h)]",
+        // Opaque: with no blur, a ground a few percent short of solid shows
+        // the text scrolling beneath it as a ghost through the labels.
+        "border-t border-glass-border bg-ethereal-alabaster",
         "shadow-[0_-10px_30px_-14px_var(--glass-shade-lifted)]",
       )}
     >

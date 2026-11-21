@@ -2,9 +2,11 @@
  * @file PropertyRow.tsx
  * @description Fixed label and value alignment for directly editable document properties.
  * From 1024 px the label, value and action share one line, the action at its
- * end. Below that the value goes under its label and the action sits right
- * after the label, clear of the shell's floating feedback button, which rides
- * at the bottom right edge of a phone.
+ * end. Below that the value goes under its label and the action sits at the
+ * end of the value's line, so a check belongs visibly to the value it checks.
+ *
+ * The row is the positioned box its `marker` runs along: a marker that places
+ * itself absolutely (the piece card's review edge) spans the whole row.
  */
 
 import { useId, type ReactNode } from "react";
@@ -36,26 +38,22 @@ export const PropertyRow = ({
   const controlId = givenId ?? generatedId;
 
   return (
-    <div className="grid min-h-11 grid-cols-[auto_minmax(0,1fr)] items-start gap-x-2 py-1 lg:grid-cols-[10.5rem_minmax(0,1fr)_auto] lg:gap-x-3 lg:py-0">
+    <div className="relative grid min-h-11 grid-cols-[minmax(0,1fr)_auto] items-start gap-x-2 py-1 lg:grid-cols-[10.5rem_minmax(0,1fr)_auto] lg:gap-x-3 lg:py-0">
+      {marker}
       <Label
         as="label"
         htmlFor={controlId}
         size="base"
         color="graphite"
-        className="relative col-start-1 self-start py-2 lg:py-3"
+        className="col-span-2 self-start pt-2 lg:col-span-1 lg:py-3"
       >
-        {marker && (
-          <span aria-hidden="true" className="absolute -left-4 top-1/2 flex size-3.5 -translate-y-1/2 items-center justify-center lg:-left-5">
-            {marker}
-          </span>
-        )}
         {label}
       </Label>
-      <div className="col-span-2 row-start-2 -ml-2 flex min-w-0 items-start gap-1 lg:col-span-1 lg:col-start-2 lg:row-start-1 lg:py-1">
+      <div className="row-start-2 -ml-2 flex min-w-0 items-start gap-1 lg:col-start-2 lg:row-start-1 lg:py-1">
         <div className={cn("min-w-0", !accessory && "flex-1")}>{children(controlId)}</div>
         {accessory}
       </div>
-      {action && <div className="col-start-2 row-start-1 self-start justify-self-start lg:col-start-3 lg:pt-1">{action}</div>}
+      {action && <div className="col-start-2 row-start-2 self-center lg:col-start-3 lg:row-start-1 lg:self-start lg:pt-1">{action}</div>}
     </div>
   );
 };

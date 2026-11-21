@@ -6,7 +6,7 @@
  * (`useScorePane`), and the record runs in a reading column on its right,
  * split from it by one hairline. Below that the screen is one column: a top
  * bar with the way back, the score as a row that opens the stand, and the
- * review action in a bottom bar above the nav dock.
+ * review action in a bar that sits on the nav dock as one surface with it.
  *
  * The header carries each state's actions: "Następne do przeglądu" while
  * another piece waits, "Zatwierdź i opublikuj" while an edition of this one
@@ -16,15 +16,15 @@
  * the section in view; in review it counts each section's unchecked fields,
  * and once the header has scrolled away it holds the publish action too. The
  * review runs from the keyboard as well (`reviewFocus.ts`). Publishing always
- * asks first, naming the fields still unchecked.
+ * asks first. While fields are unchecked the dialog's main action is to show
+ * the first of them, and publishing anyway is the quieter choice.
  *
  * The desk shows the edition under review, or the primary one, until the
  * edition list or a movement's page link asks for another. A PDF dragged over
  * the page lands on a drop target over the record pane and joins the list.
  *
- * Mounted at `/panel/archive-management/:id/next` with a bleed handle, so the
- * shell leaves the whole surface to it. Default export: lazily loaded by
- * App.tsx.
+ * Mounted at `/panel/archive-management/:id` with a bleed handle, so the shell
+ * leaves the whole surface to it. Default export: lazily loaded by App.tsx.
  * @module features/archive/piece-card/PieceCardPage
  */
 
@@ -33,7 +33,7 @@ import { useDropzone, type FileRejection } from "react-dropzone";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { ArrowLeft, ArrowRight, CircleAlert, FileText, Send, UploadCloud } from "lucide-react";
+import { ArrowLeft, ArrowRight, CircleAlert, FileText, UploadCloud } from "lucide-react";
 
 import { toastApiError } from "@/shared/api/errors";
 import { useBottomBarHeight, useBottomBarSlot } from "@/shared/lib/dom/useBottomBarSlot";
@@ -60,11 +60,11 @@ import {
   usePieces,
 } from "../api/archive.queries";
 import { pieceReviewBreakdown, type ReviewProgress as ReviewProgressCounts } from "../components/ProvenanceChip";
-import { pieceCardSchema } from "../components/PieceMetadataForm";
+import { pieceFieldSchema } from "./pieceFieldSchema";
 import { DEFAULT_LATIN_PRONUNCIATION } from "../constants/latinPronunciation";
 import { getPiecePdfLinks, getReviewPdf } from "../constants/piecePdfs";
 import { SCORE_DROP_OPTIONS, useEditionUploads } from "../hooks/useEditionUploads";
-import { CompactReviewProgress, ReviewProgress } from "./ReviewProgress";
+import { CompactReviewProgress, ReviewBar, ReviewProgress, useReviewSentence } from "./ReviewProgress";
 import { PieceEditions, uploadAsksPronunciation, type EditionDesk } from "./PieceEditions";
 import { usePieceFieldReview } from "./PieceFieldReview";
 import { PieceProperties, recordSections } from "./PieceProperties";
@@ -76,7 +76,7 @@ import { useScorePane } from "./useScorePane";
 
 const LIBRARY_PATH = "/panel/archive-management";
 const cardPath = (pieceId: string | number): string =>
-  `${LIBRARY_PATH}/${pieceId}/next`;
+  `${LIBRARY_PATH}/${pieceId}`;
 
 /** Height of the phone's top bar, which the title has to clear to count as gone. */
 const TOP_BAR_CLEARANCE = "-52px 0px 0px 0px";
@@ -162,8 +162,11 @@ interface PhoneReviewBarProps {
 }
 
 /**
- * The review action on a phone, above the nav dock. It registers its height,
- * so the shell's feedback button rides above it instead of under it.
+ * The review action on a phone, on the nav dock's top edge (`--nav-dock-h`, not
+ * `bottom-dock`, whose gap is for bars that float) and with the dock's
+ * opaque ground, so the two read as one surface rather than a card floating
+ * over a bar. It registers its height, so the shell's feedback button rides
+ * above it instead of under it.
  */
 const PhoneReviewBar = ({
   progress,
@@ -178,7 +181,7 @@ const PhoneReviewBar = ({
         ref={slotRef}
         role="region"
         aria-label={t("archive.piece_card.review_bar_aria", "Przegląd utworu")}
-        className="fixed inset-x-3 bottom-dock z-dock-bar flex items-center gap-3 rounded-nested border border-hairline-strong bg-ethereal-marble py-2.5 pl-4 pr-2.5 shadow-glass-solid"
+        className="fixed inset-x-0 bottom-[var(--nav-dock-h)] z-dock-bar flex items-center gap-4 border-t border-hairline bg-ethereal-alabaster py-2.5 pl-4 pr-3"
       >
         <CompactReviewProgress progress={progress} />
         <Button
@@ -193,6 +196,40 @@ const PhoneReviewBar = ({
         </Button>
       </div>
     </Portal>
+  );
+};
+
+/**
+ * The publish dialog's account of the review while fields are unchecked: the
+ * same bar and sentence as under the title, and publishing anyway as a quiet
+ * text action beside them.
+ */
+const ApprovalProgress = ({ progress, isPublishing, canPublish, onPublish }: {
+  readonly progress: ReviewProgressCounts;
+  readonly isPublishing: boolean;
+  readonly canPublish: boolean;
+  readonly onPublish: () => void;
+}): React.JSX.Element => {
+  const { t } = useTranslation();
+  const sentence = useReviewSentence(progress);
+  return (
+    <div className="mt-5 space-y-2 border-t border-hairline pt-4">
+      <ReviewBar progress={progress} />
+      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+        <Text as="p" color="graphite">{sentence}</Text>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          casing="sentence"
+          isLoading={isPublishing}
+          disabled={!canPublish}
+          onClick={onPublish}
+        >
+          {t("archive.piece_card.approve_anyway")}
+        </Button>
+      </div>
+    </div>
   );
 };
 
@@ -360,11 +397,12 @@ const PieceCard = ({ id }: { id: string }): React.JSX.Element => {
   const isReviewing = Boolean(awaitingEdition);
   const breakdown = pieceReviewBreakdown(piece);
   const progress = breakdown.all;
+  const hasUnchecked = progress.pending > 0;
   const indexItems: SectionIndexItem[] = sections.map((entry) => {
     const count = isReviewing && entry.review ? breakdown.sections[entry.review].pending : 0;
     return {
       id: entry.anchor,
-      label: t(entry.titleKey),
+      label: t(entry.indexKey ?? entry.titleKey),
       count,
       countLabel: count ? t("archive.piece_card.index_unchecked", { count }) : undefined,
     };
@@ -553,11 +591,11 @@ const PieceCard = ({ id }: { id: string }): React.JSX.Element => {
                   </div>
                 </div>
 
-                <div className="relative mt-1.5 lg:mt-4.5">
-                  <div key={pieceId} className="pointer-events-none absolute -left-4 top-4 lg:-left-5 lg:top-5">
-                    {titleReview.marker}
-                  </div>
-                  <Heading as="h1" size={null} aria-label={piece.title} ref={titleRef}>
+                {/* The title's check stands at the end of its first line; the
+                    title carries no edge, which beside display type reads as a
+                    stray mark rather than a state. */}
+                <div className="mt-1.5 flex items-start gap-2 lg:mt-4.5">
+                  <Heading as="h1" size={null} aria-label={piece.title} ref={titleRef} className="min-w-0 flex-1">
                     <InlineEditable
                       key={pieceId}
                       id={titleId}
@@ -568,7 +606,7 @@ const PieceCard = ({ id }: { id: string }): React.JSX.Element => {
                       } : null)}
                       validate={(next) => {
                         if (!next) return t("archive.piece_card.title_required", "Tytuł jest wymagany.");
-                        return pieceCardSchema.shape.title.safeParse(next).success
+                        return pieceFieldSchema.shape.title.safeParse(next).success
                           ? null
                           : t("archive.piece_card.field_too_long");
                       }}
@@ -577,10 +615,10 @@ const PieceCard = ({ id }: { id: string }): React.JSX.Element => {
                       className="text-4xl leading-tight lg:text-5xl"
                     />
                   </Heading>
+                  {titleReview.action && <div className="pt-0.5 lg:pt-2">{titleReview.action}</div>}
                 </div>
                 <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1">
                   {byline && <Text as="p" size="md" color="graphite">{byline}</Text>}
-                  {titleReview.action}
                   <AutosaveStatus
                     key={pieceId}
                     placement="inline"
@@ -605,23 +643,23 @@ const PieceCard = ({ id }: { id: string }): React.JSX.Element => {
                       className="shrink-0 text-ethereal-graphite"
                       aria-hidden="true"
                     />
-                    <div className="min-w-0 flex-1">
-                      <Text as="p" size="base" weight="medium" truncate>
-                        {scorePdf.label}
-                      </Text>
-                      {scorePdf.page_count ? (
-                        <Text as="p" size="sm" color="graphite">
-                          {t("archive.piece_card.page_count", { count: scorePdf.page_count })}
-                        </Text>
-                      ) : null}
-                    </div>
+                    {/* Described, not named: the upload's filename is the
+                        edition list's business, further down. */}
+                    <Text as="p" size="base" className="min-w-0 flex-1">
+                      {[
+                        t("archive.piece_card.score_row"),
+                        "PDF",
+                        scorePdf.page_count ? t("archive.piece_card.page_count", { count: scorePdf.page_count }) : null,
+                      ].filter(Boolean).join(" · ")}
+                    </Text>
                     <Button
                       variant="outline"
                       size="sm"
                       casing="sentence"
+                      aria-label={t("archive.piece_card.open_score")}
                       onClick={() => showEdition(scorePdf.id)}
                     >
-                      {t("archive.piece_card.open_score", "Otwórz partyturę")}
+                      {t("archive.piece_card.open_short")}
                     </Button>
                   </div>
                 )}
@@ -637,10 +675,7 @@ const PieceCard = ({ id }: { id: string }): React.JSX.Element => {
                   onSelect={goToSection}
                   ariaLabel={t("archive.piece_card.index_aria")}
                   trailing={isTwoPane && isReviewing && isHeaderAway ? (
-                    <div className="flex shrink-0 items-center gap-3 self-stretch border-l border-hairline pl-3">
-                      <Text as="span" size="base" color="graphite" className="tabular-nums" aria-hidden="true">
-                        {`${progress.verified}/${progress.total}`}
-                      </Text>
+                    <div className="flex shrink-0 items-center self-stretch border-l border-hairline pl-3">
                       <Button
                         variant="primary"
                         size="sm"
@@ -691,35 +726,31 @@ const PieceCard = ({ id }: { id: string }): React.JSX.Element => {
       )}
 
       {/* Publishing shows the AI's work to the whole choir and notifies the
-          projects that hold the piece, so it stops to say so. */}
+          projects that hold the piece, so it stops to say so. With fields
+          unchecked, the gold action goes back to the review and publishing
+          anyway is the quiet one. */}
       <ConfirmModal
         isOpen={isApproveOpen}
-        title={t("archive.piece_card.approve_modal_title", "Zatwierdzić i opublikować?")}
+        title={t("archive.piece_card.approve_modal_title")}
         description={t("archive.piece_card.approve_modal_body")}
-        icon={<Send size={22} aria-hidden="true" />}
+        icon={null}
         isDestructive={false}
         casing="sentence"
-        confirmText={t("archive.piece_card.approve_btn", "Zatwierdź i opublikuj")}
-        cancelText={t("common.actions.cancel", "Anuluj")}
-        isLoading={approveEdition.isPending || autosave.isSaving}
-        confirmDisabled={autosave.drafts.length > 0}
+        confirmText={t(hasUnchecked ? "archive.piece_card.approve_back_to_review" : "archive.piece_card.approve_btn")}
+        cancelText={t("common.actions.cancel")}
+        isLoading={!hasUnchecked && (approveEdition.isPending || autosave.isSaving)}
+        confirmDisabled={!hasUnchecked && autosave.drafts.length > 0}
         onCancel={() => setIsApproveOpen(false)}
-        onConfirm={handleApprove}
+        onConfirm={hasUnchecked ? backToReview : handleApprove}
         onExitComplete={focusAfterApproval}
       >
-        {/* Publishing with fields unchecked is allowed; the modal says so first. */}
-        {progress.pending > 0 && (
-          <div className="mt-4 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 border-t border-hairline pt-3">
-            <div className="flex items-center gap-2">
-              <span className="size-1.5 shrink-0 rounded-full bg-ethereal-amethyst" aria-hidden="true" />
-              <Text as="p" weight="medium">
-                {t("archive.piece_card.approve_unchecked", { count: progress.pending })}
-              </Text>
-            </div>
-            <Button type="button" variant="ghost" size="sm" casing="sentence" onClick={backToReview}>
-              {t("archive.piece_card.approve_back_to_review")}
-            </Button>
-          </div>
+        {hasUnchecked && (
+          <ApprovalProgress
+            progress={progress}
+            isPublishing={approveEdition.isPending || autosave.isSaving}
+            canPublish={autosave.drafts.length === 0}
+            onPublish={handleApprove}
+          />
         )}
         {autosave.drafts.length > 0 && (
           <div className="mt-4 border-t border-hairline pt-3">

@@ -84,9 +84,9 @@ const MovementRow = ({ piece, autosave, score, movement }: PieceMovementsProps &
   return (
     // From 1024 px every row lays out on the list's columns, so a long page
     // link in one row cannot push its tempo out of line with the others.
-    <li className="flex flex-wrap items-start gap-x-2 border-t border-hairline py-2 lg:col-span-4 lg:grid lg:grid-cols-subgrid">
-      <div className="relative pt-2">
-        <div className="absolute right-full mt-1 pe-0.5">{marker}</div>
+    <li className="relative flex flex-wrap items-start gap-x-2 border-t border-hairline py-2 lg:col-span-4 lg:grid lg:grid-cols-subgrid">
+      {marker}
+      <div className="pt-2">
         <Text size="sm" color="muted" className="tabular-nums">{order}.</Text>
       </div>
       <div className="min-w-40 flex-1">

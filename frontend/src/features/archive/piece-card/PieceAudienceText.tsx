@@ -16,7 +16,7 @@ import {
   useDeleteProgramNote,
   useDeleteTranslation,
 } from "../api/archive.queries";
-import { ProgramNoteGenerator, TranslationGenerator } from "../components/ReviewArtifactsEditors";
+import { ProgramNoteGenerator, TranslationGenerator } from "./AudienceGenerators";
 import { getLanguageLabel } from "../constants/archiveLanguages";
 import { getProgramNoteToneLabel } from "../constants/audienceMaterial";
 import { CommitText } from "./CommitText";
@@ -44,17 +44,17 @@ const TranslationBlock = ({ translation, piece, autosave }: AudienceTextProps & 
     autosave.saveField({ kind: "translation", object_id: id, field }, next);
 
   return (
-    <li className="min-w-0 space-y-1">
+    <li className="relative min-w-0 space-y-1">
+      {marker}
       <div className="flex flex-wrap items-center gap-2">
         <RecordTextLabel
           id={textId}
           label={label}
-          marker={marker}
-          action={action}
           prefix={<Badge variant="neutral">{translation.target_language}</Badge>}
         />
         {translation.is_singable && <Text size="sm" color="muted">{t("archive.review.singable")}</Text>}
-        <div className="ml-auto">
+        <div className="ml-auto flex items-center gap-1">
+          {action}
           <RecordRemove label={t("archive.review.delete_translation")} autosave={autosave} remove={() => remove.mutateAsync({ pieceId, id })} />
         </div>
       </div>
@@ -101,7 +101,7 @@ const ProgramNoteBlock = ({ note, piece, autosave }: AudienceTextProps & { note:
         <Badge variant="neutral">{note.language}</Badge>
         <RecordTextLabel id={textId} label={label} />
         {note.target_tone && <Text size="sm" color="muted">{getProgramNoteToneLabel(note.target_tone, t)}</Text>}
-        {note.is_approved && <Text size="sm" color="muted">{t("repertoire.program_notes.approved")}</Text>}
+        {note.is_approved && <Text size="sm" color="muted">{t("archive.piece_card.note_approved")}</Text>}
         <div className="ml-auto">
           <RecordRemove label={t("archive.review.delete_note")} autosave={autosave} remove={() => remove.mutateAsync({ pieceId, id })} />
         </div>

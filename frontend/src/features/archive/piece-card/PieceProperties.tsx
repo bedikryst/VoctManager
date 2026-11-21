@@ -4,22 +4,28 @@
  * `recordSections` names the sections in order, with the review group whose
  * count each carries; the page's section index reads the same list, so the
  * index and the record cannot disagree about what is on the page.
+ *
+ * An optional property of Dane that is empty, and that nobody has to check,
+ * is not a row of its own: it is named on one closing line, "Dodaj: Opus,
+ * Rok kompozycji", and choosing it puts its row in place with focus in it.
+ * The row then stays for as long as the card is open, filled or not.
  */
 
-import { useId, type ComponentProps, type ReactNode } from "react";
+import { useId, useState, type ComponentProps, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 
 import { cn } from "@/shared/lib/utils";
 import type { Piece } from "@/shared/types";
-import type { ReviewSection } from "../components/ProvenanceChip";
+import { isAiProvenance, pieceFieldProvenance, type ReviewSection } from "../components/ProvenanceChip";
 import { PropertyRow, PROPERTY_CONTROL_CLASS } from "@/shared/ui/composites/PropertyRow";
 import { Select, type SelectOption } from "@/shared/ui/primitives/Select";
-import { Text } from "@/shared/ui/primitives/typography";
-import { pieceCardSchema } from "../components/PieceMetadataForm";
+import { Label, Text } from "@/shared/ui/primitives/typography";
+import { pieceFieldSchema } from "./pieceFieldSchema";
 import { getArchiveEpochLabel, getArchiveEpochOptions } from "../constants/archiveEpochs";
 import { getArchiveLanguageChoices } from "../constants/archiveLanguages";
 import { CommitText } from "./CommitText";
 import { ComposerProperty } from "./ComposerProperty";
+import { displayMusicalKey } from "./musicalKey";
 import { PieceProgramNote, PieceTranslations } from "./PieceAudienceText";
 import { usePieceFieldReview } from "./PieceFieldReview";
 import { PieceLyrics } from "./PieceLyrics";
@@ -46,12 +52,18 @@ export interface RecordSectionEntry {
   /** The element id the section is rendered under. */
   readonly anchor: string;
   readonly titleKey: string;
+  /** A shorter name for the index, where the full title would push sections out of the row. */
+  readonly indexKey?: string;
   /** The review group counted for this section, if it holds checkable fields. */
   readonly review: ReviewSection | null;
 }
 
-const section = (id: RecordSectionId, titleKey: string, review: ReviewSection | null = null): RecordSectionEntry =>
-  ({ id, anchor: `record-${id}`, titleKey, review });
+const section = (
+  id: RecordSectionId,
+  titleKey: string,
+  review: ReviewSection | null = null,
+  indexKey?: string,
+): RecordSectionEntry => ({ id, anchor: `record-${id}`, titleKey, review, indexKey });
 
 /** The record's sections in reading order: content first, files last. */
 export const recordSections = (piece: Piece): readonly RecordSectionEntry[] => [
@@ -63,9 +75,9 @@ export const recordSections = (piece: Piece): readonly RecordSectionEntry[] => [
     ? [section("translations", "archive.piece_card.translations_section", "translations")]
     : []),
   section("movements", "archive.piece_card.movements_section", "movements"),
-  section("program-note", "archive.piece_card.program_note_section"),
-  section("recordings", "archive.piece_card.recordings_section"),
-  section("editions", "archive.piece_card.editions_section"),
+  section("program-note", "archive.piece_card.program_note_section", null, "archive.piece_card.index.program_note"),
+  section("recordings", "archive.piece_card.recordings_section", null, "archive.piece_card.index.recordings"),
+  section("editions", "archive.piece_card.editions_section", null, "archive.piece_card.index.editions"),
 ];
 
 type TextField = "arranger" | "opus_catalog" | "musical_key" | "voicing" | "text_source";
@@ -85,14 +97,16 @@ const ReviewRow = ({ children, ...props }: ReviewRowProps) => {
 const TextProperty = ({ piece, autosave, field, label }: Omit<ReviewRowProps, "children" | "field"> & {
   readonly field: TextField;
 }) => {
-  const { t } = useTranslation();
-  const schema = pieceCardSchema.shape[field];
+  const { t, i18n } = useTranslation();
+  const schema = pieceFieldSchema.shape[field];
+  const stored = piece[field] ?? "";
   return (
     <ReviewRow piece={piece} autosave={autosave} label={label} field={field}>
       {(id) => (
         <CommitText
           id={id}
-          value={piece[field] ?? ""}
+          wraps
+          value={field === "musical_key" ? displayMusicalKey(stored, i18n.language) : stored}
           draftField={autosave.track(field, label)}
           onCommit={(next) => schema.safeParse(next).success
             ? autosave.save(field, next)
@@ -150,6 +164,46 @@ const RowSelect = ({ id, value, options, onValueChange }: {
   );
 };
 
+type OptionalField =
+  | "arranger" | "opus_catalog" | "musical_key" | "language" | "epoch"
+  | "composition_year" | "estimated_duration" | "description";
+
+const isEmpty = (piece: Piece, field: OptionalField): boolean => {
+  const value = piece[field];
+  if (typeof value === "string") return value.trim() === "";
+  return value === null || value === undefined || value === 0;
+};
+
+/** The empty optional properties, named on one line; choosing one opens its row. */
+const MissingProperties = ({ fields, onAdd }: {
+  fields: readonly { readonly field: OptionalField; readonly label: string }[];
+  onAdd: (field: OptionalField) => void;
+}) => {
+  const { t } = useTranslation();
+  const labelId = useId();
+  return (
+    <div className="grid grid-cols-1 gap-x-3 py-1 lg:grid-cols-[10.5rem_minmax(0,1fr)] lg:py-0">
+      <Label id={labelId} size="base" color="graphite" className="pt-2 lg:py-3">
+        {t("archive.piece_card.missing_fields")}
+      </Label>
+      {/* Spaced, not dotted: the names wrap, and a separator left at a
+          line's end reads as a stray mark. */}
+      <div role="group" aria-labelledby={labelId} className="-ml-2 flex flex-wrap items-center gap-x-2 lg:py-1">
+        {fields.map(({ field, label }) => (
+          <button
+            key={field}
+            type="button"
+            onClick={() => onAdd(field)}
+            className="min-h-11 rounded-control px-2 text-ethereal-graphite transition-colors hover:bg-ethereal-ink/6 hover:text-ethereal-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/50 fine-pointer:min-h-9"
+          >
+            <Text as="span" size="base" color="inherit">{label}</Text>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 export const PieceProperties = ({ piece, autosave, score, editions, isReviewing }: PiecePropertiesProps & {
   readonly score?: ComponentProps<typeof PieceMovements>["score"];
   /** The edition list, owned by the page because its drop target covers the page. */
@@ -158,6 +212,10 @@ export const PieceProperties = ({ piece, autosave, score, editions, isReviewing 
 }) => {
   const { t } = useTranslation();
   const notesId = useId();
+  const [revealed, setRevealed] = useState<ReadonlySet<OptionalField>>(() => new Set());
+  const arrangerLabel = t("archive.piece_card.fields.arranger");
+  const opusLabel = t("archive.piece_card.fields.opus");
+  const keyLabel = t("archive.piece_card.fields.key");
   const languageLabel = t("archive.piece_card.fields.language");
   const epochLabel = t("archive.piece_card.fields.epoch");
   const yearLabel = t("archive.piece_card.fields.composition_year");
@@ -175,73 +233,110 @@ export const PieceProperties = ({ piece, autosave, score, editions, isReviewing 
       ? t("archive.piece_card.note.year_after_death", { death: contradictions.year.death })
       : null;
 
+  const optional: readonly { readonly field: OptionalField; readonly label: string }[] = [
+    { field: "arranger", label: arrangerLabel },
+    { field: "opus_catalog", label: opusLabel },
+    { field: "musical_key", label: keyLabel },
+    { field: "language", label: languageLabel },
+    { field: "epoch", label: epochLabel },
+    { field: "composition_year", label: yearLabel },
+    { field: "estimated_duration", label: durationLabel },
+    { field: "description", label: notesLabel },
+  ];
+  const shown = (field: OptionalField): boolean =>
+    !isEmpty(piece, field) || isAiProvenance(pieceFieldProvenance(piece, field)) || revealed.has(field);
+  const missing = optional.filter(({ field }) => !shown(field));
+  const reveal = (field: OptionalField): void => {
+    setRevealed((current) => new Set(current).add(field));
+    // The row mounts on the next render; its control is the first focusable in it.
+    requestAnimationFrame(() => {
+      document
+        .querySelector(`[data-property="${field}"]`)
+        ?.querySelector<HTMLElement>("input, textarea, button")
+        ?.focus();
+    });
+  };
+  const optionalRow = (field: OptionalField, row: ReactNode) =>
+    shown(field) ? <div data-property={field}>{row}</div> : null;
+
   const content: Record<RecordSectionId, ReactNode> = {
     properties: (
       <>
         <ComposerProperty piece={piece} autosave={autosave} />
-        <TextProperty piece={piece} autosave={autosave} field="arranger" label={t("archive.piece_card.fields.arranger")} />
-        <TextProperty piece={piece} autosave={autosave} field="opus_catalog" label={t("archive.piece_card.fields.opus")} />
-        <TextProperty piece={piece} autosave={autosave} field="musical_key" label={t("archive.piece_card.fields.key")} />
-        <ReviewRow piece={piece} autosave={autosave} field="language" label={languageLabel}>
-          {(id) => (
-            <RowSelect
-              id={id}
-              value={piece.language ?? ""}
-              options={getArchiveLanguageChoices(piece.language, t)}
-              onValueChange={(next) => void autosave.saveChoice({ field: "language" }, next, id, languageLabel).catch(autosave.showSaveError)}
-            />
-          )}
-        </ReviewRow>
-        <ReviewRow piece={piece} autosave={autosave} field="epoch" label={epochLabel}>
-          {(id) => (
-            <RowSelect
-              id={id}
-              value={epoch}
-              options={epochChoices}
-              onValueChange={(next) => {
-                const value = epochChoices.find((option) => option.value === next)?.value ?? "";
-                void autosave.saveChoice({ field: "epoch" }, value, id, epochLabel).catch(autosave.showSaveError);
-              }}
-            />
-          )}
-        </ReviewRow>
+        {optionalRow("arranger", <TextProperty piece={piece} autosave={autosave} field="arranger" label={arrangerLabel} />)}
+        {optionalRow("opus_catalog", <TextProperty piece={piece} autosave={autosave} field="opus_catalog" label={opusLabel} />)}
+        {optionalRow("musical_key", <TextProperty piece={piece} autosave={autosave} field="musical_key" label={keyLabel} />)}
+        {optionalRow("language", (
+          <ReviewRow piece={piece} autosave={autosave} field="language" label={languageLabel}>
+            {(id) => (
+              <RowSelect
+                id={id}
+                value={piece.language ?? ""}
+                options={getArchiveLanguageChoices(piece.language, t)}
+                onValueChange={(next) => void autosave.saveChoice({ field: "language" }, next, id, languageLabel).catch(autosave.showSaveError)}
+              />
+            )}
+          </ReviewRow>
+        ))}
+        {optionalRow("epoch", (
+          <ReviewRow piece={piece} autosave={autosave} field="epoch" label={epochLabel}>
+            {(id) => (
+              <RowSelect
+                id={id}
+                value={epoch}
+                options={epochChoices}
+                onValueChange={(next) => {
+                  const value = epochChoices.find((option) => option.value === next)?.value ?? "";
+                  void autosave.saveChoice({ field: "epoch" }, value, id, epochLabel).catch(autosave.showSaveError);
+                }}
+              />
+            )}
+          </ReviewRow>
+        ))}
         {contradictions.epoch && <PropertyNote isReviewing={isReviewing}>{t("archive.piece_card.note.epoch_arranged")}</PropertyNote>}
-        <ReviewRow piece={piece} autosave={autosave} field="composition_year" label={yearLabel}>
-          {(id) => (
-            <CommitText
-              id={id}
-              value={piece.composition_year?.toString() ?? ""}
-              draftField={autosave.track("composition_year", yearLabel)}
-              inputMode="numeric"
-              onCommit={(next) => {
-                const year = pieceCardSchema.shape.composition_year.safeParse(next);
-                return /^\d*$/.test(next) && year.success
-                  ? autosave.save("composition_year", year.data)
-                  : t("archive.piece_card.year_invalid");
-              }}
-            />
-          )}
-        </ReviewRow>
+        {optionalRow("composition_year", (
+          <ReviewRow piece={piece} autosave={autosave} field="composition_year" label={yearLabel}>
+            {(id) => (
+              <CommitText
+                id={id}
+                value={piece.composition_year?.toString() ?? ""}
+                draftField={autosave.track("composition_year", yearLabel)}
+                inputMode="numeric"
+                onCommit={(next) => {
+                  const year = pieceFieldSchema.shape.composition_year.safeParse(next);
+                  return /^\d*$/.test(next) && year.success
+                    ? autosave.save("composition_year", year.data)
+                    : t("archive.piece_card.year_invalid");
+                }}
+              />
+            )}
+          </ReviewRow>
+        ))}
         {yearNote && <PropertyNote isReviewing={isReviewing}>{yearNote}</PropertyNote>}
-        <PropertyRow label={durationLabel}>
-          {(id) => (
-            <CommitText
-              id={id}
-              value={pieceDuration(piece.estimated_duration)}
-              draftField={autosave.track("estimated_duration", durationLabel)}
-              onCommit={(next) => {
-                const duration = pieceDuration(next);
-                return duration.valid
-                  ? autosave.save("estimated_duration", duration.seconds)
-                  : t("archive.piece_card.duration_invalid");
-              }}
-            />
-          )}
-        </PropertyRow>
-        <div className="mt-4">
-          <RecordTextLabel id={notesId} label={notesLabel} />
-          <RecordText id={notesId} value={piece.description ?? ""} draftField={autosave.track("description", notesLabel)} onCommit={(next) => autosave.save("description", next)} />
-        </div>
+        {optionalRow("estimated_duration", (
+          <PropertyRow label={durationLabel}>
+            {(id) => (
+              <CommitText
+                id={id}
+                value={pieceDuration(piece.estimated_duration)}
+                draftField={autosave.track("estimated_duration", durationLabel)}
+                onCommit={(next) => {
+                  const duration = pieceDuration(next);
+                  return duration.valid
+                    ? autosave.save("estimated_duration", duration.seconds)
+                    : t("archive.piece_card.duration_invalid");
+                }}
+              />
+            )}
+          </PropertyRow>
+        ))}
+        {optionalRow("description", (
+          <div className="mt-4">
+            <RecordTextLabel id={notesId} label={notesLabel} />
+            <RecordText id={notesId} value={piece.description ?? ""} draftField={autosave.track("description", notesLabel)} onCommit={(next) => autosave.save("description", next)} />
+          </div>
+        ))}
+        {missing.length > 0 && <MissingProperties fields={missing} onAdd={reveal} />}
       </>
     ),
     voices: (

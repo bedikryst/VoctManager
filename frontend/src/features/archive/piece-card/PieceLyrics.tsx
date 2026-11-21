@@ -10,7 +10,7 @@ import { useMediaQuery } from "@/shared/lib/dom/useMediaQuery";
 import { cn } from "@/shared/lib/utils";
 import type { Piece } from "@/shared/types";
 import { Text } from "@/shared/ui/primitives/typography";
-import { IpaRecomputeActions, useIpaRecompute } from "../components/LyricsIpaField";
+import { IpaRecomputeActions, useIpaRecompute } from "./IpaRecompute";
 import { getLatinPronunciationLabel } from "../constants/latinPronunciation";
 import { pairLyrics } from "./pairLyrics";
 import { RecordNote } from "./RecordNote";
@@ -108,7 +108,7 @@ export const PieceLyrics = ({ piece, autosave, isReviewing }: {
   const lyrics = piece.lyrics_original ?? "";
   const guide = piece.lyrics_ipa ?? "";
   const pairs = pairLyrics(lyrics, guide);
-  const ipa = useIpaRecompute(piece, undefined, (dispatch) =>
+  const ipa = useIpaRecompute(piece, (dispatch) =>
     autosave.afterFieldsSaved(["lyrics_original", "lyrics_ipa", "language"], dispatch));
   const originalLabel = t("archive.piece_card.fields.lyrics_original");
   const ipaLabel = t("archive.piece_card.fields.lyrics_ipa");
@@ -128,14 +128,16 @@ export const PieceLyrics = ({ piece, autosave, isReviewing }: {
         // The labels stand side by side only over lines that do.
         pairs && pairedInColumns && "grid-cols-2 group-has-[textarea:focus]/lyrics:grid-cols-1 group-has-[[data-commit-draft]]/lyrics:grid-cols-1",
       )}>
-        <div>
-          <RecordTextLabel id={originalId} label={originalLabel} {...originalReview} />
+        <div className="relative">
+          {originalReview.marker}
+          <RecordTextLabel id={originalId} label={originalLabel} action={originalReview.action} />
           <div ref={originalEditor} className={editorClass}>
             <RecordText id={originalId} value={lyrics} draftField={autosave.track("lyrics_original", originalLabel)} onCommit={(next) => autosave.save("lyrics_original", next)} className={READING_TEXT} />
           </div>
         </div>
-        <div>
-          <RecordTextLabel id={ipaId} label={ipaLabel} {...ipaReview} />
+        <div className="relative">
+          {ipaReview.marker}
+          <RecordTextLabel id={ipaId} label={ipaLabel} action={ipaReview.action} />
           <div ref={ipaEditor} className={editorClass}>
             <RecordText id={ipaId} value={guide} draftField={autosave.track("lyrics_ipa", ipaLabel)} onCommit={(next) => autosave.save("lyrics_ipa", next)} className={IPA_TEXT} readOnly={ipa.isRunning} />
           </div>
@@ -162,7 +164,7 @@ export const PieceLyrics = ({ piece, autosave, isReviewing }: {
       {pronunciation && !piece.lyrics_ipa_recomputable && (
         <Text size="sm" color="muted">{pronunciation}</Text>
       )}
-      <IpaRecomputeActions piece={piece} ipa={ipa} compact />
+      <IpaRecomputeActions piece={piece} ipa={ipa} />
     </div>
   );
 };

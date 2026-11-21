@@ -80,9 +80,6 @@ export const formatEditionLabel = (link: PiecePdfLink): string => {
 export const hasPdf = (piece: PieceLike): boolean =>
   getPiecePdfLinks(piece).length > 0;
 
-export const getPrimaryPdf = (piece: PieceLike): PiecePdfLink | null =>
-  getPiecePdfLinks(piece)[0] ?? null;
-
 /**
  * The score a Piece Card should put on screen: the edition awaiting approval
  * when there is one, otherwise the piece's primary.

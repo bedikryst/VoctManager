@@ -22,12 +22,8 @@ import {
   isIngestionInProgress,
   type LatinPronunciationCode,
   type AudienceLanguage,
-  type Movement,
   type Piece,
-  type ProgramNote,
   type ProgramNoteToneCode,
-  type Recording,
-  type Translation,
 } from "@/shared/types";
 import type {
   ComposerWriteDTO,
@@ -708,34 +704,10 @@ export const useCreateMovement = () => {
   });
 };
 
-export const useUpdateMovement = () => {
-  const qc = useQueryClient();
-  return useMutation<
-    Movement,
-    Error,
-    { id: string; pieceId: string; data: Partial<Movement> }
-  >({
-    mutationFn: ({ id, data }) => ArchiveService.updateMovement(id, data),
-    onSuccess: (_d, { pieceId }) => invalidatePiece(qc, pieceId),
-  });
-};
-
 export const useDeleteMovement = () => {
   const qc = useQueryClient();
   return useMutation<void, Error, { id: string; pieceId: string }>({
     mutationFn: ({ id }) => ArchiveService.deleteMovement(id),
-    onSuccess: (_d, { pieceId }) => invalidatePiece(qc, pieceId),
-  });
-};
-
-export const useUpdateTranslation = () => {
-  const qc = useQueryClient();
-  return useMutation<
-    Translation,
-    Error,
-    { id: string; pieceId: string; data: Partial<Translation> }
-  >({
-    mutationFn: ({ id, data }) => ArchiveService.updateTranslation(id, data),
     onSuccess: (_d, { pieceId }) => invalidatePiece(qc, pieceId),
   });
 };
@@ -756,18 +728,6 @@ export const useCreateRecording = () => {
   });
 };
 
-export const useUpdateRecording = () => {
-  const qc = useQueryClient();
-  return useMutation<
-    Recording,
-    Error,
-    { id: string; pieceId: string; data: Partial<Recording> }
-  >({
-    mutationFn: ({ id, data }) => ArchiveService.updateRecording(id, data),
-    onSuccess: (_d, { pieceId }) => invalidatePiece(qc, pieceId),
-  });
-};
-
 export const useDeleteRecording = () => {
   const qc = useQueryClient();
   return useMutation<void, Error, { id: string; pieceId: string }>({
@@ -784,18 +744,6 @@ export const useCreateProgramNote = () => {
   });
 };
 
-export const useUpdateProgramNote = () => {
-  const qc = useQueryClient();
-  return useMutation<
-    ProgramNote,
-    Error,
-    { id: string; pieceId: string; data: Partial<ProgramNote> }
-  >({
-    mutationFn: ({ id, data }) => ArchiveService.updateProgramNote(id, data),
-    onSuccess: (_d, { pieceId }) => invalidatePiece(qc, pieceId),
-  });
-};
-
 export const useDeleteProgramNote = () => {
   const qc = useQueryClient();
   return useMutation<void, Error, { id: string; pieceId: string }>({
@@ -806,7 +754,7 @@ export const useDeleteProgramNote = () => {
 
 /**
  * Dispatch on-demand program-note generation. The note is async (~30s), so the
- * caller polls the piece detail itself (see ProgramNoteSection) — this just
+ * caller polls the piece detail itself — this just
  * kicks off the task.
  */
 export const useGenerateProgramNote = () => {

@@ -188,12 +188,6 @@ const ProjectDetailsPage = lazyWithPreload(
 const ArchiveManagement = lazyWithPreload(
   () => import("@pages/panel/ArchivePage"),
 );
-const ArchivePieceCardPage = lazyWithPreload(
-  () => import("@features/archive/ArchivePieceCardPage"),
-);
-// The redesigned piece card, built beside the current one on an unlinked
-// route until it replaces it (docs/specs/piece-card-redesign-2026-11.md).
-// Not preloaded: nothing links to it.
 const PieceCardPage = lazyWithPreload(
   () => import("@features/archive/piece-card/PieceCardPage"),
 );
@@ -298,7 +292,7 @@ const PANEL_ROUTE_PRELOADERS: readonly DashboardRoutePreloader[] = [
   { scope: "manager", preload: BudgetExpensesPage.preload },
   { scope: "manager", preload: ProjectDetailsPage.preload },
   { scope: "manager", preload: ArchiveManagement.preload },
-  { scope: "manager", preload: ArchivePieceCardPage.preload },
+  { scope: "manager", preload: PieceCardPage.preload },
   { scope: "manager", preload: ArchiveNewPiecePage.preload },
   { scope: "manager", preload: ArchiveComposersPage.preload },
   { scope: "manager", preload: CrewManagement.preload },
@@ -462,10 +456,6 @@ export const router = createBrowserRouter(
             />
             <Route
               path="archive-management/:id"
-              element={<ArchivePieceCardPage />}
-            />
-            <Route
-              path="archive-management/:id/next"
               element={<PieceCardPage />}
               handle={BLEED_ROUTE_HANDLE}
             />

@@ -1,6 +1,10 @@
 /**
  * @file CommitText.tsx
  * @description A typed property that retains its draft until its commit succeeds.
+ * `multiline` is a growing text block where Enter starts a new line and
+ * Ctrl+Enter commits. `wraps` is a one-line value that wraps instead of being
+ * clipped: it grows like the block, but Enter commits and a pasted line break
+ * becomes a space.
  */
 
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
@@ -18,6 +22,7 @@ interface CommitTextProps {
   readonly draftField: DraftField;
   readonly onCommit: (value: string) => Promise<void> | string;
   readonly multiline?: boolean;
+  readonly wraps?: boolean;
   readonly inputMode?: "numeric" | "text" | "url";
   readonly className?: string;
   readonly readOnly?: boolean;
@@ -25,7 +30,7 @@ interface CommitTextProps {
 }
 
 export const CommitText = ({
-  id, value, draftField, onCommit, multiline = false, inputMode, className, readOnly, ariaLabel,
+  id, value, draftField, onCommit, multiline = false, wraps = false, inputMode, className, readOnly, ariaLabel,
 }: CommitTextProps) => {
   const { t } = useTranslation();
   const [draft, setDraft] = useState<string | null>(null);
@@ -95,7 +100,7 @@ export const CommitText = ({
     onKeyDown,
     onChange: (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
       revision.current += 1;
-      setDraft(event.target.value);
+      setDraft(wraps ? event.target.value.replace(/\r?\n/g, " ") : event.target.value);
       setError(undefined);
       reportDraft(key, { id, label, discard });
     },
@@ -105,11 +110,15 @@ export const CommitText = ({
       className,
     ),
   };
-  const textBlockClass = "col-start-1 row-start-1 whitespace-pre-wrap wrap-anywhere leading-relaxed";
+  // A wrapping value keeps a one-line row's height (24 px line, 6 px padding).
+  const textBlockClass = cn(
+    "col-start-1 row-start-1 whitespace-pre-wrap wrap-anywhere",
+    wraps ? "leading-6" : "leading-relaxed",
+  );
 
   return (
     <div className="min-w-0" data-commit-draft={draft === null ? undefined : ""}>
-      {multiline ? (
+      {multiline || wraps ? (
         <div className="grid">
           {/* The mirror supplies the height even on browsers without field-sizing. */}
           <div

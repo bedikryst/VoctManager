@@ -677,22 +677,25 @@ backend/archive/
     └── language.py
 
 frontend/src/features/archive/          # UI slice (FSD) — jeden slice, bez osobnego „score-compiler"
-├── ArchivePieceCardPage.tsx            # karta utworu: edycja + weryfikacja AI w jednym miejscu
 ├── ArchiveManagement.tsx               # lista repertuaru
 ├── api/{archive.service.ts, archive.queries.ts}
+├── piece-card/                         # karta utworu: dokument obok partytury, edycja + weryfikacja AI
+│   ├── PieceCardPage.tsx               # dwa panele od 1024 px, przegląd, publikacja
+│   ├── PieceProperties.tsx             # sekcje rekordu, pola zapisują się same (usePieceAutosave)
+│   ├── PieceFieldReview.tsx            # krawędź „AI, niesprawdzone” + ✓ przy wartości
+│   ├── recordContradictions.ts         # sprzeczności rekordu (rok vs kompozytor, epoka, linie IPA)
+│   └── IpaRecompute.tsx, AudienceGenerators.tsx   # przeliczenie IPA, tłumaczenie i notka z AI
 └── components/
     ├── EditionUploadZone.tsx           # drag-and-drop multi-file
     ├── EditionUploadDrawer.tsx
     ├── ActiveIngestionsPanel.tsx       # live postęp po SSE
     ├── OrphanIngestionsPanel.tsx       # ingesty bez podpiętego utworu
-    ├── ProvenanceChip.tsx              # AI · 95% / MusicBrainz / Zweryfikowane
-    ├── ReviewMeter.tsx, CockpitSection.tsx, ReviewArtifactsEditors.tsx
-    └── AIHallucinationWarning.tsx
+    └── ProvenanceChip.tsx              # pochodzenie pól i jedna reguła liczenia przeglądu
 ```
 
 **Uwaga nawigacyjna:** nie ma już trasy `/panel/score-compiler` ani `ConductorReviewModal`. Upload
-i weryfikacja mieszkają w karcie utworu pod `/panel/archive-management/:id` (z podtrasami `/edit`
-i `/review`).
+i weryfikacja mieszkają w karcie utworu pod `/panel/archive-management/:id`; stare podtrasy `/edit`
+i `/review` przekierowują na nią.
 
 ---
 
