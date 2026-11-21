@@ -75,11 +75,11 @@ export default function SourcesPage(): React.JSX.Element {
     ].filter((entry): entry is string => entry !== null);
   };
 
-  const nameCell = (source: FundingSourceDTO, size: "sm" | "base"): React.ReactNode => {
+  const nameCell = (source: FundingSourceDTO): React.ReactNode => {
     const broken = brokenRules(source);
     return (
       <span className="flex flex-col gap-0.5">
-        <Text as="span" size={size} weight="medium">
+        <Text as="span" weight="medium">
           {source.name}
         </Text>
         {source.grantor && (
@@ -106,7 +106,7 @@ export default function SourcesPage(): React.JSX.Element {
       id: "name",
       header: t("finance.workspace.sources.source", "Źródło"),
       sortValue: (source) => source.name,
-      cell: (source) => nameCell(source, "base"),
+      cell: nameCell,
     },
     {
       id: "kind",
@@ -226,24 +226,34 @@ export default function SourcesPage(): React.JSX.Element {
               ),
             }}
             mobile={{
-              primary: (source) => nameCell(source, "sm"),
-              secondary: (source) => {
-                const date = reportDate(source);
-                return (
-                  <Caption as="span" color={reportIsNear(source) ? "gold" : "muted"}>
-                    {[
-                      fundingKindLabel(t, source.kind),
-                      source.status === "PLANNED" ? null : fundingStatusLabel(t, source.status),
-                      date
-                        ? t("finance.portfolio.report_due", "sprawozdanie do {{date}}", { date })
-                        : null,
-                    ]
-                      .filter(Boolean)
-                      .join(" · ")}
+              title: (source) => source.name,
+              flags: (source) => {
+                const broken = brokenRules(source);
+                return broken.length > 0 ? (
+                  <Caption as="span" color="crimson">
+                    {broken.join(" · ")}
                   </Caption>
-                );
+                ) : null;
               },
-              trailing: (source) => (
+              facts: (source) => {
+                const date = reportDate(source);
+                const due = date
+                  ? t("finance.portfolio.report_due", "sprawozdanie do {{date}}", { date })
+                  : null;
+                return [
+                  source.grantor,
+                  fundingKindLabel(t, source.kind),
+                  source.status === "PLANNED" ? null : fundingStatusLabel(t, source.status),
+                  due && reportIsNear(source) ? (
+                    <Text as="span" size="sm" color="gold">
+                      {due}
+                    </Text>
+                  ) : (
+                    due
+                  ),
+                ];
+              },
+              figure: (source) => (
                 <>
                   <Text as="span" size="sm" weight="medium">
                     {formatTableAmount(source.figures.charged) ?? "–"}

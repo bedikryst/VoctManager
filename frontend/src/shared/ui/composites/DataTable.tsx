@@ -13,9 +13,9 @@
  * that control. The row takes no keystrokes itself: keyboard activation belongs
  * to the link, so no key pressed inside a cell ever bubbles into navigation.
  *
- * Below `md` the table becomes a list of two-line rows: what the row is, a line
- * of facts under it, the figure that matters on the right, and an optional
- * action beside the link.
+ * Below `md` the table becomes a `RecordList`, the panel's one row recipe: the
+ * row's name, exceptions beside it, a line of facts under it, the figure that
+ * matters in a right column, and an optional action beside the link.
  *
  * Selection is optional and controlled: the caller owns which rows are
  * selected (they may be rows of other pages) and the table draws a checkbox
@@ -39,8 +39,8 @@ import { Link, useSearchParams } from "react-router-dom";
 import { ArrowDown, ArrowUp, ChevronsUpDown } from "lucide-react";
 
 import { cn } from "@/shared/lib/utils";
+import { RecordList, RecordRow, SelectBox, type RecordVoice } from "@/shared/ui/composites/RecordList";
 import { StatePanel } from "@/shared/ui/composites/StatePanel";
-import { Checkbox } from "@/shared/ui/primitives/Checkbox";
 import { Eyebrow } from "@/shared/ui/primitives/typography";
 
 export type SortDirection = "asc" | "desc";
@@ -74,10 +74,16 @@ export interface DataTableRowLink {
   readonly state?: unknown;
 }
 
+/** The row below `md`, in `RecordRow`'s slots. */
 export interface DataTableMobileRow<T> {
-  readonly primary: (row: T) => React.ReactNode;
-  readonly secondary?: (row: T) => React.ReactNode;
-  readonly trailing?: (row: T) => React.ReactNode;
+  readonly title: (row: T) => string;
+  /** Defaults to `name`: a ledger's rows are payees, sources and projects. */
+  readonly voice?: RecordVoice;
+  /** Exceptions only, such as a refusal or a broken rule. */
+  readonly flags?: (row: T) => React.ReactNode;
+  readonly facts?: (row: T) => readonly React.ReactNode[];
+  /** The figure a reader scans down the list, its lines stacked. */
+  readonly figure?: (row: T) => React.ReactNode;
   /** A control of its own, placed beside the row's link rather than in it. */
   readonly action?: (row: T) => React.ReactNode;
 }
@@ -255,30 +261,6 @@ function HeaderCell<T>({
   );
 }
 
-/** A checkbox inside a label that widens its target past the 16px box. */
-function SelectBox({
-  checked,
-  indeterminate = false,
-  label,
-  onChange,
-}: {
-  readonly checked: boolean;
-  readonly indeterminate?: boolean;
-  readonly label: string;
-  readonly onChange: () => void;
-}): React.JSX.Element {
-  return (
-    <label className="-m-2 inline-flex cursor-pointer p-2">
-      <Checkbox
-        checked={checked}
-        indeterminate={indeterminate}
-        onChange={onChange}
-        aria-label={label}
-      />
-    </label>
-  );
-}
-
 function SelectAllCell<T>({
   rows,
   selection,
@@ -434,47 +416,27 @@ export function DataTable<T>({
             </table>
           </div>
 
-          <ul aria-label={label} className="divide-y divide-hairline tabular-nums md:hidden">
-            {rows.map((row) => {
-              const link = rowLink(row);
-              const selected = selection?.isSelected(row) ?? false;
-              return (
-                <li
-                  key={rowKey(row)}
-                  className={cn("flex items-center gap-2 pr-3", selected && "bg-ethereal-gold/5")}
-                >
-                  {selection && (
-                    <span className="shrink-0 pl-5">
-                      <SelectBox
-                        checked={selected}
-                        label={selection.rowLabel(row)}
-                        onChange={() => selection.onToggle(row)}
-                      />
-                    </span>
-                  )}
-                  <Link
-                    to={link.to}
-                    state={link.state}
-                    className={cn(
-                      "flex min-w-0 flex-1 items-start gap-4 py-3 transition-colors hover:bg-ethereal-ink/3",
-                      selection ? "pl-1" : "pl-5",
-                      !mobile.action && "pr-2",
-                      LINK_FOCUS,
-                    )}
-                  >
-                    <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-                      {mobile.primary(row)}
-                      {mobile.secondary?.(row)}
-                    </span>
-                    {mobile.trailing && (
-                      <span className="flex shrink-0 flex-col items-end">{mobile.trailing(row)}</span>
-                    )}
-                  </Link>
-                  {mobile.action?.(row)}
-                </li>
-              );
-            })}
-          </ul>
+          <RecordList label={label} edge="inset" className="md:hidden">
+            {rows.map((row) => (
+              <RecordRow
+                key={rowKey(row)}
+                open={rowLink(row)}
+                title={mobile.title(row)}
+                voice={mobile.voice ?? "name"}
+                flags={mobile.flags?.(row)}
+                facts={mobile.facts?.(row)}
+                figure={mobile.figure?.(row)}
+                actions={mobile.action?.(row)}
+                select={
+                  selection && {
+                    checked: selection.isSelected(row),
+                    label: selection.rowLabel(row),
+                    onChange: () => selection.onToggle(row),
+                  }
+                }
+              />
+            ))}
+          </RecordList>
         </>
       )}
 

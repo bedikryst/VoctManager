@@ -238,25 +238,15 @@ export default function ProjectsPage(): React.JSX.Element {
               title: t("finance.workspace.projects.empty", "Żaden projekt nie ma jeszcze kosztów."),
             }}
             mobile={{
-              primary: (rollup) => (
-                <Text as="span" size="sm" weight="medium">
-                  {rollup.project.title}
-                </Text>
-              ),
-              secondary: (rollup) => (
-                <Caption as="span" color="muted">
-                  {[
-                    projectDate(rollup),
-                    cancelled(rollup) ? t("finance.portfolio.cancelled", "odwołany") : null,
-                    rollup.budget_status === "PLANNING"
-                      ? null
-                      : budgetStatusName(t, rollup.budget_status, rollup.summary.lines > 0),
-                  ]
-                    .filter(Boolean)
-                    .join(" · ")}
-                </Caption>
-              ),
-              trailing: (rollup) => (
+              title: (rollup) => rollup.project.title,
+              facts: (rollup) => [
+                projectDate(rollup),
+                cancelled(rollup) ? t("finance.portfolio.cancelled", "odwołany") : null,
+                rollup.budget_status === "PLANNING"
+                  ? null
+                  : budgetStatusName(t, rollup.budget_status, rollup.summary.lines > 0),
+              ],
+              figure: (rollup) => (
                 <>
                   <AmountCell value={rollup.summary.committed} />
                   {isPositiveAmount(rollup.summary.outstanding) && (

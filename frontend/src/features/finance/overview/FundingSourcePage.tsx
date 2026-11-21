@@ -255,20 +255,10 @@ function ChargesTable({ charges }: { readonly charges: readonly SourceChargeDTO[
         ),
       }}
       mobile={{
-        primary: (charge) => (
-          <Text as="span" size="sm" weight="medium">
-            {payee(charge)}
-          </Text>
-        ),
-        secondary: (charge) => (
-          <>
-            <Caption as="span" color="muted">
-              {[charge.project_title, facts(charge), date(charge.incurred_on)].filter(Boolean).join(" · ")}
-            </Caption>
-            {ineligible(charge)}
-          </>
-        ),
-        trailing: amount,
+        title: payee,
+        flags: ineligible,
+        facts: (charge) => [charge.project_title, facts(charge), date(charge.incurred_on)],
+        figure: amount,
       }}
     />
   );

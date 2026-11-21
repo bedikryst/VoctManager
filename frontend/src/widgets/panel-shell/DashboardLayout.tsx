@@ -4,8 +4,9 @@
  * Implements the Persistent App Shell pattern. Delegates background kinetics to
  * isolated persistent layers, and the entrance of a route to the page itself
  * (`PageTransition`) — the shell decides only WHEN a route is a new mount.
- * A route whose `handle` asks to bleed (`routeHandle.ts`) gets no ambient
- * field, page padding or width cap: it paints its own ground edge to edge.
+ * A route's `handle` picks its layout (`routeHandle.ts`): `plain` trades the
+ * ambient field for an opaque ground and keeps the page's padding and width
+ * cap; `bleed` drops all three and paints its own ground edge to edge.
  * @module widgets/panel-shell/DashboardLayout
  */
 
@@ -18,7 +19,7 @@ import type { AuthUser } from "@/shared/auth/auth.types";
 import { isArtist, isManager } from "@/shared/auth/rbac";
 import { DesktopSidebar } from "./DesktopSidebar";
 import { MobileNavigation } from "./mobile/MobileNavigation";
-import { isBleedRoute } from "./routeHandle";
+import { panelLayoutOf } from "./routeHandle";
 import { PanelErrorBoundary } from "@/app/router/PanelErrorBoundary";
 import { CommandPaletteProvider } from "./command/CommandPaletteProvider";
 import { NotesPanelProvider } from "./notes/NotesPanelProvider";
@@ -132,8 +133,11 @@ export const DashboardLayout = ({
   }
 
   const outlet = useOutlet();
+  const panelLayout = panelLayoutOf(useMatches());
   // A work surface that paints its own ground edge to edge (`routeHandle.ts`).
-  const isBleed = isBleedRoute(useMatches());
+  const isBleed = panelLayout === "bleed";
+  // Bleed and plain alike stand on an opaque ground, with no ambient field.
+  const isOpaque = panelLayout !== "ambient";
 
   // Collapse hubs whose sub-routes render inside the page (project hub tabs,
   // settings sections, the messages inbox where the route only picks which
@@ -156,13 +160,13 @@ export const DashboardLayout = ({
     rememberWorkspace("panel");
   }, []);
 
-  // `html` always reserves its scrollbar gutter (panel.css), and the gutter
-  // shows the body's ground: on a bleed route that has to be the route's own,
-  // or a strip of canvas runs down the right edge.
+  // The opaque ground is the body's own, which also fills the scrollbar gutter
+  // `html` always reserves (panel.css): a ground painted on `<main>` alone
+  // would leave a strip of canvas down the right edge.
   useEffect(() => {
-    document.body.classList.toggle("bleed-ground", isBleed);
-    return () => document.body.classList.remove("bleed-ground");
-  }, [isBleed]);
+    document.body.classList.toggle("opaque-ground", isOpaque);
+    return () => document.body.classList.remove("opaque-ground");
+  }, [isOpaque]);
 
   useEffect(() => {
     if (routePreloaders.length === 0) return;
@@ -252,10 +256,10 @@ export const DashboardLayout = ({
     <NotesPanelProvider>
     <CommandPaletteProvider user={user}>
     <div className="relative flex min-h-screen w-full bg-transparent font-sans text-ethereal-ink antialiased">
-      {/* A bleed route is opaque from edge to edge, so the field behind it
-          would only be painted to be covered; on a work screen its stave read
-          as a rendering glitch through the gutters. */}
-      {!isBleed && <EtherealBackground />}
+      {/* An opaque route would only cover the field; on a work screen its
+          stave read as a rendering glitch through the gutters, and on a list
+          of untiled rows it runs through the text. */}
+      {!isOpaque && <EtherealBackground />}
       <DesktopSidebar user={user} logout={logout} />
       <MobileNavigation user={user} logout={logout} />
       <main

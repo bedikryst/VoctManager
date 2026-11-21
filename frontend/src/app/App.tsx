@@ -28,7 +28,7 @@ import {
   DashboardLayout,
   type DashboardRoutePreloader,
 } from "@/widgets/panel-shell/DashboardLayout";
-import { BLEED_ROUTE_HANDLE } from "@/widgets/panel-shell/routeHandle";
+import { BLEED_ROUTE_HANDLE, PLAIN_ROUTE_HANDLE } from "@/widgets/panel-shell/routeHandle";
 
 import { CSRFProvider } from "@/app/providers/CSRFProvider";
 
@@ -445,14 +445,20 @@ export const router = createBrowserRouter(
                 element={<Navigate to="../details" replace />}
               />
             </Route>
-            <Route path="archive-management" element={<ArchiveManagement />} />
+            <Route
+              path="archive-management"
+              element={<ArchiveManagement />}
+              handle={PLAIN_ROUTE_HANDLE}
+            />
             <Route
               path="archive-management/composers"
               element={<ArchiveComposersPage />}
+              handle={PLAIN_ROUTE_HANDLE}
             />
             <Route
               path="archive-management/new"
               element={<ArchiveNewPiecePage />}
+              handle={PLAIN_ROUTE_HANDLE}
             />
             <Route
               path="archive-management/:id"

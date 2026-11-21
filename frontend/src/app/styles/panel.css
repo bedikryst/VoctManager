@@ -492,11 +492,11 @@
     @apply text-ethereal-ink font-sans antialiased selection:bg-ethereal-gold/20 selection:text-ethereal-ink;
   }
 
-  /* A bleed route (`widgets/panel-shell/routeHandle.ts`) paints its ground to
-     every edge, and the scrollbar gutter `html` always reserves shows the
-     body's: it takes the route's alabaster, or a canvas strip runs down the
-     right edge. */
-  body.theme-panel.bleed-ground {
+  /* A plain or bleed route (`widgets/panel-shell/routeHandle.ts`) stands on an
+     opaque alabaster ground with no ambient field. The body carries it, so the
+     scrollbar gutter `html` always reserves shows the same ground rather than
+     a canvas strip down the right edge. */
+  body.theme-panel.opaque-ground {
     background-color: var(--color-ethereal-alabaster);
   }
 

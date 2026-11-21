@@ -456,20 +456,10 @@ export default function PayablesPage(): React.JSX.Element {
       className={cn("transition-opacity", query.isPlaceholderData && "opacity-60")}
       empty={{ icon: <HandCoins size={22} strokeWidth={1.5} />, title: emptyTitle }}
       mobile={{
-        primary: (row) => (
-          <Text as="span" size="sm" weight="medium">
-            {payeeOf(row)}
-          </Text>
-        ),
-        secondary: (row) => (
-          <>
-            <Caption as="span" color="muted">
-              {[titleOf(row), row.project_title, form(row)].filter(Boolean).join(" · ")}
-            </Caption>
-            {refusal(row)}
-          </>
-        ),
-        trailing: (row) => (
+        title: payeeOf,
+        flags: refusal,
+        facts: (row) => [titleOf(row), row.project_title, form(row)],
+        figure: (row) => (
           <>
             {amount(row)}
             {unpaid ? (
