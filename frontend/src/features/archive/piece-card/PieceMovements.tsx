@@ -77,12 +77,14 @@ const MovementRow = ({ piece, autosave, score, movement }: PieceMovementsProps &
   const page = movement.starts_on_page;
   const titleLabel = t("archive.piece_card.movement_title_numbered", { number: order });
   const tempoLabel = t("archive.review.tempo");
-  const { marker, action } = usePieceFieldReview({ piece, autosave, field: "title", objectId: id, label: titleLabel });
+  const { marker, action } = usePieceFieldReview({ piece, autosave, field: "title", objectId: id, label: titleLabel, controlId: titleId });
   const save = (field: "title" | "tempo_marking", next: string) =>
     autosave.saveField({ kind: "movement", object_id: id, field }, next);
 
   return (
-    <li className="flex flex-wrap items-start gap-x-2 border-t border-hairline py-2">
+    // From 1024 px every row lays out on the list's columns, so a long page
+    // link in one row cannot push its tempo out of line with the others.
+    <li className="flex flex-wrap items-start gap-x-2 border-t border-hairline py-2 lg:col-span-4 lg:grid lg:grid-cols-subgrid">
       <div className="relative pt-2">
         <div className="absolute right-full mt-1 pe-0.5">{marker}</div>
         <Text size="sm" color="muted" className="tabular-nums">{order}.</Text>
@@ -93,12 +95,12 @@ const MovementRow = ({ piece, autosave, score, movement }: PieceMovementsProps &
           return next.length <= 200 ? save("title", next) : t("archive.piece_card.field_too_long");
         }} />
       </div>
-      <div className="w-24">
+      <div className="w-24 lg:w-auto">
         <CommitText id={tempoId} ariaLabel={tempoLabel} value={movement.tempo_marking ?? ""} draftField={autosave.track("tempo_marking", tempoLabel, id)} onCommit={(next) =>
           next.length <= 80 ? save("tempo_marking", next) : t("archive.piece_card.field_too_long")
         } />
       </div>
-      <div className="ml-auto flex flex-wrap items-center gap-1 pt-0.5">
+      <div className="flex flex-wrap items-center gap-1 pt-0.5 lg:ml-auto lg:justify-end">
         {score && <PageLink score={score} editionId={movement.starts_on_edition} page={page} />}
         {action}
         <RecordRemove label={t("archive.review.delete_movement")} autosave={autosave} remove={() => remove.mutateAsync({ pieceId, id })} />
@@ -124,7 +126,7 @@ export const PieceMovements = ({ piece, autosave, score }: PieceMovementsProps) 
   return (
     <div className="space-y-1">
       {movements.length > 0 && (
-        <ol className="border-b border-hairline">
+        <ol className="border-b border-hairline lg:grid lg:grid-cols-[auto_minmax(0,1fr)_6rem_auto] lg:gap-x-2">
           {movements.map((movement) => <MovementRow key={movement.id} {...{ piece, autosave, score, movement }} />)}
         </ol>
       )}

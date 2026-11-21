@@ -244,7 +244,9 @@ export const PieceVoices = ({ piece, autosave }: { piece: Piece; autosave: Piece
             <SearchSelect
               ariaLabel={title ? t("archive.piece_card.add_voice_to", { layer: title }) : t("archive.piece_card.add_voice")}
               variant="property"
-              className={cn(PROPERTY_CONTROL_CLASS, "w-fit max-w-full")}
+              // Outlined like the tokens it adds to, dashed because it is not
+              // one yet; on a line of its own it starts at the tokens' edge.
+              className={cn(PROPERTY_CONTROL_CLASS, "w-fit max-w-full border border-dashed border-hairline-strong px-2.5 pointer-coarse:min-h-11")}
               options={lineOptions(voiceLines, new Set(codes))}
               value=""
               placeholder={t("archive.piece_card.add_voice")}

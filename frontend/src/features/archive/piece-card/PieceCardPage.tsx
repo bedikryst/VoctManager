@@ -12,6 +12,12 @@
  * another piece waits, "Zatwierdź i opublikuj" while an edition of this one
  * does. The title and individual record properties save when committed.
  *
+ * Under the header a section index sticks to the top of the record and lights
+ * the section in view; in review it counts each section's unchecked fields,
+ * and once the header has scrolled away it holds the publish action too. The
+ * review runs from the keyboard as well (`reviewFocus.ts`). Publishing always
+ * asks first, naming the fields still unchecked.
+ *
  * The desk shows the edition under review, or the primary one, until the
  * edition list or a movement's page link asks for another. A PDF dragged over
  * the page lands on a drop target over the record pane and joins the list.
@@ -22,20 +28,22 @@
  * @module features/archive/piece-card/PieceCardPage
  */
 
-import React, { useCallback, useId, useRef, useState } from "react";
+import React, { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { useDropzone, type FileRejection } from "react-dropzone";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { ArrowLeft, ArrowRight, CircleAlert, FileText, UploadCloud } from "lucide-react";
+import { ArrowLeft, ArrowRight, CircleAlert, FileText, Send, UploadCloud } from "lucide-react";
 
 import { toastApiError } from "@/shared/api/errors";
 import { useBottomBarHeight, useBottomBarSlot } from "@/shared/lib/dom/useBottomBarSlot";
 import { useMediaQuery } from "@/shared/lib/dom/useMediaQuery";
+import { useScrollSpy } from "@/shared/lib/dom/useScrollSpy";
 import { Portal } from "@/shared/lib/dom/Portal";
 import { cn } from "@/shared/lib/utils";
 import { AutosaveStatus } from "@/shared/ui/composites/AutosaveStatus";
 import { ConfirmModal } from "@/shared/ui/composites/ConfirmModal";
+import { SectionIndex, type SectionIndexItem } from "@/shared/ui/composites/SectionIndex";
 import type { PdfPageApi } from "@/shared/ui/composites/PdfViewer";
 import { StatePanel } from "@/shared/ui/composites/StatePanel";
 import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
@@ -59,8 +67,9 @@ import { SCORE_DROP_OPTIONS, useEditionUploads } from "../hooks/useEditionUpload
 import { CompactReviewProgress, ReviewProgress } from "./ReviewProgress";
 import { PieceEditions, uploadAsksPronunciation, type EditionDesk } from "./PieceEditions";
 import { usePieceFieldReview } from "./PieceFieldReview";
-import { PieceProperties } from "./PieceProperties";
+import { PieceProperties, recordSections } from "./PieceProperties";
 import { ScorePane } from "./ScorePane";
+import { focusFirstUnchecked, useReviewKeys } from "./reviewFocus";
 import { findNextAwaiting } from "./reviewQueue";
 import { usePieceAutosave } from "./usePieceAutosave";
 import { useScorePane } from "./useScorePane";
@@ -71,6 +80,47 @@ const cardPath = (pieceId: string | number): string =>
 
 /** Height of the phone's top bar, which the title has to clear to count as gone. */
 const TOP_BAR_CLEARANCE = "-52px 0px 0px 0px";
+/**
+ * Height of the sticky section index on a desktop, which the header has to
+ * clear: as tall as the viewer's band across the hairline, plus its own rule.
+ */
+const INDEX_CLEARANCE = "-57px 0px 0px 0px";
+/**
+ * Where a section becomes current: just below the sticky bars, and level with
+ * the section scroll margins (`scroll-mt-16`, `scroll-mt-28`), so a section the
+ * index scrolled to is the one it lights.
+ */
+const SPY_LINE_DESKTOP_PX = 64;
+const SPY_LINE_PHONE_PX = 112;
+
+/**
+ * Whether an element has scrolled under a sticky bar, watched by an
+ * IntersectionObserver over `root` (null for the viewport).
+ */
+const useScrolledAway = (
+  root: Element | null,
+  rootMargin: string,
+  isActive: boolean,
+): [(node: HTMLElement | null) => void, boolean] => {
+  const [node, setNode] = useState<HTMLElement | null>(null);
+  const [isAway, setIsAway] = useState(false);
+  useEffect(() => {
+    if (!node || !isActive || typeof IntersectionObserver === "undefined") {
+      setIsAway(false);
+      return undefined;
+    }
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0];
+        if (entry) setIsAway(!entry.isIntersecting && entry.boundingClientRect.top < (entry.rootBounds?.top ?? 0) + 1);
+      },
+      { root, rootMargin },
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [node, root, rootMargin, isActive]);
+  return [setNode, isAway];
+};
 
 /** An edition asked onto the screen, and the page it opens at. */
 interface ShownEdition {
@@ -135,6 +185,7 @@ const PhoneReviewBar = ({
           variant="primary"
           size="sm"
           casing="sentence"
+          data-review-approve=""
           isLoading={isApproving}
           onClick={onApprove}
         >
@@ -156,18 +207,30 @@ const PieceCard = ({ id }: { id: string }): React.JSX.Element => {
   const isTwoPane = useMediaQuery("(min-width: 1024px)");
 
   const { data: piece, isLoading, isError, error } = usePiece(id);
+  // Each piece opens at its header. "Następne do przeglądu" swaps the record
+  // under a phone's window that is still scrolled, and a cached record paints
+  // before anything else would reset it. Beside the score the record pane is
+  // its own scroller and starts at the top with this component.
+  useLayoutEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
   const { data: allPieces = [] } = usePieces();
   const autosave = usePieceAutosave(id);
   const titleId = useId();
   const titleLabel = t("archive.piece_card.edit_title", "Tytuł utworu");
   const titleDraft = autosave.track("title", titleLabel);
-  const titleReview = usePieceFieldReview({ piece, field: "title", label: titleLabel, autosave });
+  const titleReview = usePieceFieldReview({ piece, field: "title", label: titleLabel, autosave, controlId: titleId });
   const approveEdition = useApproveEdition();
   const scorePane = useScorePane();
   const dockBarHeight = useBottomBarHeight();
 
   const [isApproveOpen, setIsApproveOpen] = useState(false);
+  // Where focus goes once the approval modal has left: a draft's field, or the
+  // first unchecked field when the modal sent the manager back to the review.
   const fieldToFocus = useRef<string | null>(null);
+  const reviewOnExit = useRef(false);
+  const [recordPane, setRecordPane] = useState<HTMLElement | null>(null);
+  const [deskPane, setDeskPane] = useState<HTMLElement | null>(null);
   const [deskEdition, setDeskEdition] = useState<ShownEdition | null>(null);
   // Kept after the stand closes, so it leaves with the edition it showed.
   const [standEdition, setStandEdition] = useState<ShownEdition | null>(null);
@@ -204,6 +267,18 @@ const PieceCard = ({ id }: { id: string }): React.JSX.Element => {
     mode: "conductor",
     active: isTwoPane,
   });
+  const claimReviewKey = useReviewKeys({
+    root: recordPane,
+    score: isTwoPane ? deskPane : null,
+    enabled: Boolean(piece),
+  });
+  const claimAnnotatorKey = annotator.claimKey;
+  // The desk's viewer asks before its own keys; the review's letters come
+  // before the annotator's tools that share them.
+  const claimDeskKey = useCallback(
+    (event: KeyboardEvent): boolean => claimReviewKey(event) || claimAnnotatorKey(event),
+    [claimReviewKey, claimAnnotatorKey],
+  );
   const pageApi = useRef<PdfPageApi | null>(null);
   const updateAnnotatorPage = annotator.onPageApiChange;
   const handleScorePageApi = useCallback((api: PdfPageApi): void => {
@@ -223,23 +298,16 @@ const PieceCard = ({ id }: { id: string }): React.JSX.Element => {
     }
   };
 
-  // The phone's top bar names the piece once its title has scrolled under it.
-  const [isTitleAway, setIsTitleAway] = useState(false);
-  const titleObserverRef = useRef<IntersectionObserver | null>(null);
-  const titleRef = useCallback((node: HTMLElement | null): void => {
-    titleObserverRef.current?.disconnect();
-    titleObserverRef.current = null;
-    if (!node || typeof IntersectionObserver === "undefined") return;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const entry = entries[0];
-        if (entry) setIsTitleAway(!entry.isIntersecting);
-      },
-      { rootMargin: TOP_BAR_CLEARANCE },
-    );
-    observer.observe(node);
-    titleObserverRef.current = observer;
-  }, []);
+  // The phone's top bar names the piece once its title has scrolled under it;
+  // beside the score the index takes the publish action once the header has.
+  const [titleRef, isTitleAway] = useScrolledAway(null, TOP_BAR_CLEARANCE, !isTwoPane);
+  const [headerRef, isHeaderAway] = useScrolledAway(recordPane, INDEX_CLEARANCE, isTwoPane);
+  const sections = piece ? recordSections(piece) : [];
+  const spy = useScrollSpy({
+    ids: sections.map((entry) => entry.anchor),
+    root: isTwoPane ? recordPane : null,
+    offset: isTwoPane ? SPY_LINE_DESKTOP_PX : SPY_LINE_PHONE_PX,
+  });
 
   if (isLoading || !piece) {
     if (isError) {
@@ -290,7 +358,25 @@ const PieceCard = ({ id }: { id: string }): React.JSX.Element => {
   );
   const awaitingEdition = awaitingEditions[0];
   const isReviewing = Boolean(awaitingEdition);
-  const progress = pieceReviewBreakdown(piece).all;
+  const breakdown = pieceReviewBreakdown(piece);
+  const progress = breakdown.all;
+  const indexItems: SectionIndexItem[] = sections.map((entry) => {
+    const count = isReviewing && entry.review ? breakdown.sections[entry.review].pending : 0;
+    return {
+      id: entry.anchor,
+      label: t(entry.titleKey),
+      count,
+      countLabel: count ? t("archive.piece_card.index_unchecked", { count }) : undefined,
+    };
+  });
+  const goToSection = (anchor: string): void => {
+    const target = document.getElementById(anchor);
+    if (!target) return;
+    spy.pin(anchor);
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    target.scrollIntoView({ block: "start", behavior: reduce ? "auto" : "smooth" });
+    target.querySelector<HTMLElement>("h2")?.focus({ preventScroll: true });
+  };
 
   const goToNext = (): void => {
     if (nextAwaiting) navigate(cardPath(nextAwaiting.id));
@@ -326,10 +412,18 @@ const PieceCard = ({ id }: { id: string }): React.JSX.Element => {
     setIsApproveOpen(false);
   };
 
-  const focusDraftField = (): void => {
+  const backToReview = (): void => {
+    reviewOnExit.current = true;
+    setIsApproveOpen(false);
+  };
+
+  const focusAfterApproval = (): void => {
     const fieldId = fieldToFocus.current;
+    const review = reviewOnExit.current;
     fieldToFocus.current = null;
+    reviewOnExit.current = false;
     if (fieldId) requestAnimationFrame(() => document.getElementById(fieldId)?.focus());
+    else if (review) requestAnimationFrame(() => focusFirstUnchecked());
   };
 
   const nextLabel = t("archive.piece_card.next_awaiting", "Następne do przeglądu");
@@ -359,6 +453,7 @@ const PieceCard = ({ id }: { id: string }): React.JSX.Element => {
       >
         {isTwoPane && (
           <section
+            ref={setDeskPane}
             aria-label={t("archive.piece_card.pdf_preview_aria", "Podgląd PDF partytury")}
             className="relative shrink-0 bg-score-desk"
             style={{ width: scorePane.paneWidth ?? undefined }}
@@ -368,7 +463,7 @@ const PieceCard = ({ id }: { id: string }): React.JSX.Element => {
               scorePdf={scorePdf}
               initialPage={deskStartPage}
               onAddEdition={dropzone.open}
-              annotator={annotator}
+              annotator={{ ...annotator, claimKey: claimDeskKey }}
               isWide={scorePane.isWide}
               canToggleWide={scorePane.canToggleWide}
               onToggleWide={scorePane.toggleWide}
@@ -380,6 +475,8 @@ const PieceCard = ({ id }: { id: string }): React.JSX.Element => {
 
         <div className="relative flex min-w-0 flex-1 flex-col">
           <section
+            ref={setRecordPane}
+            data-review-root=""
             aria-label={t("archive.piece_card.form_panel_aria", "Dane utworu")}
             className="min-h-0 min-w-0 flex-1 lg:overflow-y-auto lg:border-l lg:border-hairline-strong"
           >
@@ -418,7 +515,7 @@ const PieceCard = ({ id }: { id: string }): React.JSX.Element => {
             )}
 
             <div className="px-4 pb-16 lg:px-10">
-              <header className="mx-auto w-full max-w-170 pb-6 pt-3 lg:pt-9">
+              <header ref={headerRef} className="mx-auto w-full max-w-170 pb-6 pt-3 lg:pt-9">
                 <div className="hidden min-h-10 flex-wrap items-center justify-between gap-x-4 gap-y-2 lg:flex">
                   <Link
                     to={LIBRARY_PATH}
@@ -445,6 +542,7 @@ const PieceCard = ({ id }: { id: string }): React.JSX.Element => {
                       <Button
                         variant="primary"
                         casing="sentence"
+                        data-review-approve=""
                         className="max-w-full whitespace-normal"
                         isLoading={approveEdition.isPending}
                         onClick={() => setIsApproveOpen(true)}
@@ -459,7 +557,7 @@ const PieceCard = ({ id }: { id: string }): React.JSX.Element => {
                   <div key={pieceId} className="pointer-events-none absolute -left-4 top-4 lg:-left-5 lg:top-5">
                     {titleReview.marker}
                   </div>
-                  <Heading as="h1" size={null} aria-label={piece.title} ref={isTwoPane ? undefined : titleRef}>
+                  <Heading as="h1" size={null} aria-label={piece.title} ref={titleRef}>
                     <InlineEditable
                       key={pieceId}
                       id={titleId}
@@ -493,7 +591,11 @@ const PieceCard = ({ id }: { id: string }): React.JSX.Element => {
                 </div>
                 {/* In review the phone states progress in its bottom bar. */}
                 <div className={cn(isReviewing && "hidden lg:block")}>
-                  <ReviewProgress progress={progress} isReviewing={isReviewing} />
+                  <ReviewProgress
+                    progress={progress}
+                    isReviewing={isReviewing}
+                    hint={progress.pending > 0 ? t("archive.piece_card.review_keys_hint") : undefined}
+                  />
                 </div>
 
                 {!isTwoPane && scorePdf && (
@@ -524,10 +626,40 @@ const PieceCard = ({ id }: { id: string }): React.JSX.Element => {
                   </div>
                 )}
               </header>
+              {/* Full width under the sticky bars, so the record scrolls out of
+                  sight beneath it instead of showing through at its sides. */}
+              <div className="sticky top-13 z-10 -mx-4 mb-6 border-b border-hairline bg-ethereal-alabaster px-4 lg:top-0 lg:-mx-10 lg:px-10">
+                <SectionIndex
+                  className="mx-auto w-full max-w-170"
+                  linkClassName="lg:min-h-14"
+                  items={indexItems}
+                  activeId={spy.activeId}
+                  onSelect={goToSection}
+                  ariaLabel={t("archive.piece_card.index_aria")}
+                  trailing={isTwoPane && isReviewing && isHeaderAway ? (
+                    <div className="flex shrink-0 items-center gap-3 self-stretch border-l border-hairline pl-3">
+                      <Text as="span" size="base" color="graphite" className="tabular-nums" aria-hidden="true">
+                        {`${progress.verified}/${progress.total}`}
+                      </Text>
+                      <Button
+                        variant="primary"
+                        size="sm"
+                        casing="sentence"
+                        data-review-approve=""
+                        isLoading={approveEdition.isPending}
+                        onClick={() => setIsApproveOpen(true)}
+                      >
+                        {t("archive.piece_card.approve_short", "Zatwierdź")}
+                      </Button>
+                    </div>
+                  ) : undefined}
+                />
+              </div>
               <div className="mx-auto w-full max-w-170">
                 <PieceProperties
                   key={pieceId}
                   piece={piece}
+                  isReviewing={isReviewing}
                   autosave={autosave}
                   score={scorePdf ? { editionId: scorePdf.id, editions: pdfLinks, show: showEdition } : undefined}
                   editions={
@@ -563,18 +695,32 @@ const PieceCard = ({ id }: { id: string }): React.JSX.Element => {
       <ConfirmModal
         isOpen={isApproveOpen}
         title={t("archive.piece_card.approve_modal_title", "Zatwierdzić i opublikować?")}
-        description={t(
-          "archive.piece_card.approve_modal_desc",
-          "Materiały staną się widoczne dla chóru, a uczestnicy projektów z tym utworem dostaną powiadomienie. Upewnij się, że pola oznaczone „do sprawdzenia” są zweryfikowane.",
-        )}
+        description={t("archive.piece_card.approve_modal_body")}
+        icon={<Send size={22} aria-hidden="true" />}
+        isDestructive={false}
+        casing="sentence"
         confirmText={t("archive.piece_card.approve_btn", "Zatwierdź i opublikuj")}
         cancelText={t("common.actions.cancel", "Anuluj")}
         isLoading={approveEdition.isPending || autosave.isSaving}
         confirmDisabled={autosave.drafts.length > 0}
         onCancel={() => setIsApproveOpen(false)}
         onConfirm={handleApprove}
-        onExitComplete={focusDraftField}
+        onExitComplete={focusAfterApproval}
       >
+        {/* Publishing with fields unchecked is allowed; the modal says so first. */}
+        {progress.pending > 0 && (
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 border-t border-hairline pt-3">
+            <div className="flex items-center gap-2">
+              <span className="size-1.5 shrink-0 rounded-full bg-ethereal-amethyst" aria-hidden="true" />
+              <Text as="p" weight="medium">
+                {t("archive.piece_card.approve_unchecked", { count: progress.pending })}
+              </Text>
+            </div>
+            <Button type="button" variant="ghost" size="sm" casing="sentence" onClick={backToReview}>
+              {t("archive.piece_card.approve_back_to_review")}
+            </Button>
+          </div>
+        )}
         {autosave.drafts.length > 0 && (
           <div className="mt-4 border-t border-hairline pt-3">
             <Text as="p" role="status" weight="medium">

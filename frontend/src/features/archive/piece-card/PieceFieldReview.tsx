@@ -1,6 +1,11 @@
 /**
  * @file PieceFieldReview.tsx
- * @description Confirmation controls for the piece's unchecked AI fields.
+ * @description Confirmation controls for the piece's unchecked AI fields: the
+ * amethyst marker in the label gutter, which turns into a check that fades
+ * when the field is confirmed, and the "Potwierdź" button at the row's end.
+ * The button is a stop of the keyboard review (`reviewFocus.ts`): it names its
+ * field's control for `E`, and a confirmation made from the keyboard moves
+ * focus on to the next unchecked field.
  */
 
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
@@ -10,6 +15,7 @@ import { useTranslation } from "react-i18next";
 import { Button } from "@/shared/ui/primitives/Button";
 import type { Piece } from "@/shared/types";
 import { childFieldProvenance, isAiProvenance, pieceFieldProvenance } from "../components/ProvenanceChip";
+import { advanceReviewFocus } from "./reviewFocus";
 import type { PieceAutosave } from "./usePieceAutosave";
 
 interface ReviewProps {
@@ -19,6 +25,8 @@ interface ReviewProps {
   readonly autosave: PieceAutosave;
   readonly objectId?: string;
   readonly disabled?: boolean;
+  /** The id of the field's control, which `E` focuses from the button. */
+  readonly controlId?: string;
 }
 
 const ReviewMarker = ({ pending }: { pending: boolean }) => {
@@ -53,7 +61,7 @@ const ReviewMarker = ({ pending }: { pending: boolean }) => {
   );
 };
 
-export const usePieceFieldReview = ({ piece, field, label, autosave, objectId, disabled }: ReviewProps) => {
+export const usePieceFieldReview = ({ piece, field, label, autosave, objectId, disabled, controlId }: ReviewProps) => {
   const { t } = useTranslation();
   const entry = piece && (objectId
     ? childFieldProvenance(piece, objectId, field)
@@ -73,7 +81,13 @@ export const usePieceFieldReview = ({ piece, field, label, autosave, objectId, d
         aria-disabled={disabled || autosave.isConfirming(field, objectId)}
         leftIcon={<Check size={14} aria-hidden="true" />}
         className="h-8 min-h-8 px-2 text-sm"
-        onClick={() => autosave.confirm(field, objectId)}
+        data-review-confirm=""
+        data-review-control={controlId}
+        onClick={(event) => {
+          // A click from Enter or Space has no pointer detail.
+          if (event.detail === 0) advanceReviewFocus(event.currentTarget);
+          autosave.confirm(field, objectId);
+        }}
       >
         {t("archive.piece_card.confirm_field")}
       </Button>

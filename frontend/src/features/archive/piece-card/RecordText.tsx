@@ -19,7 +19,7 @@ export const RecordTextLabel = ({ id, label, marker, action, prefix }: {
   action?: ReactNode;
   prefix?: ReactNode;
 }) => (
-  <div className="relative flex min-h-8 flex-wrap items-center justify-between gap-2">
+  <div className="relative flex min-h-8 flex-wrap items-center gap-x-3 gap-y-2 lg:justify-between">
     <div className="relative flex items-center gap-2">
       <div className="absolute right-full pe-0.5">{marker}</div>
       {prefix}

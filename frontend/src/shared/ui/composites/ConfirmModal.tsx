@@ -12,7 +12,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { AlertTriangle } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { cva } from "class-variance-authority";
-import { Button } from "@/shared/ui/primitives/Button";
+import { Button, type ButtonProps } from "@/shared/ui/primitives/Button";
 import { Heading, Text } from "@/shared/ui/primitives/typography";
 import { BodyScrollLock } from "@/shared/lib/dom/useBodyScrollLock";
 import { OVERLAY_POP_TRANSITION } from "@/shared/ui/kinematics/motion-presets";
@@ -47,6 +47,10 @@ export interface ConfirmModalProps {
   confirmText?: string;
   cancelText?: string;
   isDestructive?: boolean;
+  /** Replaces the warning triangle; tinted by `isDestructive` like it. */
+  icon?: React.ReactNode;
+  /** The buttons' casing; a screen whose buttons are sentence case passes it. */
+  casing?: ButtonProps["casing"];
 }
 
 export const ConfirmModal = ({
@@ -64,6 +68,8 @@ export const ConfirmModal = ({
   confirmText,
   cancelText,
   isDestructive = true,
+  icon,
+  casing,
 }: ConfirmModalProps): React.ReactPortal | null => {
   const { t } = useTranslation();
   const [mounted, setMounted] = useState(false);
@@ -128,7 +134,7 @@ export const ConfirmModal = ({
             <div className="p-6">
               <div className="flex gap-4 items-start">
                 <div className={iconContainerVariants({ isDestructive })}>
-                  <AlertTriangle size={24} aria-hidden="true" />
+                  {icon ?? <AlertTriangle size={24} aria-hidden="true" />}
                 </div>
                 <div className="pt-1">
                   <Heading as="h3" id={titleId} size="lg" weight="bold">
@@ -143,11 +149,12 @@ export const ConfirmModal = ({
             </div>
 
             <div className="bg-ethereal-alabaster px-6 py-4 flex justify-end gap-3 border-t border-ethereal-incense/10">
-              <Button variant="ghost" onClick={onCancel} disabled={isLoading}>
+              <Button variant="ghost" casing={casing} onClick={onCancel} disabled={isLoading}>
                 {resolvedCancelText}
               </Button>
               <Button
                 variant={isDestructive ? "destructive" : "primary"}
+                casing={casing}
                 onClick={onConfirm}
                 isLoading={isLoading}
                 disabled={confirmDisabled}

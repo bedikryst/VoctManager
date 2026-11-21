@@ -203,6 +203,20 @@ export const METADATA_PROVENANCE_FIELDS = [
   "lyrics_original", "lyrics_ipa",
 ] as const;
 
+type MetadataProvenanceField = (typeof METADATA_PROVENANCE_FIELDS)[number];
+
+/**
+ * Where the piece card shows each metadata field: the title heads the page,
+ * and every other field sits in one record section. Together they are exactly
+ * `METADATA_PROVENANCE_FIELDS`, so the sections' counts add up to the header's.
+ */
+const RECORD_SECTION_FIELDS = {
+  header: ["title"],
+  properties: ["arranger", "opus_catalog", "musical_key", "language", "epoch", "composition_year"],
+  voices: ["voicing"],
+  text: ["text_source", "lyrics_original", "lyrics_ipa"],
+} as const satisfies Record<string, readonly MetadataProvenanceField[]>;
+
 /** The one chip-bearing field on each AI-generated child. Mirrors the server's
  *  verify allow-list (`_resolve_child_provenance_target`): anything outside it
  *  cannot be verified, so counting it would print a target that never reaches
@@ -233,10 +247,15 @@ const sumProgress = (...parts: readonly ReviewProgress[]): ReviewProgress =>
     { total: 0, verified: 0, pending: 0 },
   );
 
+/** The piece card's record sections that hold checkable fields, plus its header. */
+export type ReviewSection = keyof typeof RECORD_SECTION_FIELDS | "translations" | "movements";
+
 export interface PieceReviewBreakdown {
   readonly metadata: ReviewProgress;
   readonly movements: ReviewProgress;
   readonly translations: ReviewProgress;
+  /** The same fields split by the piece card section that shows them. */
+  readonly sections: Readonly<Record<ReviewSection, ReviewProgress>>;
   /** Everything a conductor can actually verify on this piece. */
   readonly all: ReviewProgress;
 }
@@ -265,10 +284,20 @@ export const pieceReviewBreakdown = (piece: Piece): PieceReviewBreakdown => {
       childFieldProvenance(piece, translation.id, TRANSLATION_REVIEW_FIELD),
     ),
   );
+  const fieldsOf = (fields: readonly MetadataProvenanceField[]): ReviewProgress =>
+    rollup(fields.map((field) => pieceFieldProvenance(piece, field)));
   return {
     metadata,
     movements,
     translations,
+    sections: {
+      header: fieldsOf(RECORD_SECTION_FIELDS.header),
+      properties: fieldsOf(RECORD_SECTION_FIELDS.properties),
+      voices: fieldsOf(RECORD_SECTION_FIELDS.voices),
+      text: fieldsOf(RECORD_SECTION_FIELDS.text),
+      translations,
+      movements,
+    },
     all: sumProgress(metadata, movements, translations),
   };
 };

@@ -38,7 +38,7 @@ const TranslationBlock = ({ translation, piece, autosave }: AudienceTextProps & 
   const id = translation.id;
   const label = getLanguageLabel(translation.target_language, t);
   const translatorLabel = t("archive.review.translator");
-  const { marker, action } = usePieceFieldReview({ piece, autosave, label, field: "text", objectId: id });
+  const { marker, action } = usePieceFieldReview({ piece, autosave, label, field: "text", objectId: id, controlId: textId });
   const movement = piece.movements?.find((row) => row.id === translation.movement);
   const save = (field: "text" | "translator", next: string) =>
     autosave.saveField({ kind: "translation", object_id: id, field }, next);

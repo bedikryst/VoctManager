@@ -44,19 +44,22 @@ interface ReviewProgressProps {
   readonly progress: ReviewProgressCounts;
   /** An edition is awaiting review: the bar and its sentence. */
   readonly isReviewing: boolean;
+  /** The review keys, at the line's end in review, where there is a keyboard. */
+  readonly hint?: string;
 }
 
 /** Under the title. Renders nothing when there is nothing to check. */
 export const ReviewProgress = ({
   progress,
   isReviewing,
+  hint,
 }: ReviewProgressProps): React.JSX.Element | null => {
   const { t } = useTranslation();
   if (progress.total === 0) return null;
 
   if (isReviewing) {
     return (
-      <div className="mt-4 flex items-center gap-3.5">
+      <div className="mt-4 flex flex-wrap items-center gap-x-3.5 gap-y-1">
         <ReviewSegments progress={progress} className="w-50 shrink-0" />
         <Text size="base" color="graphite">
           {t("archive.piece_card.review_progress", {
@@ -64,6 +67,11 @@ export const ReviewProgress = ({
             total: progress.total,
           })}
         </Text>
+        {hint && (
+          <Text size="sm" color="muted" className="ml-auto hidden fine-pointer:block">
+            {hint}
+          </Text>
+        )}
       </div>
     );
   }

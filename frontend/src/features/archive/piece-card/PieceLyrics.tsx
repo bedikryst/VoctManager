@@ -13,6 +13,8 @@ import { Text } from "@/shared/ui/primitives/typography";
 import { IpaRecomputeActions, useIpaRecompute } from "../components/LyricsIpaField";
 import { getLatinPronunciationLabel } from "../constants/latinPronunciation";
 import { pairLyrics } from "./pairLyrics";
+import { RecordNote } from "./RecordNote";
+import { recordContradictions } from "./recordContradictions";
 import { usePieceFieldReview } from "./PieceFieldReview";
 import { IPA_TEXT, READING_TEXT, RecordText, RecordTextLabel } from "./RecordText";
 import type { PieceAutosave } from "./usePieceAutosave";
@@ -20,10 +22,12 @@ import type { PieceAutosave } from "./usePieceAutosave";
 type Pairs = NonNullable<ReturnType<typeof pairLyrics>>;
 type LyricsEditor = "original" | "ipa";
 
-const PairedLyrics = ({ pairs, label, onEdit }: {
+const PairedLyrics = ({ pairs, label, onEdit, onColumnsChange }: {
   pairs: Pairs;
   label: string;
   onEdit: (editor: LyricsEditor) => void;
+  /** Whether lyric and IPA stand side by side, which their labels follow. */
+  onColumnsChange: (inColumns: boolean) => void;
 }) => {
   const desktop = useMediaQuery("(min-width: 1024px)");
   const reader = useRef<HTMLButtonElement>(null);
@@ -43,6 +47,10 @@ const PairedLyrics = ({ pairs, label, onEdit }: {
     fit();
     return () => observer.disconnect();
   }, [desktop]);
+
+  useEffect(() => {
+    onColumnsChange(desktop && inColumns);
+  }, [desktop, inColumns, onColumnsChange]);
 
   return (
     <div className="relative col-span-full group-has-[textarea:focus]/lyrics:hidden group-has-[[data-commit-draft]]/lyrics:hidden">
@@ -87,7 +95,11 @@ const PairedLyrics = ({ pairs, label, onEdit }: {
   );
 };
 
-export const PieceLyrics = ({ piece, autosave }: { piece: Piece; autosave: PieceAutosave }) => {
+export const PieceLyrics = ({ piece, autosave, isReviewing }: {
+  piece: Piece;
+  autosave: PieceAutosave;
+  isReviewing: boolean;
+}) => {
   const { t } = useTranslation();
   const originalId = useId();
   const ipaId = useId();
@@ -101,8 +113,10 @@ export const PieceLyrics = ({ piece, autosave }: { piece: Piece; autosave: Piece
   const originalLabel = t("archive.piece_card.fields.lyrics_original");
   const ipaLabel = t("archive.piece_card.fields.lyrics_ipa");
   const pronunciation = getLatinPronunciationLabel(piece.lyrics_ipa_system, t);
-  const originalReview = usePieceFieldReview({ piece, autosave, label: originalLabel, field: "lyrics_original" });
-  const ipaReview = usePieceFieldReview({ piece, autosave, label: ipaLabel, field: "lyrics_ipa", disabled: ipa.isRunning });
+  const originalReview = usePieceFieldReview({ piece, autosave, label: originalLabel, field: "lyrics_original", controlId: originalId });
+  const ipaReview = usePieceFieldReview({ piece, autosave, label: ipaLabel, field: "lyrics_ipa", disabled: ipa.isRunning, controlId: ipaId });
+  const lineCounts = recordContradictions(piece).lines;
+  const [pairedInColumns, setPairedInColumns] = useState(false);
   const editorClass = pairs
     ? "sr-only group-has-[textarea:focus]/lyrics:not-sr-only group-has-[[data-commit-draft]]/lyrics:not-sr-only"
     : undefined;
@@ -111,7 +125,8 @@ export const PieceLyrics = ({ piece, autosave }: { piece: Piece; autosave: Piece
     <div className="group/lyrics relative mt-4 space-y-2">
       <div className={cn(
         "grid gap-x-8 gap-y-2",
-        pairs && "grid-cols-2 group-has-[textarea:focus]/lyrics:grid-cols-1 group-has-[[data-commit-draft]]/lyrics:grid-cols-1",
+        // The labels stand side by side only over lines that do.
+        pairs && pairedInColumns && "grid-cols-2 group-has-[textarea:focus]/lyrics:grid-cols-1 group-has-[[data-commit-draft]]/lyrics:grid-cols-1",
       )}>
         <div>
           <RecordTextLabel id={originalId} label={originalLabel} {...originalReview} />
@@ -129,6 +144,7 @@ export const PieceLyrics = ({ piece, autosave }: { piece: Piece; autosave: Piece
           <PairedLyrics
             pairs={pairs}
             label={t("archive.piece_card.edit_lyrics_pair")}
+            onColumnsChange={setPairedInColumns}
             onEdit={(editor) => {
               const target = editor === "ipa" ? ipaEditor.current : originalEditor.current;
               target?.querySelector("textarea")?.focus();
@@ -136,6 +152,13 @@ export const PieceLyrics = ({ piece, autosave }: { piece: Piece; autosave: Piece
           />
         )}
       </div>
+      {lineCounts && (
+        <div className="-mx-2">
+          <RecordNote isReviewing={isReviewing}>
+            {t("archive.piece_card.note.ipa_lines", { lyrics: lineCounts.lyrics, ipa: lineCounts.ipa })}
+          </RecordNote>
+        </div>
+      )}
       {pronunciation && !piece.lyrics_ipa_recomputable && (
         <Text size="sm" color="muted">{pronunciation}</Text>
       )}

@@ -1,6 +1,9 @@
 /**
  * @file PieceProperties.tsx
  * @description Editable metadata laid out in the piece's record sections.
+ * `recordSections` names the sections in order, with the review group whose
+ * count each carries; the page's section index reads the same list, so the
+ * index and the record cannot disagree about what is on the page.
  */
 
 import { useId, type ComponentProps, type ReactNode } from "react";
@@ -8,6 +11,7 @@ import { useTranslation } from "react-i18next";
 
 import { cn } from "@/shared/lib/utils";
 import type { Piece } from "@/shared/types";
+import type { ReviewSection } from "../components/ProvenanceChip";
 import { PropertyRow, PROPERTY_CONTROL_CLASS } from "@/shared/ui/composites/PropertyRow";
 import { Select, type SelectOption } from "@/shared/ui/primitives/Select";
 import { Text } from "@/shared/ui/primitives/typography";
@@ -23,13 +27,46 @@ import { PieceMovements } from "./PieceMovements";
 import { PieceRecordings } from "./PieceRecordings";
 import { PieceVoices } from "./PieceVoices";
 import { RecordText, RecordTextLabel } from "./RecordText";
+import { RecordNote } from "./RecordNote";
 import { pieceDuration } from "./pieceDuration";
+import { recordContradictions } from "./recordContradictions";
 import type { PieceAutosave } from "./usePieceAutosave";
 
 interface PiecePropertiesProps {
   readonly piece: Piece;
   readonly autosave: PieceAutosave;
 }
+
+export type RecordSectionId =
+  | "properties" | "voices" | "text" | "translations"
+  | "movements" | "program-note" | "recordings" | "editions";
+
+export interface RecordSectionEntry {
+  readonly id: RecordSectionId;
+  /** The element id the section is rendered under. */
+  readonly anchor: string;
+  readonly titleKey: string;
+  /** The review group counted for this section, if it holds checkable fields. */
+  readonly review: ReviewSection | null;
+}
+
+const section = (id: RecordSectionId, titleKey: string, review: ReviewSection | null = null): RecordSectionEntry =>
+  ({ id, anchor: `record-${id}`, titleKey, review });
+
+/** The record's sections in reading order: content first, files last. */
+export const recordSections = (piece: Piece): readonly RecordSectionEntry[] => [
+  section("properties", "archive.piece_card.section.properties", "properties"),
+  section("voices", "archive.piece_card.fields.voicing", "voices"),
+  section("text", "archive.piece_card.group.text", "text"),
+  // Offered once there is text to translate or a translation to keep.
+  ...(piece.translations?.length || piece.lyrics_original?.trim()
+    ? [section("translations", "archive.piece_card.translations_section", "translations")]
+    : []),
+  section("movements", "archive.piece_card.movements_section", "movements"),
+  section("program-note", "archive.piece_card.program_note_section"),
+  section("recordings", "archive.piece_card.recordings_section"),
+  section("editions", "archive.piece_card.editions_section"),
+];
 
 type TextField = "arranger" | "opus_catalog" | "musical_key" | "voicing" | "text_source";
 
@@ -40,8 +77,9 @@ interface ReviewRowProps extends PiecePropertiesProps {
 }
 
 const ReviewRow = ({ children, ...props }: ReviewRowProps) => {
-  const { marker, action } = usePieceFieldReview(props);
-  return <PropertyRow label={props.label} marker={marker} action={action}>{children}</PropertyRow>;
+  const controlId = useId();
+  const { marker, action } = usePieceFieldReview({ ...props, controlId });
+  return <PropertyRow label={props.label} marker={marker} action={action} controlId={controlId}>{children}</PropertyRow>;
 };
 
 const TextProperty = ({ piece, autosave, field, label }: Omit<ReviewRowProps, "children" | "field"> & {
@@ -65,15 +103,31 @@ const TextProperty = ({ piece, autosave, field, label }: Omit<ReviewRowProps, "c
   );
 };
 
-const RecordSection = ({ title, children }: { title: string; children: ReactNode }) => {
+const RecordSection = ({ entry, children }: { entry: RecordSectionEntry; children: ReactNode }) => {
+  const { t } = useTranslation();
   const headingId = useId();
   return (
-    <section aria-labelledby={headingId}>
-      <Text as="h2" id={headingId} size="lg" weight="semibold" className="mb-3">{title}</Text>
+    // Clears the phone's top bar and the sticky index when the index scrolls here.
+    <section id={entry.anchor} aria-labelledby={headingId} className="scroll-mt-28 lg:scroll-mt-16">
+      {/* Focusable from the index, so a keyboard reader lands in the section. */}
+      <Text as="h2" id={headingId} tabIndex={-1} size="lg" weight="semibold" className="mb-3 focus:outline-none">
+        {t(entry.titleKey)}
+      </Text>
       {children}
     </section>
   );
 };
+
+/**
+ * A note under a property row, its text on the value's left edge: from 1024 px
+ * the value starts after `PropertyRow`'s 10.5rem label column and its gap, and
+ * both the control and the note pad their text by the same 0.5rem.
+ */
+const PropertyNote = ({ isReviewing, children }: { isReviewing: boolean; children: string }) => (
+  <div className="-mt-1 mb-1 -ml-2 lg:ml-43">
+    <RecordNote isReviewing={isReviewing}>{children}</RecordNote>
+  </div>
+);
 
 const RowSelect = ({ id, value, options, onValueChange }: {
   id: string;
@@ -96,10 +150,11 @@ const RowSelect = ({ id, value, options, onValueChange }: {
   );
 };
 
-export const PieceProperties = ({ piece, autosave, score, editions }: PiecePropertiesProps & {
+export const PieceProperties = ({ piece, autosave, score, editions, isReviewing }: PiecePropertiesProps & {
   readonly score?: ComponentProps<typeof PieceMovements>["score"];
   /** The edition list, owned by the page because its drop target covers the page. */
   readonly editions: ReactNode;
+  readonly isReviewing: boolean;
 }) => {
   const { t } = useTranslation();
   const notesId = useId();
@@ -113,10 +168,16 @@ export const PieceProperties = ({ piece, autosave, score, editions }: PiecePrope
   const epochChoices = epoch && !epochOptions.some((option) => option.value === epoch)
     ? [{ value: epoch, label: getArchiveEpochLabel(epoch, t) }, ...epochOptions]
     : epochOptions;
+  const contradictions = recordContradictions(piece);
+  const yearNote = contradictions.year?.kind === "before_birth"
+    ? t("archive.piece_card.note.year_before_birth", { birth: contradictions.year.birth })
+    : contradictions.year
+      ? t("archive.piece_card.note.year_after_death", { death: contradictions.year.death })
+      : null;
 
-  return (
-    <div className="space-y-8">
-      <RecordSection title={t("archive.piece_card.section.properties")}>
+  const content: Record<RecordSectionId, ReactNode> = {
+    properties: (
+      <>
         <ComposerProperty piece={piece} autosave={autosave} />
         <TextProperty piece={piece} autosave={autosave} field="arranger" label={t("archive.piece_card.fields.arranger")} />
         <TextProperty piece={piece} autosave={autosave} field="opus_catalog" label={t("archive.piece_card.fields.opus")} />
@@ -144,6 +205,7 @@ export const PieceProperties = ({ piece, autosave, score, editions }: PiecePrope
             />
           )}
         </ReviewRow>
+        {contradictions.epoch && <PropertyNote isReviewing={isReviewing}>{t("archive.piece_card.note.epoch_arranged")}</PropertyNote>}
         <ReviewRow piece={piece} autosave={autosave} field="composition_year" label={yearLabel}>
           {(id) => (
             <CommitText
@@ -160,6 +222,7 @@ export const PieceProperties = ({ piece, autosave, score, editions }: PiecePrope
             />
           )}
         </ReviewRow>
+        {yearNote && <PropertyNote isReviewing={isReviewing}>{yearNote}</PropertyNote>}
         <PropertyRow label={durationLabel}>
           {(id) => (
             <CommitText
@@ -179,32 +242,32 @@ export const PieceProperties = ({ piece, autosave, score, editions }: PiecePrope
           <RecordTextLabel id={notesId} label={notesLabel} />
           <RecordText id={notesId} value={piece.description ?? ""} draftField={autosave.track("description", notesLabel)} onCommit={(next) => autosave.save("description", next)} />
         </div>
-      </RecordSection>
-      <RecordSection title={t("archive.piece_card.fields.voicing")}>
+      </>
+    ),
+    voices: (
+      <>
         <TextProperty piece={piece} autosave={autosave} field="voicing" label={t("archive.piece_card.fields.scoring")} />
         <PieceVoices piece={piece} autosave={autosave} />
-      </RecordSection>
-      <RecordSection title={t("archive.piece_card.group.text")}>
+      </>
+    ),
+    text: (
+      <>
         <TextProperty piece={piece} autosave={autosave} field="text_source" label={t("archive.piece_card.fields.text_source")} />
-        <PieceLyrics piece={piece} autosave={autosave} />
-      </RecordSection>
-      {(Boolean(piece.translations?.length) || Boolean(piece.lyrics_original?.trim())) && (
-        <RecordSection title={t("archive.piece_card.translations_section")}>
-          <PieceTranslations piece={piece} autosave={autosave} />
-        </RecordSection>
-      )}
-      <RecordSection title={t("archive.piece_card.movements_section")}>
-        <PieceMovements piece={piece} autosave={autosave} score={score} />
-      </RecordSection>
-      <RecordSection title={t("archive.piece_card.program_note_section")}>
-        <PieceProgramNote piece={piece} autosave={autosave} />
-      </RecordSection>
-      <RecordSection title={t("archive.piece_card.recordings_section")}>
-        <PieceRecordings piece={piece} autosave={autosave} />
-      </RecordSection>
-      <RecordSection title={t("archive.piece_card.editions_section")}>
-        {editions}
-      </RecordSection>
+        <PieceLyrics piece={piece} autosave={autosave} isReviewing={isReviewing} />
+      </>
+    ),
+    translations: <PieceTranslations piece={piece} autosave={autosave} />,
+    movements: <PieceMovements piece={piece} autosave={autosave} score={score} />,
+    "program-note": <PieceProgramNote piece={piece} autosave={autosave} />,
+    recordings: <PieceRecordings piece={piece} autosave={autosave} />,
+    editions,
+  };
+
+  return (
+    <div className="space-y-8">
+      {recordSections(piece).map((entry) => (
+        <RecordSection key={entry.id} entry={entry}>{content[entry.id]}</RecordSection>
+      ))}
     </div>
   );
 };

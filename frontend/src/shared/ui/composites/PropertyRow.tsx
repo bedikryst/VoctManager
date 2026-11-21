@@ -1,6 +1,10 @@
 /**
  * @file PropertyRow.tsx
  * @description Fixed label and value alignment for directly editable document properties.
+ * From 1024 px the label, value and action share one line, the action at its
+ * end. Below that the value goes under its label and the action sits right
+ * after the label, clear of the shell's floating feedback button, which rides
+ * at the bottom right edge of a phone.
  */
 
 import { useId, type ReactNode } from "react";
@@ -15,6 +19,8 @@ interface PropertyRowProps {
   readonly marker?: ReactNode;
   readonly action?: ReactNode;
   readonly accessory?: ReactNode;
+  /** The control's id, when something outside the row has to reach it. */
+  readonly controlId?: string;
   readonly children: (controlId: string) => ReactNode;
 }
 
@@ -23,12 +29,14 @@ export const PropertyRow = ({
   marker,
   action,
   accessory,
+  controlId: givenId,
   children,
 }: PropertyRowProps) => {
-  const controlId = useId();
+  const generatedId = useId();
+  const controlId = givenId ?? generatedId;
 
   return (
-    <div className="grid min-h-11 grid-cols-[minmax(0,1fr)_auto] items-start gap-x-2 py-1 lg:grid-cols-[10.5rem_minmax(0,1fr)_auto] lg:gap-x-3 lg:py-0">
+    <div className="grid min-h-11 grid-cols-[auto_minmax(0,1fr)] items-start gap-x-2 py-1 lg:grid-cols-[10.5rem_minmax(0,1fr)_auto] lg:gap-x-3 lg:py-0">
       <Label
         as="label"
         htmlFor={controlId}
@@ -47,7 +55,7 @@ export const PropertyRow = ({
         <div className={cn("min-w-0", !accessory && "flex-1")}>{children(controlId)}</div>
         {accessory}
       </div>
-      {action && <div className="col-start-2 row-start-1 self-start lg:col-start-3 lg:pt-1">{action}</div>}
+      {action && <div className="col-start-2 row-start-1 self-start justify-self-start lg:col-start-3 lg:pt-1">{action}</div>}
     </div>
   );
 };
