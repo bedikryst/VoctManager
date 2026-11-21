@@ -8,16 +8,23 @@
  * bar with the way back, the score as a row that opens the stand, and the
  * review action in a bar that sits on the nav dock as one surface with it.
  *
- * The header carries each state's actions: "Następne do przeglądu" while
- * another piece waits, "Zatwierdź i opublikuj" while an edition of this one
- * does. The title and individual record properties save when committed.
+ * The header carries the way back, the step to the previous and next piece
+ * (`PieceNav`), and "Zatwierdź i opublikuj" while an edition of this one awaits
+ * review. The steps walk the list named in the URL (`libraryScope.ts`): the
+ * library rows the card was opened from, or the review queue, which is also
+ * what a piece in review walks when opened from anywhere else. The way back
+ * returns to the library under the filters it had. The title and individual
+ * record properties save when committed; a write in flight outlives the step
+ * to another piece, since the save queue is module-wide.
  *
  * Under the header a section index sticks to the top of the record and lights
- * the section in view; in review it counts each section's unchecked fields,
- * and once the header has scrolled away it holds the publish action too. The
- * review runs from the keyboard as well (`reviewFocus.ts`). Publishing always
- * asks first. While fields are unchecked the dialog's main action is to show
- * the first of them, and publishing anyway is the quieter choice.
+ * the section in view; in review it counts each section's unchecked fields.
+ * Once the header has scrolled away it holds the publish action in review and
+ * the steps otherwise. The review runs from the keyboard as well
+ * (`reviewFocus.ts`). Publishing always asks first. While fields are unchecked
+ * the dialog's main action is to show the first of them, and publishing anyway
+ * is the quieter choice. Once published, the card moves on to the next piece
+ * of the list it walks.
  *
  * The desk shows the edition under review, or the primary one, until the
  * edition list or a movement's page link asks for another. A PDF dragged over
@@ -30,10 +37,10 @@
 
 import React, { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { useDropzone, type FileRejection } from "react-dropzone";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { ArrowLeft, ArrowRight, CircleAlert, FileText, UploadCloud } from "lucide-react";
+import { ArrowLeft, CircleAlert, FileText, UploadCloud } from "lucide-react";
 
 import { toastApiError } from "@/shared/api/errors";
 import { useBottomBarHeight, useBottomBarSlot } from "@/shared/lib/dom/useBottomBarSlot";
@@ -50,7 +57,7 @@ import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
 import { Button } from "@/shared/ui/primitives/Button";
 import { InlineEditable } from "@/shared/ui/primitives/InlineEditable";
 import { Eyebrow, Heading, Text } from "@/shared/ui/primitives/typography";
-import { INGESTION_STATUS } from "@/shared/types";
+import { INGESTION_STATUS, type Piece } from "@/shared/types";
 import { ScoreStandModal, useScoreAnnotator } from "@/features/annotations";
 import { MaterialsService } from "@/features/materials/api/materials.service";
 
@@ -62,21 +69,27 @@ import {
 import { pieceReviewBreakdown, type ReviewProgress as ReviewProgressCounts } from "../constants/pieceProvenance";
 import { pieceFieldSchema } from "./pieceFieldSchema";
 import { DEFAULT_LATIN_PRONUNCIATION } from "../constants/latinPronunciation";
+import {
+  EMPTY_LIBRARY_FILTERS,
+  libraryPath,
+  libraryReturnState,
+  pieceCardPath,
+  readCardScope,
+  type CardList,
+} from "../constants/libraryScope";
 import { getPiecePdfLinks, getReviewPdf } from "../constants/piecePdfs";
 import { SCORE_DROP_OPTIONS, useEditionUploads } from "../hooks/useEditionUploads";
 import { CompactReviewProgress, ReviewBar, ReviewProgress, useReviewSentence } from "./ReviewProgress";
 import { PieceEditions, uploadAsksPronunciation, type EditionDesk } from "./PieceEditions";
 import { usePieceFieldReview } from "./PieceFieldReview";
+import { PieceNav } from "./PieceNav";
 import { PieceProperties, recordSections } from "./PieceProperties";
 import { ScorePane } from "./ScorePane";
+import { pieceSequence } from "./pieceSequence";
 import { focusFirstUnchecked, useReviewKeys } from "./reviewFocus";
 import { findNextAwaiting } from "./reviewQueue";
 import { usePieceAutosave } from "./usePieceAutosave";
 import { useScorePane } from "./useScorePane";
-
-const LIBRARY_PATH = "/panel/archive-management";
-const cardPath = (pieceId: string | number): string =>
-  `${LIBRARY_PATH}/${pieceId}`;
 
 /** Height of the phone's top bar, which the title has to clear to count as gone. */
 const TOP_BAR_CLEARANCE = "-52px 0px 0px 0px";
@@ -264,7 +277,11 @@ const PieceCard = ({ id }: { id: string }): React.JSX.Element => {
   const isTwoPane = useMediaQuery("(min-width: 1024px)");
 
   const { data: piece, isLoading, isError, error } = usePiece(id);
-  // Each piece opens at its header. "Następne do przeglądu" swaps the record
+  const [searchParams] = useSearchParams();
+  const scope = readCardScope(searchParams);
+  const backPath = libraryPath(scope?.filters ?? null);
+  const backState = libraryReturnState(id);
+  // Each piece opens at its header. A step to the next piece swaps the record
   // under a phone's window that is still scrolled, and a cached record paints
   // before anything else would reset it. Beside the score the record pane is
   // its own scroller and starts at the top with this component.
@@ -388,7 +405,7 @@ const PieceCard = ({ id }: { id: string }): React.JSX.Element => {
                 variant="outline"
                 leftIcon={<ArrowLeft size={14} aria-hidden="true" />}
               >
-                <Link to={LIBRARY_PATH}>
+                <Link to={backPath} state={backState}>
                   {t("archive.piece_card.back", "Wróć do biblioteki")}
                 </Link>
               </Button>
@@ -409,12 +426,19 @@ const PieceCard = ({ id }: { id: string }): React.JSX.Element => {
     .filter((part) => part !== "" && part !== null && part !== undefined)
     .join(" · ");
 
-  const nextAwaiting = findNextAwaiting(allPieces, pieceId);
   const awaitingEditions = (piece.editions ?? []).filter(
     (edition) => edition.ingestion_status === INGESTION_STATUS.AWAITING,
   );
   const awaitingEdition = awaitingEditions[0];
   const isReviewing = Boolean(awaitingEdition);
+  // A piece in review opened from outside the library still walks the queue.
+  const walkedList: CardList | null = scope?.list ?? (isReviewing ? "review" : null);
+  const walkedFilters = scope?.filters ?? EMPTY_LIBRARY_FILTERS;
+  const sequence = walkedList
+    ? pieceSequence(allPieces, pieceId, walkedList, walkedFilters)
+    : null;
+  const stepPath = (target: Piece): string =>
+    pieceCardPath(target.id, walkedList ? { list: walkedList, filters: walkedFilters } : null);
   const breakdown = pieceReviewBreakdown(piece);
   const progress = breakdown.all;
   const hasUnchecked = progress.pending > 0;
@@ -436,9 +460,11 @@ const PieceCard = ({ id }: { id: string }): React.JSX.Element => {
     target.querySelector<HTMLElement>("h2")?.focus({ preventScroll: true });
   };
 
-  const goToNext = (): void => {
-    if (nextAwaiting) navigate(cardPath(nextAwaiting.id));
-  };
+  // The published piece leaves the queue but is still in the list fetched
+  // before it, so the queue's next is the one after it; a library list goes on
+  // to its next row. At the end of either the card returns to the library.
+  const onwardAfterApproval =
+    walkedList === "library" ? (sequence?.next ?? null) : findNextAwaiting(allPieces, pieceId);
 
   const handleApprove = (): void => {
     if (!awaitingEdition) return;
@@ -453,7 +479,8 @@ const PieceCard = ({ id }: { id: string }): React.JSX.Element => {
       );
       // A second awaiting edition keeps the piece in review.
       if (awaitingEditions.length > 1) return;
-      navigate(nextAwaiting ? cardPath(nextAwaiting.id) : LIBRARY_PATH);
+      if (onwardAfterApproval) navigate(stepPath(onwardAfterApproval));
+      else navigate(backPath, { state: backState });
     }).catch((err: unknown) => {
       setIsApproveOpen(false);
       toastApiError(err, t, {
@@ -484,7 +511,6 @@ const PieceCard = ({ id }: { id: string }): React.JSX.Element => {
     else if (review) requestAnimationFrame(() => focusFirstUnchecked());
   };
 
-  const nextLabel = t("archive.piece_card.next_awaiting", "Następne do przeglądu");
   const backLabel = t("archive.piece_card.back", "Wróć do biblioteki");
   const desk: EditionDesk = {
     editionId: scorePdf?.id ?? null,
@@ -545,7 +571,7 @@ const PieceCard = ({ id }: { id: string }): React.JSX.Element => {
             {!isTwoPane && (
               <div className="sticky top-0 z-20 flex h-13 items-center gap-1 border-b border-hairline bg-ethereal-alabaster px-1">
                 <Button asChild variant="icon" size="icon" aria-label={backLabel} title={backLabel}>
-                  <Link to={LIBRARY_PATH}>
+                  <Link to={backPath} state={backState}>
                     <ArrowLeft size={20} aria-hidden="true" />
                   </Link>
                 </Button>
@@ -562,17 +588,7 @@ const PieceCard = ({ id }: { id: string }): React.JSX.Element => {
                 >
                   {piece.title}
                 </Text>
-                {nextAwaiting && (
-                  <Button
-                    variant="icon"
-                    size="icon"
-                    onClick={goToNext}
-                    aria-label={nextLabel}
-                    title={nextLabel}
-                  >
-                    <ArrowRight size={20} aria-hidden="true" />
-                  </Button>
-                )}
+                {sequence && <PieceNav sequence={sequence} pathTo={stepPath} isCompact />}
               </div>
             )}
 
@@ -580,7 +596,8 @@ const PieceCard = ({ id }: { id: string }): React.JSX.Element => {
               <header ref={headerRef} className="mx-auto w-full max-w-170 pb-6 pt-3 lg:pt-9">
                 <div className="hidden min-h-10 flex-wrap items-center justify-between gap-x-4 gap-y-2 lg:flex">
                   <Link
-                    to={LIBRARY_PATH}
+                    to={backPath}
+                    state={backState}
                     className="inline-flex items-center gap-2 rounded-chip text-ethereal-graphite transition-colors hover:text-ethereal-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40"
                   >
                     <ArrowLeft size={14} strokeWidth={2} aria-hidden="true" />
@@ -589,17 +606,7 @@ const PieceCard = ({ id }: { id: string }): React.JSX.Element => {
                     </Eyebrow>
                   </Link>
                   <div className="ml-auto flex max-w-full flex-wrap items-center justify-end gap-2">
-                    {nextAwaiting && (
-                      <Button
-                        variant="ghost"
-                        casing="sentence"
-                        className="max-w-full whitespace-normal"
-                        rightIcon={<ArrowRight size={16} aria-hidden="true" />}
-                        onClick={goToNext}
-                      >
-                        {nextLabel}
-                      </Button>
-                    )}
+                    {sequence && <PieceNav sequence={sequence} pathTo={stepPath} />}
                     {isReviewing && (
                       <Button
                         variant="primary"
@@ -710,6 +717,10 @@ const PieceCard = ({ id }: { id: string }): React.JSX.Element => {
                       >
                         {t("archive.piece_card.approve_short", "Zatwierdź")}
                       </Button>
+                    </div>
+                  ) : isTwoPane && sequence && isHeaderAway ? (
+                    <div className="flex shrink-0 items-center self-stretch border-l border-hairline pl-2">
+                      <PieceNav sequence={sequence} pathTo={stepPath} isCompact />
                     </div>
                   ) : undefined}
                 />

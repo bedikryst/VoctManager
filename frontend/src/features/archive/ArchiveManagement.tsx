@@ -21,10 +21,11 @@ import React, {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
   useDeferredValue,
 } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
@@ -49,9 +50,10 @@ import { BulkDivisiSheet } from "./components/BulkDivisiSheet";
 import { EditionUploadDrawer } from "./components/EditionUploadDrawer";
 import { OrphanIngestionsPanel } from "./components/OrphanIngestionsPanel";
 import { PieceBulkBar } from "./components/PieceBulkBar";
-import { PieceRow } from "./components/PieceRow";
+import { PieceRow, pieceRowId } from "./components/PieceRow";
 import { useArchiveData } from "./hooks/useArchiveData";
 import { getArchiveEpochOptions } from "./constants/archiveEpochs";
+import { pieceCardPath, readReturnedPiece } from "./constants/libraryScope";
 import type { EnrichedPiece } from "./types/archive.dto";
 
 const formatCoverage = (value: number, total: number): number => {
@@ -68,11 +70,13 @@ const lacksPieceWideDivisi = (piece: EnrichedPiece): boolean =>
 export default function ArchiveManagement(): React.JSX.Element {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const location = useLocation();
   const epochOptions = getArchiveEpochOptions(t);
 
   const {
     isLoading,
     isError,
+    filters,
     composers,
     voiceLines,
     libraryStats,
@@ -241,10 +245,24 @@ export default function ArchiveManagement(): React.JSX.Element {
 
   const navigateToReview = useCallback(
     (pieceId: string) => {
-      navigate(`/panel/archive-management/${pieceId}`);
+      navigate(pieceCardPath(pieceId, { list: "review", filters }));
     },
-    [navigate],
+    [navigate, filters],
   );
+
+  // Back from a card, the row it was opened from comes into view, once: after
+  // that the list scrolls as the manager scrolls it. `PageTransition` resets
+  // the window on mount, and as this page's child its effect runs first.
+  const returnedFrom = readReturnedPiece(location.state);
+  const hasRows = deferredPieces.length > 0;
+  const hasScrolledBack = useRef(false);
+  useEffect(() => {
+    if (hasScrolledBack.current || !returnedFrom || !hasRows) return;
+    hasScrolledBack.current = true;
+    document
+      .getElementById(pieceRowId(returnedFrom))
+      ?.scrollIntoView({ block: "center" });
+  }, [returnedFrom, hasRows]);
 
   if (isLoading && displayPieces.length === 0) {
     return <EtherealLoader />;
@@ -367,6 +385,7 @@ export default function ArchiveManagement(): React.JSX.Element {
                   <PieceRow
                     key={piece.id}
                     piece={piece}
+                    cardPath={pieceCardPath(piece.id, { list: "library", filters })}
                     onDelete={(p) =>
                       handleDeleteRequest(String(p.id), p.title)
                     }

@@ -877,7 +877,17 @@
         "text": "Text"
       },
       "movements_section": "Movements",
-      "next_awaiting": "Next to review",
+      "nav": {
+        "aria": "Pieces in the list",
+        "aria_review": "Pieces to review",
+        "next": "Next piece",
+        "next_review": "Next piece to review",
+        "position": "{{index}} of {{total}}",
+        "position_compact": "{{index}}/{{total}}",
+        "position_review": "{{index}} of {{total}} to review",
+        "previous": "Previous piece",
+        "previous_review": "Previous piece to review"
+      },
       "no_pdf": "No PDF for this piece",
       "open_score": "Open score",
       "page_count_one": "{{count}} page",

@@ -1,14 +1,14 @@
 /**
  * @file reviewQueue.ts
- * @description The queue "Następne do przeglądu" walks: every piece with an
- * edition awaiting review, in the library's order, wrapping round from the
- * last to the first.
+ * @description The review queue: every piece with an edition awaiting review,
+ * in the library's order. Publishing a piece moves on to the next one,
+ * wrapping round from the last to the first.
  * @module features/archive/piece-card/reviewQueue
  */
 
 import { INGESTION_STATUS, type Piece } from "@/shared/types";
 
-const isAwaitingReview = (piece: Piece): boolean =>
+export const isAwaitingReview = (piece: Piece): boolean =>
   (piece.editions ?? []).some(
     (edition) => edition.ingestion_status === INGESTION_STATUS.AWAITING,
   );

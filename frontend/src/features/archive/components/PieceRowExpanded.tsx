@@ -36,10 +36,13 @@ import { PieceRowTracks } from "./PieceRowTracks";
 
 interface PieceRowExpandedProps {
   readonly piece: EnrichedPiece;
+  /** The piece card, carrying the list the row stands in. */
+  readonly cardPath: string;
 }
 
 export const PieceRowExpanded = ({
   piece,
+  cardPath,
 }: PieceRowExpandedProps): React.JSX.Element => {
   const { t } = useTranslation();
   const composer = piece.composer ?? null;
@@ -77,7 +80,6 @@ export const PieceRowExpanded = ({
     })).sort((a, b) => (a.key === "shared" ? -1 : b.key === "shared" ? 1 : 0));
   }, [requirements, piece, t]);
 
-  const cardPath = `/panel/archive-management/${piece.id}`;
   const hasAIContent = Boolean(
     composer?.mbid ||
       composer?.wikidata_qid ||

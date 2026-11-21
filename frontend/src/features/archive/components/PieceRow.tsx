@@ -47,6 +47,8 @@ import { PieceRowExpanded } from "./PieceRowExpanded";
 
 interface PieceRowProps {
   readonly piece: EnrichedPiece;
+  /** The piece card, carrying the list the row stands in. */
+  readonly cardPath: string;
   readonly onDelete: (piece: EnrichedPiece) => void;
   readonly defaultExpanded?: boolean;
   /**
@@ -148,8 +150,12 @@ const StateBadges = ({
 
 // ---------------------------------------------------------------------------
 
+/** The row's DOM id, which the library scrolls to on the way back from a card. */
+export const pieceRowId = (pieceId: string | number): string => `piece-row-${pieceId}`;
+
 export const PieceRow = ({
   piece,
+  cardPath,
   onDelete,
   defaultExpanded = false,
   selectionMode = false,
@@ -208,6 +214,7 @@ export const PieceRow = ({
 
   return (
     <div
+      id={pieceRowId(piece.id)}
       className={cn(
         "overflow-hidden rounded-nested border bg-ethereal-alabaster/60 transition-all",
         isExpanded
@@ -403,7 +410,7 @@ export const PieceRow = ({
             transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
             className="overflow-hidden border-t border-hairline"
           >
-            <PieceRowExpanded piece={piece} />
+            <PieceRowExpanded piece={piece} cardPath={cardPath} />
           </motion.div>
         )}
       </AnimatePresence>

@@ -2,9 +2,13 @@
  * @file useArchiveData.ts
  * @description Encapsulates purely visual state, filtering logic, and modal visibility
  * for the Archive domain. Server state is fully delegated to React Query hooks.
+ * The search and filters survive a visit to a piece card: they are read from
+ * the library's query string on arrival and mirrored back into it as they
+ * change (`libraryScope.ts`).
  */
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { toastApiError } from "@/shared/api/errors";
 import { useTranslation } from "react-i18next";
@@ -15,9 +19,14 @@ import {
 } from "../api/archive.queries";
 import { useVoiceLines } from "@/shared/api/options.queries";
 import { INGESTION_STATUS } from "@/shared/types";
-import { foldDiacritics } from "@/shared/lib/text";
 import { EnrichedPiece } from "../types/archive.dto";
 import { hasPdf } from "../constants/piecePdfs";
+import {
+  filtersFromParams,
+  filtersToParams,
+  matchesLibraryFilters,
+  type LibraryFilters,
+} from "../constants/libraryScope";
 
 const isAwaitingReview = (piece: EnrichedPiece): boolean =>
   (piece.editions ?? []).some(
@@ -39,13 +48,38 @@ export const useArchiveData = () => {
   const deleteMutation = useDeletePiece();
 
   // 2. Client UI State
-  const [searchTerm, setSearchTerm] = useState<string>("");
-  const [epochFilter, setEpochFilter] = useState<string>("");
-  const [composerFilter, setComposerFilter] = useState<string>("");
-  const [voicingFilter, setVoicingFilter] = useState<string>("");
-  // Folded, not merely lowercased: this library is Polish, so "gorecki" has to
-  // find Górecki and "lukaszewski" Łukaszewski.
-  const normalizedSearchTerm = foldDiacritics(searchTerm.trim());
+  // The URL is read once, on arrival. While the library is open the inputs own
+  // the filters and the query string only mirrors them, so a keystroke never
+  // waits on a navigation.
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [arrivalFilters] = useState<LibraryFilters>(() =>
+    filtersFromParams(new URLSearchParams(location.search)),
+  );
+  const [searchTerm, setSearchTerm] = useState<string>(arrivalFilters.search);
+  const [epochFilter, setEpochFilter] = useState<string>(arrivalFilters.epoch);
+  const [composerFilter, setComposerFilter] = useState<string>(arrivalFilters.composer);
+  const [voicingFilter, setVoicingFilter] = useState<string>(arrivalFilters.voicing);
+  const normalizedSearchTerm = searchTerm.trim();
+
+  const filters = useMemo<LibraryFilters>(
+    () => ({
+      search: searchTerm,
+      epoch: epochFilter,
+      composer: composerFilter,
+      voicing: voicingFilter,
+    }),
+    [searchTerm, epochFilter, composerFilter, voicingFilter],
+  );
+
+  // Replaced, not pushed: the back button leaves the library rather than
+  // undoing a filter one keystroke at a time.
+  const filterQuery = filtersToParams(filters).toString();
+  useEffect(() => {
+    const search = filterQuery ? `?${filterQuery}` : "";
+    if (search === location.search) return;
+    navigate({ search }, { replace: true });
+  }, [filterQuery, location.search, navigate]);
 
   // Modal & Context State
   const [pieceToDelete, setPieceToDelete] = useState<{
@@ -55,36 +89,10 @@ export const useArchiveData = () => {
 
   // PieceSerializer embeds composer as a nested object directly — no manual
   // enrichment, just a fetch for the filter dropdown.
-  const displayPieces: EnrichedPiece[] = useMemo(() => {
-    return pieces.filter((piece) => {
-      const composerLabel = piece.composer
-        ? foldDiacritics(
-            `${piece.composer.first_name ?? ""} ${piece.composer.last_name}`.trim(),
-          )
-        : "";
-      const matchesSearch =
-        normalizedSearchTerm.length === 0 ||
-        foldDiacritics(piece.title).includes(normalizedSearchTerm) ||
-        composerLabel.includes(normalizedSearchTerm);
-      const matchesEpoch = epochFilter ? piece.epoch === epochFilter : true;
-      const matchesComposer = composerFilter
-        ? piece.composer?.id === composerFilter
-        : true;
-      const matchesVoicing = voicingFilter
-        ? piece.voicing === voicingFilter
-        : true;
-
-      return (
-        matchesSearch && matchesEpoch && matchesComposer && matchesVoicing
-      );
-    });
-  }, [
-    pieces,
-    normalizedSearchTerm,
-    epochFilter,
-    composerFilter,
-    voicingFilter,
-  ]);
+  const displayPieces: EnrichedPiece[] = useMemo(
+    () => pieces.filter((piece) => matchesLibraryFilters(piece, filters)),
+    [pieces, filters],
+  );
 
   const availableVoicings = useMemo(
     () =>
@@ -201,6 +209,7 @@ export const useArchiveData = () => {
     activeFilterCount,
 
     // Filters
+    filters,
     searchTerm,
     setSearchTerm,
     epochFilter,

@@ -884,7 +884,17 @@
         "text": "Texte"
       },
       "movements_section": "Mouvements",
-      "next_awaiting": "Suivante à vérifier",
+      "nav": {
+        "aria": "Pièces de la liste",
+        "aria_review": "Pièces à vérifier",
+        "next": "Pièce suivante",
+        "next_review": "Pièce suivante à vérifier",
+        "position": "{{index}} sur {{total}}",
+        "position_compact": "{{index}}/{{total}}",
+        "position_review": "{{index}} sur {{total}} à vérifier",
+        "previous": "Pièce précédente",
+        "previous_review": "Pièce précédente à vérifier"
+      },
       "no_pdf": "Aucun PDF pour cette pièce",
       "open_score": "Ouvrir la partition",
       "page_count_one": "{{count}} page",

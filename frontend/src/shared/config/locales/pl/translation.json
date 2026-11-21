@@ -902,7 +902,17 @@
         "text": "Tekst"
       },
       "movements_section": "Części",
-      "next_awaiting": "Następne do przeglądu",
+      "nav": {
+        "aria": "Utwory na liście",
+        "aria_review": "Utwory do przeglądu",
+        "next": "Następny utwór",
+        "next_review": "Następny utwór do przeglądu",
+        "position": "{{index}} z {{total}}",
+        "position_compact": "{{index}}/{{total}}",
+        "position_review": "{{index}} z {{total}} do przeglądu",
+        "previous": "Poprzedni utwór",
+        "previous_review": "Poprzedni utwór do przeglądu"
+      },
       "no_pdf": "Brak PDF dla tego utworu",
       "open_score": "Otwórz partyturę",
       "page_count_one": "{{count}} strona",
