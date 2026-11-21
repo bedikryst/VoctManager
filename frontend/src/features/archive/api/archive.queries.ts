@@ -642,10 +642,11 @@ export const useReingestEdition = () => {
 };
 
 // ===========================================================================
-// AI artifacts — inline correction from the Review cockpit
+// AI artifacts — field verification, IPA recompute, generation, and a piece's
+// child records
 // ===========================================================================
-// Each mutation refetches the parent piece (so the chip flips AI → verified and
-// the edited value re-renders) plus the pieces list (status badges).
+// Each mutation refetches the parent piece, whose review counts follow the
+// change, plus the pieces list (status badges).
 
 const invalidatePiece = (qc: ReturnType<typeof useQueryClient>, pieceId: string) =>
   Promise.all([

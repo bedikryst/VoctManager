@@ -405,7 +405,11 @@
     "active": {
       "aria": "AI processing in progress",
       "pages": "pp.",
-      "section": "AI analysis"
+      "section": "AI analysis",
+      "cancel": "Stop processing",
+      "cancel_short": "Stop",
+      "cancelled": "Processing stopped.",
+      "cancel_failed": "Could not stop processing."
     },
     "bulk": {
       "bar_aria": "Bulk actions",
@@ -831,7 +835,6 @@
       "retry_draft": "Retry saving: {{field}}",
       "discard_draft": "Discard change: {{field}}",
       "year_invalid": "Composition year: a whole number between 500 and 2100.",
-      "add_edition_hint": "Add another edition (Bärenreiter, IMSLP, your own arrangement)",
       "approve_btn": "Approve & publish",
       "approve_failed": "Couldn't approve.",
       "approved": "Approved — the materials are ready to share.",
@@ -879,7 +882,6 @@
       "open_score": "Open score",
       "page_count_one": "{{count}} page",
       "page_count_other": "{{count}} pages",
-      "pdf_download": "Download",
       "pdf_preview_aria": "Score PDF preview",
       "program_note_section": "Programme note",
       "recordings_section": "Reference recordings",
@@ -953,7 +955,8 @@
       "approve_anyway": "Publish anyway",
       "score_row": "Score",
       "open_short": "Open",
-      "note_approved": "Approved"
+      "note_approved": "Approved",
+      "note_on_approval": "A programme note is written automatically when the piece is approved. You can also generate one now."
     },
     "review": {
       "delete": "Delete",
@@ -1158,9 +1161,7 @@
       "row_remove_aria": "Remove {{name}} from the list",
       "section": "Score upload",
       "subtitle": "or click to choose. Multiple files at once · max 50 MB each",
-      "subtitle_existing": "Bärenreiter, IMSLP, your own arrangement — drag or click to choose · max 50 MB",
       "title": "Drag in score PDFs",
-      "title_existing": "Add another edition of this piece",
       "toast_failed": "Upload failed",
       "toast_success": "{{name}} — pipeline started",
       "row_awaiting_short": "AI has finished",
@@ -1216,13 +1217,6 @@
       }
     },
     "provenance": {
-      "verified": "Verified",
-      "verified_title": "Checked and corrected by hand.",
-      "ai": "AI · to review",
-      "ai_title": "Extracted by AI ({{model}}), unverified — check against the PDF and correct if needed.",
-      "canonical": "{{source}} · confirmed",
-      "canonical_title": "Confirmed by a canonical source: {{source}}.",
-      "verify_hint": "Click to mark as correct",
       "verify_aria": "Mark as correct: {{label}}"
     },
     "orphans": {

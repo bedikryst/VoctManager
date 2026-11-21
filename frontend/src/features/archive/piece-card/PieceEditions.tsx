@@ -17,7 +17,7 @@
  * @module features/archive/piece-card/PieceEditions
  */
 
-import { useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
@@ -262,7 +262,7 @@ const EditionRow = ({ edition, autosave, desk, showsDeskMark, onReingest, onDele
   const { t, i18n } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const detailId = useId();
-  const opensDialog = useRef(false);
+  const pendingDialog = useRef<(() => void) | null>(null);
   const name = edition.original_filename || t("archive.editions.untitled");
   const facts = [
     edition.publisher,
@@ -276,9 +276,10 @@ const EditionRow = ({ edition, autosave, desk, showsDeskMark, onReingest, onDele
   // and a running one is still in the pipeline.
   const canReingest = edition.ingestion_status === INGESTION_STATUS.AWAITING
     || edition.ingestion_status === INGESTION_STATUS.FAILED;
+  // The confirmation opens once the menu has handed focus back to "⋯", so the
+  // dialog takes focus from there and returns it there when it closes.
   const askFirst = (action: (edition: ScoreEditionSummary) => void) => () => {
-    opensDialog.current = true;
-    action(edition);
+    pendingDialog.current = () => action(edition);
   };
 
   return (
@@ -319,11 +320,10 @@ const EditionRow = ({ edition, autosave, desk, showsDeskMark, onReingest, onDele
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent
-            onCloseAutoFocus={(event) => {
-              // The confirmation takes focus itself.
-              if (!opensDialog.current) return;
-              opensDialog.current = false;
-              event.preventDefault();
+            onCloseAutoFocus={() => {
+              const open = pendingDialog.current;
+              pendingDialog.current = null;
+              open?.();
             }}
           >
             {canShow && (
@@ -364,6 +364,17 @@ const UploadRow = ({ upload, uploads }: { upload: PendingUpload; uploads: Editio
   const sample = options.find((option) => option.value === system)?.sample;
   const { file, phase, progress, errorMessage } = upload;
   const removeLabel = t("archive.upload.row_remove_aria", { name: file.name });
+  const rowRef = useRef<HTMLLIElement>(null);
+  const hasAsked = useRef(false);
+
+  // A file dropped on the desk waits at the end of the record, out of sight; it
+  // comes into view with its question in focus, or the drop looks ignored.
+  useEffect(() => {
+    if (phase !== "held" || hasAsked.current) return;
+    hasAsked.current = true;
+    rowRef.current?.scrollIntoView({ block: "center" });
+    document.getElementById(pronunciationId)?.focus({ preventScroll: true });
+  }, [phase, pronunciationId]);
 
   const state = phase === "uploading" || phase === "queued"
     ? t("archive.piece_card.upload_sending", { progress })
@@ -374,7 +385,7 @@ const UploadRow = ({ upload, uploads }: { upload: PendingUpload; uploads: Editio
         : t("archive.piece_card.upload_held");
 
   return (
-    <li className="border-t border-hairline py-2">
+    <li ref={rowRef} className="border-t border-hairline py-2">
       <div className="flex items-start gap-1">
         <div className="min-w-0 flex-1">
           <Text className="wrap-anywhere">{file.name}</Text>
@@ -446,39 +457,59 @@ interface PieceEditionsProps {
 
 export const PieceEditions = ({ piece, autosave, desk, uploads, onAddEdition }: PieceEditionsProps) => {
   const { t } = useTranslation();
-  const reingest = useReingestEdition();
-  const remove = useDeleteEdition();
+  const { mutateAsync: reingest } = useReingestEdition();
+  const { mutateAsync: deleteEdition } = useDeleteEdition();
   const [toReingest, setToReingest] = useState<ScoreEditionSummary | null>(null);
   const [toDelete, setToDelete] = useState<ScoreEditionSummary | null>(null);
+  // From the click to the settled request: a write can wait in the piece's
+  // queue before its mutation starts, and a second click must not queue another.
+  const [isReingesting, setIsReingesting] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const editions = [...(piece.editions ?? [])].sort((a, b) => {
     if (a.is_default !== b.is_default) return a.is_default ? -1 : 1;
     return (a.created_at ?? "").localeCompare(b.created_at ?? "");
   });
   const listed = new Set(editions.map((edition) => edition.id));
+  const listedKey = editions.map((edition) => edition.id).join(" ");
   // A sent file hands over to its edition's row once the piece lists it.
   const pending = uploads.uploads.filter((upload) => !upload.editionId || !listed.has(upload.editionId));
   const showsDeskMark = editions.filter((edition) => edition.pdf_file).length > 1;
 
-  const confirmReingest = (): void => {
-    if (!toReingest) return;
-    reingest.mutate({ id: toReingest.id }, {
-      onSuccess: () => {
-        setToReingest(null);
-        toast.success(t("archive.editions.reingest_success"));
-      },
-      onError: (err) => toastApiError(err, t, { fallbackDescription: t("archive.editions.reingest_error") }),
+  // ...and leaves for good, or deleting that edition would bring the file back
+  // as a row reading "sent" that nothing can remove.
+  const { uploads: uploadEntries, remove: forgetUpload } = uploads;
+  useEffect(() => {
+    const listedNow = new Set(listedKey.split(" "));
+    uploadEntries.forEach((upload) => {
+      if (upload.editionId && listedNow.has(upload.editionId)) forgetUpload(upload.localId);
     });
+  }, [listedKey, uploadEntries, forgetUpload]);
+
+  const confirmReingest = (): void => {
+    if (!toReingest || isReingesting) return;
+    const target = toReingest;
+    setIsReingesting(true);
+    // Queued, so a piece write in flight cannot land its older edition status
+    // over the restarted analysis.
+    void autosave.enqueue(() => reingest({ id: target.id })).then(() => {
+      setToReingest(null);
+      toast.success(t("archive.editions.reingest_success"));
+    }, (err: unknown) => {
+      toastApiError(err, t, { fallbackDescription: t("archive.editions.reingest_error") });
+    }).finally(() => setIsReingesting(false));
   };
 
   const confirmDelete = (): void => {
-    if (!toDelete) return;
-    void autosave.enqueue(() => remove.mutateAsync(toDelete.id)).then(() => {
+    if (!toDelete || isDeleting) return;
+    const target = toDelete;
+    setIsDeleting(true);
+    void autosave.enqueue(() => deleteEdition(target.id)).then(() => {
       setToDelete(null);
       toast.success(t("archive.editions.delete_success"));
     }, (err: unknown) => {
       toastApiError(err, t, { fallbackDescription: t("archive.editions.delete_error") });
-    });
+    }).finally(() => setIsDeleting(false));
   };
 
   return (
@@ -516,7 +547,7 @@ export const PieceEditions = ({ piece, autosave, desk, uploads, onAddEdition }: 
         description={t("archive.editions.reingest_modal_desc")}
         confirmText={t("archive.editions.reingest_confirm")}
         cancelText={t("common.actions.cancel")}
-        isLoading={reingest.isPending}
+        isLoading={isReingesting}
         onCancel={() => setToReingest(null)}
         onConfirm={confirmReingest}
       />
@@ -527,7 +558,7 @@ export const PieceEditions = ({ piece, autosave, desk, uploads, onAddEdition }: 
         description={t("archive.editions.delete_modal_desc")}
         confirmText={t("archive.editions.delete_confirm")}
         cancelText={t("common.actions.cancel")}
-        isLoading={remove.isPending}
+        isLoading={isDeleting}
         onCancel={() => setToDelete(null)}
         onConfirm={confirmDelete}
       />

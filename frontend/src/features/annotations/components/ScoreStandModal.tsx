@@ -2,8 +2,8 @@
  * @file ScoreStandModal.tsx
  * @description The one "music stand": a full-screen score viewer with the
  * conductor/personal annotation layer already wired in. Every in-panel score
- * opens through this — the library accordion, the review cockpit's edition
- * list, and the practice cockpit — so annotations are the default everywhere and
+ * opens through this — the library accordion, the piece card on a phone, and
+ * the practice cockpit — so annotations are the default everywhere and
  * the PdfViewerModal + useScoreAnnotator wiring lives in exactly one place. Its
  * sheet holds the score's own tab ("Nuty": page, fit, the host's section such
  * as the starting pitches, the file) beside the marks.

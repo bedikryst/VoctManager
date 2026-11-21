@@ -1,8 +1,9 @@
 /**
  * @file useFocusTrap.ts
  * @description Keeps Tab and Shift+Tab inside a modal surface while it is
- * active, moves focus to its first tabbable element when it opens, and hands
- * focus back to the control that opened it when it closes.
+ * active, moves focus to its first tabbable element when it opens (or to the
+ * caller's `initialFocus`, when that one is tabbable), and hands focus back to
+ * the control that opened it when it closes.
  *
  * A surface whose content already took focus as it mounted (an `autoFocus`
  * field) keeps it. That field is then the only focus the hook ever sees, so the
@@ -31,6 +32,7 @@ const tabbablesIn = (element: HTMLElement): HTMLElement[] =>
 export const useFocusTrap = <T extends HTMLElement>(
   ref: RefObject<T | null>,
   active: boolean,
+  initialFocus?: RefObject<HTMLElement | null>,
 ): void => {
   useEffect(() => {
     if (!active || !ref.current) return;
@@ -65,7 +67,11 @@ export const useFocusTrap = <T extends HTMLElement>(
       !alreadyInside && focused instanceof HTMLElement && focused !== document.body
         ? focused
         : null;
-    if (!alreadyInside) tabbablesIn(element)[0]?.focus();
+    if (!alreadyInside) {
+      const tabbables = tabbablesIn(element);
+      const preferred = initialFocus?.current;
+      (preferred && tabbables.includes(preferred) ? preferred : tabbables[0])?.focus();
+    }
 
     // On the surface, not the document, so a trap nested inside another only
     // answers for its own content. A click on a non-focusable part of the
@@ -81,5 +87,5 @@ export const useFocusTrap = <T extends HTMLElement>(
       const released = current === null || current === document.body || element.contains(current);
       if (opener?.isConnected && released) opener.focus({ preventScroll: true });
     };
-  }, [active, ref]);
+  }, [active, ref, initialFocus]);
 };

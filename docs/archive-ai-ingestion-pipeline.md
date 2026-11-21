@@ -348,7 +348,7 @@ Aktualne ustawienia call site'ów:
 przelicza IPA z zapisanego `lyrics_original`, bez ponownego czytania PDF, w jednym z trzech systemów
 (`germanic` / `italianate` / `classical`). Reguły liter każdego systemu siedzą w `prompts.py` jako
 jedno źródło dla obu promptów — bez nich model wraca do wymowy rzymskiej, cokolwiek mu kazano.
-Wywołują je: przycisk „Przelicz wymowę” w karcie utworu (Celery `archive.recompute_ipa`, stan zadania
+Wywołują je: przycisk „Przelicz” obok wyboru „Wymowa łaciny” w karcie utworu (Celery `archive.recompute_ipa`, stan zadania
 w cache, karta odpytuje utwór), wybór wymowy w strefie wgrywania (§4.2) i
 `manage.py recompute_ipa --system germanic [--dry-run] [--limit N]`.
 IPA, której ostatnie provenance jest ręczne (poprawka albo „zweryfikowane”), karta zastępuje dopiero
@@ -623,7 +623,8 @@ historia jest w gicie.
 * **Live postęp po SSE** — `GET /api/archive/editions/<id>/events/` (`sse_views.py`), streamowany
   podgląd rekordu w trakcie generowania. Produkcja musi chodzić pod ASGI:
   `gunicorn config.asgi -k uvicorn.workers.UvicornWorker`.
-* **Provenance na każdym polu** + kokpit weryfikacji z chipami pochodzenia i pewności.
+* **Provenance na każdym polu** + przegląd w karcie utworu: pole napisane przez AI czeka na
+  potwierdzenie albo poprawkę, a nagłówek liczy, ile zostało.
 * **Notki programowe** — model `ProgramNote`, generowanie na żądanie, edycja inline, wiele języków.
 * **Adnotacje** — `AnnotationViewSet`, warstwa wspólna dyrygenta + prywatna warstwa śpiewaka,
   egzekwowane po stronie serwera.
@@ -679,6 +680,7 @@ backend/archive/
 frontend/src/features/archive/          # UI slice (FSD) — jeden slice, bez osobnego „score-compiler"
 ├── ArchiveManagement.tsx               # lista repertuaru
 ├── api/{archive.service.ts, archive.queries.ts}
+├── constants/pieceProvenance.ts        # pochodzenie pól i jedna reguła liczenia przeglądu
 ├── piece-card/                         # karta utworu: dokument obok partytury, edycja + weryfikacja AI
 │   ├── PieceCardPage.tsx               # dwa panele od 1024 px, przegląd, publikacja
 │   ├── PieceProperties.tsx             # sekcje rekordu, pola zapisują się same (usePieceAutosave)
@@ -689,8 +691,7 @@ frontend/src/features/archive/          # UI slice (FSD) — jeden slice, bez os
     ├── EditionUploadZone.tsx           # drag-and-drop multi-file
     ├── EditionUploadDrawer.tsx
     ├── ActiveIngestionsPanel.tsx       # live postęp po SSE
-    ├── OrphanIngestionsPanel.tsx       # ingesty bez podpiętego utworu
-    └── ProvenanceChip.tsx              # pochodzenie pól i jedna reguła liczenia przeglądu
+    └── OrphanIngestionsPanel.tsx       # ingesty bez podpiętego utworu
 ```
 
 **Uwaga nawigacyjna:** nie ma już trasy `/panel/score-compiler` ani `ConductorReviewModal`. Upload

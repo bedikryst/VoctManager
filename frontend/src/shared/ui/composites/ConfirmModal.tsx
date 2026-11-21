@@ -3,10 +3,12 @@
  * @description A high-priority confirmation modal (destructive or warning).
  * Uses a glassmorphism backdrop, portal rendering, and physical spring animations.
  * Strictly decoupled from hardcoded texts via i18next and relies on core primitives.
+ * Focus moves in as it opens, Tab stays inside, and focus returns to the opener
+ * as it closes.
  * @module shared/ui/composites/ConfirmModal
  */
 
-import React, { useCallback, useEffect, useId, useState } from "react";
+import React, { useCallback, useEffect, useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { AlertTriangle } from "lucide-react";
@@ -15,6 +17,7 @@ import { cva } from "class-variance-authority";
 import { Button, type ButtonProps } from "@/shared/ui/primitives/Button";
 import { Heading, Text } from "@/shared/ui/primitives/typography";
 import { BodyScrollLock } from "@/shared/lib/dom/useBodyScrollLock";
+import { useFocusTrap } from "@/shared/lib/dom/useFocusTrap";
 import { OVERLAY_POP_TRANSITION } from "@/shared/ui/kinematics/motion-presets";
 
 const iconContainerVariants = cva(
@@ -79,10 +82,17 @@ export const ConfirmModal = ({
   const [mounted, setMounted] = useState(false);
   const titleId = useId();
   const descriptionId = useId();
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const cancelRef = useRef<HTMLButtonElement>(null);
+  const confirmRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // Focus opens on the safe answer: Cancel when confirming destroys something,
+  // the confirmation otherwise. It returns to the opener on close.
+  useFocusTrap(dialogRef, isOpen && mounted, isDestructive ? cancelRef : confirmRef);
 
   const handleEscape = useCallback((event: KeyboardEvent) => {
     if (event.key === "Escape" && !isLoading) {
@@ -129,7 +139,9 @@ export const ConfirmModal = ({
             animate={{ opacity: 1, transform: "translateY(0px) scale(1)" }}
             exit={{ opacity: 0, transform: "translateY(20px) scale(0.95)" }}
             transition={OVERLAY_POP_TRANSITION}
-            className="relative w-full max-w-md bg-ethereal-marble rounded-nested shadow-glass-solid overflow-hidden border border-ethereal-incense/20 flex flex-col"
+            ref={dialogRef}
+            tabIndex={-1}
+            className="relative w-full max-w-md bg-ethereal-marble rounded-nested shadow-glass-solid overflow-hidden border border-ethereal-incense/20 flex flex-col outline-none"
             role="dialog"
             aria-modal="true"
             aria-labelledby={titleId}
@@ -160,10 +172,11 @@ export const ConfirmModal = ({
             </div>
 
             <div className="bg-ethereal-alabaster px-6 py-4 flex justify-end gap-3 border-t border-ethereal-incense/10">
-              <Button variant="ghost" casing={casing} onClick={onCancel} disabled={isLoading}>
+              <Button ref={cancelRef} variant="ghost" casing={casing} onClick={onCancel} disabled={isLoading}>
                 {resolvedCancelText}
               </Button>
               <Button
+                ref={confirmRef}
                 variant={isDestructive ? "destructive" : "primary"}
                 casing={casing}
                 onClick={onConfirm}

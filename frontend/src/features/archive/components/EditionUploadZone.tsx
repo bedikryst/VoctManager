@@ -1,14 +1,13 @@
 /**
  * @file EditionUploadZone.tsx
- * @description Drag-and-drop multi-file upload zone for PDF scores. Surfaces
- * in two places: at the top of the Archive page (no piece context — uploads
- * become new editions resolved into pieces by the pipeline), and inside the
- * AI Review tab (with `pieceId` so uploads attach as another edition of an
- * existing piece, skipping the resolver step).
+ * @description Drag-and-drop multi-file upload zone for PDF scores, on the
+ * Archive page's welcome state and in its upload drawer. Uploads carry no
+ * piece: each becomes a new edition that the pipeline resolves into a piece.
+ * The piece card adds an edition to its own piece through its own drop target.
  *
  * Server-side the ingestion Celery chain runs per upload. Once an upload
- * completes the row appears in the Archive list (or its editions sub-list
- * inside the editor) via the auto-polling pieces query.
+ * completes the row appears in the Archive list via the auto-polling pieces
+ * query.
  *
  * The Latin pronunciation picked above the zone travels with every file
  * dropped after the pick. The analysis always writes German Latin, so any
@@ -68,14 +67,11 @@ import {
 } from "../hooks/useEditionUploads";
 
 interface EditionUploadZoneProps {
-  /** Pre-attach to an existing piece (used inside the AI Review tab). */
-  readonly pieceId?: string;
   /** Compact variant for inside an existing card (no outer GlassCard / header). */
   readonly compact?: boolean;
 }
 
 export const EditionUploadZone = ({
-  pieceId,
   compact = false,
 }: EditionUploadZoneProps): React.JSX.Element => {
   const { t } = useTranslation();
@@ -87,7 +83,7 @@ export const EditionUploadZone = ({
     clearFinished,
     hasFinished,
     inFlightCount,
-  } = useEditionUploads(pieceId);
+  } = useEditionUploads();
   const [latinSystem, setLatinSystem] = useState<LatinPronunciationCode>(
     DEFAULT_LATIN_PRONUNCIATION,
   );
@@ -109,9 +105,7 @@ export const EditionUploadZone = ({
 
   const zoneTitle = isDragActive
     ? t("archive.upload.drop_active", "Upuść tutaj, by dodać do kolejki")
-    : pieceId
-      ? t("archive.upload.title_existing", "Dodaj kolejne wydanie tego utworu")
-      : t("archive.upload.title", "Przeciągnij PDF-y partytur");
+    : t("archive.upload.title", "Przeciągnij PDF-y partytur");
 
   const dropzone = (
     <>
@@ -182,15 +176,10 @@ export const EditionUploadZone = ({
           </Heading>
         )}
         <Text color="muted" size="sm">
-          {pieceId
-            ? t(
-                "archive.upload.subtitle_existing",
-                "Bärenreiter, IMSLP, własna aranżacja — przeciągnij lub kliknij, by wybrać · max 50 MB",
-              )
-            : t(
-                "archive.upload.subtitle",
-                "lub kliknij, by wybrać. Obsługujemy wiele plików naraz · max 50 MB każdy",
-              )}
+          {t(
+            "archive.upload.subtitle",
+            "lub kliknij, by wybrać. Obsługujemy wiele plików naraz · max 50 MB każdy",
+          )}
         </Text>
       </div>
 

@@ -30,7 +30,7 @@ import { INGESTION_STATUS } from "@/shared/types";
 import { hasPdf, getPiecePdfLinks } from "../constants/piecePdfs";
 import type { EnrichedPiece } from "../types/archive.dto";
 import { usePiece } from "../api/archive.queries";
-import { pieceReviewBreakdown } from "./ProvenanceChip";
+import { pieceReviewBreakdown } from "../constants/pieceProvenance";
 
 import { PieceRowTracks } from "./PieceRowTracks";
 

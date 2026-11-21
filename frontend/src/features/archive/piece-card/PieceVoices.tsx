@@ -7,8 +7,8 @@
  *
  * The piece PATCH replaces every layer at once, so each edit sends the whole
  * list. Edits coalesce: a write takes the newest list when its turn in the
- * piece's queue comes, so a run of stepper taps costs one or two requests and
- * never lands an older count over a newer one.
+ * piece's queue comes, so a run of stepper taps keeps at most one request in
+ * flight and one waiting, and never lands an older count over a newer one.
  */
 
 import { useEffect, useId, useMemo, useRef, useState } from "react";
@@ -139,7 +139,7 @@ export const PieceVoices = ({ piece, autosave }: { piece: Piece; autosave: Piece
   const [opened, setOpened] = useState<ReadonlySet<string>>(() => new Set());
   const latest = useRef<Requirements | null>(null);
   const waiting = useRef(false);
-  const serverRef = useRef(server);
+  const serverRef = useRef<Requirements>(server);
   useEffect(() => {
     serverRef.current = server;
   }, [server]);
@@ -170,13 +170,21 @@ export const PieceVoices = ({ piece, autosave }: { piece: Piece; autosave: Piece
       waiting.current = false;
       const next = latest.current;
       if (!next) return;
-      await autosave.patchPiece({ voice_requirements: [...next] });
+      try {
+        await autosave.patchPiece({ voice_requirements: [...next] });
+      } catch (error) {
+        // Registered inside the queued write, so a write queued behind it (the
+        // publication's check among them) already sees the failure.
+        draft.setDraft(draft.key, { id: barId, label, discard, retry: flush });
+        throw error;
+      }
+      // The server holds `next` now. The effect that reads the refreshed piece
+      // runs only after the next paint, and a tap before it must not build its
+      // edit on the list this write replaced.
+      serverRef.current = next;
       if (latest.current !== next) return;
       discard();
-    }).catch((error: unknown) => {
-      autosave.showSaveError(error);
-      draft.setDraft(draft.key, { id: barId, label, discard, retry: flush });
-    });
+    }).catch(autosave.showSaveError);
   };
 
   const current = () => latest.current ?? serverRef.current;

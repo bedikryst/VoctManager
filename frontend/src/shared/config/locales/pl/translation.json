@@ -418,7 +418,11 @@
     "active": {
       "aria": "Przetwarzanie AI w toku",
       "pages": "str.",
-      "section": "Analiza AI"
+      "section": "Analiza AI",
+      "cancel": "Przerwij przetwarzanie",
+      "cancel_short": "Przerwij",
+      "cancelled": "Przerwano przetwarzanie.",
+      "cancel_failed": "Nie udało się przerwać."
     },
     "bulk": {
       "bar_aria": "Akcje zbiorcze",
@@ -856,7 +860,6 @@
       "retry_draft": "Ponów zapis: {{field}}",
       "discard_draft": "Odrzuć zmianę: {{field}}",
       "year_invalid": "Rok kompozycji: liczba całkowita od 500 do 2100.",
-      "add_edition_hint": "Dodaj kolejne wydanie (Bärenreiter, IMSLP, własna aranżacja)",
       "approve_btn": "Zatwierdź i opublikuj",
       "approve_failed": "Nie udało się zatwierdzić.",
       "approved": "Zatwierdzono — materiały są gotowe do udostępnienia.",
@@ -906,7 +909,6 @@
       "page_count_few": "{{count}} strony",
       "page_count_many": "{{count}} stron",
       "page_count_other": "{{count}} stron",
-      "pdf_download": "Pobierz",
       "pdf_preview_aria": "Podgląd PDF partytury",
       "program_note_section": "Notka programowa",
       "recordings_section": "Nagrania referencyjne",
@@ -982,7 +984,8 @@
       "approve_anyway": "Opublikuj mimo to",
       "score_row": "Partytura",
       "open_short": "Otwórz",
-      "note_approved": "Zatwierdzona"
+      "note_approved": "Zatwierdzona",
+      "note_on_approval": "Notka powstanie sama po zatwierdzeniu utworu. Możesz też wygenerować ją teraz."
     },
     "review": {
       "delete": "Usuń",
@@ -1201,9 +1204,7 @@
       "row_remove_aria": "Usuń {{name}} z listy",
       "section": "Upload partytur",
       "subtitle": "lub kliknij, by wybrać. Obsługujemy wiele plików naraz · max 50 MB każdy",
-      "subtitle_existing": "Bärenreiter, IMSLP, własna aranżacja — przeciągnij lub kliknij, by wybrać · max 50 MB",
       "title": "Przeciągnij PDF-y partytur",
-      "title_existing": "Dodaj kolejne wydanie tego utworu",
       "toast_failed": "Upload nieudany",
       "toast_success": "{{name}} — pipeline uruchomiony",
       "latin_system": "Wymowa łaciny",
@@ -1255,13 +1256,6 @@
       }
     },
     "provenance": {
-      "verified": "Zweryfikowane",
-      "verified_title": "Sprawdzone i poprawione ręcznie.",
-      "ai": "AI · do sprawdzenia",
-      "ai_title": "Wyciągnięte przez AI ({{model}}), niezweryfikowane — sprawdź z PDF i popraw w razie potrzeby.",
-      "canonical": "{{source}} · potwierdzone",
-      "canonical_title": "Potwierdzone przez kanoniczne źródło: {{source}}.",
-      "verify_hint": "Kliknij, aby oznaczyć jako poprawne",
       "verify_aria": "Oznacz jako poprawne: {{label}}"
     },
     "orphans": {

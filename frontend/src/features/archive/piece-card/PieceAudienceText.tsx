@@ -6,7 +6,7 @@
 import { useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import type { Piece, ProgramNote, Translation } from "@/shared/types";
+import { INGESTION_STATUS, type Piece, type ProgramNote, type Translation } from "@/shared/types";
 import { PropertyRow } from "@/shared/ui/composites/PropertyRow";
 import { Badge } from "@/shared/ui/primitives/Badge";
 import { Textarea } from "@/shared/ui/primitives/Textarea";
@@ -116,12 +116,19 @@ export const PieceProgramNote = ({ piece, autosave }: AudienceTextProps) => {
   const create = useCreateProgramNote();
   const [manualOpen, setManualOpen] = useState(false);
   const notes = piece.program_notes ?? [];
+  // Approval writes the note of a piece that has none, so generating one by
+  // hand during the review is a choice, not a step.
+  const writtenOnApproval = notes.length === 0
+    && (piece.editions ?? []).some((edition) => edition.ingestion_status === INGESTION_STATUS.AWAITING);
   return (
     <div className="space-y-3">
       {notes.length > 0 && (
         <ul className="space-y-5">
           {notes.map((note) => <ProgramNoteBlock key={note.id} {...{ note, piece, autosave }} />)}
         </ul>
+      )}
+      {writtenOnApproval && (
+        <Text size="sm" color="muted">{t("archive.piece_card.note_on_approval")}</Text>
       )}
       <ProgramNoteGenerator
         piece={piece}

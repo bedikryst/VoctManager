@@ -17,7 +17,7 @@ import { useTranslation } from "react-i18next";
 import { cn } from "@/shared/lib/utils";
 import { Text } from "@/shared/ui/primitives/typography";
 
-import type { ReviewProgress as ReviewProgressCounts } from "../components/ProvenanceChip";
+import type { ReviewProgress as ReviewProgressCounts } from "../constants/pieceProvenance";
 
 interface ProgressProps {
   readonly progress: ReviewProgressCounts;

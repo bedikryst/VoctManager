@@ -16,7 +16,7 @@ import { useTranslation } from "react-i18next";
 
 import { cn } from "@/shared/lib/utils";
 import type { Piece } from "@/shared/types";
-import { isAiProvenance, pieceFieldProvenance, type ReviewSection } from "../components/ProvenanceChip";
+import { isAiProvenance, pieceFieldProvenance, type ReviewSection } from "../constants/pieceProvenance";
 import { PropertyRow, PROPERTY_CONTROL_CLASS } from "@/shared/ui/composites/PropertyRow";
 import { Select, type SelectOption } from "@/shared/ui/primitives/Select";
 import { Label, Text } from "@/shared/ui/primitives/typography";

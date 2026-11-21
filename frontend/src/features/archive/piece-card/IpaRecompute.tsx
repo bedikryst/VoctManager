@@ -29,7 +29,7 @@ import { Caption, Label } from "@/shared/ui/primitives/typography";
 import type { IpaRecomputeJob, LatinPronunciationCode, Piece } from "@/shared/types";
 
 import { useRecomputeIpa } from "../api/archive.queries";
-import { pieceFieldProvenance } from "../components/ProvenanceChip";
+import { pieceFieldProvenance } from "../constants/pieceProvenance";
 import {
   DEFAULT_LATIN_PRONUNCIATION,
   LATIN_SAMPLE_WORDS,

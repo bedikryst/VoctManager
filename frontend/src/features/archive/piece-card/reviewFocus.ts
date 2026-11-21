@@ -60,11 +60,25 @@ const stepReview = (root: ParentNode, from: Element | null, direction: 1 | -1): 
   return [...confirms].reverse().find((element) => !follows(element)) ?? last;
 };
 
+const isInViewport = (element: HTMLElement): boolean => {
+  const box = element.getBoundingClientRect();
+  return box.bottom > 0 && box.top < window.innerHeight;
+};
+
+/**
+ * The publish action to hand focus to: the one on screen. The header's button
+ * still has a box once it has scrolled away under the sticky index, which then
+ * carries its own.
+ */
+const publishAction = (): HTMLElement | undefined => {
+  const actions = Array.from(document.querySelectorAll<HTMLElement>(APPROVE_SELECTOR)).filter(isLive);
+  return actions.find(isInViewport) ?? actions[0];
+};
+
 /** Focus after a keyboard confirmation: the next unchecked field, else publish. */
 export const advanceReviewFocus = (confirmed: HTMLElement): void => {
   const root = confirmed.closest(ROOT_SELECTOR) ?? document;
-  const next = stepReview(root, confirmed, 1)
-    ?? Array.from(document.querySelectorAll<HTMLElement>(APPROVE_SELECTOR)).find(isLive);
+  const next = stepReview(root, confirmed, 1) ?? publishAction();
   if (next) reveal(next);
 };
 
@@ -93,8 +107,8 @@ interface ReviewKeysOptions {
 }
 
 /**
- * Binds the review keys to the window and returns the same handler for the
- * desk viewer's `claimKey`. It returns true, after preventing the default,
+ * Binds the review keys to the window, in the capture phase, and returns the
+ * same handler for the desk viewer's `claimKey`. It returns true, after preventing the default,
  * only for a key it acted on, so a key it passes over still reaches the
  * annotator.
  */
@@ -139,11 +153,15 @@ export const useReviewKeys = ({ root, score, enabled }: ReviewKeysOptions): ((ev
   }, [enabled, root]);
 
   useEffect(() => {
+    // Captured ahead of the focused control, and kept from it once acted on: a
+    // closed `Select` answers a typed letter by choosing the first option that
+    // starts with it, so a J or K meant for the review would also rewrite the
+    // field it left, and saving that choice would stamp the field verified.
     const onKeyDown = (event: KeyboardEvent): void => {
-      handle(event);
+      if (handle(event)) event.stopPropagation();
     };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
+    window.addEventListener("keydown", onKeyDown, true);
+    return () => window.removeEventListener("keydown", onKeyDown, true);
   }, [handle]);
 
   return handle;

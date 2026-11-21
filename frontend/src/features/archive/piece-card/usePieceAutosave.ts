@@ -12,7 +12,7 @@ import { parseApiError, toastApiError } from "@/shared/api/errors";
 import type { Piece } from "@/shared/types";
 import { archiveKeys, useVerifyPieceField } from "../api/archive.queries";
 import { ArchiveService, type PieceFieldTarget } from "../api/archive.service";
-import { childFieldProvenance, isAiProvenance, pieceFieldProvenance } from "../components/ProvenanceChip";
+import { childFieldProvenance, isAiProvenance, pieceFieldProvenance } from "../constants/pieceProvenance";
 import type { PiecePatchDTO } from "../types/archive.dto";
 
 type EditableFields = Omit<PiecePatchDTO, "starting_pitches" | "voice_requirements">;

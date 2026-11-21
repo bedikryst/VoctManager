@@ -90,6 +90,9 @@ export const SectionIndex = ({
   const linkRefs = useRef(new Map<string, HTMLAnchorElement>());
   const [marker, setMarker] = useState<MarkerBox | null>(null);
   const [hidden, setHidden] = useState<HiddenEdges>({ start: false, end: false });
+  // What the links' boxes depend on. A caller rebuilds `items` on every render,
+  // and re-placing on each would scroll back a row the reader moved by hand.
+  const itemsKey = items.map((item) => `${item.id}\u0000${item.label}\u0000${item.count ?? 0}`).join("\u0001");
 
   useLayoutEffect(() => {
     const row = rowRef.current;
@@ -125,7 +128,7 @@ export const SectionIndex = ({
       row.removeEventListener("scroll", measureEdges);
       observer?.disconnect();
     };
-  }, [activeId, items]);
+  }, [activeId, itemsKey]);
 
   const scrollPage = (direction: 1 | -1): void => {
     const row = rowRef.current;

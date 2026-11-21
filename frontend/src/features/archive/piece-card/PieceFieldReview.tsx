@@ -22,7 +22,7 @@ import { useTranslation } from "react-i18next";
 import { cn } from "@/shared/lib/utils";
 import { Text } from "@/shared/ui/primitives/typography";
 import type { Piece } from "@/shared/types";
-import { childFieldProvenance, isAiProvenance, pieceFieldProvenance } from "../components/ProvenanceChip";
+import { childFieldProvenance, isAiProvenance, pieceFieldProvenance } from "../constants/pieceProvenance";
 import { advanceReviewFocus } from "./reviewFocus";
 import type { PieceAutosave } from "./usePieceAutosave";
 

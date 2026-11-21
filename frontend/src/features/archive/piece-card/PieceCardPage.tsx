@@ -59,7 +59,7 @@ import {
   usePiece,
   usePieces,
 } from "../api/archive.queries";
-import { pieceReviewBreakdown, type ReviewProgress as ReviewProgressCounts } from "../components/ProvenanceChip";
+import { pieceReviewBreakdown, type ReviewProgress as ReviewProgressCounts } from "../constants/pieceProvenance";
 import { pieceFieldSchema } from "./pieceFieldSchema";
 import { DEFAULT_LATIN_PRONUNCIATION } from "../constants/latinPronunciation";
 import { getPiecePdfLinks, getReviewPdf } from "../constants/piecePdfs";
@@ -129,6 +129,26 @@ interface ShownEdition {
 }
 
 /**
+ * Lets a drag reach the page's drop target only when it carries files and
+ * starts over the page itself. The drop target cancels the browser's default
+ * on every drag it sees, which would keep text from being dragged within a
+ * field; and React bubbles events out of portals, so a file let go over an
+ * open dialog would become an edition. Such a file is refused outright, since
+ * once stopped here the document's guard against opening it in the tab never
+ * hears of it.
+ */
+const guardDrag = (event: React.DragEvent<HTMLElement>): void => {
+  const carriesFiles = Array.from(event.dataTransfer.types).includes("Files");
+  const overPage = event.target instanceof Node && event.currentTarget.contains(event.target);
+  if (carriesFiles && overPage) return;
+  if (carriesFiles) {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "none";
+  }
+  event.stopPropagation();
+};
+
+/**
  * Covers the record pane while a file is dragged over the page. It never takes
  * pointer events, so the drop reaches the page's drop target beneath it.
  */
@@ -181,7 +201,7 @@ const PhoneReviewBar = ({
         ref={slotRef}
         role="region"
         aria-label={t("archive.piece_card.review_bar_aria", "Przegląd utworu")}
-        className="fixed inset-x-0 bottom-[var(--nav-dock-h)] z-dock-bar flex items-center gap-4 border-t border-hairline bg-ethereal-alabaster py-2.5 pl-4 pr-3"
+        className="fixed inset-x-0 bottom-(--nav-dock-h) z-dock-bar flex items-center gap-4 border-t border-hairline bg-ethereal-alabaster py-2.5 pl-4 pr-3"
       >
         <CompactReviewProgress progress={progress} />
         <Button
@@ -476,6 +496,10 @@ const PieceCard = ({ id }: { id: string }): React.JSX.Element => {
     <div
       {...dropzone.getRootProps({
         className: "flex flex-col pb-nav-dock lg:h-[calc(100dvh-var(--nav-dock-h))] lg:flex-row lg:pb-0",
+        onDragEnter: guardDrag,
+        onDragOver: guardDrag,
+        onDragLeave: guardDrag,
+        onDrop: guardDrag,
       })}
     >
       <input {...dropzone.getInputProps()} />

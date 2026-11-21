@@ -407,7 +407,11 @@
     "active": {
       "aria": "Traitement IA en cours",
       "pages": "p.",
-      "section": "Analyse IA"
+      "section": "Analyse IA",
+      "cancel": "Interrompre le traitement",
+      "cancel_short": "Interrompre",
+      "cancelled": "Traitement interrompu.",
+      "cancel_failed": "Impossible d’interrompre le traitement."
     },
     "bulk": {
       "bar_aria": "Actions groupées",
@@ -838,7 +842,6 @@
       "retry_draft": "Réessayer l’enregistrement : {{field}}",
       "discard_draft": "Abandonner la modification : {{field}}",
       "year_invalid": "Année de composition : un nombre entier entre 500 et 2100.",
-      "add_edition_hint": "Ajouter une autre édition (Bärenreiter, IMSLP, votre propre arrangement)",
       "approve_btn": "Valider et publier",
       "approve_failed": "Impossible de valider.",
       "approved": "Validé — les documents sont prêts à être partagés.",
@@ -886,7 +889,6 @@
       "open_score": "Ouvrir la partition",
       "page_count_one": "{{count}} page",
       "page_count_other": "{{count}} pages",
-      "pdf_download": "Télécharger",
       "pdf_preview_aria": "Aperçu PDF de la partition",
       "program_note_section": "Note de programme",
       "recordings_section": "Enregistrements de référence",
@@ -960,7 +962,8 @@
       "approve_anyway": "Publier quand même",
       "score_row": "Partition",
       "open_short": "Ouvrir",
-      "note_approved": "Approuvée"
+      "note_approved": "Approuvée",
+      "note_on_approval": "La note de programme sera rédigée automatiquement à l’approbation de l’œuvre. Vous pouvez aussi la générer maintenant."
     },
     "review": {
       "delete": "Supprimer",
@@ -1169,9 +1172,7 @@
       "row_remove_aria": "Retirer {{name}} de la liste",
       "section": "Import de partitions",
       "subtitle": "ou cliquez pour choisir. Plusieurs fichiers à la fois · 50 Mo max chacun",
-      "subtitle_existing": "Bärenreiter, IMSLP, votre propre arrangement — glissez ou cliquez pour choisir · 50 Mo max",
       "title": "Glissez des PDF de partition",
-      "title_existing": "Ajouter une autre édition de cette pièce",
       "toast_failed": "Échec de l'import",
       "toast_success": "{{name}} — pipeline lancé",
       "row_awaiting_short": "L’IA a terminé",
@@ -1227,13 +1228,6 @@
       }
     },
     "provenance": {
-      "verified": "Vérifié",
-      "verified_title": "Vérifié et corrigé manuellement.",
-      "ai": "IA · à vérifier",
-      "ai_title": "Extrait par l'IA ({{model}}), non vérifié — comparez au PDF et corrigez si besoin.",
-      "canonical": "{{source}} · confirmé",
-      "canonical_title": "Confirmé par une source canonique : {{source}}.",
-      "verify_hint": "Cliquez pour marquer comme correct",
       "verify_aria": "Marquer comme correct : {{label}}"
     },
     "orphans": {
