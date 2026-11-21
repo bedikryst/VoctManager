@@ -27,10 +27,13 @@ interface CommitTextProps {
   readonly className?: string;
   readonly readOnly?: boolean;
   readonly ariaLabel?: string;
+  /** What an empty field shows. A labelled row leaves it at "—"; a field with no label beside it says what it holds. */
+  readonly placeholder?: string;
 }
 
 export const CommitText = ({
   id, value, draftField, onCommit, multiline = false, wraps = false, inputMode, className, readOnly, ariaLabel,
+  placeholder = "—",
 }: CommitTextProps) => {
   const { t } = useTranslation();
   const [draft, setDraft] = useState<string | null>(null);
@@ -92,7 +95,7 @@ export const CommitText = ({
     id,
     value: displayed,
     readOnly,
-    placeholder: "—",
+    placeholder,
     "aria-label": ariaLabel,
     "aria-invalid": Boolean(error),
     "aria-describedby": error ? errorId : undefined,

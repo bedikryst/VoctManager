@@ -31,7 +31,7 @@ export const trackSlotOptions = (
   ...voiceLines,
   {
     value: TEMPO_GIUSTO_SLOT,
-    label: t("archive.row_tracks.tempo_giusto", "Tempo giusto"),
+    label: t("archive.tracks.tempo_giusto"),
   },
 ];
 

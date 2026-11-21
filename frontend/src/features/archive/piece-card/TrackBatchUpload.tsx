@@ -11,7 +11,10 @@
  * multipart POST per track and eight of them at once on a phone is how a
  * batch ends with three "network error" rows and no clue which. Failed rows
  * stay in the queue with a retry; the rest leave as they succeed.
- * @module features/archive/components/TrackBatchUpload
+ *
+ * It sits in the card's tracks section and speaks its language: rows between
+ * hairlines, a row's state in its icon and text rather than a tinted box.
+ * @module features/archive/piece-card/TrackBatchUpload
  */
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
@@ -22,9 +25,10 @@ import { AlertCircle, Check, Loader2, RotateCcw, UploadCloud, X } from "lucide-r
 import { parseApiError, resolveErrorCopy } from "@/shared/api/errors";
 import type { VoiceLineOption } from "@/shared/types";
 import { cn } from "@/shared/lib/utils";
+import { PROPERTY_CONTROL_CLASS } from "@/shared/ui/composites/PropertyRow";
 import { Button } from "@/shared/ui/primitives/Button";
 import { Select } from "@/shared/ui/primitives/Select";
-import { Caption, Text } from "@/shared/ui/primitives/typography";
+import { Text } from "@/shared/ui/primitives/typography";
 
 import { useUploadTrack } from "../api/archive.queries";
 import {
@@ -97,13 +101,15 @@ export const TrackBatchUpload = ({
     [voiceLines],
   );
   const slotOptions = useMemo(() => trackSlotOptions(voiceLines, t), [voiceLines, t]);
-  const [entries, setEntries] = useState<BatchEntry[]>([]);
+  // The first files are rows from the first render, so the queue has its
+  // height when the card scrolls to it.
+  const [entries, setEntries] = useState<BatchEntry[]>(() => buildEntries(files, scope, dictionary));
   const [editionId, setEditionId] = useState<string>("");
   const [isRunning, setIsRunning] = useState<boolean>(false);
 
   // Files dropped while the queue is open join it; the rows already in it —
   // uploaded, failed or hand-picked — are never rebuilt from props.
-  const seen = useRef<WeakSet<File>>(new WeakSet());
+  const seen = useRef<WeakSet<File>>(new WeakSet(files));
   useEffect(() => {
     const fresh = files.filter((file) => !seen.current.has(file));
     if (fresh.length === 0) return;
@@ -153,12 +159,7 @@ export const TrackBatchUpload = ({
 
     const succeeded = pending.length - failed;
     if (succeeded > 0) {
-      toast.success(
-        t("archive.row_tracks.batch.toast_success", {
-          defaultValue: "Dodano {{count}} ścieżek",
-          count: succeeded,
-        }),
-      );
+      toast.success(t("archive.tracks.batch.toast_success", { count: succeeded }));
     }
     if (failed === 0) onDone();
   };
@@ -167,22 +168,21 @@ export const TrackBatchUpload = ({
     slotOptions.find((option) => option.value === code)?.label ?? code;
 
   return (
-    <div className="flex flex-col gap-2 rounded-nested border border-ethereal-gold/30 bg-ethereal-gold/5 p-3">
+    <div className="space-y-2 border-t border-hairline py-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <Text size="sm" weight="semibold">
-          {t("archive.row_tracks.batch.title", {
-            defaultValue: "{{count}} plików do wgrania",
-            count: pending.length,
-          })}
+        <Text weight="medium">
+          {t("archive.tracks.batch.title", { count: pending.length })}
         </Text>
         {editions.length > 1 && (
           <Select
             value={editionId}
             onValueChange={setEditionId}
             disabled={isRunning}
-            className="md:w-52"
-            placeholder={t("archive.row_tracks.edition_any", "Wspólne dla wydań")}
-            ariaLabel={t("archive.row_tracks.edition", "Wydanie")}
+            variant="property"
+            className="w-fit max-w-full"
+            placeholder={t("archive.tracks.edition_any")}
+            clearLabel={t("archive.tracks.edition_any")}
+            ariaLabel={t("archive.tracks.edition")}
             options={editions.map((edition) => ({
               value: edition.id,
               label: edition.label,
@@ -192,90 +192,75 @@ export const TrackBatchUpload = ({
       </div>
 
       {unresolved.length > 0 && (
-        <Caption color="muted">
-          {t("archive.row_tracks.batch.unresolved", {
-            defaultValue:
-              "{{count}} plików nie ma jednoznacznego głosu w nazwie — wybierz go ręcznie.",
-            count: unresolved.length,
-          })}
-        </Caption>
+        <Text size="sm" color="muted">
+          {t("archive.tracks.batch.unresolved", { count: unresolved.length })}
+        </Text>
       )}
 
-      <ul role="list" className="flex flex-col gap-1.5">
+      <ul className="border-b border-hairline">
         {entries.map((entry) => {
           const finished = entry.phase === "succeeded";
           return (
             <li
               key={entry.localId}
-              className={cn(
-                "flex flex-col gap-1 rounded-control border px-2.5 py-1.5 md:flex-row md:items-center md:gap-3",
-                finished
-                  ? "border-ethereal-sage/30 bg-ethereal-sage/5"
-                  : entry.phase === "failed"
-                    ? "border-ethereal-crimson/30 bg-ethereal-crimson/5"
-                    : "border-hairline bg-ethereal-alabaster/70",
-              )}
+              className="flex flex-col gap-1 border-t border-hairline py-2 md:flex-row md:items-center md:gap-3"
             >
-              <div className="flex min-w-0 flex-1 items-center gap-2">
+              <div className="flex min-w-0 flex-1 items-start gap-2">
                 {entry.phase === "uploading" && (
-                  <Loader2 size={13} className="shrink-0 animate-spin text-ethereal-gold" aria-hidden="true" />
+                  <Loader2 size={16} className="mt-1 shrink-0 animate-spin text-ethereal-gold" aria-hidden="true" />
                 )}
                 {finished && (
-                  <Check size={13} className="shrink-0 text-ethereal-sage" aria-hidden="true" />
+                  <Check size={16} className="mt-1 shrink-0 text-ethereal-sage" aria-hidden="true" />
                 )}
                 {entry.phase === "failed" && (
-                  <AlertCircle size={13} className="shrink-0 text-ethereal-crimson" aria-hidden="true" />
+                  <AlertCircle size={16} className="mt-1 shrink-0 text-ethereal-crimson" aria-hidden="true" />
                 )}
                 <div className="min-w-0">
-                  <Text size="xs" className="truncate" title={entry.file.name}>
+                  <Text className={cn("wrap-anywhere", finished && "text-ethereal-graphite")}>
                     {entry.file.name}
                   </Text>
                   {entry.error && (
-                    <Caption color="crimson" className="block truncate">
+                    <Text size="sm" color="crimson">
                       {entry.error}
-                    </Caption>
+                    </Text>
                   )}
                   {!entry.voice && entry.resolution.kind === "ambiguous" && (
-                    <Caption color="muted" className="block">
-                      {t("archive.row_tracks.batch.ambiguous", {
-                        defaultValue: "W tym utworze: {{options}} — który?",
+                    <Text size="sm" color="muted">
+                      {t("archive.tracks.batch.ambiguous", {
                         options: entry.resolution.candidates.map(voiceLabel).join(", "),
                       })}
-                    </Caption>
+                    </Text>
                   )}
                 </div>
               </div>
 
               {finished ? (
-                <Caption color="muted" className="shrink-0">
+                <Text size="sm" color="muted" className="shrink-0">
                   {voiceLabel(entry.voice)}
-                </Caption>
+                </Text>
               ) : (
-                <div className="flex shrink-0 items-center gap-1.5">
+                <div className="flex shrink-0 items-center gap-1">
                   <Select
                     value={entry.voice}
                     onValueChange={(value) => patchEntry(entry.localId, { voice: value })}
                     disabled={isRunning}
-                    className="w-40"
-                    placeholder={t("archive.row_tracks.pick", "Wybierz")}
-                    ariaLabel={t("archive.row_tracks.batch.voice_for", {
-                      defaultValue: "Głos dla {{name}}",
-                      name: entry.file.name,
-                    })}
+                    variant="property"
+                    // Under the file name on a phone, its text on the name's edge.
+                    className={cn(PROPERTY_CONTROL_CLASS, "-ml-2 w-48 md:ml-0")}
+                    placeholder={t("archive.tracks.pick")}
+                    ariaLabel={t("archive.tracks.batch.voice_for", { name: entry.file.name })}
                     options={slotOptions}
                   />
                   <Button
                     type="button"
                     variant="ghost"
                     size="sm"
+                    className="min-h-8 px-2"
                     onClick={() => removeEntry(entry.localId)}
                     disabled={isRunning}
-                    aria-label={t("archive.row_tracks.batch.remove", {
-                      defaultValue: "Pomiń {{name}}",
-                      name: entry.file.name,
-                    })}
+                    aria-label={t("archive.tracks.batch.remove", { name: entry.file.name })}
                   >
-                    <X size={13} aria-hidden="true" />
+                    <X size={16} aria-hidden="true" />
                   </Button>
                 </div>
               )}
@@ -284,39 +269,37 @@ export const TrackBatchUpload = ({
         })}
       </ul>
 
-      <div className="flex items-center justify-end gap-1.5">
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          onClick={onDone}
-          disabled={isRunning}
-        >
-          {pending.length === 0
-            ? t("common.actions.close", "Zamknij")
-            : t("common.actions.cancel", "Anuluj")}
-        </Button>
+      <div className="flex flex-wrap gap-1">
         {pending.length > 0 && (
           <Button
             type="button"
+            variant="outline"
             size="sm"
+            casing="sentence"
             onClick={() => void run()}
             disabled={!canRun}
             isLoading={isRunning}
             leftIcon={
               isRunning ? undefined : entries.some((e) => e.phase === "failed") ? (
-                <RotateCcw size={13} aria-hidden="true" />
+                <RotateCcw size={16} aria-hidden="true" />
               ) : (
-                <UploadCloud size={13} aria-hidden="true" />
+                <UploadCloud size={16} aria-hidden="true" />
               )
             }
           >
-            {t("archive.row_tracks.batch.upload", {
-              defaultValue: "Wgraj ({{count}})",
-              count: pending.length,
-            })}
+            {t("archive.tracks.batch.upload", { count: pending.length })}
           </Button>
         )}
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          casing="sentence"
+          onClick={onDone}
+          disabled={isRunning}
+        >
+          {pending.length === 0 ? t("common.actions.close") : t("common.actions.cancel")}
+        </Button>
       </div>
     </div>
   );

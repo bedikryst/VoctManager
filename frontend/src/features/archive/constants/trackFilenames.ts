@@ -5,8 +5,8 @@
  * `(B) Title.mp3`, `(mp3) Title.mp3` — the bracketed prefix is the part, and
  * `(mp3)` is the mix of every voice, i.e. Tutti. `(Tempo giusto)` / `(TG)` is
  * not a voice at all but the target-tempo take, and resolves to its picker
- * slot (see [trackSlots]). Pure functions; [PieceRowTracks] uses them to
- * pre-fill the voice on every file dropped at once.
+ * slot (see [trackSlots]). Pure functions; [TrackBatchUpload] uses them to
+ * pre-fill the voice on every file that arrives at once.
  *
  * A bare family letter (`(B)`) is only unambiguous when the piece has ONE
  * line of that family. With B1 and B2 declared the file is not guessed at —

@@ -31,8 +31,9 @@ import { hasPdf, getPiecePdfLinks } from "../constants/piecePdfs";
 import type { EnrichedPiece } from "../types/archive.dto";
 import { usePiece } from "../api/archive.queries";
 import { pieceReviewBreakdown } from "../constants/pieceProvenance";
-
-import { PieceRowTracks } from "./PieceRowTracks";
+import { PieceTracks } from "../piece-card/PieceTracks";
+import { usePieceAutosave } from "../piece-card/usePieceAutosave";
+import { useTrackBatch } from "../piece-card/useTrackBatch";
 
 interface PieceRowExpandedProps {
   readonly piece: EnrichedPiece;
@@ -54,6 +55,8 @@ export const PieceRowExpanded = ({
   );
   const audioCount = piece.tracks?.length ?? 0;
   const [openEditionId, setOpenEditionId] = useState<string | null>(null);
+  const autosave = usePieceAutosave(String(piece.id));
+  const trackBatch = useTrackBatch();
 
   // Layers in reading order: what holds for the whole piece, then whatever an
   // individual arrangement overrides. A layer's heading is dropped when it is
@@ -251,7 +254,7 @@ export const PieceRowExpanded = ({
                 })}
           </Eyebrow>
         </div>
-        <PieceRowTracks piece={piece} />
+        <PieceTracks piece={piece} autosave={autosave} batch={trackBatch} />
       </div>
 
       {/* Footer CTA — one handoff to the full Piece Card */}

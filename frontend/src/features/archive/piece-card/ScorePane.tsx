@@ -32,7 +32,7 @@ interface ScorePaneProps {
   readonly scorePdf: PiecePdfLink | null;
   /** The page the edition opens at when it comes onto the desk. */
   readonly initialPage: number;
-  /** Opens the file picker of the page's drop target. */
+  /** Opens the page's PDF picker. */
   readonly onAddEdition: () => void;
   readonly annotator: ScoreAnnotatorBindings;
   readonly isWide: boolean;

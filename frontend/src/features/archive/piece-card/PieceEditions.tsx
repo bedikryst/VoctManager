@@ -451,7 +451,7 @@ interface PieceEditionsProps {
   readonly autosave: PieceAutosave;
   readonly desk: EditionDesk;
   readonly uploads: EditionUploads;
-  /** Opens the file picker of the page's drop target. */
+  /** Opens the page's PDF picker. */
   readonly onAddEdition: () => void;
 }
 

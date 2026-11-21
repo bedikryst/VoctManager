@@ -95,14 +95,18 @@ export const useEditionUploads = (pieceId?: string) => {
     [pieceId, uploadEdition, update, t],
   );
 
-  const reject = useCallback((rejections: readonly FileRejection[]): void => {
+  /**
+   * Says why each refused file was refused. `wrongType` names what the target
+   * takes, for a target that takes more than PDFs.
+   */
+  const reject = useCallback((rejections: readonly FileRejection[], wrongType?: string): void => {
     for (const rejection of rejections) {
       const reason = rejection.errors[0];
       const message =
         reason?.code === "file-too-large"
           ? t("archive.upload.error_too_large", "Plik przekracza limit 50 MB")
           : reason?.code === "file-invalid-type"
-            ? t("archive.upload.error_wrong_type", "Tylko pliki PDF są akceptowane")
+            ? (wrongType ?? t("archive.upload.error_wrong_type", "Tylko pliki PDF są akceptowane"))
             : (reason?.message ?? t("archive.upload.error_generic", "Plik odrzucony"));
       toast.error(`${rejection.file.name} — ${message}`);
     }

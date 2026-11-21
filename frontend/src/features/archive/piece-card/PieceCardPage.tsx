@@ -27,8 +27,13 @@
  * of the list it walks.
  *
  * The desk shows the edition under review, or the primary one, until the
- * edition list or a movement's page link asks for another. A PDF dragged over
- * the page lands on a drop target over the record pane and joins the list.
+ * edition list or a movement's page link asks for another.
+ *
+ * The page is the card's one drop target. A file dragged over it lands on a
+ * target over the record pane, which sends each file where its type belongs: a
+ * PDF joins the edition list, an audio file the tracks section's queue, and
+ * the record scrolls to the tracks. One target, because a second one inside it
+ * would fire with it, and a take would arrive refused as "PDF only" as well.
  *
  * Mounted at `/panel/archive-management/:id` with a bleed handle, so the shell
  * leaves the whole surface to it. Default export: lazily loaded by App.tsx.
@@ -36,7 +41,7 @@
  */
 
 import React, { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
-import { useDropzone, type FileRejection } from "react-dropzone";
+import { useDropzone, type DropzoneOptions, type FileRejection } from "react-dropzone";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
@@ -83,13 +88,21 @@ import { CompactReviewProgress, ReviewBar, ReviewProgress, useReviewSentence } f
 import { PieceEditions, uploadAsksPronunciation, type EditionDesk } from "./PieceEditions";
 import { usePieceFieldReview } from "./PieceFieldReview";
 import { PieceNav } from "./PieceNav";
-import { PieceProperties, recordSections } from "./PieceProperties";
+import { PieceProperties, recordSections, sectionAnchor } from "./PieceProperties";
+import { PieceTracks } from "./PieceTracks";
 import { ScorePane } from "./ScorePane";
 import { pieceSequence } from "./pieceSequence";
 import { focusFirstUnchecked, useReviewKeys } from "./reviewFocus";
 import { findNextAwaiting } from "./reviewQueue";
 import { usePieceAutosave } from "./usePieceAutosave";
 import { useScorePane } from "./useScorePane";
+import { AUDIO_ACCEPT, isAudioFile, useTrackBatch } from "./useTrackBatch";
+
+/** The page takes scores and tracks alike, and routes each file by its type. */
+const CARD_DROP_OPTIONS = {
+  ...SCORE_DROP_OPTIONS,
+  accept: { ...SCORE_DROP_OPTIONS.accept, ...AUDIO_ACCEPT },
+} satisfies DropzoneOptions;
 
 /** Height of the phone's top bar, which the title has to clear to count as gone. */
 const TOP_BAR_CLEARANCE = "-52px 0px 0px 0px";
@@ -146,7 +159,7 @@ interface ShownEdition {
  * starts over the page itself. The drop target cancels the browser's default
  * on every drag it sees, which would keep text from being dragged within a
  * field; and React bubbles events out of portals, so a file let go over an
- * open dialog would become an edition. Such a file is refused outright, since
+ * open dialog would land on the card. Such a file is refused outright, since
  * once stopped here the document's guard against opening it in the tab never
  * hears of it.
  */
@@ -322,17 +335,23 @@ const PieceCard = ({ id }: { id: string }): React.JSX.Element => {
     : null;
 
   const uploads = useEditionUploads(id);
+  const trackBatch = useTrackBatch();
   const { reject: rejectFiles, add: addFiles } = uploads;
+  const { add: addTracks } = trackBatch;
   const asksPronunciation = piece ? uploadAsksPronunciation(piece) : false;
-  const onDrop = useCallback((accepted: File[], rejections: FileRejection[]): void => {
-    rejectFiles(rejections);
-    addFiles(accepted, asksPronunciation ? null : DEFAULT_LATIN_PRONUNCIATION);
-  }, [rejectFiles, addFiles, asksPronunciation]);
-  const dropzone = useDropzone({
+  const addScores = useCallback((files: readonly File[]): void => {
+    addFiles(files, asksPronunciation ? null : DEFAULT_LATIN_PRONUNCIATION);
+  }, [addFiles, asksPronunciation]);
+  // "Dodaj wydanie" opens a picker of PDFs alone; only a drop takes both kinds.
+  const editionPicker = useDropzone({
     ...SCORE_DROP_OPTIONS,
-    onDrop,
+    onDrop: (accepted: File[], rejections: FileRejection[]): void => {
+      rejectFiles(rejections);
+      addScores(accepted);
+    },
     noClick: true,
     noKeyboard: true,
+    noDrag: true,
   });
   // Conductor markup on the desk. Idle on a phone, where the stand carries
   // its own annotator.
@@ -381,6 +400,40 @@ const PieceCard = ({ id }: { id: string }): React.JSX.Element => {
     ids: sections.map((entry) => entry.anchor),
     root: isTwoPane ? recordPane : null,
     offset: isTwoPane ? SPY_LINE_DESKTOP_PX : SPY_LINE_PHONE_PX,
+  });
+  const pinSection = spy.pin;
+  const goToSection = useCallback((anchor: string): void => {
+    const target = document.getElementById(anchor);
+    if (!target) return;
+    pinSection(anchor);
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    target.scrollIntoView({ block: "start", behavior: reduce ? "auto" : "smooth" });
+    target.querySelector<HTMLElement>("h2")?.focus({ preventScroll: true });
+  }, [pinSection]);
+
+  const wrongType = t("archive.piece_card.drop_wrong_type");
+  const revealTracks = useRef(false);
+  const onDrop = useCallback((accepted: File[], rejections: FileRejection[]): void => {
+    rejectFiles(rejections, wrongType);
+    addScores(accepted.filter((file) => !isAudioFile(file)));
+    const tracks = accepted.filter(isAudioFile);
+    if (tracks.length === 0) return;
+    addTracks(tracks);
+    revealTracks.current = true;
+  }, [rejectFiles, wrongType, addScores, addTracks]);
+  // The queue opens far down the record, out of sight: without the scroll the
+  // drop looks ignored. It runs once the queue is on the page, which lengthens
+  // a short record enough for the section to reach the top.
+  useEffect(() => {
+    if (!revealTracks.current) return;
+    revealTracks.current = false;
+    goToSection(sectionAnchor("tracks"));
+  }, [trackBatch.files, goToSection]);
+  const dropzone = useDropzone({
+    ...CARD_DROP_OPTIONS,
+    onDrop,
+    noClick: true,
+    noKeyboard: true,
   });
 
   if (isLoading || !piece) {
@@ -451,15 +504,6 @@ const PieceCard = ({ id }: { id: string }): React.JSX.Element => {
       countLabel: count ? t("archive.piece_card.index_unchecked", { count }) : undefined,
     };
   });
-  const goToSection = (anchor: string): void => {
-    const target = document.getElementById(anchor);
-    if (!target) return;
-    spy.pin(anchor);
-    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    target.scrollIntoView({ block: "start", behavior: reduce ? "auto" : "smooth" });
-    target.querySelector<HTMLElement>("h2")?.focus({ preventScroll: true });
-  };
-
   // The published piece leaves the queue but is still in the list fetched
   // before it, so the queue's next is the one after it; a library list goes on
   // to its next row. At the end of either the card returns to the library.
@@ -529,6 +573,7 @@ const PieceCard = ({ id }: { id: string }): React.JSX.Element => {
       })}
     >
       <input {...dropzone.getInputProps()} />
+      <input {...editionPicker.getInputProps()} />
       {/* The desk runs under the floating rail to the window's edge, so the
           rail floats on it and the page centres in the room right of it. */}
       <div
@@ -550,7 +595,7 @@ const PieceCard = ({ id }: { id: string }): React.JSX.Element => {
               pieceTitle={piece.title}
               scorePdf={scorePdf}
               initialPage={deskStartPage}
-              onAddEdition={dropzone.open}
+              onAddEdition={editionPicker.open}
               annotator={{ ...annotator, claimKey: claimDeskKey }}
               isWide={scorePane.isWide}
               canToggleWide={scorePane.canToggleWide}
@@ -732,13 +777,14 @@ const PieceCard = ({ id }: { id: string }): React.JSX.Element => {
                   isReviewing={isReviewing}
                   autosave={autosave}
                   score={scorePdf ? { editionId: scorePdf.id, editions: pdfLinks, show: showEdition } : undefined}
+                  tracks={<PieceTracks piece={piece} autosave={autosave} batch={trackBatch} />}
                   editions={
                     <PieceEditions
                       piece={piece}
                       autosave={autosave}
                       desk={desk}
                       uploads={uploads}
-                      onAddEdition={dropzone.open}
+                      onAddEdition={editionPicker.open}
                     />
                   }
                 />

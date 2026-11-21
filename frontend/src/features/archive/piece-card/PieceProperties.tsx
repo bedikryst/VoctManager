@@ -45,7 +45,7 @@ interface PiecePropertiesProps {
 
 export type RecordSectionId =
   | "properties" | "voices" | "text" | "translations"
-  | "movements" | "program-note" | "recordings" | "editions";
+  | "movements" | "program-note" | "recordings" | "tracks" | "editions";
 
 export interface RecordSectionEntry {
   readonly id: RecordSectionId;
@@ -58,12 +58,15 @@ export interface RecordSectionEntry {
   readonly review: ReviewSection | null;
 }
 
+/** The element id a section is rendered under. */
+export const sectionAnchor = (id: RecordSectionId): string => `record-${id}`;
+
 const section = (
   id: RecordSectionId,
   titleKey: string,
   review: ReviewSection | null = null,
   indexKey?: string,
-): RecordSectionEntry => ({ id, anchor: `record-${id}`, titleKey, review, indexKey });
+): RecordSectionEntry => ({ id, anchor: sectionAnchor(id), titleKey, review, indexKey });
 
 /** The record's sections in reading order: content first, files last. */
 export const recordSections = (piece: Piece): readonly RecordSectionEntry[] => [
@@ -77,6 +80,7 @@ export const recordSections = (piece: Piece): readonly RecordSectionEntry[] => [
   section("movements", "archive.piece_card.movements_section", "movements"),
   section("program-note", "archive.piece_card.program_note_section", null, "archive.piece_card.index.program_note"),
   section("recordings", "archive.piece_card.recordings_section", null, "archive.piece_card.index.recordings"),
+  section("tracks", "archive.piece_card.tracks_section", null, "archive.piece_card.index.tracks"),
   section("editions", "archive.piece_card.editions_section", null, "archive.piece_card.index.editions"),
 ];
 
@@ -204,9 +208,13 @@ const MissingProperties = ({ fields, onAdd }: {
   );
 };
 
-export const PieceProperties = ({ piece, autosave, score, editions, isReviewing }: PiecePropertiesProps & {
+export const PieceProperties = ({ piece, autosave, score, tracks, editions, isReviewing }: PiecePropertiesProps & {
   readonly score?: ComponentProps<typeof PieceMovements>["score"];
-  /** The edition list, owned by the page because its drop target covers the page. */
+  /**
+   * The tracks and the edition list, owned by the page because its drop
+   * target covers the page and hands each its files.
+   */
+  readonly tracks: ReactNode;
   readonly editions: ReactNode;
   readonly isReviewing: boolean;
 }) => {
@@ -355,6 +363,7 @@ export const PieceProperties = ({ piece, autosave, score, editions, isReviewing 
     movements: <PieceMovements piece={piece} autosave={autosave} score={score} />,
     "program-note": <PieceProgramNote piece={piece} autosave={autosave} />,
     recordings: <PieceRecordings piece={piece} autosave={autosave} />,
+    tracks,
     editions,
   };
 
