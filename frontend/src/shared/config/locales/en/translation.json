@@ -635,103 +635,13 @@
       "voicing_token": "Voicing: {{voicing}}"
     },
     "form": {
-      "actions": {
-        "add_new": "+ Add New",
-        "back_to_search": "Back to Search",
-        "save_add": "Save and Add Another",
-        "save_changes": "Save Changes",
-        "save_close": "Save and Close"
-      },
-      "add_new_composer": "Add new",
-      "arranger_placeholder": "e.g. John Rutter",
-      "back_to_picker": "Pick from list",
-      "composer": {
-        "unknown": "— Traditional / Unknown —"
-      },
-      "composer_birth": "Birth yr.",
-      "composer_death": "Death yr.",
-      "composer_first": "First name",
-      "composer_last": "Surname *",
       "composer_none": "— Traditional / unknown —",
       "decrement": "Decrease",
-      "description_placeholder": "Anything worth remembering about this piece.",
-      "descriptions": {
-        "divisi": "Select voice parts and define the minimum number of singers required to validate staffing gaps in micro-casting mode."
-      },
-      "divisi_hint": "Click a voice to add it. The number says how many singers this part needs.",
-      "duration_mins": "Minutes",
-      "duration_secs": "Seconds",
-      "empty": {
-        "requirements": "No requirements defined."
-      },
-      "epoch_pick": "— select —",
       "fields": {
-        "arranger": "Arranger",
-        "composer": "Composer",
-        "composition_year": "Composition Year",
-        "description": "Conductor's notes (internal)",
-        "divisi": "Divisi (optional)",
-        "duration": "Estimated Duration",
-        "epoch": "Musical Period",
-        "language": "Language",
-        "lyrics": "Original text",
-        "lyrics_original": "Original Lyrics",
-        "lyrics_translation": "Translation (Notes)",
-        "reference_spotify": "Spotify Reference",
-        "reference_youtube": "YouTube Reference",
-        "sheet_music": "Score / Sheet Music (Optional PDF)",
-        "title": "Piece Title *",
-        "voicing": "Voicing (Traditional Notation)",
-        "year": "Year composed"
+        "composer": "Composer"
       },
       "increment": "Increase",
-      "lyrics_placeholder": "Paste the piece's text — AI will add IPA and translations after you upload the PDF in review mode.",
-      "placeholders": {
-        "arranger": "e.g., John Rutter",
-        "composer_birth_year": "Birth year",
-        "composer_death_year": "Death year",
-        "composer_first_name": "First name",
-        "composer_last_name": "Last name *",
-        "composer_search": "Search the list (or leave empty)",
-        "composition_year": "e.g., 1741",
-        "duration_minutes": "Minutes",
-        "duration_seconds": "Seconds",
-        "epoch": "— Select period —",
-        "language": "e.g., Latin",
-        "lyrics_original": "Paste the original lyrics...",
-        "lyrics_translation": "Paste the translation...",
-        "reference_spotify": "https://open.spotify.com/track/...",
-        "reference_youtube": "https://youtube.com/watch?v=...",
-        "title": "e.g., Lacrimosa",
-        "voicing": "e.g., SSAATTBB, Choir + Soloists"
-      },
       "remove_divisi": "Remove",
-      "section": {
-        "lyrics": "Text and notes",
-        "performance": "Performance requirements"
-      },
-      "sections": {
-        "divisi": "Cast Algorithm (Divisi)",
-        "materials": "Materials and Texts",
-        "requirements": "Performance Requirements"
-      },
-      "status": {
-        "sheet_music_attached": "Sheet music is already attached in the database."
-      },
-      "title_placeholder": "e.g. Lacrimosa",
-      "toast": {
-        "composer_required": "Composer name is required.",
-        "create_success": "Piece added successfully.",
-        "creating": "Adding piece to archive...",
-        "save_error_desc": "Check the data and try again.",
-        "save_error_title": "Save error.",
-        "update_success": "Changes have been saved.",
-        "updating": "Updating metadata..."
-      },
-      "units": {
-        "minutes_short": "min",
-        "seconds_short": "sec"
-      },
       "epochs": {
         "med": "Medieval",
         "ren": "Renaissance",
@@ -743,10 +653,7 @@
         "pop": "Popular",
         "folk": "Folk / Traditional",
         "oth": "Other"
-      },
-      "language_pick": "— select —",
-      "divisi_hint_editions": "Tap a voice to add it. An edition with its own divisi replaces the shared one — leave it empty to inherit the shared voices.",
-      "divisi_layer_shared": "Shared across editions"
+      }
     },
     "hero": {
       "badge": "Archive Operations",
@@ -774,13 +681,15 @@
       "pieces": "Pieces"
     },
     "new_piece": {
-      "back": "Library",
-      "composer_required": "The composer's surname is required.",
-      "submit": "Add to archive",
-      "title": "Add a new piece",
-      "toast_creating": "Adding piece…",
-      "toast_error": "Couldn't add the piece.",
-      "toast_success": "Piece added."
+      "title": "New piece",
+      "hint": "You fill in the rest on the piece card.",
+      "title_label": "Title",
+      "similar_one": "A similar title is already in the library",
+      "similar_other": "{{count}} similar titles are already in the library",
+      "similar_aria": "Similar titles in the library",
+      "more": "and {{count}} more",
+      "submit": "Create",
+      "error": "Couldn't create the piece."
     },
     "progress": {
       "preparing": "Preparing the document…",

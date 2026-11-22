@@ -476,6 +476,32 @@ class UpdatePieceProvenanceTests(APITestCase):
         )
 
 
+class CreatePieceByTitleTests(APITestCase):
+    """POST /api/pieces/ with a title alone: the library's new-piece dialog
+    sends nothing else and leaves every other field to the piece card.
+    """
+
+    def setUp(self) -> None:
+        manager = User.objects.create_user(username="mgr", email="mgr@test.pl", password="pw123456")
+        UserProfile.objects.create(user=manager, role=AppRole.MANAGER)
+        self.client.force_authenticate(manager)
+
+    def test_title_alone_creates_an_empty_piece(self) -> None:
+        resp = self.client.post("/api/pieces/", {"title": "Gaudete"}, format="json")
+
+        self.assertEqual(resp.status_code, 201, resp.content)
+        piece = Piece.objects.get(pk=resp.json()["id"])
+        self.assertEqual(piece.title, "Gaudete")
+        self.assertIsNone(piece.composer)
+        self.assertEqual(piece.voicing, "")
+        self.assertIsNone(piece.composition_year)
+        self.assertFalse(piece.voice_requirements.exists())
+
+    def test_blank_title_is_refused(self) -> None:
+        resp = self.client.post("/api/pieces/", {"title": "  "}, format="json")
+        self.assertEqual(resp.status_code, 400)
+
+
 class BulkVoiceLayoutEndpointTests(APITestCase):
     """PUT /api/pieces/voice-requirements/ stamps one piece-wide divisi onto
     many pieces at once. It replaces only the piece-wide layer — an edition's

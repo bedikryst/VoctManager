@@ -17,6 +17,14 @@ import type { Piece } from "@/shared/types";
 
 export const LIBRARY_PATH = "/panel/archive-management";
 
+/**
+ * `?nowy=1` arrives at the library with the new-piece dialog open: the way in
+ * from `/new`, which `App.tsx` redirects here. It is read once, on arrival; the
+ * library's filter sync then drops it from the URL, so a reload or a way back
+ * does not reopen the dialog.
+ */
+export const NEW_PIECE_PARAM = "nowy";
+
 export interface LibraryFilters {
   readonly search: string;
   readonly epoch: string;

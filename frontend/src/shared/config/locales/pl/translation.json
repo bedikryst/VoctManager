@@ -658,103 +658,13 @@
       "voicing_token": "Obsada: {{voicing}}"
     },
     "form": {
-      "actions": {
-        "add_new": "+ Dodaj nowego",
-        "back_to_search": "Wróć do wyszukiwarki",
-        "save_add": "Zapisz i dodaj kolejny",
-        "save_changes": "Zapisz zmiany",
-        "save_close": "Zapisz i zamknij"
-      },
-      "add_new_composer": "Dodaj nowego",
-      "arranger_placeholder": "np. John Rutter",
-      "back_to_picker": "Wybierz z listy",
-      "composer": {
-        "unknown": "— Tradycyjny / Nieznany —"
-      },
-      "composer_birth": "Rok ur.",
-      "composer_death": "Rok śm.",
-      "composer_first": "Imię",
-      "composer_last": "Nazwisko *",
       "composer_none": "— Tradycyjny / nieznany —",
       "decrement": "Zmniejsz",
-      "description_placeholder": "Cokolwiek warto pamiętać o tym utworze.",
-      "descriptions": {
-        "divisi": "Wybierz głosy i ustal minimalną ilość śpiewaków do weryfikacji braków kadrowych w trybie mikro-obsady."
-      },
-      "divisi_hint": "Kliknij głos, by dodać. Liczba mówi ilu śpiewaków potrzeba na tę partię.",
-      "duration_mins": "Minuty",
-      "duration_secs": "Sekundy",
-      "empty": {
-        "requirements": "Brak zdefiniowanych wymagań."
-      },
-      "epoch_pick": "— wybierz —",
       "fields": {
-        "arranger": "Aranżer",
-        "composer": "Kompozytor",
-        "composition_year": "Rok powstania",
-        "description": "Notatki dyrygenta (wewnętrzne)",
-        "divisi": "Divisi (opcjonalnie)",
-        "duration": "Szacowany czas trwania",
-        "epoch": "Epoka muzyczna",
-        "language": "Język",
-        "lyrics": "Tekst oryginalny",
-        "lyrics_original": "Tekst oryginalny",
-        "lyrics_translation": "Tłumaczenie (notatki)",
-        "reference_spotify": "Referencja Spotify",
-        "reference_youtube": "Referencja YouTube",
-        "sheet_music": "Partytura / nuty (opcjonalnie PDF)",
-        "title": "Tytuł utworu *",
-        "voicing": "Obsada wokalna (zapis tradycyjny)",
-        "year": "Rok powstania"
+        "composer": "Kompozytor"
       },
       "increment": "Zwiększ",
-      "lyrics_placeholder": "Wklej tekst utworu — IPA i tłumaczenia uzupełni AI po wgraniu PDF-u w trybie weryfikacji.",
-      "placeholders": {
-        "arranger": "np. John Rutter",
-        "composer_birth_year": "Rok ur.",
-        "composer_death_year": "Rok śm.",
-        "composer_first_name": "Imię",
-        "composer_last_name": "Nazwisko *",
-        "composer_search": "Szukaj na liście (lub zostaw puste)",
-        "composition_year": "np. 1741",
-        "duration_minutes": "Minuty",
-        "duration_seconds": "Sekundy",
-        "epoch": "— Wybierz epokę —",
-        "language": "np. Łacina",
-        "lyrics_original": "Wklej oryginalny tekst utworu...",
-        "lyrics_translation": "Wklej polskie tłumaczenie...",
-        "reference_spotify": "https://open.spotify.com/track/...",
-        "reference_youtube": "https://youtube.com/watch?v=...",
-        "title": "np. Lacrimosa",
-        "voicing": "np. SSAATTBB, Chór + Soliści"
-      },
       "remove_divisi": "Usuń",
-      "section": {
-        "lyrics": "Tekst i notatki",
-        "performance": "Wymagania wykonawcze"
-      },
-      "sections": {
-        "divisi": "Algorytm obsady (Divisi)",
-        "materials": "Materiały i teksty",
-        "requirements": "Wymagania wykonawcze"
-      },
-      "status": {
-        "sheet_music_attached": "Dokument nutowy jest już załączony w bazie."
-      },
-      "title_placeholder": "np. Lacrimosa",
-      "toast": {
-        "composer_required": "Nazwisko kompozytora jest wymagane.",
-        "create_success": "Utwór dodany pomyślnie.",
-        "creating": "Dodawanie utworu do archiwum...",
-        "save_error_desc": "Sprawdź poprawność danych i spróbuj ponownie.",
-        "save_error_title": "Błąd zapisu.",
-        "update_success": "Zmiany zostały zapisane.",
-        "updating": "Aktualizowanie metadanych..."
-      },
-      "units": {
-        "minutes_short": "min",
-        "seconds_short": "sek"
-      },
       "epochs": {
         "med": "Średniowiecze",
         "ren": "Renesans",
@@ -766,10 +676,7 @@
         "pop": "Rozrywka",
         "folk": "Folk / Ludowa",
         "oth": "Inne"
-      },
-      "language_pick": "— wybierz —",
-      "divisi_hint_editions": "Kliknij głos, by dodać. Wydanie z własnym podziałem zastępuje wspólny — zostaw puste, żeby odziedziczyło wspólne głosy.",
-      "divisi_layer_shared": "Wspólne dla wydań"
+      }
     },
     "hero": {
       "badge": "Operacje Archiwum",
@@ -797,13 +704,17 @@
       "pieces": "Utwory"
     },
     "new_piece": {
-      "back": "Biblioteka",
-      "composer_required": "Nazwisko kompozytora jest wymagane.",
-      "submit": "Dodaj do archiwum",
-      "title": "Dodaj nowy utwór",
-      "toast_creating": "Dodawanie utworu…",
-      "toast_error": "Nie udało się dodać utworu.",
-      "toast_success": "Utwór dodany."
+      "title": "Nowy utwór",
+      "hint": "Resztę danych uzupełnisz na karcie utworu.",
+      "title_label": "Tytuł",
+      "similar_one": "W bibliotece jest już podobny tytuł",
+      "similar_few": "W bibliotece są już {{count}} podobne tytuły",
+      "similar_many": "W bibliotece jest już {{count}} podobnych tytułów",
+      "similar_other": "W bibliotece jest już {{count}} podobnych tytułów",
+      "similar_aria": "Podobne tytuły w bibliotece",
+      "more": "i jeszcze {{count}}",
+      "submit": "Utwórz",
+      "error": "Nie udało się utworzyć utworu."
     },
     "progress": {
       "preparing": "Przygotowuję dokument…",

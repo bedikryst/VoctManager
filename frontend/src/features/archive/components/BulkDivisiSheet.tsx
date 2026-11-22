@@ -208,7 +208,6 @@ export const BulkDivisiSheet = ({
           voiceLines={voiceLines}
           requirements={draft.requirements}
           editionId={null}
-          showHeading={false}
           addRequirement={draft.addRequirement}
           adjustRequirement={draft.adjustRequirement}
           removeRequirement={draft.removeRequirement}

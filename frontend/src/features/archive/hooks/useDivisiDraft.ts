@@ -1,9 +1,8 @@
 /**
  * @file useDivisiDraft.ts
  * @description Local draft of a divisi list plus the three mutators
- * [DivisiEditor] expects. Owned by whichever surface edits a divisi before
- * saving it as one act: the manual-create form ([usePieceFormState]) and the
- * bulk layout sheet ([BulkDivisiSheet]).
+ * [DivisiEditor] expects. Owned by a surface that edits a divisi before saving
+ * it as one act: the library's bulk layout sheet ([BulkDivisiSheet]).
  * @module features/archive/hooks/useDivisiDraft
  */
 

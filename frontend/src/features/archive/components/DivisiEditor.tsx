@@ -1,12 +1,13 @@
 /**
  * @file DivisiEditor.tsx
  * @description Divisi (voice-requirements) editor for ONE arrangement layer:
- * tap a voice line to add it, then set how many singers that part needs.
- * [DivisiSection] stacks one of these per layer; [PieceFormBody] (create) and
- * the Piece Card (edit) both go through that.
+ * tap a voice line to add it, then set how many singers that part needs. The
+ * library's bulk layout sheet ([BulkDivisiSheet]) writes one layout to many
+ * pieces through it, under its own heading; the piece card edits a piece's
+ * divisi in [PieceVoices] and takes only [DIVISI_LINES] from here.
  *
  * Purely controlled — the parent owns the requirements list and the mutators
- * (from [usePieceFormState] or an equivalent), so this component only renders.
+ * ([useDivisiDraft]), so this component only renders.
  * @module features/archive/components/DivisiEditor
  */
 
@@ -16,8 +17,7 @@ import { Minus, Plus, X } from "lucide-react";
 
 import type { VoiceLine, VoiceLineOption } from "@/shared/types";
 import { collapseVoiceLabels } from "@/shared/lib/voiceLabels";
-import { GlossaryTerm } from "@/shared/ui/composites/glossary/GlossaryTerm";
-import { Caption, Eyebrow, Text } from "@/shared/ui/primitives/typography";
+import { Eyebrow, Text } from "@/shared/ui/primitives/typography";
 
 import type { VoiceRequirementDTO } from "../types/archive.dto";
 
@@ -51,8 +51,6 @@ interface DivisiEditorProps {
   readonly requirements: VoiceRequirementDTO[];
   /** Arrangement this editor writes to; `null` = the piece-wide layer. */
   readonly editionId?: string | null;
-  /** Hidden when [DivisiSection] already labelled the layer above. */
-  readonly showHeading?: boolean;
   readonly addRequirement: (
     voiceLine: VoiceLine,
     editionId?: string | null,
@@ -66,7 +64,6 @@ export const DivisiEditor = ({
   voiceLines,
   requirements,
   editionId = null,
-  showHeading = true,
   addRequirement,
   adjustRequirement,
   removeRequirement,
@@ -96,21 +93,6 @@ export const DivisiEditor = ({
 
   return (
     <div>
-      {showHeading && (
-        <>
-          <Eyebrow color="muted" className="mb-1 block">
-            <GlossaryTerm term="divisi">
-              {t("archive.form.fields.divisi", "Divisi (opcjonalnie)")}
-            </GlossaryTerm>
-          </Eyebrow>
-          <Caption color="muted" className="mb-3 block">
-            {t(
-              "archive.form.divisi_hint",
-              "Kliknij głos, by dodać. Liczba mówi ilu śpiewaków potrzeba na tę partię.",
-            )}
-          </Caption>
-        </>
-      )}
       <div className="flex flex-wrap gap-2">
         {availableLines.map((vl) => (
           <button

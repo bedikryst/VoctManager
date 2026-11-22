@@ -191,9 +191,6 @@ const ArchiveManagement = lazyWithPreload(
 const PieceCardPage = lazyWithPreload(
   () => import("@features/archive/piece-card/PieceCardPage"),
 );
-const ArchiveNewPiecePage = lazyWithPreload(
-  () => import("@features/archive/ArchiveNewPiecePage"),
-);
 const ArchiveComposersPage = lazyWithPreload(
   () => import("@features/archive/ArchiveComposersPage"),
 );
@@ -293,7 +290,6 @@ const PANEL_ROUTE_PRELOADERS: readonly DashboardRoutePreloader[] = [
   { scope: "manager", preload: ProjectDetailsPage.preload },
   { scope: "manager", preload: ArchiveManagement.preload },
   { scope: "manager", preload: PieceCardPage.preload },
-  { scope: "manager", preload: ArchiveNewPiecePage.preload },
   { scope: "manager", preload: ArchiveComposersPage.preload },
   { scope: "manager", preload: CrewManagement.preload },
   { scope: "manager", preload: LogisticsLocationsPage.preload },
@@ -455,10 +451,12 @@ export const router = createBrowserRouter(
               element={<ArchiveComposersPage />}
               handle={PLAIN_ROUTE_HANDLE}
             />
+            {/* A new piece is a dialog over the library (`NEW_PIECE_PARAM` in
+                libraryScope.ts). The route stays, or `:id` below would read
+                "new" as a piece id. */}
             <Route
               path="archive-management/new"
-              element={<ArchiveNewPiecePage />}
-              handle={PLAIN_ROUTE_HANDLE}
+              element={<Navigate to="/panel/archive-management?nowy=1" replace />}
             />
             <Route
               path="archive-management/:id"

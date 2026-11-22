@@ -3,7 +3,8 @@
  * @description True-empty-state for a fresh archive (zero pieces ever).
  * Replaces the panel-stack noise (decorative metrics + filters + empty list)
  * with a single welcoming surface: big drop zone front-and-centre, plus a
- * secondary "add manually" escape hatch for the folk-song / no-PDF case.
+ * secondary "add manually" escape hatch for the folk-song / no-PDF case, which
+ * opens the new-piece dialog.
  *
  * Conductor mental model: "First time here — what do I do?" Answer: drag a
  * PDF in. No filters to navigate, no metrics to puzzle over.
@@ -59,6 +60,7 @@ export const ArchiveWelcomeState = ({
         <Eyebrow color="muted">{t("archive.welcome.or", "Albo")}</Eyebrow>
         <Button
           variant="outline"
+          casing="sentence"
           onClick={onAddManually}
           leftIcon={<Plus size={16} aria-hidden="true" />}
         >

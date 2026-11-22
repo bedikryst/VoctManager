@@ -5,7 +5,8 @@
  * read and edited. The list itself edits nothing but the selection.
  *
  * Two ways in: "Wgraj PDF" opens the upload drawer, the common path, and
- * "Dodaj ręcznie" opens `/new`. Uploads the AI is still reading, and those it
+ * "Dodaj ręcznie" opens the new-piece dialog, which asks for a title and hands
+ * the piece to its card. Uploads the AI is still reading, and those it
  * gave up on before they became a piece, stand above the list as their own
  * sections. "Zaznacz wiele" turns the rows into toggles for the one bulk act,
  * a voice layout written to many pieces. A fresh library shows the welcome
@@ -45,12 +46,17 @@ import { StatLine, type StatLineItem } from "@/shared/ui/composites/StatLine";
 import { ArchiveWelcomeState } from "./components/ArchiveWelcomeState";
 import { BulkDivisiSheet } from "./components/BulkDivisiSheet";
 import { EditionUploadDrawer } from "./components/EditionUploadDrawer";
+import { NewPieceDialog } from "./components/NewPieceDialog";
 import { OrphanIngestionsPanel } from "./components/OrphanIngestionsPanel";
 import { PieceBulkBar } from "./components/PieceBulkBar";
 import { PieceRow, pieceRowId } from "./components/PieceRow";
 import { useArchiveData } from "./hooks/useArchiveData";
 import { getArchiveEpochOptions } from "./constants/archiveEpochs";
-import { pieceCardPath, readReturnedPiece } from "./constants/libraryScope";
+import {
+  NEW_PIECE_PARAM,
+  pieceCardPath,
+  readReturnedPiece,
+} from "./constants/libraryScope";
 import type { EnrichedPiece } from "./types/archive.dto";
 
 /** No piece-wide divisi at all — the rows a layout sweep usually targets. */
@@ -168,6 +174,12 @@ export default function ArchiveManagement(): React.JSX.Element {
 
   const [isUploadOpen, setIsUploadOpen] = useState<boolean>(false);
 
+  // The dialog's title on open, or null while it is closed. Read before the
+  // filter sync in `useArchiveData` rewrites the query string.
+  const [newPieceTitle, setNewPieceTitle] = useState<string | null>(() =>
+    new URLSearchParams(location.search).get(NEW_PIECE_PARAM) === "1" ? "" : null,
+  );
+
   // Selection mode: ids live in a Set keyed by String(id); the sheet receives
   // the piece objects so it can read what layouts they already carry.
   const [selectionMode, setSelectionMode] = useState<boolean>(false);
@@ -230,10 +242,6 @@ export default function ArchiveManagement(): React.JSX.Element {
       );
     }
   }, [isError, t]);
-
-  const navigateToNew = useCallback(() => {
-    navigate("/panel/archive-management/new");
-  }, [navigate]);
 
   const navigateToReview = useCallback(
     (pieceId: string) => {
@@ -305,7 +313,7 @@ export default function ArchiveManagement(): React.JSX.Element {
                 <Button
                   variant="ghost"
                   casing="sentence"
-                  onClick={navigateToNew}
+                  onClick={() => setNewPieceTitle("")}
                   fullWidth
                   leftIcon={<Plus size={16} aria-hidden="true" />}
                 >
@@ -355,7 +363,7 @@ export default function ArchiveManagement(): React.JSX.Element {
         </div>
 
         {isFreshArchive ? (
-          <ArchiveWelcomeState onAddManually={navigateToNew} />
+          <ArchiveWelcomeState onAddManually={() => setNewPieceTitle("")} />
         ) : (
           <>
             <ArchiveSearchBar
@@ -400,7 +408,7 @@ export default function ArchiveManagement(): React.JSX.Element {
               <ArchiveEmptyState
                 searchTerm={normalizedSearchTerm}
                 hasActiveFilters={hasActiveFilters}
-                onCreatePiece={navigateToNew}
+                onCreatePiece={() => setNewPieceTitle(normalizedSearchTerm)}
                 onResetFilters={resetFilters}
               />
             )}
@@ -411,6 +419,13 @@ export default function ArchiveManagement(): React.JSX.Element {
           isOpen={isUploadOpen}
           onClose={() => setIsUploadOpen(false)}
         />
+
+        {newPieceTitle !== null && (
+          <NewPieceDialog
+            initialTitle={newPieceTitle}
+            onClose={() => setNewPieceTitle(null)}
+          />
+        )}
 
         <AnimatePresence>
           {selectionMode && !isFreshArchive && (

@@ -1,7 +1,8 @@
 /**
  * @file ArchiveEmptyState.tsx
- * @description Empty state for the archive collection list.
- * Adapts its copy and actions to search-driven and filter-driven no-result scenarios.
+ * @description Empty state for the library list. Adapts its copy and actions to
+ * a search or filters that found nothing; after a search, "Dodaj utwór" offers
+ * the searched title as the new piece's.
  */
 
 import React from "react";
@@ -51,6 +52,7 @@ export function ArchiveEmptyState({
         <>
           <Button
             variant="secondary"
+            casing="sentence"
             onClick={onCreatePiece}
             leftIcon={<Plus size={14} aria-hidden="true" />}
           >
@@ -63,6 +65,7 @@ export function ArchiveEmptyState({
           {hasActiveFilters && (
             <Button
               variant="ghost"
+              casing="sentence"
               onClick={onResetFilters}
               leftIcon={<RotateCcw size={14} aria-hidden="true" />}
             >

@@ -50,7 +50,8 @@ interface PieceRowProps {
 /** The row's DOM id, which the library scrolls to on the way back from a card. */
 export const pieceRowId = (pieceId: string | number): string => `piece-row-${pieceId}`;
 
-const composerName = (piece: EnrichedPiece): string | null => {
+/** First name and surname, as a row's first fact; null for a piece with no composer. */
+export const pieceComposerName = (piece: EnrichedPiece): string | null => {
   const composer = piece.composer;
   return composer ? `${composer.first_name ?? ""} ${composer.last_name}`.trim() : null;
 };
@@ -167,7 +168,7 @@ export const PieceRow = ({
       title={piece.title}
       voice="work"
       flags={flags}
-      facts={[composerName(piece), year, epoch]}
+      facts={[pieceComposerName(piece), year, epoch]}
       meta={[
         piece.voicing || null,
         formatDuration(piece.estimated_duration),
