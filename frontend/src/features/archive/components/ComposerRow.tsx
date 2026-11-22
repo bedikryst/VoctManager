@@ -1,307 +1,135 @@
 /**
  * @file ComposerRow.tsx
- * @description Compact composer row with inline pencil edits on name +
- * lifespan + nationality. Click row to expand → portrait, bio,
- * MB/Wikidata links, pieces in the library, refresh-from-MB action.
+ * @description One composer in the composers list, as a `RecordRow`: the row
+ * opens the composer's record, where every edit happens. The name is set
+ * surname first, the order the list is sorted in; under it the lifespan, and
+ * to the right the number of pieces the library holds by this composer.
  *
- * Bulk select via leading checkbox enables the parent page's merge UI.
+ * The row carries no flags: a composer missing its MusicBrainz link is found
+ * through the list's filter, not by a chip on most rows. A composer with no
+ * pieces has a menu with "Usuń"; in merge mode the row is one toggle
+ * (`RecordRow`'s `row` scope) and the menu steps aside.
  * @module features/archive/components/ComposerRow
  */
 
-import React, { useState } from "react";
+import React, { useRef } from "react";
 import { useTranslation } from "react-i18next";
-import { AnimatePresence, motion } from "framer-motion";
-import {
-  AlertTriangle,
-  ChevronDown,
-  Library,
-  Sparkles,
-  Trash2,
-} from "lucide-react";
+import { MoreHorizontal, Trash2 } from "lucide-react";
 
-import { Badge } from "@/shared/ui/primitives/Badge";
-import { Button } from "@/shared/ui/primitives/Button";
-import { Checkbox } from "@/shared/ui/primitives/Checkbox";
-import { Caption, Text } from "@/shared/ui/primitives/typography";
-import { InlineEditable } from "@/shared/ui/primitives/InlineEditable";
 import type { Composer } from "@/shared/types";
-import { onActivate } from "@/shared/lib/dom/a11y";
-import { cn } from "@/shared/lib/utils";
-
-import { useUpdateComposer } from "../api/archive.queries";
-import { ComposerRowExpanded } from "./ComposerRowExpanded";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/shared/ui/composites/DropdownMenu";
+import { RecordRow, recordActionClass } from "@/shared/ui/composites/RecordList";
+import { Button } from "@/shared/ui/primitives/Button";
 
 interface ComposerRowProps {
   readonly composer: Composer;
-  readonly isSelected: boolean;
-  readonly onToggleSelected: (composerId: string) => void;
+  readonly onOpen: (composer: Composer) => void;
   readonly onDelete: (composer: Composer) => void;
+  /** The list is in merge mode: a tap toggles the composer instead of opening it. */
+  readonly selectionMode?: boolean;
+  readonly selected?: boolean;
+  readonly onToggleSelect?: (id: string) => void;
 }
 
-const composerDisplayName = (composer: Composer): string =>
-  composer.full_name?.trim() ||
-  `${composer.last_name}${composer.first_name ? `, ${composer.first_name}` : ""}`;
+/** Surname, then first name: the catalogue order the list is sorted in. */
+export const composerListName = (composer: Composer): string =>
+  composer.first_name ? `${composer.last_name}, ${composer.first_name}` : composer.last_name;
 
-const lifespanString = (composer: Composer): string | null => {
+/** First name and surname, the way a record names a person. */
+export const composerFullName = (composer: Composer): string =>
+  [composer.first_name, composer.last_name].filter(Boolean).join(" ");
+
+/** "1685–1750", "1943–" for a living composer, "?–1652" for an unknown birth; null when neither is known. */
+export const composerLifespan = (composer: Composer): string | null => {
   if (!composer.birth_year && !composer.death_year) return null;
-  return `${composer.birth_year ?? "?"}–${composer.death_year ?? ""}`.trim();
-};
-
-// ---------------------------------------------------------------------------
-// The pieces count is an intrinsic fact and reads as one — plain type, no chip.
-// The MusicBrainz link only speaks when it is MISSING: a sage "MB ✓" beside a
-// gold "MB?" put a chip on every composer in the library and left the eye with
-// nothing to find. Shared between the desktop right rail and the mobile meta
-// line so the markup lives in one place.
-// ---------------------------------------------------------------------------
-
-interface ComposerStatsProps {
-  readonly piecesCount: number;
-  readonly hasMB: boolean;
-}
-
-const ComposerStats = ({
-  piecesCount,
-  hasMB,
-}: ComposerStatsProps): React.JSX.Element => {
-  const { t } = useTranslation();
-  return (
-    <>
-      <Caption
-        color="muted"
-        className="inline-flex items-center gap-1 tabular-nums"
-        title={t(
-          "archive.composer_row.pieces_tooltip",
-          "{{count}} utworów w bibliotece",
-          { count: piecesCount },
-        )}
-      >
-        <Library size={10} aria-hidden="true" />
-        {piecesCount}
-      </Caption>
-      {!hasMB && (
-        <Badge
-          variant="warning"
-          icon={<AlertTriangle size={11} aria-hidden="true" />}
-          title={t(
-            "archive.composer_row.no_mb_tooltip",
-            "Brak MBID — rozważ 'Odśwież z MusicBrainz'",
-          )}
-        >
-          {t("archive.composer_row.no_mb", "bez MB")}
-        </Badge>
-      )}
-    </>
-  );
+  return `${composer.birth_year || "?"}–${composer.death_year ?? ""}`;
 };
 
 export const ComposerRow = ({
   composer,
-  isSelected,
-  onToggleSelected,
+  onOpen,
   onDelete,
+  selectionMode = false,
+  selected = false,
+  onToggleSelect,
 }: ComposerRowProps): React.JSX.Element => {
   const { t } = useTranslation();
-  const [isExpanded, setIsExpanded] = useState<boolean>(false);
-  const updateComposer = useUpdateComposer();
-
+  const deleteChosen = useRef(false);
+  const name = composerListName(composer);
   const piecesCount = composer.pieces_count ?? 0;
   const isOrphan = composer.is_orphan ?? piecesCount === 0;
-  const hasPortrait = Boolean(composer.portrait_url);
-  const hasMB = Boolean(composer.mbid);
-
-  const patch = (
-    field: keyof Composer,
-    value: string,
-  ) =>
-    updateComposer.mutateAsync({
-      id: String(composer.id),
-      data: { [field]: value } as Parameters<
-        typeof updateComposer.mutateAsync
-      >[0]["data"],
-    });
 
   return (
-    <div
-      className={cn(
-        "overflow-hidden rounded-nested border bg-ethereal-alabaster/60 transition-all",
-        isExpanded
-          ? "border-ethereal-gold/30 shadow-glass-ethereal"
-          : "border-hairline hover:border-ethereal-gold/25 hover:bg-ethereal-parchment/30",
-        isSelected && "ring-2 ring-ethereal-gold/40",
-      )}
-    >
-      <div
-        role="button"
-        tabIndex={0}
-        onClick={() => setIsExpanded((v) => !v)}
-        onKeyDown={onActivate(() => setIsExpanded((v) => !v))}
-        className="group flex w-full cursor-pointer items-start gap-3 px-4 py-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40 focus-visible:ring-inset md:items-center"
-        aria-expanded={isExpanded}
-      >
-        {/* Bulk-select checkbox. The wrapper only keeps the click off the row —
-            selecting is the checkbox's own `onChange`, and calling it from here
-            as well toggled the same box twice per click, which is a box that
-            never changes. */}
-        <span
-          onClick={(event) => event.stopPropagation()}
-          className="flex shrink-0 items-center"
-        >
-          <Checkbox
-            checked={isSelected}
-            onChange={() => onToggleSelected(String(composer.id))}
-            aria-label={t(
-              "archive.composer_row.select_aria",
-              "Zaznacz {{name}} do łączenia",
-              { name: composerDisplayName(composer) },
-            )}
+    <RecordRow
+      open={{ onOpen: () => onOpen(composer) }}
+      title={name}
+      voice="name"
+      leading={
+        composer.portrait_url ? (
+          <img
+            src={composer.portrait_url}
+            alt=""
+            className="size-10 rounded-full border border-hairline-strong object-cover"
+            loading="lazy"
           />
-        </span>
-
-        {/* Avatar */}
-        <span
-          className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full border border-hairline-strong bg-ethereal-alabaster shadow-sm"
-          aria-hidden="true"
-        >
-          {hasPortrait ? (
-            <img
-              src={composer.portrait_url}
-              alt=""
-              className="h-full w-full object-cover"
-              loading="lazy"
-            />
-          ) : (
-            <Sparkles
-              size={14}
-              className="text-ethereal-gold/60"
-              strokeWidth={1.6}
-            />
-          )}
-        </span>
-
-        {/* Name + lifespan + nationality */}
-        <div className="min-w-0 flex-1">
-          {/* No stopPropagation wrappers here: `InlineEditable` already swallows
-              the click on its own control, and a wrapper around it swallowed the
-              whole line — the empty space beside a name is the largest target
-              the row offers for expanding it. */}
-          <div className="flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5">
-            <span className="inline-flex items-baseline">
-              <InlineEditable
-                value={composer.last_name}
-                onSave={(next) => patch("last_name", next)}
-                ariaLabel={t("archive.composer_row.edit_last", "Nazwisko")}
-                variant="title"
-              />
-              <Text size="sm" color="graphite" aria-hidden="true">
-                ,
-              </Text>
-            </span>
-            <InlineEditable
-              value={composer.first_name ?? ""}
-              onSave={(next) => patch("first_name", next)}
-              ariaLabel={t("archive.composer_row.edit_first", "Imię")}
-              emptyDisplay={t("archive.composer_row.first_empty", "imię?")}
-            />
-          </div>
-          <div className="mt-0.5 flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-            <InlineEditable
-              value={composer.birth_year ?? ""}
-              onSave={(next) => patch("birth_year", next)}
-              type="number"
-              ariaLabel={t("archive.composer_row.edit_birth", "Rok urodzenia")}
-              variant="subtle"
-              emptyDisplay={t("archive.composer_row.birth_empty", "ur.?")}
-            />
-            <Text size="xs" color="graphite" aria-hidden="true">
-              –
-            </Text>
-            <InlineEditable
-              value={composer.death_year ?? ""}
-              onSave={(next) => patch("death_year", next)}
-              type="number"
-              ariaLabel={t("archive.composer_row.edit_death", "Rok śmierci")}
-              variant="subtle"
-              emptyDisplay={t("archive.composer_row.death_empty", "—")}
-            />
-            <Text size="xs" color="graphite" aria-hidden="true">
-              ·
-            </Text>
-            <InlineEditable
-              value={composer.nationality ?? ""}
-              onSave={(next) => patch("nationality", next)}
-              ariaLabel={t("archive.composer_row.edit_nationality", "Narodowość")}
-              variant="subtle"
-              emptyDisplay={t("archive.composer_row.nationality_empty", "kraj?")}
-            />
-          </div>
-
-          {/* Mobile meta — stat chips on their own line below the name so they
-              never crowd or overlap it. Desktop shows them on the right rail. */}
-          <div className="mt-1.5 flex flex-wrap items-center gap-1.5 md:hidden">
-            <ComposerStats piecesCount={piecesCount} hasMB={hasMB} />
-          </div>
-        </div>
-
-        {/* Stats chips — desktop right rail (mobile renders them above). */}
-        <div className="hidden shrink-0 items-center gap-1.5 md:flex">
-          <ComposerStats piecesCount={piecesCount} hasMB={hasMB} />
-        </div>
-
-        {/* Actions */}
-        <div className="flex shrink-0 items-center gap-1">
-          {isOrphan && (
-            <Button
-              variant="icon"
-              size="icon"
-              aria-label={t(
-                "archive.composer_row.delete_aria",
-                "Usuń kompozytora {{name}}",
-                { name: composerDisplayName(composer) },
-              )}
-              onClick={(event) => {
-                event.stopPropagation();
+        ) : undefined
+      }
+      facts={[composerLifespan(composer)]}
+      meta={[
+        piecesCount > 0
+          ? t("archive.composers.pieces", "{{count}} utworów", { count: piecesCount })
+          : null,
+      ]}
+      select={
+        selectionMode
+          ? {
+              scope: "row",
+              checked: selected,
+              label: t("archive.composers.select_aria", "Zaznacz: {{name}}", { name }),
+              onChange: () => onToggleSelect?.(String(composer.id)),
+            }
+          : undefined
+      }
+      actions={
+        isOrphan ? (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="icon"
+                size="icon"
+                className={recordActionClass}
+                aria-label={t("archive.composers.menu_aria", "Więcej: {{name}}", { name })}
+              >
+                <MoreHorizontal size={16} aria-hidden="true" />
+              </Button>
+            </DropdownMenuTrigger>
+            {/* The confirmation opens once the menu has handed focus back to its
+                trigger, so the dialog returns focus there when it closes. */}
+            <DropdownMenuContent
+              onCloseAutoFocus={() => {
+                if (!deleteChosen.current) return;
+                deleteChosen.current = false;
                 onDelete(composer);
               }}
-              className="h-8 w-8 text-ethereal-graphite transition-opacity hover:text-ethereal-crimson focus-visible:opacity-100 fine-pointer:opacity-0 fine-pointer:group-hover:opacity-100"
             >
-              <Trash2 size={13} aria-hidden="true" />
-            </Button>
-          )}
-          <ChevronDown
-            size={16}
-            aria-hidden="true"
-            className={cn(
-              "shrink-0 text-ethereal-graphite/70 transition-transform",
-              isExpanded && "rotate-180 text-ethereal-gold",
-            )}
-          />
-        </div>
-      </div>
-
-      <AnimatePresence initial={false}>
-        {isExpanded && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-            className="overflow-hidden border-t border-hairline"
-          >
-            <ComposerRowExpanded composer={composer} />
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
+              <DropdownMenuItem
+                destructive
+                icon={<Trash2 size={16} />}
+                onSelect={() => {
+                  deleteChosen.current = true;
+                }}
+              >
+                {t("archive.composers.delete", "Usuń kompozytora")}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ) : undefined
+      }
+    />
   );
-};
-
-// Helper for parents that need the lifespan elsewhere (e.g. merge dialog).
-export const useComposerSubtitle = (composer: Composer): string => {
-  const parts = [
-    lifespanString(composer),
-    composer.nationality,
-    composer.period,
-  ].filter(Boolean);
-  return parts.join(" · ");
 };

@@ -1,6 +1,7 @@
 /**
  * @file ComposerProperty.tsx
- * @description Composer catalogue selection, creation and reference links for the piece.
+ * @description Composer catalogue selection, creation and reference links for
+ * the piece. `CreateComposer` is also the composers list's "Dodaj kompozytora".
  */
 
 import { useState, type FormEvent } from "react";
@@ -89,41 +90,52 @@ const ComposerInfo = ({ composer, workId }: { composer?: Composer | null; workId
 };
 
 interface CreateComposerProps {
-  readonly initialLastName: string;
-  readonly pickerId: string;
-  readonly onAssign: (id: string) => Promise<void>;
+  /** Already in the surname field on open: what the picker's search held. */
+  readonly initialLastName?: string;
+  /** Takes focus when the dialog closes; without it, focus returns to whatever opened the dialog. */
+  readonly returnFocusId?: string;
+  /**
+   * What the new composer is for: the card assigns it to the piece, the
+   * composers list opens its record. A rejection keeps the dialog open, and
+   * "Ponów" runs this again without creating the composer twice.
+   */
+  readonly onCreated: (composer: Composer) => Promise<void> | void;
   readonly onClose: () => void;
 }
 
-const CreateComposer = ({ initialLastName, pickerId, onAssign, onClose }: CreateComposerProps) => {
+/**
+ * A new catalogue composer: surname, first name and the two years. The rest
+ * of the record (nationality, period, MusicBrainz) is filled in its record or
+ * by the refresh.
+ */
+export const CreateComposer = ({ initialLastName = "", returnFocusId, onCreated, onClose }: CreateComposerProps) => {
   const { t } = useTranslation();
   const { mutateAsync: create } = useCreateComposer();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [createdId, setCreatedId] = useState<string>();
+  const [created, setCreated] = useState<Composer>();
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (isSubmitting) return;
     const fields = new FormData(event.currentTarget);
     const read = (name: string) => String(fields.get(name) ?? "").trim();
-    let composerId = createdId;
+    let composer = created;
     setIsSubmitting(true);
     try {
-      if (!composerId) {
-        const composer = await create({
+      if (!composer) {
+        composer = await create({
           first_name: read("first_name"),
           last_name: read("last_name"),
           birth_year: read("birth_year"),
           death_year: read("death_year"),
         });
-        composerId = String(composer.id);
-        setCreatedId(composerId);
+        setCreated(composer);
       }
-      await onAssign(composerId);
+      await onCreated(composer);
       onClose();
     } catch (error) {
       toastApiError(error, t, {
-        fallbackDescription: t(composerId ? "archive.piece_card.autosave_failed" : "archive.piece_card.composer_error"),
+        fallbackDescription: t(composer ? "archive.piece_card.autosave_failed" : "archive.piece_card.composer_error"),
       });
     } finally {
       setIsSubmitting(false);
@@ -134,20 +146,26 @@ const CreateComposer = ({ initialLastName, pickerId, onAssign, onClose }: Create
     <Dialog.Root open onOpenChange={(open) => { if (!open && !isSubmitting) onClose(); }}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-focus-trap bg-surface-inverse/70" />
+        {/* Anchored a fifth from the top, as the library's new-piece dialog
+            is: on a phone the keyboard covers the lower half, and a centred
+            dialog would put its buttons under it. Both side insets plus auto
+            margins centre it under its width cap and keep a gutter on a
+            phone. */}
         <Dialog.Content
           aria-describedby={undefined}
           onCloseAutoFocus={(event) => {
+            if (!returnFocusId) return;
             event.preventDefault();
-            document.getElementById(pickerId)?.focus();
+            document.getElementById(returnFocusId)?.focus();
           }}
-          className="fixed left-1/2 top-1/2 z-focus-trap max-h-dvh w-full max-w-md -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-nested border border-hairline-strong bg-ethereal-alabaster p-5 shadow-glass-solid"
+          className="fixed inset-x-4 top-1/5 z-focus-trap mx-auto max-h-3/4 max-w-md overflow-y-auto rounded-nested border border-hairline-strong bg-ethereal-alabaster p-5 shadow-glass-solid"
         >
           <BodyScrollLock />
           <Dialog.Title asChild>
             <Text as="h2" size="lg" weight="semibold">{t("archive.composers.add_form_title")}</Text>
           </Dialog.Title>
           <form className="mt-4 space-y-4" onSubmit={(event) => void submit(event)}>
-            <fieldset disabled={isSubmitting || Boolean(createdId)} className="grid grid-cols-2 gap-3">
+            <fieldset disabled={isSubmitting || Boolean(created)} className="grid grid-cols-2 gap-3">
               <Input name="first_name" label={t("archive.composers.add_first")} />
               <Input name="last_name" label={t("archive.composers.add_last")} defaultValue={initialLastName} required />
               <Input name="birth_year" label={t("archive.composers.add_birth")} />
@@ -158,7 +176,7 @@ const CreateComposer = ({ initialLastName, pickerId, onAssign, onClose }: Create
                 {t("common.actions.cancel")}
               </Button>
               <Button type="submit" variant="primary" casing="sentence" isLoading={isSubmitting}>
-                {t(createdId ? "common.actions.retry" : "archive.composers.add_submit")}
+                {t(created ? "common.actions.retry" : "archive.composers.add_submit")}
               </Button>
             </div>
           </form>
@@ -204,8 +222,8 @@ export const ComposerProperty = ({ piece, autosave }: { piece: Piece; autosave: 
           {newComposer !== null && (
             <CreateComposer
               initialLastName={newComposer}
-              pickerId={id}
-              onAssign={(value) => autosave.saveChoice({ field: "composer_id" }, value, id, label)}
+              returnFocusId={id}
+              onCreated={(created) => autosave.saveChoice({ field: "composer_id" }, String(created.id), id, label)}
               onClose={() => setNewComposer(null)}
             />
           )}

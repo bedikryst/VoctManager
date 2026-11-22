@@ -22,6 +22,7 @@ import {
   isIngestionInProgress,
   type LatinPronunciationCode,
   type AudienceLanguage,
+  type Composer,
   type Piece,
   type ProgramNoteToneCode,
 } from "@/shared/types";
@@ -135,7 +136,14 @@ export const useCreateComposer = () => {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (data: ComposerWriteDTO) => ArchiveService.createComposer(data),
-    onSuccess: () => {
+    // In the list at once, so whatever opens the new composer's record finds
+    // it before the refetch lands.
+    onSuccess: (created) => {
+      qc.setQueryData<Composer[]>(archiveKeys.composers.all, (list) =>
+        list && !list.some((entry) => String(entry.id) === String(created.id))
+          ? [...list, created]
+          : list,
+      );
       qc.invalidateQueries({ queryKey: archiveKeys.composers.all });
       qc.invalidateQueries({ queryKey: archiveKeys.pieces.all });
     },

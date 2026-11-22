@@ -1,73 +1,62 @@
 /**
  * @file ArchiveComposersPage.tsx
- * @description Composer-management surface — sibling of [ArchiveManagement].
- * Lists every composer with inline pencil edits, expand-to-see-bio +
- * portrait + pieces, bulk-merge for duplicates that the AI pipeline
- * failed to dedupe.
+ * @description The library's composers: every composer in the catalogue, as a
+ * list whose rows open the composer's record (`ComposerRecordDialog`), where
+ * the record is read and corrected. The list itself edits nothing.
  *
- * Why a dedicated page: AI creates composers automatically with
- * potentially incomplete or duplicated data. Without a top-level surface
- * the conductor can't fix or consolidate them outside Django admin.
+ * The AI creates composers as it reads scores, sometimes with a name spelled
+ * twice or without its MusicBrainz link, so the page is where the catalogue is
+ * kept clean: the stat line's two filters find the composers missing their
+ * MusicBrainz link and those left without pieces, and "Połącz duplikaty" turns
+ * the rows into toggles for merging two entries of one person. "Dodaj
+ * kompozytora" is the piece card's own dialog, and opens the new record.
  * @module features/archive/ArchiveComposersPage
  */
 
 import React, { useMemo, useState } from "react";
+import { AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
-import { toastApiError } from "@/shared/api/errors";
 import { useTranslation } from "react-i18next";
-import {
-  CheckCircle2,
-  ChevronsRight,
-  GitMerge,
-  Plus,
-  Search,
-  Sparkles,
-  Users,
-  X,
-} from "lucide-react";
+import { GitMerge, Plus, Search, Users, X } from "lucide-react";
 
+import { toastApiError } from "@/shared/api/errors";
+import { foldDiacritics } from "@/shared/lib/text";
+import { cn } from "@/shared/lib/utils";
+import type { Composer } from "@/shared/types";
 import { ConfirmModal } from "@/shared/ui/composites/ConfirmModal";
 import { PageHeader } from "@/shared/ui/composites/PageHeader";
+import { RecordList } from "@/shared/ui/composites/RecordList";
+import { StatLine, type StatLineItem } from "@/shared/ui/composites/StatLine";
 import { StatePanel } from "@/shared/ui/composites/StatePanel";
-import { Badge } from "@/shared/ui/primitives/Badge";
+import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
+import { PageTransition } from "@/shared/ui/kinematics/PageTransition";
 import { Button } from "@/shared/ui/primitives/Button";
 import { Input } from "@/shared/ui/primitives/Input";
-import { Caption, Eyebrow, Text } from "@/shared/ui/primitives/typography";
-import { cn } from "@/shared/lib/utils";
-import { foldDiacritics } from "@/shared/lib/text";
-import { PageTransition } from "@/shared/ui/kinematics/PageTransition";
-import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
-import type { Composer } from "@/shared/types";
+import { Text } from "@/shared/ui/primitives/typography";
 
-import {
-  useComposers,
-  useCreateComposer,
-  useDeleteComposer,
-  useMergeComposers,
-} from "./api/archive.queries";
-import { StatLine, type StatLineItem } from "@/shared/ui/composites/StatLine";
+import { useComposers, useDeleteComposer } from "./api/archive.queries";
 import { ArchiveTabs } from "./components/ArchiveTabs";
+import { ComposerMergeBar, ComposerMergeDialog } from "./components/ComposerMerge";
+import { ComposerRecordDialog } from "./components/ComposerRecordDialog";
 import { ComposerRow } from "./components/ComposerRow";
+import { CreateComposer } from "./piece-card/ComposerProperty";
 
-interface AddComposerDraft {
-  first_name: string;
-  last_name: string;
-  birth_year: string;
-  death_year: string;
-}
+type ComposerFilter = "no_mb" | "orphans";
 
-const EMPTY_DRAFT: AddComposerDraft = {
-  first_name: "",
-  last_name: "",
-  birth_year: "",
-  death_year: "",
+const isOrphan = (composer: Composer): boolean =>
+  composer.is_orphan ?? (composer.pieces_count ?? 0) === 0;
+
+const FILTERS: Readonly<Record<ComposerFilter, (composer: Composer) => boolean>> = {
+  no_mb: (composer) => !composer.mbid,
+  orphans: isOrphan,
 };
 
-// Folded, not merely lowercased: this library is Polish, so "gorecki" has to
-// find Górecki and "lukaszewski" Łukaszewski.
-const composerSearchableLabel = (composer: Composer): string =>
+// Names only, the ones the row and the record show, plus the variants the
+// catalogue knows ("J.S. Bach"). Folded, not merely lowercased: this library
+// is Polish, so "gorecki" has to find Górecki and "lukaszewski" Łukaszewski.
+const composerSearchKey = (composer: Composer): string =>
   foldDiacritics(
-    [composer.first_name, composer.last_name, composer.nationality, composer.bio]
+    [composer.first_name, composer.last_name, composer.full_name, ...(composer.aliases ?? [])]
       .filter(Boolean)
       .join(" "),
   );
@@ -75,147 +64,69 @@ const composerSearchableLabel = (composer: Composer): string =>
 export default function ArchiveComposersPage(): React.JSX.Element {
   const { t } = useTranslation();
   const { data: composers = [], isLoading } = useComposers();
-  const createComposer = useCreateComposer();
   const deleteComposer = useDeleteComposer();
-  const mergeComposers = useMergeComposers();
 
   const [searchTerm, setSearchTerm] = useState<string>("");
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [pendingDelete, setPendingDelete] = useState<Composer | null>(null);
-  const [isAdding, setIsAdding] = useState<boolean>(false);
-  const [draft, setDraft] = useState<AddComposerDraft>(EMPTY_DRAFT);
-  const [mergeTargetId, setMergeTargetId] = useState<string>("");
+  const [filter, setFilter] = useState<ComposerFilter | null>(null);
+  const [mergeMode, setMergeMode] = useState<boolean>(false);
+  const [selectedIds, setSelectedIds] = useState<ReadonlySet<string>>(() => new Set());
   const [isMergeOpen, setIsMergeOpen] = useState<boolean>(false);
+  const [isAdding, setIsAdding] = useState<boolean>(false);
+  const [openId, setOpenId] = useState<string | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<Composer | null>(null);
 
   const composersById = useMemo(
-    () => new Map(composers.map((c) => [String(c.id), c])),
+    () => new Map(composers.map((composer) => [String(composer.id), composer])),
     [composers],
   );
 
-  const filtered = useMemo(() => {
-    const normalized = foldDiacritics(searchTerm.trim());
-    if (!normalized) return composers;
-    return composers.filter((c) =>
-      composerSearchableLabel(c).includes(normalized),
-    );
-  }, [composers, searchTerm]);
-
-  const totalComposers = composers.length;
-  const withPortrait = composers.filter((c) => Boolean(c.portrait_url)).length;
-  const orphans = composers.filter((c) => (c.pieces_count ?? 0) === 0).length;
-
-  const selectedComposers = useMemo(
+  const normalizedSearch = foldDiacritics(searchTerm.trim());
+  const visible = useMemo(
     () =>
-      Array.from(selectedIds)
-        .map((id) => composersById.get(id))
-        .filter((c): c is Composer => Boolean(c)),
-    [selectedIds, composersById],
+      composers.filter(
+        (composer) =>
+          (!filter || FILTERS[filter](composer)) &&
+          (!normalizedSearch || composerSearchKey(composer).includes(normalizedSearch)),
+      ),
+    [composers, filter, normalizedSearch],
   );
 
-  const toggleSelected = (id: string) => {
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
+  // Merged or deleted entries drop out of the selection as the list refetches.
+  const selectedComposers = Array.from(selectedIds)
+    .map((id) => composersById.get(id))
+    .filter((composer): composer is Composer => Boolean(composer));
+  const openComposer = openId ? composersById.get(openId) : undefined;
+
+  const total = composers.length;
+  const withoutMb = composers.filter(FILTERS.no_mb).length;
+  const orphans = composers.filter(FILTERS.orphans).length;
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds((current) => {
+      const next = new Set(current);
       if (next.has(id)) next.delete(id);
       else next.add(id);
       return next;
     });
   };
 
-  const clearSelection = () => setSelectedIds(new Set());
-
-  const handleAddComposer = async () => {
-    const trimmed = {
-      first_name: draft.first_name.trim() || undefined,
-      last_name: draft.last_name.trim(),
-      birth_year: draft.birth_year.trim() || undefined,
-      death_year: draft.death_year.trim() || undefined,
-    };
-    if (!trimmed.last_name) {
-      toast.error(
-        t(
-          "archive.composers.add_last_required",
-          "Nazwisko kompozytora jest wymagane.",
-        ),
-      );
-      return;
-    }
-    try {
-      await createComposer.mutateAsync(trimmed);
-      toast.success(
-        t("archive.composers.add_success", "Dodano kompozytora."),
-      );
-      setDraft(EMPTY_DRAFT);
-      setIsAdding(false);
-    } catch (err) {
-      toastApiError(err, t, {
-        fallbackDescription: t(
-          "archive.composers.add_error",
-          "Nie udało się dodać.",
-        ),
-      });
-    }
+  const exitMerge = () => {
+    setMergeMode(false);
+    setIsMergeOpen(false);
+    setSelectedIds(new Set());
   };
 
   const handleDeleteConfirm = async () => {
     if (!pendingDelete) return;
     try {
       await deleteComposer.mutateAsync(String(pendingDelete.id));
-      toast.success(
-        t(
-          "archive.composers.delete_success",
-          "Kompozytor usunięty.",
-        ),
-      );
-    } catch (err) {
-      toastApiError(err, t, {
-        fallbackDescription: t(
-          "archive.composers.delete_error",
-          "Nie udało się usunąć kompozytora.",
-        ),
+      toast.success(t("archive.composers.delete_success", "Kompozytor usunięty."));
+    } catch (error) {
+      toastApiError(error, t, {
+        fallbackDescription: t("archive.composers.delete_error", "Nie udało się usunąć kompozytora."),
       });
     } finally {
       setPendingDelete(null);
-    }
-  };
-
-  const handleMergeConfirm = async () => {
-    if (!mergeTargetId || selectedIds.size < 2) return;
-    const sources = selectedComposers.filter(
-      (c) => String(c.id) !== mergeTargetId,
-    );
-    const target = composersById.get(mergeTargetId);
-    if (!target) return;
-
-    try {
-      // Serial merges — each shifts pieces onto the target and soft-deletes the source.
-      for (const source of sources) {
-        await mergeComposers.mutateAsync({
-          sourceId: String(source.id),
-          targetId: mergeTargetId,
-        });
-      }
-      toast.success(
-        t(
-          "archive.composers.merge_success",
-          "Połączono {{count}} kompozytorów w {{target}}.",
-          {
-            count: sources.length,
-            target: `${target.last_name}, ${target.first_name ?? ""}`.trim(),
-          },
-        ),
-      );
-      clearSelection();
-      setMergeTargetId("");
-      setIsMergeOpen(false);
-    } catch (err) {
-      toast.error(
-        err instanceof Error
-          ? err.message
-          : t(
-              "archive.composers.merge_error",
-              "Nie udało się połączyć kompozytorów.",
-            ),
-      );
     }
   };
 
@@ -223,404 +134,142 @@ export default function ArchiveComposersPage(): React.JSX.Element {
     return <EtherealLoader />;
   }
 
-  // "0 bez utworów" is the healthy state announcing itself — the same silence
-  // rule the piece row follows for `bez nut`. The segment appears only when
-  // there is actually an orphan to go and look at.
-  const composerStats: StatLineItem[] = [
+  const stats: StatLineItem[] = [
     {
       id: "total",
-      value: totalComposers,
-      label: t("archive.composers.stat_total", "kompozytorów"),
+      value: total,
+      label: t("archive.composers.stat_total", "kompozytorów", { count: total }),
     },
-    {
-      id: "portrait",
-      value: withPortrait,
-      label: t("archive.composers.stat_portrait", "z portretem"),
-    },
-    ...(orphans > 0
-      ? [
-          {
-            id: "orphans",
-            value: orphans,
-            label: t("archive.composers.stat_orphan", "bez utworów"),
-          },
-        ]
-      : []),
   ];
+
+  // The two exceptions worth hunting for, as filters that say their size.
+  // Each appears only while there is something to find, and one is on at a time.
+  const filterToggle = (id: ComposerFilter, label: string) => (
+    <Button
+      key={id}
+      variant={filter === id ? "secondary" : "outline"}
+      size="sm"
+      casing="sentence"
+      aria-pressed={filter === id}
+      onClick={() => setFilter((current) => (current === id ? null : id))}
+      className={cn(filter === id && "border-ethereal-gold/40 text-ethereal-ink")}
+    >
+      {label}
+    </Button>
+  );
+  const filterToggles = [
+    withoutMb > 0 &&
+      filterToggle(
+        "no_mb",
+        t("archive.composers.filter_no_mb", "{{count}} bez MusicBrainz", { count: withoutMb }),
+      ),
+    orphans > 0 &&
+      filterToggle(
+        "orphans",
+        t("archive.composers.filter_orphans", "{{count}} bez utworów", { count: orphans }),
+      ),
+  ].filter(Boolean);
+
+  const isNarrowed = Boolean(normalizedSearch) || filter !== null;
 
   return (
     <PageTransition>
       <div className="relative mx-auto flex max-w-5xl flex-col gap-5 pb-24 pt-6">
         <PageHeader
           size="standard"
-          roleText={t("archive.composers.subtitle", "Biblioteka nut")}
           title={t("archive.composers.title", "Kompozytorzy")}
-          titleHighlight={t("archive.composers.title_highlight", "i aranżerzy")}
           rightContent={
-            <Button
-              variant="primary"
-              size="sm"
-              onClick={() => setIsAdding((v) => !v)}
-              leftIcon={<Plus size={14} aria-hidden="true" />}
-            >
-              {t("archive.composers.add_btn", "Dodaj kompozytora")}
-            </Button>
+            <div className="flex w-full sm:w-auto">
+              <Button
+                variant="primary"
+                casing="sentence"
+                onClick={() => setIsAdding(true)}
+                fullWidth
+                leftIcon={<Plus size={16} aria-hidden="true" />}
+              >
+                {t("archive.composers.add_btn", "Dodaj kompozytora")}
+              </Button>
+            </div>
           }
         />
 
         <ArchiveTabs />
 
-        <StatLine stats={composerStats} />
-
-        {isAdding && (
-          <div className="rounded-nested border border-ethereal-gold/30 bg-ethereal-gold/5 p-4">
-            <Eyebrow color="gold" className="mb-3 block">
-              {t("archive.composers.add_form_title", "Nowy kompozytor")}
-            </Eyebrow>
-            <div className="grid gap-3 md:grid-cols-2">
-              <Input
-                placeholder={t("archive.composers.add_first", "Imię")}
-                value={draft.first_name}
-                onChange={(e) =>
-                  setDraft({ ...draft, first_name: e.target.value })
-                }
-                disabled={createComposer.isPending}
-              />
-              <Input
-                placeholder={t("archive.composers.add_last", "Nazwisko *")}
-                value={draft.last_name}
-                onChange={(e) =>
-                  setDraft({ ...draft, last_name: e.target.value })
-                }
-                disabled={createComposer.isPending}
-              />
-              <Input
-                type="number"
-                placeholder={t("archive.composers.add_birth", "Rok urodzenia")}
-                value={draft.birth_year}
-                onChange={(e) =>
-                  setDraft({ ...draft, birth_year: e.target.value })
-                }
-                disabled={createComposer.isPending}
-              />
-              <Input
-                type="number"
-                placeholder={t("archive.composers.add_death", "Rok śmierci")}
-                value={draft.death_year}
-                onChange={(e) =>
-                  setDraft({ ...draft, death_year: e.target.value })
-                }
-                disabled={createComposer.isPending}
-              />
-            </div>
-            <div className="mt-3 flex items-center justify-end gap-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  setDraft(EMPTY_DRAFT);
-                  setIsAdding(false);
-                }}
-                disabled={createComposer.isPending}
-              >
-                {t("common.actions.cancel", "Anuluj")}
-              </Button>
-              <Button
-                variant="primary"
-                size="sm"
-                onClick={handleAddComposer}
-                disabled={createComposer.isPending || !draft.last_name.trim()}
-                isLoading={createComposer.isPending}
-              >
-                {t("archive.composers.add_submit", "Dodaj")}
-              </Button>
-            </div>
-          </div>
-        )}
-
-        {/* Bulk merge bar — expands inline with a target picker when invoked */}
-        {selectedIds.size > 0 && (
-          <div className="rounded-nested border border-ethereal-gold/30 bg-ethereal-gold/5 p-3">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div className="flex items-center gap-2">
-                <Eyebrow color="gold">
-                  {t(
-                    "archive.composers.selected",
-                    "Zaznaczono {{count}}",
-                    { count: selectedIds.size },
-                  )}
-                </Eyebrow>
-                <Button variant="ghost" size="sm" onClick={clearSelection}>
-                  <X size={12} aria-hidden="true" className="mr-1" />
-                  {t("archive.composers.clear_selection", "Wyczyść")}
-                </Button>
-              </div>
-              {selectedIds.size >= 2 ? (
-                isMergeOpen ? (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      setIsMergeOpen(false);
-                      setMergeTargetId("");
-                    }}
-                  >
-                    {t("common.actions.cancel", "Anuluj")}
-                  </Button>
-                ) : (
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    leftIcon={<GitMerge size={13} aria-hidden="true" />}
-                    onClick={() => setIsMergeOpen(true)}
-                    disabled={mergeComposers.isPending}
-                  >
-                    {t(
-                      "archive.composers.merge_btn",
-                      "Połącz duplikaty",
-                    )}
-                  </Button>
-                )
-              ) : (
-                <Caption color="muted">
-                  {t(
-                    "archive.composers.merge_hint",
-                    "Zaznacz przynajmniej 2 by połączyć",
-                  )}
-                </Caption>
-              )}
-            </div>
-
-            {isMergeOpen && (
-              <div className="mt-3 space-y-3 border-t border-ethereal-gold/25 pt-3">
-                <div>
-                  <Eyebrow color="muted" className="mb-2 block">
-                    {t(
-                      "archive.composers.merge_target_label",
-                      "Wybierz kompozytora docelowego — pozostali zostaną do niego przepięci i usunięci",
-                    )}
-                  </Eyebrow>
-                  <div
-                    role="radiogroup"
-                    aria-label={t(
-                      "archive.composers.merge_target_group_aria",
-                      "Kompozytor docelowy",
-                    )}
-                    className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3"
-                  >
-                    {selectedComposers.map((c) => {
-                      const isTarget = mergeTargetId === String(c.id);
-                      const piecesCount = c.pieces_count ?? 0;
-                      const hasPortrait = Boolean(c.portrait_url);
-                      const hasMB = Boolean(c.mbid);
-                      return (
-                        <button
-                          key={c.id}
-                          type="button"
-                          role="radio"
-                          aria-checked={isTarget}
-                          onClick={() => setMergeTargetId(String(c.id))}
-                          disabled={mergeComposers.isPending}
-                          className={cn(
-                            "group/card relative cursor-pointer rounded-nested border bg-ethereal-alabaster/80 p-3 text-left transition-colors",
-                            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/50",
-                            isTarget
-                              ? "border-ethereal-gold/60 bg-ethereal-gold/10 shadow-glass-ethereal"
-                              : "border-hairline-strong hover:border-ethereal-gold/40",
-                          )}
-                        >
-                          {isTarget && (
-                            <span
-                              className="absolute right-2 top-2 inline-flex h-5 w-5 items-center justify-center rounded-full bg-ethereal-gold text-ink-on-inverse"
-                              aria-hidden="true"
-                            >
-                              <CheckCircle2 size={12} strokeWidth={2.5} />
-                            </span>
-                          )}
-                          <div className="flex items-start gap-2.5">
-                            <span
-                              className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full border border-hairline-strong bg-ethereal-alabaster shadow-sm"
-                              aria-hidden="true"
-                            >
-                              {hasPortrait ? (
-                                <img
-                                  src={c.portrait_url}
-                                  alt=""
-                                  className="h-full w-full object-cover"
-                                  loading="lazy"
-                                />
-                              ) : (
-                                <Sparkles
-                                  size={12}
-                                  className="text-ethereal-gold/60"
-                                />
-                              )}
-                            </span>
-                            <div className="min-w-0 flex-1">
-                              <Text
-                                size="sm"
-                                weight="semibold"
-                                truncate
-                                className="block"
-                              >
-                                {c.last_name}
-                                {c.first_name ? `, ${c.first_name}` : ""}
-                              </Text>
-                              <Caption color="muted" className="block">
-                                {[c.birth_year, c.death_year]
-                                  .filter(Boolean)
-                                  .join("–") || "—"}
-                                {c.nationality && ` · ${c.nationality}`}
-                              </Caption>
-                              {/* The merge target is chosen on evidence, so here
-                                  the richer record is the signal worth showing:
-                                  how many pieces would move, and whether this
-                                  row is the one already tied to MusicBrainz. */}
-                              <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-                                <Caption color="muted" className="tabular-nums">
-                                  {piecesCount}{" "}
-                                  {t(
-                                    "archive.composers.merge_card_pieces",
-                                    "utw.",
-                                  )}
-                                </Caption>
-                                {hasMB && (
-                                  <Badge variant="success" className="py-0">
-                                    MB
-                                  </Badge>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {mergeTargetId && (
-                  <div className="rounded-control border border-hairline bg-ethereal-alabaster/60 p-3">
-                    <Caption color="muted" className="mb-1 block">
-                      {t(
-                        "archive.composers.merge_preview",
-                        "Po połączeniu:",
-                      )}
-                    </Caption>
-                    <ul className="space-y-0.5 text-xs text-ethereal-graphite">
-                      {selectedComposers
-                        .filter((c) => String(c.id) !== mergeTargetId)
-                        .map((c) => (
-                          <li
-                            key={c.id}
-                            className="flex items-center gap-1.5"
-                          >
-                            <ChevronsRight
-                              size={11}
-                              aria-hidden="true"
-                              className="text-ethereal-crimson"
-                            />
-                            <span className="truncate">
-                              {c.last_name}
-                              {c.first_name ? `, ${c.first_name}` : ""} (
-                              {c.pieces_count ?? 0}{" "}
-                              {t("archive.composers.merge_card_pieces")}) →{" "}
-                              {t(
-                                "archive.composers.merge_preview_delete",
-                                "usunięty",
-                              )}
-                            </span>
-                          </li>
-                        ))}
-                    </ul>
-                  </div>
-                )}
-
-                <div className="flex justify-end">
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    onClick={handleMergeConfirm}
-                    disabled={!mergeTargetId || mergeComposers.isPending}
-                    isLoading={mergeComposers.isPending}
-                    leftIcon={<GitMerge size={13} aria-hidden="true" />}
-                  >
-                    {t(
-                      "archive.composers.merge_confirm",
-                      "Połącz {{count}} kompozytorów",
-                      { count: selectedIds.size },
-                    )}
-                  </Button>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        <Input
-          leftIcon={<Search size={16} aria-hidden="true" />}
-          type="search"
-          placeholder={t(
-            "archive.composers.search_placeholder",
-            "Szukaj po imieniu, nazwisku, kraju, bio…",
-          )}
-          value={searchTerm}
-          onChange={(event) => setSearchTerm(event.target.value)}
-          aria-label={t(
-            "archive.composers.search_aria",
-            "Szukaj kompozytora",
-          )}
+        <StatLine
+          stats={stats}
+          action={filterToggles.length > 0 ? <>{filterToggles}</> : undefined}
         />
 
-        {/* The stat line above is library-wide by design (one denominator for
-            all three figures). While a search narrows the list, say so here —
-            the same sentence the pieces list prints under its filter tokens —
-            so "128 kompozytorów" is never read as the count of what is on
-            screen. */}
-        {searchTerm.trim() && filtered.length > 0 && (
-          <Caption color="muted">
+        <div className="flex flex-col gap-2 md:flex-row md:items-center">
+          <div className="flex-1">
+            <Input
+              leftIcon={<Search size={16} aria-hidden="true" />}
+              type="search"
+              placeholder={t("archive.composers.search_placeholder", "Szukaj po imieniu lub nazwisku…")}
+              value={searchTerm}
+              onChange={(event) => setSearchTerm(event.target.value)}
+              aria-label={t("archive.composers.search_aria", "Szukaj kompozytora")}
+            />
+          </div>
+          <Button
+            variant={mergeMode ? "secondary" : "outline"}
+            casing="sentence"
+            aria-pressed={mergeMode}
+            onClick={() => (mergeMode ? exitMerge() : setMergeMode(true))}
+            leftIcon={<GitMerge size={16} aria-hidden="true" />}
+            className={cn("shrink-0 self-start md:self-auto", mergeMode && "border-ethereal-gold/40 text-ethereal-ink")}
+          >
+            {t("archive.composers.merge_btn", "Połącz duplikaty")}
+          </Button>
+        </div>
+
+        {/* The stat line counts the whole catalogue; while a search or a filter
+            narrows the list, say so, so the total is never read as the count of
+            what is on screen. */}
+        {isNarrowed && visible.length > 0 && (
+          <Text as="p" size="sm" color="muted">
             {t("archive.search.summary_filtered", "{{visible}} z {{total}}", {
-              visible: filtered.length,
-              total: totalComposers,
+              visible: visible.length,
+              total,
             })}
-          </Caption>
+          </Text>
         )}
 
-        {filtered.length === 0 ? (
+        {visible.length === 0 ? (
           <StatePanel
             icon={<Users size={32} aria-hidden="true" />}
             title={
-              searchTerm
-                ? t(
-                    "archive.composers.empty_search",
-                    "Żaden kompozytor nie pasuje do filtra",
-                  )
-                : t("archive.composers.empty_first", "Biblioteka jest pusta")
+              isNarrowed
+                ? t("archive.composers.empty_search", "Żaden kompozytor nie pasuje")
+                : t("archive.composers.empty_first", "Nie ma jeszcze kompozytorów")
             }
             description={
-              searchTerm
-                ? t(
-                    "archive.composers.empty_search_hint",
-                    "Spróbuj innej frazy lub wyczyść wyszukiwanie.",
-                  )
+              isNarrowed
+                ? t("archive.composers.empty_search_hint", "Spróbuj innej pisowni albo wyczyść wyszukiwanie.")
                 : t(
                     "archive.composers.empty_first_hint",
-                    "Kompozytorzy pojawiają się automatycznie gdy AI rozpoznaje utwór z PDF-a, albo dodaj ręcznie.",
+                    "Kompozytorzy pojawiają się sami, gdy AI rozpozna utwór z PDF-a. Możesz też dodać kompozytora ręcznie.",
                   )
             }
             actions={
-              searchTerm ? (
+              isNarrowed ? (
                 <Button
                   variant="ghost"
-                  onClick={() => setSearchTerm("")}
-                  leftIcon={<X size={14} aria-hidden="true" />}
+                  casing="sentence"
+                  onClick={() => {
+                    setSearchTerm("");
+                    setFilter(null);
+                  }}
+                  leftIcon={<X size={16} aria-hidden="true" />}
                 >
                   {t("archive.composers.clear_search", "Wyczyść wyszukiwanie")}
                 </Button>
               ) : (
                 <Button
-                  variant="secondary"
+                  variant="outline"
+                  casing="sentence"
                   onClick={() => setIsAdding(true)}
-                  leftIcon={<Plus size={14} aria-hidden="true" />}
+                  leftIcon={<Plus size={16} aria-hidden="true" />}
                 >
                   {t("archive.composers.add_btn", "Dodaj kompozytora")}
                 </Button>
@@ -628,34 +277,67 @@ export default function ArchiveComposersPage(): React.JSX.Element {
             }
           />
         ) : (
-          <div className="flex flex-col gap-2">
-            {filtered.map((composer) => (
+          <RecordList label={t("archive.composers.list_aria", "Kompozytorzy w bibliotece")}>
+            {visible.map((composer) => (
               <ComposerRow
                 key={composer.id}
                 composer={composer}
-                isSelected={selectedIds.has(String(composer.id))}
-                onToggleSelected={toggleSelected}
+                onOpen={(chosen) => setOpenId(String(chosen.id))}
                 onDelete={setPendingDelete}
+                selectionMode={mergeMode}
+                selected={selectedIds.has(String(composer.id))}
+                onToggleSelect={toggleSelect}
               />
             ))}
-          </div>
+          </RecordList>
+        )}
+
+        {isAdding && (
+          <CreateComposer
+            onCreated={(created) => setOpenId(String(created.id))}
+            onClose={() => setIsAdding(false)}
+          />
+        )}
+
+        {openComposer && (
+          <ComposerRecordDialog
+            composer={openComposer}
+            onClose={() => setOpenId(null)}
+            onDelete={(chosen) => {
+              setOpenId(null);
+              setPendingDelete(chosen);
+            }}
+          />
+        )}
+
+        <AnimatePresence>
+          {mergeMode && (
+            <ComposerMergeBar
+              selectedCount={selectedComposers.length}
+              onMerge={() => setIsMergeOpen(true)}
+              onExit={exitMerge}
+            />
+          )}
+        </AnimatePresence>
+
+        {isMergeOpen && selectedComposers.length >= 2 && (
+          <ComposerMergeDialog
+            composers={selectedComposers}
+            onClose={() => setIsMergeOpen(false)}
+            onMerged={exitMerge}
+          />
         )}
 
         <ConfirmModal
           isOpen={pendingDelete !== null}
           isDestructive
-          title={t(
-            "archive.composers.delete_modal_title",
-            "Usunąć kompozytora?",
-          )}
+          casing="sentence"
+          title={t("archive.composers.delete_modal_title", "Usunąć kompozytora?")}
           description={t(
             "archive.composers.delete_modal_desc",
-            "Kompozytor zostanie usunięty (soft-delete). Operacja jest dozwolona tylko gdy nie ma przypisanych utworów.",
+            "Zniknie z listy kompozytorów. Usunąć można tylko kompozytora, do którego nie jest przypisany żaden utwór.",
           )}
-          confirmText={t(
-            "archive.composers.delete_modal_confirm",
-            "Usuń kompozytora",
-          )}
+          confirmText={t("archive.composers.delete_modal_confirm", "Usuń kompozytora")}
           cancelText={t("common.actions.cancel", "Anuluj")}
           isLoading={deleteComposer.isPending}
           onCancel={() => setPendingDelete(null)}
