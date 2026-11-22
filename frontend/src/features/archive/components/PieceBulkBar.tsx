@@ -46,13 +46,14 @@ export const PieceBulkBar = ({
 
   return (
     <Portal>
+      {/* The transform as one string, so the entrance runs on the compositor. */}
       <motion.div
         ref={slotRef}
-        initial={{ y: 80, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        exit={{ y: 80, opacity: 0 }}
-        transition={{ type: "spring", damping: 26, stiffness: 260 }}
-        className="fixed inset-x-0 bottom-dock z-dock-bar mx-auto flex w-[min(100%-2rem,44rem)] flex-wrap items-center justify-between gap-3 rounded-nested border border-hairline-strong bg-ethereal-alabaster/90 px-4 py-3 shadow-glass-ethereal backdrop-blur-xl"
+        initial={{ transform: "translateY(80px)", opacity: 0 }}
+        animate={{ transform: "translateY(0px)", opacity: 1 }}
+        exit={{ transform: "translateY(80px)", opacity: 0 }}
+        transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+        className="fixed inset-x-0 bottom-dock z-dock-bar mx-auto flex w-[min(100%-2rem,48rem)] flex-wrap items-center justify-between gap-3 rounded-nested border border-hairline-strong bg-ethereal-alabaster/90 px-4 py-3 shadow-glass-ethereal"
         role="region"
         aria-label={t("archive.bulk.bar_aria", "Akcje zbiorcze")}
       >
@@ -66,15 +67,16 @@ export const PieceBulkBar = ({
           <Button
             variant="ghost"
             size="sm"
+            casing="sentence"
             onClick={allSelected ? onClear : onSelectAll}
-            leftIcon={<CheckCheck size={13} aria-hidden="true" />}
+            leftIcon={<CheckCheck size={16} aria-hidden="true" />}
           >
             {allSelected
               ? t("archive.bulk.clear", "Wyczyść")
               : t("archive.bulk.select_all", "Zaznacz wszystkie")}
           </Button>
           {withoutDivisiCount > 0 && (
-            <Button variant="ghost" size="sm" onClick={onSelectWithoutDivisi}>
+            <Button variant="ghost" size="sm" casing="sentence" onClick={onSelectWithoutDivisi}>
               {t("archive.bulk.select_without_divisi", {
                 defaultValue: "Bez rozkładu ({{n}})",
                 n: withoutDivisiCount,
@@ -87,17 +89,19 @@ export const PieceBulkBar = ({
           <Button
             variant="primary"
             size="sm"
+            casing="sentence"
             onClick={onSetDivisi}
             disabled={selectedCount === 0}
-            leftIcon={<ListMusic size={14} aria-hidden="true" />}
+            leftIcon={<ListMusic size={16} aria-hidden="true" />}
           >
             {t("archive.bulk.set_divisi", "Rozkład głosów")}
           </Button>
           <Button
             variant="ghost"
             size="sm"
+            casing="sentence"
             onClick={onExit}
-            leftIcon={<X size={14} aria-hidden="true" />}
+            leftIcon={<X size={16} aria-hidden="true" />}
           >
             {t("archive.bulk.done", "Zakończ")}
           </Button>

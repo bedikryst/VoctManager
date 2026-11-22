@@ -91,7 +91,7 @@ export function TelemetryWidget({
 
         <div className="grid grid-cols-2 gap-2 xl:gap-8 relative">
           <MetricBlock
-            label={t("dashboard.admin.kpi_pieces", "Utwory w archiwum")}
+            label={t("dashboard.admin.kpi_pieces", "Utwory w bibliotece")}
             value={stats.totalPieces ?? "—"}
           />
 

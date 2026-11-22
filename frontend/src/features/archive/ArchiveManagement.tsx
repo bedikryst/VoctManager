@@ -1,19 +1,15 @@
 /**
  * @file ArchiveManagement.tsx
- * @description Operational controller for the repertoire library.
- * Layout philosophy (rev. 2026-05-30): no side panel anywhere. Three states,
- * three patterns:
+ * @description The library: every piece the ensemble holds, as a list whose
+ * rows open the piece card (`/panel/archive-management/:id`), where a piece is
+ * read and edited. The list itself edits nothing but the selection.
  *
- *   1. Glance — compact PieceRow list with inline pencil edits for trivial
- *      single-line fields (title, year, voicing). Hover delete.
- *   2. Expand — click row → accordion shows composer / divisi / PDFs /
- *      tracks + CTAs. ~80% of conductor interactions land here.
- *   3. Deep work — dedicated routes for focused tasks:
- *        /panel/archive-management/new   → manual create
- *        /panel/archive-management/:id   → the Piece Card (edit + AI verification)
- *
- * Upload zone stays in a drawer triggered by the header CTA. Fresh-archive
- * empty state hosts the drop zone inline as the dominant CTA.
+ * Two ways in: "Wgraj PDF" opens the upload drawer, the common path, and
+ * "Dodaj ręcznie" opens `/new`. Uploads the AI is still reading, and those it
+ * gave up on before they became a piece, stand above the list as their own
+ * sections. "Zaznacz wiele" turns the rows into toggles for the one bulk act,
+ * a voice layout written to many pieces. A fresh library shows the welcome
+ * state with the drop zone inline instead.
  * @module features/archive/ArchiveManagement
  */
 
@@ -33,6 +29,7 @@ import { Plus, Sparkles, UploadCloud } from "lucide-react";
 
 import { ConfirmModal } from "@/shared/ui/composites/ConfirmModal";
 import { PageHeader } from "@/shared/ui/composites/PageHeader";
+import { RecordList } from "@/shared/ui/composites/RecordList";
 import { Button } from "@/shared/ui/primitives/Button";
 import { PageTransition } from "@/shared/ui/kinematics/PageTransition";
 import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
@@ -55,11 +52,6 @@ import { useArchiveData } from "./hooks/useArchiveData";
 import { getArchiveEpochOptions } from "./constants/archiveEpochs";
 import { pieceCardPath, readReturnedPiece } from "./constants/libraryScope";
 import type { EnrichedPiece } from "./types/archive.dto";
-
-const formatCoverage = (value: number, total: number): number => {
-  if (total === 0) return 0;
-  return Math.round((value / total) * 100);
-};
 
 /** No piece-wide divisi at all — the rows a layout sweep usually targets. */
 const lacksPieceWideDivisi = (piece: EnrichedPiece): boolean =>
@@ -104,7 +96,7 @@ export default function ArchiveManagement(): React.JSX.Element {
   const deferredPieces = useDeferredValue(displayPieces);
   const normalizedSearchTerm = searchTerm.trim();
   const totalPieces = libraryStats.totalPieces;
-  const pdfCoverage = formatCoverage(libraryStats.withPdf, totalPieces);
+  const withoutPdf = totalPieces - libraryStats.withPdf;
 
   const composerLabelMap = useMemo(
     () =>
@@ -232,7 +224,7 @@ export default function ArchiveManagement(): React.JSX.Element {
         {
           description: t(
             "archive.toast.sync_warning_desc",
-            "Nie udało się pobrać wszystkich danych archiwum.",
+            "Nie udało się pobrać wszystkich danych biblioteki.",
           ),
         },
       );
@@ -273,17 +265,23 @@ export default function ArchiveManagement(): React.JSX.Element {
   const awaitingCount = awaitingPieces.length;
   const firstAwaitingPiece = awaitingPieces[0];
 
+  // A count, and the one gap a manager acts on, only while there is one: a
+  // coverage percentage restated a default on a healthy library.
   const libraryStatSegments: StatLineItem[] = [
     {
       id: "pieces",
       value: totalPieces,
-      label: t("archive.stat_strip.pieces", "utworów"),
+      label: t("archive.stat_strip.pieces", "utworów", { count: totalPieces }),
     },
-    {
-      id: "pdf",
-      value: `${pdfCoverage}%`,
-      label: t("archive.stat_strip.with_pdf", "z PDF"),
-    },
+    ...(withoutPdf > 0
+      ? [
+          {
+            id: "no_pdf",
+            value: withoutPdf,
+            label: t("archive.stat_strip.without_pdf", "bez PDF"),
+          },
+        ]
+      : []),
   ];
 
   return (
@@ -291,26 +289,25 @@ export default function ArchiveManagement(): React.JSX.Element {
       <div className="relative mx-auto flex max-w-5xl flex-col gap-5 pb-24 pt-6">
         <PageHeader
           size="standard"
-          roleText={t("archive.dashboard.subtitle", "Biblioteka nut")}
-          title={t("archive.dashboard.title", "Archiwum")}
-          titleHighlight={t("archive.dashboard.title_highlight", "repertuaru")}
+          title={t("archive.dashboard.title", "Biblioteka")}
           rightContent={
             !isFreshArchive ? (
               <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
                 <Button
                   variant="primary"
+                  casing="sentence"
                   onClick={() => setIsUploadOpen(true)}
                   fullWidth
-                  leftIcon={<UploadCloud size={14} aria-hidden="true" />}
+                  leftIcon={<UploadCloud size={16} aria-hidden="true" />}
                 >
                   {t("archive.dashboard.upload_pdf", "Wgraj PDF")}
                 </Button>
                 <Button
-                  variant="outline"
-                  size="sm"
+                  variant="ghost"
+                  casing="sentence"
                   onClick={navigateToNew}
                   fullWidth
-                  leftIcon={<Plus size={14} aria-hidden="true" />}
+                  leftIcon={<Plus size={16} aria-hidden="true" />}
                 >
                   {t("archive.dashboard.add_manual", "Dodaj ręcznie")}
                 </Button>
@@ -322,8 +319,8 @@ export default function ArchiveManagement(): React.JSX.Element {
         {!isFreshArchive && <ArchiveTabs />}
 
         {/* Facts stay a sentence; the review backlog is the one thing here that
-            is work, so it is a control and not a fourth restatement of the count
-            the rows already carry. */}
+            is work, so it is a control and not a restatement of the flags the
+            rows already carry. */}
         {!isFreshArchive && (
           <StatLine
             stats={libraryStatSegments}
@@ -332,7 +329,8 @@ export default function ArchiveManagement(): React.JSX.Element {
                 <Button
                   variant="outline"
                   size="sm"
-                  leftIcon={<Sparkles size={13} aria-hidden="true" />}
+                  casing="sentence"
+                  leftIcon={<Sparkles size={14} aria-hidden="true" />}
                   onClick={() => navigateToReview(String(firstAwaitingPiece.id))}
                 >
                   {t(
@@ -346,12 +344,15 @@ export default function ArchiveManagement(): React.JSX.Element {
           />
         )}
 
-        {/* Persistent, refresh-proof live view of every ingestion in flight —
-            rendered in both the fresh and populated archive states, and paired
-            with the dead-letter queue for the runs that never reached a piece
-            (silent until there is one, which is nearly always). */}
-        <ActiveIngestionsPanel />
-        <OrphanIngestionsPanel />
+        {/* Every ingestion in flight, refresh-proof, in both the fresh and the
+            populated library, then the runs that never reached a piece. Each
+            section renders nothing while it is empty, which is nearly always. */}
+        {/* The extra air below keeps the search from reading as part of the
+            last section; with both sections empty the box collapses away. */}
+        <div className="flex flex-col gap-8 pb-4 empty:hidden">
+          <ActiveIngestionsPanel />
+          <OrphanIngestionsPanel />
+        </div>
 
         {isFreshArchive ? (
           <ArchiveWelcomeState onAddManually={navigateToNew} />
@@ -380,7 +381,7 @@ export default function ArchiveManagement(): React.JSX.Element {
             />
 
             {deferredPieces.length > 0 ? (
-              <div className="flex flex-col gap-2">
+              <RecordList label={t("archive.list_aria", "Utwory w bibliotece")}>
                 {deferredPieces.map((piece) => (
                   <PieceRow
                     key={piece.id}
@@ -394,7 +395,7 @@ export default function ArchiveManagement(): React.JSX.Element {
                     onToggleSelect={toggleSelect}
                   />
                 ))}
-              </div>
+              </RecordList>
             ) : (
               <ArchiveEmptyState
                 searchTerm={normalizedSearchTerm}
@@ -436,10 +437,10 @@ export default function ArchiveManagement(): React.JSX.Element {
 
         <ConfirmModal
           isOpen={!!pieceToDelete}
-          title={t("archive.delete_modal.title", "Usunąć utwór z archiwum?")}
+          title={t("archive.delete_modal.title", "Usunąć utwór z biblioteki?")}
           description={t(
             "archive.delete_modal.desc",
-            "Ten krok usunie bezpowrotnie metadane utworu i powiązane pliki zarządzane w archiwum.",
+            "Ten krok usunie bezpowrotnie metadane utworu i powiązane pliki zarządzane w bibliotece.",
           )}
           onConfirm={async () => {
             await executeDelete();

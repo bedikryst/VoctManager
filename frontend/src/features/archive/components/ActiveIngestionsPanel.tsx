@@ -1,22 +1,25 @@
 /**
  * @file ActiveIngestionsPanel.tsx
- * @description Persistent, refresh-proof "AI w toku" panel. Lists every
- * in-flight ingestion (from `GET /api/archive/editions/active/`) with the live
- * step, elapsed time and running cost — so the conductor always sees what the
- * AI is doing, even right after upload (before the piece resolves) and even
- * after a page reload. This is the durable counterpart to the in-session live
- * row inside the upload zone.
+ * @description The library's "Analiza AI" section: every ingestion in flight
+ * (from `GET /api/archive/editions/active/`), with the live step, the elapsed
+ * time, the running cost and the page count. It is refresh-proof, so the
+ * manager sees what the AI is doing right after an upload, before the piece
+ * resolves, and after a reload; the upload drawer's live row is its in-session
+ * counterpart.
+ *
+ * The rows are the list's own `RecordRow`s. Once the resolver has attached a
+ * piece, the row opens its card; before that it is an upload, not a record,
+ * and opens nothing.
  * @module features/archive/components/ActiveIngestionsPanel
  */
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { Ban, Loader2, Sparkles } from "lucide-react";
+import { Ban, Loader2 } from "lucide-react";
 
-import { SectionCard } from "@/shared/ui/composites/SectionCard";
-import { Badge } from "@/shared/ui/primitives/Badge";
-import { Caption, Text } from "@/shared/ui/primitives/typography";
+import { RecordList, RecordRow } from "@/shared/ui/composites/RecordList";
+import { Text } from "@/shared/ui/primitives/typography";
 import { cn } from "@/shared/lib/utils";
 
 import { useActiveIngestions, useCancelEdition } from "../api/archive.queries";
@@ -27,6 +30,7 @@ import {
   liveAnalysisDetail,
   liveIngestionLabel,
 } from "../constants/ingestionProgress";
+import { pieceCardPath } from "../constants/libraryScope";
 import { InlineConfirmAction } from "./InlineConfirmAction";
 
 const fmtElapsed = (seconds: number): string => {
@@ -37,11 +41,12 @@ const fmtElapsed = (seconds: number): string => {
 
 export const ActiveIngestionsPanel = (): React.JSX.Element | null => {
   const { t } = useTranslation();
+  const headingId = useId();
   const { data } = useActiveIngestions();
   const active = data ?? [];
   const [now, setNow] = useState<number>(() => Date.now());
 
-  // Tick once a second so the elapsed timer feels alive between 2s polls.
+  // Tick once a second so the elapsed timer moves between the 2 s polls.
   useEffect(() => {
     if (active.length === 0) return;
     const id = window.setInterval(() => setNow(Date.now()), 1000);
@@ -51,27 +56,16 @@ export const ActiveIngestionsPanel = (): React.JSX.Element | null => {
   if (active.length === 0) return null;
 
   return (
-    // The card header is a label slot, not a sentence: the count rides in the
-    // action chip, and the sentence stays where it does real work — the region's
-    // accessible name.
-    <SectionCard
-      as="h2"
-      title={t("archive.active.section", "Analiza AI")}
-      icon={<Sparkles size={14} strokeWidth={1.8} aria-hidden="true" />}
-      action={
-        <Badge variant="amethyst" className="py-0 tabular-nums">
-          {active.length}
-        </Badge>
-      }
-      ariaLabel={t("archive.active.aria", "Przetwarzanie AI w toku")}
-      bodyClassName="gap-2"
-    >
-      <ul role="list" aria-live="polite" className="flex flex-col gap-2">
+    <section aria-labelledby={headingId}>
+      <Text as="h2" id={headingId} size="lg" weight="semibold" className="mb-2">
+        {t("archive.active.section", "Analiza AI")}
+      </Text>
+      <RecordList label={t("archive.active.aria", "Przetwarzanie AI w toku")}>
         {active.map((item) => (
           <ActiveRow key={item.id} item={item} now={now} />
         ))}
-      </ul>
-    </SectionCard>
+      </RecordList>
+    </section>
   );
 };
 
@@ -88,59 +82,53 @@ const ActiveRow = ({ item, now }: ActiveRowProps): React.JSX.Element => {
   // would show an absurd multi-day timer.
   const startedAt = item.ingestion_run_started_at ?? item.created_at;
   const elapsed = Math.floor((now - new Date(startedAt).getTime()) / 1000);
-  // The streamed preview knows the work's real title seconds into the analysis
-  // — long before the resolver attaches a Piece (which is where piece_title
-  // comes from). Filename is the last resort.
-  const title =
-    item.piece_title?.trim() ||
-    item.live_preview?.title ||
-    item.original_filename;
+  // The streamed preview knows the work's real title seconds into the analysis,
+  // long before the resolver attaches a Piece (which is where piece_title comes
+  // from). The file name is the last resort, and is not a work's title.
+  const workTitle = item.piece_title?.trim() || item.live_preview?.title || null;
+  const step =
+    (!overloaded && liveAnalysisDetail(t, item.live_preview)) ||
+    liveIngestionLabel(t, item.ingestion_status, item.ingestion_progress);
 
   return (
-    <li
-      className={cn(
-        "flex items-center gap-3 rounded-nested border bg-ethereal-alabaster/70 px-4 py-3",
-        overloaded ? "border-ethereal-gold/40" : "border-hairline",
-      )}
-    >
-      <span
-        className={cn(
-          "flex h-9 w-9 shrink-0 items-center justify-center rounded-control border",
-          overloaded
-            ? "border-ethereal-gold/50 bg-ethereal-gold/10 text-ethereal-gold"
-            : "border-ethereal-amethyst/40 bg-ethereal-amethyst/10 text-ethereal-amethyst",
-        )}
-        aria-hidden="true"
-      >
-        <Loader2 size={16} strokeWidth={2} className="animate-spin" />
-      </span>
-      <div className="min-w-0 flex-1">
-        <Text size="sm" weight="semibold" truncate className="block">
-          {title}
-        </Text>
-        <Caption color={overloaded ? "gold" : "muted"} className="mt-0.5 block">
-          {(!overloaded && liveAnalysisDetail(t, item.live_preview)) ||
-            liveIngestionLabel(t, item.ingestion_status, item.ingestion_progress)}
-        </Caption>
-        <Caption color="muted" className="mt-0.5 block">
-          {[
-            fmtElapsed(elapsed),
-            formatIngestionCost(item.ingestion_cost_cents_lifetime),
-            item.page_count
-              ? `${item.page_count} ${t("archive.active.pages", "str.")}`
-              : null,
-          ]
-            .filter(Boolean)
-            .join(" · ")}
-        </Caption>
-      </div>
-      <CancelControl editionId={item.id} />
-    </li>
+    <RecordRow
+      open={item.piece ? { to: pieceCardPath(item.piece, null) } : undefined}
+      title={workTitle ?? item.original_filename}
+      voice={workTitle ? "work" : "name"}
+      leading={
+        <Loader2
+          size={16}
+          strokeWidth={2}
+          aria-hidden="true"
+          className={cn(
+            "animate-spin",
+            overloaded ? "text-ethereal-gold" : "text-ethereal-amethyst",
+          )}
+        />
+      }
+      facts={[
+        overloaded ? (
+          <Text as="span" size="sm" color="gold">
+            {step}
+          </Text>
+        ) : (
+          step
+        ),
+      ]}
+      meta={[
+        fmtElapsed(elapsed),
+        formatIngestionCost(item.ingestion_cost_cents_lifetime),
+        item.page_count
+          ? `${item.page_count} ${t("archive.active.pages", "str.")}`
+          : null,
+      ]}
+      actions={<CancelControl editionId={item.id} />}
+    />
   );
 };
 
-/** Two-click "przerwij" — cancelling an ingestion mid-flight is deliberate
- *  (wrong PDF), so guard it against an accidental single tap. */
+/** Two-step "Przerwij": cancelling an ingestion mid-flight is deliberate
+ *  (a wrong PDF), so it is guarded against a single accidental tap. */
 const CancelControl = ({
   editionId,
 }: {

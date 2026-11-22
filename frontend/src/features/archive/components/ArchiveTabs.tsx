@@ -34,7 +34,7 @@ export const ArchiveTabs = ({ className }: ArchiveTabsProps): React.JSX.Element 
     <RouteTabs
       variant="underline"
       items={items}
-      ariaLabel={t("archive.tabs.aria", "Sekcje archiwum")}
+      ariaLabel={t("archive.tabs.aria", "Sekcje biblioteki")}
       className={className}
     />
   );

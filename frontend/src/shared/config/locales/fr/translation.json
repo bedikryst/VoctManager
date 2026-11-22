@@ -562,17 +562,12 @@
     },
     "dashboard": {
       "add_manual": "Ajouter manuellement",
-      "collection_desc": "Historique de vos événements réalisés.",
-      "collection_title": "Projets Historiques",
-      "new_piece": "Nouvelle pièce",
-      "subtitle": "Ressources du répertoire",
-      "title": "Archive de",
-      "title_highlight": "Partitions",
+      "title": "Bibliothèque",
       "upload_pdf": "Importer un PDF"
     },
     "delete_modal": {
       "desc": "Cette étape supprimera définitivement les métadonnées de la pièce...",
-      "title": "Supprimer la pièce de l'archive ?"
+      "title": "Supprimer la pièce de la bibliothèque ?"
     },
     "editions": {
       "ai_cost": "Coût IA : {{cost}}",
@@ -618,7 +613,7 @@
       "add_search": "Ajouter la pièce \"{{term}}\"",
       "filters_blocked": "Les filtres actifs masquent la collection. Effacez-les pour revenir au catalogue complet.",
       "search_results": "Aucun résultat pour \"{{term}}\". Vous pouvez créer une nouvelle fiche de pièce ou supprimer certains filtres.",
-      "start_building": "Commencez à construire la bibliothèque en ajoutant la première pièce à l'archive.",
+      "start_building": "Commencez à construire la bibliothèque en ajoutant la première pièce.",
       "title": "Aucune pièce dans la vue actuelle"
     },
     "filters": {
@@ -637,7 +632,7 @@
       "epoch_token": "Époque : {{epoch}}",
       "heading": "Filtres de collection",
       "no_active_filters": "Aucun filtre actif",
-      "no_filters_message": "Aucun filtre actif. La vue affiche le catalogue d'archives complet.",
+      "no_filters_message": "Aucun filtre actif. La vue affiche toute la bibliothèque.",
       "search_label": "Recherche",
       "search_placeholder": "Recherchez par titre ou compositeur...",
       "search_token": "Expression : \"{{term}}\"",
@@ -1022,46 +1017,19 @@
         "generic": "Impossible de lancer la traduction."
       }
     },
+    "list_aria": "Pièces de la bibliothèque",
     "row": {
-      "audio_count_tooltip_one": "{{count}} piste audio",
-      "audio_count_tooltip_few": "{{count}} pistes audio",
-      "audio_count_tooltip_many": "{{count}} pistes audio",
-      "audio_count_tooltip_other": "{{count}} pistes audio",
-      "delete_aria": "Supprimer la pièce {{title}}",
-      "edit_title": "Titre",
-      "edit_voicing": "Distribution",
-      "edit_year": "Année de composition",
-      "title_placeholder": "Titre de la pièce",
-      "traditional": "Traditionnel",
-      "year_anomaly_aria": "Avertissement : l'année de composition semble douteuse",
-      "year_anomaly_tooltip": "L'IA a pu se tromper — l'année ne correspond pas aux dates du compositeur",
-      "year_placeholder": "année ?",
-      "no_pdf": "sans partition",
-      "no_pdf_tooltip": "Aucune partition — importez un PDF pour que l'IA complète les métadonnées"
-    },
-    "row_expanded": {
-      "ai_empty_hint": "Pièce saisie manuellement. Importez un PDF pour que l'IA complète les métadonnées, l'IPA, les traductions et la note de programme.",
-      "audio_count_one": "Piste d'entraînement ({{count}})",
-      "audio_count_few": "Pistes d'entraînement ({{count}})",
-      "audio_count_many": "Pistes d'entraînement ({{count}})",
-      "audio_count_other": "Pistes d'entraînement ({{count}})",
-      "cta_open_card": "Ouvrir la fiche de la pièce",
-      "default_marker": "par défaut",
-      "divisi": "Divisi",
-      "no_audio": "Aucune piste MP3",
-      "no_composer": "Aucun compositeur attribué",
-      "no_divisi": "Aucune exigence de voix — ajoutez-les sur la fiche de la pièce.",
-      "no_pdf": "Aucun PDF — importez un fichier depuis la page principale de l'archive.",
-      "pdf_download": "Télécharger le PDF",
-      "pdf_one": "Partition PDF",
-      "pdf_many_one": "Édition ({{count}})",
-      "pdf_many_few": "Éditions ({{count}})",
-      "pdf_many_many": "Éditions ({{count}})",
-      "pdf_many_other": "Éditions ({{count}})",
-      "unverified_count_one": "{{count}} champ à vérifier",
-      "unverified_count_other": "{{count}} champs à vérifier",
-      "divisi_shared": "Commun à toutes les éditions",
-      "divisi_other_edition": "Autre édition"
+      "flag_no_pdf": "Sans PDF",
+      "flag_running": "IA en cours",
+      "flag_awaiting": "À vérifier",
+      "flag_failed": "Échec de l'IA",
+      "year_anomaly": "L'IA a pu se tromper : l'année ne correspond pas aux dates du compositeur",
+      "tracks_one": "{{count}} piste",
+      "tracks_few": "{{count}} pistes",
+      "tracks_many": "{{count}} pistes",
+      "tracks_other": "{{count}} pistes",
+      "menu_aria": "Plus : {{title}}",
+      "delete": "Supprimer la pièce"
     },
     "tracks": {
       "add": "Ajouter une piste",
@@ -1110,7 +1078,7 @@
       "all_composers": "Tous",
       "all_epochs": "Toutes",
       "all_voicings": "Toutes",
-      "aria": "Rechercher dans l'archive",
+      "aria": "Rechercher dans la bibliothèque",
       "composer": "Compositeur",
       "epoch": "Époque",
       "filters_btn": "Filtres",
@@ -1121,15 +1089,18 @@
       "voicing": "Distribution"
     },
     "stat_strip": {
-      "pieces": "pièces",
-      "with_pdf": "avec PDF",
+      "pieces_one": "pièce",
+      "pieces_few": "pièces",
+      "pieces_many": "pièces",
+      "pieces_other": "pièces",
+      "without_pdf": "sans PDF",
       "review_cta_one": "{{count}} à vérifier",
       "review_cta_few": "{{count}} à vérifier",
       "review_cta_many": "{{count}} à vérifier",
       "review_cta_other": "{{count}} à vérifier"
     },
     "tabs": {
-      "aria": "Sections de l'archive",
+      "aria": "Sections de la bibliothèque",
       "composers": "Compositeurs",
       "pieces": "Pièces"
     },
@@ -1137,8 +1108,8 @@
       "delete_error_desc": "Assurez-vous que la pièce n'est pas liée à des projets actifs.",
       "delete_error_title": "Impossible de supprimer la pièce.",
       "delete_loading": "Suppression de \"{{title}}\"...",
-      "delete_success": "La pièce a été supprimée de l'archive.",
-      "sync_warning_desc": "Impossible de récupérer toutes les données de l'archive.",
+      "delete_success": "La pièce a été supprimée de la bibliothèque.",
+      "sync_warning_desc": "Impossible de récupérer toutes les données de la bibliothèque.",
       "sync_warning_title": "Avertissement de synchronisation"
     },
     "upload": {
@@ -1220,7 +1191,7 @@
       "aria": "Fichiers importés que l’IA n’a pas pu traiter",
       "hint": "L’IA n’est pas allée jusqu’à identifier l’œuvre : ces fichiers ne sont rattachés à aucune fiche. Relancez l’analyse ou supprimez le fichier.",
       "untitled": "Sans titre",
-      "retry": "Relancer",
+      "retry": "Relancer l'analyse",
       "retry_started": "Analyse relancée.",
       "retry_failed": "Impossible de relancer l’analyse.",
       "delete": "Supprimer le fichier importé",
@@ -3076,10 +3047,10 @@
       "kpi_active_projects": "Projets actifs",
       "kpi_ensemble": "L'ensemble",
       "kpi_invitations": "Statut des Invitations",
-      "kpi_pieces": "Pièces en archive",
+      "kpi_pieces": "Pièces de la bibliothèque",
       "kpi_voice_balance": "Équilibre des voix",
       "modules": {
-        "archive_title": "Archive des partitions",
+        "archive_title": "Bibliothèque",
         "artists_title": "Base artistes",
         "contracts_title": "RH & Paie",
         "crew_title": "Équipe technique",
@@ -3114,7 +3085,7 @@
         "title": "Ligne de production"
       },
       "quick": {
-        "archive": "Archives",
+        "archive": "Bibliothèque",
         "archive_hint": "Partitions et œuvres",
         "aria": "Modules du système",
         "artists": "Artistes",
@@ -3147,7 +3118,7 @@
         "eyebrow": "Première saison",
         "finish": "Terminer la configuration",
         "intro": "Trois étapes vous séparent d'une console vivante : programmez votre premier concert, invitez vos chanteurs et constituez le répertoire. Chaque étape mène directement au bon outil.",
-        "intro_done": "Vous avez un concert au calendrier, des chanteurs dans l'effectif et du répertoire aux archives. Votre console est prête à travailler.",
+        "intro_done": "Vous avez un concert au calendrier, des chanteurs dans l'effectif et du répertoire dans la bibliothèque. Votre console est prête à travailler.",
         "progress": "Étape {{done}} sur {{total}}",
         "snooze": "Je le ferai plus tard",
         "step_done": "Terminé",
@@ -3158,8 +3129,8 @@
             "label": "Programmez votre premier concert"
           },
           "repertoire": {
-            "cta": "Ouvrir les archives",
-            "desc": "Téléversez partitions et enregistrements aux archives pour les associer aux concerts et répétitions.",
+            "cta": "Ouvrir la bibliothèque",
+            "desc": "Téléversez partitions et enregistrements dans la bibliothèque pour les associer aux concerts et répétitions.",
             "label": "Constituez le répertoire"
           },
           "singers": {
@@ -3339,7 +3310,7 @@
       },
       "links": {
         "admin_dashboard": "Tableau de bord Admin",
-        "archive": "Archives Musicales",
+        "archive": "Bibliothèque",
         "artist_dashboard": "Tableau de bord Artiste",
         "artists": "Base des Artistes",
         "attendance": "Répétitions et présence",
@@ -4801,7 +4772,7 @@
         "na": "Sans objet"
       },
       "item": {
-        "fix_in_archive": "Certaines données sont peu fiables — corrigez-les dans l'archive",
+        "fix_in_archive": "Certaines données sont peu fiables — corrigez-les dans la bibliothèque",
         "no_pdf": "Aucune partition jointe — une page de substitution apparaîtra dans le recueil.",
         "no_pdf_short": "sans partition",
         "over_copies": "L'effectif ({{cast}}) dépasse le nombre d'exemplaires sous licence possédés ({{copies}}). Assurez-vous d'avoir assez de copies ou une licence supplémentaire.",
@@ -6218,21 +6189,6 @@
       "collapse": "Replier la liste"
     }
   },
-  "repertoire": {
-    "composer": {
-      "portrait_alt": "Portrait de {{name}}",
-      "section": "Compositeur (source : MusicBrainz + Wikidata)"
-    },
-    "status": {
-      "awaiting": "En attente de révision",
-      "enriching": "Recherche de sources",
-      "extracting": "Extraction des métadonnées",
-      "failed": "Erreur",
-      "generating": "Note et traductions",
-      "pending": "En attente",
-      "ready": "Approuvé"
-    }
-  },
   "score_book": {
     "download_failed": "Le fichier n'a pas pu être préparé.",
     "download_hint": "Un fichier avec les annotations de votre choix. La préparation prend un instant.",
@@ -7078,10 +7034,10 @@
         "capabilities": "Les données de travail : déchiffrage et étendue vocale.",
         "contacts": "Les coordonnées des autres chanteurs — l'annuaire porte un nom, un avatar et une voix.",
         "documents": "Les documents des catégories non partagées avec les choristes.",
-        "archive": "L'archive des œuvres — ils voient le programme de leurs concerts, jamais le catalogue.",
+        "archive": "La bibliothèque des œuvres — ils voient le programme de leurs concerts, jamais le catalogue.",
         "after_concert": "Les partitions et les pistes après le concert — le matériel se ferme pour les projets terminés et annulés.",
         "protected": "Les éditions protégées — une licence inconnue est traitée comme protégée.",
-        "manager_panel": "Tout le panneau du manager : artistes, présences, archives, logistique, équipe et projets."
+        "manager_panel": "Tout le panneau du manager : artistes, présences, bibliothèque, logistique, équipe et projets."
       },
       "from_you": {
         "title": "Ce que vous ne verrez pas ici",

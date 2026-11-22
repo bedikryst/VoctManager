@@ -1,9 +1,9 @@
 /**
  * @file ArchiveSearchBar.tsx
- * @description Dominant search input + collapsible advanced filters.
- * Replaces the 4-dropdown panel that always took a full row. Most of the
- * time the conductor just types — composer / epoch / voicing filters hide
- * behind a small "Filtry" toggle with a count badge.
+ * @description Dominant search input + collapsible advanced filters. Most of
+ * the time the conductor just types; the composer, epoch and voicing filters
+ * wait behind a "Filtry" toggle that counts the ones in use, beside the
+ * "Zaznacz wiele" switch for the list's selection mode.
  * @module features/archive/components/ArchiveSearchBar
  */
 
@@ -25,7 +25,7 @@ import { FilterTokens, type FilterToken } from "@/shared/ui/composites/FilterTok
 import { GlossaryTerm } from "@/shared/ui/composites/glossary/GlossaryTerm";
 import { Input } from "@/shared/ui/primitives/Input";
 import { Select } from "@/shared/ui/primitives/Select";
-import { Caption, Eyebrow } from "@/shared/ui/primitives/typography";
+import { Caption, Text } from "@/shared/ui/primitives/typography";
 import { cn } from "@/shared/lib/utils";
 
 export type ArchiveActiveFilter = FilterToken;
@@ -97,16 +97,16 @@ export const ArchiveSearchBar = ({
             )}
             value={searchTerm}
             onChange={(event) => onSearchTermChange(event.target.value)}
-            aria-label={t("archive.search.aria", "Szukaj w archiwum")}
+            aria-label={t("archive.search.aria", "Szukaj w bibliotece")}
           />
         </div>
         <div className="flex shrink-0 items-center gap-2">
           <Button
             variant={selectionMode ? "secondary" : "outline"}
+            casing="sentence"
             aria-pressed={selectionMode}
             onClick={onToggleSelectionMode}
-            title={t("archive.search.select_mode", "Zaznacz wiele")}
-            leftIcon={<CheckSquare size={13} aria-hidden="true" />}
+            leftIcon={<CheckSquare size={16} aria-hidden="true" />}
             className={cn(
               "shrink-0",
               selectionMode && "border-ethereal-gold/40 text-ethereal-ink",
@@ -116,12 +116,13 @@ export const ArchiveSearchBar = ({
           </Button>
           <Button
             variant={activeFilterCount > 0 ? "secondary" : "outline"}
+            casing="sentence"
             onClick={() => setIsAdvancedOpen((open) => !open)}
             aria-expanded={isAdvancedOpen}
-            leftIcon={<SlidersHorizontal size={13} aria-hidden="true" />}
+            leftIcon={<SlidersHorizontal size={16} aria-hidden="true" />}
             rightIcon={
               <ChevronDown
-                size={13}
+                size={16}
                 aria-hidden="true"
                 className={cn(
                   "transition-transform",
@@ -132,7 +133,7 @@ export const ArchiveSearchBar = ({
           >
             {t("archive.search.filters_btn", "Filtry")}
             {activeFilterCount > 0 && (
-              <Badge variant="warning" className="ml-2 px-1.5 py-0">
+              <Badge variant="warning" casing="natural" className="ml-2 px-1.5 py-0 tabular-nums">
                 {activeFilterCount}
               </Badge>
             )}
@@ -140,9 +141,9 @@ export const ArchiveSearchBar = ({
           {hasActiveFilters && (
             <Button
               variant="ghost"
-              size="sm"
+              casing="sentence"
               onClick={onResetFilters}
-              leftIcon={<RotateCcw size={13} aria-hidden="true" />}
+              leftIcon={<RotateCcw size={16} aria-hidden="true" />}
             >
               {t("archive.search.reset", "Wyczyść")}
             </Button>
@@ -150,20 +151,21 @@ export const ArchiveSearchBar = ({
         </div>
       </div>
 
+      {/* Opacity and a short drop, on the compositor: the panel pushes the
+          list down at once rather than growing into it. */}
       <AnimatePresence initial={false}>
         {isAdvancedOpen && (
           <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
+            initial={{ opacity: 0, transform: "translateY(-4px)" }}
+            animate={{ opacity: 1, transform: "translateY(0px)" }}
+            exit={{ opacity: 0, transform: "translateY(-4px)" }}
             transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-            className="overflow-hidden"
           >
             <div className="grid gap-3 rounded-nested border border-hairline bg-ethereal-alabaster/40 p-3 md:grid-cols-3">
               <div>
-                <Eyebrow color="muted" className="mb-1 ml-1 block">
+                <Text as="span" size="sm" color="graphite" className="mb-1 ml-1 block">
                   {t("archive.search.composer", "Kompozytor")}
-                </Eyebrow>
+                </Text>
                 {/* An unset filter means "everything" — that reading belongs on
                     the placeholder, and the clear entry is the way back to it. */}
                 <Select
@@ -179,11 +181,11 @@ export const ArchiveSearchBar = ({
                 />
               </div>
               <div>
-                <Eyebrow color="muted" className="mb-1 ml-1 block">
+                <Text as="span" size="sm" color="graphite" className="mb-1 ml-1 block">
                   <GlossaryTerm term="epoch">
                     {t("archive.search.epoch", "Epoka")}
                   </GlossaryTerm>
-                </Eyebrow>
+                </Text>
                 <Select
                   value={epochFilter}
                   onValueChange={onEpochFilterChange}
@@ -194,9 +196,9 @@ export const ArchiveSearchBar = ({
                 />
               </div>
               <div>
-                <Eyebrow color="muted" className="mb-1 ml-1 block">
+                <Text as="span" size="sm" color="graphite" className="mb-1 ml-1 block">
                   {t("archive.search.voicing", "Obsada")}
-                </Eyebrow>
+                </Text>
                 <Select
                   value={voicingFilter}
                   onValueChange={onVoicingFilterChange}

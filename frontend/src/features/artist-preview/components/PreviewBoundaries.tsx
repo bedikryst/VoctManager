@@ -169,7 +169,7 @@ export const PreviewBoundaries = (): React.JSX.Element => {
             <BoundaryItem>
               {t(
                 "artist_preview.boundaries.from_member.archive",
-                "Archiwum utworów — widzą program swoich koncertów, nigdy katalogu.",
+                "Biblioteka utworów — widzą program swoich koncertów, nigdy katalogu.",
               )}
             </BoundaryItem>
             <BoundaryItem>
@@ -187,7 +187,7 @@ export const PreviewBoundaries = (): React.JSX.Element => {
             <BoundaryItem>
               {t(
                 "artist_preview.boundaries.from_member.manager_panel",
-                "Całego panelu menedżera: artystów, obecności, archiwum, logistyki, ekipy i projektów.",
+                "Całego panelu menedżera: artystów, obecności, biblioteki, logistyki, ekipy i projektów.",
               )}
             </BoundaryItem>
           </BoundaryList>

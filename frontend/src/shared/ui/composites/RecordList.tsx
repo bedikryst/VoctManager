@@ -19,6 +19,12 @@
  * cannot break the settled rule: serif for a titled work, sans for a person or
  * a place.
  *
+ * Selection comes in two scopes. A standing selection (`box`, a ledger's) puts
+ * a box beside a row that still opens its record. A selection mode a toolbar
+ * switches on (`row`) makes the whole row one toggle: the body becomes a
+ * pressed-state button and the actions step aside, so a tap while selecting
+ * never leaves the page and drops the selection.
+ *
  * `SelectBox` lives here because both this list and `DataTable` draw it.
  * @module shared/ui/composites/RecordList
  */
@@ -40,13 +46,23 @@ export type RecordRowOpen =
 
 export interface RecordRowSelect {
   readonly checked: boolean;
-  /** The checkbox's accessible name. */
+  /** The checkbox's accessible name, and the row's while the row is the toggle. */
   readonly label: string;
   readonly onChange: () => void;
+  /**
+   * `box` (default): a standing selection, the box beside a row that opens its
+   * record. `row`: the list is in a selection mode, and the whole row toggles.
+   */
+  readonly scope?: "box" | "row";
 }
 
 export interface RecordRowProps {
-  readonly open: RecordRowOpen;
+  /**
+   * What the row opens. Omitted for an entry that is not a record yet (an
+   * upload the AI has not attached to a piece): the body is static and the
+   * actions are the row's only controls.
+   */
+  readonly open?: RecordRowOpen;
   readonly title: string;
   readonly voice: RecordVoice;
   /** An avatar or a category icon. Omitted rather than filled with a placeholder glyph. */
@@ -100,17 +116,24 @@ export const recordActionClass =
 const OPEN_FOCUS =
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ethereal-gold/40";
 
-/** A checkbox inside a label that widens its target past the 16 px box. */
+/**
+ * A checkbox inside a label that widens its target past the 16 px box.
+ * `mirror`: a second pointer target for a control that already carries the
+ * state (a row in selection mode), kept out of the tab order and the
+ * accessibility tree so a keyboard or a screen reader meets the row once.
+ */
 export function SelectBox({
   checked,
   indeterminate = false,
   label,
   onChange,
+  mirror = false,
 }: {
   readonly checked: boolean;
   readonly indeterminate?: boolean;
   readonly label: string;
   readonly onChange: () => void;
+  readonly mirror?: boolean;
 }): React.JSX.Element {
   return (
     <label className="-m-2 inline-flex cursor-pointer p-2">
@@ -118,7 +141,9 @@ export function SelectBox({
         checked={checked}
         indeterminate={indeterminate}
         onChange={onChange}
-        aria-label={label}
+        aria-label={mirror ? undefined : label}
+        aria-hidden={mirror || undefined}
+        tabIndex={mirror ? -1 : undefined}
       />
     </label>
   );
@@ -214,6 +239,35 @@ export function RecordRow({
     "flex min-w-0 flex-1 items-center gap-3 rounded-control py-3 first:-ml-2 first:pl-2 last:-mr-2 last:pr-2",
     OPEN_FOCUS,
   );
+  const rowToggles = select?.scope === "row";
+  const ariaCurrent = current ? "true" : undefined;
+
+  const openElement = rowToggles ? (
+    <button
+      type="button"
+      onClick={select.onChange}
+      aria-pressed={select.checked}
+      aria-label={select.label}
+      className={cn(openClass, "text-left")}
+    >
+      {body}
+    </button>
+  ) : open === undefined ? (
+    <div className={cn(openClass, "cursor-default")}>{body}</div>
+  ) : "to" in open ? (
+    <Link to={open.to} state={open.state} aria-current={ariaCurrent} className={openClass}>
+      {body}
+    </Link>
+  ) : (
+    <button
+      type="button"
+      onClick={open.onOpen}
+      aria-current={ariaCurrent}
+      className={cn(openClass, "text-left")}
+    >
+      {body}
+    </button>
+  );
 
   return (
     <li id={id}>
@@ -222,36 +276,27 @@ export function RecordRow({
       <div
         className={cn(
           "relative -mx-2 flex items-center gap-2 rounded-control px-2 transition-colors",
-          select?.checked ? "bg-ethereal-gold/5" : "hover:bg-ethereal-ink/3",
+          select?.checked
+            ? "bg-ethereal-gold/5"
+            : (open !== undefined || rowToggles) && "hover:bg-ethereal-ink/3",
           current &&
             "before:pointer-events-none before:absolute before:inset-y-2 before:left-0 before:w-0.5 before:rounded-full before:bg-ethereal-gold",
         )}
       >
         {select && (
           <span className="flex shrink-0 items-center">
-            <SelectBox checked={select.checked} label={select.label} onChange={select.onChange} />
+            <SelectBox
+              checked={select.checked}
+              label={select.label}
+              onChange={select.onChange}
+              mirror={rowToggles}
+            />
           </span>
         )}
-        {"to" in open ? (
-          <Link
-            to={open.to}
-            state={open.state}
-            aria-current={current ? "true" : undefined}
-            className={openClass}
-          >
-            {body}
-          </Link>
-        ) : (
-          <button
-            type="button"
-            onClick={open.onOpen}
-            aria-current={current ? "true" : undefined}
-            className={cn(openClass, "text-left")}
-          >
-            {body}
-          </button>
+        {openElement}
+        {!rowToggles && isPresent(actions) && (
+          <span className="flex shrink-0 items-center gap-1">{actions}</span>
         )}
-        {isPresent(actions) && <span className="flex shrink-0 items-center gap-1">{actions}</span>}
       </div>
     </li>
   );

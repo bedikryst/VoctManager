@@ -3,9 +3,8 @@
  * @description Maps the backend's fine-grained ingestion step
  * (`ScoreEdition.ingestion_progress`) to a live, human-facing label — the
  * "what is the AI doing right now?" line shown while a freshly uploaded PDF is
- * processed. Mirrors the i18n-key + Polish-default pattern used across the
- * Archive UI (e.g. EditionStatusBadge), so the copy is localizable but reads in
- * Polish by default.
+ * processed. Each label is an i18n key with a Polish default, so the copy is
+ * localizable but reads in Polish by default.
  * @module features/archive/constants/ingestionProgress
  */
 

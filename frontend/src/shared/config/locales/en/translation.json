@@ -555,17 +555,12 @@
     },
     "dashboard": {
       "add_manual": "Add manually",
-      "collection_desc": "The piece archive is the central repository for all repertoire resources. Each card represents a piece with its metadata, reference recordings, and attached sheet music. Use the filters to narrow down the collection or add new pieces to expand the library.",
-      "collection_title": "Piece archive",
-      "new_piece": "New Piece",
-      "subtitle": "Repertoire Resources",
-      "title": "Sheet Music",
-      "title_highlight": "Archive",
+      "title": "Library",
       "upload_pdf": "Upload PDF"
     },
     "delete_modal": {
       "desc": "This step will permanently remove the piece metadata...",
-      "title": "Delete piece from archive?"
+      "title": "Delete piece from the library?"
     },
     "editions": {
       "ai_cost": "AI cost: {{cost}}",
@@ -611,7 +606,7 @@
       "add_search": "Add piece \"{{term}}\"",
       "filters_blocked": "Active filters are hiding the collection. Clear them to return to the full catalog.",
       "search_results": "No results for \"{{term}}\". You can create a new piece card or remove some filters.",
-      "start_building": "Start building the library by adding the first piece to the archive.",
+      "start_building": "Start building the library by adding the first piece.",
       "title": "No pieces in the current view"
     },
     "filters": {
@@ -630,7 +625,7 @@
       "epoch_token": "Epoch: {{epoch}}",
       "heading": "Collection Filters",
       "no_active_filters": "No active filters",
-      "no_filters_message": "No active filters. The view shows the full archive catalog.",
+      "no_filters_message": "No active filters. The view shows the whole library.",
       "search_label": "Search",
       "search_placeholder": "Search by title or composer...",
       "search_token": "Phrase: \"{{term}}\"",
@@ -1015,46 +1010,19 @@
         "generic": "Could not start the translation."
       }
     },
+    "list_aria": "Pieces in the library",
     "row": {
-      "audio_count_tooltip_one": "{{count}} audio track",
-      "audio_count_tooltip_few": "{{count}} audio tracks",
-      "audio_count_tooltip_many": "{{count}} audio tracks",
-      "audio_count_tooltip_other": "{{count}} audio tracks",
-      "delete_aria": "Delete piece {{title}}",
-      "edit_title": "Title",
-      "edit_voicing": "Voicing",
-      "edit_year": "Composition year",
-      "title_placeholder": "Piece title",
-      "traditional": "Traditional",
-      "year_anomaly_aria": "Warning: the composition year looks suspicious",
-      "year_anomaly_tooltip": "AI may have got it wrong — the year doesn't match the composer's lifespan",
-      "year_placeholder": "year?",
-      "no_pdf": "no score",
-      "no_pdf_tooltip": "No score attached — upload a PDF so the AI can fill in the metadata"
-    },
-    "row_expanded": {
-      "ai_empty_hint": "Piece entered manually. Upload a PDF so AI can fill in the metadata, IPA, translations and programme note.",
-      "audio_count_one": "Practice track ({{count}})",
-      "audio_count_few": "Practice tracks ({{count}})",
-      "audio_count_many": "Practice tracks ({{count}})",
-      "audio_count_other": "Practice tracks ({{count}})",
-      "cta_open_card": "Open piece card",
-      "default_marker": "default",
-      "divisi": "Divisi",
-      "no_audio": "No MP3 tracks",
-      "no_composer": "No composer assigned",
-      "no_divisi": "No voice requirements — add them on the piece card.",
-      "no_pdf": "No PDF — upload a file from the main archive page.",
-      "pdf_download": "Download PDF",
-      "pdf_one": "Score PDF",
-      "pdf_many_one": "Edition ({{count}})",
-      "pdf_many_few": "Editions ({{count}})",
-      "pdf_many_many": "Editions ({{count}})",
-      "pdf_many_other": "Editions ({{count}})",
-      "unverified_count_one": "{{count}} field to verify",
-      "unverified_count_other": "{{count}} fields to verify",
-      "divisi_shared": "Shared across editions",
-      "divisi_other_edition": "Another edition"
+      "flag_no_pdf": "No PDF",
+      "flag_running": "AI at work",
+      "flag_awaiting": "Awaiting review",
+      "flag_failed": "AI failed",
+      "year_anomaly": "The AI may have got it wrong: the year does not fit the composer's lifespan",
+      "tracks_one": "{{count}} track",
+      "tracks_few": "{{count}} tracks",
+      "tracks_many": "{{count}} tracks",
+      "tracks_other": "{{count}} tracks",
+      "menu_aria": "More: {{title}}",
+      "delete": "Delete piece"
     },
     "tracks": {
       "add": "Add a track",
@@ -1099,7 +1067,7 @@
       "all_composers": "All",
       "all_epochs": "All",
       "all_voicings": "All",
-      "aria": "Search the archive",
+      "aria": "Search the library",
       "composer": "Composer",
       "epoch": "Era",
       "filters_btn": "Filters",
@@ -1110,15 +1078,18 @@
       "voicing": "Voicing"
     },
     "stat_strip": {
-      "pieces": "pieces",
-      "with_pdf": "with PDF",
+      "pieces_one": "piece",
+      "pieces_few": "pieces",
+      "pieces_many": "pieces",
+      "pieces_other": "pieces",
+      "without_pdf": "without PDF",
       "review_cta_one": "{{count}} to review",
       "review_cta_few": "{{count}} to review",
       "review_cta_many": "{{count}} to review",
       "review_cta_other": "{{count}} to review"
     },
     "tabs": {
-      "aria": "Archive sections",
+      "aria": "Library sections",
       "composers": "Composers",
       "pieces": "Pieces"
     },
@@ -1126,8 +1097,8 @@
       "delete_error_desc": "Make sure the piece is not linked to active projects.",
       "delete_error_title": "Failed to remove the piece.",
       "delete_loading": "Deleting \"{{title}}\"...",
-      "delete_success": "Piece was removed from the archive.",
-      "sync_warning_desc": "Failed to fetch all archive data.",
+      "delete_success": "Piece was removed from the library.",
+      "sync_warning_desc": "Failed to fetch all library data.",
       "sync_warning_title": "Sync warning"
     },
     "upload": {
@@ -1209,7 +1180,7 @@
       "aria": "Uploaded files the AI could not process",
       "hint": "The AI never got as far as identifying the work, so these files reached no piece card. Retry the analysis or delete the file.",
       "untitled": "Untitled",
-      "retry": "Retry",
+      "retry": "Retry analysis",
       "retry_started": "Analysis started again.",
       "retry_failed": "Couldn't restart the analysis.",
       "delete": "Delete uploaded file",
@@ -3065,10 +3036,10 @@
       "kpi_active_projects": "Active projects",
       "kpi_ensemble": "Ensemble",
       "kpi_invitations": "Invitation Status",
-      "kpi_pieces": "Pieces in archive",
+      "kpi_pieces": "Pieces in the library",
       "kpi_voice_balance": "Voice balance",
       "modules": {
-        "archive_title": "Music Archive",
+        "archive_title": "Library",
         "artists_title": "Artist Database",
         "contracts_title": "HR & Payroll",
         "crew_title": "Technical Crew",
@@ -3103,7 +3074,7 @@
         "title": "Production line"
       },
       "quick": {
-        "archive": "Archive",
+        "archive": "Library",
         "archive_hint": "Scores & pieces",
         "aria": "System modules",
         "artists": "Artists",
@@ -3136,7 +3107,7 @@
         "eyebrow": "First season",
         "finish": "Finish setup",
         "intro": "Three steps stand between you and a living console: schedule your first concert, invite your singers, and build the repertoire. Each step leads straight to the right tool.",
-        "intro_done": "You've a concert on the calendar, singers in the roster, and repertoire in the archive. Your console is ready to work.",
+        "intro_done": "You've a concert on the calendar, singers in the roster, and repertoire in the library. Your console is ready to work.",
         "progress": "Step {{done}} of {{total}}",
         "snooze": "I'll do this later",
         "step_done": "Done",
@@ -3147,8 +3118,8 @@
             "label": "Schedule your first concert"
           },
           "repertoire": {
-            "cta": "Open the archive",
-            "desc": "Upload scores and recordings to the archive so you can assign them to concerts and rehearsals.",
+            "cta": "Open the library",
+            "desc": "Upload scores and recordings to the library so you can assign them to concerts and rehearsals.",
             "label": "Build the repertoire"
           },
           "singers": {
@@ -3328,7 +3299,7 @@
       },
       "links": {
         "admin_dashboard": "Admin Dashboard",
-        "archive": "Music Archive",
+        "archive": "Library",
         "artist_dashboard": "Artist Dashboard",
         "artists": "Artists Roster",
         "attendance": "Rehearsals & attendance",
@@ -4790,7 +4761,7 @@
         "na": "Not applicable"
       },
       "item": {
-        "fix_in_archive": "Some data is low-confidence — fix it in the archive",
+        "fix_in_archive": "Some data is low-confidence — fix it in the library",
         "no_pdf": "No score attached — a placeholder page will appear in the book.",
         "no_pdf_short": "no score",
         "over_copies": "The cast ({{cast}}) exceeds the licensed copies owned ({{copies}}). Make sure you have enough copies or an extra licence.",
@@ -6205,21 +6176,6 @@
       "collapse": "Collapse the list"
     }
   },
-  "repertoire": {
-    "composer": {
-      "portrait_alt": "Portrait of {{name}}",
-      "section": "Composer (source: MusicBrainz + Wikidata)"
-    },
-    "status": {
-      "awaiting": "Awaiting review",
-      "enriching": "Finding sources",
-      "extracting": "Extracting metadata",
-      "failed": "Error",
-      "generating": "Note & translations",
-      "pending": "Pending",
-      "ready": "Approved"
-    }
-  },
   "score_book": {
     "download_failed": "The file could not be prepared.",
     "download_hint": "A file with the marks you choose. Preparing it takes a moment.",
@@ -7064,10 +7020,10 @@
         "capabilities": "Capability data: sight-reading and vocal range.",
         "contacts": "Other singers' contact details — the ensemble directory carries a name, an avatar and a voice.",
         "documents": "Documents in categories not shared with choristers.",
-        "archive": "The piece archive — they see the programme of their own concerts, never the catalogue.",
+        "archive": "The piece library — they see the programme of their own concerts, never the catalogue.",
         "after_concert": "Scores and tracks after the concert — materials close for completed and cancelled projects.",
         "protected": "Protected editions — an unknown licence is treated as protected too.",
-        "manager_panel": "The whole manager panel: artists, attendance, archive, logistics, crew and projects."
+        "manager_panel": "The whole manager panel: artists, attendance, library, logistics, crew and projects."
       },
       "from_you": {
         "title": "What you will not see here",

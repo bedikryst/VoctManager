@@ -59,7 +59,7 @@ export const AdminQuickModules = (): React.JSX.Element => {
       to: "/panel/archive-management",
       Icon: Music,
       accent: "incense",
-      label: t("dashboard.admin.quick.archive", "Archiwum"),
+      label: t("dashboard.admin.quick.archive", "Biblioteka"),
       hint: t("dashboard.admin.quick.archive_hint", "Nuty i utwory"),
     },
     {

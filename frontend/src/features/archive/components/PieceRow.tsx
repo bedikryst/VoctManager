@@ -1,99 +1,93 @@
 /**
  * @file PieceRow.tsx
- * @description Compact, click-to-expand piece row with inline pencil edits
- * on 1-line fields. Replaces the heavy slide-over panel pattern: ~80% of
- * conductor interactions land here without ever leaving the list.
+ * @description One piece in the library, as a `RecordRow`: the row opens the
+ * piece card, and every edit happens there. The title is set in the work
+ * voice; under it, the composer, the year and the epoch; to the right, the
+ * voicing, the length and the practice tracks.
  *
- * Three layers of interaction:
- *   1. Glance — row collapsed; intrinsic facts read as plain type, and the
- *      only chips are exceptions (no score, pipeline unsettled).
- *   2. Quick fix — pencil-click any inline-editable field, type, Enter.
- *      Optimistic PATCH; no panel, no animation.
- *   3. Expand — click row body → accordion opens below with composer card,
- *      editions list (per-edition approve/reingest/delete), MP3 tracks
- *      mini-player + upload, audio list, AI status summary, and a CTA to
- *      `/panel/archive-management/:id` — the Piece Card — for the full
- *      edit + AI verification cockpit.
+ * Flags speak only for a piece that needs a person: no score yet, the AI still
+ * reading one, a reading waiting for review, a reading that failed. A healthy
+ * piece carries none, which is what makes the few that do findable in a list
+ * of two hundred. A composition year that cannot be right for the composer's
+ * life is marked on the year itself, with the reason in its accessible text.
+ *
+ * In selection mode the row is one toggle (`RecordRow`'s `row` scope) and the
+ * menu steps aside.
  * @module features/archive/components/PieceRow
  */
 
-import React, { useState } from "react";
+import React, { useRef } from "react";
 import { useTranslation } from "react-i18next";
-import { AnimatePresence, motion } from "framer-motion";
-import {
-  AlertTriangle,
-  ChevronDown,
-  Clock,
-  FileWarning,
-  Headphones,
-  Trash2,
-} from "lucide-react";
+import { MoreHorizontal, Trash2 } from "lucide-react";
 
-import type { EnrichedPiece } from "../types/archive.dto";
 import { INGESTION_STATUS, type IngestionStatusCode } from "@/shared/types";
-import { Badge } from "@/shared/ui/primitives/Badge";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/shared/ui/composites/DropdownMenu";
+import { RecordRow, recordActionClass } from "@/shared/ui/composites/RecordList";
+import { Badge, type BadgeVariant } from "@/shared/ui/primitives/Badge";
 import { Button } from "@/shared/ui/primitives/Button";
-import { Checkbox } from "@/shared/ui/primitives/Checkbox";
-import { Caption, Eyebrow, Text } from "@/shared/ui/primitives/typography";
-import { EditionStatusBadge } from "@/shared/ui/composites/repertoire";
-import { InlineEditable } from "@/shared/ui/primitives/InlineEditable";
-import { hasPdf } from "../constants/piecePdfs";
-import { getArchiveEpochOptions } from "../constants/archiveEpochs";
-import { onActivate } from "@/shared/lib/dom/a11y";
-import { cn } from "@/shared/lib/utils";
+import { Text } from "@/shared/ui/primitives/typography";
 
-import { useUpdatePiece } from "../api/archive.queries";
-import { PieceRowExpanded } from "./PieceRowExpanded";
+import { getArchiveEpochOptions } from "../constants/archiveEpochs";
+import { hasPdf } from "../constants/piecePdfs";
+import type { EnrichedPiece } from "../types/archive.dto";
 
 interface PieceRowProps {
   readonly piece: EnrichedPiece;
   /** The piece card, carrying the list the row stands in. */
   readonly cardPath: string;
   readonly onDelete: (piece: EnrichedPiece) => void;
-  readonly defaultExpanded?: boolean;
-  /**
-   * Selection mode turns the whole row into one tap target that toggles the
-   * piece in the bulk selection: inline edits, expand and delete step aside
-   * so a tap anywhere means "this one".
-   */
+  /** The list is in selection mode: a tap toggles the piece instead of opening it. */
   readonly selectionMode?: boolean;
   readonly selected?: boolean;
   readonly onToggleSelect?: (id: string) => void;
 }
 
-const composerLabel = (piece: EnrichedPiece, fallback: string): string => {
-  const c = piece.composer;
-  if (!c) return fallback;
-  return `${c.first_name ?? ""} ${c.last_name}`.trim();
+/** The row's DOM id, which the library scrolls to on the way back from a card. */
+export const pieceRowId = (pieceId: string | number): string => `piece-row-${pieceId}`;
+
+const composerName = (piece: EnrichedPiece): string | null => {
+  const composer = piece.composer;
+  return composer ? `${composer.first_name ?? ""} ${composer.last_name}`.trim() : null;
 };
 
 const formatDuration = (seconds: number | null | undefined): string | null => {
   if (!seconds) return null;
-  const m = Math.floor(seconds / 60);
-  const s = seconds % 60;
-  return `${m}:${String(s).padStart(2, "0")}`;
+  const minutes = Math.floor(seconds / 60);
+  return `${minutes}:${String(seconds % 60).padStart(2, "0")}`;
 };
 
+type PipelineFlag = "running" | "failed" | "awaiting";
+
 /**
- * The one ingestion phase worth printing on a collapsed row — and only when it
- * is not READY. Approved is the resting state of every piece in a healthy
- * archive, so a chip announcing it on all two hundred rows is exactly what
- * buries the three that need a human.
+ * The one pipeline state the row names, across all of a piece's editions. A
+ * run in flight comes first, since whatever else is true may change when it
+ * lands; then a failure, then a reading waiting for review. Ready says nothing.
  */
-const unsettledIngestionStatus = (
-  piece: EnrichedPiece,
-): IngestionStatusCode | null => {
-  if (!piece.editions || piece.editions.length === 0) return null;
-  const priority: IngestionStatusCode[] = [
+const pipelineFlag = (piece: EnrichedPiece): PipelineFlag | null => {
+  const present = new Set<IngestionStatusCode>(
+    (piece.editions ?? []).map((edition) => edition.ingestion_status),
+  );
+  const running: readonly IngestionStatusCode[] = [
+    INGESTION_STATUS.PENDING,
     INGESTION_STATUS.EXTRACTING,
     INGESTION_STATUS.ENRICHING,
     INGESTION_STATUS.GENERATING,
-    INGESTION_STATUS.PENDING,
-    INGESTION_STATUS.FAILED,
-    INGESTION_STATUS.AWAITING,
   ];
-  const present = new Set(piece.editions.map((e) => e.ingestion_status));
-  return priority.find((s) => present.has(s)) ?? null;
+  if (running.some((status) => present.has(status))) return "running";
+  if (present.has(INGESTION_STATUS.FAILED)) return "failed";
+  if (present.has(INGESTION_STATUS.AWAITING)) return "awaiting";
+  return null;
+};
+
+const FLAG_TONE: Readonly<Record<PipelineFlag, BadgeVariant>> = {
+  running: "amethyst",
+  awaiting: "amethyst",
+  failed: "danger",
 };
 
 const parseYear = (value: string | null | undefined): number | null => {
@@ -102,6 +96,7 @@ const parseYear = (value: string | null | undefined): number | null => {
   return match ? parseInt(match[0], 10) : null;
 };
 
+/** A year before the composer's birth, or more than fifty years after the death. */
 const hasYearAnomaly = (piece: EnrichedPiece): boolean => {
   if (!piece.composition_year || !piece.composer) return false;
   const birth = parseYear(piece.composer.birth_year);
@@ -111,309 +106,118 @@ const hasYearAnomaly = (piece: EnrichedPiece): boolean => {
   return false;
 };
 
-// ---------------------------------------------------------------------------
-// Exceptions only. A chip on this row means "look at me": the score that never
-// arrived, and a pipeline phase that has not settled. Everything a healthy
-// piece has — an approved edition, an attached PDF — says nothing, which is
-// what makes the two that speak findable in a list of two hundred.
-// ---------------------------------------------------------------------------
-
-interface StateBadgesProps {
-  readonly hasPdfAttached: boolean;
-  readonly aiStatus: IngestionStatusCode | null;
-}
-
-const StateBadges = ({
-  hasPdfAttached,
-  aiStatus,
-}: StateBadgesProps): React.JSX.Element | null => {
-  const { t } = useTranslation();
-  if (hasPdfAttached && !aiStatus) return null;
-  return (
-    <>
-      {!hasPdfAttached && (
-        <Badge
-          variant="warning"
-          icon={<FileWarning size={11} aria-hidden="true" />}
-          title={t(
-            "archive.row.no_pdf_tooltip",
-            "Utwór bez partytury — wgraj PDF, żeby AI uzupełnił metadane",
-          )}
-        >
-          {t("archive.row.no_pdf", "bez nut")}
-        </Badge>
-      )}
-      {aiStatus && <EditionStatusBadge status={aiStatus} />}
-    </>
-  );
-};
-
-// ---------------------------------------------------------------------------
-
-/** The row's DOM id, which the library scrolls to on the way back from a card. */
-export const pieceRowId = (pieceId: string | number): string => `piece-row-${pieceId}`;
-
 export const PieceRow = ({
   piece,
   cardPath,
   onDelete,
-  defaultExpanded = false,
   selectionMode = false,
   selected = false,
   onToggleSelect,
 }: PieceRowProps): React.JSX.Element => {
   const { t } = useTranslation();
-  const [isExpanded, setIsExpanded] = useState<boolean>(defaultExpanded);
-  const updatePiece = useUpdatePiece();
+  const deleteChosen = useRef(false);
 
-  const activate = () =>
-    selectionMode
-      ? onToggleSelect?.(String(piece.id))
-      : setIsExpanded((v) => !v);
-
-  const epochOptions = getArchiveEpochOptions(t);
-  const epochLabel = piece.epoch
-    ? epochOptions.find((e) => e.value === piece.epoch)?.label
-    : null;
-  const composer = composerLabel(piece, t("archive.row.traditional", "Tradycyjny"));
-  const duration = formatDuration(piece.estimated_duration);
-  const aiStatus = unsettledIngestionStatus(piece);
-  const audioCount = piece.tracks?.length ?? 0;
-  const hasPdfAttached = hasPdf(piece);
-  const yearAnomaly = hasYearAnomaly(piece);
-
-  /** Intrinsic facts — a count and a length, not statuses. No chip chrome. */
-  const trackCount = audioCount > 0 && (
-    <Caption
-      color="muted"
-      className="inline-flex items-center gap-1 tabular-nums"
-      title={t("archive.row.audio_count_tooltip", "{{count}} ścieżek audio", {
-        count: audioCount,
-      })}
-    >
-      <Headphones size={10} aria-hidden="true" />
-      {audioCount}
-    </Caption>
-  );
-
-  const patch = (field: string, valueRaw: string) => {
-    const value: string | number | null = (() => {
-      if (field === "composition_year") {
-        const trimmed = valueRaw.trim();
-        if (!trimmed) return null;
-        const parsed = Number(trimmed);
-        return Number.isFinite(parsed) ? parsed : null;
-      }
-      return valueRaw;
-    })();
-    return updatePiece.mutateAsync({
-      id: String(piece.id),
-      data: { [field]: value },
-    });
+  const pipeline = pipelineFlag(piece);
+  const withoutPdf = !hasPdf(piece);
+  const flagLabel: Readonly<Record<PipelineFlag, string>> = {
+    running: t("archive.row.flag_running", "AI w toku"),
+    awaiting: t("archive.row.flag_awaiting", "Czeka na przegląd"),
+    failed: t("archive.row.flag_failed", "Błąd AI"),
   };
+  const flags =
+    withoutPdf || pipeline ? (
+      <>
+        {withoutPdf && (
+          <Badge variant="warning" casing="natural">
+            {t("archive.row.flag_no_pdf", "Bez PDF")}
+          </Badge>
+        )}
+        {pipeline && (
+          <Badge variant={FLAG_TONE[pipeline]} casing="natural">
+            {flagLabel[pipeline]}
+          </Badge>
+        )}
+      </>
+    ) : null;
+
+  const epoch = piece.epoch
+    ? getArchiveEpochOptions(t).find((option) => option.value === piece.epoch)?.label
+    : null;
+  const yearAnomaly = t(
+    "archive.row.year_anomaly",
+    "AI mógł się pomylić: rok nie pasuje do dat życia kompozytora",
+  );
+  const year = piece.composition_year
+    ? hasYearAnomaly(piece)
+      ? (
+          <Text as="span" size="sm" color="crimson" title={yearAnomaly}>
+            {piece.composition_year}
+            <span className="sr-only"> ({yearAnomaly})</span>
+          </Text>
+        )
+      : String(piece.composition_year)
+    : null;
+
+  const trackCount = piece.tracks?.length ?? 0;
 
   return (
-    <div
+    <RecordRow
       id={pieceRowId(piece.id)}
-      className={cn(
-        "overflow-hidden rounded-nested border bg-ethereal-alabaster/60 transition-all",
-        isExpanded
-          ? "border-ethereal-gold/30 shadow-glass-ethereal"
-          : "border-hairline hover:border-ethereal-gold/25 hover:bg-ethereal-parchment/30",
-        selected && "border-ethereal-gold/60 bg-ethereal-gold/4 ring-1 ring-ethereal-gold/40",
-      )}
-    >
-      <div
-        role="button"
-        tabIndex={0}
-        onClick={activate}
-        onKeyDown={onActivate(activate)}
-        className={cn(
-          "group flex w-full cursor-pointer items-start gap-3 px-4 py-3 md:items-center",
-          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40 focus-visible:ring-inset",
-        )}
-        aria-expanded={selectionMode ? undefined : isExpanded}
-        aria-pressed={selectionMode ? selected : undefined}
-        aria-label={
-          selectionMode
-            ? t("archive.bulk.select_aria", {
-                defaultValue: "Zaznacz: {{title}}",
-                title: piece.title,
-              })
-            : undefined
-        }
-      >
-        {selectionMode && (
-          <Checkbox
-            size="md"
-            checked={selected}
-            readOnly
-            tabIndex={-1}
-            aria-hidden="true"
-            className="pointer-events-none self-center"
-          />
-        )}
-
-        {/* In selection mode the inline editors and the rails go inert so the
-            tap reaches the row — the row IS the control then. */}
-        <div className={cn("min-w-0 flex-1", selectionMode && "pointer-events-none")}>
-          <div className="flex items-baseline gap-2">
-            {/* No stopPropagation wrapper anywhere in this row: `InlineEditable`
-                already swallows the click on its own control, and a wrapper
-                around it swallowed the whole LINE — the empty space beside a
-                title is the largest target the row offers for expanding it. */}
-            <InlineEditable
-              value={piece.title}
-              onSave={(next) => patch("title", next)}
-              ariaLabel={t("archive.row.edit_title", "Tytuł")}
-              variant="display"
-              placeholder={t("archive.row.title_placeholder", "Tytuł utworu")}
-            />
-            {epochLabel && (
-              <Eyebrow
-                color="muted"
-                className="hidden shrink-0 md:inline"
-              >
-                {epochLabel}
-              </Eyebrow>
-            )}
-          </div>
-          <div className="mt-0.5 flex items-baseline gap-1.5">
-            <Text size="xs" color="graphite" className="truncate">
-              {composer}
-            </Text>
-            {(piece.composition_year || piece.composer) && (
-              <>
-                <Text size="xs" color="graphite" aria-hidden="true">
-                  ·
-                </Text>
-                <InlineEditable
-                  value={piece.composition_year ?? null}
-                  onSave={(next) => patch("composition_year", next)}
-                  type="number"
-                  ariaLabel={t("archive.row.edit_year", "Rok kompozycji")}
-                  variant="subtle"
-                  emptyDisplay={t("archive.row.year_placeholder", "rok?")}
-                />
-                {yearAnomaly && (
-                  <span
-                    title={t(
-                      "archive.row.year_anomaly_tooltip",
-                      "AI mógł się pomylić — rok nie pasuje do dat życia kompozytora",
-                    )}
-                    className="inline-flex items-center text-ethereal-crimson"
-                    aria-label={t(
-                      "archive.row.year_anomaly_aria",
-                      "Ostrzeżenie: rok kompozycji jest podejrzany",
-                    )}
-                  >
-                    <AlertTriangle size={11} strokeWidth={2.2} aria-hidden="true" />
-                  </span>
-                )}
-              </>
-            )}
-          </div>
-
-          {/* Mobile meta — voicing / duration / badges live on their own line
-              below the title so nothing crowds it. Desktop shows these on the
-              right rail instead (the two clusters below, md:flex). */}
-          {(piece.voicing || duration || audioCount > 0 || !hasPdfAttached || aiStatus) && (
-            <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 md:hidden">
-              {/* A voicing is notation the score itself carries (SATB, SSAATTBB)
-                  — it owns its casing and is not an overline. */}
-              {piece.voicing && (
-                <Caption color="muted" className="font-semibold">
-                  {piece.voicing}
-                </Caption>
-              )}
-              {duration && (
-                <Caption color="muted" className="inline-flex items-center gap-1 tabular-nums">
-                  <Clock size={10} aria-hidden="true" />
-                  {duration}
-                </Caption>
-              )}
-              {trackCount}
-              <StateBadges hasPdfAttached={hasPdfAttached} aiStatus={aiStatus} />
-            </div>
-          )}
-        </div>
-
-        {/* Intrinsic facts — voicing, duration, tracks: plain typography, no chip chrome */}
-        <div
-          className={cn(
-            "hidden shrink-0 items-baseline gap-3 md:flex",
-            selectionMode && "pointer-events-none",
-          )}
-        >
-          {piece.voicing && (
-            <InlineEditable
-              value={piece.voicing}
-              onSave={(next) => patch("voicing", next)}
-              ariaLabel={t("archive.row.edit_voicing", "Obsada")}
-              variant="subtle"
-              placeholder="SATB"
-            />
-          )}
-          {duration && (
-            <Caption color="muted" className="inline-flex items-center gap-1 tabular-nums">
-              <Clock size={10} aria-hidden="true" />
-              {duration}
-            </Caption>
-          )}
-          {trackCount}
-        </div>
-
-        {/* Exceptions — desktop right rail; on mobile these render in the
-            meta line under the title instead (see above). */}
-        <div className="hidden shrink-0 items-center gap-1.5 md:flex">
-          <StateBadges hasPdfAttached={hasPdfAttached} aiStatus={aiStatus} />
-        </div>
-
-        {!selectionMode && (
-          <div className="flex shrink-0 items-center gap-1">
+      open={{ to: cardPath }}
+      title={piece.title}
+      voice="work"
+      flags={flags}
+      facts={[composerName(piece), year, epoch]}
+      meta={[
+        piece.voicing || null,
+        formatDuration(piece.estimated_duration),
+        trackCount > 0
+          ? t("archive.row.tracks", "{{count}} ścieżek", { count: trackCount })
+          : null,
+      ]}
+      select={
+        selectionMode
+          ? {
+              scope: "row",
+              checked: selected,
+              label: t("archive.bulk.select_aria", "Zaznacz: {{title}}", { title: piece.title }),
+              onChange: () => onToggleSelect?.(String(piece.id)),
+            }
+          : undefined
+      }
+      actions={
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
             <Button
               variant="icon"
               size="icon"
-              aria-label={t("archive.row.delete_aria", "Usuń utwór {{title}}", {
-                title: piece.title,
-              })}
-              onClick={(event) => {
-                event.stopPropagation();
-                onDelete(piece);
-              }}
-              className="h-8 w-8 text-ethereal-graphite transition-opacity hover:text-ethereal-crimson focus-visible:opacity-100 fine-pointer:opacity-0 fine-pointer:group-hover:opacity-100"
+              className={recordActionClass}
+              aria-label={t("archive.row.menu_aria", "Więcej: {{title}}", { title: piece.title })}
             >
-              <Trash2 size={13} aria-hidden="true" />
+              <MoreHorizontal size={16} aria-hidden="true" />
             </Button>
-            <ChevronDown
-              size={16}
-              aria-hidden="true"
-              className={cn(
-                "shrink-0 text-ethereal-graphite/70 transition-transform",
-                isExpanded && "rotate-180 text-ethereal-gold",
-              )}
-            />
-          </div>
-        )}
-      </div>
-
-      {/* Selection mode folds the body away as well: an open tracks section
-          would keep its drop zone and inline editors live under a row that
-          is supposed to be one inert tap target. The expanded state survives
-          and the body returns when selection mode ends. */}
-      <AnimatePresence initial={false}>
-        {isExpanded && !selectionMode && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-            className="overflow-hidden border-t border-hairline"
+          </DropdownMenuTrigger>
+          {/* The confirmation opens once the menu has handed focus back to its
+              trigger, so the dialog returns focus there when it closes. */}
+          <DropdownMenuContent
+            onCloseAutoFocus={() => {
+              if (!deleteChosen.current) return;
+              deleteChosen.current = false;
+              onDelete(piece);
+            }}
           >
-            <PieceRowExpanded piece={piece} cardPath={cardPath} />
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
+            <DropdownMenuItem
+              destructive
+              icon={<Trash2 size={16} />}
+              onSelect={() => {
+                deleteChosen.current = true;
+              }}
+            >
+              {t("archive.row.delete", "Usuń utwór")}
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      }
+    />
   );
 };

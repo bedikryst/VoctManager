@@ -426,7 +426,7 @@ export function ScorePackageItemRow({
                   <PencilLine size={12} aria-hidden="true" />
                   {t(
                     "projects.score_package.item.fix_in_archive",
-                    "Część danych ma niską pewność — popraw w archiwum",
+                    "Część danych ma niską pewność — popraw w bibliotece",
                   )}
                 </Link>
               )}

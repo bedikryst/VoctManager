@@ -220,7 +220,7 @@ export const SeasonSetupConcierge = ({
               {allDone
                 ? t(
                     "dashboard.admin.setup.intro_done",
-                    "Masz koncert w kalendarzu, śpiewaków w składzie i repertuar w archiwum. Twój pulpit jest gotowy do pracy.",
+                    "Masz koncert w kalendarzu, śpiewaków w składzie i repertuar w bibliotece. Twój pulpit jest gotowy do pracy.",
                   )
                 : t(
                     "dashboard.admin.setup.intro",

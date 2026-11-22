@@ -39,7 +39,7 @@ export function ArchiveEmptyState({
         )
       : t(
           "archive.empty_state.start_building",
-          "Rozpocznij budowę biblioteki, dodając pierwszy utwór do archiwum.",
+          "Rozpocznij budowę biblioteki, dodając pierwszy utwór.",
         );
 
   return (

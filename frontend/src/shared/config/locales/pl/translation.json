@@ -578,17 +578,12 @@
     },
     "dashboard": {
       "add_manual": "Dodaj ręcznie",
-      "collection_desc": "Historia Twoich zrealizowanych wydarzeń.",
-      "collection_title": "Projekty Historyczne",
-      "new_piece": "Nowy Utwór",
-      "subtitle": "Zasoby Repertuarowe",
-      "title": "Archiwum",
-      "title_highlight": "Nut",
+      "title": "Biblioteka",
       "upload_pdf": "Wgraj PDF"
     },
     "delete_modal": {
       "desc": "Ten krok usunie bezpowrotnie metadane utworu...",
-      "title": "Usunąć utwór z archiwum?"
+      "title": "Usunąć utwór z biblioteki?"
     },
     "editions": {
       "ai_cost": "Koszt AI: {{cost}}",
@@ -634,7 +629,7 @@
       "add_search": "Dodaj utwór \"{{term}}\"",
       "filters_blocked": "Aktualne filtry ukrywają całą kolekcję. Wyczyść je, aby wrócić do pełnego katalogu.",
       "search_results": "Nie znaleziono wyników dla \"{{term}}\". Możesz utworzyć nową kartę utworu lub usunąć część filtrów.",
-      "start_building": "Rozpocznij budowę biblioteki, dodając pierwszy utwór do archiwum.",
+      "start_building": "Rozpocznij budowę biblioteki, dodając pierwszy utwór.",
       "title": "Brak utworów w bieżącym widoku"
     },
     "filters": {
@@ -653,7 +648,7 @@
       "epoch_token": "Epoka: {{epoch}}",
       "heading": "Filtry Kolekcji",
       "no_active_filters": "Brak aktywnych filtrów",
-      "no_filters_message": "Brak aktywnych filtrów. Widok pokazuje pełny katalog archiwum.",
+      "no_filters_message": "Brak aktywnych filtrów. Widok pokazuje całą bibliotekę.",
       "search_label": "Wyszukiwanie",
       "search_placeholder": "Szukaj po tytule lub kompozytorze...",
       "search_token": "Fraza: \"{{term}}\"",
@@ -1044,48 +1039,19 @@
         "generic": "Nie udało się uruchomić tłumaczenia."
       }
     },
+    "list_aria": "Utwory w bibliotece",
     "row": {
-      "audio_count_tooltip_one": "{{count}} ścieżek audio",
-      "audio_count_tooltip_few": "{{count}} ścieżek audio",
-      "audio_count_tooltip_many": "{{count}} ścieżek audio",
-      "audio_count_tooltip_other": "{{count}} ścieżek audio",
-      "delete_aria": "Usuń utwór {{title}}",
-      "edit_title": "Tytuł",
-      "edit_voicing": "Obsada",
-      "edit_year": "Rok kompozycji",
-      "title_placeholder": "Tytuł utworu",
-      "traditional": "Tradycyjny",
-      "year_anomaly_aria": "Ostrzeżenie: rok kompozycji jest podejrzany",
-      "year_anomaly_tooltip": "AI mógł się pomylić — rok nie pasuje do dat życia kompozytora",
-      "year_placeholder": "rok?",
-      "no_pdf": "bez nut",
-      "no_pdf_tooltip": "Utwór bez partytury — wgraj PDF, żeby AI uzupełnił metadane"
-    },
-    "row_expanded": {
-      "ai_empty_hint": "Utwór wprowadzony ręcznie. Wgraj PDF żeby AI uzupełnił metadane, IPA, tłumaczenia i notkę programową.",
-      "audio_count_one": "Ścieżki ćwiczeniowe ({{count}})",
-      "audio_count_few": "Ścieżki ćwiczeniowe ({{count}})",
-      "audio_count_many": "Ścieżki ćwiczeniowe ({{count}})",
-      "audio_count_other": "Ścieżki ćwiczeniowe ({{count}})",
-      "cta_open_card": "Otwórz kartę utworu",
-      "default_marker": "domyślne",
-      "divisi": "Divisi",
-      "no_audio": "Brak ścieżek MP3",
-      "no_composer": "Brak przypisanego kompozytora",
-      "no_divisi": "Brak wymagań głosowych — dodaj w karcie utworu.",
-      "no_pdf": "Brak PDF — wgraj plik z głównej strony archiwum.",
-      "pdf_download": "Pobierz PDF",
-      "pdf_one": "Partytura PDF",
-      "pdf_many_one": "Wydania ({{count}})",
-      "pdf_many_few": "Wydania ({{count}})",
-      "pdf_many_many": "Wydania ({{count}})",
-      "pdf_many_other": "Wydania ({{count}})",
-      "unverified_count_one": "{{count}} pole do weryfikacji",
-      "unverified_count_few": "{{count}} pola do weryfikacji",
-      "unverified_count_many": "{{count}} pól do weryfikacji",
-      "unverified_count_other": "{{count}} pól do weryfikacji",
-      "divisi_shared": "Wspólne dla wydań",
-      "divisi_other_edition": "Inne wydanie"
+      "flag_no_pdf": "Bez PDF",
+      "flag_running": "AI w toku",
+      "flag_awaiting": "Czeka na przegląd",
+      "flag_failed": "Błąd AI",
+      "year_anomaly": "AI mógł się pomylić: rok nie pasuje do dat życia kompozytora",
+      "tracks_one": "{{count}} ścieżka",
+      "tracks_few": "{{count}} ścieżki",
+      "tracks_many": "{{count}} ścieżek",
+      "tracks_other": "{{count}} ścieżki",
+      "menu_aria": "Więcej: {{title}}",
+      "delete": "Usuń utwór"
     },
     "tracks": {
       "add": "Dodaj ścieżkę",
@@ -1138,7 +1104,7 @@
       "all_composers": "Wszyscy",
       "all_epochs": "Wszystkie",
       "all_voicings": "Wszystkie",
-      "aria": "Szukaj w archiwum",
+      "aria": "Szukaj w bibliotece",
       "composer": "Kompozytor",
       "epoch": "Epoka",
       "filters_btn": "Filtry",
@@ -1149,15 +1115,18 @@
       "voicing": "Obsada"
     },
     "stat_strip": {
-      "pieces": "utworów",
-      "with_pdf": "z PDF",
+      "pieces_one": "utwór",
+      "pieces_few": "utwory",
+      "pieces_many": "utworów",
+      "pieces_other": "utworu",
+      "without_pdf": "bez PDF",
       "review_cta_one": "{{count}} do przeglądu",
       "review_cta_few": "{{count}} do przeglądu",
       "review_cta_many": "{{count}} do przeglądu",
       "review_cta_other": "{{count}} do przeglądu"
     },
     "tabs": {
-      "aria": "Sekcje archiwum",
+      "aria": "Sekcje biblioteki",
       "composers": "Kompozytorzy",
       "pieces": "Utwory"
     },
@@ -1165,8 +1134,8 @@
       "delete_error_desc": "Upewnij się, że utwór nie jest powiązany z aktywnymi projektami.",
       "delete_error_title": "Nie udało się usunąć utworu.",
       "delete_loading": "Usuwanie \"{{title}}\"...",
-      "delete_success": "Utwór został usunięty z archiwum.",
-      "sync_warning_desc": "Nie udało się pobrać wszystkich danych archiwum.",
+      "delete_success": "Utwór został usunięty z biblioteki.",
+      "sync_warning_desc": "Nie udało się pobrać wszystkich danych biblioteki.",
       "sync_warning_title": "Ostrzeżenie synchronizacji"
     },
     "upload": {
@@ -1248,7 +1217,7 @@
       "aria": "Wgrane pliki, których AI nie zdołał przetworzyć",
       "hint": "AI nie zdążył rozpoznać utworu, więc te pliki nie trafiły do żadnej karty. Ponów analizę albo usuń plik.",
       "untitled": "Bez nazwy",
-      "retry": "Ponów",
+      "retry": "Ponów analizę",
       "retry_started": "Analiza uruchomiona ponownie.",
       "retry_failed": "Nie udało się ponowić analizy.",
       "delete": "Usuń wgrany plik",
@@ -3104,10 +3073,10 @@
       "kpi_active_projects": "Aktywne projekty",
       "kpi_ensemble": "Zespół",
       "kpi_invitations": "Status Zaproszeń",
-      "kpi_pieces": "Utwory w archiwum",
+      "kpi_pieces": "Utwory w bibliotece",
       "kpi_voice_balance": "Proporcje głosów",
       "modules": {
-        "archive_title": "Archiwum Nut",
+        "archive_title": "Biblioteka",
         "artists_title": "Baza Artystów",
         "contracts_title": "Kadry i Płace",
         "crew_title": "Ekipa Techniczna",
@@ -3142,7 +3111,7 @@
         "title": "Linia produkcji"
       },
       "quick": {
-        "archive": "Archiwum",
+        "archive": "Biblioteka",
         "archive_hint": "Nuty i utwory",
         "aria": "Moduły systemu",
         "artists": "Artyści",
@@ -3175,7 +3144,7 @@
         "eyebrow": "Pierwszy sezon",
         "finish": "Zakończ konfigurację",
         "intro": "Trzy kroki dzielą Cię od żywego pulpitu: zaplanuj pierwszy koncert, zaproś śpiewaków i zbuduj repertuar. Każdy krok prowadzi prosto do właściwego narzędzia.",
-        "intro_done": "Masz koncert w kalendarzu, śpiewaków w składzie i repertuar w archiwum. Twój pulpit jest gotowy do pracy.",
+        "intro_done": "Masz koncert w kalendarzu, śpiewaków w składzie i repertuar w bibliotece. Twój pulpit jest gotowy do pracy.",
         "progress": "Krok {{done}} z {{total}}",
         "snooze": "Zrobię to później",
         "step_done": "Gotowe",
@@ -3186,8 +3155,8 @@
             "label": "Zaplanuj pierwszy koncert"
           },
           "repertoire": {
-            "cta": "Otwórz archiwum",
-            "desc": "Wgraj nuty i nagrania do archiwum, by przypisać je do koncertów i prób.",
+            "cta": "Otwórz bibliotekę",
+            "desc": "Wgraj nuty i nagrania do biblioteki, by przypisać je do koncertów i prób.",
             "label": "Zbuduj repertuar"
           },
           "singers": {
@@ -3367,7 +3336,7 @@
       },
       "links": {
         "admin_dashboard": "Pulpit Główny",
-        "archive": "Archiwum Nut",
+        "archive": "Biblioteka",
         "artist_dashboard": "Pulpit Artysty",
         "artists": "Baza Artystów",
         "attendance": "Próby i obecność",
@@ -4883,7 +4852,7 @@
         "na": "Nie dotyczy"
       },
       "item": {
-        "fix_in_archive": "Część danych ma niską pewność — popraw w archiwum",
+        "fix_in_archive": "Część danych ma niską pewność — popraw w bibliotece",
         "no_pdf": "Brak dołączonych nut — w partyturze pojawi się strona-zastępka.",
         "no_pdf_short": "brak nut",
         "over_copies": "Obsada ({{cast}}) przewyższa liczbę posiadanych egzemplarzy licencji ({{copies}}). Upewnij się, że masz dość kopii lub dodatkową licencję.",
@@ -6315,21 +6284,6 @@
       "collapse": "Zwiń listę"
     }
   },
-  "repertoire": {
-    "composer": {
-      "portrait_alt": "Portret {{name}}",
-      "section": "Kompozytor (źródło: MusicBrainz + Wikidata)"
-    },
-    "status": {
-      "awaiting": "Czeka na przegląd",
-      "enriching": "Wyszukiwanie źródeł",
-      "extracting": "Ekstrakcja metadanych",
-      "failed": "Błąd",
-      "generating": "Notka i tłumaczenia",
-      "pending": "Oczekuje",
-      "ready": "Zatwierdzone"
-    }
-  },
   "score_book": {
     "download_failed": "Nie udało się przygotować pliku.",
     "download_hint": "Plik z oznaczeniami, które wybierzesz. Przygotowanie trwa chwilę.",
@@ -7180,10 +7134,10 @@
         "capabilities": "Danych warsztatowych: czytania a vista i skali głosu.",
         "contacts": "Kontaktu do innych śpiewaków — w katalogu zespołu jest imię, nazwisko, awatar i głos.",
         "documents": "Dokumentów z kategorii nieudostępnionych chórzystom.",
-        "archive": "Archiwum utworów — widzą program swoich koncertów, nigdy katalogu.",
+        "archive": "Biblioteka utworów — widzą program swoich koncertów, nigdy katalogu.",
         "after_concert": "Nut i nagrań po koncercie — materiały zamykają się dla projektów zakończonych i odwołanych.",
         "protected": "Wydań chronionych licencją — nieznana licencja też jest traktowana jak chroniona.",
-        "manager_panel": "Całego panelu menedżera: artystów, obecności, archiwum, logistyki, ekipy i projektów."
+        "manager_panel": "Całego panelu menedżera: artystów, obecności, biblioteki, logistyki, ekipy i projektów."
       },
       "from_you": {
         "title": "Czego nie zobaczysz tutaj",

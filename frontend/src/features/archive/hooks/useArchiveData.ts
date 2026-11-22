@@ -177,7 +177,7 @@ export const useArchiveData = () => {
     try {
       await deleteMutation.mutateAsync(pieceToDelete.id);
       toast.success(
-        t("archive.toast.delete_success", "Utwór został usunięty z archiwum."),
+        t("archive.toast.delete_success", "Utwór został usunięty z biblioteki."),
         {
           id: toastId,
         },
