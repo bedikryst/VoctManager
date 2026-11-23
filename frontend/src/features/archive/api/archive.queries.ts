@@ -114,10 +114,9 @@ export const useComposers = () =>
   useQuery({
     queryKey: archiveKeys.composers.all,
     queryFn: ArchiveService.getComposers,
-    // Was staleTime 1h — which, with the persisted cache, hid AI-created
-    // composers for up to an hour (and the SSE `done` handler never invalidated
-    // this key). Now reconciles on mount/focus, plus the ingestion-completion
-    // signals below invalidate it explicitly.
+    // Reconciles on mount and focus, and the ingestion-completion signals
+    // invalidate it too: composers appear as the AI reads scores, and a long
+    // staleTime under the persisted cache would hide them.
     ...RECONCILING_REFETCH,
     staleTime: 1000 * 60 * 5,
   });
@@ -218,8 +217,7 @@ export const useMergeComposers = () => {
 export const useRefreshComposerFromMb = () => {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, force = false }: { id: string; force?: boolean }) =>
-      ArchiveService.refreshComposerFromMb(id, force),
+    mutationFn: (id: string) => ArchiveService.refreshComposerFromMb(id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: archiveKeys.composers.all });
       qc.invalidateQueries({ queryKey: archiveKeys.pieces.all });

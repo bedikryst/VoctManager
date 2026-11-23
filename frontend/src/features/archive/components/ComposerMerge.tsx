@@ -3,12 +3,15 @@
  * @description Merging duplicate composers, the list's one act on many rows.
  * "Połącz duplikaty" turns the rows into toggles; `ComposerMergeBar` stands on
  * the dock with the count and "Połącz", which opens `ComposerMergeDialog`. The
- * dialog asks which entry stays: the others' pieces move to it and the others
- * are deleted.
+ * dialog asks which entry stays: the others' pieces and the data it lacks move
+ * to it, and the others are deleted. The names stay its own, so choosing the
+ * entry is choosing the spelling.
  *
  * The entry that stays is chosen on evidence, so each candidate shows its
- * lifespan, its pieces and whether it is tied to MusicBrainz, and the one tied
- * to MusicBrainz with the most pieces is chosen to begin with.
+ * lifespan, its pieces and whether it is tied to MusicBrainz. The dialog
+ * chooses only when exactly one candidate is tied to MusicBrainz; otherwise
+ * "Połącz" waits for the manager's choice. Candidates MusicBrainz knows as
+ * different people get a warning, not a block: MusicBrainz has duplicates too.
  * @module features/archive/components/ComposerMerge
  */
 
@@ -88,10 +91,6 @@ export const ComposerMergeBar = ({
   );
 };
 
-/** Tied to MusicBrainz first, then the most pieces: the record worth keeping. */
-const richestFirst = (a: Composer, b: Composer): number =>
-  Number(Boolean(b.mbid)) - Number(Boolean(a.mbid)) || (b.pieces_count ?? 0) - (a.pieces_count ?? 0);
-
 interface ComposerMergeDialogProps {
   readonly composers: readonly Composer[];
   readonly onClose: () => void;
@@ -105,11 +104,13 @@ export const ComposerMergeDialog = ({
 }: ComposerMergeDialogProps): React.JSX.Element => {
   const { t } = useTranslation();
   const { mutateAsync: merge, isPending } = useMergeComposers();
+  const linked = composers.filter((composer) => Boolean(composer.mbid));
   const [targetId, setTargetId] = useState<string>(() =>
-    String([...composers].sort(richestFirst)[0]?.id ?? ""),
+    linked.length === 1 ? String(linked[0].id) : "",
   );
   const target = composers.find((composer) => String(composer.id) === targetId);
-  const sources = composers.filter((composer) => String(composer.id) !== targetId);
+  const sources = target ? composers.filter((composer) => composer !== target) : [];
+  const knownAsDifferent = new Set(linked.map((composer) => composer.mbid)).size > 1;
 
   const submit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -148,7 +149,7 @@ export const ComposerMergeDialog = ({
             <Text as="p" size="sm" color="graphite" className="mt-1">
               {t(
                 "archive.composers.merge_desc",
-                "Wybierz wpis, który zostaje. Utwory pozostałych przejdą do niego, a ich wpisy zostaną usunięte.",
+                "Wybierz wpis, który zostaje. Przejdą do niego utwory i brakujące dane pozostałych wpisów, a te wpisy zostaną usunięte.",
               )}
             </Text>
           </Dialog.Description>
@@ -158,7 +159,7 @@ export const ComposerMergeDialog = ({
               <legend className="sr-only">
                 {t("archive.composers.merge_target_group_aria", "Wpis, który zostaje")}
               </legend>
-              <div className="border-b border-hairline">
+              <div>
                 {composers.map((composer) => {
                   const id = String(composer.id);
                   const pieces = composer.pieces_count ?? 0;
@@ -168,9 +169,11 @@ export const ComposerMergeDialog = ({
                     composer.mbid ? "MusicBrainz" : null,
                   ].filter(Boolean);
                   return (
+                    // The tone and the hairlines reach past the column together,
+                    // so the names keep the column's edge (RecordRow's rule).
                     <label
                       key={id}
-                      className="-mx-2 flex cursor-pointer items-start gap-3 rounded-control border-t border-hairline px-2 py-3 transition-colors hover:bg-ethereal-ink/3 has-checked:bg-ethereal-gold/5"
+                      className="-mx-2 flex cursor-pointer items-start gap-3 border-t border-hairline px-2 py-3 transition-colors last:border-b hover:bg-ethereal-ink/3 has-checked:bg-ethereal-gold/5"
                     >
                       {/* The native radio ignores the theme, so it is drawn
                           beside a visually hidden input that keeps the
@@ -208,6 +211,15 @@ export const ComposerMergeDialog = ({
                   })
                 : null}
             </Text>
+
+            {knownAsDifferent && (
+              <Text as="p" size="sm" color="crimson">
+                {t(
+                  "archive.composers.merge_different_people",
+                  "Według MusicBrainz to różne osoby. Połącz tylko, jeśli to na pewno ten sam kompozytor.",
+                )}
+              </Text>
+            )}
 
             <div className="flex flex-wrap justify-end gap-2">
               <Button type="button" variant="ghost" casing="sentence" disabled={isPending} onClick={onClose}>

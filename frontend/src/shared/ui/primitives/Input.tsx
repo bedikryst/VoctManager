@@ -12,7 +12,7 @@ import {
   fieldShellVariants,
   type FieldShellVariantProps,
 } from "@/shared/ui/primitives/fieldShell";
-import { Eyebrow, Text } from "@/shared/ui/primitives/typography";
+import { Eyebrow, Label, Text } from "@/shared/ui/primitives/typography";
 
 export interface InputFieldClassesArgs extends FieldShellVariantProps {
   readonly hasLeftIcon?: boolean;
@@ -51,6 +51,12 @@ export interface InputProps
     FieldShellVariantProps {
   /** Text label displayed above the input */
   label?: string;
+  /**
+   * `overline` (default): an uppercase `Eyebrow`, the settings forms' label.
+   * `sentence`: the piece card's property label, for a dialog that speaks the
+   * card's language.
+   */
+  labelCasing?: "overline" | "sentence";
   /** Error message derived from validation schema */
   error?: string;
   /** Optional icon rendered on the left flank */
@@ -63,6 +69,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
   (
     {
       label,
+      labelCasing = "overline",
       error,
       variant,
       hasError: hasErrorFlag,
@@ -84,11 +91,16 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
 
     return (
       <div className="flex w-full flex-col gap-1.5">
-        {label && (
-          <Eyebrow as="label" htmlFor={inputId} color="muted" className="ml-1">
-            {label}
-          </Eyebrow>
-        )}
+        {label &&
+          (labelCasing === "sentence" ? (
+            <Label as="label" htmlFor={inputId} size="base" color="graphite">
+              {label}
+            </Label>
+          ) : (
+            <Eyebrow as="label" htmlFor={inputId} color="muted" className="ml-1">
+              {label}
+            </Eyebrow>
+          ))}
 
         <div className="relative flex items-center">
           {leftIcon && (

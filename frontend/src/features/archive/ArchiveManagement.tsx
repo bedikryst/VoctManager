@@ -26,7 +26,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
-import { Plus, Sparkles, UploadCloud } from "lucide-react";
+import { Plus, UploadCloud } from "lucide-react";
 
 import { ConfirmModal } from "@/shared/ui/composites/ConfirmModal";
 import { PageHeader } from "@/shared/ui/composites/PageHeader";
@@ -338,7 +338,6 @@ export default function ArchiveManagement(): React.JSX.Element {
                   variant="outline"
                   size="sm"
                   casing="sentence"
-                  leftIcon={<Sparkles size={14} aria-hidden="true" />}
                   onClick={() => navigateToReview(String(firstAwaitingPiece.id))}
                 >
                   {t(

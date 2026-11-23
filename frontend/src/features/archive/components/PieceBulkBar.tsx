@@ -59,9 +59,8 @@ export const PieceBulkBar = ({
       >
         <div className="flex flex-wrap items-center gap-2">
           <Text size="sm" weight="bold" className="tabular-nums">
-            {t("archive.bulk.selected_count", {
-              defaultValue: "{{n}} zaznaczono",
-              n: selectedCount,
+            {t("archive.bulk.selected_count", "Zaznaczono {{count}}", {
+              count: selectedCount,
             })}
           </Text>
           <Button

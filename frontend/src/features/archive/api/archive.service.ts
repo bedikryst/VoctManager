@@ -261,7 +261,10 @@ export const ArchiveService = {
     await api.delete(`${COMPOSERS_URL}${id}/`);
   },
 
-  /** Reassigns this composer's pieces onto `targetId`, then soft-deletes the source. */
+  /**
+   * Merges this composer into `targetId` and soft-deletes the source: its
+   * pieces, the data the target lacks and its spellings (as aliases) move over.
+   */
   mergeComposer: async (sourceId: string, targetId: string): Promise<Composer> => {
     const response = await api.post<Composer>(
       `${COMPOSERS_URL}${sourceId}/merge_into/${targetId}/`,
@@ -270,17 +273,11 @@ export const ArchiveService = {
   },
 
   /**
-   * Re-pull MusicBrainz + Wikidata data for a composer.
-   * @param force when true, also overwrite existing canonical fields with fresh
-   *   values (conductor's manual edits stay protected); otherwise fill blanks only.
+   * Re-pulls MusicBrainz + Wikidata data for a composer, filling blank fields
+   * only. The API's `force` mode (overwrite all but hand edits) has no UI.
    */
-  refreshComposerFromMb: async (
-    id: string,
-    force = false,
-  ): Promise<ComposerRefreshResult> => {
-    const response = await api.post<ComposerRefreshResult>(
-      `${COMPOSERS_URL}${id}/refresh_mb/${force ? "?force=true" : ""}`,
-    );
+  refreshComposerFromMb: async (id: string): Promise<ComposerRefreshResult> => {
+    const response = await api.post<ComposerRefreshResult>(`${COMPOSERS_URL}${id}/refresh_mb/`);
     return response.data;
   },
 

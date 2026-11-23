@@ -33,12 +33,6 @@ import {
 import { pieceCardPath } from "../constants/libraryScope";
 import { InlineConfirmAction } from "./InlineConfirmAction";
 
-const fmtElapsed = (seconds: number): string => {
-  const s = Math.max(0, seconds);
-  if (s < 60) return `${s}s`;
-  return `${Math.floor(s / 60)}m ${s % 60}s`;
-};
-
 export const ActiveIngestionsPanel = (): React.JSX.Element | null => {
   const { t } = useTranslation();
   const headingId = useId();
@@ -75,13 +69,20 @@ interface ActiveRowProps {
 }
 
 const ActiveRow = ({ item, now }: ActiveRowProps): React.JSX.Element => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const overloaded = isOverloadWait(item.ingestion_progress);
   // Elapsed counts from THIS run's dispatch. created_at is only the fallback
   // (pre-migration rows): on a re-ingest it is the original upload date and
   // would show an absurd multi-day timer.
   const startedAt = item.ingestion_run_started_at ?? item.created_at;
-  const elapsed = Math.floor((now - new Date(startedAt).getTime()) / 1000);
+  const elapsed = Math.max(0, Math.floor((now - new Date(startedAt).getTime()) / 1000));
+  const elapsedText =
+    elapsed < 60
+      ? t("archive.active.elapsed_seconds", "{{s}} s", { s: elapsed })
+      : t("archive.active.elapsed_minutes", "{{m}} min {{s}} s", {
+          m: Math.floor(elapsed / 60),
+          s: elapsed % 60,
+        });
   // The streamed preview knows the work's real title seconds into the analysis,
   // long before the resolver attaches a Piece (which is where piece_title comes
   // from). The file name is the last resort, and is not a work's title.
@@ -116,8 +117,8 @@ const ActiveRow = ({ item, now }: ActiveRowProps): React.JSX.Element => {
         ),
       ]}
       meta={[
-        fmtElapsed(elapsed),
-        formatIngestionCost(item.ingestion_cost_cents_lifetime),
+        elapsedText,
+        formatIngestionCost(item.ingestion_cost_cents_lifetime, i18n.language),
         item.page_count
           ? `${item.page_count} ${t("archive.active.pages", "str.")}`
           : null,

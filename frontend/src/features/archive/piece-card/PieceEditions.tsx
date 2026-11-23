@@ -156,14 +156,14 @@ const EditionStatus = ({ edition }: { edition: ScoreEditionSummary }) => {
 };
 
 const EditionSettings = ({ edition, autosave }: { edition: ScoreEditionSummary; autosave: PieceAutosave }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const patch = usePatchEdition();
   const licenceLabel = t("archive.editions.license.label");
   const copiesLabel = t("archive.piece_card.edition_copies");
   const licence: ScoreLicenseType = edition.license_type ?? "UNK";
   const wholePage = edition.stand_whole_page ?? false;
   const suggested = !wholePage && edition.stand_whole_page_suggested === true;
-  const cost = formatIngestionCost(edition.ingestion_cost_cents);
+  const cost = formatIngestionCost(edition.ingestion_cost_cents, i18n.language);
   const licenceNames: Record<ScoreLicenseType, string> = {
     PD: t("archive.editions.license.public_domain"),
     LC: t("archive.editions.license.licensed_copies"),

@@ -131,7 +131,7 @@ const OrphanRow = ({
       }
       facts={[
         fmtWhen(item.updated_at, i18n.language),
-        formatIngestionCost(item.ingestion_cost_cents_lifetime),
+        formatIngestionCost(item.ingestion_cost_cents_lifetime, i18n.language),
       ]}
       actions={
         <>

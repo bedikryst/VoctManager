@@ -5,8 +5,10 @@
  * surname first, the order the list is sorted in; under it the lifespan, and
  * to the right the number of pieces the library holds by this composer.
  *
- * The row carries no flags: a composer missing its MusicBrainz link is found
- * through the list's filter, not by a chip on most rows. A composer with no
+ * The row carries no flags and no portrait: a composer missing its MusicBrainz
+ * link is found through the list's filter, not by a chip on most rows, and a
+ * portrait on some rows only would break the names' left edge (the record shows
+ * it). A composer with no
  * pieces has a menu with "Usuń"; in merge mode the row is one toggle
  * (`RecordRow`'s `row` scope) and the menu steps aside.
  * @module features/archive/components/ComposerRow
@@ -69,16 +71,6 @@ export const ComposerRow = ({
       open={{ onOpen: () => onOpen(composer) }}
       title={name}
       voice="name"
-      leading={
-        composer.portrait_url ? (
-          <img
-            src={composer.portrait_url}
-            alt=""
-            className="size-10 rounded-full border border-hairline-strong object-cover"
-            loading="lazy"
-          />
-        ) : undefined
-      }
       facts={[composerLifespan(composer)]}
       meta={[
         piecesCount > 0

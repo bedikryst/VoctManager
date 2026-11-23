@@ -3,8 +3,11 @@
  * @description Maps the backend's fine-grained ingestion step
  * (`ScoreEdition.ingestion_progress`) to a live, human-facing label — the
  * "what is the AI doing right now?" line shown while a freshly uploaded PDF is
- * processed. Each label is an i18n key with a Polish default, so the copy is
- * localizable but reads in Polish by default.
+ * processed. Each label is an i18n key with a Polish default.
+ *
+ * Steps are named impersonally ("Zapis wyników"), with no trailing ellipsis:
+ * the spinner beside them already says the work is running. The live sections
+ * are nouns, because they join the facts line after the title and composer.
  * @module features/archive/constants/ingestionProgress
  */
 
@@ -20,30 +23,30 @@ const PROGRESS_LABEL: Record<
   Exclude<IngestionProgressCode, "">,
   { readonly key: string; readonly pl: string }
 > = {
-  preparing: { key: "archive.progress.preparing", pl: "Przygotowuję dokument…" },
+  preparing: { key: "archive.progress.preparing", pl: "Przygotowanie dokumentu" },
   analyzing: {
     key: "archive.progress.analyzing",
-    pl: "Czytam partyturę (AI) — tytuł, części, tekst, IPA, tłumaczenia…",
+    pl: "Odczyt partytury: tytuł, części, tekst, IPA, tłumaczenia",
   },
   resolving: {
     key: "archive.progress.resolving",
-    pl: "Szukam w MusicBrainz i Wikidata…",
+    pl: "Wyszukiwanie w MusicBrainz i Wikidata",
   },
   persisting: {
     key: "archive.progress.persisting",
-    pl: "Zapisuję wyniki…",
+    pl: "Zapis wyników",
   },
   program_note: {
     key: "archive.progress.program_note",
-    pl: "Piszę notkę programową…",
+    pl: "Pisanie notki programowej",
   },
   recordings: {
     key: "archive.progress.recordings",
-    pl: "Szukam nagrań (Spotify, YouTube)…",
+    pl: "Wyszukiwanie nagrań w Spotify i YouTube",
   },
   waiting_overload: {
     key: "archive.progress.waiting_overload",
-    pl: "Usługa AI jest przeciążona — ponawiam za chwilę…",
+    pl: "Usługa AI jest przeciążona. Ponowienie za chwilę",
   },
 };
 
@@ -58,23 +61,23 @@ const LIVE_SECTION_LABEL: Record<
 > = {
   identity: {
     key: "archive.progress.live_identity",
-    pl: "odczytuję stronę tytułową…",
+    pl: "strona tytułowa",
   },
   movements: {
     key: "archive.progress.live_movements",
-    pl: "wykrywam części…",
+    pl: "podział na części",
   },
   sung_text: {
     key: "archive.progress.live_sung_text",
-    pl: "transkrybuję tekst spod nut…",
+    pl: "tekst spod nut",
   },
   ipa: {
     key: "archive.progress.live_ipa",
-    pl: "opracowuję wymowę (IPA)…",
+    pl: "wymowa (IPA)",
   },
   translations: {
     key: "archive.progress.live_translations",
-    pl: "tłumaczę…",
+    pl: "tłumaczenia",
   },
 };
 
@@ -121,14 +124,14 @@ export const liveIngestionLabel = (
   }
   switch (status) {
     case "PEND":
-      return t("archive.progress.queued", "W kolejce…");
+      return t("archive.progress.queued", "W kolejce");
     case "EXTR":
-      return t("archive.progress.preparing", "Przygotowuję dokument…");
+      return t(PROGRESS_LABEL.preparing.key, PROGRESS_LABEL.preparing.pl);
     case "ENRI":
-      return t("archive.progress.resolving", "Szukam w MusicBrainz i Wikidata…");
+      return t(PROGRESS_LABEL.resolving.key, PROGRESS_LABEL.resolving.pl);
     case "GENR":
-      return t("archive.progress.analyzing", "Czytam partyturę (AI)…");
+      return t(PROGRESS_LABEL.analyzing.key, PROGRESS_LABEL.analyzing.pl);
     default:
-      return t("archive.progress.working", "Pracuję…");
+      return t("archive.progress.working", "W toku");
   }
 };

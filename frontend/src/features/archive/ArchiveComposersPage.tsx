@@ -101,6 +101,14 @@ export default function ArchiveComposersPage(): React.JSX.Element {
   const withoutMb = composers.filter(FILTERS.no_mb).length;
   const orphans = composers.filter(FILTERS.orphans).length;
 
+  // A filter whose count reaches zero (the last orphan deleted, the last
+  // unlinked composer refreshed or merged) switches itself off: its toggle is
+  // gone, so nothing else could, and the list behind it would stay empty.
+  const filterCounts: Readonly<Record<ComposerFilter, number>> = { no_mb: withoutMb, orphans };
+  if (filter && !isLoading && filterCounts[filter] === 0) {
+    setFilter(null);
+  }
+
   const toggleSelect = (id: string) => {
     setSelectedIds((current) => {
       const next = new Set(current);
@@ -300,14 +308,7 @@ export default function ArchiveComposersPage(): React.JSX.Element {
         )}
 
         {openComposer && (
-          <ComposerRecordDialog
-            composer={openComposer}
-            onClose={() => setOpenId(null)}
-            onDelete={(chosen) => {
-              setOpenId(null);
-              setPendingDelete(chosen);
-            }}
-          />
+          <ComposerRecordDialog composer={openComposer} onClose={() => setOpenId(null)} />
         )}
 
         <AnimatePresence>

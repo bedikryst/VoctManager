@@ -13,7 +13,7 @@
 
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { Plus, Sparkles } from "lucide-react";
+import { Music, Plus } from "lucide-react";
 
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { Button } from "@/shared/ui/primitives/Button";
@@ -38,7 +38,8 @@ export const ArchiveWelcomeState = ({
             className="flex h-16 w-16 items-center justify-center rounded-surface border border-ethereal-gold/40 bg-ethereal-gold/10 text-ethereal-gold"
             aria-hidden="true"
           >
-            <Sparkles size={28} strokeWidth={1.5} />
+            {/* The library's own icon from the navigation rail. */}
+            <Music size={28} strokeWidth={1.5} />
           </span>
           <Heading as="h2" size="3xl" weight="medium" className="font-serif">
             {t(

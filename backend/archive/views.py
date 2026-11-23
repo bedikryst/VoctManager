@@ -82,7 +82,7 @@ from .serializers import (
     TrackSerializer,
     TranslationWriteSerializer,
 )
-from .services import enrichment, provenance
+from .services import composers, enrichment, provenance
 from .services.field_edits import EditSuperseded, FieldEdit, Scalar
 from .services.ingestion import (
     DispatchRefused,
@@ -126,6 +126,17 @@ class ComposerViewSet(viewsets.ModelViewSet):
             ),
         ).order_by('last_name', 'first_name')
 
+    @transaction.atomic
+    def perform_update(self, serializer) -> None:
+        """A hand edit stamps MANUAL provenance on each field it changed, which
+        is what keeps a correction safe from a forced MusicBrainz refresh."""
+        before = {name: getattr(serializer.instance, name) for name in serializer.validated_data}
+        composer = serializer.save()
+        actor = _actor_email(self.request)
+        for name, previous in before.items():
+            if getattr(composer, name) != previous:
+                provenance.record_manual(target=composer, field_name=name, actor_email=actor)
+
     # -----------------------------------------------------------------
     # Custom actions
     # -----------------------------------------------------------------
@@ -133,53 +144,29 @@ class ComposerViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'], url_path='merge_into/(?P<target_id>[^/.]+)')
     def merge_into(self, request, pk=None, target_id=None):
         """
-        Move every Piece + ProvenanceRecord from this composer (source) onto
-        `target_id`, then soft-delete the source. Used to consolidate
-        duplicates the AI pipeline failed to dedupe (e.g. "J.S. Bach" and
-        "Johann Sebastian Bach").
+        Merge this composer (source) into `target_id` and soft-delete the
+        source: pieces, the target's missing data with its provenance, and the
+        source's spellings as aliases (`services.composers.merge_composers`).
+        Used to consolidate duplicates ingestion failed to dedupe, e.g.
+        "J.S. Bach" and "Johann Sebastian Bach".
 
         Refuses to merge a composer into itself or into a deleted target.
         """
         source = self.get_object()
-        if str(source.id) == str(target_id):
-            return Response(
-                {'detail': 'Cannot merge a composer into itself.'},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
         try:
-            target = Composer.objects.get(id=target_id, is_deleted=False)
-        except Composer.DoesNotExist:
+            target = Composer.objects.get(id=target_id)
+            composers.merge_composers(source=source, target=target)
+        except composers.MergeRefused as exc:
+            return Response({'detail': str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+        except (Composer.DoesNotExist, DjangoValidationError):
             return Response(
                 {'detail': f'Target composer {target_id} not found.'},
                 status=status.HTTP_404_NOT_FOUND,
             )
 
-        with transaction.atomic():
-            reassigned = Piece.objects.filter(composer=source).update(
-                composer=target,
-            )
-            source.delete()
-
-        logger.info(
-            "composer.merged source=%s target=%s pieces_moved=%d",
-            source.id, target.id, reassigned,
-        )
-        target.refresh_from_db()
         # Re-annotate so pieces_count reflects the merged total.
-        annotated = (
-            Composer.objects
-            .filter(id=target.id)
-            .annotate(
-                pieces_count_annotated=Count(
-                    'pieces', filter=Q(pieces__is_deleted=False),
-                ),
-            )
-            .first()
-        )
-        return Response(
-            ComposerSerializer(annotated or target).data,
-            status=status.HTTP_200_OK,
-        )
+        annotated = self.get_queryset().get(id=target.id)
+        return Response(ComposerSerializer(annotated).data, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=['post'], url_path='refresh_mb')
     def refresh_mb(self, request, pk=None):

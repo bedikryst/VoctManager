@@ -104,9 +104,9 @@ interface CreateComposerProps {
 }
 
 /**
- * A new catalogue composer: surname, first name and the two years. The rest
- * of the record (nationality, period, MusicBrainz) is filled in its record or
- * by the refresh.
+ * A new catalogue composer: surname, first name and the two years, in the
+ * record's order. The rest of the record (period, MusicBrainz) is filled in
+ * its record or by the refresh.
  */
 export const CreateComposer = ({ initialLastName = "", returnFocusId, onCreated, onClose }: CreateComposerProps) => {
   const { t } = useTranslation();
@@ -166,10 +166,16 @@ export const CreateComposer = ({ initialLastName = "", returnFocusId, onCreated,
           </Dialog.Title>
           <form className="mt-4 space-y-4" onSubmit={(event) => void submit(event)}>
             <fieldset disabled={isSubmitting || Boolean(created)} className="grid grid-cols-2 gap-3">
-              <Input name="first_name" label={t("archive.composers.add_first")} />
-              <Input name="last_name" label={t("archive.composers.add_last")} defaultValue={initialLastName} required />
-              <Input name="birth_year" label={t("archive.composers.add_birth")} />
-              <Input name="death_year" label={t("archive.composers.add_death")} />
+              <Input
+                name="last_name"
+                label={t("archive.composers.add_last")}
+                labelCasing="sentence"
+                defaultValue={initialLastName}
+                required
+              />
+              <Input name="first_name" label={t("archive.composers.add_first")} labelCasing="sentence" />
+              <Input name="birth_year" label={t("archive.composers.add_birth")} labelCasing="sentence" />
+              <Input name="death_year" label={t("archive.composers.add_death")} labelCasing="sentence" />
             </fieldset>
             <div className="flex flex-wrap justify-end gap-2">
               <Button type="button" variant="ghost" casing="sentence" disabled={isSubmitting} onClick={onClose}>

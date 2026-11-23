@@ -252,7 +252,7 @@ type RowView =
   | "ingest_failed";
 
 const UploadRow = ({ entry, onRemove }: UploadRowProps): React.JSX.Element => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { file, phase, progress, errorMessage, editionId } = entry;
 
   // Live ingestion over SSE the instant the PDF is accepted — the row shows the
@@ -263,7 +263,7 @@ const UploadRow = ({ entry, onRemove }: UploadRowProps): React.JSX.Element => {
   const live = useLiveIngestion(editionId ?? null);
   const ingStatus = live?.ingestion_status;
   const overloaded = isOverloadWait(live?.ingestion_progress);
-  const liveCost = formatIngestionCost(live?.ingestion_cost_cents_lifetime);
+  const liveCost = formatIngestionCost(live?.ingestion_cost_cents_lifetime, i18n.language);
 
   const view: RowView =
     phase === "queued" || phase === "held"

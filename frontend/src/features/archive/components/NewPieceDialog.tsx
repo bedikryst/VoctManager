@@ -136,6 +136,7 @@ export const NewPieceDialog = ({
               <Input
                 name="title"
                 label={t("archive.new_piece.title_label", "Tytuł")}
+                labelCasing="sentence"
                 value={title}
                 onChange={(event) => setTitle(event.target.value)}
                 maxLength={TITLE_MAX_LENGTH}

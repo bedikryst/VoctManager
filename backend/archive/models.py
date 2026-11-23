@@ -137,8 +137,10 @@ class Composer(SoftDeleteModel):
     birth_year = models.CharField(max_length=50, blank=True, help_text=_("e.g. 1885"), verbose_name=_("Birth Year"))
     death_year = models.CharField(max_length=50, blank=True, verbose_name=_("Death Year"))
 
-    # Canonical identity — highest-priority dedup key when present.
-    mbid = models.UUIDField(null=True, blank=True, unique=True, verbose_name=_("MusicBrainz ID"))
+    # Canonical identity — highest-priority dedup key when present. Unique among
+    # active rows only (see Meta): a merged-away or deleted composer keeps its
+    # MBID, and must not block the entry that now holds it.
+    mbid = models.UUIDField(null=True, blank=True, verbose_name=_("MusicBrainz ID"))
     wikidata_qid = models.CharField(max_length=20, blank=True, db_index=True, verbose_name=_("Wikidata QID"))
 
     nationality = models.CharField(max_length=80, blank=True, verbose_name=_("Nationality"))
@@ -155,6 +157,13 @@ class Composer(SoftDeleteModel):
         ordering = ['last_name']
         indexes = [
             models.Index(fields=['last_name', 'first_name']),
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=['mbid'],
+                condition=models.Q(is_deleted=False),
+                name='unique_active_composer_mbid',
+            ),
         ]
 
     def __str__(self) -> str:
@@ -192,7 +201,9 @@ class Piece(SoftDeleteModel):
     epoch = models.CharField(max_length=4, choices=EpochChoices.choices, blank=True, verbose_name=_("Epoch"))
 
     # Canonical identity from MusicBrainz (one work can have many editions/recordings).
-    mbid_work = models.UUIDField(null=True, blank=True, unique=True, verbose_name=_("MusicBrainz Work ID"))
+    # Unique among active rows only (see Meta), so a deleted piece does not hold
+    # its work id against the next ingestion of the same work.
+    mbid_work = models.UUIDField(null=True, blank=True, verbose_name=_("MusicBrainz Work ID"))
     opus_catalog = models.CharField(
         max_length=40, blank=True,
         help_text=_("e.g. BWV 243, K. 626, Op. 110 No. 2"),
@@ -261,6 +272,13 @@ class Piece(SoftDeleteModel):
         indexes = [
             models.Index(fields=['title']),
             models.Index(fields=['epoch']),
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=['mbid_work'],
+                condition=models.Q(is_deleted=False),
+                name='unique_active_piece_mbid_work',
+            ),
         ]
 
     def __str__(self) -> str:

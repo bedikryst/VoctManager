@@ -1,20 +1,20 @@
 /**
  * @file ComposerRecordDialog.tsx
- * @description One composer's record, over the composers list: the six
+ * @description One composer's record, over the composers list: the five
  * properties a manager corrects, each saving itself as it does on the piece
  * card; the catalogues the record is tied to and the refresh from them; the
  * pieces the library holds by this composer, each opening its card. A composer
- * with no pieces can be deleted from here.
+ * with no pieces is deleted from here, confirmed in place.
  *
- * The stored biography is the English Wikipedia extract, so it is shown only
- * in the English interface, the rule the piece card's composer popover follows.
- * Nationality is shown as stored: MusicBrainz, Wikidata and the seed each wrote
- * it in their own form, which is why the list leaves it out.
+ * The refresh also fills the biography and the nationality, which the record
+ * does not show: the biography is the English Wikipedia extract and the
+ * nationality is stored in whichever form its source wrote it.
  * @module features/archive/components/ComposerRecordDialog
  */
 
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 import * as Dialog from "@radix-ui/react-dialog";
 import { ArrowUpRight, RefreshCcw, Trash2, X } from "lucide-react";
 
@@ -29,23 +29,29 @@ import { Button } from "@/shared/ui/primitives/Button";
 import { Select } from "@/shared/ui/primitives/Select";
 import { Text } from "@/shared/ui/primitives/typography";
 
-import { usePieces, useRefreshComposerFromMb, useUpdateComposer } from "../api/archive.queries";
+import {
+  useDeleteComposer,
+  usePieces,
+  useRefreshComposerFromMb,
+  useUpdateComposer,
+} from "../api/archive.queries";
 import type { ComposerRefreshResult } from "../api/archive.service";
 import { getArchiveEpochLabel, getArchiveEpochOptions } from "../constants/archiveEpochs";
 import { pieceCardPath } from "../constants/libraryScope";
 import { CommitText } from "../piece-card/CommitText";
 import type { DraftField } from "../piece-card/usePieceAutosave";
 import { composerFullName } from "./ComposerRow";
+import { InlineConfirmAction } from "./InlineConfirmAction";
 
-type ComposerField = "last_name" | "first_name" | "birth_year" | "death_year" | "nationality" | "period";
+type ComposerField = "last_name" | "first_name" | "birth_year" | "death_year" | "period";
 type ComposerPatch = Partial<Record<ComposerField, string>>;
 
 /**
- * The fields a refresh can fill, named for the reader. The portrait's licence
- * arrives with the portrait and is not named on its own.
+ * The fields a refresh can fill that the record shows, named for the reader.
+ * The portrait's licence arrives with the portrait and is not named on its own.
  */
 const FILLED_FIELDS = [
-  "birth_year", "death_year", "nationality", "period", "bio", "portrait_url", "aliases", "mbid", "wikidata_qid",
+  "birth_year", "death_year", "period", "portrait_url", "aliases", "mbid", "wikidata_qid",
 ] as const;
 type FilledField = (typeof FILLED_FIELDS)[number];
 const isFilledField = (field: string): field is FilledField =>
@@ -61,22 +67,19 @@ const reportNoDraft: DraftField["setDraft"] = () => undefined;
 interface ComposerRecordDialogProps {
   readonly composer: Composer;
   readonly onClose: () => void;
-  /** Asks for the deletion, which the list confirms once the record has closed. */
-  readonly onDelete: (composer: Composer) => void;
 }
 
 export const ComposerRecordDialog = ({
   composer,
   onClose,
-  onDelete,
 }: ComposerRecordDialogProps): React.JSX.Element => {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const { mutateAsync: updateComposer } = useUpdateComposer();
   const refresh = useRefreshComposerFromMb();
+  const deleteComposer = useDeleteComposer();
   const { data: allPieces = [] } = usePieces();
   const [pendingWrites, setPendingWrites] = useState(0);
   const [writeFailed, setWriteFailed] = useState(false);
-  const [refreshMode, setRefreshMode] = useState<"fill" | "force" | null>(null);
   const [outcome, setOutcome] = useState<ComposerRefreshResult | null>(null);
   const [refreshFailed, setRefreshFailed] = useState(false);
 
@@ -86,7 +89,6 @@ export const ComposerRecordDialog = ({
     .filter((piece: Piece) => piece.composer && String(piece.composer.id) === composerId)
     .sort((a, b) => a.title.localeCompare(b.title));
   const isOrphan = composer.is_orphan ?? (composer.pieces_count ?? 0) === 0;
-  const bio = (i18n.resolvedLanguage ?? i18n.language).startsWith("en") ? composer.bio : "";
 
   const save = async (field: ComposerField, value: string): Promise<void> => {
     const data: ComposerPatch = {};
@@ -134,18 +136,26 @@ export const ComposerRecordDialog = ({
       ? [{ value: period, label: getArchiveEpochLabel(period, t) }, ...periodOptions]
       : periodOptions;
 
-  const runRefresh = (force: boolean) => {
+  const runRefresh = () => {
     setOutcome(null);
     setRefreshFailed(false);
-    setRefreshMode(force ? "force" : "fill");
-    refresh.mutate(
-      { id: composerId, force },
-      {
-        onSuccess: setOutcome,
-        onError: () => setRefreshFailed(true),
-        onSettled: () => setRefreshMode(null),
+    refresh.mutate(composerId, {
+      onSuccess: setOutcome,
+      onError: () => setRefreshFailed(true),
+    });
+  };
+
+  const remove = () => {
+    deleteComposer.mutate(composerId, {
+      onSuccess: () => {
+        toast.success(t("archive.composers.delete_success", "Kompozytor usunięty."));
+        onClose();
       },
-    );
+      onError: (error) =>
+        toastApiError(error, t, {
+          fallbackDescription: t("archive.composers.delete_error", "Nie udało się usunąć kompozytora."),
+        }),
+    });
   };
 
   const filledNames = outcome
@@ -221,7 +231,6 @@ export const ComposerRecordDialog = ({
             {textRow("first_name", t("archive.composer_record.fields.first_name", "Imię"))}
             {textRow("birth_year", t("archive.composer_record.fields.birth_year", "Rok urodzenia"))}
             {textRow("death_year", t("archive.composer_record.fields.death_year", "Rok śmierci"))}
-            {textRow("nationality", t("archive.composer_record.fields.nationality", "Narodowość"))}
             <PropertyRow label={periodLabel}>
               {(id) => (
                 <Select
@@ -243,12 +252,6 @@ export const ComposerRecordDialog = ({
               )}
             </PropertyRow>
           </div>
-
-          {bio && (
-            <Text as="p" size="sm" color="graphite" className="mt-4 whitespace-pre-wrap leading-relaxed">
-              {bio}
-            </Text>
-          )}
 
           <section className="mt-8" aria-labelledby={`composer-sources-${composerId}`}>
             <Text as="h3" id={`composer-sources-${composerId}`} size="base" weight="semibold">
@@ -281,35 +284,18 @@ export const ComposerRecordDialog = ({
                 </Text>
               )}
             </div>
-            <div className="mt-3 flex flex-wrap items-center gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                casing="sentence"
-                onClick={() => runRefresh(false)}
-                disabled={refresh.isPending}
-                isLoading={refreshMode === "fill"}
-                leftIcon={refreshMode === "fill" ? undefined : <RefreshCcw size={16} aria-hidden="true" />}
-              >
-                {t("archive.composer_record.refresh", "Odśwież z MusicBrainz")}
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                casing="sentence"
-                onClick={() => runRefresh(true)}
-                disabled={refresh.isPending}
-                isLoading={refreshMode === "force"}
-                title={t(
-                  "archive.composer_record.refresh_force_hint",
-                  "Pobiera dane jeszcze raz i zastępuje to, co przyszło z MusicBrainz i Wikidata. Twoje poprawki zostają.",
-                )}
-              >
-                {t("archive.composer_record.refresh_force", "Pobierz ponownie")}
-              </Button>
-            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              casing="sentence"
+              onClick={runRefresh}
+              isLoading={refresh.isPending}
+              leftIcon={refresh.isPending ? undefined : <RefreshCcw size={16} aria-hidden="true" />}
+              className="mt-3"
+            >
+              {t("archive.composer_record.refresh", "Odśwież z MusicBrainz")}
+            </Button>
             {/* Always in the tree, so the outcome is announced when it lands. */}
             <Text
               as="p"
@@ -342,27 +328,24 @@ export const ComposerRecordDialog = ({
                 ))}
               </RecordList>
             ) : (
-              <Text as="p" size="sm" color="graphite">
-                {t("archive.composer_record.no_pieces", "Żaden utwór w bibliotece nie jest przypisany do tego kompozytora.")}
-              </Text>
+              // Deletion sits beside its reason: only a composer with no
+              // pieces can go.
+              <div className="flex items-center justify-between gap-3">
+                <Text as="p" size="sm" color="graphite">
+                  {t("archive.composer_record.no_pieces", "Żaden utwór w bibliotece nie jest przypisany do tego kompozytora.")}
+                </Text>
+                {isOrphan && (
+                  <InlineConfirmAction
+                    icon={Trash2}
+                    label={t("archive.composer_record.delete", "Usuń kompozytora")}
+                    confirmLabel={t("archive.review.delete")}
+                    onConfirm={remove}
+                    isPending={deleteComposer.isPending}
+                  />
+                )}
+              </div>
             )}
           </section>
-
-          {isOrphan && (
-            <div className="mt-6 flex justify-end">
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                casing="sentence"
-                onClick={() => onDelete(composer)}
-                leftIcon={<Trash2 size={16} aria-hidden="true" />}
-                className="text-ethereal-crimson hover:text-ethereal-crimson"
-              >
-                {t("archive.composer_record.delete", "Usuń kompozytora")}
-              </Button>
-            </div>
-          )}
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog.Root>

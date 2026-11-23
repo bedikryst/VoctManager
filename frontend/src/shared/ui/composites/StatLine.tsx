@@ -1,7 +1,7 @@
 /**
  * @file StatLine.tsx
  * @description The dot-separated facts line under a page or card header —
- * "128 utworów · 71% z PDF", "40 śpiewaków · 12 prób".
+ * "128 utworów · 6 bez PDF", "40 śpiewaków · 12 prób".
  *
  * Facts only, in the sentence form the figures actually read in: these are
  * inline counts, not display figures, so they are sans and never `Metric`.

@@ -4,7 +4,9 @@
  * record: a route (the row's body is a `<Link>`) or an overlay or map focus (a
  * `<button>`). Rows sit between hairlines with no tile, fill, radius or shadow,
  * the way the piece card sets its own lists; a tone shows only on hover, on a
- * selected row and on the record the rest of the screen is showing.
+ * selected row and on the record the rest of the screen is showing. The tone
+ * fills the band between two hairlines exactly, square, and in a flush list
+ * both reach a little past the column so the titles keep the column's edge.
  *
  * One row, three columns: an optional select box, the open element, and at
  * most one icon action plus one menu. Nothing interactive lives inside the
@@ -29,7 +31,7 @@
  * @module shared/ui/composites/RecordList
  */
 
-import React, { Children, type ReactNode } from "react";
+import React, { Children, createContext, useContext, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 
 import { cn } from "@/shared/lib/utils";
@@ -39,6 +41,8 @@ import { Heading, Text } from "@/shared/ui/primitives/typography";
 
 /** `work`: a titled work, in Cormorant. `name`: a person, a place, a payee, in sans. */
 export type RecordVoice = "work" | "name";
+
+export type RecordListEdge = "flush" | "inset";
 
 export type RecordRowOpen =
   | { readonly to: string; readonly state?: unknown }
@@ -100,7 +104,7 @@ export interface RecordListProps {
    * list inside a card, ruled between rows only, so the card's own edges and
    * footer close it.
    */
-  readonly edge?: "flush" | "inset";
+  readonly edge?: RecordListEdge;
   /** Shown in place of the list when it has no rows. */
   readonly empty?: RecordListEmpty;
   readonly className?: string;
@@ -115,6 +119,25 @@ export const recordActionClass =
 
 const OPEN_FOCUS =
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ethereal-gold/40";
+
+/**
+ * Where a row's band ends, per list edge. The row (`li`) carries the reach and
+ * the hairline with it; its padding puts the content back on the text edge.
+ * The open element reaches back out by the same padding on a side where no
+ * select box or action stands, so its focus ring outlines the whole band.
+ */
+const ROW_EDGE: Readonly<Record<RecordListEdge, { readonly row: string; readonly open: string }>> = {
+  flush: {
+    row: "-mx-2 px-2",
+    open: "first:-ml-2 first:pl-2 last:-mr-2 last:pr-2",
+  },
+  inset: {
+    row: "px-5",
+    open: "first:-ml-5 first:pl-5 last:-mr-5 last:pr-5",
+  },
+};
+
+const RecordEdgeContext = createContext<RecordListEdge>("flush");
 
 /**
  * A checkbox inside a label that widens its target past the 16 px box.
@@ -186,6 +209,7 @@ export function RecordRow({
   current = false,
   id,
 }: RecordRowProps): React.JSX.Element {
+  const edge = ROW_EDGE[useContext(RecordEdgeContext)];
   const shownFacts = facts.filter(isPresent);
   const shownMeta = meta.filter(isPresent);
   const hasFactsLine = shownFacts.length > 0 || shownMeta.length > 0;
@@ -233,12 +257,7 @@ export function RecordRow({
     </>
   );
 
-  // The open element reaches the tone's edge on a side where no select box or
-  // action stands, so its focus ring outlines the whole row.
-  const openClass = cn(
-    "flex min-w-0 flex-1 items-center gap-3 rounded-control py-3 first:-ml-2 first:pl-2 last:-mr-2 last:pr-2",
-    OPEN_FOCUS,
-  );
+  const openClass = cn("flex min-w-0 flex-1 items-center gap-3 py-3", edge.open, OPEN_FOCUS);
   const rowToggles = select?.scope === "row";
   const ariaCurrent = current ? "true" : undefined;
 
@@ -270,19 +289,19 @@ export function RecordRow({
   );
 
   return (
-    <li id={id}>
-      {/* The current edge is a pseudo-element: a child would take the
-          `first:` reach from the open element. */}
-      <div
-        className={cn(
-          "relative -mx-2 flex items-center gap-2 rounded-control px-2 transition-colors",
-          select?.checked
-            ? "bg-ethereal-gold/5"
-            : (open !== undefined || rowToggles) && "hover:bg-ethereal-ink/3",
-          current &&
-            "before:pointer-events-none before:absolute before:inset-y-2 before:left-0 before:w-0.5 before:rounded-full before:bg-ethereal-gold",
-        )}
-      >
+    <li
+      id={id}
+      className={cn(
+        "relative transition-colors",
+        edge.row,
+        select?.checked
+          ? "bg-ethereal-gold/5"
+          : (open !== undefined || rowToggles) && "hover:bg-ethereal-ink/3",
+        current &&
+          "before:pointer-events-none before:absolute before:inset-y-2 before:left-0 before:w-0.5 before:rounded-full before:bg-ethereal-gold",
+      )}
+    >
+      <div className="flex items-center gap-2">
         {select && (
           <span className="flex shrink-0 items-center">
             <SelectBox
@@ -321,17 +340,20 @@ export function RecordList({
     );
   }
 
+  // A flush list rules its rows, not itself: the hairlines reach with the rows.
   return (
-    <ul
-      aria-label={label}
-      className={cn(
-        edge === "flush"
-          ? "border-b border-hairline [&>li]:border-t [&>li]:border-hairline"
-          : "divide-y divide-hairline [&>li]:px-5",
-        className,
-      )}
-    >
-      {children}
-    </ul>
+    <RecordEdgeContext.Provider value={edge}>
+      <ul
+        aria-label={label}
+        className={cn(
+          edge === "flush"
+            ? "[&>li]:border-t [&>li]:border-hairline [&>li:last-child]:border-b"
+            : "divide-y divide-hairline",
+          className,
+        )}
+      >
+        {children}
+      </ul>
+    </RecordEdgeContext.Provider>
   );
 }

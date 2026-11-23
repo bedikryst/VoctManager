@@ -83,7 +83,7 @@ export const EditionUploadDrawer = ({
                 <Caption color="muted" className="mt-2 block">
                   {t(
                     "archive.upload_drawer.cost_hint",
-                    "Koszt jednego PDF-a: zwykle 4–20 ¢, najwyżej 1,50 USD za jedno przetworzenie.",
+                    "Koszt jednego PDF-a: zwykle 0,04–0,20 USD, najwyżej 1,50 USD za jedno przetworzenie.",
                   )}
                 </Caption>
               </div>
