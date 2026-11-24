@@ -2,8 +2,11 @@
  * @file PieceRow.tsx
  * @description One piece in the library, as a `RecordRow`: the row opens the
  * piece card, and every edit happens there. The title is set in the work
- * voice; under it, the composer, the year and the epoch; to the right, the
- * voicing, the length and the practice tracks.
+ * voice; under it, the composer and the year as a catalogue byline ("Arvo
+ * Pärt, 1990"); to the right, the voicing, the length and the practice tracks
+ * in the columns the library declares (`PIECE_COLUMNS`). The epoch is not on
+ * the row: the year carries it, and the list filters by it. On a phone the
+ * voicing and the length stand in the right column and the track count goes.
  *
  * Flags speak only for a piece that needs a person: no score yet, the AI still
  * reading one, a reading waiting for review, a reading that failed. A healthy
@@ -27,12 +30,11 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/shared/ui/composites/DropdownMenu";
-import { RecordRow, recordActionClass } from "@/shared/ui/composites/RecordList";
+import { RecordRow, recordActionClass, type RecordColumn } from "@/shared/ui/composites/RecordList";
 import { Badge, type BadgeVariant } from "@/shared/ui/primitives/Badge";
 import { Button } from "@/shared/ui/primitives/Button";
 import { Text } from "@/shared/ui/primitives/typography";
 
-import { getArchiveEpochOptions } from "../constants/archiveEpochs";
 import { hasPdf } from "../constants/piecePdfs";
 import type { EnrichedPiece } from "../types/archive.dto";
 
@@ -46,6 +48,16 @@ interface PieceRowProps {
   readonly selected?: boolean;
   readonly onToggleSelect?: (id: string) => void;
 }
+
+/**
+ * The library list's figure columns, in `PieceRow`'s `meta` order: the voicing
+ * ("SSATB SATB" fits), the length, the practice tracks.
+ */
+export const PIECE_COLUMNS: readonly RecordColumn[] = [
+  { width: "lg", align: "start", compact: "stack" },
+  { width: "xs", compact: "stack" },
+  { width: "md" },
+];
 
 /** The row's DOM id, which the library scrolls to on the way back from a card. */
 export const pieceRowId = (pieceId: string | number): string => `piece-row-${pieceId}`;
@@ -141,9 +153,6 @@ export const PieceRow = ({
       </>
     ) : null;
 
-  const epoch = piece.epoch
-    ? getArchiveEpochOptions(t).find((option) => option.value === piece.epoch)?.label
-    : null;
   const yearAnomaly = t(
     "archive.row.year_anomaly",
     "AI mógł się pomylić: rok nie pasuje do dat życia kompozytora",
@@ -168,7 +177,7 @@ export const PieceRow = ({
       title={piece.title}
       voice="work"
       flags={flags}
-      facts={[pieceComposerName(piece), year, epoch]}
+      facts={[pieceComposerName(piece), year]}
       meta={[
         piece.voicing || null,
         formatDuration(piece.estimated_duration),

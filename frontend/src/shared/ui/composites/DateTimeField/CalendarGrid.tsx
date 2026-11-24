@@ -310,7 +310,7 @@ export const CalendarGrid = ({
                         "relative flex items-center justify-center rounded-full text-sm tabular-nums transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40",
                         isTouch ? "size-11" : "size-9",
                         isSelected
-                          ? "bg-ethereal-gold font-semibold text-surface-inverse shadow-button-primary"
+                          ? "bg-ethereal-gold font-semibold text-surface-inverse"
                           : "hover:bg-ethereal-parchment/70",
                         !isSelected && isOutside && "text-ethereal-graphite/35",
                         !isSelected && !isOutside && "text-ethereal-graphite",

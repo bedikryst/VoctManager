@@ -49,7 +49,7 @@ import { EditionUploadDrawer } from "./components/EditionUploadDrawer";
 import { NewPieceDialog } from "./components/NewPieceDialog";
 import { OrphanIngestionsPanel } from "./components/OrphanIngestionsPanel";
 import { PieceBulkBar } from "./components/PieceBulkBar";
-import { PieceRow, pieceRowId } from "./components/PieceRow";
+import { PIECE_COLUMNS, PieceRow, pieceRowId } from "./components/PieceRow";
 import { useArchiveData } from "./hooks/useArchiveData";
 import { getArchiveEpochOptions } from "./constants/archiveEpochs";
 import {
@@ -388,7 +388,7 @@ export default function ArchiveManagement(): React.JSX.Element {
             />
 
             {deferredPieces.length > 0 ? (
-              <RecordList label={t("archive.list_aria", "Utwory w bibliotece")}>
+              <RecordList label={t("archive.list_aria", "Utwory w bibliotece")} columns={PIECE_COLUMNS}>
                 {deferredPieces.map((piece) => (
                   <PieceRow
                     key={piece.id}

@@ -1,20 +1,18 @@
 /**
  * @file BulkActionBar.tsx
- * @description Floating command bar shown while the roster is in selection mode.
- * Surfaces the selection count and context-aware bulk lifecycle actions
- * (archive the selected active singers / restore the selected archived ones).
+ * @description The roster's `BulkBar` while it is in selection mode: the
+ * selection count and the lifecycle acts the selection allows (archive the
+ * selected active singers / restore the selected archived ones).
  * @module features/artists/components/BulkActionBar
  */
 
 import React from "react";
-import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { Archive, CheckCheck, RotateCcw, X } from "lucide-react";
 
+import { BulkBar } from "@/shared/ui/composites/BulkBar";
 import { Button } from "@/shared/ui/primitives/Button";
 import { Text } from "@/shared/ui/primitives/typography";
-import { Portal } from "@/shared/lib/dom/Portal";
-import { useBottomBarSlot } from "@/shared/lib/dom/useBottomBarSlot";
 
 interface BulkActionBarProps {
   selectedTotal: number;
@@ -43,80 +41,72 @@ export const BulkActionBar = ({
 }: BulkActionBarProps): React.JSX.Element => {
   const { t } = useTranslation();
   const allSelected = selectedTotal >= visibleCount && visibleCount > 0;
-  const slotRef = useBottomBarSlot();
 
   return (
-    <Portal>
-    <motion.div
-      ref={slotRef}
-      initial={{ y: 80, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      exit={{ y: 80, opacity: 0 }}
-      transition={{ type: "spring", damping: 26, stiffness: 260 }}
-      className="fixed inset-x-0 bottom-dock z-dock-bar mx-auto flex w-[min(100%-2rem,44rem)] flex-wrap items-center justify-between gap-3 rounded-nested border border-hairline-strong bg-ethereal-alabaster/90 px-4 py-3 shadow-glass-ethereal backdrop-blur-xl"
-      role="region"
-      aria-label={t("artists.bulk.bar_aria", "Akcje zbiorcze")}
-    >
-      <div className="flex items-center gap-3">
-        <Text size="sm" weight="bold" className="tabular-nums">
-          {t("artists.bulk.selected_count", {
-            defaultValue: "{{n}} zaznaczono",
-            n: selectedTotal,
-          })}
-        </Text>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={allSelected ? onClear : onSelectAll}
-          leftIcon={<CheckCheck size={13} aria-hidden="true" />}
-        >
-          {allSelected
-            ? t("artists.bulk.clear", "Wyczyść")
-            : t("artists.bulk.select_all", "Zaznacz wszystkich")}
-        </Button>
-      </div>
-
-      <div className="flex items-center gap-2">
-        {archivedCount > 0 && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onRestore}
-            disabled={isPending}
-            leftIcon={<RotateCcw size={14} aria-hidden="true" />}
-            className="text-ethereal-sage hover:text-ethereal-sage"
-          >
-            {t("artists.bulk.restore", {
-              defaultValue: "Przywróć ({{n}})",
-              n: archivedCount,
+    <BulkBar
+      label={t("artists.bulk.bar_aria", "Akcje zbiorcze")}
+      status={
+        <>
+          <Text size="sm" weight="bold" className="tabular-nums">
+            {t("artists.bulk.selected_count", {
+              defaultValue: "{{n}} zaznaczono",
+              n: selectedTotal,
             })}
-          </Button>
-        )}
-        {activeCount > 0 && (
+          </Text>
           <Button
-            variant="outline"
+            variant="ghost"
             size="sm"
-            onClick={onArchive}
-            disabled={isPending}
-            leftIcon={<Archive size={14} aria-hidden="true" />}
-            className="text-ethereal-crimson hover:text-ethereal-crimson"
+            onClick={allSelected ? onClear : onSelectAll}
+            leftIcon={<CheckCheck size={13} aria-hidden="true" />}
           >
-            {t("artists.bulk.archive", {
-              defaultValue: "Archiwizuj ({{n}})",
-              n: activeCount,
-            })}
+            {allSelected
+              ? t("artists.bulk.clear", "Wyczyść")
+              : t("artists.bulk.select_all", "Zaznacz wszystkich")}
           </Button>
-        )}
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onExit}
-          leftIcon={<X size={14} aria-hidden="true" />}
-        >
-          {t("artists.bulk.done", "Zakończ")}
-        </Button>
-      </div>
-    </motion.div>
-    </Portal>
+        </>
+      }
+      actions={
+        <>
+          {archivedCount > 0 && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onRestore}
+              disabled={isPending}
+              leftIcon={<RotateCcw size={14} aria-hidden="true" />}
+              className="text-ethereal-sage hover:text-ethereal-sage"
+            >
+              {t("artists.bulk.restore", {
+                defaultValue: "Przywróć ({{n}})",
+                n: archivedCount,
+              })}
+            </Button>
+          )}
+          {activeCount > 0 && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onArchive}
+              disabled={isPending}
+              leftIcon={<Archive size={14} aria-hidden="true" />}
+              className="text-ethereal-crimson hover:text-ethereal-crimson"
+            >
+              {t("artists.bulk.archive", {
+                defaultValue: "Archiwizuj ({{n}})",
+                n: activeCount,
+              })}
+            </Button>
+          )}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onExit}
+            leftIcon={<X size={14} aria-hidden="true" />}
+          >
+            {t("artists.bulk.done", "Zakończ")}
+          </Button>
+        </>
+      }
+    />
   );
 };

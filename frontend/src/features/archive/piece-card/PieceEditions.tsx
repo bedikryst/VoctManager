@@ -269,7 +269,7 @@ const EditionRow = ({ edition, autosave, desk, showsDeskMark, onReingest, onDele
     edition.edition_year ? String(edition.edition_year) : null,
     edition.page_count ? t("archive.piece_card.page_count", { count: edition.page_count }) : null,
     uploadedWhen(edition.created_at, i18n.language),
-  ].filter(Boolean).join(" · ");
+  ].filter(Boolean).join(", ");
   const isOnDesk = desk.isTwoPane && desk.editionId === edition.id;
   const canShow = Boolean(edition.pdf_file) && !isOnDesk;
   // Re-running an approved edition takes back materials the choir already has,

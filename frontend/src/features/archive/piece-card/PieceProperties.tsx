@@ -19,7 +19,7 @@ import type { Piece } from "@/shared/types";
 import { isAiProvenance, pieceFieldProvenance, type ReviewSection } from "../constants/pieceProvenance";
 import { PropertyRow, PROPERTY_CONTROL_CLASS } from "@/shared/ui/composites/PropertyRow";
 import { Select, type SelectOption } from "@/shared/ui/primitives/Select";
-import { Label, Text } from "@/shared/ui/primitives/typography";
+import { Heading, Label, Text } from "@/shared/ui/primitives/typography";
 import { pieceFieldSchema } from "./pieceFieldSchema";
 import { getArchiveEpochLabel, getArchiveEpochOptions } from "../constants/archiveEpochs";
 import { getArchiveLanguageChoices } from "../constants/archiveLanguages";
@@ -127,10 +127,12 @@ const RecordSection = ({ entry, children }: { entry: RecordSectionEntry; childre
   return (
     // Clears the phone's top bar and the sticky index when the index scrolls here.
     <section id={entry.anchor} aria-labelledby={headingId} className="scroll-mt-28 lg:scroll-mt-16">
-      {/* Focusable from the index, so a keyboard reader lands in the section. */}
-      <Text as="h2" id={headingId} tabIndex={-1} size="lg" weight="semibold" className="mb-3 focus:outline-none">
+      {/* Focusable from the index, so a keyboard reader lands in the section.
+          Set in the title's voice: the card reads as one document, not as a
+          form under a handsome title. */}
+      <Heading as="h2" id={headingId} tabIndex={-1} size="3xl" weight="medium" className="mb-3 focus:outline-none">
         {t(entry.titleKey)}
-      </Text>
+      </Heading>
       {children}
     </section>
   );

@@ -54,14 +54,12 @@ export const etherealTwMerge = extendTailwindMerge({
       text: ["overline", "overline-sm"],
       // --radius-* → the four-step scale.
       radius: ["surface", "nested", "control", "chip"],
-      // --shadow-* → glass elevation and the primary button's lighting.
+      // --shadow-* → glass elevation and the paper on the score desk.
       shadow: [
         "glass-ethereal",
         "glass-ethereal-hover",
         "glass-solid",
         "glass-outline-hover",
-        "button-primary",
-        "button-primary-hover",
         "paper",
       ],
       // --blur-* → the shared backdrop radius (blur-* and backdrop-blur-*).

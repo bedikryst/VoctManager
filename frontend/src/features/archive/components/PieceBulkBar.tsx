@@ -1,22 +1,19 @@
 /**
  * @file PieceBulkBar.tsx
- * @description Floating command bar shown while the archive list is in
- * selection mode. Carries the selection count, the two selection shortcuts
- * (everything visible / only the pieces still without a divisi) and the one
- * bulk act the archive offers: writing a voice layout to the selection.
- * Portals to body and sits on `bottom-dock` so it clears the mobile nav.
+ * @description The library's `BulkBar` while the list is in selection mode:
+ * the selection count, the two selection shortcuts (everything visible / only
+ * the pieces still without a divisi) and the one bulk act the library offers,
+ * writing a voice layout to the selection.
  * @module features/archive/components/PieceBulkBar
  */
 
 import React from "react";
-import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { CheckCheck, ListMusic, X } from "lucide-react";
 
+import { BulkBar } from "@/shared/ui/composites/BulkBar";
 import { Button } from "@/shared/ui/primitives/Button";
 import { Text } from "@/shared/ui/primitives/typography";
-import { Portal } from "@/shared/lib/dom/Portal";
-import { useBottomBarSlot } from "@/shared/lib/dom/useBottomBarSlot";
 
 interface PieceBulkBarProps {
   readonly selectedCount: number;
@@ -42,22 +39,12 @@ export const PieceBulkBar = ({
 }: PieceBulkBarProps): React.JSX.Element => {
   const { t } = useTranslation();
   const allSelected = selectedCount >= visibleCount && visibleCount > 0;
-  const slotRef = useBottomBarSlot();
 
   return (
-    <Portal>
-      {/* The transform as one string, so the entrance runs on the compositor. */}
-      <motion.div
-        ref={slotRef}
-        initial={{ transform: "translateY(80px)", opacity: 0 }}
-        animate={{ transform: "translateY(0px)", opacity: 1 }}
-        exit={{ transform: "translateY(80px)", opacity: 0 }}
-        transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-        className="fixed inset-x-0 bottom-dock z-dock-bar mx-auto flex w-[min(100%-2rem,48rem)] flex-wrap items-center justify-between gap-3 rounded-nested border border-hairline-strong bg-ethereal-alabaster/90 px-4 py-3 shadow-glass-ethereal"
-        role="region"
-        aria-label={t("archive.bulk.bar_aria", "Akcje zbiorcze")}
-      >
-        <div className="flex flex-wrap items-center gap-2">
+    <BulkBar
+      label={t("archive.bulk.bar_aria", "Akcje zbiorcze")}
+      status={
+        <>
           <Text size="sm" weight="bold" className="tabular-nums">
             {t("archive.bulk.selected_count", "Zaznaczono {{count}}", {
               count: selectedCount,
@@ -82,9 +69,10 @@ export const PieceBulkBar = ({
               })}
             </Button>
           )}
-        </div>
-
-        <div className="flex items-center gap-2">
+        </>
+      }
+      actions={
+        <>
           <Button
             variant="primary"
             size="sm"
@@ -104,8 +92,8 @@ export const PieceBulkBar = ({
           >
             {t("archive.bulk.done", "Zakończ")}
           </Button>
-        </div>
-      </motion.div>
-    </Portal>
+        </>
+      }
+    />
   );
 };

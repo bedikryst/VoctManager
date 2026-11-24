@@ -4,9 +4,10 @@
  * record: a route (the row's body is a `<Link>`) or an overlay or map focus (a
  * `<button>`). Rows sit between hairlines with no tile, fill, radius or shadow,
  * the way the piece card sets its own lists; a tone shows only on hover, on a
- * selected row and on the record the rest of the screen is showing. The tone
- * fills the band between two hairlines exactly, square, and in a flush list
- * both reach a little past the column so the titles keep the column's edge.
+ * selected row and on the record the rest of the screen is showing. The
+ * hairlines stop on the column's edge, like the tabs, the search field and the
+ * buttons above them; in a flush list only the tone reaches a little past it,
+ * so a toned row does not crowd the titles that start on that edge.
  *
  * One row, three columns: an optional select box, the open element, and at
  * most one icon action plus one menu. Nothing interactive lives inside the
@@ -14,12 +15,16 @@
  * editor; editing happens in the record it opens.
  *
  * The title takes the width. It is the title line alone; flags wrap under it
- * before they narrow it, and below `md` the figures join the facts line rather
- * than take a column from the name. A ledger's figure (`figure`) is the
- * exception: it is what a reader scans down the list, so it keeps its right
- * column at every width. The title's voice is a prop, not a class, so a row
- * cannot break the settled rule: serif for a titled work, sans for a person or
- * a place.
+ * before they narrow it. Under it, the facts read as a catalogue byline,
+ * joined by commas ("Arvo Pärt, 1990"). Figures about the record (`meta`) fill
+ * the cells the list declares (`columns`): one width per column for every row,
+ * so a voicing stands under a voicing and a length under a length, and an
+ * empty cell keeps its width. Below `md` the name needs the width: the columns
+ * a list marks `stack` stand one per line in a single right column, and the
+ * rest are left to the record. A ledger's figure (`figure`) keeps its right
+ * column at every width: it is what a reader scans down the list. The title's
+ * voice is a prop, not a class, so a row cannot break the settled rule: serif
+ * for a titled work, sans for a person or a place.
  *
  * Selection comes in two scopes. A standing selection (`box`, a ledger's) puts
  * a box beside a row that still opens its record. A selection mode a toolbar
@@ -31,7 +36,7 @@
  * @module shared/ui/composites/RecordList
  */
 
-import React, { Children, createContext, useContext, type ReactNode } from "react";
+import React, { Children, createContext, useContext, useMemo, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 
 import { cn } from "@/shared/lib/utils";
@@ -43,6 +48,20 @@ import { Heading, Text } from "@/shared/ui/primitives/typography";
 export type RecordVoice = "work" | "name";
 
 export type RecordListEdge = "flush" | "inset";
+
+/** A meta cell's width: 3, 4, 5 or 6 rem, the same in every row of the list. */
+export type RecordColumnWidth = "xs" | "sm" | "md" | "lg";
+
+export interface RecordColumn {
+  readonly width: RecordColumnWidth;
+  /** `end` (default) for a figure, so the digits line up; `start` for a label such as a voicing. */
+  readonly align?: "start" | "end";
+  /**
+   * Below `md`: `stack` keeps the cell, one per line in the row's right
+   * column, the way `figure` stands; `drop` (default) leaves it to the record.
+   */
+  readonly compact?: "stack" | "drop";
+}
 
 export type RecordRowOpen =
   | { readonly to: string; readonly state?: unknown }
@@ -73,9 +92,13 @@ export interface RecordRowProps {
   readonly leading?: ReactNode;
   /** Exceptions only, in sentence case: `Badge casing="natural"` or a crimson `Caption`. */
   readonly flags?: ReactNode;
-  /** One muted line under the title, joined by " · ", cut at its end. */
+  /** One muted line under the title, a byline joined by commas, cut at its end. */
   readonly facts?: readonly ReactNode[];
-  /** Figures about the record: a right column from `md`, appended to the facts below it. */
+  /**
+   * Figures about the record, one per column the list declares, by position:
+   * a null keeps its cell empty. A list with columns gives every row the same
+   * actions, or the cells of a row without them stand further right.
+   */
   readonly meta?: readonly ReactNode[];
   /** A ledger's figure, its lines stacked: a right column at every width. */
   readonly figure?: ReactNode;
@@ -105,6 +128,8 @@ export interface RecordListProps {
    * footer close it.
    */
   readonly edge?: RecordListEdge;
+  /** The cells the rows' `meta` fill, left to right; a row's figures render only here. */
+  readonly columns?: readonly RecordColumn[];
   /** Shown in place of the list when it has no rows. */
   readonly empty?: RecordListEmpty;
   readonly className?: string;
@@ -120,24 +145,57 @@ export const recordActionClass =
 const OPEN_FOCUS =
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ethereal-gold/40";
 
+interface RowEdge {
+  /** The row's padding: none in a flush list, whose text starts on the column's edge. */
+  readonly row: string;
+  /** The tone's horizontal extent (the row's `::before`). */
+  readonly band: string;
+  /** The current record's gold edge (the row's `::after`). */
+  readonly current: string;
+  /**
+   * The open element reaches out to the band on a side where no select box or
+   * action stands, and pads its content back, so its focus ring and its click
+   * target are the whole band.
+   */
+  readonly open: string;
+}
+
 /**
- * Where a row's band ends, per list edge. The row (`li`) carries the reach and
- * the hairline with it; its padding puts the content back on the text edge.
- * The open element reaches back out by the same padding on a side where no
- * select box or action stands, so its focus ring outlines the whole band.
+ * Where a row's band ends, per list edge. The hairline is the row's own
+ * border, so it keeps the row's width: the column in a flush list, the card in
+ * an inset one. The tone is a pseudo-element behind the content, free to reach
+ * past that width while the hairline stays put.
  */
-const ROW_EDGE: Readonly<Record<RecordListEdge, { readonly row: string; readonly open: string }>> = {
+const ROW_EDGE: Readonly<Record<RecordListEdge, RowEdge>> = {
   flush: {
-    row: "-mx-2 px-2",
+    row: "",
+    band: "before:-inset-x-2",
+    current: "after:-left-2",
     open: "first:-ml-2 first:pl-2 last:-mr-2 last:pr-2",
   },
   inset: {
     row: "px-5",
+    band: "before:inset-x-0",
+    current: "after:left-0",
     open: "first:-ml-5 first:pl-5 last:-mr-5 last:pr-5",
   },
 };
 
-const RecordEdgeContext = createContext<RecordListEdge>("flush");
+const COLUMN_WIDTH: Readonly<Record<RecordColumnWidth, string>> = {
+  xs: "w-12",
+  sm: "w-16",
+  md: "w-20",
+  lg: "w-24",
+};
+
+interface RecordListContextValue {
+  readonly edge: RecordListEdge;
+  readonly columns: readonly RecordColumn[];
+}
+
+const NO_COLUMNS: readonly RecordColumn[] = [];
+
+const RecordListContext = createContext<RecordListContextValue>({ edge: "flush", columns: NO_COLUMNS });
 
 /**
  * A checkbox inside a label that widens its target past the 16 px box.
@@ -175,12 +233,12 @@ export function SelectBox({
 const isPresent = (node: ReactNode): boolean =>
   node !== null && node !== undefined && node !== false && node !== "";
 
-/** The items joined by a middle dot, with keys, skipping the empty ones. */
+/** The items joined by a comma, catalogue style, with keys, skipping the empty ones. */
 const joinFacts = (items: readonly ReactNode[]): ReactNode[] =>
   items.filter(isPresent).flatMap((item, index) =>
     index === 0
       ? [<React.Fragment key={index}>{item}</React.Fragment>]
-      : [" · ", <React.Fragment key={index}>{item}</React.Fragment>],
+      : [", ", <React.Fragment key={index}>{item}</React.Fragment>],
   );
 
 function RecordTitle({ title, voice }: { readonly title: string; readonly voice: RecordVoice }): React.JSX.Element {
@@ -209,10 +267,12 @@ export function RecordRow({
   current = false,
   id,
 }: RecordRowProps): React.JSX.Element {
-  const edge = ROW_EDGE[useContext(RecordEdgeContext)];
+  const { edge: edgeName, columns } = useContext(RecordListContext);
+  const edge = ROW_EDGE[edgeName];
   const shownFacts = facts.filter(isPresent);
-  const shownMeta = meta.filter(isPresent);
-  const hasFactsLine = shownFacts.length > 0 || shownMeta.length > 0;
+  const stacked = columns.flatMap((column, index) =>
+    column.compact === "stack" && isPresent(meta[index]) ? [{ index, cell: meta[index] }] : [],
+  );
 
   const body = (
     <>
@@ -224,32 +284,39 @@ export function RecordRow({
             <span className="flex max-w-full flex-wrap items-center gap-1">{flags}</span>
           )}
         </span>
-        {hasFactsLine && (
-          <Text
-            as="span"
-            size="sm"
-            color="muted"
-            className={cn("block truncate", shownFacts.length === 0 && "md:hidden")}
-          >
+        {shownFacts.length > 0 && (
+          <Text as="span" size="sm" color="muted" className="block truncate">
             {joinFacts(shownFacts)}
-            {shownMeta.length > 0 && (
-              <span className="md:hidden">
-                {shownFacts.length > 0 && " · "}
-                {joinFacts(shownMeta)}
-              </span>
-            )}
           </Text>
         )}
       </span>
-      {shownMeta.length > 0 && (
-        <Text
-          as="span"
-          size="sm"
-          color="graphite"
-          className="hidden shrink-0 whitespace-nowrap text-right tabular-nums md:block"
-        >
-          {joinFacts(shownMeta)}
-        </Text>
+      {columns.length > 0 && (
+        <span className="hidden shrink-0 items-center gap-4 md:flex">
+          {columns.map((column, index) => (
+            <Text
+              key={index}
+              as="span"
+              size="sm"
+              color="graphite"
+              className={cn(
+                "truncate tabular-nums",
+                COLUMN_WIDTH[column.width],
+                column.align === "start" ? "text-left" : "text-right",
+              )}
+            >
+              {isPresent(meta[index]) ? meta[index] : null}
+            </Text>
+          ))}
+        </span>
+      )}
+      {stacked.length > 0 && (
+        <span className="flex shrink-0 flex-col items-end gap-0.5 text-right md:hidden">
+          {stacked.map(({ index, cell }) => (
+            <Text key={index} as="span" size="sm" color="graphite" className="whitespace-nowrap tabular-nums">
+              {cell}
+            </Text>
+          ))}
+        </span>
       )}
       {isPresent(figure) && (
         <span className="flex shrink-0 flex-col items-end text-right tabular-nums">{figure}</span>
@@ -288,17 +355,23 @@ export function RecordRow({
     </button>
   );
 
+  // `isolate` keeps the tone's negative z-index inside the row: it paints
+  // behind the row's content and above whatever the list stands on.
   return (
     <li
       id={id}
       className={cn(
-        "relative transition-colors",
+        "relative isolate before:pointer-events-none before:absolute before:inset-y-0 before:-z-10 before:transition-colors",
         edge.row,
+        edge.band,
         select?.checked
-          ? "bg-ethereal-gold/5"
-          : (open !== undefined || rowToggles) && "hover:bg-ethereal-ink/3",
+          ? "before:bg-ethereal-gold/5"
+          : (open !== undefined || rowToggles) && "hover:before:bg-ethereal-ink/3",
         current &&
-          "before:pointer-events-none before:absolute before:inset-y-2 before:left-0 before:w-0.5 before:rounded-full before:bg-ethereal-gold",
+          cn(
+            "after:pointer-events-none after:absolute after:inset-y-2 after:w-0.5 after:rounded-full after:bg-ethereal-gold",
+            edge.current,
+          ),
       )}
     >
       <div className="flex items-center gap-2">
@@ -325,9 +398,12 @@ export function RecordList({
   label,
   children,
   edge = "flush",
+  columns = NO_COLUMNS,
   empty,
   className,
 }: RecordListProps): React.JSX.Element {
+  const context = useMemo<RecordListContextValue>(() => ({ edge, columns }), [edge, columns]);
+
   if (empty && Children.toArray(children).length === 0) {
     return (
       <StatePanel
@@ -340,9 +416,9 @@ export function RecordList({
     );
   }
 
-  // A flush list rules its rows, not itself: the hairlines reach with the rows.
+  // A flush list rules its rows, not itself, at the column's width.
   return (
-    <RecordEdgeContext.Provider value={edge}>
+    <RecordListContext.Provider value={context}>
       <ul
         aria-label={label}
         className={cn(
@@ -354,6 +430,6 @@ export function RecordList({
       >
         {children}
       </ul>
-    </RecordEdgeContext.Provider>
+    </RecordListContext.Provider>
   );
 }

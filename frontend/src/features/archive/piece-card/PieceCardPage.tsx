@@ -61,7 +61,7 @@ import { StatePanel } from "@/shared/ui/composites/StatePanel";
 import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
 import { Button } from "@/shared/ui/primitives/Button";
 import { InlineEditable } from "@/shared/ui/primitives/InlineEditable";
-import { Eyebrow, Heading, Text } from "@/shared/ui/primitives/typography";
+import { Heading, Text } from "@/shared/ui/primitives/typography";
 import { INGESTION_STATUS, type Piece } from "@/shared/types";
 import { ScoreStandModal, useScoreAnnotator } from "@/features/annotations";
 import { MaterialsService } from "@/features/materials/api/materials.service";
@@ -475,9 +475,10 @@ const PieceCard = ({ id }: { id: string }): React.JSX.Element => {
   const composerName = composer
     ? `${composer.first_name ?? ""} ${composer.last_name}`.trim()
     : "";
+  // Catalogue form, the way the library row reads: "Arvo Pärt, 1990".
   const byline = [composerName, piece.composition_year]
     .filter((part) => part !== "" && part !== null && part !== undefined)
-    .join(" · ");
+    .join(", ");
 
   const awaitingEditions = (piece.editions ?? []).filter(
     (edition) => edition.ingestion_status === INGESTION_STATUS.AWAITING,
@@ -645,10 +646,10 @@ const PieceCard = ({ id }: { id: string }): React.JSX.Element => {
                     state={backState}
                     className="inline-flex items-center gap-2 rounded-chip text-ethereal-graphite transition-colors hover:text-ethereal-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40"
                   >
-                    <ArrowLeft size={14} strokeWidth={2} aria-hidden="true" />
-                    <Eyebrow color="inherit">
+                    <ArrowLeft size={16} strokeWidth={1.75} aria-hidden="true" />
+                    <Text as="span" size="base" color="inherit">
                       {t("archive.piece_card.back_btn", "Biblioteka")}
-                    </Eyebrow>
+                    </Text>
                   </Link>
                   <div className="ml-auto flex max-w-full flex-wrap items-center justify-end gap-2">
                     {sequence && <PieceNav sequence={sequence} pathTo={stepPath} />}
@@ -723,10 +724,9 @@ const PieceCard = ({ id }: { id: string }): React.JSX.Element => {
                         edition list's business, further down. */}
                     <Text as="p" size="base" className="min-w-0 flex-1">
                       {[
-                        t("archive.piece_card.score_row"),
-                        "PDF",
+                        `${t("archive.piece_card.score_row")} PDF`,
                         scorePdf.page_count ? t("archive.piece_card.page_count", { count: scorePdf.page_count }) : null,
-                      ].filter(Boolean).join(" · ")}
+                      ].filter(Boolean).join(", ")}
                     </Text>
                     <Button
                       variant="outline"

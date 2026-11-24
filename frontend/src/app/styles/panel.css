@@ -30,6 +30,10 @@
   --color-ethereal-marble: #FBFAF7;
 
   --color-ethereal-gold: #c2a878;
+  /* Gold pressed a step darker (gold mixed 90/10 with ink): the primary
+     button's hover. A literal, because gold holds its value in both themes and
+     ink does not. */
+  --color-ethereal-gold-deep: #b1996e;
   --color-ethereal-sage: #8f9a8a;
   --color-ethereal-amethyst: #8c7a9e;
   --color-ethereal-incense: #a69279;
@@ -134,22 +138,20 @@
      must therefore be a variable here, never a literal.
 
      WHICH colours are themed is a question about what each layer paints ON, and
-     it sorts the layers below into three groups rather than two:
+     it sorts the layers below into two groups:
 
      · Cast onto the PAGE — themed, because the ground flips underneath. These
        become `--glass-highlight` (the light on a surface's top edge) and the
        `--glass-shade` rungs, all declared in :root below. There are three shade
        rungs and not one because a single alpha cannot carry rest, hover and a
-       control that stands proud of the page: .14 / .22 / .45 is the ramp the
-       panel already had, and flattening it would cost the card its hover lift
-       and the primary button its footing.
-     · Painted on the BUTTON'S OWN gold fill — not themed. Gold is an accent and
-       holds its hue in both themes, so a white specular line along its top edge
-       and an ink line along its bottom are correct on either ground. Literal on
-       purpose; these two are the exception the rule above allows for.
-     · A gold GLOW — an accent, not a shadow. `outline-hover` and the primary
-       button's hover cast are the surface saying "gold"; it says it the same
-       way on a dark ground, so both stay literal too. */
+       surface that stands proud of the page (a sign-in card, the command
+       palette): .14 / .22 / .45.
+     · A gold GLOW — an accent, not a shadow. `outline-hover` is the surface
+       saying "gold"; it says it the same way on a dark ground, so it stays
+       literal.
+
+     The primary button casts nothing: it is a flat gold fill, and the only
+     raised object on a flat screen read as the most dated thing on it. */
   --shadow-glass-ethereal:
     inset 0 1px 1px var(--glass-highlight),
     0 1px 2px var(--glass-contact),
@@ -162,15 +164,6 @@
     0 1px 2px var(--glass-contact),
     0 10px 24px -12px var(--glass-shade);
   --shadow-glass-outline-hover: 0 4px 16px rgba(194, 168, 120, 0.1);
-
-  --shadow-button-primary:
-    inset 0 1px 0 rgba(255, 255, 255, 0.45),
-    inset 0 -1px 0 rgba(22, 20, 18, 0.14),
-    0 6px 16px -4px var(--glass-shade-strong);
-  --shadow-button-primary-hover:
-    inset 0 1px 0 rgba(255, 255, 255, 0.6),
-    inset 0 -1px 0 rgba(22, 20, 18, 0.16),
-    0 12px 28px -6px rgba(194, 168, 120, 0.5);
 
   /* A sheet of paper on the score desk: a tight contact line and one soft
      cast, no glass highlight, because paper is not glass. */

@@ -38,7 +38,7 @@ import { useComposers, useDeleteComposer } from "./api/archive.queries";
 import { ArchiveTabs } from "./components/ArchiveTabs";
 import { ComposerMergeBar, ComposerMergeDialog } from "./components/ComposerMerge";
 import { ComposerRecordDialog } from "./components/ComposerRecordDialog";
-import { ComposerRow } from "./components/ComposerRow";
+import { COMPOSER_COLUMNS, ComposerRow } from "./components/ComposerRow";
 import { CreateComposer } from "./piece-card/ComposerProperty";
 
 type ComposerFilter = "no_mb" | "orphans";
@@ -285,7 +285,7 @@ export default function ArchiveComposersPage(): React.JSX.Element {
             }
           />
         ) : (
-          <RecordList label={t("archive.composers.list_aria", "Kompozytorzy w bibliotece")}>
+          <RecordList label={t("archive.composers.list_aria", "Kompozytorzy w bibliotece")} columns={COMPOSER_COLUMNS}>
             {visible.map((composer) => (
               <ComposerRow
                 key={composer.id}

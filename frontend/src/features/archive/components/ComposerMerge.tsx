@@ -16,17 +16,15 @@
  */
 
 import React, { useState } from "react";
-import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import * as Dialog from "@radix-ui/react-dialog";
 import { GitMerge, X } from "lucide-react";
 
 import { toastApiError } from "@/shared/api/errors";
-import { Portal } from "@/shared/lib/dom/Portal";
 import { BodyScrollLock } from "@/shared/lib/dom/useBodyScrollLock";
-import { useBottomBarSlot } from "@/shared/lib/dom/useBottomBarSlot";
 import type { Composer } from "@/shared/types";
+import { BulkBar } from "@/shared/ui/composites/BulkBar";
 import { Button } from "@/shared/ui/primitives/Button";
 import { Text } from "@/shared/ui/primitives/typography";
 
@@ -45,27 +43,20 @@ export const ComposerMergeBar = ({
   onExit,
 }: ComposerMergeBarProps): React.JSX.Element => {
   const { t } = useTranslation();
-  const slotRef = useBottomBarSlot();
 
   return (
-    <Portal>
-      {/* The transform as one string, so the entrance runs on the compositor. */}
-      <motion.div
-        ref={slotRef}
-        initial={{ transform: "translateY(80px)", opacity: 0 }}
-        animate={{ transform: "translateY(0px)", opacity: 1 }}
-        exit={{ transform: "translateY(80px)", opacity: 0 }}
-        transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-        className="fixed inset-x-0 bottom-dock z-dock-bar mx-auto flex w-[min(100%-2rem,36rem)] flex-wrap items-center justify-between gap-3 rounded-nested border border-hairline-strong bg-ethereal-alabaster/90 px-4 py-3 shadow-glass-ethereal"
-        role="region"
-        aria-label={t("archive.composers.merge_bar_aria", "Łączenie duplikatów")}
-      >
+    <BulkBar
+      width="compact"
+      label={t("archive.composers.merge_bar_aria", "Łączenie duplikatów")}
+      status={
         <Text size="sm" color="graphite" role="status">
           {selectedCount < 2
             ? t("archive.composers.merge_hint", "Zaznacz wpisy tego samego kompozytora")
             : t("archive.composers.selected", "Zaznaczono {{count}}", { count: selectedCount })}
         </Text>
-        <div className="flex items-center gap-2">
+      }
+      actions={
+        <>
           <Button
             variant="primary"
             size="sm"
@@ -85,9 +76,9 @@ export const ComposerMergeBar = ({
           >
             {t("archive.composers.merge_done", "Zakończ")}
           </Button>
-        </div>
-      </motion.div>
-    </Portal>
+        </>
+      }
+    />
   );
 };
 
@@ -169,11 +160,12 @@ export const ComposerMergeDialog = ({
                     composer.mbid ? "MusicBrainz" : null,
                   ].filter(Boolean);
                   return (
-                    // The tone and the hairlines reach past the column together,
-                    // so the names keep the column's edge (RecordRow's rule).
+                    // RecordRow's rule: the hairlines stop on the column's edge
+                    // and only the tone, a pseudo-element behind the content,
+                    // reaches past it.
                     <label
                       key={id}
-                      className="-mx-2 flex cursor-pointer items-start gap-3 border-t border-hairline px-2 py-3 transition-colors last:border-b hover:bg-ethereal-ink/3 has-checked:bg-ethereal-gold/5"
+                      className="relative isolate flex cursor-pointer items-start gap-3 border-t border-hairline py-3 last:border-b before:pointer-events-none before:absolute before:inset-y-0 before:-inset-x-2 before:-z-10 before:transition-colors hover:before:bg-ethereal-ink/3 has-checked:before:bg-ethereal-gold/5"
                     >
                       {/* The native radio ignores the theme, so it is drawn
                           beside a visually hidden input that keeps the
@@ -195,7 +187,7 @@ export const ComposerMergeDialog = ({
                           {composerListName(composer)}
                         </Text>
                         <Text as="span" size="sm" color="muted">
-                          {facts.join(" · ")}
+                          {facts.join(", ")}
                         </Text>
                       </span>
                     </label>

@@ -25,8 +25,11 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/shared/ui/composites/DropdownMenu";
-import { RecordRow, recordActionClass } from "@/shared/ui/composites/RecordList";
+import { RecordRow, recordActionClass, type RecordColumn } from "@/shared/ui/composites/RecordList";
 import { Button } from "@/shared/ui/primitives/Button";
+
+/** The composers list's one figure column, the piece count, kept on a phone too. */
+export const COMPOSER_COLUMNS: readonly RecordColumn[] = [{ width: "lg", compact: "stack" }];
 
 interface ComposerRowProps {
   readonly composer: Composer;

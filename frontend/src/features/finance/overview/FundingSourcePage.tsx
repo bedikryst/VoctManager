@@ -148,7 +148,7 @@ function ChargesTable({ charges }: { readonly charges: readonly SourceChargeDTO[
   const facts = (charge: SourceChargeDTO): string =>
     [charge.plan_line || categoryLabel(t, charge.category), charge.document_number || null]
       .filter(Boolean)
-      .join(" · ");
+      .join(", ");
   const ineligible = (charge: SourceChargeDTO): React.ReactNode =>
     charge.eligible ? null : (
       <Caption as="span" color="crimson">

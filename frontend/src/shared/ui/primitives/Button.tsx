@@ -28,8 +28,11 @@ export const buttonVariants = cva(
         // side effect on the light theme is deliberate: the resting label
         // deepens from graphite to ink, which is where the hover state already
         // took it and clears AA (3.98 → 8.0) on the panel's loudest control.
+        // Flat: no bevel, no cast, no glow. The fill alone marks the primary
+        // act, and the hover presses it a step darker rather than lifting it.
+        // The transparent border keeps its height equal to an outlined button's.
         primary:
-          "bg-ethereal-gold text-surface-inverse border border-ethereal-gold/30 shadow-button-primary hover:shadow-button-primary-hover hover:bg-ethereal-gold/90 hover:border-ethereal-ink/20",
+          "bg-ethereal-gold text-surface-inverse border border-transparent hover:bg-ethereal-gold-deep",
         // `marble` rather than white: the fill means "a step brighter than the
         // card under me", which is a rung, not a colour. On light the two are
         // within one value step of each other; on dark it lifts off the card
@@ -60,9 +63,9 @@ export const buttonVariants = cva(
         true: "w-full",
       },
       // `label` is the panel's control type above. `sentence` is the piece
-      // card pilot's: sentence case at reading size, no tracking, for a screen
-      // whose only uppercase is its breadcrumb (`.ai/04_design_system.md`,
-      // "Piece card pilot"). Declared after `size`, so its type size wins.
+      // card's and the library's: sentence case at reading size, no tracking,
+      // for a screen that sets nothing in caps (`.ai/04_design_system.md`,
+      // "Piece card and library"). Declared after `size`, so its type size wins.
       casing: {
         label: "",
         sentence: "normal-case tracking-normal text-sm font-medium",

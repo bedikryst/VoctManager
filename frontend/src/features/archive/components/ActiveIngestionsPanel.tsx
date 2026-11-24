@@ -18,8 +18,8 @@ import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { Ban, Loader2 } from "lucide-react";
 
-import { RecordList, RecordRow } from "@/shared/ui/composites/RecordList";
-import { Text } from "@/shared/ui/primitives/typography";
+import { RecordList, RecordRow, type RecordColumn } from "@/shared/ui/composites/RecordList";
+import { Heading, Text } from "@/shared/ui/primitives/typography";
 import { cn } from "@/shared/lib/utils";
 
 import { useActiveIngestions, useCancelEdition } from "../api/archive.queries";
@@ -32,6 +32,13 @@ import {
 } from "../constants/ingestionProgress";
 import { pieceCardPath } from "../constants/libraryScope";
 import { InlineConfirmAction } from "./InlineConfirmAction";
+
+/** The elapsed time (kept on a phone, where it says the run is alive), the cost, the pages. */
+const ACTIVE_COLUMNS: readonly RecordColumn[] = [
+  { width: "md", compact: "stack" },
+  { width: "sm" },
+  { width: "sm" },
+];
 
 export const ActiveIngestionsPanel = (): React.JSX.Element | null => {
   const { t } = useTranslation();
@@ -51,10 +58,10 @@ export const ActiveIngestionsPanel = (): React.JSX.Element | null => {
 
   return (
     <section aria-labelledby={headingId}>
-      <Text as="h2" id={headingId} size="lg" weight="semibold" className="mb-2">
+      <Heading as="h2" id={headingId} size="3xl" weight="medium" className="mb-2">
         {t("archive.active.section", "Analiza AI")}
-      </Text>
-      <RecordList label={t("archive.active.aria", "Przetwarzanie AI w toku")}>
+      </Heading>
+      <RecordList label={t("archive.active.aria", "Przetwarzanie AI w toku")} columns={ACTIVE_COLUMNS}>
         {active.map((item) => (
           <ActiveRow key={item.id} item={item} now={now} />
         ))}

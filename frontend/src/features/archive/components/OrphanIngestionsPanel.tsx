@@ -29,7 +29,7 @@ import {
   recordActionClass,
 } from "@/shared/ui/composites/RecordList";
 import { Button } from "@/shared/ui/primitives/Button";
-import { Caption, Text } from "@/shared/ui/primitives/typography";
+import { Caption, Heading, Text } from "@/shared/ui/primitives/typography";
 
 import {
   useDeleteEdition,
@@ -62,9 +62,9 @@ export const OrphanIngestionsPanel = (): React.JSX.Element | null => {
 
   return (
     <section aria-labelledby={headingId}>
-      <Text as="h2" id={headingId} size="lg" weight="semibold">
+      <Heading as="h2" id={headingId} size="3xl" weight="medium">
         {t("archive.orphans.section", "Nieukończone analizy")}
-      </Text>
+      </Heading>
       <Text size="sm" color="graphite" className="mb-2 mt-1 block">
         {t(
           "archive.orphans.hint",

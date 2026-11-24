@@ -48,7 +48,7 @@ const RecordingRow = ({ piece, recording, autosave }: PieceRecordingsProps & { r
       <div className="min-w-0 flex-1">
         <Text className="wrap-anywhere">{recording.performer || t("archive.review.unknown_performer")}</Text>
         <Text size="sm" color="muted">
-          {[recording.source_display || recording.source, recording.year].filter(Boolean).join(" · ")}
+          {[recording.source_display || recording.source, recording.year].filter(Boolean).join(", ")}
         </Text>
       </div>
       <div className="flex items-center gap-1">
