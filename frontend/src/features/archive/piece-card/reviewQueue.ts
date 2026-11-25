@@ -8,7 +8,7 @@
 
 import { INGESTION_STATUS, type Piece } from "@/shared/types";
 
-export const isAwaitingReview = (piece: Piece): boolean =>
+export const isAwaitingReview = (piece: Pick<Piece, "editions">): boolean =>
   (piece.editions ?? []).some(
     (edition) => edition.ingestion_status === INGESTION_STATUS.AWAITING,
   );

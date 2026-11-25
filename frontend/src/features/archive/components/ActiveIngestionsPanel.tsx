@@ -1,11 +1,15 @@
 /**
  * @file ActiveIngestionsPanel.tsx
- * @description The library's "Analiza AI" section: every ingestion in flight
- * (from `GET /api/archive/editions/active/`), with the live step, the elapsed
- * time, the running cost and the page count. It is refresh-proof, so the
- * manager sees what the AI is doing right after an upload, before the piece
- * resolves, and after a reload; the upload drawer's live row is its in-session
- * counterpart.
+ * @description Every ingestion in flight (from `GET /api/archive/editions/active/`),
+ * folded into one line over the library ("AI analizuje 2 pliki") that opens
+ * the list: the live step, the elapsed time, the running cost and the page
+ * count. It is refresh-proof, so the manager sees what the AI is doing right
+ * after an upload, before the piece resolves, and after a reload; the upload
+ * drawer's live row is its in-session counterpart.
+ *
+ * Folded by default: a piece the AI is reading already carries "AI w toku" in
+ * the list below, so an open section stated it twice and put a band of rows
+ * between the tabs and the toolbar for as long as a run lasted.
  *
  * The rows are the list's own `RecordRow`s. Once the resolver has attached a
  * piece, the row opens its card; before that it is an upload, not a record,
@@ -16,10 +20,10 @@
 import React, { useEffect, useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { Ban, Loader2 } from "lucide-react";
+import { Ban, ChevronDown, Loader2 } from "lucide-react";
 
 import { RecordList, RecordRow, type RecordColumn } from "@/shared/ui/composites/RecordList";
-import { Heading, Text } from "@/shared/ui/primitives/typography";
+import { Text } from "@/shared/ui/primitives/typography";
 import { cn } from "@/shared/lib/utils";
 
 import { useActiveIngestions, useCancelEdition } from "../api/archive.queries";
@@ -42,30 +46,67 @@ const ACTIVE_COLUMNS: readonly RecordColumn[] = [
 
 export const ActiveIngestionsPanel = (): React.JSX.Element | null => {
   const { t } = useTranslation();
-  const headingId = useId();
+  const listId = useId();
   const { data } = useActiveIngestions();
   const active = data ?? [];
+  const [isOpen, setIsOpen] = useState<boolean>(false);
   const [now, setNow] = useState<number>(() => Date.now());
 
-  // Tick once a second so the elapsed timer moves between the 2 s polls.
+  // Tick once a second so the elapsed timer moves between the 2 s polls; only
+  // while the rows that show it are open.
   useEffect(() => {
-    if (active.length === 0) return;
+    if (!isOpen || active.length === 0) return;
     const id = window.setInterval(() => setNow(Date.now()), 1000);
     return () => window.clearInterval(id);
-  }, [active.length]);
+  }, [isOpen, active.length]);
 
   if (active.length === 0) return null;
 
   return (
-    <section aria-labelledby={headingId}>
-      <Heading as="h2" id={headingId} size="3xl" weight="medium" className="mb-2">
-        {t("archive.active.section", "Analiza AI")}
-      </Heading>
-      <RecordList label={t("archive.active.aria", "Przetwarzanie AI w toku")} columns={ACTIVE_COLUMNS}>
-        {active.map((item) => (
-          <ActiveRow key={item.id} item={item} now={now} />
-        ))}
-      </RecordList>
+    <section aria-label={t("archive.active.aria", "Przetwarzanie AI w toku")}>
+      <button
+        type="button"
+        aria-expanded={isOpen}
+        aria-controls={listId}
+        onClick={() => {
+          // The clock stood still while folded; restart it from now.
+          setNow(Date.now());
+          setIsOpen((open) => !open);
+        }}
+        className="group flex min-h-11 items-center gap-3 rounded-control text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40"
+      >
+        <Loader2
+          size={16}
+          strokeWidth={2}
+          aria-hidden="true"
+          className="shrink-0 animate-spin text-ethereal-amethyst"
+        />
+        <Text
+          as="span"
+          size="sm"
+          color="graphite"
+          className="tabular-nums transition-colors group-hover:text-ethereal-ink"
+        >
+          {t("archive.active.summary", "AI analizuje {{count}} plików", { count: active.length })}
+        </Text>
+        <ChevronDown
+          size={16}
+          aria-hidden="true"
+          className={cn(
+            "shrink-0 text-ethereal-graphite transition-transform",
+            isOpen && "rotate-180",
+          )}
+        />
+      </button>
+      {isOpen && (
+        <div id={listId}>
+          <RecordList label={t("archive.active.aria", "Przetwarzanie AI w toku")} columns={ACTIVE_COLUMNS}>
+            {active.map((item) => (
+              <ActiveRow key={item.id} item={item} now={now} />
+            ))}
+          </RecordList>
+        </div>
+      )}
     </section>
   );
 };

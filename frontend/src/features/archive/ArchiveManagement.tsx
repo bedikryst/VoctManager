@@ -4,13 +4,16 @@
  * rows open the piece card (`/panel/archive-management/:id`), where a piece is
  * read and edited. The list itself edits nothing but the selection.
  *
- * Two ways in: "Wgraj PDF" opens the upload drawer, the common path, and
- * "Dodaj ręcznie" opens the new-piece dialog, which asks for a title and hands
- * the piece to its card. Uploads the AI is still reading, and those it
- * gave up on before they became a piece, stand above the list as their own
- * sections. "Zaznacz wiele" turns the rows into toggles for the one bulk act,
- * a voice layout written to many pieces. A fresh library shows the welcome
- * state with the drop zone inline instead.
+ * Two bands before the list: the title with its two ways in, then the tabs.
+ * "Wgraj PDF" opens the upload drawer, the common path, and "Dodaj ręcznie"
+ * opens the new-piece dialog, which asks for a title and hands the piece to its
+ * card; on a phone both are icons in the title's row. The toolbar's census line
+ * carries the count and the two quick filters, the review backlog and the
+ * pieces without a PDF. Uploads the AI is still reading fold into one line
+ * under the tabs; those it gave up on before they became a piece stand there as
+ * their own section. "Zaznacz wiele" turns the rows into toggles for the one
+ * bulk act, a voice layout written to many pieces. A fresh library shows the
+ * welcome state with the drop zone inline instead.
  * @module features/archive/ArchiveManagement
  */
 
@@ -22,16 +25,17 @@ import React, {
   useState,
   useDeferredValue,
 } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import { Plus, UploadCloud } from "lucide-react";
 
 import { ConfirmModal } from "@/shared/ui/composites/ConfirmModal";
+import { FilterToggle } from "@/shared/ui/composites/FilterTokens";
+import { ListCensus, ToolbarButton } from "@/shared/ui/composites/ListToolbar";
 import { PageHeader } from "@/shared/ui/composites/PageHeader";
 import { RecordList } from "@/shared/ui/composites/RecordList";
-import { Button } from "@/shared/ui/primitives/Button";
 import { PageTransition } from "@/shared/ui/kinematics/PageTransition";
 import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
 
@@ -42,7 +46,6 @@ import {
   ArchiveSearchBar,
   type ArchiveActiveFilter,
 } from "./components/ArchiveSearchBar";
-import { StatLine, type StatLineItem } from "@/shared/ui/composites/StatLine";
 import { ArchiveWelcomeState } from "./components/ArchiveWelcomeState";
 import { BulkDivisiSheet } from "./components/BulkDivisiSheet";
 import { EditionUploadDrawer } from "./components/EditionUploadDrawer";
@@ -56,6 +59,7 @@ import {
   NEW_PIECE_PARAM,
   pieceCardPath,
   readReturnedPiece,
+  type LibraryQuickFilter,
 } from "./constants/libraryScope";
 import type { EnrichedPiece } from "./types/archive.dto";
 
@@ -67,7 +71,6 @@ const lacksPieceWideDivisi = (piece: EnrichedPiece): boolean =>
 
 export default function ArchiveManagement(): React.JSX.Element {
   const { t } = useTranslation();
-  const navigate = useNavigate();
   const location = useLocation();
   const epochOptions = getArchiveEpochOptions(t);
 
@@ -80,7 +83,7 @@ export default function ArchiveManagement(): React.JSX.Element {
     libraryStats,
     availableVoicings,
     displayPieces,
-    awaitingPieces,
+    quickFilterCounts,
     hasActiveFilters,
     activeFilterCount,
     searchTerm,
@@ -91,6 +94,8 @@ export default function ArchiveManagement(): React.JSX.Element {
     setEpochFilter,
     voicingFilter,
     setVoicingFilter,
+    quickFilter,
+    setQuickFilter,
     resetFilters,
     pieceToDelete,
     setPieceToDelete,
@@ -102,7 +107,6 @@ export default function ArchiveManagement(): React.JSX.Element {
   const deferredPieces = useDeferredValue(displayPieces);
   const normalizedSearchTerm = searchTerm.trim();
   const totalPieces = libraryStats.totalPieces;
-  const withoutPdf = totalPieces - libraryStats.withPdf;
 
   const composerLabelMap = useMemo(
     () =>
@@ -243,13 +247,6 @@ export default function ArchiveManagement(): React.JSX.Element {
     }
   }, [isError, t]);
 
-  const navigateToReview = useCallback(
-    (pieceId: string) => {
-      navigate(pieceCardPath(pieceId, { list: "review", filters }));
-    },
-    [navigate, filters],
-  );
-
   // Back from a card, the row it was opened from comes into view, once: after
   // that the list scrolls as the manager scrolls it. `PageTransition` resets
   // the window on mount, and as this page's child its effect runs first.
@@ -270,55 +267,49 @@ export default function ArchiveManagement(): React.JSX.Element {
 
   const isFreshArchive = !isLoading && totalPieces === 0;
 
-  const awaitingCount = awaitingPieces.length;
-  const firstAwaitingPiece = awaitingPieces[0];
-
-  // A count, and the one gap a manager acts on, only while there is one: a
-  // coverage percentage restated a default on a healthy library.
-  const libraryStatSegments: StatLineItem[] = [
-    {
-      id: "pieces",
-      value: totalPieces,
-      label: t("archive.stat_strip.pieces", "utworów", { count: totalPieces }),
-    },
-    ...(withoutPdf > 0
-      ? [
-          {
-            id: "no_pdf",
-            value: withoutPdf,
-            label: t("archive.stat_strip.without_pdf", "bez PDF"),
-          },
-        ]
-      : []),
-  ];
+  // The two gaps a manager hunts for, each a chip only while it has something
+  // to find, one pressed at a time. Their counts are library-wide, like the
+  // total the census states beside them.
+  const quickFilterLabels: Readonly<Record<LibraryQuickFilter, string>> = {
+    review: t("archive.stat_strip.filter_review", "{{count}} do przeglądu", {
+      count: quickFilterCounts.review,
+    }),
+    no_pdf: t("archive.stat_strip.filter_no_pdf", "{{count}} bez PDF", {
+      count: quickFilterCounts.no_pdf,
+    }),
+  };
+  const quickFilterChips = (["review", "no_pdf"] as const)
+    .filter((id) => quickFilterCounts[id] > 0)
+    .map((id) => (
+      <FilterToggle
+        key={id}
+        label={quickFilterLabels[id]}
+        pressed={quickFilter === id}
+        onToggle={() => setQuickFilter((current) => (current === id ? "" : id))}
+      />
+    ));
 
   return (
     <PageTransition>
       <div className="relative mx-auto flex max-w-5xl flex-col gap-5 pb-24 pt-6">
         <PageHeader
-          size="standard"
+          size="compact"
           title={t("archive.dashboard.title", "Biblioteka")}
           rightContent={
             !isFreshArchive ? (
-              <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
-                <Button
+              <div className="flex items-center gap-2">
+                <ToolbarButton
                   variant="primary"
-                  casing="sentence"
+                  icon={<UploadCloud size={16} aria-hidden="true" />}
+                  label={t("archive.dashboard.upload_pdf", "Wgraj PDF")}
                   onClick={() => setIsUploadOpen(true)}
-                  fullWidth
-                  leftIcon={<UploadCloud size={16} aria-hidden="true" />}
-                >
-                  {t("archive.dashboard.upload_pdf", "Wgraj PDF")}
-                </Button>
-                <Button
+                />
+                <ToolbarButton
                   variant="ghost"
-                  casing="sentence"
+                  icon={<Plus size={16} aria-hidden="true" />}
+                  label={t("archive.dashboard.add_manual", "Dodaj ręcznie")}
                   onClick={() => setNewPieceTitle("")}
-                  fullWidth
-                  leftIcon={<Plus size={16} aria-hidden="true" />}
-                >
-                  {t("archive.dashboard.add_manual", "Dodaj ręcznie")}
-                </Button>
+                />
               </div>
             ) : undefined
           }
@@ -326,37 +317,11 @@ export default function ArchiveManagement(): React.JSX.Element {
 
         {!isFreshArchive && <ArchiveTabs />}
 
-        {/* Facts stay a sentence; the review backlog is the one thing here that
-            is work, so it is a control and not a restatement of the flags the
-            rows already carry. */}
-        {!isFreshArchive && (
-          <StatLine
-            stats={libraryStatSegments}
-            action={
-              awaitingCount > 0 && firstAwaitingPiece ? (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  casing="sentence"
-                  onClick={() => navigateToReview(String(firstAwaitingPiece.id))}
-                >
-                  {t(
-                    "archive.stat_strip.review_cta",
-                    "{{count}} do przeglądu",
-                    { count: awaitingCount },
-                  )}
-                </Button>
-              ) : undefined
-            }
-          />
-        )}
-
         {/* Every ingestion in flight, refresh-proof, in both the fresh and the
-            populated library, then the runs that never reached a piece. Each
-            section renders nothing while it is empty, which is nearly always. */}
-        {/* The extra air below keeps the search from reading as part of the
-            last section; with both sections empty the box collapses away. */}
-        <div className="flex flex-col gap-8 pb-4 empty:hidden">
+            populated library, folded into one line, then the runs that never
+            reached a piece. Each renders nothing while it is empty, which is
+            nearly always, and the box collapses away with them. */}
+        <div className="flex flex-col gap-6 empty:hidden">
           <ActiveIngestionsPanel />
           <OrphanIngestionsPanel />
         </div>
@@ -373,11 +338,23 @@ export default function ArchiveManagement(): React.JSX.Element {
               composers={composers}
               epochOptions={epochOptions}
               availableVoicings={availableVoicings}
-              hasActiveFilters={hasActiveFilters}
               activeFilterCount={activeFilterCount}
               activeFilters={activeFilters}
-              visibleCount={deferredPieces.length}
-              totalCount={totalPieces}
+              census={
+                <ListCensus
+                  total={totalPieces}
+                  noun={t("archive.stat_strip.pieces", "utworów", { count: totalPieces })}
+                  narrowed={
+                    hasActiveFilters
+                      ? t("archive.search.summary_filtered", "{{visible}} z {{total}}", {
+                          visible: deferredPieces.length,
+                          total: totalPieces,
+                        })
+                      : null
+                  }
+                />
+              }
+              quickFilters={quickFilterChips}
               onSearchTermChange={setSearchTerm}
               onComposerFilterChange={setComposerFilter}
               onEpochFilterChange={setEpochFilter}

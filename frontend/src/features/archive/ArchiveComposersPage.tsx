@@ -6,10 +6,12 @@
  *
  * The AI creates composers as it reads scores, sometimes with a name spelled
  * twice or without its MusicBrainz link, so the page is where the catalogue is
- * kept clean: the stat line's two filters find the composers missing their
- * MusicBrainz link and those left without pieces, and "Połącz duplikaty" turns
- * the rows into toggles for merging two entries of one person. "Dodaj
- * kompozytora" is the piece card's own dialog, and opens the new record.
+ * kept clean: the census line's two quick filters find the composers missing
+ * their MusicBrainz link and those left without pieces, and "Połącz duplikaty"
+ * turns the rows into toggles for merging two entries of one person. "Dodaj
+ * kompozytora" is the piece card's own dialog, and opens the new record. The
+ * header and toolbar are the library's (`ArchiveManagement`), so the two tabs
+ * do not change shape under the manager's eye.
  * @module features/archive/ArchiveComposersPage
  */
 
@@ -21,18 +23,17 @@ import { GitMerge, Plus, Search, Users, X } from "lucide-react";
 
 import { toastApiError } from "@/shared/api/errors";
 import { foldDiacritics } from "@/shared/lib/text";
-import { cn } from "@/shared/lib/utils";
 import type { Composer } from "@/shared/types";
 import { ConfirmModal } from "@/shared/ui/composites/ConfirmModal";
+import { FilterToggle } from "@/shared/ui/composites/FilterTokens";
+import { ListCensus, ListToolbar, ToolbarButton } from "@/shared/ui/composites/ListToolbar";
 import { PageHeader } from "@/shared/ui/composites/PageHeader";
 import { RecordList } from "@/shared/ui/composites/RecordList";
-import { StatLine, type StatLineItem } from "@/shared/ui/composites/StatLine";
 import { StatePanel } from "@/shared/ui/composites/StatePanel";
 import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
 import { PageTransition } from "@/shared/ui/kinematics/PageTransition";
 import { Button } from "@/shared/ui/primitives/Button";
 import { Input } from "@/shared/ui/primitives/Input";
-import { Text } from "@/shared/ui/primitives/typography";
 
 import { useComposers, useDeleteComposer } from "./api/archive.queries";
 import { ArchiveTabs } from "./components/ArchiveTabs";
@@ -142,41 +143,22 @@ export default function ArchiveComposersPage(): React.JSX.Element {
     return <EtherealLoader />;
   }
 
-  const stats: StatLineItem[] = [
-    {
-      id: "total",
-      value: total,
-      label: t("archive.composers.stat_total", "kompozytorów", { count: total }),
-    },
-  ];
-
   // The two exceptions worth hunting for, as filters that say their size.
   // Each appears only while there is something to find, and one is on at a time.
-  const filterToggle = (id: ComposerFilter, label: string) => (
-    <Button
-      key={id}
-      variant={filter === id ? "secondary" : "outline"}
-      size="sm"
-      casing="sentence"
-      aria-pressed={filter === id}
-      onClick={() => setFilter((current) => (current === id ? null : id))}
-      className={cn(filter === id && "border-ethereal-gold/40 text-ethereal-ink")}
-    >
-      {label}
-    </Button>
-  );
-  const filterToggles = [
-    withoutMb > 0 &&
-      filterToggle(
-        "no_mb",
-        t("archive.composers.filter_no_mb", "{{count}} bez MusicBrainz", { count: withoutMb }),
-      ),
-    orphans > 0 &&
-      filterToggle(
-        "orphans",
-        t("archive.composers.filter_orphans", "{{count}} bez utworów", { count: orphans }),
-      ),
-  ].filter(Boolean);
+  const filterLabels: Readonly<Record<ComposerFilter, string>> = {
+    no_mb: t("archive.composers.filter_no_mb", "{{count}} bez MusicBrainz", { count: withoutMb }),
+    orphans: t("archive.composers.filter_orphans", "{{count}} bez utworów", { count: orphans }),
+  };
+  const filterChips = (["no_mb", "orphans"] as const)
+    .filter((id) => filterCounts[id] > 0)
+    .map((id) => (
+      <FilterToggle
+        key={id}
+        label={filterLabels[id]}
+        pressed={filter === id}
+        onToggle={() => setFilter((current) => (current === id ? null : id))}
+      />
+    ));
 
   const isNarrowed = Boolean(normalizedSearch) || filter !== null;
 
@@ -184,32 +166,22 @@ export default function ArchiveComposersPage(): React.JSX.Element {
     <PageTransition>
       <div className="relative mx-auto flex max-w-5xl flex-col gap-5 pb-24 pt-6">
         <PageHeader
-          size="standard"
+          size="compact"
           title={t("archive.composers.title", "Kompozytorzy")}
           rightContent={
-            <div className="flex w-full sm:w-auto">
-              <Button
-                variant="primary"
-                casing="sentence"
-                onClick={() => setIsAdding(true)}
-                fullWidth
-                leftIcon={<Plus size={16} aria-hidden="true" />}
-              >
-                {t("archive.composers.add_btn", "Dodaj kompozytora")}
-              </Button>
-            </div>
+            <ToolbarButton
+              variant="primary"
+              icon={<Plus size={16} aria-hidden="true" />}
+              label={t("archive.composers.add_btn", "Dodaj kompozytora")}
+              onClick={() => setIsAdding(true)}
+            />
           }
         />
 
         <ArchiveTabs />
 
-        <StatLine
-          stats={stats}
-          action={filterToggles.length > 0 ? <>{filterToggles}</> : undefined}
-        />
-
-        <div className="flex flex-col gap-2 md:flex-row md:items-center">
-          <div className="flex-1">
+        <ListToolbar
+          search={
             <Input
               leftIcon={<Search size={16} aria-hidden="true" />}
               type="search"
@@ -218,30 +190,34 @@ export default function ArchiveComposersPage(): React.JSX.Element {
               onChange={(event) => setSearchTerm(event.target.value)}
               aria-label={t("archive.composers.search_aria", "Szukaj kompozytora")}
             />
-          </div>
-          <Button
-            variant={mergeMode ? "secondary" : "outline"}
-            casing="sentence"
-            aria-pressed={mergeMode}
-            onClick={() => (mergeMode ? exitMerge() : setMergeMode(true))}
-            leftIcon={<GitMerge size={16} aria-hidden="true" />}
-            className={cn("shrink-0 self-start md:self-auto", mergeMode && "border-ethereal-gold/40 text-ethereal-ink")}
-          >
-            {t("archive.composers.merge_btn", "Połącz duplikaty")}
-          </Button>
-        </div>
-
-        {/* The stat line counts the whole catalogue; while a search or a filter
-            narrows the list, say so, so the total is never read as the count of
-            what is on screen. */}
-        {isNarrowed && visible.length > 0 && (
-          <Text as="p" size="sm" color="muted">
-            {t("archive.search.summary_filtered", "{{visible}} z {{total}}", {
-              visible: visible.length,
-              total,
-            })}
-          </Text>
-        )}
+          }
+          controls={
+            <ToolbarButton
+              icon={<GitMerge size={16} aria-hidden="true" />}
+              label={t("archive.composers.merge_btn", "Połącz duplikaty")}
+              on={mergeMode}
+              aria-pressed={mergeMode}
+              onClick={() => (mergeMode ? exitMerge() : setMergeMode(true))}
+            />
+          }
+          census={
+            <>
+              <ListCensus
+                total={total}
+                noun={t("archive.composers.stat_total", "kompozytorów", { count: total })}
+                narrowed={
+                  isNarrowed
+                    ? t("archive.search.summary_filtered", "{{visible}} z {{total}}", {
+                        visible: visible.length,
+                        total,
+                      })
+                    : null
+                }
+              />
+              {filterChips}
+            </>
+          }
+        />
 
         {visible.length === 0 ? (
           <StatePanel

@@ -16,6 +16,13 @@
  * It stays BELOW the nav's own z-layer: a floating button that paints over
  * navigation is a trap, not an affordance, which also means every modal and sheet
  * simply covers it.
+ *
+ * Side: right with a mouse, where the page's column stops well short of it. On
+ * touch, where the column runs to the screen's edge, it stands on the left: the
+ * right edge is every list row's actions column (`RecordRow`'s menu), and a
+ * button parked there took the tap meant for the menu of whichever row passed
+ * under it. On the left it only covers the start of a title, and the rest of
+ * that row still opens it.
  * @module features/feedback/components/FeedbackDock
  */
 
@@ -59,7 +66,8 @@ export const FeedbackDock = (): React.JSX.Element => {
         }
         transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
         className={cn(
-          "pointer-events-auto mr-4 flex size-12 shrink-0 items-center justify-center self-end rounded-full sm:mr-6",
+          "pointer-events-auto ml-4 flex size-12 shrink-0 items-center justify-center self-start rounded-full sm:ml-6",
+          "fine-pointer:ml-0 fine-pointer:mr-6 fine-pointer:self-end",
           "border border-ethereal-gold/30 bg-ethereal-alabaster/85 text-ethereal-gold shadow-glass-solid backdrop-blur-md",
           "transition-colors hover:border-ethereal-gold/60 hover:text-ethereal-ink active:scale-[0.94]",
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40",

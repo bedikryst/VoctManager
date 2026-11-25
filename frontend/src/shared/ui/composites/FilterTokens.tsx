@@ -6,6 +6,13 @@
  * the shape `Badge` exists to prevent. Here the button is a bare wrapper and
  * the `Badge` draws the chip; a token carries user content (a typed phrase, a
  * company name), so it is `casing="natural"`.
+ *
+ * `FilterToggle` is the same chip as a quick filter: an exception worth hunting
+ * for, named with its size ("2 do przeglądu"), that narrows the list while it
+ * is pressed. Off, it is an outlined chip; on, it takes the gold tint
+ * `ToolbarButton` uses for a mode that is on, and the × a token carries, since
+ * a press then clears it. A chip, not a `Button`: a filter beside "Zaznacz
+ * wiele" in the same outlined weight read as one more action.
  * @module shared/ui/composites/FilterTokens
  */
 
@@ -79,3 +86,36 @@ export const FilterTokens = ({
     </div>
   );
 };
+
+interface FilterToggleProps {
+  readonly label: string;
+  readonly pressed: boolean;
+  readonly onToggle: () => void;
+}
+
+export const FilterToggle = ({
+  label,
+  pressed,
+  onToggle,
+}: FilterToggleProps): React.JSX.Element => (
+  // The chip is 26 px tall; the button's ::after reaches 8 px above and below
+  // it, so a thumb gets a target of about 42 px without the line growing.
+  <button
+    type="button"
+    aria-pressed={pressed}
+    onClick={onToggle}
+    className="relative rounded-chip after:absolute after:inset-x-0 after:-inset-y-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40"
+  >
+    <Badge
+      casing="natural"
+      variant="outline"
+      className={cn(
+        "cursor-pointer tabular-nums hover:border-ethereal-gold/40 hover:text-ethereal-ink",
+        pressed && "border-ethereal-gold/50 bg-ethereal-gold/15 text-ethereal-ink",
+      )}
+    >
+      {label}
+      {pressed && <X size={11} aria-hidden="true" />}
+    </Badge>
+  </button>
+);

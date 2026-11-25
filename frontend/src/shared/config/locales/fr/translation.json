@@ -407,7 +407,10 @@
     "active": {
       "aria": "Traitement IA en cours",
       "pages": "p.",
-      "section": "Analyse IA",
+      "summary_one": "L'IA analyse {{count}} fichier",
+      "summary_few": "L'IA analyse {{count}} fichiers",
+      "summary_many": "L'IA analyse {{count}} fichiers",
+      "summary_other": "L'IA analyse {{count}} fichiers",
       "cancel": "Interrompre le traitement",
       "cancel_short": "Interrompre",
       "cancelled": "Traitement interrompu.",
@@ -988,7 +991,6 @@
       "epoch": "Époque",
       "filters_btn": "Filtres",
       "placeholder": "Rechercher une pièce ou un compositeur…",
-      "reset": "Effacer",
       "select_mode": "Sélection multiple",
       "summary_filtered": "{{visible}} sur {{total}}",
       "voicing": "Distribution"
@@ -998,11 +1000,14 @@
       "pieces_few": "pièces",
       "pieces_many": "pièces",
       "pieces_other": "pièces",
-      "without_pdf": "sans PDF",
-      "review_cta_one": "{{count}} à vérifier",
-      "review_cta_few": "{{count}} à vérifier",
-      "review_cta_many": "{{count}} à vérifier",
-      "review_cta_other": "{{count}} à vérifier"
+      "filter_no_pdf_one": "{{count}} sans PDF",
+      "filter_no_pdf_few": "{{count}} sans PDF",
+      "filter_no_pdf_many": "{{count}} sans PDF",
+      "filter_no_pdf_other": "{{count}} sans PDF",
+      "filter_review_one": "{{count}} à vérifier",
+      "filter_review_few": "{{count}} à vérifier",
+      "filter_review_many": "{{count}} à vérifier",
+      "filter_review_other": "{{count}} à vérifier"
     },
     "tabs": {
       "aria": "Sections de la bibliothèque",

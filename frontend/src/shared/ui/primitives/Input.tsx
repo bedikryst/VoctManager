@@ -41,7 +41,9 @@ export const inputFieldClasses = ({
     // Icon padding only from sm+, since the icon itself is hidden on phones.
     hasLeftIcon ? "pl-4 sm:pl-10" : "pl-4",
     hasRightElement ? "pr-12" : "pr-4",
-    "py-3",
+    // A field narrower than its placeholder (a search beside toolbar icons on a
+    // phone) ends it on an ellipsis instead of clipping a letter in half.
+    "py-3 text-ellipsis",
     className,
   );
 

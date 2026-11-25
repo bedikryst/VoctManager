@@ -1,31 +1,27 @@
 /**
  * @file ArchiveSearchBar.tsx
- * @description Dominant search input + collapsible advanced filters. Most of
- * the time the conductor just types; the composer, epoch and voicing filters
- * wait behind a "Filtry" toggle that counts the ones in use, beside the
- * "Zaznacz wiele" switch for the list's selection mode.
+ * @description The library's toolbar (`ListToolbar`): the search, then the
+ * "Zaznacz wiele" switch for the list's selection mode and the "Filtry" toggle
+ * that counts the filters in use. Most of the time the conductor just types;
+ * the composer, epoch and voicing filters wait behind "Filtry". The line under
+ * the row is the page's census: the count the caller passes, its quick filters,
+ * then a removable token for each filter in use.
  * @module features/archive/components/ArchiveSearchBar
  */
 
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { AnimatePresence, motion } from "framer-motion";
-import {
-  CheckSquare,
-  ChevronDown,
-  RotateCcw,
-  Search,
-  SlidersHorizontal,
-} from "lucide-react";
+import { CheckSquare, ChevronDown, Search, SlidersHorizontal } from "lucide-react";
 
 import type { Composer } from "@/shared/types";
 import { Badge } from "@/shared/ui/primitives/Badge";
-import { Button } from "@/shared/ui/primitives/Button";
 import { FilterTokens, type FilterToken } from "@/shared/ui/composites/FilterTokens";
 import { GlossaryTerm } from "@/shared/ui/composites/glossary/GlossaryTerm";
+import { ListToolbar, ToolbarButton } from "@/shared/ui/composites/ListToolbar";
 import { Input } from "@/shared/ui/primitives/Input";
 import { Select } from "@/shared/ui/primitives/Select";
-import { Caption, Text } from "@/shared/ui/primitives/typography";
+import { Text } from "@/shared/ui/primitives/typography";
 import { cn } from "@/shared/lib/utils";
 
 export type ArchiveActiveFilter = FilterToken;
@@ -43,11 +39,12 @@ interface ArchiveSearchBarProps {
   readonly composers: Composer[];
   readonly epochOptions: EpochOption[];
   readonly availableVoicings: string[];
-  readonly hasActiveFilters: boolean;
   readonly activeFilterCount: number;
   readonly activeFilters: ArchiveActiveFilter[];
-  readonly visibleCount: number;
-  readonly totalCount: number;
+  /** The list's count (`ListCensus`), first on the census line. */
+  readonly census: React.ReactNode;
+  /** `FilterToggle` chips, after the count. */
+  readonly quickFilters?: React.ReactNode;
   readonly onSearchTermChange: (value: string) => void;
   readonly onComposerFilterChange: (value: string) => void;
   readonly onEpochFilterChange: (value: string) => void;
@@ -66,11 +63,10 @@ export const ArchiveSearchBar = ({
   composers,
   epochOptions,
   availableVoicings,
-  hasActiveFilters,
   activeFilterCount,
   activeFilters,
-  visibleCount,
-  totalCount,
+  census,
+  quickFilters,
   onSearchTermChange,
   onComposerFilterChange,
   onEpochFilterChange,
@@ -85,72 +81,59 @@ export const ArchiveSearchBar = ({
   );
 
   return (
-    <div className="flex flex-col gap-3">
-      <div className="flex flex-col gap-2 md:flex-row md:items-center">
-        <div className="flex-1">
-          <Input
-            leftIcon={<Search size={16} aria-hidden="true" />}
-            type="search"
-            placeholder={t(
-              "archive.search.placeholder",
-              "Szukaj utworu lub kompozytora…",
-            )}
-            value={searchTerm}
-            onChange={(event) => onSearchTermChange(event.target.value)}
-            aria-label={t("archive.search.aria", "Szukaj w bibliotece")}
-          />
-        </div>
-        <div className="flex shrink-0 items-center gap-2">
-          <Button
-            variant={selectionMode ? "secondary" : "outline"}
-            casing="sentence"
+    <ListToolbar
+      search={
+        <Input
+          leftIcon={<Search size={16} aria-hidden="true" />}
+          type="search"
+          placeholder={t("archive.search.placeholder", "Szukaj utworu lub kompozytora…")}
+          value={searchTerm}
+          onChange={(event) => onSearchTermChange(event.target.value)}
+          aria-label={t("archive.search.aria", "Szukaj w bibliotece")}
+        />
+      }
+      controls={
+        <>
+          <ToolbarButton
+            icon={<CheckSquare size={16} aria-hidden="true" />}
+            label={t("archive.search.select_mode", "Zaznacz wiele")}
+            on={selectionMode}
             aria-pressed={selectionMode}
             onClick={onToggleSelectionMode}
-            leftIcon={<CheckSquare size={16} aria-hidden="true" />}
-            className={cn(
-              "shrink-0",
-              selectionMode && "border-ethereal-gold/40 text-ethereal-ink",
-            )}
-          >
-            {t("archive.search.select_mode", "Zaznacz wiele")}
-          </Button>
-          <Button
-            variant={activeFilterCount > 0 ? "secondary" : "outline"}
-            casing="sentence"
-            onClick={() => setIsAdvancedOpen((open) => !open)}
+          />
+          <ToolbarButton
+            icon={<SlidersHorizontal size={16} aria-hidden="true" />}
+            label={t("archive.search.filters_btn", "Filtry")}
+            on={activeFilterCount > 0}
             aria-expanded={isAdvancedOpen}
-            leftIcon={<SlidersHorizontal size={16} aria-hidden="true" />}
-            rightIcon={
-              <ChevronDown
-                size={16}
-                aria-hidden="true"
-                className={cn(
-                  "transition-transform",
-                  isAdvancedOpen && "rotate-180",
+            onClick={() => setIsAdvancedOpen((open) => !open)}
+            trailing={
+              <>
+                {activeFilterCount > 0 && (
+                  <Badge variant="warning" casing="natural" className="px-1.5 py-0 tabular-nums">
+                    {activeFilterCount}
+                  </Badge>
                 )}
-              />
+                <ChevronDown
+                  size={16}
+                  aria-hidden="true"
+                  className={cn("transition-transform", isAdvancedOpen && "rotate-180")}
+                />
+              </>
             }
-          >
-            {t("archive.search.filters_btn", "Filtry")}
-            {activeFilterCount > 0 && (
-              <Badge variant="warning" casing="natural" className="ml-2 px-1.5 py-0 tabular-nums">
-                {activeFilterCount}
-              </Badge>
-            )}
-          </Button>
-          {hasActiveFilters && (
-            <Button
-              variant="ghost"
-              casing="sentence"
-              onClick={onResetFilters}
-              leftIcon={<RotateCcw size={16} aria-hidden="true" />}
-            >
-              {t("archive.search.reset", "Wyczyść")}
-            </Button>
-          )}
-        </div>
-      </div>
-
+          />
+        </>
+      }
+      // One clear-everything control, and only where it is more than one click:
+      // with a single filter in use, that token's own × is the way back.
+      census={
+        <>
+          {census}
+          {quickFilters}
+          <FilterTokens tokens={activeFilters} onClearAll={onResetFilters} className="contents" />
+        </>
+      }
+    >
       {/* Opacity and a short drop, on the compositor: the panel pushes the
           list down at once rather than growing into it. */}
       <AnimatePresence initial={false}>
@@ -182,9 +165,7 @@ export const ArchiveSearchBar = ({
               </div>
               <div>
                 <Text as="span" size="sm" color="graphite" className="mb-1 ml-1 block">
-                  <GlossaryTerm term="epoch">
-                    {t("archive.search.epoch", "Epoka")}
-                  </GlossaryTerm>
+                  <GlossaryTerm term="epoch">{t("archive.search.epoch", "Epoka")}</GlossaryTerm>
                 </Text>
                 <Select
                   value={epochFilter}
@@ -215,27 +196,6 @@ export const ArchiveSearchBar = ({
           </motion.div>
         )}
       </AnimatePresence>
-
-      {/* Unlike the crew roster's permanent census, this summary is the *effect*
-          of a filter — the library total is already stated in the stat line
-          above, so with nothing narrowing the view it would only say "128 z
-          128". Hence the guard rather than `FilterTokens`' summary-only mode.
-          `onClearAll` is deliberately not passed either: "Wyczyść" already sits
-          beside the Filtry toggle, and a second clear-everything control is the
-          same sentence twice. */}
-      {activeFilters.length > 0 && (
-        <FilterTokens
-          tokens={activeFilters}
-          summary={
-            <Caption color="muted">
-              {t("archive.search.summary_filtered", "{{visible}} z {{total}}", {
-                visible: visibleCount,
-                total: totalCount,
-              })}
-            </Caption>
-          }
-        />
-      )}
-    </div>
+    </ListToolbar>
   );
 };

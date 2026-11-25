@@ -418,7 +418,10 @@
     "active": {
       "aria": "Przetwarzanie AI w toku",
       "pages": "str.",
-      "section": "Analiza AI",
+      "summary_one": "AI analizuje {{count}} plik",
+      "summary_few": "AI analizuje {{count}} pliki",
+      "summary_many": "AI analizuje {{count}} plików",
+      "summary_other": "AI analizuje {{count}} pliku",
       "cancel": "Przerwij przetwarzanie",
       "cancel_short": "Przerwij",
       "cancelled": "Przerwano przetwarzanie.",
@@ -1016,7 +1019,6 @@
       "epoch": "Epoka",
       "filters_btn": "Filtry",
       "placeholder": "Szukaj utworu lub kompozytora…",
-      "reset": "Wyczyść",
       "select_mode": "Zaznacz wiele",
       "summary_filtered": "{{visible}} z {{total}}",
       "voicing": "Obsada"
@@ -1026,11 +1028,14 @@
       "pieces_few": "utwory",
       "pieces_many": "utworów",
       "pieces_other": "utworu",
-      "without_pdf": "bez PDF",
-      "review_cta_one": "{{count}} do przeglądu",
-      "review_cta_few": "{{count}} do przeglądu",
-      "review_cta_many": "{{count}} do przeglądu",
-      "review_cta_other": "{{count}} do przeglądu"
+      "filter_no_pdf_one": "{{count}} bez PDF",
+      "filter_no_pdf_few": "{{count}} bez PDF",
+      "filter_no_pdf_many": "{{count}} bez PDF",
+      "filter_no_pdf_other": "{{count}} bez PDF",
+      "filter_review_one": "{{count}} do przeglądu",
+      "filter_review_few": "{{count}} do przeglądu",
+      "filter_review_many": "{{count}} do przeglądu",
+      "filter_review_other": "{{count}} do przeglądu"
     },
     "tabs": {
       "aria": "Sekcje biblioteki",

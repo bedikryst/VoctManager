@@ -18,20 +18,16 @@ import {
   useDeletePiece,
 } from "../api/archive.queries";
 import { useVoiceLines } from "@/shared/api/options.queries";
-import { INGESTION_STATUS } from "@/shared/types";
 import { EnrichedPiece } from "../types/archive.dto";
 import { hasPdf } from "../constants/piecePdfs";
 import {
   filtersFromParams,
   filtersToParams,
   matchesLibraryFilters,
+  matchesQuickFilter,
   type LibraryFilters,
+  type LibraryQuickFilter,
 } from "../constants/libraryScope";
-
-const isAwaitingReview = (piece: EnrichedPiece): boolean =>
-  (piece.editions ?? []).some(
-    (edition) => edition.ingestion_status === INGESTION_STATUS.AWAITING,
-  );
 
 export const useArchiveData = () => {
   const { t } = useTranslation();
@@ -60,6 +56,7 @@ export const useArchiveData = () => {
   const [epochFilter, setEpochFilter] = useState<string>(arrivalFilters.epoch);
   const [composerFilter, setComposerFilter] = useState<string>(arrivalFilters.composer);
   const [voicingFilter, setVoicingFilter] = useState<string>(arrivalFilters.voicing);
+  const [quickFilter, setQuickFilter] = useState<LibraryQuickFilter | "">(arrivalFilters.only);
   const normalizedSearchTerm = searchTerm.trim();
 
   const filters = useMemo<LibraryFilters>(
@@ -68,8 +65,9 @@ export const useArchiveData = () => {
       epoch: epochFilter,
       composer: composerFilter,
       voicing: voicingFilter,
+      only: quickFilter,
     }),
-    [searchTerm, epochFilter, composerFilter, voicingFilter],
+    [searchTerm, epochFilter, composerFilter, voicingFilter, quickFilter],
   );
 
   // Replaced, not pushed: the back button leaves the library rather than
@@ -108,14 +106,24 @@ export const useArchiveData = () => {
     [pieces],
   );
 
-  // The review backlog belongs to the LIBRARY, not to the current filter: read
-  // against a filtered list it silently reported zero pending reviews whenever a
-  // composer filter happened to exclude them, while the two figures beside it
-  // stayed library-wide.
-  const awaitingPieces = useMemo(
-    () => pieces.filter(isAwaitingReview),
+  // A quick filter's size belongs to the LIBRARY, not to the current filter:
+  // read against a filtered list the review backlog silently reported zero
+  // whenever a composer filter happened to exclude it, while the total beside
+  // it stayed library-wide.
+  const quickFilterCounts = useMemo<Readonly<Record<LibraryQuickFilter, number>>>(
+    () => ({
+      review: pieces.filter((piece) => matchesQuickFilter(piece, "review")).length,
+      no_pdf: pieces.filter((piece) => matchesQuickFilter(piece, "no_pdf")).length,
+    }),
     [pieces],
   );
+
+  // A quick filter whose count reaches zero (the last piece reviewed, the last
+  // PDF uploaded) switches itself off: its chip is gone, so nothing else could,
+  // and the list behind it would stay empty.
+  if (quickFilter && !isLoadingPieces && quickFilterCounts[quickFilter] === 0) {
+    setQuickFilter("");
+  }
 
   const libraryStats = useMemo(() => {
     const uniqueComposers = new Set(
@@ -143,9 +151,11 @@ export const useArchiveData = () => {
   }, [pieces]);
 
   const hasActiveFilters = Boolean(
-    normalizedSearchTerm || epochFilter || composerFilter || voicingFilter,
+    normalizedSearchTerm || epochFilter || composerFilter || voicingFilter || quickFilter,
   );
 
+  // What the "Filtry" toggle counts: the search and the panel's filters, not
+  // the quick filter, whose own chip already shows it pressed.
   const activeFilterCount = [
     normalizedSearchTerm,
     epochFilter,
@@ -163,6 +173,7 @@ export const useArchiveData = () => {
     setEpochFilter("");
     setComposerFilter("");
     setVoicingFilter("");
+    setQuickFilter("");
   }, []);
 
   const executeDelete = async () => {
@@ -200,7 +211,7 @@ export const useArchiveData = () => {
     isLoading: isLoadingPieces || isLoadingComposers || isLoadingVoiceLines,
     isError: isErrorPieces,
     displayPieces,
-    awaitingPieces,
+    quickFilterCounts,
     composers,
     voiceLines,
     libraryStats,
@@ -218,6 +229,8 @@ export const useArchiveData = () => {
     setComposerFilter,
     voicingFilter,
     setVoicingFilter,
+    quickFilter,
+    setQuickFilter,
     resetFilters,
 
     // UI Context

@@ -16,10 +16,12 @@ const pageHeaderVariants = cva(
       size: {
         dashboard: "mb-8 px-5 md:px-0",
         standard: "mb-6 px-0",
-        // For a page whose own content is bound to the viewport, where the
-        // header is a band taken out of the work area rather than an approach
-        // to it. Below `md` the title and its one action share a row and the
-        // eyebrow steps aside — ~155px of a 844px phone becomes ~45px. From
+        // For a page whose header is a band taken out of the work area rather
+        // than an approach to it: content bound to the viewport, or a list
+        // whose first rows should not wait below the fold (the library). Below
+        // `md` the title and its actions share a row, the actions as icons
+        // (`ToolbarButton`), and the eyebrow steps aside — ~155px of a 844px
+        // phone becomes ~45px. From
         // `md` up it IS `standard`: the room that made the tall header right is
         // back, and a page must not read as two different pages across a
         // breakpoint.

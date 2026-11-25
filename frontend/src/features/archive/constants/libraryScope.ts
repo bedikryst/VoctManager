@@ -9,11 +9,16 @@
  *
  * Both screens filter through `matchesLibraryFilters`. A second copy of the
  * predicate is how a card's "4 z 17" stops matching the rows the library showed.
+ * That includes the quick filter (`only`), so a card opened from the library
+ * narrowed to "do przeglądu" walks exactly the pieces awaiting review it listed.
  * @module features/archive/constants/libraryScope
  */
 
 import { foldDiacritics } from "@/shared/lib/text";
 import type { Piece } from "@/shared/types";
+
+import { isAwaitingReview } from "../piece-card/reviewQueue";
+import { hasPdf } from "./piecePdfs";
 
 export const LIBRARY_PATH = "/panel/archive-management";
 
@@ -25,11 +30,31 @@ export const LIBRARY_PATH = "/panel/archive-management";
  */
 export const NEW_PIECE_PARAM = "nowy";
 
+/**
+ * The library's quick filters: the exceptions a manager hunts for, one at a
+ * time, each a chip in the toolbar that names its size.
+ */
+export type LibraryQuickFilter = "review" | "no_pdf";
+
+const QUICK_FILTERS: Readonly<
+  Record<LibraryQuickFilter, (piece: Pick<Piece, "editions">) => boolean>
+> = {
+  review: isAwaitingReview,
+  no_pdf: (piece) => !hasPdf(piece),
+};
+
+export const matchesQuickFilter = (
+  piece: Pick<Piece, "editions">,
+  filter: LibraryQuickFilter,
+): boolean => QUICK_FILTERS[filter](piece);
+
 export interface LibraryFilters {
   readonly search: string;
   readonly epoch: string;
   readonly composer: string;
   readonly voicing: string;
+  /** A quick filter, or "" for none. */
+  readonly only: LibraryQuickFilter | "";
 }
 
 export const EMPTY_LIBRARY_FILTERS: LibraryFilters = {
@@ -37,6 +62,7 @@ export const EMPTY_LIBRARY_FILTERS: LibraryFilters = {
   epoch: "",
   composer: "",
   voicing: "",
+  only: "",
 };
 
 /**
@@ -51,14 +77,18 @@ export interface CardScope {
   readonly filters: LibraryFilters;
 }
 
-const FILTER_KEYS = ["search", "epoch", "composer", "voicing"] as const;
+const FILTER_KEYS = ["search", "epoch", "composer", "voicing", "only"] as const;
 
 const PARAM: Readonly<Record<keyof LibraryFilters, string>> = {
   search: "q",
   epoch: "epoch",
   composer: "composer",
   voicing: "voicing",
+  only: "only",
 };
+
+const readQuickFilter = (value: string | null): LibraryQuickFilter | "" =>
+  value === "review" || value === "no_pdf" ? value : "";
 
 /** Names the list a card URL steps through. */
 const FROM_PARAM = "from";
@@ -71,6 +101,7 @@ export const filtersFromParams = (params: URLSearchParams): LibraryFilters => ({
   epoch: params.get(PARAM.epoch) ?? "",
   composer: params.get(PARAM.composer) ?? "",
   voicing: params.get(PARAM.voicing) ?? "",
+  only: readQuickFilter(params.get(PARAM.only)),
 });
 
 /** Only the filters in use, so an unfiltered library keeps a bare URL. */
@@ -126,7 +157,7 @@ export const readReturnedPiece = (state: unknown): string | null =>
     ? state.fromPiece
     : null;
 
-type FilterablePiece =Pick<Piece, "title" | "composer" | "epoch" | "voicing">;
+type FilterablePiece = Pick<Piece, "title" | "composer" | "epoch" | "voicing" | "editions">;
 
 export const matchesLibraryFilters = (
   piece: FilterablePiece,
@@ -144,5 +175,6 @@ export const matchesLibraryFilters = (
   if (filters.epoch && piece.epoch !== filters.epoch) return false;
   if (filters.composer && piece.composer?.id !== filters.composer) return false;
   if (filters.voicing && piece.voicing !== filters.voicing) return false;
+  if (filters.only && !matchesQuickFilter(piece, filters.only)) return false;
   return true;
 };

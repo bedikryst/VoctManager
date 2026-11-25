@@ -405,7 +405,10 @@
     "active": {
       "aria": "AI processing in progress",
       "pages": "pp.",
-      "section": "AI analysis",
+      "summary_one": "AI is analysing {{count}} file",
+      "summary_few": "AI is analysing {{count}} files",
+      "summary_many": "AI is analysing {{count}} files",
+      "summary_other": "AI is analysing {{count}} files",
       "cancel": "Stop processing",
       "cancel_short": "Stop",
       "cancelled": "Processing stopped.",
@@ -977,7 +980,6 @@
       "epoch": "Era",
       "filters_btn": "Filters",
       "placeholder": "Search piece or composer…",
-      "reset": "Clear",
       "select_mode": "Select many",
       "summary_filtered": "{{visible}} of {{total}}",
       "voicing": "Voicing"
@@ -987,11 +989,14 @@
       "pieces_few": "pieces",
       "pieces_many": "pieces",
       "pieces_other": "pieces",
-      "without_pdf": "without PDF",
-      "review_cta_one": "{{count}} to review",
-      "review_cta_few": "{{count}} to review",
-      "review_cta_many": "{{count}} to review",
-      "review_cta_other": "{{count}} to review"
+      "filter_no_pdf_one": "{{count}} without a PDF",
+      "filter_no_pdf_few": "{{count}} without a PDF",
+      "filter_no_pdf_many": "{{count}} without a PDF",
+      "filter_no_pdf_other": "{{count}} without a PDF",
+      "filter_review_one": "{{count}} to review",
+      "filter_review_few": "{{count}} to review",
+      "filter_review_many": "{{count}} to review",
+      "filter_review_other": "{{count}} to review"
     },
     "tabs": {
       "aria": "Library sections",
