@@ -1120,65 +1120,39 @@
       "selected_count": "{{n}} selected"
     },
     "card": {
-      "activate_action": "Activate",
-      "archive_action": "Archive",
-      "archive_badge": "Archive",
       "detached_account": "Account detached",
-      "details": "Dossier",
       "edit": "Edit",
       "invite_sent_at": "Sent {{when}}",
       "link_expired": "Link expired",
-      "message": "Message",
       "message_title": "Write a message",
       "no_email": "No e-mail",
       "no_email_title": "Added without an e-mail address. This person has no access to the app and receives no notifications, so everything has to be passed on to them in person.",
-      "no_phone": "No phone",
       "no_push_title": "None of this person's devices receives push notifications. For now, reminders and answers to requests reach them by email; new material only shows up in the app.",
-      "open_profile_aria": "Open profile: {{name}}",
       "pending_activation": "Not activated",
       "resend_activation": "Resend invitation",
-      "resend_activation_short": "Resend",
-      "sight_reading": "Sight-reading",
       "sight_reading_title": "Sight-reading: {{level}}/5",
       "unverified": "Not verified",
-      "voice_range": "Voice Range",
       "range_by_singer": "per the singer",
       "range_proposal_title": "The singer's proposal",
-      "range_agreed": "matches the proposal",
       "preview_title": "See what this person sees",
       "preview_aria": "See what {{name}} sees"
     },
     "dashboard": {
       "activate_desc": "The artist will regain access to the platform and become available in castings for new projects.",
       "activate_title": "Activate profile?",
-      "active_members": "in the ensemble",
-      "add_artist": "Add Artist",
+      "add_artist": "Add artist",
       "add_search_term": "Add: {{term}}",
-      "all_sections": "All sections",
       "all_voices": "All Voices",
       "archive_desc": "The artist will lose access to the panel. Historical data in past projects will be preserved.",
       "archive_title": "Archive artist?",
-      "balance_title": "Ensemble balance",
       "empty_desc_default": "Change the search criteria or add a new person to the database.",
       "empty_desc_search": "We could not find choir member \"{{term}}\". You can add them to the database now.",
       "empty_filtered_title": "Nobody matches the filters",
       "empty_roster_title": "Your ensemble is empty",
-      "empty_title": "No results",
-      "pending_activation": "not activated",
-      "pending_activation_hint": "Active artists who haven't activated their platform account yet.",
-      "search_placeholder": "Search by last name...",
-      "without_push": "without push",
-      "without_push_hint": "Members with an active account none of whose devices receives push notifications. Until they turn it on, reminders and answers to requests reach them by email, and new material only shows up in the app.",
-      "show_all": "Show all",
-      "subtitle": "Human Resources",
+      "search_placeholder": "Search by last name…",
       "sync_warning_desc": "Failed to fetch artist data.",
       "sync_warning_title": "Warning",
-      "title_highlight": "Management",
-      "title_prefix": "Team",
-      "archived_members": "archived",
-      "archived_members_hint": "Archived singers are still in the list below, at the end — the sections do not count them.",
-      "range_proposals": "of {{total}} range proposals",
-      "range_proposals_hint": "How many active singers have proposed their own vocal range. Players, archived members and people outside the app are not counted."
+      "title": "Artist roster"
     },
     "dossier": {
       "acceptance": "Invitation acceptance",
@@ -1228,7 +1202,8 @@
       },
       "toast": {
         "merged": "Merged into: {{name}}"
-      }
+      },
+      "summary": "Possible duplicates: {{count}}"
     },
     "editor": {
       "active_access_desc": "Unchecking will block login access.",
@@ -1309,16 +1284,18 @@
     },
     "toolbar": {
       "select_mode": "Select multiple",
-      "sort_label": "Sort",
+      "sort_label": "Order",
       "sort_name": "Surname (A–Z)",
       "sort_section": "Section (SATB)",
       "sort_skill": "Sight-reading",
       "range_label": "Vocal range",
-      "range_all": "Vocal range: everyone",
+      "range_all": "Everyone",
       "range_proposed": "Range proposed",
       "range_missing": "No range proposed",
       "range_differs": "Proposal differs from assessment",
-      "view_label": "View"
+      "range_awaiting": "Proposal awaiting assessment",
+      "filters": "Filters",
+      "search_token": "Phrase: \"{{term}}\""
     },
     "validation": {
       "first_name_required": "Enter a first name.",
@@ -1326,6 +1303,32 @@
       "invalid_email": "Enter a valid e-mail address.",
       "last_name_required": "Enter a last name.",
       "voice_type_required": "Choose a voice type."
+    },
+    "tabs": {
+      "aria": "Ensemble sections"
+    },
+    "list_aria": "Ensemble members",
+    "census": {
+      "people_one": "person",
+      "people_other": "people",
+      "narrowed": "{{visible}} of {{total}}"
+    },
+    "quick": {
+      "pending": "{{count}} not activated",
+      "range_one": "{{count}} range to assess",
+      "range_other": "{{count}} ranges to assess",
+      "archived": "{{count}} archived",
+      "no_push": "{{count}} without push"
+    },
+    "row": {
+      "invite_sent": "invitation sent {{when}}",
+      "menu_aria": "More: {{name}}",
+      "message": "Message",
+      "preview": "View as a singer",
+      "resend": "Resend invitation",
+      "edit": "Edit",
+      "archive": "Archive",
+      "restore": "Restore"
     }
   },
   "auth": {

@@ -1,15 +1,25 @@
 /**
  * @file useArtistData.ts
- * @description Manages UI state, client-side filtering/sorting, and ensemble
- * aggregates for the roster. Reads data exclusively from the React Query cache.
- * Section balance and the section filter share one taxonomy (voiceSections) so
- * mezzo / countertenor / baritone are always counted and filterable. The range
- * count and the range filter share `vocalRangeProposal`, so the count, the
- * filter and the lines on the cards read a proposal the same way.
+ * @description The roster's list state, its client-side filtering and sorting,
+ * and the counts the tabs and the census line state. Reads data exclusively
+ * from the React Query cache.
+ *
+ * The section comes from the address (`?sekcja=`, the tabs are links); the
+ * search, the range filter, the order and the quick filter are read from it
+ * once on arrival and mirrored back into it as they change (`rosterScope`).
+ * The section counts and the section filter share one taxonomy
+ * (`voiceSections`), so mezzo, countertenor and baritone are always counted
+ * and filterable. The range chip and the range filter share
+ * `vocalRangeProposal`, so they read a proposal the same way.
+ *
+ * `?focus=<id>` (the command palette, a thread) opens that member's dossier
+ * and `?new=1` the create panel, once the roster has loaded; both then leave
+ * the address.
  * @module hooks/useArtistData
  */
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { toastApiError } from "@/shared/api/errors";
 import { useTranslation } from "react-i18next";
@@ -21,34 +31,23 @@ import {
 } from "../api/artist.queries";
 import { useVoiceTypes } from "@/shared/api/options.queries";
 import { foldDiacritics } from "@/shared/lib/text";
-import { isSingingVoiceType } from "@/shared/lib/voiceTypes";
 import type { Artist } from "@/shared/types";
 import {
   getVoiceSection,
   sectionOrder,
   type SectionKey,
 } from "../constants/voiceSections";
-import { isAwaitingActivation, isWithoutEmail, isWithoutPush } from "../lib/accountState";
 import {
-  matchesRangeFilter,
-  proposalOf,
-  type RangeFilter,
-} from "../lib/vocalRangeProposal";
-
-export type RosterSort = "name" | "section" | "skill";
-export type RosterView = "grid" | "list";
-
-const VIEW_STORAGE_KEY = "voct:roster:view";
-
-const readStoredView = (): RosterView => {
-  if (typeof window === "undefined") return "grid";
-  try {
-    const stored = window.localStorage.getItem(VIEW_STORAGE_KEY);
-    return stored === "list" || stored === "grid" ? stored : "grid";
-  } catch {
-    return "grid";
-  }
-};
+  matchesQuickFilter,
+  ROSTER_QUICK_FILTERS,
+  rosterFiltersFromParams,
+  rosterQuery,
+  sectionFromParams,
+  type RosterFilters,
+  type RosterQuickFilter,
+  type RosterSort,
+} from "../lib/rosterScope";
+import { matchesRangeFilter, type RangeFilter } from "../lib/vocalRangeProposal";
 
 const sortName = (artist: Artist): string =>
   `${artist.last_name} ${artist.first_name}`.trim().toLowerCase();
@@ -56,11 +55,14 @@ const sortName = (artist: Artist): string =>
 const searchHaystack = (artist: Artist): string =>
   foldDiacritics(`${artist.first_name} ${artist.last_name}`);
 
+const FOCUS_PARAM = "focus";
+const NEW_PARAM = "new";
+
 export const useArtistData = () => {
   const { t } = useTranslation();
-  // The roster is the one screen that shows archived singers: the filters, the
-  // section balance and the bulk bar all split on `is_active`, and restoring
-  // somebody is only reachable if they are on screen to be selected.
+  // Archived members are fetched too: they leave the default list, but the
+  // archive chip lists them, and restoring somebody is only reachable if they
+  // are on screen to be selected.
   const {
     data: artists = [],
     isLoading: isArtistsLoading,
@@ -81,11 +83,22 @@ export const useArtistData = () => {
   const isLoading = isArtistsLoading || isVoiceTypesLoading;
   const isError = isArtistsError;
 
-  const [searchTerm, setSearchTerm] = useState<string>("");
-  const [voiceFilter, setVoiceFilter] = useState<SectionKey | "">("");
-  const [rangeFilter, setRangeFilter] = useState<RangeFilter>("all");
-  const [sortBy, setSortBy] = useState<RosterSort>("name");
-  const [viewMode, setViewModeState] = useState<RosterView>(readStoredView);
+  const location = useLocation();
+  const navigate = useNavigate();
+  const params = useMemo(() => new URLSearchParams(location.search), [location.search]);
+  const section: SectionKey | "" = sectionFromParams(params);
+  const focusId = params.get(FOCUS_PARAM);
+  const wantsNew = params.get(NEW_PARAM) === "1";
+
+  // Read once, on arrival: while the roster is open the inputs own these and
+  // the address only mirrors them, so a keystroke never waits on a navigation.
+  const [arrivalFilters] = useState<RosterFilters>(() =>
+    rosterFiltersFromParams(new URLSearchParams(location.search)),
+  );
+  const [searchTerm, setSearchTerm] = useState<string>(arrivalFilters.search);
+  const [rangeFilter, setRangeFilter] = useState<RangeFilter>(arrivalFilters.range);
+  const [sortBy, setSortBy] = useState<RosterSort>(arrivalFilters.sort);
+  const [quickFilter, setQuickFilter] = useState<RosterQuickFilter | "">(arrivalFilters.only);
   const [isPanelOpen, setIsPanelOpen] = useState<boolean>(false);
   const [editingArtist, setEditingArtist] = useState<Artist | null>(null);
   const [initialSearchContext, setInitialSearchContext] = useState<string>("");
@@ -106,59 +119,62 @@ export const useArtistData = () => {
   } | null>(null);
   const bulkToggleMutation = useBulkToggleArtistStatus();
 
-  const setViewMode = useCallback((next: RosterView) => {
-    setViewModeState(next);
-    try {
-      window.localStorage.setItem(VIEW_STORAGE_KEY, next);
-    } catch {
-      /* storage unavailable — keep the in-memory value only */
-    }
-  }, []);
+  const filters = useMemo<RosterFilters>(
+    () => ({ search: searchTerm, range: rangeFilter, sort: sortBy, only: quickFilter }),
+    [searchTerm, rangeFilter, sortBy, quickFilter],
+  );
+
+  // Replaced, not pushed: the back button leaves the roster rather than undoing
+  // a filter one keystroke at a time. A tab is a link and pushes its own entry.
+  // A deep link waits for its effect below, which consumes it first.
+  const query = rosterQuery(section, filters);
+  const hasDeepLink = focusId !== null || wantsNew;
+  useEffect(() => {
+    if (hasDeepLink) return;
+    const search = query ? `?${query}` : "";
+    if (search === location.search) return;
+    navigate({ search }, { replace: true });
+  }, [hasDeepLink, query, location.search, navigate]);
 
   const activeArtists = useMemo(
     () => artists.filter((artist) => artist.is_active),
     [artists],
   );
 
-  const ensembleBalance = useMemo(() => {
+  // The ensemble's balance, on the tabs: active members only, whatever the
+  // quick filter shows.
+  const sectionCounts = useMemo(() => {
     const counts: Record<SectionKey, number> = { S: 0, A: 0, T: 0, B: 0 };
     for (const artist of activeArtists) {
-      const section = getVoiceSection(artist.voice_type);
-      if (section) counts[section] += 1;
+      const key = getVoiceSection(artist.voice_type);
+      if (key) counts[key] += 1;
     }
-    return { ...counts, Total: activeArtists.length };
+    return { ...counts, all: activeArtists.length };
   }, [activeArtists]);
 
-  // Singers still owing an activation — the same predicate every card and row
-  // renders, so the count and the chips on screen always agree.
-  const accountPendingCount = useMemo(
-    () => activeArtists.filter(isAwaitingActivation).length,
-    [activeArtists],
-  );
-
-  // Signed-in members none of whose devices takes a push — the same predicate
-  // as the bell-off mark on their row, so the figure and the marks agree.
-  const withoutPushCount = useMemo(
-    () => activeArtists.filter(isWithoutPush).length,
-    [activeArtists],
-  );
-
-  // Who has proposed a range, out of the active singers who can be asked: a
-  // player has no range to give, and an archived member, a member added
-  // without an address and a detached account never see the screen, so
-  // counting them would keep the figure short of the total forever.
-  const rangeProposals = useMemo(() => {
-    const singers = activeArtists.filter(
-      (artist) =>
-        isSingingVoiceType(artist.voice_type) &&
-        Boolean(artist.user) &&
-        !isWithoutEmail(artist),
-    );
-    return {
-      answered: singers.filter((artist) => proposalOf(artist) !== null).length,
-      total: singers.length,
+  // A chip's size belongs to the roster, not to the current section or search,
+  // like the total beside it.
+  const quickFilterCounts = useMemo(() => {
+    const counts: Record<RosterQuickFilter, number> = {
+      pending: 0,
+      range: 0,
+      archived: 0,
+      no_push: 0,
     };
-  }, [activeArtists]);
+    for (const artist of artists) {
+      for (const filter of ROSTER_QUICK_FILTERS) {
+        if (matchesQuickFilter(artist, filter)) counts[filter] += 1;
+      }
+    }
+    return counts;
+  }, [artists]);
+
+  // A chip whose count reaches zero (the last invitation answered, the last
+  // member restored) switches itself off: it is gone, so nothing else could,
+  // and the list behind it would stay empty.
+  if (quickFilter && !isArtistsLoading && quickFilterCounts[quickFilter] === 0) {
+    setQuickFilter("");
+  }
 
   const selectionStats = useMemo(() => {
     let active = 0;
@@ -172,10 +188,15 @@ export const useArtistData = () => {
     return { active, archived, total: selectedIds.size };
   }, [artists, selectedIds]);
 
-  const archivedCount = useMemo(
-    () => artists.length - activeArtists.length,
-    [artists.length, activeArtists.length],
-  );
+  // The list the census counts: the archive while its chip is pressed, the
+  // active roster otherwise. Anything else narrows it, and the census says so.
+  const baseTotal =
+    quickFilter === "archived" ? quickFilterCounts.archived : activeArtists.length;
+  const isNarrowed =
+    Boolean(searchTerm.trim()) ||
+    section !== "" ||
+    rangeFilter !== "all" ||
+    (quickFilter !== "" && quickFilter !== "archived");
 
   const displayArtists = useMemo(() => {
     // Folded, so "zielinska" finds Zielińska — a Polish roster is typed
@@ -183,19 +204,13 @@ export const useArtistData = () => {
     const term = foldDiacritics(searchTerm.trim());
 
     const filtered = artists.filter((artist) => {
+      const inBase = quickFilter ? matchesQuickFilter(artist, quickFilter) : artist.is_active;
       const matchesSearch = term ? searchHaystack(artist).includes(term) : true;
-      const matchesVoice = voiceFilter
-        ? getVoiceSection(artist.voice_type) === voiceFilter
-        : true;
-      return (
-        matchesSearch && matchesVoice && matchesRangeFilter(artist, rangeFilter)
-      );
+      const matchesSection = section ? getVoiceSection(artist.voice_type) === section : true;
+      return inBase && matchesSearch && matchesSection && matchesRangeFilter(artist, rangeFilter);
     });
 
     return filtered.sort((a, b) => {
-      // Active singers always lead; archived sink to the bottom of any view.
-      if (a.is_active !== b.is_active) return a.is_active ? -1 : 1;
-
       if (sortBy === "section") {
         const bySection = sectionOrder(a.voice_type) - sectionOrder(b.voice_type);
         if (bySection !== 0) return bySection;
@@ -209,7 +224,12 @@ export const useArtistData = () => {
         sensitivity: "base",
       });
     });
-  }, [artists, searchTerm, voiceFilter, rangeFilter, sortBy]);
+  }, [artists, searchTerm, section, rangeFilter, sortBy, quickFilter]);
+
+  const resetFilters = useCallback(() => {
+    setSearchTerm("");
+    setRangeFilter("all");
+  }, []);
 
   const openPanel = useCallback(
     (artist: Artist | null = null, initialNameContext: string = "") => {
@@ -247,6 +267,20 @@ export const useArtistData = () => {
     setIsDossierOpen(false);
     setTimeout(() => setDossierTarget(null), 300);
   }, []);
+
+  // Read whenever the address carries one, so a palette jump made while the
+  // roster is already open works too. The whole roster is searched: a thread
+  // can name an archived member.
+  useEffect(() => {
+    if (!hasDeepLink || isLoading) return;
+    if (wantsNew) {
+      openPanel(null);
+    } else if (focusId) {
+      const target = artists.find((artist) => String(artist.id) === focusId);
+      if (target) openDossier(target);
+    }
+    navigate({ search: query ? `?${query}` : "" }, { replace: true });
+  }, [hasDeepLink, isLoading, wantsNew, focusId, artists, openPanel, openDossier, navigate, query]);
 
   const toggleSelect = useCallback((id: string) => {
     setSelectedIds((previous) => {
@@ -405,21 +439,21 @@ export const useArtistData = () => {
     isLoading,
     isError,
     voiceTypes,
+    section,
+    filters,
     searchTerm,
     setSearchTerm,
-    voiceFilter,
-    setVoiceFilter,
     rangeFilter,
     setRangeFilter,
     sortBy,
     setSortBy,
-    viewMode,
-    setViewMode,
-    ensembleBalance,
-    accountPendingCount,
-    withoutPushCount,
-    rangeProposals,
-    archivedCount,
+    quickFilter,
+    setQuickFilter,
+    resetFilters,
+    sectionCounts,
+    quickFilterCounts,
+    baseTotal,
+    isNarrowed,
     displayArtists,
     isPanelOpen,
     editingArtist,

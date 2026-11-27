@@ -1,8 +1,8 @@
 /**
  * @file SightReadingStars.tsx
- * @description Shared a-vista (sight-reading) rating display used by both the
- * roster card and the dense list row. Unrated singers read as an explicit
- * "not verified" caption rather than five empty stars.
+ * @description Shared a-vista (sight-reading) rating display, on the roster's
+ * rows and in the dossier. Unrated singers read as an explicit "not verified"
+ * caption rather than five empty stars.
  * @module features/artists/components/SightReadingStars
  */
 

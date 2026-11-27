@@ -49,8 +49,8 @@ export type RecordVoice = "work" | "name";
 
 export type RecordListEdge = "flush" | "inset";
 
-/** A meta cell's width: 3, 4, 5 or 6 rem, the same in every row of the list. */
-export type RecordColumnWidth = "xs" | "sm" | "md" | "lg";
+/** A meta cell's width: 3, 4, 5, 6 or 8 rem, the same in every row of the list. */
+export type RecordColumnWidth = "xs" | "sm" | "md" | "lg" | "xl";
 
 export interface RecordColumn {
   readonly width: RecordColumnWidth;
@@ -186,6 +186,7 @@ const COLUMN_WIDTH: Readonly<Record<RecordColumnWidth, string>> = {
   sm: "w-16",
   md: "w-20",
   lg: "w-24",
+  xl: "w-32",
 };
 
 interface RecordListContextValue {

@@ -1,14 +1,22 @@
 /**
  * @file ArtistManagement.tsx
- * @description Roster command centre. Ensemble-balance strip (section read +
- * filter) → search / range filter / sort / density toolbar → grid or list of
- * singers. Editing happens in a slide-over; one-click messaging is wired at
- * the page level so a single thread composer serves every card and row.
+ * @description The roster: every member of the ensemble, as a list whose rows
+ * open the member's dossier, a slide-over; editing happens in the editor
+ * panel the dossier or the row's menu opens.
+ *
+ * Two bands before the list: the title with "Dodaj artystę", then the voice
+ * sections as tabs, each with its size ("Alty 12"), which carry the ensemble's
+ * balance. The section is held in the address, so a reload keeps it. Possible
+ * duplicates fold into one line under the tabs. The toolbar's census line
+ * carries the count and the quick filters (invitations unanswered, range
+ * proposals awaiting the conductor, the archive, members without push);
+ * archived members leave the default list and stand on their own under their
+ * chip. "Zaznacz wiele" turns the rows into toggles for the bulk archive and
+ * restore. One message composer serves every row.
  * @module features/artists/ArtistManagement
  */
 
-import React, { useEffect, useRef } from "react";
-import { useSearchParams } from "react-router-dom";
+import React, { useEffect } from "react";
 import { AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
@@ -16,28 +24,31 @@ import { UserPlus, Users } from "lucide-react";
 
 import { useAuth } from "@/app/providers/AuthProvider";
 import { isManager } from "@/shared/auth/rbac";
-import { useArtistDuplicates } from "./api/artist.queries";
-import type { DuplicateGroup } from "./types/artist.dto";
-import { useArtistData } from "./hooks/useArtistData";
 import { ConfirmModal } from "@/shared/ui/composites/ConfirmModal";
+import { FilterToggle } from "@/shared/ui/composites/FilterTokens";
+import { ListCensus, ToolbarButton } from "@/shared/ui/composites/ListToolbar";
+import { PageHeader } from "@/shared/ui/composites/PageHeader";
+import { RecordList } from "@/shared/ui/composites/RecordList";
+import { RouteTabs, type RouteTabItem } from "@/shared/ui/composites/RouteTabs";
 import { StatePanel } from "@/shared/ui/composites/StatePanel";
+import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
+import { PageTransition } from "@/shared/ui/kinematics/PageTransition";
 import { Button } from "@/shared/ui/primitives/Button";
+import { NewThreadModal } from "@/features/messages/components/NewThreadModal";
+
+import { useArtistDuplicates } from "./api/artist.queries";
 import ArtistEditorPanel from "./components/ArtistEditorPanel";
-import { ArtistCard } from "./components/ArtistCard";
-import { ArtistRow } from "./components/ArtistRow";
 import { ArtistDossier } from "./components/ArtistDossier";
+import { ARTIST_COLUMNS, ArtistRow } from "./components/ArtistRow";
 import { BulkActionBar } from "./components/BulkActionBar";
 import { DuplicateReview } from "./components/DuplicateReview";
-import { EnsembleBalance } from "./components/EnsembleBalance";
 import { RosterToolbar } from "./components/RosterToolbar";
-import { NewThreadModal } from "@/features/messages/components/NewThreadModal";
-import { PageTransition } from "@/shared/ui/kinematics/PageTransition";
-import { PageHeader } from "@/shared/ui/composites/PageHeader";
-import {
-  StaggeredBentoContainer,
-  StaggeredBentoItem,
-} from "@/shared/ui/kinematics/StaggeredBentoGrid";
-import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
+import { VOICE_SECTIONS } from "./constants/voiceSections";
+import { useArtistData } from "./hooks/useArtistData";
+import { ROSTER_QUICK_FILTERS, rosterQuery, type RosterQuickFilter } from "./lib/rosterScope";
+import type { DuplicateGroup } from "./types/artist.dto";
+
+const ROSTER_PATH = "/panel/artists";
 
 /** Stable identity, so an idle query never re-renders the page on a new []. */
 const EMPTY_DUPLICATE_GROUPS: DuplicateGroup[] = [];
@@ -49,21 +60,21 @@ export default function ArtistManagement(): React.JSX.Element {
     isLoading,
     isError,
     voiceTypes,
+    section,
+    filters,
     searchTerm,
     setSearchTerm,
-    voiceFilter,
-    setVoiceFilter,
     rangeFilter,
     setRangeFilter,
     sortBy,
     setSortBy,
-    viewMode,
-    setViewMode,
-    ensembleBalance,
-    accountPendingCount,
-    withoutPushCount,
-    rangeProposals,
-    archivedCount,
+    quickFilter,
+    setQuickFilter,
+    resetFilters,
+    sectionCounts,
+    quickFilterCounts,
+    baseTotal,
+    isNarrowed,
     displayArtists,
     isPanelOpen,
     editingArtist,
@@ -115,199 +126,165 @@ export default function ArtistManagement(): React.JSX.Element {
     }
   }, [isError, t]);
 
-  // Deep-links from the command palette: ?focus=<id> opens that singer's
-  // dossier, ?new=1 opens the create panel. Consumed once (a ref guard), then
-  // the param is stripped so refresh / back doesn't reopen the surface.
-  const [searchParams, setSearchParams] = useSearchParams();
-  const deepLinkConsumed = useRef(false);
-  useEffect(() => {
-    if (deepLinkConsumed.current) return;
-    const focusId = searchParams.get("focus");
-    const wantsNew = searchParams.get("new") === "1";
-    if (!focusId && !wantsNew) return;
-    if (isLoading) return;
-
-    deepLinkConsumed.current = true;
-    if (wantsNew) {
-      openPanel(null);
-    } else if (focusId) {
-      const target = displayArtists.find(
-        (artist) => String(artist.id) === focusId,
-      );
-      if (target) openDossier(target);
-    }
-
-    const next = new URLSearchParams(searchParams);
-    next.delete("focus");
-    next.delete("new");
-    setSearchParams(next, { replace: true });
-  }, [
-    searchParams,
-    isLoading,
-    displayArtists,
-    openDossier,
-    openPanel,
-    setSearchParams,
-  ]);
-
   if (isLoading && displayArtists.length === 0) {
     return <EtherealLoader />;
   }
 
-  const isFiltering =
-    Boolean(searchTerm.trim()) || voiceFilter !== "" || rangeFilter !== "all";
+  const term = searchTerm.trim();
+
+  // A tab keeps the filters in use: the section is one more way of narrowing
+  // the same list, not a different page.
+  const sectionHref = (key: (typeof VOICE_SECTIONS)[number]["key"] | ""): string => {
+    const query = rosterQuery(key, filters);
+    return query ? `${ROSTER_PATH}?${query}` : ROSTER_PATH;
+  };
+  const tabs: readonly RouteTabItem[] = [
+    {
+      to: sectionHref(""),
+      label: t("artists.filters.all", "Tutti"),
+      count: sectionCounts.all,
+      active: section === "",
+    },
+    ...VOICE_SECTIONS.map((voiceSection) => ({
+      to: sectionHref(voiceSection.key),
+      label: t(voiceSection.labelKey, voiceSection.defaultLabel),
+      count: sectionCounts[voiceSection.key],
+      active: section === voiceSection.key,
+    })),
+  ];
+
+  // Each chip only while it has someone to find, one pressed at a time.
+  const quickFilterLabels: Readonly<Record<RosterQuickFilter, string>> = {
+    pending: t("artists.quick.pending", "{{count}} bez aktywacji", {
+      count: quickFilterCounts.pending,
+    }),
+    range: t("artists.quick.range", "{{count}} skal do oceny", {
+      count: quickFilterCounts.range,
+    }),
+    archived: t("artists.quick.archived", "{{count}} w archiwum", {
+      count: quickFilterCounts.archived,
+    }),
+    no_push: t("artists.quick.no_push", "{{count}} bez powiadomień", {
+      count: quickFilterCounts.no_push,
+    }),
+  };
+  const quickFilterChips = ROSTER_QUICK_FILTERS.filter((id) => quickFilterCounts[id] > 0).map(
+    (id) => (
+      <FilterToggle
+        key={id}
+        label={quickFilterLabels[id]}
+        pressed={quickFilter === id}
+        onToggle={() => setQuickFilter((current) => (current === id ? "" : id))}
+      />
+    ),
+  );
 
   return (
     <PageTransition>
-      <div className="relative mx-auto max-w-7xl cursor-default pb-24 pt-6">
-        <StaggeredBentoContainer className="space-y-5">
-          <StaggeredBentoItem>
-            <PageHeader
-              size="standard"
-              roleText={t("artists.dashboard.subtitle", "Zasoby Ludzkie")}
-              title={t("artists.dashboard.title_prefix", "Zarządzanie")}
-              titleHighlight={t("artists.dashboard.title_highlight", "Zespołem")}
-              rightContent={
-                <Button
-                  variant="primary"
-                  onClick={() => openPanel(null)}
-                  leftIcon={<UserPlus size={16} aria-hidden="true" />}
-                >
-                  {t("artists.dashboard.add_artist", "Dodaj Artystę")}
-                </Button>
+      <div className="relative mx-auto flex max-w-5xl flex-col gap-5 pb-24 pt-6">
+        <PageHeader
+          size="compact"
+          title={t("artists.dashboard.title", "Baza artystów")}
+          rightContent={
+            <ToolbarButton
+              variant="primary"
+              icon={<UserPlus size={16} aria-hidden="true" />}
+              label={t("artists.dashboard.add_artist", "Dodaj artystę")}
+              onClick={() => openPanel(null)}
+            />
+          }
+        />
+
+        <RouteTabs
+          variant="underline"
+          items={tabs}
+          ariaLabel={t("artists.tabs.aria", "Sekcje zespołu")}
+        />
+
+        {duplicateGroups.length > 0 && <DuplicateReview groups={duplicateGroups} />}
+
+        <RosterToolbar
+          searchTerm={searchTerm}
+          onSearch={setSearchTerm}
+          rangeFilter={rangeFilter}
+          onRangeFilter={setRangeFilter}
+          sortBy={sortBy}
+          onSort={setSortBy}
+          selectionMode={selectionMode}
+          onToggleSelectionMode={toggleSelectionMode}
+          census={
+            <ListCensus
+              total={baseTotal}
+              noun={t("artists.census.people", "osób", { count: baseTotal })}
+              narrowed={
+                isNarrowed
+                  ? t("artists.census.narrowed", "{{visible}} z {{total}}", {
+                      visible: displayArtists.length,
+                      total: baseTotal,
+                    })
+                  : null
               }
             />
-          </StaggeredBentoItem>
+          }
+          quickFilters={quickFilterChips}
+          onResetFilters={resetFilters}
+        />
 
-          <StaggeredBentoItem>
-            <EnsembleBalance
-              balance={ensembleBalance}
-              accountPending={accountPendingCount}
-              withoutPush={withoutPushCount}
-              rangeProposals={rangeProposals}
-              archivedCount={archivedCount}
-              activeSection={voiceFilter}
-              onSelectSection={setVoiceFilter}
-            />
-          </StaggeredBentoItem>
-
-          {/* Triage before browsing: a duplicate is only visible when the two
-              rows are next to each other, which the sorted roster never does.
-              Absent entirely on a clean roster — an empty item would still take
-              the stack's gap. */}
-          {duplicateGroups.length > 0 && (
-            <StaggeredBentoItem>
-              <DuplicateReview groups={duplicateGroups} />
-            </StaggeredBentoItem>
-          )}
-
-          <StaggeredBentoItem>
-            <RosterToolbar
-              searchTerm={searchTerm}
-              onSearch={setSearchTerm}
-              rangeFilter={rangeFilter}
-              onRangeFilter={setRangeFilter}
-              sortBy={sortBy}
-              onSort={setSortBy}
-              viewMode={viewMode}
-              onViewMode={setViewMode}
-              selectionMode={selectionMode}
-              onToggleSelectionMode={toggleSelectionMode}
-            />
-          </StaggeredBentoItem>
-
-          <StaggeredBentoItem>
-            {displayArtists.length > 0 ? (
-              viewMode === "grid" ? (
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                  <AnimatePresence>
-                    {displayArtists.map((artist) => (
-                      <ArtistCard
-                        key={artist.id}
-                        artist={artist}
-                        onOpen={openDossier}
-                        onMessage={openMessage}
-                        onToggleStatus={handleToggleRequest}
-                        onResendActivation={handleResendActivation}
-                        isResending={resendingIds.has(artist.id)}
-                        selectionMode={selectionMode}
-                        selected={selectedIds.has(artist.id)}
-                        onToggleSelect={toggleSelect}
-                      />
-                    ))}
-                  </AnimatePresence>
-                </div>
-              ) : (
-                <div className="flex flex-col gap-2">
-                  {displayArtists.map((artist) => (
-                    <ArtistRow
-                      key={artist.id}
-                      artist={artist}
-                      onOpen={openDossier}
-                      onMessage={openMessage}
-                      onToggleStatus={handleToggleRequest}
-                      onResendActivation={handleResendActivation}
-                      isResending={resendingIds.has(artist.id)}
-                      selectionMode={selectionMode}
-                      selected={selectedIds.has(artist.id)}
-                      onToggleSelect={toggleSelect}
-                    />
-                  ))}
-                </div>
-              )
-            ) : (
-              <StatePanel
-                icon={<Users size={32} aria-hidden="true" />}
-                eyebrow={t("artists.dashboard.empty_title", "Brak wyników")}
-                title={
-                  isFiltering
-                    ? t(
-                        "artists.dashboard.empty_filtered_title",
-                        "Nikt nie pasuje do filtrów",
-                      )
-                    : t(
-                        "artists.dashboard.empty_roster_title",
-                        "Twój zespół jest pusty",
-                      )
-                }
-                description={
-                  searchTerm.trim()
-                    ? t("artists.dashboard.empty_desc_search", {
-                        defaultValue:
-                          'Nie znaleźliśmy chórzysty "{{term}}". Możesz dodać go teraz do bazy.',
-                        term: searchTerm,
-                      })
-                    : t(
-                        "artists.dashboard.empty_desc_default",
-                        "Zmień kryteria wyszukiwania lub dodaj nową osobę do bazy.",
-                      )
-                }
-                actions={
-                  searchTerm.trim() ? (
-                    <Button
-                      variant="secondary"
-                      onClick={() => openPanel(null, searchTerm)}
-                      leftIcon={<UserPlus size={14} aria-hidden="true" />}
-                    >
-                      {t("artists.dashboard.add_search_term", {
-                        defaultValue: "Dodaj: {{term}}",
-                        term: searchTerm,
-                      })}
-                    </Button>
-                  ) : (
-                    <Button
-                      variant="secondary"
-                      onClick={() => openPanel(null)}
-                      leftIcon={<UserPlus size={14} aria-hidden="true" />}
-                    >
-                      {t("artists.dashboard.add_artist", "Dodaj Artystę")}
-                    </Button>
-                  )
-                }
+        {displayArtists.length > 0 ? (
+          <RecordList label={t("artists.list_aria", "Członkowie zespołu")} columns={ARTIST_COLUMNS}>
+            {displayArtists.map((artist) => (
+              <ArtistRow
+                key={artist.id}
+                artist={artist}
+                onOpen={openDossier}
+                onMessage={openMessage}
+                onEdit={openPanel}
+                onToggleStatus={handleToggleRequest}
+                onResendActivation={handleResendActivation}
+                isResending={resendingIds.has(artist.id)}
+                selectionMode={selectionMode}
+                selected={selectedIds.has(artist.id)}
+                onToggleSelect={toggleSelect}
               />
-            )}
-          </StaggeredBentoItem>
-        </StaggeredBentoContainer>
+            ))}
+          </RecordList>
+        ) : (
+          <StatePanel
+            icon={<Users size={32} aria-hidden="true" />}
+            title={
+              isNarrowed
+                ? t("artists.dashboard.empty_filtered_title", "Nikt nie pasuje do filtrów")
+                : t("artists.dashboard.empty_roster_title", "Twój zespół jest pusty")
+            }
+            description={
+              term
+                ? t("artists.dashboard.empty_desc_search", {
+                    defaultValue:
+                      'Nie znaleźliśmy chórzysty "{{term}}". Możesz dodać go teraz do bazy.',
+                    term,
+                  })
+                : t(
+                    "artists.dashboard.empty_desc_default",
+                    "Zmień kryteria wyszukiwania lub dodaj nową osobę do bazy.",
+                  )
+            }
+            actions={
+              <Button
+                variant="secondary"
+                casing="sentence"
+                onClick={() => openPanel(null, term)}
+                leftIcon={<UserPlus size={16} aria-hidden="true" />}
+              >
+                {term
+                  ? t("artists.dashboard.add_search_term", {
+                      defaultValue: "Dodaj: {{term}}",
+                      term,
+                    })
+                  : t("artists.dashboard.add_artist", "Dodaj artystę")}
+              </Button>
+            }
+          />
+        )}
 
         <ArtistEditorPanel
           isOpen={isPanelOpen}

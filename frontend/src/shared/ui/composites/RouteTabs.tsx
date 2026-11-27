@@ -15,11 +15,15 @@
  * The labels start on the column's edge, like the header above them.
  *
  * An item may carry a `count`: the section's own size, said once, on the tab.
+ *
+ * Underline tabs may also partition one route by a query parameter (the
+ * roster's `?sekcja=`). A `NavLink` matches the path alone, so every such tab
+ * would read as current; the caller states which one is (`active`).
  * @module shared/ui/composites/RouteTabs
  */
 
 import React from "react";
-import { NavLink } from "react-router-dom";
+import { Link, NavLink } from "react-router-dom";
 
 import { cn } from "@/shared/lib/utils";
 import { Eyebrow, Text } from "@/shared/ui/primitives/typography";
@@ -32,6 +36,11 @@ export interface RouteTabItem {
   /** Active only on the exact path — for an index route. */
   readonly end?: boolean;
   readonly count?: number;
+  /**
+   * `underline` only: whether this tab is current, for tabs whose addresses
+   * differ only in their query. Omitted, the path decides.
+   */
+  readonly active?: boolean;
 }
 
 interface RouteTabsBaseProps {
@@ -49,45 +58,65 @@ export type RouteTabsProps = RouteTabsBaseProps &
 const LINK_FOCUS =
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ethereal-gold/40";
 
+const underlineLinkClass = (isActive: boolean): string =>
+  cn(
+    "relative flex min-h-11 shrink-0 items-center gap-1.5 rounded-control px-2 transition-colors duration-200",
+    LINK_FOCUS,
+    isActive ? "text-ethereal-ink" : "text-ethereal-graphite hover:text-ethereal-ink",
+  );
+
+const UnderlineTabContent = ({
+  item,
+  isActive,
+}: {
+  readonly item: RouteTabItem;
+  readonly isActive: boolean;
+}): React.JSX.Element => (
+  <>
+    <Text as="span" size="base" weight="medium" color="inherit" className="whitespace-nowrap">
+      {item.label}
+    </Text>
+    {item.count !== undefined && (
+      <Text as="span" size="sm" color="muted" className="tabular-nums">
+        {item.count}
+      </Text>
+    )}
+    <span
+      aria-hidden="true"
+      className={cn(
+        "pointer-events-none absolute inset-x-2 bottom-0 h-0.5 rounded-full bg-ethereal-ink transition-opacity duration-200",
+        isActive ? "opacity-100" : "opacity-0",
+      )}
+    />
+  </>
+);
+
 const UnderlineTabs = ({ items, ariaLabel, className }: RouteTabsBaseProps): React.JSX.Element => (
   <nav aria-label={ariaLabel} className={cn("min-w-0 border-b border-hairline", className)}>
     {/* Pulled out by the links' padding, so the first label starts on the
         column's edge and no focus ring is clipped by the scroller. */}
     <div className="no-scrollbar -mx-2 flex gap-1 overflow-x-auto">
-      {items.map((item) => (
-        <NavLink
-          key={item.to}
-          to={item.to}
-          end={item.end}
-          className={({ isActive }) =>
-            cn(
-              "relative flex min-h-11 shrink-0 items-center gap-1.5 rounded-control px-2 transition-colors duration-200",
-              LINK_FOCUS,
-              isActive ? "text-ethereal-ink" : "text-ethereal-graphite hover:text-ethereal-ink",
-            )
-          }
-        >
-          {({ isActive }) => (
-            <>
-              <Text as="span" size="base" weight="medium" color="inherit" className="whitespace-nowrap">
-                {item.label}
-              </Text>
-              {item.count !== undefined && (
-                <Text as="span" size="sm" color="muted" className="tabular-nums">
-                  {item.count}
-                </Text>
-              )}
-              <span
-                aria-hidden="true"
-                className={cn(
-                  "pointer-events-none absolute inset-x-2 bottom-0 h-0.5 rounded-full bg-ethereal-ink transition-opacity duration-200",
-                  isActive ? "opacity-100" : "opacity-0",
-                )}
-              />
-            </>
-          )}
-        </NavLink>
-      ))}
+      {items.map((item) =>
+        item.active === undefined ? (
+          <NavLink
+            key={item.to}
+            to={item.to}
+            end={item.end}
+            className={({ isActive }) => underlineLinkClass(isActive)}
+          >
+            {({ isActive }) => <UnderlineTabContent item={item} isActive={isActive} />}
+          </NavLink>
+        ) : (
+          <Link
+            key={item.to}
+            to={item.to}
+            aria-current={item.active ? "page" : undefined}
+            className={underlineLinkClass(item.active)}
+          >
+            <UnderlineTabContent item={item} isActive={item.active} />
+          </Link>
+        ),
+      )}
     </div>
   </nav>
 );

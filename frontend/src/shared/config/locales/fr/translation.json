@@ -1131,65 +1131,39 @@
       "selected_count": "{{n}} sélectionnés"
     },
     "card": {
-      "activate_action": "Activer",
-      "archive_action": "Archiver",
-      "archive_badge": "Archive",
       "detached_account": "Compte détaché",
-      "details": "Dossier",
       "edit": "Modifier",
       "invite_sent_at": "Envoyé {{when}}",
       "link_expired": "Lien expiré",
-      "message": "Écrire",
       "message_title": "Écrire un message",
       "no_email": "Sans e-mail",
       "no_email_title": "Ajouté sans adresse e-mail. Cette personne n'a pas accès à l'application et ne reçoit aucune notification : tout doit lui être transmis en personne.",
-      "no_phone": "Pas de téléphone",
       "no_push_title": "Aucun appareil de cette personne ne reçoit les notifications push. En attendant, les rappels et les réponses à ses demandes lui arrivent par e-mail ; les nouveaux documents n’apparaissent que dans l’application.",
-      "open_profile_aria": "Ouvrir le profil : {{name}}",
       "pending_activation": "Non activé",
       "resend_activation": "Renvoyer l'invitation",
-      "resend_activation_short": "Renvoyer",
-      "sight_reading": "Déchiffrage",
       "sight_reading_title": "Déchiffrage : {{level}}/5",
       "unverified": "Non vérifié",
-      "voice_range": "Étendue vocale",
       "range_by_singer": "selon le choriste",
       "range_proposal_title": "Proposition du choriste",
-      "range_agreed": "conforme à la proposition",
       "preview_title": "Voir ce que voit cette personne",
       "preview_aria": "Voir ce que voit {{name}}"
     },
     "dashboard": {
       "activate_desc": "L'artiste retrouvera l'accès à la plateforme et redeviendra disponible pour les nouvelles distributions.",
       "activate_title": "Activer le profil ?",
-      "active_members": "dans l'ensemble",
       "add_artist": "Ajouter un artiste",
       "add_search_term": "Ajouter : {{term}}",
-      "all_sections": "Tous les pupitres",
       "all_voices": "Toutes les voix",
       "archive_desc": "L'artiste perdra l'accès au panneau. Les données historiques des projets passés seront conservées.",
       "archive_title": "Archiver l'artiste ?",
-      "balance_title": "Équilibre de l'ensemble",
       "empty_desc_default": "Modifiez les critères de recherche ou ajoutez une nouvelle personne à la base.",
       "empty_desc_search": "Nous n'avons pas trouvé le choriste \"{{term}}\". Vous pouvez l'ajouter à la base maintenant.",
       "empty_filtered_title": "Personne ne correspond aux filtres",
       "empty_roster_title": "Votre ensemble est vide",
-      "empty_title": "Aucun résultat",
-      "pending_activation": "sans activation",
-      "pending_activation_hint": "Artistes actifs qui n'ont pas encore activé leur compte sur la plateforme.",
-      "search_placeholder": "Rechercher par nom...",
-      "without_push": "sans notifications push",
-      "without_push_hint": "Membres au compte actif dont aucun appareil ne reçoit les notifications push. Tant qu’ils ne les activent pas, les rappels et les réponses à leurs demandes leur arrivent par e-mail, et les nouveaux documents n’apparaissent que dans l’application.",
-      "show_all": "Tout afficher",
-      "subtitle": "Ressources humaines",
+      "search_placeholder": "Rechercher par nom…",
       "sync_warning_desc": "Impossible de récupérer les données des artistes.",
       "sync_warning_title": "Avertissement",
-      "title_highlight": "l'ensemble",
-      "title_prefix": "Gestion de",
-      "archived_members": "archivés",
-      "archived_members_hint": "Les chanteurs archivés figurent toujours dans la liste ci-dessous, à la fin — les pupitres ne les comptent pas.",
-      "range_proposals": "sur {{total}} propositions d'étendue",
-      "range_proposals_hint": "Combien de choristes actifs ont proposé leur propre étendue vocale. Sans les instrumentistes, les membres archivés ni les personnes hors de l'application."
+      "title": "Base des artistes"
     },
     "dossier": {
       "acceptance": "Acceptation des invitations",
@@ -1239,7 +1213,8 @@
       },
       "toast": {
         "merged": "Fusionné dans : {{name}}"
-      }
+      },
+      "summary": "Doublons possibles : {{count}}"
     },
     "editor": {
       "active_access_desc": "Le décocher bloquera l'accès à la connexion.",
@@ -1320,16 +1295,18 @@
     },
     "toolbar": {
       "select_mode": "Sélection multiple",
-      "sort_label": "Trier",
+      "sort_label": "Ordre",
       "sort_name": "Nom (A–Z)",
       "sort_section": "Pupitre (SATB)",
       "sort_skill": "Lecture à vue",
       "range_label": "Étendue vocale",
-      "range_all": "Étendue vocale : tous",
+      "range_all": "Tous",
       "range_proposed": "Étendue proposée",
       "range_missing": "Sans étendue proposée",
       "range_differs": "Proposition différente de l'évaluation",
-      "view_label": "Affichage"
+      "range_awaiting": "Proposition en attente d'évaluation",
+      "filters": "Filtres",
+      "search_token": "Expression : \"{{term}}\""
     },
     "validation": {
       "first_name_required": "Indiquez le prénom.",
@@ -1337,6 +1314,34 @@
       "invalid_email": "Indiquez une adresse e-mail valide.",
       "last_name_required": "Indiquez le nom.",
       "voice_type_required": "Choisissez un type de voix."
+    },
+    "tabs": {
+      "aria": "Pupitres de l'ensemble"
+    },
+    "list_aria": "Membres de l'ensemble",
+    "census": {
+      "people_one": "personne",
+      "people_other": "personnes",
+      "narrowed": "{{visible}} sur {{total}}"
+    },
+    "quick": {
+      "pending_one": "{{count}} non activé",
+      "pending_other": "{{count}} non activés",
+      "range_one": "{{count}} étendue à évaluer",
+      "range_other": "{{count}} étendues à évaluer",
+      "archived_one": "{{count}} archivé",
+      "archived_other": "{{count}} archivés",
+      "no_push": "{{count}} sans notifications push"
+    },
+    "row": {
+      "invite_sent": "invitation envoyée le {{when}}",
+      "menu_aria": "Plus : {{name}}",
+      "message": "Écrire",
+      "preview": "Voir comme choriste",
+      "resend": "Renvoyer l'invitation",
+      "edit": "Modifier",
+      "archive": "Archiver",
+      "restore": "Restaurer"
     }
   },
   "auth": {

@@ -2,8 +2,9 @@
  * @file voiceSections.ts
  * @description Single source of truth for choral section taxonomy and presentation.
  * Maps granular voice types (SOP, MEZ, ALT, CT, TEN, BAR, BAS) onto the four
- * canonical SATB sections and their Ethereal colour language, so the balance
- * strip, roster cards, and list rows never drift apart.
+ * canonical SATB sections and their Ethereal colour language, so the roster's
+ * section tabs, its counts and every surface that tints a section never drift
+ * apart.
  *
  * Section grouping follows mixed-choir practice: mezzo-soprano and countertenor
  * sing the alto line; baritone sings with the basses. This is also why the old

@@ -1,7 +1,7 @@
 /**
  * @file accountState.ts
  * @description What the roster says about a member's platform account. One
- * predicate per state, shared by the roster card, row and dossier, the
+ * predicate per state, shared by the roster's rows, quick filters and dossier, the
  * pending-invitation count and the project's cast, so none of them can
  * disagree about who is waiting on an invitation or who the app cannot reach.
  * @module features/artists/lib/accountState

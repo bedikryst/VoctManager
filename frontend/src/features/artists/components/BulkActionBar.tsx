@@ -56,6 +56,7 @@ export const BulkActionBar = ({
           <Button
             variant="ghost"
             size="sm"
+            casing="sentence"
             onClick={allSelected ? onClear : onSelectAll}
             leftIcon={<CheckCheck size={13} aria-hidden="true" />}
           >
@@ -71,6 +72,7 @@ export const BulkActionBar = ({
             <Button
               variant="outline"
               size="sm"
+              casing="sentence"
               onClick={onRestore}
               disabled={isPending}
               leftIcon={<RotateCcw size={14} aria-hidden="true" />}
@@ -86,6 +88,7 @@ export const BulkActionBar = ({
             <Button
               variant="outline"
               size="sm"
+              casing="sentence"
               onClick={onArchive}
               disabled={isPending}
               leftIcon={<Archive size={14} aria-hidden="true" />}
@@ -100,6 +103,7 @@ export const BulkActionBar = ({
           <Button
             variant="ghost"
             size="sm"
+            casing="sentence"
             onClick={onExit}
             leftIcon={<X size={14} aria-hidden="true" />}
           >

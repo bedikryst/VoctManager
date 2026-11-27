@@ -408,7 +408,7 @@ export const router = createBrowserRouter(
               element={<Navigate to="/panel/finance" replace />}
             />
             <Route path="rehearsals" element={<Rehearsals />} />
-            <Route path="artists" element={<ArtistManagement />} />
+            <Route path="artists" handle={PLAIN_ROUTE_HANDLE} element={<ArtistManagement />} />
             <Route
               path="artists/:artistId/preview"
               element={<ArtistPreviewPage />}

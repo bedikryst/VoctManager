@@ -17,11 +17,12 @@
  * @module features/archive/components/ActiveIngestionsPanel
  */
 
-import React, { useEffect, useId, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { Ban, ChevronDown, Loader2 } from "lucide-react";
+import { Ban, Loader2 } from "lucide-react";
 
+import { FoldLine } from "@/shared/ui/composites/FoldLine";
 import { RecordList, RecordRow, type RecordColumn } from "@/shared/ui/composites/RecordList";
 import { Text } from "@/shared/ui/primitives/typography";
 import { cn } from "@/shared/lib/utils";
@@ -46,7 +47,6 @@ const ACTIVE_COLUMNS: readonly RecordColumn[] = [
 
 export const ActiveIngestionsPanel = (): React.JSX.Element | null => {
   const { t } = useTranslation();
-  const listId = useId();
   const { data } = useActiveIngestions();
   const active = data ?? [];
   const [isOpen, setIsOpen] = useState<boolean>(false);
@@ -63,51 +63,23 @@ export const ActiveIngestionsPanel = (): React.JSX.Element | null => {
   if (active.length === 0) return null;
 
   return (
-    <section aria-label={t("archive.active.aria", "Przetwarzanie AI w toku")}>
-      <button
-        type="button"
-        aria-expanded={isOpen}
-        aria-controls={listId}
-        onClick={() => {
-          // The clock stood still while folded; restart it from now.
-          setNow(Date.now());
-          setIsOpen((open) => !open);
-        }}
-        className="group flex min-h-11 items-center gap-3 rounded-control text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40"
-      >
-        <Loader2
-          size={16}
-          strokeWidth={2}
-          aria-hidden="true"
-          className="shrink-0 animate-spin text-ethereal-amethyst"
-        />
-        <Text
-          as="span"
-          size="sm"
-          color="graphite"
-          className="tabular-nums transition-colors group-hover:text-ethereal-ink"
-        >
-          {t("archive.active.summary", "AI analizuje {{count}} plików", { count: active.length })}
-        </Text>
-        <ChevronDown
-          size={16}
-          aria-hidden="true"
-          className={cn(
-            "shrink-0 text-ethereal-graphite transition-transform",
-            isOpen && "rotate-180",
-          )}
-        />
-      </button>
-      {isOpen && (
-        <div id={listId}>
-          <RecordList label={t("archive.active.aria", "Przetwarzanie AI w toku")} columns={ACTIVE_COLUMNS}>
-            {active.map((item) => (
-              <ActiveRow key={item.id} item={item} now={now} />
-            ))}
-          </RecordList>
-        </div>
-      )}
-    </section>
+    <FoldLine
+      label={t("archive.active.aria", "Przetwarzanie AI w toku")}
+      summary={t("archive.active.summary", "AI analizuje {{count}} plików", { count: active.length })}
+      icon={<Loader2 size={16} strokeWidth={2} className="animate-spin text-ethereal-amethyst" />}
+      open={isOpen}
+      onToggle={() => {
+        // The clock stood still while folded; restart it from now.
+        setNow(Date.now());
+        setIsOpen((open) => !open);
+      }}
+    >
+      <RecordList label={t("archive.active.aria", "Przetwarzanie AI w toku")} columns={ACTIVE_COLUMNS}>
+        {active.map((item) => (
+          <ActiveRow key={item.id} item={item} now={now} />
+        ))}
+      </RecordList>
+    </FoldLine>
   );
 };
 

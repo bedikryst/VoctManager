@@ -1,56 +1,57 @@
 /**
  * @file ArtistRow.tsx
- * @description Dense, click-to-open roster row — the list-view counterpart to
- * ArtistCard. Click opens the dossier; inline message / archive actions stop
- * propagation. In selection mode a leading checkbox appears and the whole row
- * toggles multi-selection instead.
+ * @description One member of the roster, as a `RecordRow`: the row opens the
+ * dossier. The name in the sans voice; under it, the voice or role ("Bas",
+ * "Dyrygent") and, while an invitation waits, when it went out. To the right,
+ * in the columns the roster declares (`ARTIST_COLUMNS`), the range and the
+ * sight-reading stars; both are left to the dossier below `md`, as are the
+ * e-mail and the phone.
  *
- * The row states an account problem ONCE: a chip when the invitation is still
- * unanswered, plus the resend it needs. There is no "account is fine" mark —
- * that is the resting case for every singer on a healthy roster, and painting
- * it forty times is what buried the one row that needed a hand. A member added
- * without an address wears a neutral chip instead: not a problem to fix, but
- * the reason nothing the app sends ever reaches them. A signed-in member none of
- * whose devices takes a push wears a quiet bell-off mark — the list of people
- * worth asking in person — which goes the moment any device subscribes. Range and
- * a-vista are the singer's own facts, so they read as plain type and simply
- * vanish when nobody has recorded them. The conductor's range leads; under it,
- * muted, the singer's own proposal marked as theirs, or only "zgodna z
- * propozycją" when the two hold the same notes. Until the conductor writes a
- * range, the proposal stands in on the first line and the mark takes the
- * second.
+ * Flags speak only for a member who needs a hand: an invitation unanswered or
+ * expired, an address never given, a detached account, and the bell-off mark
+ * of a member none of whose devices takes a push, the list of people worth
+ * asking in person. "Asystent" is the one flag that is a role, not a problem:
+ * it is why the manager looks for that row. A healthy member carries none.
+ *
+ * The range is the conductor's; until there is one, the singer's own proposal
+ * stands in, muted and marked as theirs. The comparison of the two stays in
+ * the dossier and in the range filter.
+ *
+ * Every row has the same one menu, so the columns stand under each other. In
+ * selection mode the row is one toggle (`RecordRow`'s `row` scope) and the
+ * menu steps aside.
  * @module features/artists/components/ArtistRow
  */
 
-import React from "react";
-import { Link } from "react-router-dom";
+import React, { useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
+  Archive,
+  ArchiveRestore,
   BellOff,
-  CheckCircle2,
-  ChevronRight,
   Eye,
-  Mail,
-  MailWarning,
   MessageSquare,
-  Phone,
+  MoreHorizontal,
+  Pencil,
   Send,
-  Trash2,
-  UserX,
 } from "lucide-react";
 
 import type { Artist } from "@/shared/types";
-import { cn } from "@/shared/lib/utils";
 import { artistRoleLabel } from "@/shared/lib/voiceTypes";
-import { onActivate } from "@/shared/lib/dom/a11y";
 import { formatLocalizedDateTime } from "@/shared/lib/time/intl";
 import { Avatar } from "@/shared/ui/composites/Avatar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/shared/ui/composites/DropdownMenu";
+import { RecordRow, recordActionClass, type RecordColumn } from "@/shared/ui/composites/RecordList";
 import { VocalRangeText } from "@/shared/ui/instruments/PitchName";
 import { Badge } from "@/shared/ui/primitives/Badge";
-import { Checkbox } from "@/shared/ui/primitives/Checkbox";
-import { ACCENT_BADGE } from "@/shared/ui/primitives/accents";
-import { Caption, Text } from "@/shared/ui/primitives/typography";
-import { getSectionPresentation } from "../constants/voiceSections";
+import { Button } from "@/shared/ui/primitives/Button";
+import { Text } from "@/shared/ui/primitives/typography";
 import { usePitchNotation } from "../hooks/usePitchNotation";
 import {
   canReceiveMessages,
@@ -58,369 +59,235 @@ import {
   isWithoutEmail,
   isWithoutPush,
 } from "../lib/accountState";
-import { rangesOf, sameRange } from "../lib/vocalRangeProposal";
+import { rangeShown } from "../lib/vocalRangeProposal";
 import { SightReadingStars } from "./SightReadingStars";
 
-interface ArtistRowProps {
-  artist: Artist;
-  onOpen: (artist: Artist) => void;
-  onMessage: (artist: Artist) => void;
-  onToggleStatus: (id: string, willBeActive: boolean) => void;
-  onResendActivation?: (artist: Artist) => void;
-  isResending?: boolean;
-  selectionMode?: boolean;
-  selected?: boolean;
-  onToggleSelect?: (id: string) => void;
-}
+/**
+ * The roster's figure columns, in `ArtistRow`'s `meta` order: the range ("E (D)
+ * – c¹ (e¹)" fits), the sight-reading stars. Both drop below `md`.
+ */
+export const ARTIST_COLUMNS: readonly RecordColumn[] = [
+  { width: "xl" },
+  { width: "sm" },
+];
 
-const stop = (event: React.SyntheticEvent) => event.stopPropagation();
+interface ArtistRowProps {
+  readonly artist: Artist;
+  readonly onOpen: (artist: Artist) => void;
+  readonly onMessage: (artist: Artist) => void;
+  readonly onEdit: (artist: Artist) => void;
+  readonly onToggleStatus: (id: string, willBeActive: boolean) => void;
+  readonly onResendActivation: (artist: Artist) => void;
+  readonly isResending?: boolean;
+  /** The list is in selection mode: a tap toggles the member instead of opening them. */
+  readonly selectionMode?: boolean;
+  readonly selected?: boolean;
+  readonly onToggleSelect?: (id: string) => void;
+}
 
 export const ArtistRow = React.memo(
   ({
     artist,
     onOpen,
     onMessage,
+    onEdit,
     onToggleStatus,
     onResendActivation,
     isResending = false,
     selectionMode = false,
     selected = false,
     onToggleSelect,
-  }: ArtistRowProps) => {
+  }: ArtistRowProps): React.JSX.Element => {
     const { t } = useTranslation();
+    const navigate = useNavigate();
     const notation = usePitchNotation();
+    // The act a menu item chose, run once the menu has handed focus back to
+    // its trigger, so the dialog or panel it opens returns focus there.
+    const chosen = useRef<(() => void) | null>(null);
 
-    const section = getSectionPresentation(artist.voice_type);
+    const fullName = `${artist.first_name} ${artist.last_name}`;
     const isActive = artist.is_active;
     const hasAccount = Boolean(artist.user);
     const accountPending = isAwaitingActivation(artist);
-    const withoutEmail = isWithoutEmail(artist);
-    const withoutPush = isWithoutPush(artist);
     const linkExpired = accountPending && artist.activation_link_expired === true;
-    const inviteSentAt = artist.activation_email_sent_at
-      ? formatLocalizedDateTime(artist.activation_email_sent_at, {
-          day: "2-digit",
-          month: "2-digit",
-          year: "numeric",
-          hour: "2-digit",
-          minute: "2-digit",
-        })
-      : null;
-    const fullName = `${artist.first_name} ${artist.last_name}`;
+    const withoutEmail = isWithoutEmail(artist);
+    const withoutPush = isActive && isWithoutPush(artist);
+    const detached = isActive && !hasAccount;
+
     const voiceLabel = artist.voice_type
       ? artistRoleLabel(t, artist.voice_type, artist.instrument)
-      : artist.voice_type_display || "";
-    const { assessed, proposed } = rangesOf(artist);
-    const agreed =
-      assessed !== null && proposed !== null && sameRange(assessed, proposed);
+      : artist.voice_type_display || null;
+    const inviteSent =
+      accountPending && artist.activation_email_sent_at
+        ? t("artists.row.invite_sent", "zaproszenie wysłane {{when}}", {
+            when: formatLocalizedDateTime(artist.activation_email_sent_at, {
+              day: "2-digit",
+              month: "2-digit",
+              year: "numeric",
+            }),
+          })
+        : null;
 
-    const activate = () =>
-      selectionMode ? onToggleSelect?.(artist.id) : onOpen(artist);
+    const noPushLabel = t("artists.card.no_push_title");
+    const flags =
+      accountPending || withoutEmail || detached || withoutPush || (isActive && artist.is_project_leader) ? (
+        <>
+          {accountPending && (
+            <Badge variant={linkExpired ? "danger" : "warning"} casing="natural">
+              {linkExpired
+                ? t("artists.card.link_expired", "Link wygasł")
+                : t("artists.card.pending_activation", "Nie aktywowano")}
+            </Badge>
+          )}
+          {withoutEmail && (
+            <Badge
+              variant="neutral"
+              casing="natural"
+              title={t(
+                "artists.card.no_email_title",
+                "Dodano bez adresu e-mail. Ta osoba nie ma dostępu do aplikacji i nie dostaje powiadomień, więc wszystko trzeba jej przekazywać osobiście.",
+              )}
+            >
+              {t("artists.card.no_email", "Bez e-maila")}
+            </Badge>
+          )}
+          {detached && (
+            <Badge variant="danger" casing="natural">
+              {t("artists.card.detached_account", "Konto odłączone")}
+            </Badge>
+          )}
+          {isActive && artist.is_project_leader && (
+            <Badge variant="neutral" casing="natural">
+              {t("projects.delegates.badge", "Asystent")}
+            </Badge>
+          )}
+          {withoutPush && (
+            <span role="img" aria-label={noPushLabel} title={noPushLabel} className="inline-flex text-ethereal-graphite">
+              <BellOff size={14} aria-hidden="true" />
+            </span>
+          )}
+        </>
+      ) : null;
+
+    const shown = rangeShown(artist);
+    const proposalTitle = t("artists.card.range_proposal_title", "Propozycja chórzysty");
+    const range = !shown ? null : shown.source === "conductor" ? (
+      <VocalRangeText range={shown.range} notation={notation} />
+    ) : (
+      <Text as="span" size="sm" color="muted" title={proposalTitle}>
+        <VocalRangeText range={shown.range} notation={notation} />
+        <span className="sr-only"> ({proposalTitle})</span>
+      </Text>
+    );
+
+    const choose = (act: () => void) => () => {
+      chosen.current = act;
+    };
 
     return (
-      <div
-        role="button"
-        tabIndex={0}
-        onClick={activate}
-        onKeyDown={onActivate(activate)}
-        aria-pressed={selectionMode ? selected : undefined}
-        aria-label={
-          selectionMode
-            ? t("artists.bulk.select_aria", {
-                defaultValue: "Zaznacz: {{name}}",
-                name: fullName,
-              })
-            : t("artists.card.open_profile_aria", {
-                defaultValue: "Otwórz profil: {{name}}",
-                name: fullName,
-              })
-        }
-        className={cn(
-          "group flex w-full cursor-pointer items-center gap-3 rounded-nested border border-hairline-strong bg-ethereal-alabaster px-4 py-3 transition-colors hover:border-ethereal-gold/30 hover:bg-ethereal-parchment/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40 focus-visible:ring-inset",
-          !isActive && "opacity-65 saturate-[0.85]",
-          selected && "border-ethereal-gold/60 bg-ethereal-gold/[0.04] ring-1 ring-ethereal-gold/40",
-        )}
-      >
-        {selectionMode && (
-          <Checkbox
-            size="md"
-            checked={selected}
-            readOnly
-            tabIndex={-1}
-            aria-hidden="true"
-            className="pointer-events-none"
+      <RecordRow
+        open={{ onOpen: () => onOpen(artist) }}
+        title={fullName}
+        voice="name"
+        leading={
+          <Avatar
+            src={artist.avatar_thumb_url}
+            name={fullName}
+            size="sm"
+            shape="rounded"
+            tone="neutral"
           />
-        )}
-
-        <Avatar
-          src={artist.avatar_thumb_url}
-          name={fullName}
-          size="sm"
-          shape="rounded"
-          tone="neutral"
-          className={cn(
-            "shrink-0 border shadow-glass-solid",
-            isActive
-              ? "border-ethereal-marble bg-ethereal-alabaster"
-              : "border-ethereal-incense/20 bg-ethereal-marble",
-          )}
-        />
-
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <Text weight="semibold" truncate className="text-ethereal-ink">
-              {fullName}
-            </Text>
-            <Badge
-              variant={
-                isActive && section ? ACCENT_BADGE[section.accent] : "neutral"
-              }
-              className="shrink-0"
-            >
-              {voiceLabel}
-            </Badge>
-            {isActive && artist.is_project_leader && (
-              <Badge variant={ACCENT_BADGE.gold} className="shrink-0">
-                {t("projects.delegates.badge", "Asystent")}
-              </Badge>
-            )}
-            {!isActive && (
-              <Badge variant="neutral" className="shrink-0">
-                {t("artists.card.archive_badge", "Archiwum")}
-              </Badge>
-            )}
-            {accountPending && (
-              <Badge
-                variant={linkExpired ? "danger" : "warning"}
-                className="shrink-0"
-              >
-                {linkExpired
-                  ? t("artists.card.link_expired", "Link wygasł")
-                  : t("artists.card.pending_activation", "Nie aktywowano")}
-              </Badge>
-            )}
-            {withoutEmail && (
-              <Badge
-                variant="neutral"
-                className="shrink-0"
-                title={t(
-                  "artists.card.no_email_title",
-                  "Dodano bez adresu e-mail. Ta osoba nie ma dostępu do aplikacji i nie dostaje powiadomień, więc wszystko trzeba jej przekazywać osobiście.",
-                )}
-              >
-                {t("artists.card.no_email", "Bez e-maila")}
-              </Badge>
-            )}
-            {isActive && !hasAccount && (
-              <span
-                className="shrink-0 text-ethereal-crimson/70"
-                title={t("artists.card.detached_account", "Konto odłączone")}
-              >
-                <UserX size={13} aria-hidden="true" />
-              </span>
-            )}
-            {isActive && withoutPush && (
-              <span
-                role="img"
-                className="shrink-0 text-ethereal-graphite/50"
-                title={t("artists.card.no_push_title")}
-                aria-label={t("artists.card.no_push_title")}
-              >
-                <BellOff size={13} aria-hidden="true" />
-              </span>
-            )}
-          </div>
-          <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5">
-            {artist.email && (
-              <Caption
-                color="muted"
-                className="inline-flex max-w-[16rem] items-center gap-1 truncate"
-              >
-                <Mail size={11} aria-hidden="true" />
-                <span className="truncate">{artist.email}</span>
-              </Caption>
-            )}
-            {artist.phone_number && (
-              <Caption color="muted" className="inline-flex items-center gap-1">
-                <Phone size={11} aria-hidden="true" />
-                {artist.phone_number}
-              </Caption>
-            )}
-            {/* When the invitation went out is a fact, not a second alarm — the
-                chip above already carries the tone. */}
-            {accountPending && inviteSentAt && (
-              <Caption
-                color="muted"
-                className="inline-flex items-center gap-1 tabular-nums"
-              >
-                <MailWarning size={11} aria-hidden="true" />
-                {t("artists.card.invite_sent_at", {
-                  defaultValue: "Wysłano {{when}}",
-                  when: inviteSentAt,
-                })}
-              </Caption>
-            )}
-          </div>
-        </div>
-
-        <div className="hidden shrink-0 items-center gap-4 md:flex">
-          {/* Whose range it is goes under it, not after it, so a French range
-              with both extremes and its mark does not widen this block and
-              squeeze the name. Only a proposal that differs shares its line
-              with the mark: three facts, two lines. */}
-          {(assessed || proposed) && (
-            <div className="flex flex-col items-end">
-              {assessed ? (
-                <Caption
-                  className="text-ethereal-graphite"
-                  title={t("artists.card.voice_range", "Skala Głosu")}
-                >
-                  <VocalRangeText range={assessed} notation={notation} />
-                </Caption>
-              ) : (
-                proposed && (
-                  <Caption
-                    color="muted"
-                    title={t("artists.card.range_proposal_title", "Propozycja chórzysty")}
-                  >
-                    <VocalRangeText range={proposed} notation={notation} />
-                  </Caption>
-                )
-              )}
-              {proposed && (
-                <Caption
-                  color="muted"
-                  title={
-                    agreed
-                      ? undefined
-                      : t("artists.card.range_proposal_title", "Propozycja chórzysty")
-                  }
-                >
-                  {assessed && !agreed && (
-                    <>
-                      <VocalRangeText range={proposed} notation={notation} />{" "}
-                    </>
-                  )}
-                  {agreed
-                    ? t("artists.card.range_agreed", "zgodna z propozycją")
-                    : t("artists.card.range_by_singer", "wg chórzysty")}
-                </Caption>
-              )}
-            </div>
-          )}
-          {artist.sight_reading_skill ? (
+        }
+        flags={flags}
+        facts={[voiceLabel, inviteSent]}
+        meta={[
+          range,
+          artist.sight_reading_skill ? (
             <SightReadingStars level={artist.sight_reading_skill} size={10} />
-          ) : null}
-        </div>
-
-        {!selectionMode && (
-          <div className="flex shrink-0 items-center gap-1">
-            {/* "What does this person see?" — only where there is a view to
-                see. An archived member and one with no account behind them
-                genuinely have none, and both already say so on this row. */}
-            {isActive && hasAccount && (
-              <Link
-                to={`/panel/artists/${artist.id}/preview`}
-                onClick={stop}
-                title={t("artists.card.preview_title", "Zobacz, co widzi ta osoba")}
-                aria-label={t("artists.card.preview_aria", {
-                  defaultValue: "Zobacz, co widzi {{name}}",
+          ) : null,
+        ]}
+        select={
+          selectionMode
+            ? {
+                scope: "row",
+                checked: selected,
+                label: t("artists.bulk.select_aria", {
+                  defaultValue: "Zaznacz: {{name}}",
                   name: fullName,
-                })}
-                className="flex h-8 w-8 items-center justify-center rounded-chip text-ethereal-graphite/60 transition-colors hover:bg-ethereal-gold/12 hover:text-ethereal-gold"
+                }),
+                onChange: () => onToggleSelect?.(artist.id),
+              }
+            : undefined
+        }
+        actions={
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="icon"
+                size="icon"
+                className={recordActionClass}
+                aria-label={t("artists.row.menu_aria", "Więcej: {{name}}", { name: fullName })}
               >
-                <Eye size={14} aria-hidden="true" />
-              </Link>
-            )}
-            {accountPending && onResendActivation && (
-              <button
-                type="button"
-                onClick={(event) => {
-                  stop(event);
-                  onResendActivation(artist);
-                }}
-                disabled={isResending}
-                title={t(
-                  "artists.card.resend_activation",
-                  "Wyślij ponownie zaproszenie",
-                )}
-                aria-label={t(
-                  "artists.card.resend_activation",
-                  "Wyślij ponownie zaproszenie",
-                )}
-                className={cn(
-                  "flex h-8 w-8 items-center justify-center rounded-chip transition-colors disabled:opacity-50",
-                  linkExpired
-                    ? "text-ethereal-crimson hover:bg-ethereal-crimson/10"
-                    : "text-ethereal-gold hover:bg-ethereal-gold/12",
-                )}
-              >
-                <Send size={14} aria-hidden="true" />
-              </button>
-            )}
-            {canReceiveMessages(artist) && (
-              <button
-                type="button"
-                onClick={(event) => {
-                  stop(event);
-                  onMessage(artist);
-                }}
-                title={t("artists.card.message_title", "Napisz wiadomość")}
-                aria-label={t("artists.card.message_title", "Napisz wiadomość")}
-                className="flex h-8 w-8 items-center justify-center rounded-chip text-ethereal-graphite/60 transition-colors hover:bg-ethereal-amethyst/10 hover:text-ethereal-amethyst"
-              >
-                <MessageSquare size={14} aria-hidden="true" />
-              </button>
-            )}
-            <button
-              type="button"
-              onClick={(event) => {
-                stop(event);
-                onToggleStatus(artist.id, !isActive);
+                <MoreHorizontal size={16} aria-hidden="true" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              onCloseAutoFocus={() => {
+                const act = chosen.current;
+                chosen.current = null;
+                act?.();
               }}
-              title={
-                isActive
-                  ? t("artists.card.archive_action", "Archiwum")
-                  : t("artists.card.activate_action", "Aktywuj")
-              }
-              aria-label={
-                isActive
-                  ? t("artists.card.archive_action", "Archiwum")
-                  : t("artists.card.activate_action", "Aktywuj")
-              }
-              className={cn(
-                "flex h-8 w-8 items-center justify-center rounded-chip transition-colors",
-                isActive
-                  ? "text-ethereal-graphite/50 hover:bg-ethereal-crimson/10 hover:text-ethereal-crimson"
-                  : "text-ethereal-sage hover:bg-ethereal-sage/10",
-              )}
             >
-              {isActive ? (
-                <Trash2 size={13} aria-hidden="true" />
-              ) : (
-                <CheckCircle2 size={14} aria-hidden="true" />
+              {canReceiveMessages(artist) && (
+                <DropdownMenuItem
+                  icon={<MessageSquare size={16} />}
+                  onSelect={choose(() => onMessage(artist))}
+                >
+                  {t("artists.row.message", "Napisz")}
+                </DropdownMenuItem>
               )}
-            </button>
-            <ChevronRight
-              size={16}
-              aria-hidden="true"
-              className="shrink-0 text-ethereal-graphite/50 transition-transform group-hover:translate-x-0.5 group-hover:text-ethereal-gold"
-            />
-          </div>
-        )}
-      </div>
+              {isActive && hasAccount && (
+                <DropdownMenuItem
+                  icon={<Eye size={16} />}
+                  onSelect={choose(() => navigate(`/panel/artists/${artist.id}/preview`))}
+                >
+                  {t("artists.row.preview", "Podgląd jak chórzysta")}
+                </DropdownMenuItem>
+              )}
+              {accountPending && (
+                <DropdownMenuItem
+                  icon={<Send size={16} />}
+                  disabled={isResending}
+                  onSelect={() => onResendActivation(artist)}
+                >
+                  {t("artists.row.resend", "Wyślij zaproszenie ponownie")}
+                </DropdownMenuItem>
+              )}
+              <DropdownMenuItem icon={<Pencil size={16} />} onSelect={choose(() => onEdit(artist))}>
+                {t("artists.row.edit", "Edytuj")}
+              </DropdownMenuItem>
+              {isActive ? (
+                <DropdownMenuItem
+                  destructive
+                  icon={<Archive size={16} />}
+                  onSelect={choose(() => onToggleStatus(artist.id, false))}
+                >
+                  {t("artists.row.archive", "Archiwizuj")}
+                </DropdownMenuItem>
+              ) : (
+                <DropdownMenuItem
+                  icon={<ArchiveRestore size={16} />}
+                  onSelect={choose(() => onToggleStatus(artist.id, true))}
+                >
+                  {t("artists.row.restore", "Przywróć")}
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        }
+      />
     );
   },
-  (previous, next) =>
-    previous.artist === next.artist &&
-    previous.selectionMode === next.selectionMode &&
-    previous.selected === next.selected &&
-    previous.isResending === next.isResending &&
-    previous.onOpen === next.onOpen &&
-    previous.onMessage === next.onMessage &&
-    previous.onToggleStatus === next.onToggleStatus &&
-    previous.onResendActivation === next.onResendActivation &&
-    previous.onToggleSelect === next.onToggleSelect,
 );
 
 ArtistRow.displayName = "ArtistRow";

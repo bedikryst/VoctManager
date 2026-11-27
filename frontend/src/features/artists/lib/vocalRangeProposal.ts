@@ -1,13 +1,13 @@
 /**
  * @file vocalRangeProposal.ts
  * @description The two ranges a singer can carry, as MIDI notes: the
- * conductor's assessment and the singer's own proposal. Baza Artystów shows
- * both (`rangesOf`); Obsada has one line per singer and shows the assessment
- * whenever there is one, else the proposal (`rangeShown`). Every surface marks
+ * conductor's assessment and the singer's own proposal. The dossier shows both
+ * (`rangesOf`); the roster's row and Obsada have one line per singer and show
+ * the assessment whenever there is one, else the proposal. Every surface marks
  * a proposal as the singer's, so it is never read as the conductor's verdict.
  *
  * The roster's range filter (`matchesRangeFilter`) lives here too, so the
- * filter and the lines on screen answer from the same two reads.
+ * filter, its quick chip and the lines on screen answer from the same reads.
  *
  * Both arrive only on the manager's detailed payload. Anyone else gets
  * neither, and every helper answers null.
@@ -62,9 +62,22 @@ export const rangesOf = (artist: Artist | undefined): VocalRanges => ({
   proposed: proposalOf(artist),
 });
 
-/** `all` keeps everyone; the other three keep singers only, since a player
- *  has no range to propose. `differs` needs both ranges and a note apart. */
-export type RangeFilter = "all" | "proposed" | "missing" | "differs";
+/** `all` keeps everyone; the others keep singers only, since a player has no
+ *  range to propose. `awaiting` is a proposal the conductor has not taken: no
+ *  assessment yet, or one a note apart. `differs` needs both ranges and a note
+ *  apart. */
+export type RangeFilter = "all" | "proposed" | "awaiting" | "missing" | "differs";
+
+export const RANGE_FILTERS: readonly RangeFilter[] = [
+  "all",
+  "proposed",
+  "awaiting",
+  "missing",
+  "differs",
+];
+
+export const isRangeFilter = (value: string | null): value is RangeFilter =>
+  (RANGE_FILTERS as readonly (string | null)[]).includes(value);
 
 export const matchesRangeFilter = (artist: Artist, filter: RangeFilter): boolean => {
   if (filter === "all") return true;
@@ -72,6 +85,9 @@ export const matchesRangeFilter = (artist: Artist, filter: RangeFilter): boolean
   const { assessed, proposed } = rangesOf(artist);
   if (filter === "proposed") return proposed !== null;
   if (filter === "missing") return proposed === null;
+  if (filter === "awaiting") {
+    return proposed !== null && (assessed === null || !sameRange(assessed, proposed));
+  }
   return assessed !== null && proposed !== null && !sameRange(assessed, proposed);
 };
 

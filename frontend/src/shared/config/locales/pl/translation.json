@@ -1159,65 +1159,39 @@
       "selected_count": "{{n}} zaznaczono"
     },
     "card": {
-      "activate_action": "Aktywuj",
-      "archive_action": "Archiwum",
-      "archive_badge": "Archiwum",
       "detached_account": "Konto odłączone",
-      "details": "Dossier",
       "edit": "Edytuj",
       "invite_sent_at": "Wysłano {{when}}",
       "link_expired": "Link wygasł",
-      "message": "Napisz",
       "message_title": "Napisz wiadomość",
       "no_email": "Bez e-maila",
       "no_email_title": "Dodano bez adresu e-mail. Ta osoba nie ma dostępu do aplikacji i nie dostaje powiadomień, więc wszystko trzeba jej przekazywać osobiście.",
       "no_push_title": "Żadne urządzenie tej osoby nie odbiera powiadomień push. Przypomnienia i odpowiedzi na zgłoszenia dostaje na razie mailem, o nowych materiałach dowie się dopiero w aplikacji.",
-      "no_phone": "Brak telefonu",
-      "open_profile_aria": "Otwórz profil: {{name}}",
       "pending_activation": "Nie aktywowano",
       "resend_activation": "Wyślij ponownie zaproszenie",
-      "resend_activation_short": "Wyślij ponownie",
-      "sight_reading": "A Vista",
       "sight_reading_title": "Czytanie a vista: {{level}}/5",
       "unverified": "Brak weryfikacji",
-      "voice_range": "Skala Głosu",
       "range_by_singer": "wg chórzysty",
       "range_proposal_title": "Propozycja chórzysty",
-      "range_agreed": "zgodna z propozycją",
       "preview_title": "Zobacz, co widzi ta osoba",
       "preview_aria": "Zobacz, co widzi {{name}}"
     },
     "dashboard": {
       "activate_desc": "Artysta odzyska możliwość logowania się do platformy i będzie widoczny w obsadzie nowych projektów.",
       "activate_title": "Aktywować profil?",
-      "active_members": "w zespole",
-      "add_artist": "Dodaj Artystę",
+      "add_artist": "Dodaj artystę",
       "add_search_term": "Dodaj: {{term}}",
-      "all_sections": "Wszystkie sekcje",
       "all_voices": "Wszystkie głosy",
       "archive_desc": "Artysta utraci dostęp do panelu. Jego dane historyczne w przeszłych projektach zostaną zachowane.",
       "archive_title": "Zarchiwizować artystę?",
-      "balance_title": "Balans zespołu",
       "empty_desc_default": "Zmień kryteria wyszukiwania lub dodaj nową osobę do bazy.",
       "empty_desc_search": "Nie znaleźliśmy chórzysty \"{{term}}\". Możesz dodać go teraz do bazy.",
       "empty_filtered_title": "Nikt nie pasuje do filtrów",
       "empty_roster_title": "Twój zespół jest pusty",
-      "empty_title": "Brak wyników",
-      "pending_activation": "bez aktywacji",
-      "pending_activation_hint": "Aktywni artyści, którzy nie aktywowali jeszcze konta na platformie.",
-      "without_push": "bez powiadomień push",
-      "without_push_hint": "Osoby z aktywnym kontem, których żadne urządzenie nie odbiera powiadomień push. Dopóki tego nie włączą, przypomnienia i odpowiedzi na zgłoszenia dostają mailem, a o nowych materiałach dowiadują się dopiero w aplikacji.",
-      "search_placeholder": "Szukaj po nazwisku...",
-      "show_all": "Pokaż wszystkich",
-      "subtitle": "Zasoby Ludzkie",
+      "search_placeholder": "Szukaj po nazwisku…",
       "sync_warning_desc": "Nie udało się pobrać danych o artystach.",
       "sync_warning_title": "Ostrzeżenie",
-      "title_highlight": "Zespołem",
-      "title_prefix": "Zarządzanie",
-      "archived_members": "w archiwum",
-      "archived_members_hint": "Zarchiwizowani śpiewacy nadal są na liście poniżej, na jej końcu — sekcje ich nie liczą.",
-      "range_proposals": "z {{total}} propozycji skali",
-      "range_proposals_hint": "Ilu aktywnych chórzystów zaproponowało własną skalę głosu. Bez instrumentalistów, archiwum i osób poza aplikacją."
+      "title": "Baza artystów"
     },
     "dossier": {
       "acceptance": "Akceptacja zaproszeń",
@@ -1267,7 +1241,8 @@
       },
       "toast": {
         "merged": "Scalono z pozycją: {{name}}"
-      }
+      },
+      "summary": "Możliwe duplikaty: {{count}}"
     },
     "editor": {
       "active_access_desc": "Zablokuje logowanie w przypadku odznaczenia.",
@@ -1348,16 +1323,18 @@
     },
     "toolbar": {
       "select_mode": "Zaznacz wielu",
-      "sort_label": "Sortuj",
+      "sort_label": "Kolejność",
       "sort_name": "Nazwisko (A–Z)",
       "sort_section": "Sekcja (SATB)",
       "sort_skill": "Czytanie a vista",
       "range_label": "Skala głosu",
-      "range_all": "Skala głosu: wszyscy",
+      "range_all": "Wszyscy",
       "range_proposed": "Z propozycją skali",
       "range_missing": "Bez propozycji skali",
       "range_differs": "Propozycja inna niż ocena",
-      "view_label": "Widok"
+      "range_awaiting": "Propozycja czeka na ocenę",
+      "filters": "Filtry",
+      "search_token": "Fraza: \"{{term}}\""
     },
     "validation": {
       "first_name_required": "Podaj imię.",
@@ -1365,6 +1342,36 @@
       "invalid_email": "Podaj poprawny adres e-mail.",
       "last_name_required": "Podaj nazwisko.",
       "voice_type_required": "Wybierz rodzaj głosu."
+    },
+    "tabs": {
+      "aria": "Sekcje zespołu"
+    },
+    "list_aria": "Członkowie zespołu",
+    "census": {
+      "people_one": "osoba",
+      "people_few": "osoby",
+      "people_many": "osób",
+      "people_other": "osoby",
+      "narrowed": "{{visible}} z {{total}}"
+    },
+    "quick": {
+      "pending": "{{count}} bez aktywacji",
+      "range_one": "{{count}} skala do oceny",
+      "range_few": "{{count}} skale do oceny",
+      "range_many": "{{count}} skal do oceny",
+      "range_other": "{{count}} skali do oceny",
+      "archived": "{{count}} w archiwum",
+      "no_push": "{{count}} bez powiadomień"
+    },
+    "row": {
+      "invite_sent": "zaproszenie wysłane {{when}}",
+      "menu_aria": "Więcej: {{name}}",
+      "message": "Napisz",
+      "preview": "Podgląd jak chórzysta",
+      "resend": "Wyślij zaproszenie ponownie",
+      "edit": "Edytuj",
+      "archive": "Archiwizuj",
+      "restore": "Przywróć"
     }
   },
   "auth": {

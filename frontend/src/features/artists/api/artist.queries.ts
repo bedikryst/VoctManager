@@ -87,10 +87,10 @@ export const useToggleArtistStatus = () => {
 /**
  * Re-sends the account-activation invite to an artist who never activated.
  * A successful resend stamps a fresh `activation_email_sent_at` server-side, so
- * we refetch the roster to surface that new send time on the card. The
+ * we refetch the roster to surface that new send time on the row. The
  * `account_already_active` rejection is refetched too: it means the artist
  * activated in the gap since the roster was fetched, so our cached
- * `account_activated` is stale — refetching flips the card "pending" → "active".
+ * `account_activated` is stale — refetching flips the row "pending" → "active".
  */
 export const useResendActivation = () => {
   const queryClient = useQueryClient();

@@ -143,8 +143,12 @@ describe("matchesRangeFilter", () => {
     expect(kept("differs")).toEqual([differs]);
   });
 
+  it("keeps a proposal the conductor has not taken, unassessed or a note apart", () => {
+    expect(kept("awaiting")).toEqual([proposed, differs]);
+  });
+
   it("never keeps a player once a filter is set", () => {
-    const filters: RangeFilter[] = ["proposed", "missing", "differs"];
+    const filters: RangeFilter[] = ["proposed", "awaiting", "missing", "differs"];
     for (const filter of filters) {
       expect(matchesRangeFilter(player, filter)).toBe(false);
       expect(matchesRangeFilter(playerWithRanges, filter)).toBe(false);
