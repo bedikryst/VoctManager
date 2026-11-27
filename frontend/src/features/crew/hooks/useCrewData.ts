@@ -1,8 +1,12 @@
 /**
  * @file useCrewData.ts
- * @description Operational orchestrator for the Crew domain — derives metrics, filter state,
- * active filter chips, and deletion lifecycle on top of the React Query cache.
- * Server state stays delegated to `crew.queries`; this hook owns purely UI logic.
+ * @description The crew list's filter state, its client-side filtering and
+ * sorting, the tokens for the filters in use and the deletion lifecycle, on
+ * top of the React Query cache. Server state stays delegated to
+ * `crew.queries`; this hook owns purely UI logic.
+ *
+ * One quick filter, "bez pełnego kontaktu": a collaborator missing an e-mail
+ * or a phone is the gap this list is opened to fill. Its count is list-wide.
  * @module features/crew/hooks/useCrewData
  */
 
@@ -13,80 +17,47 @@ import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
 
 import { foldDiacritics } from "@/shared/lib/text";
-import type { Collaborator, CollaboratorSpecialty } from "@/shared/types";
+import type { FilterToken } from "@/shared/ui/composites/FilterTokens";
+import type { Collaborator } from "@/shared/types";
 
 import { useCrewMembers, useDeleteCrewMember } from "../api/crew.queries";
-import {
-  getCrewSpecialtyOption,
-  getCrewSpecialtyOptions,
-  getCrewSpecialtyOrder,
-} from "../constants/crewSpecialties";
+import { getCrewSpecialtyOption, getCrewSpecialtyOrder } from "../constants/crewSpecialties";
 import type { CrewContactCompleteness } from "../types/crew.dto";
 
 export type CrewSort = "name" | "specialty" | "company";
-export type CrewView = "grid" | "list";
-
-const VIEW_STORAGE_KEY = "voct:crew:view";
-
-const readStoredView = (): CrewView => {
-  if (typeof window === "undefined") return "grid";
-  try {
-    const stored = window.localStorage.getItem(VIEW_STORAGE_KEY);
-    return stored === "list" || stored === "grid" ? stored : "grid";
-  } catch {
-    return "grid";
-  }
-};
-
-export interface CrewActiveFilter {
-  id: string;
-  label: string;
-  clear: () => void;
-}
-
-export interface CrewMetrics {
-  totalPeople: number;
-  withEmail: number;
-  withPhone: number;
-  withFullContact: number;
-  uniqueCompanies: number;
-  uniqueSpecialties: number;
-  topSpecialty: {
-    value: CollaboratorSpecialty;
-    count: number;
-  } | null;
-}
 
 export interface CrewDeletionTarget {
   id: string;
   fullName: string;
 }
 
+const hasEmail = (person: Collaborator): boolean => Boolean(person.email?.trim());
+const hasPhone = (person: Collaborator): boolean => Boolean(person.phone_number?.trim());
+
+/** A collaborator missing an e-mail or a phone: the quick filter. */
+export const lacksFullContact = (person: Collaborator): boolean =>
+  !hasEmail(person) || !hasPhone(person);
+
 const matchesContactFilter = (
   person: Collaborator,
   filter: CrewContactCompleteness,
 ): boolean => {
-  const hasEmail = Boolean(person.email && person.email.trim());
-  const hasPhone = Boolean(person.phone_number && person.phone_number.trim());
-
   switch (filter) {
     case "WITH_EMAIL":
-      return hasEmail;
+      return hasEmail(person);
     case "WITH_PHONE":
-      return hasPhone;
+      return hasPhone(person);
     case "FULL_CONTACT":
-      return hasEmail && hasPhone;
-    case "MISSING_CONTACT":
-      return !hasEmail || !hasPhone;
+      return hasEmail(person) && hasPhone(person);
     case "ALL":
     default:
       return true;
   }
 };
 
-const getContactFilterLabel = (
+export const getContactFilterLabel = (
   t: TFunction,
-  filter: CrewContactCompleteness,
+  filter: Exclude<CrewContactCompleteness, "ALL">,
 ): string => {
   switch (filter) {
     case "WITH_EMAIL":
@@ -94,12 +65,8 @@ const getContactFilterLabel = (
     case "WITH_PHONE":
       return t("crew.contact_filters.with_phone", "Z telefonem");
     case "FULL_CONTACT":
-      return t("crew.contact_filters.full_contact", "Pełny kontakt");
-    case "MISSING_CONTACT":
-      return t("crew.contact_filters.missing_contact", "Niekompletny kontakt");
-    case "ALL":
     default:
-      return t("crew.contact_filters.all", "Dowolny kontakt");
+      return t("crew.contact_filters.full_contact", "Pełny kontakt");
   }
 };
 
@@ -112,29 +79,16 @@ export const useCrewData = () => {
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [specialtyFilter, setSpecialtyFilter] = useState<string>("");
   const [companyFilter, setCompanyFilter] = useState<string>("");
-  const [contactFilter, setContactFilter] =
-    useState<CrewContactCompleteness>("ALL");
+  const [contactFilter, setContactFilter] = useState<CrewContactCompleteness>("ALL");
+  const [onlyMissingContact, setOnlyMissingContact] = useState<boolean>(false);
   const [sortBy, setSortBy] = useState<CrewSort>("name");
-  const [viewMode, setViewModeState] = useState<CrewView>(readStoredView);
-
-  const setViewMode = useCallback((next: CrewView) => {
-    setViewModeState(next);
-    try {
-      window.localStorage.setItem(VIEW_STORAGE_KEY, next);
-    } catch {
-      /* storage unavailable — keep in-memory value */
-    }
-  }, []);
 
   const [isPanelOpen, setIsPanelOpen] = useState<boolean>(false);
   const [editingPerson, setEditingPerson] = useState<Collaborator | null>(null);
   const [initialSearchContext, setInitialSearchContext] = useState<string>("");
-  const [personToDelete, setPersonToDelete] =
-    useState<CrewDeletionTarget | null>(null);
+  const [personToDelete, setPersonToDelete] = useState<CrewDeletionTarget | null>(null);
 
-  const closeResetTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
-    null,
-  );
+  const closeResetTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Folded, so "sniadecki" finds Śniadecki — the one fold, shared with every
   // other search in the panel.
@@ -148,11 +102,17 @@ export const useCrewData = () => {
             .map((person) => person.company_name?.trim())
             .filter((name): name is string => Boolean(name)),
         ),
-      ).sort((left, right) =>
-        left.localeCompare(right, undefined, { sensitivity: "base" }),
-      ),
+      ).sort((left, right) => left.localeCompare(right, undefined, { sensitivity: "base" })),
     [crew],
   );
+
+  const missingContactCount = useMemo(() => crew.filter(lacksFullContact).length, [crew]);
+
+  // The chip is gone once nobody lacks a contact, so nothing else could switch
+  // it off, and the list behind it would stay empty.
+  if (onlyMissingContact && !isLoading && missingContactCount === 0) {
+    setOnlyMissingContact(false);
+  }
 
   const displayCrew = useMemo(() => {
     const sortName = (person: Collaborator) =>
@@ -162,26 +122,18 @@ export const useCrewData = () => {
       const haystack = foldDiacritics(
         `${person.first_name} ${person.last_name} ${person.company_name ?? ""} ${person.email ?? ""}`,
       );
-      const matchesSearch =
-        normalizedSearchTerm.length === 0 ||
-        haystack.includes(normalizedSearchTerm);
-      const matchesSpecialty = specialtyFilter
-        ? person.specialty === specialtyFilter
-        : true;
-      const matchesCompany = companyFilter
-        ? person.company_name?.trim() === companyFilter
-        : true;
-      const matchesContact = matchesContactFilter(person, contactFilter);
-
       return (
-        matchesSearch && matchesSpecialty && matchesCompany && matchesContact
+        (normalizedSearchTerm.length === 0 || haystack.includes(normalizedSearchTerm)) &&
+        (!specialtyFilter || person.specialty === specialtyFilter) &&
+        (!companyFilter || person.company_name?.trim() === companyFilter) &&
+        matchesContactFilter(person, contactFilter) &&
+        (!onlyMissingContact || lacksFullContact(person))
       );
     });
 
     return filtered.sort((a, b) => {
       if (sortBy === "specialty") {
-        const bySpecialty =
-          getCrewSpecialtyOrder(a.specialty) - getCrewSpecialtyOrder(b.specialty);
+        const bySpecialty = getCrewSpecialtyOrder(a.specialty) - getCrewSpecialtyOrder(b.specialty);
         if (bySpecialty !== 0) return bySpecialty;
       } else if (sortBy === "company") {
         const byCompany = (a.company_name?.trim() || "￿").localeCompare(
@@ -191,134 +143,51 @@ export const useCrewData = () => {
         );
         if (byCompany !== 0) return byCompany;
       }
-      return sortName(a).localeCompare(sortName(b), undefined, {
-        sensitivity: "base",
-      });
+      return sortName(a).localeCompare(sortName(b), undefined, { sensitivity: "base" });
     });
-  }, [
-    crew,
-    normalizedSearchTerm,
-    specialtyFilter,
-    companyFilter,
-    contactFilter,
-    sortBy,
-  ]);
+  }, [crew, normalizedSearchTerm, specialtyFilter, companyFilter, contactFilter, onlyMissingContact, sortBy]);
 
-  const specialtyCounts = useMemo(() => {
-    const counts: Record<CollaboratorSpecialty, number> = {
-      SOUND: 0,
-      LIGHT: 0,
-      VISUALS: 0,
-      INSTRUMENT: 0,
-      LOGISTICS: 0,
-      OTHER: 0,
-    };
-    for (const person of crew) {
-      if (person.specialty in counts) counts[person.specialty] += 1;
-    }
-    return counts;
-  }, [crew]);
+  /** Filters in the "Filtry" panel, for the count on its button. */
+  const panelFilterCount =
+    (specialtyFilter ? 1 : 0) + (companyFilter ? 1 : 0) + (contactFilter !== "ALL" ? 1 : 0);
 
-  const metrics: CrewMetrics = useMemo(() => {
-    const specialtyCounts = new Map<CollaboratorSpecialty, number>();
-    let withEmail = 0;
-    let withPhone = 0;
-    let withFullContact = 0;
+  const hasActiveFilters = Boolean(normalizedSearchTerm) || panelFilterCount > 0 || onlyMissingContact;
 
-    for (const person of crew) {
-      const hasEmail = Boolean(person.email && person.email.trim());
-      const hasPhone = Boolean(
-        person.phone_number && person.phone_number.trim(),
-      );
-      if (hasEmail) withEmail += 1;
-      if (hasPhone) withPhone += 1;
-      if (hasEmail && hasPhone) withFullContact += 1;
-      specialtyCounts.set(
-        person.specialty,
-        (specialtyCounts.get(person.specialty) ?? 0) + 1,
-      );
-    }
-
-    let topSpecialty: CrewMetrics["topSpecialty"] = null;
-    for (const [value, count] of specialtyCounts.entries()) {
-      if (!topSpecialty || count > topSpecialty.count) {
-        topSpecialty = { value, count };
-      }
-    }
-
-    return {
-      totalPeople: crew.length,
-      withEmail,
-      withPhone,
-      withFullContact,
-      uniqueCompanies: availableCompanies.length,
-      uniqueSpecialties: specialtyCounts.size,
-      topSpecialty,
-    };
-  }, [crew, availableCompanies.length]);
-
-  const hasActiveFilters = Boolean(
-    normalizedSearchTerm ||
-      specialtyFilter ||
-      companyFilter ||
-      contactFilter !== "ALL",
-  );
-
-  const activeFilters = useMemo<CrewActiveFilter[]>(() => {
-    const tokens: CrewActiveFilter[] = [];
+  const activeFilters = useMemo<FilterToken[]>(() => {
+    const tokens: FilterToken[] = [];
 
     if (normalizedSearchTerm) {
       tokens.push({
         id: "search",
-        label: t("crew.filters.search_token", 'Fraza: "{{term}}"', {
-          term: searchTerm.trim(),
-        }),
+        label: t("crew.filters.search_token", 'Fraza: "{{term}}"', { term: searchTerm.trim() }),
         clear: () => setSearchTerm(""),
       });
     }
-
     if (specialtyFilter) {
-      const option = getCrewSpecialtyOption(t, specialtyFilter);
       tokens.push({
         id: "specialty",
         label: t("crew.filters.specialty_token", "Specjalizacja: {{label}}", {
-          label: option.label,
+          label: getCrewSpecialtyOption(t, specialtyFilter).label,
         }),
         clear: () => setSpecialtyFilter(""),
       });
     }
-
     if (companyFilter) {
       tokens.push({
         id: "company",
-        label: t("crew.filters.company_token", "Firma: {{label}}", {
-          label: companyFilter,
-        }),
+        label: t("crew.filters.company_token", "Firma: {{label}}", { label: companyFilter }),
         clear: () => setCompanyFilter(""),
       });
     }
-
     if (contactFilter !== "ALL") {
       tokens.push({
         id: "contact",
-        label: t("crew.filters.contact_token", "Kontakt: {{label}}", {
-          label: getContactFilterLabel(t, contactFilter),
-        }),
+        label: getContactFilterLabel(t, contactFilter),
         clear: () => setContactFilter("ALL"),
       });
     }
-
     return tokens;
-  }, [
-    companyFilter,
-    contactFilter,
-    normalizedSearchTerm,
-    searchTerm,
-    specialtyFilter,
-    t,
-  ]);
-
-  const specialtyOptions = useMemo(() => getCrewSpecialtyOptions(t), [t]);
+  }, [companyFilter, contactFilter, normalizedSearchTerm, searchTerm, specialtyFilter, t]);
 
   const resetFilters = useCallback(() => {
     setSearchTerm("");
@@ -327,18 +196,15 @@ export const useCrewData = () => {
     setContactFilter("ALL");
   }, []);
 
-  const openPanel = useCallback(
-    (person: Collaborator | null = null, searchContext: string = "") => {
-      if (closeResetTimeoutRef.current) {
-        clearTimeout(closeResetTimeoutRef.current);
-        closeResetTimeoutRef.current = null;
-      }
-      setEditingPerson(person);
-      setInitialSearchContext(searchContext);
-      setIsPanelOpen(true);
-    },
-    [],
-  );
+  const openPanel = useCallback((person: Collaborator | null = null, searchContext: string = "") => {
+    if (closeResetTimeoutRef.current) {
+      clearTimeout(closeResetTimeoutRef.current);
+      closeResetTimeoutRef.current = null;
+    }
+    setEditingPerson(person);
+    setInitialSearchContext(searchContext);
+    setIsPanelOpen(true);
+  }, []);
 
   const closePanel = useCallback(() => {
     setIsPanelOpen(false);
@@ -383,10 +249,9 @@ export const useCrewData = () => {
 
     try {
       await deleteMutation.mutateAsync(personToDelete.id);
-      toast.success(
-        t("crew.toast.delete_success", "Osoba została usunięta z bazy."),
-        { id: toastId },
-      );
+      toast.success(t("crew.toast.delete_success", "Osoba została usunięta z bazy."), {
+        id: toastId,
+      });
     } catch (error) {
       toastApiError(error, t, {
         id: toastId,
@@ -408,12 +273,11 @@ export const useCrewData = () => {
 
     // Derived list & metadata
     displayCrew,
-    metrics,
-    specialtyCounts,
     availableCompanies,
-    specialtyOptions,
+    missingContactCount,
     activeFilters,
     hasActiveFilters,
+    panelFilterCount,
 
     // Filter state
     searchTerm,
@@ -424,10 +288,10 @@ export const useCrewData = () => {
     setCompanyFilter,
     contactFilter,
     setContactFilter,
+    onlyMissingContact,
+    setOnlyMissingContact,
     sortBy,
     setSortBy,
-    viewMode,
-    setViewMode,
     resetFilters,
 
     // Editor lifecycle

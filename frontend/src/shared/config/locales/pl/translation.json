@@ -2787,28 +2787,9 @@
     }
   },
   "crew": {
-    "bar": {
-      "all": "Wszyscy",
-      "companies": "firm",
-      "email_pct": "e-mail {{n}}%",
-      "phone_pct": "tel. {{n}}%",
-      "title": "Specjalizacje",
-      "email_unknown": "e-mail —",
-      "phone_unknown": "tel. —"
-    },
-    "card": {
-      "btn_delete": "Usuń",
-      "btn_edit": "Edytuj",
-      "company": "Firma / Marka",
-      "no_company": "Brak danych",
-      "no_email": "Brak e-mail",
-      "no_phone": "Brak telefonu",
-      "open_aria": "Edytuj: {{name}}"
-    },
     "contact_filters": {
       "all": "Dowolny kontakt",
       "full_contact": "Pełny kontakt",
-      "missing_contact": "Niekompletny kontakt",
       "with_email": "Z e-mailem",
       "with_phone": "Z telefonem"
     },
@@ -2821,9 +2802,7 @@
       "in_view_few": "{{count}} w widoku",
       "in_view_many": "{{count}} w widoku",
       "in_view_other": "{{count}} w widoku",
-      "subtitle": "Logistyka",
-      "title": "Ekipa",
-      "title_highlight": "Techniczna"
+      "title": "Ekipa techniczna"
     },
     "delete_modal": {
       "desc": "Zniknie ona bezpowrotnie ze spisu. Nie można usunąć osób powiązanych już z koncertami (w takim przypadku zaktualizuj jej dane).",
@@ -2853,7 +2832,6 @@
       "filters_blocked": "Aktualne filtry ukrywają całą bazę. Wyczyść je, aby wrócić do pełnego spisu.",
       "search_results": "Nie znaleźliśmy osoby ani firmy \"{{term}}\". Możesz dodać nowy wpis lub usunąć część filtrów.",
       "start_building": "Rozpocznij budowę zespołu produkcyjnego, dodając pierwszego współpracownika do bazy.",
-      "title": "Brak osób w bieżącym widoku",
       "filtered_title": "Nikt nie pasuje do filtrów",
       "pristine_title": "Twoja baza ekipy jest pusta"
     },
@@ -2869,16 +2847,14 @@
       "company_label": "Firma / Marka",
       "company_token": "Firma: {{label}}",
       "contact_label": "Stan kontaktu",
-      "contact_token": "Kontakt: {{label}}",
       "heading": "Filtry Ekipy",
       "no_active_filters": "Brak aktywnych filtrów",
       "no_filters_message": "Brak aktywnych filtrów. Widok pokazuje pełną bazę współpracowników.",
       "search_label": "Wyszukiwanie",
-      "search_placeholder": "Szukaj po nazwisku, firmie lub e-mailu...",
+      "search_placeholder": "Szukaj osoby lub firmy…",
       "search_token": "Fraza: \"{{term}}\"",
       "specialty_label": "Specjalizacja",
-      "specialty_token": "Specjalizacja: {{label}}",
-      "summary": "{{visible}} z {{total}} osób w aktualnym widoku."
+      "specialty_token": "Specjalizacja: {{label}}"
     },
     "hero": {
       "badge": "Operacje Logistyczne",
@@ -2940,10 +2916,27 @@
     },
     "toolbar": {
       "sort_company": "Firma",
-      "sort_label": "Sortuj",
+      "sort_label": "Kolejność",
       "sort_name": "Nazwisko (A–Z)",
       "sort_specialty": "Specjalizacja",
-      "view_label": "Widok"
+      "filters": "Filtry"
+    },
+    "census": {
+      "people_one": "osoba",
+      "people_few": "osoby",
+      "people_many": "osób",
+      "people_other": "osoby",
+      "narrowed": "{{visible}} z {{total}}"
+    },
+    "quick": {
+      "missing_contact": "{{count}} bez pełnego kontaktu"
+    },
+    "list_aria": "Ekipa techniczna",
+    "row": {
+      "menu_aria": "Więcej: {{name}}",
+      "call": "Zadzwoń",
+      "email": "Napisz e-mail",
+      "delete": "Usuń"
     }
   },
   "dashboard": {

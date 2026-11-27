@@ -1,41 +1,37 @@
 /**
  * @file CrewManagement.tsx
- * @description External-collaborators roster. Specialty-balance strip (read +
- * filter) → search / contact / sort / density toolbar → grid or list of
- * click-to-open cards. Mirrors the artists roster; collaborators have no
- * accounts, so there is no dossier or bulk lifecycle — editing is the primary
- * open action.
+ * @description The crew: the external collaborators a production calls on,
+ * as a list whose rows open the editor panel. Collaborators have no accounts,
+ * so there is no dossier and no bulk lifecycle; editing is the open action,
+ * and contact lives in each row's menu.
+ *
+ * The title with "Dodaj osobę", then the toolbar: the search, "Filtry" with
+ * the specialty, the company, the contact filter and the order, and the
+ * census line with the one quick filter, the collaborators without a full
+ * contact.
  * @module features/crew/CrewManagement
  */
 
-import React, { useDeferredValue, useEffect } from "react";
+import React, { useDeferredValue, useEffect, useMemo } from "react";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
-import { Plus, RotateCcw, UsersRound } from "lucide-react";
+import { RotateCcw, UserPlus, UsersRound } from "lucide-react";
 
 import { ConfirmModal } from "@/shared/ui/composites/ConfirmModal";
-import { FilterTokens } from "@/shared/ui/composites/FilterTokens";
+import { FilterToggle } from "@/shared/ui/composites/FilterTokens";
+import { ListCensus, ToolbarButton } from "@/shared/ui/composites/ListToolbar";
 import { PageHeader } from "@/shared/ui/composites/PageHeader";
+import { RecordList } from "@/shared/ui/composites/RecordList";
 import { StatePanel } from "@/shared/ui/composites/StatePanel";
 import { Button } from "@/shared/ui/primitives/Button";
-import { Caption } from "@/shared/ui/primitives/typography";
 import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
 import { PageTransition } from "@/shared/ui/kinematics/PageTransition";
-import {
-  StaggeredBentoContainer,
-  StaggeredBentoItem,
-} from "@/shared/ui/kinematics/StaggeredBentoGrid";
 
-import { CrewCard } from "./components/CrewCard";
-import { CrewRow } from "./components/CrewRow";
 import { CrewEditorPanel } from "./components/CrewEditorPanel";
-import { CrewSpecialtyBar } from "./components/CrewSpecialtyBar";
+import { CrewRow } from "./components/CrewRow";
 import { CrewToolbar } from "./components/CrewToolbar";
+import { getCrewSpecialtyOptions } from "./constants/crewSpecialties";
 import { useCrewData } from "./hooks/useCrewData";
-
-/** `null` where there is nobody to compute a rate over — see the strip header. */
-const formatCoverage = (value: number, total: number): number | null =>
-  total === 0 ? null : Math.round((value / total) * 100);
 
 export default function CrewManagement(): React.JSX.Element {
   const { t } = useTranslation();
@@ -44,12 +40,11 @@ export default function CrewManagement(): React.JSX.Element {
     isError,
     crew,
     displayCrew,
-    metrics,
-    specialtyCounts,
     availableCompanies,
-    specialtyOptions,
+    missingContactCount,
     activeFilters,
     hasActiveFilters,
+    panelFilterCount,
     searchTerm,
     setSearchTerm,
     specialtyFilter,
@@ -58,10 +53,10 @@ export default function CrewManagement(): React.JSX.Element {
     setCompanyFilter,
     contactFilter,
     setContactFilter,
+    onlyMissingContact,
+    setOnlyMissingContact,
     sortBy,
     setSortBy,
-    viewMode,
-    setViewMode,
     resetFilters,
     isPanelOpen,
     editingPerson,
@@ -77,16 +72,12 @@ export default function CrewManagement(): React.JSX.Element {
 
   const deferredCrew = useDeferredValue(displayCrew);
   const normalizedSearchTerm = searchTerm.trim();
-  const emailCoverage = formatCoverage(metrics.withEmail, metrics.totalPeople);
-  const phoneCoverage = formatCoverage(metrics.withPhone, metrics.totalPeople);
+  const specialtyOptions = useMemo(() => getCrewSpecialtyOptions(t), [t]);
 
   useEffect(() => {
     if (!isError) return;
     toast.error(t("crew.toast.sync_warning", "Ostrzeżenie synchronizacji"), {
-      description: t(
-        "crew.toast.sync_error",
-        "Nie udało się pobrać listy współpracowników.",
-      ),
+      description: t("crew.toast.sync_error", "Nie udało się pobrać listy współpracowników."),
     });
   }, [isError, t]);
 
@@ -94,165 +85,130 @@ export default function CrewManagement(): React.JSX.Element {
     return <EtherealLoader />;
   }
 
+  const total = crew.length;
+
   return (
     <PageTransition>
-      <div className="relative mx-auto flex max-w-6xl flex-col gap-5 pb-24 pt-6">
-        <StaggeredBentoContainer className="flex flex-col gap-5">
-          <StaggeredBentoItem>
-            <PageHeader
-              size="standard"
-              roleText={t("crew.dashboard.subtitle", "Logistyka")}
-              title={t("crew.dashboard.title", "Ekipa")}
-              titleHighlight={t("crew.dashboard.title_highlight", "Techniczna")}
-              rightContent={
+      <div className="relative mx-auto flex max-w-5xl flex-col gap-5 pb-24 pt-6">
+        <PageHeader
+          size="compact"
+          title={t("crew.dashboard.title", "Ekipa techniczna")}
+          rightContent={
+            <ToolbarButton
+              variant="primary"
+              icon={<UserPlus size={16} aria-hidden="true" />}
+              label={t("crew.dashboard.add_btn", "Dodaj osobę")}
+              onClick={() => openPanel(null)}
+            />
+          }
+        />
+
+        <CrewToolbar
+          searchTerm={searchTerm}
+          onSearch={setSearchTerm}
+          specialtyOptions={specialtyOptions}
+          specialtyFilter={specialtyFilter}
+          onSpecialtyFilter={setSpecialtyFilter}
+          availableCompanies={availableCompanies}
+          companyFilter={companyFilter}
+          onCompanyFilter={setCompanyFilter}
+          contactFilter={contactFilter}
+          onContactFilter={setContactFilter}
+          sortBy={sortBy}
+          onSort={setSortBy}
+          panelFilterCount={panelFilterCount}
+          census={
+            <ListCensus
+              total={total}
+              noun={t("crew.census.people", "osób", { count: total })}
+              narrowed={
+                hasActiveFilters
+                  ? t("crew.census.narrowed", "{{visible}} z {{total}}", {
+                      visible: deferredCrew.length,
+                      total,
+                    })
+                  : null
+              }
+            />
+          }
+          quickFilters={
+            missingContactCount > 0 ? (
+              <FilterToggle
+                label={t("crew.quick.missing_contact", "{{count}} bez pełnego kontaktu", {
+                  count: missingContactCount,
+                })}
+                pressed={onlyMissingContact}
+                onToggle={() => setOnlyMissingContact((on) => !on)}
+              />
+            ) : null
+          }
+          activeFilters={activeFilters}
+          onResetFilters={resetFilters}
+        />
+
+        {deferredCrew.length > 0 ? (
+          <RecordList label={t("crew.list_aria", "Ekipa techniczna")}>
+            {deferredCrew.map((person) => (
+              <CrewRow key={person.id} person={person} onOpen={openPanel} onDelete={requestDelete} />
+            ))}
+          </RecordList>
+        ) : (
+          <StatePanel
+            icon={<UsersRound size={32} aria-hidden="true" />}
+            title={
+              hasActiveFilters
+                ? t("crew.empty_state.filtered_title", "Nikt nie pasuje do filtrów")
+                : t("crew.empty_state.pristine_title", "Twoja baza ekipy jest pusta")
+            }
+            description={
+              normalizedSearchTerm
+                ? t("crew.empty_state.search_results", {
+                    defaultValue:
+                      'Nie znaleźliśmy osoby ani firmy "{{term}}". Możesz dodać nowy wpis lub usunąć część filtrów.',
+                    term: normalizedSearchTerm,
+                  })
+                : hasActiveFilters
+                  ? t(
+                      "crew.empty_state.filters_blocked",
+                      "Aktualne filtry ukrywają całą bazę. Wyczyść je, aby wrócić do pełnego spisu.",
+                    )
+                  : t(
+                      "crew.empty_state.start_building",
+                      "Rozpocznij budowę zespołu produkcyjnego, dodając pierwszego współpracownika do bazy.",
+                    )
+            }
+            actions={
+              <>
                 <Button
-                  variant="primary"
-                  onClick={() => openPanel(null)}
-                  leftIcon={<Plus size={16} aria-hidden="true" />}
+                  variant="secondary"
+                  casing="sentence"
+                  onClick={() => openPanel(null, normalizedSearchTerm)}
+                  leftIcon={<UserPlus size={16} aria-hidden="true" />}
                 >
-                  {t("crew.dashboard.add_btn", "Dodaj osobę")}
-                </Button>
-              }
-            />
-          </StaggeredBentoItem>
-
-          <StaggeredBentoItem>
-            <CrewSpecialtyBar
-              specialtyOptions={specialtyOptions}
-              counts={specialtyCounts}
-              totalPeople={metrics.totalPeople}
-              uniqueCompanies={metrics.uniqueCompanies}
-              emailCoverage={emailCoverage}
-              phoneCoverage={phoneCoverage}
-              activeSpecialty={specialtyFilter}
-              onSelectSpecialty={setSpecialtyFilter}
-            />
-          </StaggeredBentoItem>
-
-          <StaggeredBentoItem>
-            <CrewToolbar
-              searchTerm={searchTerm}
-              onSearch={setSearchTerm}
-              companyFilter={companyFilter}
-              onCompanyFilter={setCompanyFilter}
-              availableCompanies={availableCompanies}
-              contactFilter={contactFilter}
-              onContactFilter={setContactFilter}
-              sortBy={sortBy}
-              onSort={setSortBy}
-              viewMode={viewMode}
-              onViewMode={setViewMode}
-            />
-          </StaggeredBentoItem>
-
-          <StaggeredBentoItem>
-            <FilterTokens
-              tokens={activeFilters}
-              onClearAll={resetFilters}
-              summary={
-                <Caption color="muted" className="tabular-nums">
-                  {t("crew.filters.summary", {
-                    visible: deferredCrew.length,
-                    total: metrics.totalPeople,
-                    defaultValue: "{{visible}} z {{total}} osób w widoku.",
-                  })}
-                </Caption>
-              }
-            />
-          </StaggeredBentoItem>
-
-          <StaggeredBentoItem>
-            {deferredCrew.length > 0 ? (
-              viewMode === "grid" ? (
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                  {deferredCrew.map((person) => (
-                    <CrewCard
-                      key={person.id}
-                      person={person}
-                      onOpen={openPanel}
-                      onDelete={requestDelete}
-                    />
-                  ))}
-                </div>
-              ) : (
-                <div className="flex flex-col gap-2">
-                  {deferredCrew.map((person) => (
-                    <CrewRow
-                      key={person.id}
-                      person={person}
-                      onOpen={openPanel}
-                      onDelete={requestDelete}
-                    />
-                  ))}
-                </div>
-              )
-            ) : (
-              <StatePanel
-                icon={<UsersRound size={32} aria-hidden="true" />}
-                eyebrow={t(
-                  "crew.empty_state.title",
-                  "Brak osób w bieżącym widoku",
-                )}
-                title={
-                  hasActiveFilters
-                    ? t(
-                        "crew.empty_state.filtered_title",
-                        "Nikt nie pasuje do filtrów",
-                      )
-                    : t(
-                        "crew.empty_state.pristine_title",
-                        "Twoja baza ekipy jest pusta",
-                      )
-                }
-                description={
-                  normalizedSearchTerm
-                    ? t("crew.empty_state.search_results", {
-                        defaultValue:
-                          'Nie znaleźliśmy osoby ani firmy "{{term}}". Możesz dodać nowy wpis lub usunąć część filtrów.',
+                  {normalizedSearchTerm
+                    ? t("crew.empty_state.add_search", {
+                        defaultValue: 'Dodaj wpis "{{term}}"',
                         term: normalizedSearchTerm,
                       })
-                    : hasActiveFilters
-                      ? t(
-                          "crew.empty_state.filters_blocked",
-                          "Aktualne filtry ukrywają całą bazę. Wyczyść je, aby wrócić do pełnego spisu.",
-                        )
-                      : t(
-                          "crew.empty_state.start_building",
-                          "Rozpocznij budowę zespołu produkcyjnego, dodając pierwszego współpracownika do bazy.",
-                        )
-                }
-                actions={
-                  <>
-                    <Button
-                      variant="secondary"
-                      onClick={() => openPanel(null, normalizedSearchTerm)}
-                      leftIcon={<Plus size={14} aria-hidden="true" />}
-                    >
-                      {normalizedSearchTerm
-                        ? t("crew.empty_state.add_search", {
-                            defaultValue: 'Dodaj wpis "{{term}}"',
-                            term: normalizedSearchTerm,
-                          })
-                        : t(
-                            "crew.empty_state.add_person",
-                            "Dodaj współpracownika",
-                          )}
-                    </Button>
-                    {hasActiveFilters && (
-                      <Button
-                        variant="ghost"
-                        onClick={resetFilters}
-                        leftIcon={<RotateCcw size={14} aria-hidden="true" />}
-                      >
-                        {t("crew.filters.clear_filters", "Wyczyść filtry")}
-                      </Button>
-                    )}
-                  </>
-                }
-              />
-            )}
-          </StaggeredBentoItem>
-        </StaggeredBentoContainer>
+                    : t("crew.empty_state.add_person", "Dodaj współpracownika")}
+                </Button>
+                {hasActiveFilters && (
+                  <Button
+                    variant="ghost"
+                    casing="sentence"
+                    onClick={() => {
+                      resetFilters();
+                      setOnlyMissingContact(false);
+                    }}
+                    leftIcon={<RotateCcw size={16} aria-hidden="true" />}
+                  >
+                    {t("crew.filters.clear_filters", "Wyczyść filtry")}
+                  </Button>
+                )}
+              </>
+            }
+          />
+        )}
 
         <CrewEditorPanel
           isOpen={isPanelOpen}

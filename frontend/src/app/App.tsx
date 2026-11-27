@@ -473,7 +473,7 @@ export const router = createBrowserRouter(
               path="archive-management/:id/review"
               element={<Navigate to=".." replace relative="path" />}
             />
-            <Route path="crew" element={<CrewManagement />} />
+            <Route path="crew" handle={PLAIN_ROUTE_HANDLE} element={<CrewManagement />} />
             <Route path="locations" element={<LogisticsLocationsPage />} />
           </Route>
           <Route path="resources" element={<ChoristerHubPage />} />

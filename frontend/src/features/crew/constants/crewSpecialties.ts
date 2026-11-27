@@ -2,9 +2,10 @@
  * @file crewSpecialties.ts
  * @description Domain dictionary for collaborator specialties.
  * Centralises i18n keys, lucide icons, and the shared accent so every
- * downstream surface (cards, badges, filters, balance bar) speaks the same
- * dialect. The accent scale has no crimson, so a trade cannot claim the alarm
- * colour — "Wizualizacje" wore it, on every projection specialist in the base.
+ * downstream surface (the crew's rows and filter, the project's crew) speaks
+ * the same dialect. The accent scale has no crimson, so a trade cannot claim
+ * the alarm colour — "Wizualizacje" wore it, on every projection specialist in
+ * the base.
  * @module features/crew/constants/crewSpecialties
  */
 
@@ -131,7 +132,7 @@ export const getCrewSpecialtyOption = (
   );
 };
 
-/** Canonical specialty ordering (SOUND → … → OTHER), used by the balance bar and "by specialty" sort. */
+/** Canonical specialty ordering (SOUND → … → OTHER), for the "by specialty" order. */
 export const CREW_SPECIALTY_ORDER: readonly CollaboratorSpecialty[] =
   CREW_SPECIALTY_DEFINITIONS.map((definition) => definition.value);
 

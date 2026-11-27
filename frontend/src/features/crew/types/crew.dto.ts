@@ -18,9 +18,5 @@ export interface CrewFormData {
 
 export type CrewWriteDTO = CrewFormData;
 
-export type CrewContactCompleteness =
-  | "ALL"
-  | "WITH_EMAIL"
-  | "WITH_PHONE"
-  | "FULL_CONTACT"
-  | "MISSING_CONTACT";
+/** The "Kontakt" filter in the crew's panel. Who lacks one is the quick filter instead. */
+export type CrewContactCompleteness = "ALL" | "WITH_EMAIL" | "WITH_PHONE" | "FULL_CONTACT";

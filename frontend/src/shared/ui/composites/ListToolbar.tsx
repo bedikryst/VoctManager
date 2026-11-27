@@ -176,15 +176,24 @@ export const ToolbarPanelButton = ({
 interface ToolbarPanelProps {
   readonly id: string;
   readonly open: boolean;
-  /** `ToolbarPanelField`s, three to a row from `md` up. */
+  /**
+   * `ToolbarPanelField`s to a row: three from `md` up, or four from `lg` up
+   * (two at `md`), so a panel of four does not leave one field alone on a row.
+   */
+  readonly columns?: 3 | 4;
   readonly children: React.ReactNode;
 }
+
+const PANEL_COLUMNS: Readonly<Record<NonNullable<ToolbarPanelProps["columns"]>, string>> = {
+  3: "md:grid-cols-3",
+  4: "md:grid-cols-2 lg:grid-cols-4",
+};
 
 /**
  * The filters a list keeps behind "Filtry". Opacity and a short drop, on the
  * compositor: the panel pushes the list down at once rather than growing into it.
  */
-export const ToolbarPanel = ({ id, open, children }: ToolbarPanelProps): React.JSX.Element => (
+export const ToolbarPanel = ({ id, open, columns = 3, children }: ToolbarPanelProps): React.JSX.Element => (
   <AnimatePresence initial={false}>
     {open && (
       <motion.div
@@ -194,7 +203,12 @@ export const ToolbarPanel = ({ id, open, children }: ToolbarPanelProps): React.J
         exit={{ opacity: 0, transform: "translateY(-4px)" }}
         transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
       >
-        <div className="grid gap-3 rounded-nested border border-hairline bg-ethereal-alabaster/40 p-3 md:grid-cols-3">
+        <div
+          className={cn(
+            "grid gap-3 rounded-nested border border-hairline bg-ethereal-alabaster/40 p-3",
+            PANEL_COLUMNS[columns],
+          )}
+        >
           {children}
         </div>
       </motion.div>

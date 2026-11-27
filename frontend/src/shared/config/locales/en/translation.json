@@ -2744,28 +2744,9 @@
     }
   },
   "crew": {
-    "bar": {
-      "all": "All",
-      "companies": "companies",
-      "email_pct": "email {{n}}%",
-      "phone_pct": "phone {{n}}%",
-      "title": "Specialities",
-      "email_unknown": "e-mail —",
-      "phone_unknown": "phone —"
-    },
-    "card": {
-      "btn_delete": "Delete",
-      "btn_edit": "Edit",
-      "company": "Company / Brand",
-      "no_company": "No data",
-      "no_email": "No email",
-      "no_phone": "No phone",
-      "open_aria": "Edit: {{name}}"
-    },
     "contact_filters": {
       "all": "Any contact",
       "full_contact": "Complete contact",
-      "missing_contact": "Incomplete contact",
       "with_email": "With email",
       "with_phone": "With phone"
     },
@@ -2778,9 +2759,7 @@
       "in_view_few": "{{count}} in view",
       "in_view_many": "{{count}} in view",
       "in_view_other": "{{count}} in view",
-      "subtitle": "Logistics",
-      "title": "Tech",
-      "title_highlight": "Crew"
+      "title": "Technical crew"
     },
     "delete_modal": {
       "desc": "They will be permanently removed from the roster. You cannot delete people already assigned to concerts (update their data instead).",
@@ -2810,7 +2789,6 @@
       "filters_blocked": "Current filters hide the entire roster. Clear them to return to the full directory.",
       "search_results": "We couldn't find a person or company \"{{term}}\". Add a new entry or remove some filters.",
       "start_building": "Start building your production team by adding the first collaborator to the database.",
-      "title": "No people in the current view",
       "filtered_title": "Nobody matches the filters",
       "pristine_title": "Your crew base is empty"
     },
@@ -2826,16 +2804,14 @@
       "company_label": "Company / Brand",
       "company_token": "Company: {{label}}",
       "contact_label": "Contact state",
-      "contact_token": "Contact: {{label}}",
       "heading": "Crew Filters",
       "no_active_filters": "No active filters",
       "no_filters_message": "No active filters. The view shows the full collaborator directory.",
       "search_label": "Search",
-      "search_placeholder": "Search by name, company, or email...",
+      "search_placeholder": "Search people or companies…",
       "search_token": "Term: \"{{term}}\"",
       "specialty_label": "Specialty",
-      "specialty_token": "Specialty: {{label}}",
-      "summary": "{{visible}} of {{total}} people in the current view."
+      "specialty_token": "Specialty: {{label}}"
     },
     "hero": {
       "badge": "Logistics Operations",
@@ -2897,10 +2873,25 @@
     },
     "toolbar": {
       "sort_company": "Company",
-      "sort_label": "Sort",
+      "sort_label": "Order",
       "sort_name": "Surname (A–Z)",
       "sort_specialty": "Speciality",
-      "view_label": "View"
+      "filters": "Filters"
+    },
+    "census": {
+      "people_one": "person",
+      "people_other": "people",
+      "narrowed": "{{visible}} of {{total}}"
+    },
+    "quick": {
+      "missing_contact": "{{count}} without full contact"
+    },
+    "list_aria": "Technical crew",
+    "row": {
+      "menu_aria": "More: {{name}}",
+      "call": "Call",
+      "email": "Send an email",
+      "delete": "Delete"
     }
   },
   "dashboard": {
