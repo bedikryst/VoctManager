@@ -2,9 +2,11 @@
  * @file vocalRangeProposal.ts
  * @description The two ranges a singer can carry, as MIDI notes: the
  * conductor's assessment and the singer's own proposal. The dossier shows both
- * (`rangesOf`); the roster's row and Obsada have one line per singer and show
- * the assessment whenever there is one, else the proposal. Every surface marks
- * a proposal as the singer's, so it is never read as the conductor's verdict.
+ * (`rangesOf`). The roster's row shows the assessment and, under it, the
+ * proposal wherever the two disagree (`rowRanges`). Obsada has one line per
+ * singer and shows the assessment whenever there is one, else the proposal
+ * (`rangeShown`). Every surface marks a proposal as the singer's, so it is
+ * never read as the conductor's verdict.
  *
  * The roster's range filter (`matchesRangeFilter`) lives here too, so the
  * filter, its quick chip and the lines on screen answer from the same reads.
@@ -61,6 +63,17 @@ export const rangesOf = (artist: Artist | undefined): VocalRanges => ({
   assessed: assessmentOf(artist),
   proposed: proposalOf(artist),
 });
+
+/**
+ * The roster row's ranges: the assessment, and the proposal only where it says
+ * something the assessment does not (no assessment yet, or a note apart). A
+ * proposal the conductor took as it stands is the assessment, and shows once.
+ */
+export const rowRanges = (artist: Artist | undefined): VocalRanges => {
+  const { assessed, proposed } = rangesOf(artist);
+  const disagrees = proposed !== null && (assessed === null || !sameRange(assessed, proposed));
+  return { assessed, proposed: disagrees ? proposed : null };
+};
 
 /** `all` keeps everyone; the others keep singers only, since a player has no
  *  range to propose. `awaiting` is a proposal the conductor has not taken: no

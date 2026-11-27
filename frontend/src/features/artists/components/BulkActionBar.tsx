@@ -100,14 +100,17 @@ export const BulkActionBar = ({
               })}
             </Button>
           )}
+          {/* The cross alone below `md`, so the count, "Zaznacz wszystkich"
+              and the exit share one line on a phone. */}
           <Button
             variant="ghost"
             size="sm"
             casing="sentence"
             onClick={onExit}
             leftIcon={<X size={14} aria-hidden="true" />}
+            className="max-md:gap-0 max-md:px-2"
           >
-            {t("artists.bulk.done", "Zakończ")}
+            <span className="max-md:sr-only">{t("artists.bulk.done", "Zakończ")}</span>
           </Button>
         </>
       }

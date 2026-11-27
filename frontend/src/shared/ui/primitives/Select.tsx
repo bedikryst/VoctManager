@@ -161,9 +161,12 @@ export const Select = ({
             </span>
           )}
 
+          {/* The chosen label as plain text, so a value wears the trigger's own
+              scale and weight, the same as its placeholder. Left to Radix, the
+              trigger would clone the item's 12 px medium `ItemText` instead. */}
           <span className="min-w-0 flex-1 truncate text-left">
             <RadixSelect.Value placeholder={placeholder}>
-              {variant === "property" ? options.find((option) => option.value === value)?.label : undefined}
+              {options.find((option) => option.value === value)?.label}
             </RadixSelect.Value>
           </span>
 

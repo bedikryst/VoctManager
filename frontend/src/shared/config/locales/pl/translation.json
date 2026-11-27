@@ -1173,6 +1173,7 @@
       "unverified": "Brak weryfikacji",
       "range_by_singer": "wg chórzysty",
       "range_proposal_title": "Propozycja chórzysty",
+      "range_assessment_title": "Ocena dyrygenta",
       "preview_title": "Zobacz, co widzi ta osoba",
       "preview_aria": "Zobacz, co widzi {{name}}"
     },

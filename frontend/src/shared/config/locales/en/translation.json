@@ -1134,6 +1134,7 @@
       "unverified": "Not verified",
       "range_by_singer": "per the singer",
       "range_proposal_title": "The singer's proposal",
+      "range_assessment_title": "The conductor's assessment",
       "preview_title": "See what this person sees",
       "preview_aria": "See what {{name}} sees"
     },

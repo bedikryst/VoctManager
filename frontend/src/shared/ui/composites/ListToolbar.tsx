@@ -8,6 +8,12 @@
  * their label from `md` up and stand as their icon alone below it, so the
  * search never drops to a band of its own with two full-width buttons under it.
  *
+ * Every control on the row and in the panel stands at one height: 44 px below
+ * `md`, the touch floor, and 40 px from it. The toolbar sets the height of the
+ * fields it is handed (`TOOLBAR_SEARCH_HEIGHT`, `TOOLBAR_SELECT_HEIGHT`), so a page's search cannot
+ * stand taller than the buttons beside it; the field keeps its own type scale,
+ * 16 px on touch for the iOS zoom (`FIELD_TEXT_SCALE`).
+ *
  * The census line carries, in order: the count (`ListCensus`, "16 utworów", or
  * "3 z 16" while anything narrows the list), the quick filters as
  * `FilterToggle` chips, and the filters in use as `FilterTokens`. It is the
@@ -41,6 +47,16 @@ interface ListToolbarProps {
   readonly children?: React.ReactNode;
 }
 
+/**
+ * The height of a field the toolbar holds, the `ToolbarButton`'s: the search
+ * `<input>` on the row, the `Select` triggers (`role="combobox"`) in the panel.
+ * A trigger takes no typed text, so the iOS zoom floor does not bind it and it
+ * reads at 14 px on touch as it does under a mouse.
+ */
+const TOOLBAR_SEARCH_HEIGHT = "[&_input]:h-11 [&_input]:py-0 md:[&_input]:h-10";
+const TOOLBAR_SELECT_HEIGHT =
+  "[&_[role=combobox]]:h-11 [&_[role=combobox]]:py-0 [&_[role=combobox]]:text-sm md:[&_[role=combobox]]:h-10";
+
 export const ListToolbar = ({
   search,
   controls,
@@ -49,7 +65,7 @@ export const ListToolbar = ({
 }: ListToolbarProps): React.JSX.Element => (
   <div className="flex flex-col gap-3">
     <div className="flex items-center gap-2">
-      <div className="min-w-0 flex-1">{search}</div>
+      <div className={cn("min-w-0 flex-1", TOOLBAR_SEARCH_HEIGHT)}>{search}</div>
       {controls && <div className="flex shrink-0 items-center gap-2">{controls}</div>}
     </div>
     {children}
@@ -120,7 +136,7 @@ export const ToolbarButton = ({
     casing="sentence"
     leftIcon={icon}
     className={cn(
-      "shrink-0 max-md:size-11 max-md:gap-0 max-md:p-0",
+      "shrink-0 max-md:size-11 max-md:gap-0 max-md:p-0 md:h-10 md:py-0",
       on && "border-ethereal-gold/50 bg-ethereal-gold/15 text-ethereal-ink hover:bg-ethereal-gold/20",
       className,
     )}
@@ -206,6 +222,7 @@ export const ToolbarPanel = ({ id, open, columns = 3, children }: ToolbarPanelPr
         <div
           className={cn(
             "grid gap-3 rounded-nested border border-hairline bg-ethereal-alabaster/40 p-3",
+            TOOLBAR_SELECT_HEIGHT,
             PANEL_COLUMNS[columns],
           )}
         >

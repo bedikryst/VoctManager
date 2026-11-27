@@ -2,7 +2,8 @@
  * @file vocalRangeProposal.test.ts
  * @description Pins how the two ranges are read off an artist, which one a
  * one-line surface shows (the conductor's assessment whenever it is set, the
- * singer's proposal otherwise), and who each roster range filter keeps.
+ * singer's proposal otherwise), when the roster's row shows both, and who each
+ * roster range filter keeps.
  * @module features/artists/lib/vocalRangeProposal.test
  */
 
@@ -15,6 +16,7 @@ import {
   proposalOf,
   rangeShown,
   rangesOf,
+  rowRanges,
   sameRange,
   type RangeFilter,
 } from "./vocalRangeProposal";
@@ -110,6 +112,30 @@ describe("rangesOf", () => {
   it("answers null for each range that is missing", () => {
     expect(rangesOf(base)).toEqual({ assessed: null, proposed: null });
     expect(rangesOf(undefined)).toEqual({ assessed: null, proposed: null });
+  });
+});
+
+describe("rowRanges", () => {
+  it("keeps both while they disagree", () => {
+    expect(rowRanges({ ...proposed, ...assessed })).toEqual({
+      assessed: assessmentOf(assessed),
+      proposed: proposalOf(proposed),
+    });
+  });
+
+  it("shows an accepted proposal once, as the assessment", () => {
+    const accepted: Artist = {
+      ...proposed,
+      assessed_tessitura_low: 57,
+      assessed_tessitura_high: 81,
+      assessed_extreme_low: 55,
+      assessed_extreme_high: null,
+    };
+    expect(rowRanges(accepted)).toEqual({ assessed: assessmentOf(accepted), proposed: null });
+  });
+
+  it("shows a proposal alone before any assessment", () => {
+    expect(rowRanges(proposed)).toEqual({ assessed: null, proposed: proposalOf(proposed) });
   });
 });
 

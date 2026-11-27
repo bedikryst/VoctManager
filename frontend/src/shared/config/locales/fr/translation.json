@@ -1145,6 +1145,7 @@
       "unverified": "Non vérifié",
       "range_by_singer": "selon le choriste",
       "range_proposal_title": "Proposition du choriste",
+      "range_assessment_title": "Évaluation du chef",
       "preview_title": "Voir ce que voit cette personne",
       "preview_aria": "Voir ce que voit {{name}}"
     },

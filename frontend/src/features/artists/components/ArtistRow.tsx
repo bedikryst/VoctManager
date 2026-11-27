@@ -13,9 +13,9 @@
  * asking in person. "Asystent" is the one flag that is a role, not a problem:
  * it is why the manager looks for that row. A healthy member carries none.
  *
- * The range is the conductor's; until there is one, the singer's own proposal
- * stands in, muted and marked as theirs. The comparison of the two stays in
- * the dossier and in the range filter.
+ * The range is the conductor's. Where the singer's own proposal disagrees with
+ * it, or stands alone before any assessment, the proposal sits under it,
+ * muted and marked as theirs, so a disagreement is visible from the list.
  *
  * Every row has the same one menu, so the columns stand under each other. In
  * selection mode the row is one toggle (`RecordRow`'s `row` scope) and the
@@ -59,7 +59,7 @@ import {
   isWithoutEmail,
   isWithoutPush,
 } from "../lib/accountState";
-import { rangeShown } from "../lib/vocalRangeProposal";
+import { rowRanges } from "../lib/vocalRangeProposal";
 import { SightReadingStars } from "./SightReadingStars";
 
 /**
@@ -169,16 +169,26 @@ export const ArtistRow = React.memo(
         </>
       ) : null;
 
-    const shown = rangeShown(artist);
+    const { assessed, proposed } = rowRanges(artist);
+    const assessmentTitle = t("artists.card.range_assessment_title", "Ocena dyrygenta");
     const proposalTitle = t("artists.card.range_proposal_title", "Propozycja chórzysty");
-    const range = !shown ? null : shown.source === "conductor" ? (
-      <VocalRangeText range={shown.range} notation={notation} />
-    ) : (
-      <Text as="span" size="sm" color="muted" title={proposalTitle}>
-        <VocalRangeText range={shown.range} notation={notation} />
-        <span className="sr-only"> ({proposalTitle})</span>
-      </Text>
-    );
+    const range =
+      assessed || proposed ? (
+        <span className="flex flex-col">
+          {assessed && (
+            <span title={assessmentTitle}>
+              <VocalRangeText range={assessed} notation={notation} />
+              {proposed && <span className="sr-only"> ({assessmentTitle})</span>}
+            </span>
+          )}
+          {proposed && (
+            <Text as="span" size="sm" color="muted" title={proposalTitle}>
+              <VocalRangeText range={proposed} notation={notation} />
+              <span className="sr-only"> ({proposalTitle})</span>
+            </Text>
+          )}
+        </span>
+      ) : null;
 
     const choose = (act: () => void) => () => {
       chosen.current = act;
