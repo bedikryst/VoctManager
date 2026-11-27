@@ -19,7 +19,7 @@ import React, { useMemo, useState } from "react";
 import { AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
-import { GitMerge, Plus, Search, Users, X } from "lucide-react";
+import { CheckSquare, Plus, Search, Users, X } from "lucide-react";
 
 import { toastApiError } from "@/shared/api/errors";
 import { foldDiacritics } from "@/shared/lib/text";
@@ -192,8 +192,11 @@ export default function ArchiveComposersPage(): React.JSX.Element {
             />
           }
           controls={
+            // Merging is a selection: the rows turn into toggles and the bar
+            // below offers "Połącz". So its entry wears the selection glyph the
+            // library's "Zaznacz wiele" wears; on a phone the glyph stands alone.
             <ToolbarButton
-              icon={<GitMerge size={16} aria-hidden="true" />}
+              icon={<CheckSquare size={16} aria-hidden="true" />}
               label={t("archive.composers.merge_btn", "Połącz duplikaty")}
               on={mergeMode}
               aria-pressed={mergeMode}
