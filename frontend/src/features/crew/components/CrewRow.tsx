@@ -2,7 +2,8 @@
  * @file CrewRow.tsx
  * @description One collaborator, as a `RecordRow`: the row opens the editor
  * panel. The specialty's icon leads, a category in the canon's sense; under
- * the name, the specialty and the company as a byline.
+ * the name, the specialty and the company as a byline. "Inne" names no
+ * specialty, so the byline leaves it out and the company stands alone.
  *
  * Contact is why this list is opened, so it sits in the row's one menu, with
  * the number or the address under each act, rather than leaving the row:
@@ -55,7 +56,7 @@ const CrewRowComponent = ({ person, onOpen, onDelete }: CrewRowProps): React.JSX
           <SpecialtyIcon size={18} strokeWidth={1.75} aria-hidden="true" />
         </span>
       }
-      facts={[specialty.label, person.company_name?.trim() || null]}
+      facts={[specialty.value === "OTHER" ? null : specialty.label, person.company_name?.trim() || null]}
       actions={
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
