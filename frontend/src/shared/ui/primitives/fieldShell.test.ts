@@ -203,6 +203,15 @@ const DECIDED = {
     removed: ["text-sm"],
     added: ["fine-pointer:text-sm", "text-base"],
   } as Delta,
+  /**
+   * 2026-11: an `Input` narrower than its placeholder (a search beside the
+   * toolbar icons on a phone) ends it on an ellipsis instead of clipping a
+   * letter in half. Input only; a textarea wraps.
+   */
+  inputEllipsis: {
+    removed: [],
+    added: ["text-ellipsis"],
+  } as Delta,
 } as const;
 
 /* ------------------------------------------------------------------ *
@@ -216,6 +225,7 @@ describe("Input — surface after folding onto fieldShell", () => {
       expect(delta(legacyInput(variant, false), inputFieldClasses({ variant }))).toEqual(
         merge(
           DECIDED.touchTextScale,
+          DECIDED.inputEllipsis,
           variant === "glass" ? DECIDED.blurDropped : NO_CHANGE,
           variant === "glass" ? DECIDED.glassInsetThemed : NO_CHANGE,
           ...(variant === "dark"
@@ -233,16 +243,26 @@ describe("Input — surface after folding onto fieldShell", () => {
         inputFieldClasses({ hasLeftIcon: true, hasRightElement: true }),
       ),
     ).toEqual(
-      merge(DECIDED.touchTextScale, DECIDED.blurDropped, DECIDED.glassInsetThemed),
+      merge(
+        DECIDED.touchTextScale,
+        DECIDED.inputEllipsis,
+        DECIDED.blurDropped,
+        DECIDED.glassInsetThemed,
+      ),
     );
   });
 
   it("tints the errored field exactly as before", () => {
     expect(delta(legacyInput("glass", true), inputFieldClasses({ hasError: true }))).toEqual(
-      merge(DECIDED.touchTextScale, DECIDED.blurDropped, DECIDED.glassInsetThemed),
+      merge(
+        DECIDED.touchTextScale,
+        DECIDED.inputEllipsis,
+        DECIDED.blurDropped,
+        DECIDED.glassInsetThemed,
+      ),
     );
     expect(delta(legacyInput("ghost", true), inputFieldClasses({ variant: "ghost", hasError: true }))).toEqual(
-      DECIDED.touchTextScale,
+      merge(DECIDED.touchTextScale, DECIDED.inputEllipsis),
     );
   });
 
@@ -254,6 +274,7 @@ describe("Input — surface after folding onto fieldShell", () => {
     ).toEqual(
       merge(
         DECIDED.touchTextScale,
+        DECIDED.inputEllipsis,
         DECIDED.darkErrorKeepsItsText,
         DECIDED.darkIslandFocusFill,
       ),
@@ -358,7 +379,7 @@ describe("one recipe, three primitives", () => {
       // And what they add on top is layout, not surface.
       const inputExtras = [...input].filter((c) => !shell.has(c));
       const textareaExtras = [...textarea].filter((c) => !shell.has(c));
-      expect(inputExtras.sort()).toEqual(["pl-4", "pr-4", "py-3"]);
+      expect(inputExtras.sort()).toEqual(["pl-4", "pr-4", "py-3", "text-ellipsis"]);
       expect(textareaExtras.sort()).toEqual(["px-4", "py-3", "resize-y"]);
     }
   });

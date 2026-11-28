@@ -25,7 +25,7 @@ describe("vocativeFromTable", () => {
   });
 
   it("gives nothing for a name the table does not list", () => {
-    expect(vocativeFromTable("Florent")).toBe("");
+    expect(vocativeFromTable("Siegfried")).toBe("");
     expect(vocativeFromTable("Anna-Maria")).toBe("");
     expect(vocativeFromTable("Michal")).toBe("");
     expect(vocativeFromTable("")).toBe("");
