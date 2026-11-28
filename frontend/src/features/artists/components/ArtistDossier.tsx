@@ -1,63 +1,56 @@
 /**
  * @file ArtistDossier.tsx
- * @description Read-first slide-over: an artist's project track record for the
- * conductor. Reliability (acceptance + attendance), engagement counts, project
- * leadership (projects led, evenings actually stood in front of), the voice
- * lines they actually sing, and a per-project casting history ("sang T1 in X,
- * B2 in Y"). All derived from relational state via GET /artists/{id}/dossier/.
- * Editing lives one click deeper, behind the "Edit profile" action. On
- * `SidePanel`.
+ * @description An artist's record for the manager, on `SidePanel`. The head is
+ * the roster row's own: the name, its byline (the voice, an invitation's date),
+ * "Edytuj" and a menu (write to them, see what the app shows them). The body
+ * states the account only when it asks for an act (no e-mail address, an
+ * invitation not taken up), then the track record served by
+ * GET /artists/{id}/dossier/: the two rates, the voices most sung, the money,
+ * the projects led and the projects sung. Every project is a row that opens
+ * it; a sung project opens its voice assignments, where the per-piece lines
+ * live, and the finished ones fold into one line.
  * @module features/artists/components/ArtistDossier
  */
 
-import React from "react";
-import { Link } from "react-router-dom";
+import React, { useId, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import type { TFunction } from "i18next";
 import { useTranslation } from "react-i18next";
-import {
-  BadgeCheck,
-  CalendarCheck,
-  CalendarClock,
-  CheckCircle2,
-  ChevronRight,
-  Coins,
-  Eye,
-  Layers,
-  MailWarning,
-  MailX,
-  MessageSquare,
-  Music2,
-  NotebookPen,
-  Pencil,
-  Send,
-  UserRound,
-  Users,
-} from "lucide-react";
+import { Eye, History, MessageSquare, MoreHorizontal, Pencil, Users } from "lucide-react";
 
-import { cn } from "@/shared/lib/utils";
 import { artistRoleLabel } from "@/shared/lib/voiceTypes";
 import type { Artist } from "@/shared/types";
 import { Badge } from "@/shared/ui/primitives/Badge";
 import { Button } from "@/shared/ui/primitives/Button";
-import {
-  Caption,
-  Eyebrow,
-  Metric,
-  Text,
-} from "@/shared/ui/primitives/typography";
+import { Text } from "@/shared/ui/primitives/typography";
 import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
 import { StatePanel } from "@/shared/ui/composites/StatePanel";
 import { SidePanel } from "@/shared/ui/composites/SidePanel";
 import { Avatar } from "@/shared/ui/composites/Avatar";
-import { ACCENT_BADGE } from "@/shared/ui/primitives/accents";
+import { MetricBlock } from "@/shared/ui/composites/MetricBlock";
+import { FoldLine } from "@/shared/ui/composites/FoldLine";
+import { RecordList, RecordRow } from "@/shared/ui/composites/RecordList";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/shared/ui/composites/DropdownMenu";
 import { formatLocalizedDate, formatLocalizedDateTime } from "@/shared/lib/time/intl";
 import { isPositiveAmount, toGrosze } from "@/features/finance/lib/money";
 import type { DecimalString } from "@/features/finance/types/finance.dto";
+import { PROJECT_STATUS } from "@/features/projects/constants/projectDomain";
+import { getProjectStatusPresentation } from "@/features/projects/lib/projectPresentation";
+import {
+  RATE_TONE_ACCENT,
+  attendanceRateTone,
+} from "@/features/rehearsals/constants/attendanceMeta";
 import { useArtistDossier } from "../api/artist.queries";
-import { getSectionPresentation } from "../constants/voiceSections";
 import { canReceiveMessages, isAwaitingActivation, isWithoutEmail } from "../lib/accountState";
 import type {
   ArtistDossierLeadership,
   ArtistDossierStats,
+  DossierCasting,
   DossierLedProject,
   DossierProject,
 } from "../types/artistDossier.dto";
@@ -72,25 +65,6 @@ interface ArtistDossierProps {
   isResending?: boolean;
 }
 
-type Tone = "sage" | "gold" | "crimson" | "neutral";
-
-const TONE_TEXT: Record<Tone, string> = {
-  sage: "text-ethereal-sage",
-  gold: "text-ethereal-gold",
-  crimson: "text-ethereal-crimson",
-  neutral: "text-ethereal-ink",
-};
-
-const rateTone = (rate: number | null): Tone => {
-  if (rate === null) return "neutral";
-  if (rate >= 0.85) return "sage";
-  if (rate >= 0.6) return "gold";
-  return "crimson";
-};
-
-const formatPercent = (rate: number | null): string =>
-  rate === null ? "—" : `${Math.round(rate * 100)}%`;
-
 const plnFormatter = new Intl.NumberFormat("pl-PL", {
   style: "currency",
   currency: "PLN",
@@ -101,194 +75,185 @@ const plnFormatter = new Intl.NumberFormat("pl-PL", {
 const formatPln = (value: DecimalString): string =>
   plnFormatter.format((toGrosze(value) ?? 0) / 100);
 
-const projectStatusBadge = (
-  status: string,
-): { variant: "success" | "warning" | "neutral" | "danger"; key: string; fallback: string } => {
-  switch (status) {
-    case "DONE":
-      return { variant: "neutral", key: "projects.badge_done", fallback: "Zrealizowano" };
-    case "ACTIVE":
-      return { variant: "warning", key: "projects.badge_active", fallback: "W przygotowaniu" };
-    case "CANC":
-      return { variant: "danger", key: "artists.dossier.project_cancelled", fallback: "Odwołany" };
-    default:
-      return { variant: "neutral", key: "artists.dossier.project_draft", fallback: "Szkic" };
+const formatProjectDate = (value: string | null): string | null =>
+  value ? formatLocalizedDate(value, { day: "numeric", month: "short", year: "numeric" }) : null;
+
+const toPercent = (rate: number | null): number | null =>
+  rate === null ? null : Math.round(rate * 100);
+
+/**
+ * A project's castings summed by the part they sang: "Bas 1 w 3 utworach,
+ * Bas 2 w 2", the most-sung part first. Keyed by the part's name, not its code,
+ * like the server's own tally: one code heads "Tenor" on a unison piece and
+ * "Tenor 1" on a divided one.
+ */
+const summariseCastings = (castings: readonly DossierCasting[], t: TFunction): string => {
+  const piecesByLine = new Map<string, Set<string>>();
+  for (const casting of castings) {
+    const pieces = piecesByLine.get(casting.voice_line_label) ?? new Set<string>();
+    pieces.add(casting.piece_title);
+    piecesByLine.set(casting.voice_line_label, pieces);
   }
+  const tally = [...piecesByLine]
+    .map(([line, pieces]) => ({ line, count: pieces.size }))
+    .sort((left, right) => right.count - left.count);
+  if (tally.length === 0) {
+    return t("artists.dossier.no_casting", "bez przypisania do utworów");
+  }
+  const [first, ...rest] = tally;
+  return [
+    t("artists.dossier.casting_first", { line: first.line, count: first.count }),
+    ...rest.map(({ line, count }) => t("artists.dossier.casting_more", { line, count })),
+  ].join(", ");
 };
 
-const RateTile = ({
+const DateFigure = ({ value }: { value: string | null }): React.JSX.Element | null => {
+  const label = formatProjectDate(value);
+  return label ? (
+    <Text as="span" size="sm" color="graphite" className="whitespace-nowrap">
+      {label}
+    </Text>
+  ) : null;
+};
+
+const SubHeading = ({ id, children }: { id: string; children: React.ReactNode }) => (
+  <Text as="h3" id={id} size="base" weight="semibold" className="mb-1">
+    {children}
+  </Text>
+);
+
+const RateFigure = ({
   label,
   rate,
-  sub,
+  counts,
+  accent,
 }: {
   label: string;
   rate: number | null;
-  sub: string;
+  counts: string;
+  accent: "default" | "gold";
 }) => {
-  const tone = rateTone(rate);
+  const percent = toPercent(rate);
   return (
-    <div className="flex flex-col gap-1 rounded-nested border border-hairline bg-ethereal-alabaster/70 p-4">
-      <Eyebrow color="muted">{label}</Eyebrow>
-      <Metric size="3xl" className={cn("leading-none", TONE_TEXT[tone])}>
-        {formatPercent(rate)}
-      </Metric>
-      <Caption color="muted">{sub}</Caption>
+    <div className="flex flex-col gap-1">
+      <MetricBlock
+        label={label}
+        value={percent ?? "—"}
+        unit={percent === null ? undefined : "%"}
+        accentColor={accent}
+      />
+      <Text as="p" size="sm" color="muted">
+        {counts}
+      </Text>
     </div>
   );
 };
 
-// One figure recipe for the whole dossier: the rates, the engagement counts and
-// the money all read as display figures, so they all wear `Metric`.
-const CountTile = ({
-  icon,
-  label,
-  value,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: number;
-}) => (
-  <div className="flex flex-col gap-1.5 rounded-nested border border-hairline bg-ethereal-alabaster/70 p-4">
-    <span className="flex items-center gap-1.5 text-ethereal-incense/70" aria-hidden="true">
-      {icon}
-    </span>
-    <Metric size="2xl" className="leading-none">
-      {value}
-    </Metric>
-    <Caption color="muted">{label}</Caption>
-  </div>
-);
-
-const StatsSection = ({ stats }: { stats: ArtistDossierStats }) => {
+// A rate with nothing measured yet is left out rather than shown as a dash
+// over two zeros: a conductor who is never invited to sing would otherwise
+// open on a block of blanks.
+const RatesSection = ({ stats }: { stats: ArtistDossierStats }) => {
   const { t } = useTranslation();
+  const hasAcceptance = stats.acceptance_rate !== null;
+  const hasAttendance = stats.attendance_rate !== null;
+  if (!hasAcceptance && !hasAttendance && stats.top_voice_lines.length === 0) return null;
+  // Only the attendance rate has a shortfall line, `LOW_ATTENDANCE_RATE`. An
+  // invitation declined is a member's choice, and no scale for it exists.
+  const attendanceAccent = RATE_TONE_ACCENT[attendanceRateTone(toPercent(stats.attendance_rate))];
   return (
-    <div className="space-y-5">
-      <div className="grid grid-cols-2 gap-3">
-        <RateTile
-          label={t("artists.dossier.acceptance", "Akceptacja zaproszeń")}
-          rate={stats.acceptance_rate}
-          sub={t("artists.dossier.acceptance_sub", {
-            defaultValue: "{{confirmed}} potw. · {{declined}} odm.",
-            confirmed: stats.projects_confirmed,
-            declined: stats.invitations_declined,
-          })}
-        />
-        <RateTile
-          label={t("artists.dossier.attendance", "Frekwencja na próbach")}
-          rate={stats.attendance_rate}
-          sub={t("artists.dossier.attendance_sub", {
-            defaultValue: "{{present}} ob. · {{absent}} nieob.",
-            present: stats.attendance_present + stats.attendance_late,
-            absent: stats.attendance_absent,
-          })}
-        />
-      </div>
-
-      <div className="grid grid-cols-3 gap-3">
-        <CountTile
-          icon={<CheckCircle2 size={15} />}
-          label={t("artists.dossier.confirmed", "Potwierdzone")}
-          value={stats.projects_confirmed}
-        />
-        <CountTile
-          icon={<CalendarClock size={15} />}
-          label={t("artists.dossier.upcoming", "Nadchodzące")}
-          value={stats.projects_upcoming}
-        />
-        <CountTile
-          icon={<Layers size={15} />}
-          label={t("artists.dossier.completed", "Zrealizowane")}
-          value={stats.projects_completed}
-        />
-      </div>
-
-      {(isPositiveAmount(stats.earnings_paid) ||
-        isPositiveAmount(stats.earnings_outstanding)) && (
-        <div className="space-y-2">
-          <Eyebrow color="muted">
-            {t("artists.dossier.earnings", "Rozliczenia")}
-          </Eyebrow>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="flex flex-col gap-1.5 rounded-nested border border-hairline bg-ethereal-alabaster/70 p-4">
-              <span className="text-ethereal-sage" aria-hidden="true">
-                <BadgeCheck size={15} />
-              </span>
-              <Metric size="xl" className="leading-none text-ethereal-sage">
-                {formatPln(stats.earnings_paid)}
-              </Metric>
-              <Caption color="muted">
-                {t("artists.dossier.earnings_paid", "Wypłacono")}
-                {stats.projects_paid > 0 &&
-                  ` · ${t("artists.dossier.earnings_projects", "{{n}} proj.", {
-                    n: stats.projects_paid,
-                  })}`}
-              </Caption>
-            </div>
-            <div className="flex flex-col gap-1.5 rounded-nested border border-hairline bg-ethereal-alabaster/70 p-4">
-              <span
-                className={cn(
-                  isPositiveAmount(stats.earnings_outstanding)
-                    ? "text-ethereal-crimson"
-                    : "text-ethereal-incense/70",
-                )}
-                aria-hidden="true"
-              >
-                <Coins size={15} />
-              </span>
-              <Metric
-                size="xl"
-                className={cn(
-                  "leading-none",
-                  isPositiveAmount(stats.earnings_outstanding)
-                    ? "text-ethereal-crimson"
-                    : "text-ethereal-ink",
-                )}
-              >
-                {formatPln(stats.earnings_outstanding)}
-              </Metric>
-              <Caption color="muted">
-                {t("artists.dossier.earnings_outstanding", "Do wypłaty")}
-              </Caption>
-            </div>
-          </div>
+    <div className="space-y-4">
+      {(hasAcceptance || hasAttendance) && (
+        <div className="grid grid-cols-2 gap-5">
+          {hasAcceptance && (
+            <RateFigure
+              label={t("artists.dossier.acceptance", "Akceptacja zaproszeń")}
+              rate={stats.acceptance_rate}
+              accent="default"
+              counts={[
+                t("artists.dossier.confirmed_count", { count: stats.projects_confirmed }),
+                t("artists.dossier.declined_count", { count: stats.invitations_declined }),
+              ].join(", ")}
+            />
+          )}
+          {hasAttendance && (
+            <RateFigure
+              label={t("artists.dossier.attendance", "Frekwencja na próbach")}
+              rate={stats.attendance_rate}
+              accent={attendanceAccent}
+              counts={[
+                t("artists.dossier.present_count", {
+                  count: stats.attendance_present + stats.attendance_late,
+                }),
+                t("artists.dossier.absent_count", { count: stats.attendance_absent }),
+              ].join(", ")}
+            />
+          )}
         </div>
       )}
-
       {stats.top_voice_lines.length > 0 && (
-        <div className="space-y-2">
-          <Eyebrow color="muted">
-            {t("artists.dossier.most_sung_lines", "Najczęściej śpiewane głosy")}
-          </Eyebrow>
-          {/* Keyed by name, not code: the tally folds by what the part is
-              CALLED, so one code can head two rows — "Tenor" on the unison
-              pieces, "Tenor 1" on the divided ones. */}
-          <div className="flex flex-wrap gap-1.5">
-            {stats.top_voice_lines.slice(0, 6).map((line) => (
-              <Badge key={line.label} variant="brand">
-                {line.label}
-                <span className="ml-1 text-ethereal-graphite/60">×{line.count}</span>
-              </Badge>
-            ))}
-          </div>
-        </div>
+        <Text as="p" size="sm" color="graphite">
+          {t("artists.dossier.most_sung", "Najczęściej: {{lines}}", {
+            lines: stats.top_voice_lines
+              .slice(0, 6)
+              .map((line) => `${line.label} (${line.count})`)
+              .join(", "),
+          })}
+        </Text>
       )}
     </div>
   );
 };
 
-const LedProjectItem = ({ project }: { project: DossierLedProject }) => {
+// Ledger figures, not display ones: sans with tabular digits, and no tone,
+// since money owed is the ordinary state between a concert and its payroll.
+const EarningsSection = ({ stats }: { stats: ArtistDossierStats }) => {
   const { t } = useTranslation();
-  const dateLabel = project.date_time
-    ? formatLocalizedDate(project.date_time, {
-        day: "numeric",
-        month: "short",
-        year: "numeric",
-      })
-    : null;
+  const headingId = useId();
+  const paid = isPositiveAmount(stats.earnings_paid);
+  const outstanding = isPositiveAmount(stats.earnings_outstanding);
+  if (!paid && !outstanding) return null;
+  return (
+    <section aria-labelledby={headingId}>
+      <SubHeading id={headingId}>{t("artists.dossier.earnings", "Rozliczenia")}</SubHeading>
+      {paid && (
+        <Text as="p" size="sm" color="graphite" className="tabular-nums">
+          {stats.projects_paid > 0
+            ? t("artists.dossier.earnings_paid_projects", {
+                amount: formatPln(stats.earnings_paid),
+                count: stats.projects_paid,
+              })
+            : t("artists.dossier.earnings_paid", "Wypłacono {{amount}}", {
+                amount: formatPln(stats.earnings_paid),
+              })}
+        </Text>
+      )}
+      {outstanding && (
+        <Text as="p" size="sm" color="graphite" className="tabular-nums">
+          {t("artists.dossier.earnings_outstanding", "Do wypłaty {{amount}}", {
+            amount: formatPln(stats.earnings_outstanding),
+          })}
+        </Text>
+      )}
+    </section>
+  );
+};
 
-  // Same copy as the project's own leaders card: a row says something about
-  // scope only when one was withheld, because the full grant is the ordinary
-  // appointment.
+const LedProjectRow = ({ project }: { project: DossierLedProject }) => {
+  const { t } = useTranslation();
+
+  // Three tenses of one appointment: still open (with or without a set end),
+  // or over, because the clock ran out or because the concert did.
+  const tenure = project.is_live
+    ? project.expires_at
+      ? t("projects.delegates.until", "do {{date}}", {
+          date: formatLocalizedDate(project.expires_at, { day: "numeric", month: "short" }),
+        })
+      : t("artists.dossier.leadership.current", "trwa")
+    : t("artists.dossier.leadership.ended", "zakończone");
+
+  // Same copy as the project's own leaders card: scope is said only where it
+  // departs from the ordinary appointment. The first three are granted by
+  // default, so a withheld one is the exception; the last two the reverse.
   const withheld: string[] = [];
   if (!project.scopes.marks) {
     withheld.push(t("projects.delegates.scope.without_marks", "bez notatek"));
@@ -300,182 +265,150 @@ const LedProjectItem = ({ project }: { project: DossierLedProject }) => {
     withheld.push(t("projects.delegates.scope.without_materials", "bez materiałów"));
   }
 
-  // Three tenses of one appointment: still open (with or without a set end),
-  // or over — either because the clock ran out or because the concert did.
-  const tenure = project.is_live
-    ? project.expires_at
-      ? t("projects.delegates.until", "do {{date}}", {
-          date: formatLocalizedDate(project.expires_at, {
-            day: "numeric",
-            month: "short",
-          }),
-        })
-      : t("artists.dossier.leadership.current", "trwa")
-    : t("artists.dossier.leadership.ended", "zakończone");
-
   return (
-    <div className="flex items-start justify-between gap-3 rounded-control border border-hairline bg-ethereal-alabaster/60 px-3.5 py-3">
-      <div className="min-w-0">
-        <Text weight="semibold" truncate className="text-ethereal-ink">
-          {project.title}
-        </Text>
-        <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5">
-          {dateLabel && (
-            <Caption color="muted" className="inline-flex items-center gap-1">
-              <CalendarClock size={11} aria-hidden="true" />
-              {dateLabel}
-            </Caption>
-          )}
-          <Caption color={project.is_live ? "graphite" : "muted"}>{tenure}</Caption>
-          {withheld.length > 0 && (
-            <Caption color="gold">
-              {t("projects.delegates.scope.limited", {
-                defaultValue: "Zakres ograniczony: {{missing}}",
-                missing: withheld.join(", "),
-              })}
-            </Caption>
-          )}
-          {/* The last two scopes are off by default, so granted is the
-              exception worth a line. */}
-          {project.scopes.choir_marks && (
-            <Caption color="gold">
-              {t("projects.delegates.scope.choir_marks_granted", "Nanosi uwagi dla chóru")}
-            </Caption>
-          )}
-          {project.scopes.manage_rehearsals && (
-            <Caption color="gold">
-              {t("projects.delegates.scope.planning_granted", "Układa plan swoich prób")}
-            </Caption>
-          )}
-        </div>
-      </div>
-      <Badge
-        variant={project.is_live ? ACCENT_BADGE.gold : "neutral"}
-        className="shrink-0"
-      >
-        {t("projects.delegates.badge", "Asystent")}
-      </Badge>
-    </div>
+    <RecordRow
+      open={{ to: `/panel/projects/${project.project_id}` }}
+      title={project.title}
+      voice="name"
+      facts={[
+        tenure,
+        withheld.length > 0
+          ? t("projects.delegates.scope.limited", {
+              defaultValue: "Zakres ograniczony: {{missing}}",
+              missing: withheld.join(", "),
+            })
+          : null,
+        project.scopes.choir_marks
+          ? t("projects.delegates.scope.choir_marks_granted", "Nanosi uwagi dla chóru")
+          : null,
+        project.scopes.manage_rehearsals
+          ? t("projects.delegates.scope.planning_granted", "Układa plan swoich prób")
+          : null,
+      ]}
+      figure={<DateFigure value={project.date_time} />}
+    />
   );
 };
 
 // Rendered only when there is something to show: a singer who never led is
 // the ordinary case, and a block of zeros would read as a shortfall.
-const LeadershipSection = ({
-  leadership,
-}: {
-  leadership: ArtistDossierLeadership;
-}) => {
+const LeadershipSection = ({ leadership }: { leadership: ArtistDossierLeadership }) => {
   const { t } = useTranslation();
+  const headingId = useId();
   if (leadership.projects_led === 0) return null;
+  const title = t("artists.dossier.leadership.title", "Prowadzenie");
+  // The projects are the rows below; the line counts what they add up to.
+  // Debriefs are counted by the author stamp, not by `led_by`: a leader may
+  // write up an evening she covered without having been announced for it.
+  const counts = [
+    leadership.rehearsals_led > 0
+      ? t("artists.dossier.leadership.rehearsals_count", { count: leadership.rehearsals_led })
+      : null,
+    leadership.debriefs_written > 0
+      ? t("artists.dossier.leadership.debriefs_count", { count: leadership.debriefs_written })
+      : null,
+  ].filter((part): part is string => part !== null);
   return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <Eyebrow as="h4" color="graphite">
-          {t("artists.dossier.leadership.title", "Prowadzenie")}
-        </Eyebrow>
-        <Caption color="muted" className="tabular-nums">
-          {leadership.projects_led}
-        </Caption>
-      </div>
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-        <CountTile
-          icon={<UserRound size={15} />}
-          label={t("artists.dossier.leadership.projects", "Projekty prowadzone")}
-          value={leadership.projects_led}
-        />
-        <CountTile
-          icon={<CalendarCheck size={15} />}
-          label={t("artists.dossier.leadership.rehearsals", "Poprowadzone próby")}
-          value={leadership.rehearsals_led}
-        />
-        {/* Counted by the author stamp, not by `led_by`: a leader may write up
-            an evening she covered without having been announced for it. */}
-        <CountTile
-          icon={<NotebookPen size={15} />}
-          label={t("artists.dossier.leadership.debriefs", "Podsumowania prób")}
-          value={leadership.debriefs_written}
-        />
-      </div>
-      <div className="flex flex-col gap-2">
+    <section aria-labelledby={headingId}>
+      <SubHeading id={headingId}>{title}</SubHeading>
+      {counts.length > 0 && (
+        <Text as="p" size="sm" color="graphite" className="mb-1">
+          {counts.join(", ")}
+        </Text>
+      )}
+      <RecordList edge="inset" label={title}>
         {leadership.projects.map((project) => (
-          <LedProjectItem key={project.project_id} project={project} />
+          <LedProjectRow key={project.project_id} project={project} />
         ))}
-      </div>
-    </div>
+      </RecordList>
+    </section>
   );
 };
 
-const ProjectHistoryItem = ({ project }: { project: DossierProject }) => {
+const ProjectHistoryRow = ({
+  project,
+  showsStatus,
+}: {
+  project: DossierProject;
+  showsStatus: boolean;
+}) => {
   const { t } = useTranslation();
-  const badge = projectStatusBadge(project.status);
-  const dateLabel = project.date_time
-    ? formatLocalizedDate(
-        project.date_time,
-        { day: "numeric", month: "short", year: "numeric" },
-        undefined,
-        undefined,
-      )
-    : null;
+  const status = getProjectStatusPresentation(project.status);
+  return (
+    <RecordRow
+      open={{ to: `/panel/projects/${project.project_id}/divisi` }}
+      title={project.title}
+      voice="name"
+      flags={
+        project.led ? (
+          <Badge variant="neutral" casing="natural">
+            {t("projects.delegates.badge", "Asystent")}
+          </Badge>
+        ) : null
+      }
+      facts={[
+        showsStatus ? t(status.labelKey, status.fallbackLabel) : null,
+        summariseCastings(project.castings, t),
+      ]}
+      figure={<DateFigure value={project.date_time} />}
+    />
+  );
+};
+
+// Keyed by the artist where it is rendered, so the fold closes again when the
+// panel moves on to the next person.
+const ProjectsSection = ({ projects }: { projects: readonly DossierProject[] }) => {
+  const { t } = useTranslation();
+  const headingId = useId();
+  const [doneOpen, setDoneOpen] = useState(false);
+  const title = t("artists.dossier.projects_title", "Projekty");
+  const doneLabel = t("artists.dossier.done_label", "Projekty zrealizowane");
+  const current = projects.filter((project) => project.status !== PROJECT_STATUS.DONE);
+  const done = projects.filter((project) => project.status === PROJECT_STATUS.DONE);
 
   return (
-    <div className="rounded-control border border-hairline bg-ethereal-alabaster/60 p-3.5">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <Text weight="semibold" truncate className="text-ethereal-ink">
-            {project.title}
-          </Text>
-          {dateLabel && (
-            <Caption color="muted" className="mt-0.5 inline-flex items-center gap-1">
-              <CalendarClock size={11} aria-hidden="true" />
-              {dateLabel}
-            </Caption>
+    <section aria-labelledby={headingId}>
+      <SubHeading id={headingId}>{title}</SubHeading>
+      {projects.length === 0 && (
+        <Text as="p" size="sm" color="graphite">
+          {t(
+            "artists.dossier.empty_history",
+            "Ten artysta nie brał jeszcze udziału w żadnym projekcie.",
           )}
-        </div>
-        <div className="flex shrink-0 items-center gap-1.5">
-          {project.led && (
-            <Badge variant={ACCENT_BADGE.gold}>
-              {t("projects.delegates.badge", "Asystent")}
-            </Badge>
-          )}
-          <Badge variant={badge.variant}>{t(badge.key, badge.fallback)}</Badge>
-        </div>
-      </div>
-
-      {project.castings.length > 0 ? (
-        <div className="mt-2.5 flex flex-col gap-1.5 border-t border-hairline pt-2.5">
-          {project.castings.map((casting, index) => (
-            <div
-              key={`${casting.piece_title}-${casting.voice_line}-${index}`}
-              className="flex items-center gap-2"
-            >
-              <Music2
-                size={12}
-                className="shrink-0 text-ethereal-graphite/40"
-                aria-hidden="true"
-              />
-              <Text size="sm" color="graphite" truncate className="min-w-0 flex-1">
-                {casting.piece_title}
-              </Text>
-              {casting.gives_pitch && (
-                <span
-                  className="h-2 w-2 shrink-0 rounded-full bg-ethereal-gold"
-                  title={t("artists.dossier.gives_pitch", "Podaje ton")}
-                  aria-label={t("artists.dossier.gives_pitch", "Podaje ton")}
-                />
-              )}
-              <Badge variant="brand" className="shrink-0">
-                {casting.voice_line_label}
-              </Badge>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <Caption color="muted" className="mt-2 block italic">
-          {t("artists.dossier.no_casting", "Brak przypisania do utworów")}
-        </Caption>
+        </Text>
       )}
-    </div>
+      {current.length > 0 && (
+        <RecordList edge="inset" label={title}>
+          {current.map((project) => (
+            <ProjectHistoryRow key={project.project_id} project={project} showsStatus />
+          ))}
+        </RecordList>
+      )}
+      {done.length > 0 && (
+        <div className={current.length > 0 ? "mt-2" : undefined}>
+          {/* The fold says they are finished, so the rows under it do not. */}
+          <FoldLine
+            label={doneLabel}
+            summary={t("artists.dossier.done_fold", "Zrealizowane: {{count}}", {
+              count: done.length,
+            })}
+            icon={<History size={16} className="text-ethereal-graphite" />}
+            open={doneOpen}
+            onToggle={() => setDoneOpen((open) => !open)}
+          >
+            <RecordList edge="inset" label={doneLabel}>
+              {done.map((project) => (
+                <ProjectHistoryRow
+                  key={project.project_id}
+                  project={project}
+                  showsStatus={false}
+                />
+              ))}
+            </RecordList>
+          </FoldLine>
+        </div>
+      )}
+    </section>
   );
 };
 
@@ -489,19 +422,45 @@ export const ArtistDossier = ({
   isResending = false,
 }: ArtistDossierProps): React.JSX.Element => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
+  const accountHeadingId = useId();
+  // The act a menu item chose, run once the menu has handed focus back to its
+  // trigger, as on the roster row.
+  const chosen = useRef<(() => void) | null>(null);
 
   const { data, isLoading, isError } = useArtistDossier(
     isOpen && artist ? artist.id : null,
   );
 
-  const section = artist ? getSectionPresentation(artist.voice_type) : null;
-  const voiceLabel = artist?.voice_type
-    ? artistRoleLabel(t, artist.voice_type, artist.instrument)
-    : "";
   const accountPending = artist ? isAwaitingActivation(artist) : false;
   const withoutEmail = artist ? isWithoutEmail(artist) : false;
   const linkExpired = accountPending && artist?.activation_link_expired === true;
   const fullName = artist ? `${artist.first_name} ${artist.last_name}` : "";
+  const canMessage = artist ? canReceiveMessages(artist) : false;
+  const canPreview = Boolean(artist?.is_active && artist.user);
+
+  // The roster row's own facts, so the record repeats what was clicked.
+  const voiceLabel = artist
+    ? artist.voice_type
+      ? artistRoleLabel(t, artist.voice_type, artist.instrument)
+      : artist.voice_type_display || null
+    : null;
+  const inviteSent =
+    artist && accountPending && artist.activation_email_sent_at
+      ? t("artists.row.invite_sent", "zaproszenie wysłane {{when}}", {
+          when: formatLocalizedDateTime(artist.activation_email_sent_at, {
+            day: "2-digit",
+            month: "2-digit",
+            year: "numeric",
+          }),
+        })
+      : null;
+  const byline = [voiceLabel, inviteSent].filter(Boolean).join(", ");
+
+  const choose = (act: () => void) => () => {
+    chosen.current = act;
+  };
+  const editLabel = t("artists.row.edit", "Edytuj");
 
   return (
     <SidePanel
@@ -509,7 +468,7 @@ export const ArtistDossier = ({
       onCloseRequest={onClose}
       size="lg"
       // Sans, like the roster rows this opened from: the serif marks a titled
-      // work or event, and a person is neither.
+      // work, and a person is not one.
       title={fullName}
       leading={
         artist && (
@@ -523,152 +482,123 @@ export const ArtistDossier = ({
           />
         )
       }
-      byline={
-        <Badge
-          variant={section ? ACCENT_BADGE[section.accent] : "neutral"}
-          icon={<Music2 size={9} />}
-        >
-          {voiceLabel}
-        </Badge>
-      }
+      byline={byline || undefined}
       actions={
-        // The dossier answers "who is this person to us"; the preview answers
-        // "and what does the app tell them". Offered here as an icon rather
-        // than a third footer slab: the footer already carries the two things
-        // a manager does FROM this panel.
-        artist?.is_active && artist.user ? (
-          <Link
-            to={`/panel/artists/${artist.id}/preview`}
-            onClick={onClose}
-            title={t("artists.card.preview_title", "Zobacz, co widzi ta osoba")}
-            aria-label={t("artists.card.preview_aria", {
-              defaultValue: "Zobacz, co widzi {{name}}",
-              name: fullName,
-            })}
-            className="rounded-control border border-ethereal-incense/20 bg-ethereal-alabaster p-2.5 text-ethereal-graphite shadow-sm transition-all hover:bg-ethereal-gold/12 hover:text-ethereal-gold active:scale-95"
-          >
-            <Eye size={20} aria-hidden="true" />
-          </Link>
-        ) : undefined
-      }
-      footer={
-        artist && (
-          <div className="flex items-center gap-3">
-            {canReceiveMessages(artist) && (
-              <Button
-                variant="secondary"
-                onClick={() => onMessage(artist)}
-                leftIcon={<MessageSquare size={15} aria-hidden="true" />}
-                className="flex-1"
-              >
-                {t("artists.card.message_title", "Napisz wiadomość")}
-              </Button>
-            )}
+        artist ? (
+          <>
             <Button
-              variant="primary"
+              variant="icon"
+              size="icon"
               onClick={() => onEdit(artist)}
-              leftIcon={<Pencil size={15} aria-hidden="true" />}
-              rightIcon={<ChevronRight size={15} aria-hidden="true" />}
-              className="flex-1"
+              aria-label={editLabel}
+              title={editLabel}
             >
-              {t("artists.dossier.edit_profile", "Edytuj profil")}
+              <Pencil size={18} aria-hidden="true" />
             </Button>
-          </div>
-        )
+            {(canMessage || canPreview) && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="icon"
+                    size="icon"
+                    aria-label={t("artists.row.menu_aria", "Więcej: {{name}}", {
+                      name: fullName,
+                    })}
+                  >
+                    <MoreHorizontal size={18} aria-hidden="true" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  align="end"
+                  onCloseAutoFocus={() => {
+                    const act = chosen.current;
+                    chosen.current = null;
+                    act?.();
+                  }}
+                >
+                  {canMessage && (
+                    <DropdownMenuItem
+                      icon={<MessageSquare size={16} />}
+                      onSelect={choose(() => onMessage(artist))}
+                    >
+                      {t("artists.card.message_title", "Napisz wiadomość")}
+                    </DropdownMenuItem>
+                  )}
+                  {canPreview && (
+                    <DropdownMenuItem
+                      icon={<Eye size={16} />}
+                      onSelect={choose(() => {
+                        onClose();
+                        navigate(`/panel/artists/${artist.id}/preview`);
+                      })}
+                    >
+                      {t("artists.card.preview_title", "Zobacz, co widzi ta osoba")}
+                    </DropdownMenuItem>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+          </>
+        ) : undefined
       }
     >
       {artist && (
-        <>
-          {/* Neutral, not gold: nothing here is waiting on anyone. It says
-              what the manager has taken on by adding this member so. */}
+        <div className="space-y-7">
+          {/* No tone: nothing here is waiting on anyone. It says what the
+              manager has taken on by adding this member so. */}
           {withoutEmail && (
-            <div className="mb-6 flex items-start gap-2.5 rounded-nested border border-hairline-strong bg-ethereal-alabaster/70 p-4 text-ethereal-graphite">
-              <MailX size={18} className="mt-0.5 shrink-0" aria-hidden="true" />
-              <div className="min-w-0">
-                <Eyebrow color="muted">
-                  {t("artists.dossier.no_email_title", "Bez adresu e-mail")}
-                </Eyebrow>
-                <Caption color="muted" className="mt-0.5 block">
-                  {t(
-                    "artists.dossier.no_email_desc",
-                    "Ta osoba nie ma dostępu do aplikacji i nie dostaje żadnych powiadomień. Plan, zmiany i nuty trzeba jej przekazywać osobiście; ikona oka u góry pokazuje, co ma w planie. Wpisanie adresu w edycji profilu wyśle jej zaproszenie.",
-                  )}
-                </Caption>
-              </div>
-            </div>
-          )}
-          {accountPending && (
-            <div
-              className={cn(
-                "mb-6 flex flex-col gap-3 rounded-nested border p-4 sm:flex-row sm:items-center sm:justify-between",
-                linkExpired
-                  ? "border-ethereal-crimson/25 bg-ethereal-crimson/[0.06]"
-                  : "border-ethereal-gold/25 bg-ethereal-gold/[0.07]",
-              )}
-            >
-              <div
-                className={cn(
-                  "flex min-w-0 items-start gap-2.5",
-                  linkExpired ? "text-ethereal-crimson" : "text-ethereal-gold",
+            <section aria-labelledby={accountHeadingId}>
+              <SubHeading id={accountHeadingId}>
+                {t("artists.dossier.no_email_title", "Bez adresu e-mail")}
+              </SubHeading>
+              <Text as="p" size="sm" color="graphite">
+                {t(
+                  "artists.dossier.no_email_desc",
+                  "Ta osoba nie ma dostępu do aplikacji i nie dostaje żadnych powiadomień. Plan, zmiany i nuty trzeba jej przekazywać osobiście; „Zobacz, co widzi ta osoba” w menu u góry pokazuje, co ma w planie. Wpisanie adresu w edycji profilu wyśle jej zaproszenie.",
                 )}
+              </Text>
+            </section>
+          )}
+          {/* An expired link is one discrete state that needs an act, so it
+              may be crimson; an invitation still open is ordinary waiting. */}
+          {accountPending && (
+            <section aria-labelledby={accountHeadingId}>
+              <Text
+                as="h3"
+                id={accountHeadingId}
+                size="base"
+                weight="semibold"
+                color={linkExpired ? "crimson" : undefined}
+                className="mb-1"
               >
-                <MailWarning size={18} className="mt-0.5 shrink-0" aria-hidden="true" />
-                <div className="min-w-0">
-                  <Eyebrow color={linkExpired ? "crimson" : "gold"}>
-                    {linkExpired
-                      ? t("artists.card.link_expired", "Link wygasł")
-                      : t("artists.card.pending_activation", "Nie aktywowano")}
-                  </Eyebrow>
-                  <Caption color="muted" className="mt-0.5 block">
-                    {linkExpired
-                      ? t(
-                          "artists.dossier.link_expired_desc",
-                          "Link aktywacyjny stracił ważność. Wyślij zaproszenie ponownie, aby ten artysta mógł aktywować konto.",
-                        )
-                      : t(
-                          "artists.dossier.pending_activation_desc",
-                          "Zaproszenie zostało wysłane, ale ten artysta nie aktywował jeszcze konta na platformie.",
-                        )}
-                  </Caption>
-                  {artist.activation_email_sent_at && (
-                    <Caption
-                      className={cn(
-                        "mt-1 block font-semibold tabular-nums",
-                        linkExpired
-                          ? "text-ethereal-crimson/90"
-                          : "text-ethereal-gold/90",
-                      )}
-                    >
-                      {t("artists.card.invite_sent_at", {
-                        defaultValue: "Wysłano {{when}}",
-                        when: formatLocalizedDateTime(
-                          artist.activation_email_sent_at,
-                          {
-                            day: "2-digit",
-                            month: "2-digit",
-                            year: "numeric",
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          },
-                        ),
-                      })}
-                    </Caption>
-                  )}
-                </div>
-              </div>
+                {linkExpired
+                  ? t("artists.card.link_expired", "Link wygasł")
+                  : t("artists.card.pending_activation", "Nie aktywowano")}
+              </Text>
+              <Text as="p" size="sm" color="graphite">
+                {linkExpired
+                  ? t(
+                      "artists.dossier.link_expired_desc",
+                      "Link aktywacyjny stracił ważność. Wyślij zaproszenie ponownie, aby ten artysta mógł aktywować konto.",
+                    )
+                  : t(
+                      "artists.dossier.pending_activation_desc",
+                      "Zaproszenie zostało wysłane, ale ten artysta nie aktywował jeszcze konta na platformie.",
+                    )}
+              </Text>
               {onResendActivation && (
                 <Button
                   variant="secondary"
                   size="sm"
+                  casing="sentence"
                   onClick={() => onResendActivation(artist)}
                   isLoading={isResending}
-                  leftIcon={<Send size={13} aria-hidden="true" />}
-                  className="shrink-0 self-start sm:self-auto"
+                  className="mt-3"
                 >
                   {t("artists.card.resend_activation", "Wyślij ponownie zaproszenie")}
                 </Button>
               )}
-            </div>
+            </section>
           )}
           {isLoading ? (
             <EtherealLoader className="h-64" />
@@ -683,41 +613,14 @@ export const ArtistDossier = ({
               )}
             />
           ) : data ? (
-            <div className="space-y-7">
-              <StatsSection stats={data.stats} />
-
+            <>
+              <RatesSection stats={data.stats} />
+              <EarningsSection stats={data.stats} />
               <LeadershipSection leadership={data.leadership} />
-
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <Eyebrow as="h4" color="graphite">
-                    {t("artists.dossier.history_title", "Historia projektów")}
-                  </Eyebrow>
-                  <Caption color="muted" className="tabular-nums">
-                    {data.projects.length}
-                  </Caption>
-                </div>
-
-                {data.projects.length > 0 ? (
-                  <div className="flex flex-col gap-2">
-                    {data.projects.map((project) => (
-                      <ProjectHistoryItem key={project.project_id} project={project} />
-                    ))}
-                  </div>
-                ) : (
-                  <StatePanel
-                    variant="inline"
-                    icon={<Layers size={22} aria-hidden="true" />}
-                    title={t(
-                      "artists.dossier.empty_history",
-                      "Ten artysta nie brał jeszcze udziału w żadnym projekcie.",
-                    )}
-                  />
-                )}
-              </div>
-            </div>
+              <ProjectsSection key={artist.id} projects={data.projects} />
+            </>
           ) : null}
-        </>
+        </div>
       )}
     </SidePanel>
   );

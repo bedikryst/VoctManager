@@ -58,9 +58,11 @@ export interface SidePanelProps {
   readonly onCloseRequest: () => void;
   /** The record's name or the editor's title; also the dialog's name. */
   readonly title: React.ReactNode;
-  /** One muted line under the title. */
+  /** One muted line under the title, running on under the actions: beside
+   *  three icon buttons on a phone it would wrap into a narrow column. */
   readonly byline?: React.ReactNode;
-  /** Before the title: an avatar. */
+  /** Before the title, from `sm` up: an avatar. On a phone its width goes to
+   *  the title, which would otherwise break a two-word name. */
   readonly leading?: React.ReactNode;
   /** Beside the close button: at most one icon button and one menu, as on a
    *  `RecordRow`. */
@@ -164,39 +166,41 @@ export const SidePanel = ({
                   )}
                 >
                   <header className="flex shrink-0 items-center gap-3 border-b border-hairline px-5 py-3 md:px-6">
-                    {leading && <div className="flex shrink-0">{leading}</div>}
-                    <div className="min-w-0 flex-1 py-1">
-                      <Dialog.Title asChild>
-                        <Text
-                          as="h2"
-                          size="lg"
-                          weight="semibold"
-                          className="wrap-break-word"
-                        >
-                          {title}
-                        </Text>
-                      </Dialog.Title>
+                    {leading && <div className="hidden shrink-0 sm:flex">{leading}</div>}
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-3">
+                        <Dialog.Title asChild>
+                          <Text
+                            as="h2"
+                            size="lg"
+                            weight="semibold"
+                            className="min-w-0 flex-1 py-1 wrap-break-word"
+                          >
+                            {title}
+                          </Text>
+                        </Dialog.Title>
+                        {actions && (
+                          <div className="flex shrink-0 items-center gap-1">
+                            {actions}
+                          </div>
+                        )}
+                        <Dialog.Close asChild>
+                          <Button
+                            variant="icon"
+                            size="icon"
+                            className="-mr-2 shrink-0"
+                            aria-label={t("common.actions.close", "Zamknij")}
+                          >
+                            <X size={18} aria-hidden="true" />
+                          </Button>
+                        </Dialog.Close>
+                      </div>
                       {byline && (
-                        <Text as="div" size="sm" color="muted" className="mt-0.5">
+                        <Text as="div" size="sm" color="muted" className="-mt-1 pb-1">
                           {byline}
                         </Text>
                       )}
                     </div>
-                    {actions && (
-                      <div className="flex shrink-0 items-center gap-1">
-                        {actions}
-                      </div>
-                    )}
-                    <Dialog.Close asChild>
-                      <Button
-                        variant="icon"
-                        size="icon"
-                        className="-mr-2 shrink-0"
-                        aria-label={t("common.actions.close", "Zamknij")}
-                      >
-                        <X size={18} aria-hidden="true" />
-                      </Button>
-                    </Dialog.Close>
                   </header>
 
                   <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-5 md:p-6">

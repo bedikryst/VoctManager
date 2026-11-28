@@ -7,6 +7,7 @@
  */
 
 import type { DecimalString } from "@/features/finance/types/finance.dto";
+import type { ProjectStatus } from "@/features/projects/constants/projectDomain";
 import type { ParticipationStatus } from "@/shared/types";
 
 export interface DossierCasting {
@@ -20,8 +21,7 @@ export interface DossierProject {
   project_id: string;
   title: string;
   date_time: string | null;
-  /** Project lifecycle code: DRAFT | ACTIVE | DONE | CANC. */
-  status: string;
+  status: ProjectStatus;
   participation_status: ParticipationStatus;
   castings: DossierCasting[];
   /** The artist led this project (any leadership grant, live or ended). */
@@ -46,8 +46,7 @@ export interface DossierLedProject {
   project_id: string;
   title: string;
   date_time: string | null;
-  /** Project lifecycle code: DRAFT | ACTIVE | DONE | CANC. */
-  status: string;
+  status: ProjectStatus;
   /** The grant still opens something today: unexpired, not revoked, project open. */
   is_live: boolean;
   expires_at: string | null;
