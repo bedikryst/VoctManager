@@ -5,7 +5,8 @@ a window, [tasks.dispatch_material_notice_task] closes it.
 Every uploaded track fires the material event, so without the window a batch of
 rehearsal MP3s is a dozen pushes per singer. These cases pin it: however many
 events land in one window, one notice goes out, it names the kind only when the
-events agree, and it reaches only the people the piece is programmed for.
+events agree, and it reaches only the people the piece is programmed for and who
+can open it: a live seat in a project still open to the cast.
 """
 
 from datetime import timedelta
@@ -30,11 +31,11 @@ class MaterialNoticeWindowTests(TestCase):
     def setUp(self) -> None:
         cache.clear()
         self.piece = Piece.objects.create(title="Lacrimosa")
-        project = Project.objects.create(
+        self.project = Project.objects.create(
             title="Requiem", date_time=timezone.now() + timedelta(days=30),
-            status=Project.Status.DRAFT,
+            status=Project.Status.ACTIVE,
         )
-        ProgramItem.objects.create(project=project, piece=self.piece, order=1)
+        ProgramItem.objects.create(project=self.project, piece=self.piece, order=1)
         self.user = get_user_model().objects.create_user(
             username="mat-alt", email="mat-alt@test.pl", password="pw123456"
         )
@@ -42,8 +43,8 @@ class MaterialNoticeWindowTests(TestCase):
             user=self.user, first_name="Ala", last_name="Alt",
             email="mat-alt@test.pl", voice_type=VoiceType.ALTO,
         )
-        Participation.objects.create(
-            artist=artist, project=project, status=Participation.Status.CONFIRMED,
+        self.seat = Participation.objects.create(
+            artist=artist, project=self.project, status=Participation.Status.CONFIRMED,
         )
 
     def _event(self, kind: str, piece: Piece | None = None) -> None:
@@ -84,6 +85,25 @@ class MaterialNoticeWindowTests(TestCase):
             self._event("recording", piece=loose)
 
         self._close_window(piece=loose).assert_not_called()
+
+    def test_a_declined_seat_hears_nothing(self) -> None:
+        self.seat.status = Participation.Status.DECLINED
+        self.seat.save(update_fields=["status"])
+        with patch(SCHEDULE):
+            self._event("score")
+
+        self._close_window().assert_not_called()
+
+    def test_a_project_closed_to_the_cast_sends_nothing(self) -> None:
+        # Draft and cancelled projects do not exist for the cast; after a
+        # finished one the music is no longer theirs to open.
+        for status in (Project.Status.DRAFT, Project.Status.CANCELLED, Project.Status.COMPLETED):
+            with self.subTest(status=status):
+                Project.objects.filter(id=self.project.id).update(status=status)
+                with patch(SCHEDULE):
+                    self._event("score")
+
+                self._close_window().assert_not_called()
 
     def test_a_closed_window_lets_the_next_event_open_another(self) -> None:
         with patch(SCHEDULE) as schedule:

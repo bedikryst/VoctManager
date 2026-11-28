@@ -422,9 +422,11 @@ def dispatch_material_notice_task(piece_id: str) -> int:
     Closes a piece's material window: one notice for everything that landed in it.
 
     Recipients are resolved now, not when the first file arrived, so a singer cast
-    during the window hears about it and one who left does not. The kind is named
-    only when every event agreed; a mixed or unknown window sends `None`, whose
-    generic wording the composer already has.
+    during the window hears about it and one who left does not. They are the live
+    seats of the open projects programming the piece: whoever declined, or sings in
+    a draft, cancelled or finished project, could not open what the notice points
+    at. The kind is named only when every event agreed; a mixed or unknown window
+    sends `None`, whose generic wording the composer already has.
     """
     # Reopen first: an upload from here on starts its own window rather than
     # being folded into a notice that has already been composed.
@@ -436,11 +438,13 @@ def dispatch_material_notice_task(piece_id: str) -> int:
     if piece is None:
         return 0
 
-    user_ids = Participation.objects.filter(
-        project__program_items__piece=piece,
-        is_deleted=False,
-        project__is_deleted=False,
-    ).values_list("artist__user_id", flat=True).distinct()
+    user_ids = (
+        Participation.live_seats()
+        .filter(project__program_items__piece=piece)
+        .exclude(project__status__in=Project.CLOSED_STATUSES)
+        .values_list("artist__user_id", flat=True)
+        .distinct()
+    )
     recipient_ids = [str(uid) for uid in user_ids if uid]
     if not recipient_ids:
         return 0
