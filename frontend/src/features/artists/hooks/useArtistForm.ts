@@ -1,10 +1,11 @@
 /**
  * @file useArtistForm.ts
  * @description Encapsulates form state, Zod validation, and API payload construction using RHF.
+ * Fills the vocative from the name table (`lib/polishVocative`) as the first name is typed.
  * @module features/artists/hooks/useArtistForm
  */
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
@@ -17,6 +18,7 @@ import {
   useToggleArtistStatus,
   useUpdateArtist,
 } from "../api/artist.queries";
+import { vocativeFromTable } from "../lib/polishVocative";
 import {
   artistFormSchema,
   type ArtistFormValues,
@@ -41,6 +43,12 @@ const preferencesOf = (artist: Artist | null): PreferenceValues => ({
   language: artist?.language ?? "pl",
   salutation: artist?.salutation ?? "N",
 });
+
+/** A stored vocative is shown as stored. An empty one shows the table's form
+ *  for the name without marking it as a change: any save of the profile
+ *  stores it, and closing without one leaves the record as it was. */
+const shownVocative = (artist: Artist | null, firstName: string): string =>
+  artist?.first_name_vocative || vocativeFromTable(firstName);
 
 export const useArtistForm = (
   artist: Artist | null,
@@ -69,7 +77,10 @@ export const useArtistForm = (
     resolver: zodResolver(artistFormSchema),
     defaultValues: {
       first_name: artist?.first_name || defaultNames.first,
-      first_name_vocative: artist?.first_name_vocative || "",
+      first_name_vocative: shownVocative(
+        artist,
+        artist?.first_name || defaultNames.first,
+      ),
       last_name: artist?.last_name || defaultNames.last,
       email: artist?.email || "",
       without_email: artist ? artist.email === "" : false,
@@ -87,15 +98,39 @@ export const useArtistForm = (
     },
   });
 
+  // The table's vocative for the first name as it stood before the latest
+  // keystroke. While the vocative field holds that form, or nothing, it is the
+  // table's and follows the name; anything else was typed by hand and stays.
+  const tableVocative = useRef("");
+
+  useEffect(() => {
+    const subscription = form.watch((values, { name, type }) => {
+      if (name !== "first_name" || type !== "change") return;
+      const suggestion = vocativeFromTable(values.first_name ?? "");
+      const current = (values.first_name_vocative ?? "").trim();
+      if (
+        (current === "" || current === tableVocative.current) &&
+        current !== suggestion
+      ) {
+        form.setValue("first_name_vocative", suggestion, { shouldDirty: true });
+      }
+      tableVocative.current = suggestion;
+    });
+    return () => subscription.unsubscribe();
+  }, [form]);
+
   // Re-seed every time the panel opens so reopening always reflects the saved
   // record — closing discards unsaved edits (and "New artist" never inherits a
   // previously edited profile).
   useEffect(() => {
     if (!isOpen) return;
+    tableVocative.current = vocativeFromTable(
+      artist ? artist.first_name : defaultNames.first,
+    );
     if (artist) {
       form.reset({
         first_name: artist.first_name,
-        first_name_vocative: artist.first_name_vocative || "",
+        first_name_vocative: shownVocative(artist, artist.first_name),
         last_name: artist.last_name,
         email: artist.email ?? "",
         without_email: artist.email === "",
@@ -112,7 +147,7 @@ export const useArtistForm = (
     } else {
       form.reset({
         first_name: defaultNames.first,
-        first_name_vocative: "",
+        first_name_vocative: vocativeFromTable(defaultNames.first),
         last_name: defaultNames.last,
         email: "",
         without_email: false,

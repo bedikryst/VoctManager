@@ -37,6 +37,7 @@ import {
   voiceToSalutation,
 } from "../types/artist.dto";
 import { canReceiveMessages } from "../lib/accountState";
+import { vocativeFromTable } from "../lib/polishVocative";
 import { AssessedRangeField } from "./AssessedRangeField";
 import { NewThreadModal } from "@/features/messages/components/NewThreadModal";
 
@@ -108,6 +109,14 @@ export default function ArtistEditorPanel({
   const isCreating = !artist?.id;
 
   const firstNameValue = useWatch({ control: form.control, name: "first_name" });
+  const vocativeValue = useWatch({
+    control: form.control,
+    name: "first_name_vocative",
+  });
+  // The form fills the vocative from the name table; an empty field beside a
+  // name says why, so a blank does not read as a fill that failed.
+  const isNameMissingFromTable =
+    !vocativeValue?.trim() && vocativeFromTable(firstNameValue ?? "") === "";
   const withoutEmail = useWatch({ control: form.control, name: "without_email" });
   // Creating with the waiver ticked: the field is emptied and closed, so the
   // form cannot carry an address and the waiver at once. On edit the waiver is
@@ -256,10 +265,15 @@ export default function ArtistEditorPanel({
                         className="font-medium text-ethereal-amethyst"
                       />
                       <FieldHint>
-                        {t(
-                          "artists.editor.first_name_vocative_hint",
-                          "Forma używana w powitaniach, np. w mailach.",
-                        )}
+                        {isNameMissingFromTable
+                          ? t(
+                              "artists.editor.first_name_vocative_not_in_table",
+                              "Tego imienia nie ma w tabeli wołaczy. Wpisz formę ręcznie.",
+                            )
+                          : t(
+                              "artists.editor.first_name_vocative_hint",
+                              "Forma używana w powitaniach, np. w mailach.",
+                            )}
                       </FieldHint>
                     </motion.div>
                   )}
