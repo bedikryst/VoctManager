@@ -1,11 +1,12 @@
 /**
  * @file ArtistDossier.tsx
  * @description An artist's record for the manager, on `SidePanel`. The head is
- * the roster row's own: the name, its byline (the voice, an invitation's date),
- * "Edytuj" and a menu (write to them, see what the app shows them). The body
+ * the roster row's own: the name, its byline (the voice, an invitation's date,
+ * the row's bell-off mark in words), "Edytuj" and a menu (write to them, see
+ * what the app shows them) whose items are named as on the row. The body
  * states the account only when it asks for an act (no e-mail address, an
- * invitation not taken up), then the track record served by
- * GET /artists/{id}/dossier/: the two rates, the voices most sung, the money,
+ * invitation not taken up, no account behind the row), then the track record
+ * served by GET /artists/{id}/dossier/: the two rates, the voices most sung, the money,
  * the projects led and the projects sung. Every project is a row that opens
  * it; a sung project opens its voice assignments, where the per-piece lines
  * live, and the finished ones fold into one line.
@@ -46,7 +47,13 @@ import {
   attendanceRateTone,
 } from "@/features/rehearsals/constants/attendanceMeta";
 import { useArtistDossier } from "../api/artist.queries";
-import { canReceiveMessages, isAwaitingActivation, isWithoutEmail } from "../lib/accountState";
+import {
+  canReceiveMessages,
+  isAwaitingActivation,
+  isDetached,
+  isWithoutEmail,
+  isWithoutPush,
+} from "../lib/accountState";
 import type {
   ArtistDossierLeadership,
   ArtistDossierStats,
@@ -120,6 +127,40 @@ const SubHeading = ({ id, children }: { id: string; children: React.ReactNode })
   <Text as="h3" id={id} size="base" weight="semibold" className="mb-1">
     {children}
   </Text>
+);
+
+// What the row's flag means, said once in the record. Crimson only for a
+// discrete broken state (an expired link, no account behind the row); waiting
+// and a choice the manager made take no tone.
+const AccountNote = ({
+  headingId,
+  title,
+  body,
+  broken = false,
+  children,
+}: {
+  headingId: string;
+  title: string;
+  body: string;
+  broken?: boolean;
+  children?: React.ReactNode;
+}) => (
+  <section aria-labelledby={headingId}>
+    <Text
+      as="h3"
+      id={headingId}
+      size="base"
+      weight="semibold"
+      color={broken ? "crimson" : undefined}
+      className="mb-1"
+    >
+      {title}
+    </Text>
+    <Text as="p" size="sm" color="graphite">
+      {body}
+    </Text>
+    {children}
+  </section>
 );
 
 const RateFigure = ({
@@ -373,7 +414,7 @@ const ProjectsSection = ({ projects }: { projects: readonly DossierProject[] }) 
         <Text as="p" size="sm" color="graphite">
           {t(
             "artists.dossier.empty_history",
-            "Ten artysta nie brał jeszcze udziału w żadnym projekcie.",
+            "Ta osoba nie brała jeszcze udziału w żadnym projekcie.",
           )}
         </Text>
       )}
@@ -435,6 +476,8 @@ export const ArtistDossier = ({
   const accountPending = artist ? isAwaitingActivation(artist) : false;
   const withoutEmail = artist ? isWithoutEmail(artist) : false;
   const linkExpired = accountPending && artist?.activation_link_expired === true;
+  const detached = artist ? isDetached(artist) : false;
+  const withoutPush = artist ? artist.is_active && isWithoutPush(artist) : false;
   const fullName = artist ? `${artist.first_name} ${artist.last_name}` : "";
   const canMessage = artist ? canReceiveMessages(artist) : false;
   const canPreview = Boolean(artist?.is_active && artist.user);
@@ -455,7 +498,10 @@ export const ArtistDossier = ({
           }),
         })
       : null;
-  const byline = [voiceLabel, inviteSent].filter(Boolean).join(", ");
+  // The row's bell-off mark in words. Most members have no push device, so it
+  // stays a byline fact rather than a note that would head most records.
+  const noPush = withoutPush ? t("artists.dossier.no_push", "bez powiadomień push") : null;
+  const byline = [voiceLabel, inviteSent, noPush].filter(Boolean).join(", ");
 
   const choose = (act: () => void) => () => {
     chosen.current = act;
@@ -521,7 +567,7 @@ export const ArtistDossier = ({
                       icon={<MessageSquare size={16} />}
                       onSelect={choose(() => onMessage(artist))}
                     >
-                      {t("artists.card.message_title", "Napisz wiadomość")}
+                      {t("artists.row.message", "Napisz wiadomość")}
                     </DropdownMenuItem>
                   )}
                   {canPreview && (
@@ -532,7 +578,7 @@ export const ArtistDossier = ({
                         navigate(`/panel/artists/${artist.id}/preview`);
                       })}
                     >
-                      {t("artists.card.preview_title", "Zobacz, co widzi ta osoba")}
+                      {t("artists.row.preview", "Zobacz, co widzi ta osoba")}
                     </DropdownMenuItem>
                   )}
                 </DropdownMenuContent>
@@ -544,48 +590,40 @@ export const ArtistDossier = ({
     >
       {artist && (
         <div className="space-y-7">
-          {/* No tone: nothing here is waiting on anyone. It says what the
-              manager has taken on by adding this member so. */}
+          {/* The three states exclude each other (an address never given, an
+              invitation out, no account at all), so at most one note shows
+              and they share a heading id. */}
           {withoutEmail && (
-            <section aria-labelledby={accountHeadingId}>
-              <SubHeading id={accountHeadingId}>
-                {t("artists.dossier.no_email_title", "Bez adresu e-mail")}
-              </SubHeading>
-              <Text as="p" size="sm" color="graphite">
-                {t(
-                  "artists.dossier.no_email_desc",
-                  "Ta osoba nie ma dostępu do aplikacji i nie dostaje żadnych powiadomień. Plan, zmiany i nuty trzeba jej przekazywać osobiście; „Zobacz, co widzi ta osoba” w menu u góry pokazuje, co ma w planie. Wpisanie adresu w edycji profilu wyśle jej zaproszenie.",
-                )}
-              </Text>
-            </section>
+            <AccountNote
+              headingId={accountHeadingId}
+              title={t("artists.dossier.no_email_title", "Bez adresu e-mail")}
+              body={t(
+                "artists.dossier.no_email_desc",
+                "Ta osoba nie ma dostępu do aplikacji i nie dostaje żadnych powiadomień. Plan, zmiany i nuty trzeba jej przekazywać osobiście; „Zobacz, co widzi ta osoba” w menu u góry pokazuje, co ma w planie. Wpisanie adresu w edycji profilu wyśle jej zaproszenie.",
+              )}
+            />
           )}
-          {/* An expired link is one discrete state that needs an act, so it
-              may be crimson; an invitation still open is ordinary waiting. */}
           {accountPending && (
-            <section aria-labelledby={accountHeadingId}>
-              <Text
-                as="h3"
-                id={accountHeadingId}
-                size="base"
-                weight="semibold"
-                color={linkExpired ? "crimson" : undefined}
-                className="mb-1"
-              >
-                {linkExpired
+            <AccountNote
+              headingId={accountHeadingId}
+              broken={linkExpired}
+              title={
+                linkExpired
                   ? t("artists.card.link_expired", "Link wygasł")
-                  : t("artists.card.pending_activation", "Nie aktywowano")}
-              </Text>
-              <Text as="p" size="sm" color="graphite">
-                {linkExpired
+                  : t("artists.card.pending_activation", "Nie aktywowano")
+              }
+              body={
+                linkExpired
                   ? t(
                       "artists.dossier.link_expired_desc",
-                      "Link aktywacyjny stracił ważność. Wyślij zaproszenie ponownie, aby ten artysta mógł aktywować konto.",
+                      "Link aktywacyjny stracił ważność. Wyślij zaproszenie ponownie, aby ta osoba mogła aktywować konto.",
                     )
                   : t(
                       "artists.dossier.pending_activation_desc",
-                      "Zaproszenie zostało wysłane, ale ten artysta nie aktywował jeszcze konta na platformie.",
-                    )}
-              </Text>
+                      "Zaproszenie zostało wysłane, ale ta osoba nie aktywowała jeszcze konta na platformie.",
+                    )
+              }
+            >
               {onResendActivation && (
                 <Button
                   variant="secondary"
@@ -595,10 +633,21 @@ export const ArtistDossier = ({
                   isLoading={isResending}
                   className="mt-3"
                 >
-                  {t("artists.card.resend_activation", "Wyślij ponownie zaproszenie")}
+                  {t("artists.row.resend", "Wyślij zaproszenie ponownie")}
                 </Button>
               )}
-            </section>
+            </AccountNote>
+          )}
+          {detached && (
+            <AccountNote
+              headingId={accountHeadingId}
+              broken
+              title={t("artists.card.detached_account", "Konto odłączone")}
+              body={t(
+                "artists.dossier.detached_desc",
+                "Konto tej osoby zostało usunięte; jej projekty i obsady zostają w historii. Nie zaloguje się i nie dostaje powiadomień, a adres wpisany w profilu nie wyśle jej już zaproszenia.",
+              )}
+            />
           )}
           {isLoading ? (
             <EtherealLoader className="h-64" />

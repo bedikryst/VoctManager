@@ -56,6 +56,7 @@ import { usePitchNotation } from "../hooks/usePitchNotation";
 import {
   canReceiveMessages,
   isAwaitingActivation,
+  isDetached,
   isWithoutEmail,
   isWithoutPush,
 } from "../lib/accountState";
@@ -112,7 +113,7 @@ export const ArtistRow = React.memo(
     const linkExpired = accountPending && artist.activation_link_expired === true;
     const withoutEmail = isWithoutEmail(artist);
     const withoutPush = isActive && isWithoutPush(artist);
-    const detached = isActive && !hasAccount;
+    const detached = isDetached(artist);
 
     const voiceLabel = artist.voice_type
       ? artistRoleLabel(t, artist.voice_type, artist.instrument)
@@ -253,7 +254,7 @@ export const ArtistRow = React.memo(
                   icon={<MessageSquare size={16} />}
                   onSelect={choose(() => onMessage(artist))}
                 >
-                  {t("artists.row.message", "Napisz")}
+                  {t("artists.row.message", "Napisz wiadomość")}
                 </DropdownMenuItem>
               )}
               {isActive && hasAccount && (
@@ -261,7 +262,7 @@ export const ArtistRow = React.memo(
                   icon={<Eye size={16} />}
                   onSelect={choose(() => navigate(`/panel/artists/${artist.id}/preview`))}
                 >
-                  {t("artists.row.preview", "Podgląd jak chórzysta")}
+                  {t("artists.row.preview", "Zobacz, co widzi ta osoba")}
                 </DropdownMenuItem>
               )}
               {accountPending && (

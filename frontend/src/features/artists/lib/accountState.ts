@@ -21,7 +21,7 @@ export const isWithoutEmail = (artist: Artist): boolean =>
 /**
  * Invited and not answered yet. `account_activated` is manager-only (undefined
  * otherwise), so unknown counts as neither state. The serializer also reports
- * `false` for a detached (GDPR-erased) account, which is the crimson
+ * `false` for a row with no account ({@link isDetached}), which is the crimson
  * "detached" state rather than a pending invite — hence the linked-account
  * check — and for a member without an address, who was never invited.
  */
@@ -42,9 +42,20 @@ export const isWithoutPush = (artist: Artist): boolean =>
   artist.has_push === false && artist.account_activated === true;
 
 /**
- * A thread is addressed to the member's linked account. Without one — a
- * detached (GDPR-erased) account — there is nowhere to deliver it and the
- * server refuses the thread, so no "write" action is offered for them.
+ * On the roster with no account behind the row: the auth row it pointed at was
+ * deleted, and `Artist.user` nulled with it. The app's own erasure anonymizes an
+ * account rather than deleting it, and archives the row, so this is left by a
+ * deletion outside the app's flows (the Django admin). Nothing reaches the
+ * member, and an address typed into the profile is a label that sends no
+ * invitation. Only an active row is flagged: an archived one asks nothing of
+ * the manager.
+ */
+export const isDetached = (artist: Artist): boolean => artist.is_active && !artist.user;
+
+/**
+ * A thread is addressed to the member's linked account. Without one
+ * ({@link isDetached}) there is nowhere to deliver it and the server refuses
+ * the thread, so no "write" action is offered for them.
  */
 export const canReceiveMessages = (artist: Artist): boolean => Boolean(artist.user);
 

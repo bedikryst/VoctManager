@@ -1124,19 +1124,15 @@
       "edit": "Edit",
       "invite_sent_at": "Sent {{when}}",
       "link_expired": "Link expired",
-      "message_title": "Write a message",
       "no_email": "No e-mail",
       "no_email_title": "Added without an e-mail address. This person has no access to the app and receives no notifications, so everything has to be passed on to them in person.",
       "no_push_title": "None of this person's devices receives push notifications. For now, reminders and answers to requests reach them by email; new material only shows up in the app.",
       "pending_activation": "Not activated",
-      "resend_activation": "Resend invitation",
       "sight_reading_title": "Sight-reading: {{level}}/5",
       "unverified": "Not verified",
       "range_by_singer": "per the singer",
       "range_proposal_title": "The singer's proposal",
-      "range_assessment_title": "The conductor's assessment",
-      "preview_title": "See what this person sees",
-      "preview_aria": "See what {{name}} sees"
+      "range_assessment_title": "The conductor's assessment"
     },
     "dashboard": {
       "activate_desc": "The artist will regain access to the platform and become available in castings for new projects.",
@@ -1186,6 +1182,8 @@
       "no_email_title": "No e-mail address",
       "no_email_desc": "This person has no access to the app and receives no notifications. The schedule, changes and scores have to be passed on to them in person; “See what this person sees” in the menu at the top shows what is on their schedule. Entering an address in the profile editor will send them an invitation.",
       "pending_activation_desc": "The invitation was sent, but this artist hasn't activated their platform account yet.",
+      "detached_desc": "This person's account was deleted; their projects and castings stay in the history. They cannot sign in or receive notifications, and an address entered in the profile will no longer send them an invitation.",
+      "no_push": "no push notifications",
       "leadership": {
         "title": "Leadership",
         "rehearsals_count_one": "{{count}} rehearsal led",
@@ -1328,8 +1326,8 @@
     "row": {
       "invite_sent": "invitation sent {{when}}",
       "menu_aria": "More: {{name}}",
-      "message": "Message",
-      "preview": "View as a singer",
+      "message": "Write a message",
+      "preview": "See what this person sees",
       "resend": "Resend invitation",
       "edit": "Edit",
       "archive": "Archive",
