@@ -77,7 +77,7 @@ export default function CrewManagement(): React.JSX.Element {
   useEffect(() => {
     if (!isError) return;
     toast.error(t("crew.toast.sync_warning", "Ostrzeżenie synchronizacji"), {
-      description: t("crew.toast.sync_error", "Nie udało się pobrać listy współpracowników."),
+      description: t("crew.toast.sync_error", "Nie udało się pobrać listy ekipy."),
     });
   }, [isError, t]);
 
@@ -158,13 +158,13 @@ export default function CrewManagement(): React.JSX.Element {
             title={
               hasActiveFilters
                 ? t("crew.empty_state.filtered_title", "Nikt nie pasuje do filtrów")
-                : t("crew.empty_state.pristine_title", "Twoja baza ekipy jest pusta")
+                : t("crew.empty_state.pristine_title", "Nikogo tu jeszcze nie ma")
             }
             description={
               normalizedSearchTerm
                 ? t("crew.empty_state.search_results", {
                     defaultValue:
-                      'Nie znaleźliśmy osoby ani firmy "{{term}}". Możesz dodać nowy wpis lub usunąć część filtrów.',
+                      "Nie ma osoby ani firmy „{{term}}”. Możesz dodać nową osobę albo zdjąć część filtrów.",
                     term: normalizedSearchTerm,
                   })
                 : hasActiveFilters
@@ -174,7 +174,7 @@ export default function CrewManagement(): React.JSX.Element {
                     )
                   : t(
                       "crew.empty_state.start_building",
-                      "Rozpocznij budowę zespołu produkcyjnego, dodając pierwszego współpracownika do bazy.",
+                      "Tu trafiają osoby, które pracują przy koncertach poza chórem: dźwięk, światło, logistyka.",
                     )
             }
             actions={
@@ -187,10 +187,10 @@ export default function CrewManagement(): React.JSX.Element {
                 >
                   {normalizedSearchTerm
                     ? t("crew.empty_state.add_search", {
-                        defaultValue: 'Dodaj wpis "{{term}}"',
+                        defaultValue: "Dodaj osobę „{{term}}”",
                         term: normalizedSearchTerm,
                       })
-                    : t("crew.empty_state.add_person", "Dodaj współpracownika")}
+                    : t("crew.empty_state.add_person", "Dodaj osobę")}
                 </Button>
                 {hasActiveFilters && (
                   <Button
@@ -219,10 +219,10 @@ export default function CrewManagement(): React.JSX.Element {
 
         <ConfirmModal
           isOpen={!!personToDelete}
-          title={t("crew.delete_modal.title", "Usunąć tę osobę z bazy?")}
+          title={t("crew.delete_modal.title", "Usunąć tę osobę z ekipy?")}
           description={t(
             "crew.delete_modal.desc",
-            "Zniknie ona bezpowrotnie ze spisu. Nie można usunąć osób powiązanych już z koncertami (w takim przypadku zaktualizuj jej dane).",
+            "Zniknie z listy na stałe. Osoby przypisanej już do koncertu nie można usunąć, można tylko poprawić jej dane.",
           )}
           onConfirm={executeDelete}
           onCancel={cancelDelete}

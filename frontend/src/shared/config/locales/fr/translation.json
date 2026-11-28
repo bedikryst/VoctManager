@@ -2776,33 +2776,32 @@
       "title": "Équipe technique"
     },
     "delete_modal": {
-      "desc": "Elle sera définitivement supprimée du registre. Vous ne pouvez pas supprimer des personnes déjà assignées à des concerts (mettez plutôt leurs données à jour).",
-      "title": "Supprimer cette personne de la base ?"
+      "desc": "Elle disparaîtra définitivement de la liste. Une personne déjà affectée à un concert ne peut pas être supprimée, seulement modifiée.",
+      "title": "Retirer cette personne de l'équipe ?"
     },
     "editor": {
-      "btn_save": "Enregistrer dans la base",
-      "business_profile": "Profil d'activité",
-      "company_name": "Entreprise / Marque (optionnel)",
+      "company_name": "Entreprise",
       "company_placeholder": "ex. SoundTech Pro LLC",
-      "confirm_exit_desc": "Vous avez apporté des modifications au formulaire qui n'ont pas été enregistrées. Fermer le panneau les supprimera.",
-      "confirm_exit_title": "Vous avez des modifications non enregistrées !",
-      "contact_person": "Personne de contact",
       "email": "E-mail",
-      "first_name": "Prénom *",
-      "last_name": "Nom *",
+      "first_name": "Prénom",
+      "last_name": "Nom",
       "phone": "Téléphone",
-      "specialty": "Spécialité *",
-      "title_edit": "Modification des données",
-      "title_new": "Nouveau collaborateur"
+      "save": "Enregistrer",
+      "section_contact": "Coordonnées",
+      "section_work": "Activité",
+      "specialty": "Spécialité",
+      "submit": "Ajouter la personne",
+      "title_edit": "Modifier la personne",
+      "title_new": "Nouvelle personne"
     },
     "empty_state": {
-      "add_person": "Ajouter un collaborateur",
-      "add_search": "Ajouter l'entrée \"{{term}}\"",
+      "add_person": "Ajouter une personne",
+      "add_search": "Ajouter la personne « {{term}} »",
       "filters_blocked": "Les filtres actuels masquent toute la liste. Effacez-les pour revenir à l'annuaire complet.",
-      "search_results": "Nous n'avons trouvé aucune personne ou entreprise \"{{term}}\". Ajoutez une nouvelle entrée ou retirez certains filtres.",
-      "start_building": "Commencez à construire votre équipe de production en ajoutant le premier collaborateur à la base.",
+      "search_results": "Aucune personne ni entreprise ne correspond à « {{term}} ». Vous pouvez ajouter une personne ou retirer des filtres.",
+      "start_building": "Ici figurent les personnes qui travaillent aux concerts en dehors du chœur : son, lumière, logistique.",
       "filtered_title": "Personne ne correspond aux filtres",
-      "pristine_title": "Votre base d'équipe est vide"
+      "pristine_title": "Personne pour l'instant"
     },
     "filters": {
       "active_description": "Cliquez sur un filtre pour le retirer sans réinitialiser toute la vue.",
@@ -2870,17 +2869,17 @@
       "VISUALS": "Visuels"
     },
     "toast": {
-      "delete_error_desc": "Elle est probablement liée à des projets existants. Essayez plutôt de modifier ses données.",
+      "delete_error_desc": "Elle est probablement affectée à un concert ; ses données peuvent seulement être modifiées.",
       "delete_error_title": "Impossible de supprimer cette personne",
       "delete_loading": "Suppression de \"{{name}}\"...",
-      "delete_success": "La personne a été retirée de la base.",
+      "delete_success": "Personne retirée de l'équipe.",
       "save_error_desc": "Vérifiez les données et réessayez.",
       "save_error_title": "Une erreur est survenue lors de l'enregistrement des données.",
-      "save_loading_edit": "Mise à jour des données...",
-      "save_loading_new": "Ajout du collaborateur...",
-      "save_success_edit": "Profil du collaborateur mis à jour.",
-      "save_success_new": "Nouvelle personne ajoutée à la base.",
-      "sync_error": "Impossible de récupérer la liste des collaborateurs.",
+      "save_loading_edit": "Enregistrement des modifications…",
+      "save_loading_new": "Ajout de la personne…",
+      "save_success_edit": "Modifications enregistrées.",
+      "save_success_new": "Personne ajoutée à l'équipe.",
+      "sync_error": "Impossible de charger la liste de l'équipe.",
       "sync_warning": "Avertissement de synchronisation"
     },
     "toolbar": {
@@ -3543,7 +3542,6 @@
     "editor": {
       "address": "Adresse",
       "category": "Type de lieu",
-      "internal_notes": "Notes pour l'équipe",
       "name": "Nom",
       "notes_hint": "Seule l'équipe les voit, dans la fiche du lieu.",
       "notes_placeholder": "ex. Entrée artistes côté parking. Code du portail : 1234#.",
@@ -3551,7 +3549,7 @@
       "placeholder_name": "ex. Philharmonie nationale — Salle de chambre",
       "save": "Enregistrer",
       "section_basic": "Données de base",
-      "section_notes": "Instructions internes",
+      "section_notes": "Notes",
       "section_position": "Position sur la carte",
       "section_search": "Base globale Google",
       "submit": "Ajouter le lieu",

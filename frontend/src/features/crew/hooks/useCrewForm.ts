@@ -62,8 +62,8 @@ export const useCrewForm = (
 
     const toastId = toast.loading(
       person?.id
-        ? t("crew.toast.save_loading_edit", "Aktualizowanie danych...")
-        : t("crew.toast.save_loading_new", "Dodawanie współpracownika..."),
+        ? t("crew.toast.save_loading_edit", "Zapisywanie zmian…")
+        : t("crew.toast.save_loading_new", "Dodawanie osoby…"),
     );
 
     try {
@@ -72,9 +72,9 @@ export const useCrewForm = (
         person?.id
           ? t(
               "crew.toast.save_success_edit",
-              "Zaktualizowano profil współpracownika.",
+              "Zapisano zmiany.",
             )
-          : t("crew.toast.save_success_new", "Dodano nową osobę do bazy."),
+          : t("crew.toast.save_success_new", "Dodano osobę do ekipy."),
         { id: toastId },
       );
       setFormData(formData);

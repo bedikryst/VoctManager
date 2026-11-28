@@ -2763,33 +2763,32 @@
       "title": "Technical crew"
     },
     "delete_modal": {
-      "desc": "They will be permanently removed from the roster. You cannot delete people already assigned to concerts (update their data instead).",
-      "title": "Delete this person from the database?"
+      "desc": "They will be removed from the list for good. A person already assigned to a concert cannot be deleted, only edited.",
+      "title": "Remove this person from the crew?"
     },
     "editor": {
-      "btn_save": "Save to database",
-      "business_profile": "Business profile",
-      "company_name": "Company / Brand (optional)",
+      "company_name": "Company",
       "company_placeholder": "e.g., SoundTech Pro LLC",
-      "confirm_exit_desc": "You made changes in the form that have not been saved. Closing the panel will discard them.",
-      "confirm_exit_title": "You have unsaved changes!",
-      "contact_person": "Contact person",
       "email": "Email",
-      "first_name": "First Name *",
-      "last_name": "Last Name *",
+      "first_name": "First name",
+      "last_name": "Last name",
       "phone": "Phone",
-      "specialty": "Specialty *",
-      "title_edit": "Edit data",
-      "title_new": "New collaborator"
+      "save": "Save",
+      "section_contact": "Contact details",
+      "section_work": "Work",
+      "specialty": "Specialty",
+      "submit": "Add person",
+      "title_edit": "Edit person",
+      "title_new": "New person"
     },
     "empty_state": {
-      "add_person": "Add collaborator",
-      "add_search": "Add entry \"{{term}}\"",
+      "add_person": "Add person",
+      "add_search": "Add person \"{{term}}\"",
       "filters_blocked": "Current filters hide the entire roster. Clear them to return to the full directory.",
-      "search_results": "We couldn't find a person or company \"{{term}}\". Add a new entry or remove some filters.",
-      "start_building": "Start building your production team by adding the first collaborator to the database.",
+      "search_results": "No person or company matches \"{{term}}\". You can add a new person or remove some filters.",
+      "start_building": "This is for the people who work on concerts outside the choir: sound, light, logistics.",
       "filtered_title": "Nobody matches the filters",
-      "pristine_title": "Your crew base is empty"
+      "pristine_title": "No one here yet"
     },
     "filters": {
       "active_description": "Click a filter to remove it without resetting the whole view.",
@@ -2857,17 +2856,17 @@
       "VISUALS": "Visuals"
     },
     "toast": {
-      "delete_error_desc": "They are likely associated with existing projects. Try editing their data instead.",
+      "delete_error_desc": "They are probably assigned to a concert; their details can only be edited.",
       "delete_error_title": "Cannot delete this person",
       "delete_loading": "Deleting \"{{name}}\"...",
-      "delete_success": "Person has been removed from the database.",
+      "delete_success": "Person removed from the crew.",
       "save_error_desc": "Check the data and try again.",
       "save_error_title": "An error occurred while saving data.",
-      "save_loading_edit": "Updating data...",
-      "save_loading_new": "Adding collaborator...",
-      "save_success_edit": "Collaborator profile updated.",
-      "save_success_new": "New person added to the database.",
-      "sync_error": "Failed to fetch collaborators list.",
+      "save_loading_edit": "Saving changes…",
+      "save_loading_new": "Adding person…",
+      "save_success_edit": "Changes saved.",
+      "save_success_new": "Person added to the crew.",
+      "sync_error": "Could not load the crew list.",
       "sync_warning": "Sync warning"
     },
     "toolbar": {
@@ -3530,7 +3529,6 @@
     "editor": {
       "address": "Address",
       "category": "Kind of place",
-      "internal_notes": "Notes for the team",
       "name": "Name",
       "notes_hint": "Only the team sees them, on the location's card.",
       "notes_placeholder": "e.g. Artist entrance from the parking side. Gate code: 1234#.",
@@ -3538,7 +3536,7 @@
       "placeholder_name": "e.g. National Philharmonic — Chamber Hall",
       "save": "Save",
       "section_basic": "Core data",
-      "section_notes": "Internal instructions",
+      "section_notes": "Notes",
       "section_position": "Position on the map",
       "section_search": "Google global base",
       "submit": "Add location",

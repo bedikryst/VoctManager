@@ -249,7 +249,7 @@ export const useCrewData = () => {
 
     try {
       await deleteMutation.mutateAsync(personToDelete.id);
-      toast.success(t("crew.toast.delete_success", "Osoba została usunięta z bazy."), {
+      toast.success(t("crew.toast.delete_success", "Usunięto osobę z ekipy."), {
         id: toastId,
       });
     } catch (error) {
@@ -257,7 +257,7 @@ export const useCrewData = () => {
         id: toastId,
         fallbackDescription: t(
           "crew.toast.delete_error_desc",
-          "Prawdopodobnie jest ona powiązana z istniejącymi projektami. Spróbuj edytować jej dane.",
+          "Prawdopodobnie jest przypisana do koncertu; jej dane można tylko poprawić.",
         ),
       });
     } finally {

@@ -17,6 +17,7 @@ import { useTranslation } from "react-i18next";
 import { Compass, MapPin } from "lucide-react";
 
 import { ConfirmModal } from "@/shared/ui/composites/ConfirmModal";
+import { FormSection } from "@/shared/ui/composites/FormSection";
 import { SidePanel } from "@/shared/ui/composites/SidePanel";
 import { Button } from "@/shared/ui/primitives/Button";
 import { Input } from "@/shared/ui/primitives/Input";
@@ -40,27 +41,6 @@ interface LocationEditorPanelProps {
   initialQuery?: string;
 }
 
-/** One of the form's sections, under a sans sub-heading, with no card. */
-const VenueFormSection = ({
-  heading,
-  className,
-  children,
-}: {
-  heading: string;
-  className?: string;
-  children: React.ReactNode;
-}): React.JSX.Element => {
-  const headingId = useId();
-  return (
-    <section aria-labelledby={headingId} className={className}>
-      <Text as="h3" id={headingId} size="base" weight="semibold" className="mb-3">
-        {heading}
-      </Text>
-      {children}
-    </section>
-  );
-};
-
 export function LocationEditorPanel({
   isOpen,
   onClose,
@@ -70,6 +50,7 @@ export function LocationEditorPanel({
 }: LocationEditorPanelProps): React.JSX.Element {
   const { t } = useTranslation();
   const formId = useId();
+  const notesHeadingId = useId();
   const [showExitConfirm, setShowExitConfirm] = useState<boolean>(false);
 
   const { form, handleGooglePlaceSelect, isDirty, isSubmitting, onSubmit } =
@@ -136,7 +117,7 @@ export function LocationEditorPanel({
       }
     >
       <form id={formId} onSubmit={onSubmit} className="space-y-9">
-        <VenueFormSection
+        <FormSection
           heading={
             isNewEntry
               ? t("logistics.editor.section_search", "Globalna baza Google")
@@ -150,9 +131,9 @@ export function LocationEditorPanel({
             initialAddress={location?.formatted_address}
             initialQuery={isNewEntry ? initialQuery : undefined}
           />
-        </VenueFormSection>
+        </FormSection>
 
-        <VenueFormSection
+        <FormSection
           heading={t("logistics.editor.section_basic", "Dane podstawowe")}
           className="space-y-5"
         >
@@ -199,11 +180,12 @@ export function LocationEditorPanel({
             )}
             error={errorText(errors.formatted_address?.message)}
           />
-        </VenueFormSection>
+        </FormSection>
 
-        <VenueFormSection heading={t("logistics.editor.section_notes", "Instrukcje wewnętrzne")}>
+        {/* The heading names the one field; a label would say it again. */}
+        <FormSection heading={t("logistics.editor.section_notes", "Notatki")} headingId={notesHeadingId}>
           <Textarea
-            label={t("logistics.editor.internal_notes", "Notatki dla zespołu")}
+            aria-labelledby={notesHeadingId}
             rows={5}
             {...form.register("internal_notes")}
             disabled={isSubmitting}
@@ -219,7 +201,7 @@ export function LocationEditorPanel({
               "Widzi je tylko zespół, w karcie miejsca.",
             )}
           </Text>
-        </VenueFormSection>
+        </FormSection>
       </form>
 
       <ConfirmModal
