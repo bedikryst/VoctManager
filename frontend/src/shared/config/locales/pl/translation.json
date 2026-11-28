@@ -3255,7 +3255,7 @@
         "attendance": "Próby i obecność",
         "finance": "Finanse",
         "crew": "Ekipa Techniczna",
-        "locations": "Lokalizacje",
+        "locations": "Miejsca",
         "materials": "Materiały Ćwiczeniowe",
         "messages": "Wiadomości",
         "projects": "Zarządzanie Projektami",
@@ -3512,8 +3512,7 @@
       "markers_count_few": "{{count}} miejsc",
       "markers_count_many": "{{count}} miejsc",
       "markers_count_other": "{{count}} miejsc",
-      "open_maps": "Mapy Google",
-      "missing_count": "{{count}} bez współrzędnych"
+      "open_maps": "Mapy Google"
     },
     "autocomplete": {
       "placeholder": "Zacznij wpisywać nazwę miejsca..."
@@ -3528,26 +3527,26 @@
     "categories": {
       "airport": "Lotnisko",
       "church": "Kościół",
-      "concert_hall": "Sala Koncertowa",
+      "concert_hall": "Sala koncertowa",
       "hotel": "Hotel",
       "other": "Inne",
       "parking": "Parking",
-      "rehearsal_room": "Sala Prób",
+      "rehearsal_room": "Sala prób",
       "restaurant": "Restauracja",
       "transit": "Stacja / Dworzec",
-      "workspace": "Prywatna Przestrzeń"
+      "workspace": "Prywatna przestrzeń"
     },
     "categories_plural": {
       "airport": "Lotniska",
       "church": "Kościoły",
-      "concert_hall": "Sale Koncertowe",
+      "concert_hall": "Sale koncertowe",
       "hotel": "Hotele",
       "other": "Pozostałe",
       "parking": "Parkingi",
-      "rehearsal_room": "Sale Prób",
+      "rehearsal_room": "Sale prób",
       "restaurant": "Restauracje",
-      "transit": "Dworce i Stacje",
-      "workspace": "Prywatne Przestrzenie"
+      "transit": "Dworce i stacje",
+      "workspace": "Prywatne przestrzenie"
     },
     "category_descriptions": {
       "airport": "Porty lotnicze obsługujące transfery zespołu.",
@@ -3562,17 +3561,11 @@
       "workspace": "Biura zespołu, studia i zaplecze produkcyjne."
     },
     "dashboard": {
-      "add_location": "Dodaj lokację",
+      "add_location": "Dodaj miejsce",
       "archive_desc": "Lokacja zniknie z głównej bazy operacyjnej, ale zostanie zachowana dla projektów historycznych.",
       "archive_title": "Zarchiwizować lokację?",
-      "collection_desc": "Każda lokacja zna swoją strefę czasową i przechowuje wewnętrzne instrukcje dla zespołu produkcyjnego.",
-      "collection_title": "Globalna baza",
-      "filtered_view": "Widok filtrowany",
-      "in_view": "{{count}} w widoku",
-      "subtitle": "Moduł Logistyczny",
       "sync_error": "Nie udało się pobrać bazy lokacji.",
-      "title": "Atlas",
-      "title_highlight": "Lokacji"
+      "title": "Miejsca"
     },
     "dossier": {
       "close": "Zamknij",
@@ -3609,49 +3602,18 @@
       "title_new": "Nowa lokacja"
     },
     "empty_state": {
-      "add_location": "Dodaj lokację",
-      "filters_blocked": "Aktualne filtry ukrywają całą bazę. Wyczyść je, aby wrócić do pełnego atlasu.",
-      "search_results": "Nie znaleźliśmy lokacji pasującej do \"{{term}}\". Możesz dodać nowy wpis lub zmienić filtry.",
-      "start_building": "Rozpocznij budowę globalnego atlasu, dodając pierwszą salę, kościół lub hotel zespołu.",
-      "title": "Brak lokacji w bieżącym widoku"
+      "start_building": "Dodaj pierwszą salę, kościół albo hotel zespołu.",
+      "title": "Nie ma jeszcze żadnego miejsca",
+      "title_filtered": "Żadne miejsce nie pasuje do filtrów"
     },
     "event": {
-      "no_venue": "Bez lokacji",
+      "no_venue": "Bez miejsca",
       "rehearsal": "Próba"
     },
     "filters": {
-      "active_description": "Kliknij filtr, aby usunąć go bez resetowania całego widoku.",
-      "active_filters": "{{count}} aktywne filtry",
-      "all_categories": "Wszystkie kategorie",
-      "category_label": "Kategoria",
-      "chip_category": "Kategoria: {{label}}",
       "chip_search": "Wyszukiwanie: \"{{term}}\"",
       "clear_filters": "Wyczyść filtry",
-      "heading": "Filtry Bazy",
-      "no_active_filters": "Brak aktywnych filtrów",
-      "no_filters_message": "Widok prezentuje pełną bazę lokacji.",
-      "search_label": "Wyszukiwanie",
-      "search_placeholder": "Szukaj po nazwie lub adresie...",
-      "summary": "{{visible}} z {{total}} lokacji w aktualnym widoku.",
-      "view_aria": "Tryb widoku",
-      "view_atlas": "Atlas",
-      "view_grid": "Siatka"
-    },
-    "hero": {
-      "badge": "Globalna Baza Lokacji",
-      "coverage": {
-        "geo": "Pokrycie GPS",
-        "notes": "Notatki zespołu",
-        "ratio": "{{value}} / {{total}}"
-      },
-      "description": "Filharmonie, kościoły, sale prób, hotele i lotniska — synchronizowane z Google Maps, ze strefami czasowymi i instrukcjami dla zespołu.",
-      "stats": {
-        "countries": "{{count}} krajów",
-        "locations": "{{count}} lokacji",
-        "timezones": "{{count}} stref czasowych",
-        "top_category": "Najliczniej: {{label}} ({{count}})"
-      },
-      "title": "Każda scena, każdy hub — w jednym atlasie."
+      "search_placeholder": "Szukaj miejsca…"
     },
     "imminence": {
       "today": "Dziś"
@@ -3667,22 +3629,6 @@
       "zoom_in": "Przybliż",
       "zoom_out": "Oddal"
     },
-    "metrics": {
-      "countries": "Kraje",
-      "geo_coverage": "Pokrycie GPS",
-      "locations": "Lokacje w bazie",
-      "notes_coverage": "Notatki zespołu"
-    },
-    "overview": {
-      "all": "Wszystkie",
-      "all_hint": "Wszystkie kategorie",
-      "live": "aktywnych miejsc",
-      "timezones": "stref",
-      "title": "Przegląd operacyjny",
-      "today": "dziś",
-      "upcoming": "nadchodzących",
-      "venues": "lokacji"
-    },
     "preview": {
       "default_category": "Lokacja",
       "get_directions": "Wyznacz trasę",
@@ -3690,26 +3636,15 @@
       "unknown_location": "Nieznana lokacja"
     },
     "rail": {
-      "back_to_list": "Wszystkie lokacje",
-      "hint": "Wybierz lokację, aby zobaczyć szczegóły i wydarzenia.",
-      "no_upcoming_desc": "Koncerty i próby z przypisaną lokacją pojawią się tutaj automatycznie.",
+      "back_to_list": "Wszystkie miejsca",
+      "no_upcoming_desc": "Tu pojawią się zaplanowane koncerty i próby.",
       "no_upcoming_title": "Brak nadchodzących wydarzeń",
-      "tab_locations": "Lokacje",
-      "tab_upcoming": "Nadchodzące",
-      "tabs_label": "Zawartość szyny",
-      "view_label": "Widok",
-      "view_list": "Lista",
-      "view_map": "Mapa"
+      "no_upcoming_filtered": "Żadne wydarzenie nie pasuje do filtrów"
     },
     "row": {
-      "edit_aria": "Edytuj {{name}}",
-      "upcoming_here": "Zaplanowane tutaj: {{count}}"
+      "edit_aria": "Edytuj {{name}}"
     },
     "timezone": {
-      "count_one": "{{count}} stref",
-      "count_few": "{{count}} stref",
-      "count_many": "{{count}} stref",
-      "count_other": "{{count}} stref",
       "in_days_one": "za {{count}} dni",
       "in_days_few": "za {{count}} dni",
       "in_days_many": "za {{count}} dni",
@@ -3727,6 +3662,34 @@
       "sync_warning": "Ostrzeżenie synchronizacji",
       "update_success": "Zaktualizowano!",
       "updating": "Aktualizacja..."
+    },
+    "tabs": {
+      "aria": "Widoki miejsc",
+      "venues": "Miejsca",
+      "upcoming": "Nadchodzące",
+      "map": "Mapa"
+    },
+    "toolbar": {
+      "filters": "Filtry",
+      "category_label": "Rodzaj miejsca",
+      "category_all": "Wszystkie"
+    },
+    "census": {
+      "venues_one": "miejsce",
+      "venues_few": "miejsca",
+      "venues_many": "miejsc",
+      "venues_other": "miejsca",
+      "events_one": "wydarzenie",
+      "events_few": "wydarzenia",
+      "events_many": "wydarzeń",
+      "events_other": "wydarzenia",
+      "narrowed": "{{visible}} z {{total}}"
+    },
+    "quick": {
+      "no_coordinates_one": "{{count}} bez współrzędnych",
+      "no_coordinates_few": "{{count}} bez współrzędnych",
+      "no_coordinates_many": "{{count}} bez współrzędnych",
+      "no_coordinates_other": "{{count}} bez współrzędnych"
     }
   },
   "materials": {

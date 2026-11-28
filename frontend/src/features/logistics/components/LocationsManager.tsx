@@ -1,77 +1,80 @@
 /**
  * @file LocationsManager.tsx
- * @description Master controller for the Logistics command centre. The map is
- * the protagonist (venues + upcoming concerts/rehearsals, fly-to + 3D), paired
- * with a dense command rail (venues / upcoming feed). All domain logic stays in
- * `useLocationsData` (filters, archive, selection) and `useLogisticsEvents`
- * (the client-side join of schedule → coordinates); this file only composes.
+ * @description The locations page: the venues and the upcoming events as
+ * lists beside the atlas that plots them. Domain logic stays in
+ * `useLocationsData` (the view, filters, focus, archive) and
+ * `useLogisticsEvents` (the client-side join of the schedule to coordinates);
+ * this file composes.
+ *
+ * One band of underline tabs, held in the address (`?widok=`): "Miejsca",
+ * "Nadchodzące", and below `lg` "Mapa", the page's third view on a phone. From
+ * `lg` the map stands beside the rail at all times, so the tabs head the rail's
+ * card, which they partition, and `mapa` reads as the venues. Below `lg` there
+ * is no card: tabs, toolbar and list stand on the page under the header.
+ *
+ * Exactly one `LocationsAtlas` is mounted, the one the layout `isDesktop`
+ * picks, never two Google maps. On a phone it mounts the first time it is
+ * wanted (its tab, or a focused venue) and then stays, hidden behind the list,
+ * so it keeps its camera. A focused venue takes the whole screen there, the
+ * map under a bottom sheet with the detail; the list stays mounted beneath, so
+ * its scroll survives. From `lg` the detail replaces the rail's content.
  * @module features/logistics/components/LocationsManager
  */
 
-import React, { useDeferredValue, useEffect, useMemo } from "react";
-import { AnimatePresence } from "framer-motion";
+import React, { useDeferredValue, useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useMediaQuery } from "usehooks-ts";
 import { useTranslation } from "react-i18next";
-import {
-  CalendarClock,
-  List,
-  MapPin,
-  Map as MapIcon,
-  Plus,
-  Search,
-} from "lucide-react";
+import { CalendarClock, MapPin, MapPinPlusInside } from "lucide-react";
 
 import { cn } from "@/shared/lib/utils";
 import { foldDiacritics } from "@/shared/lib/text";
 import { useBodyScrollLock } from "@/shared/lib/dom/useBodyScrollLock";
 import { ConfirmModal } from "@/shared/ui/composites/ConfirmModal";
-import { FilterTokens } from "@/shared/ui/composites/FilterTokens";
-import { PageHeader } from "@/shared/ui/composites/PageHeader";
-import { SegmentedTabs } from "@/shared/ui/composites/SegmentedTabs";
-import { StatePanel } from "@/shared/ui/composites/StatePanel";
+import { FilterToggle } from "@/shared/ui/composites/FilterTokens";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
-import { Button } from "@/shared/ui/primitives/Button";
-import { Input } from "@/shared/ui/primitives/Input";
-import { Text } from "@/shared/ui/primitives/typography";
+import { ListCensus, ToolbarButton } from "@/shared/ui/composites/ListToolbar";
+import { PageHeader } from "@/shared/ui/composites/PageHeader";
+import { RecordList, type RecordListEdge } from "@/shared/ui/composites/RecordList";
+import { RouteTabs, type RouteTabItem } from "@/shared/ui/composites/RouteTabs";
+import { StatePanel } from "@/shared/ui/composites/StatePanel";
 import { PageTransition } from "@/shared/ui/kinematics/PageTransition";
-import {
-  StaggeredBentoContainer,
-  StaggeredBentoItem,
-} from "@/shared/ui/kinematics/StaggeredBentoGrid";
+import { Button } from "@/shared/ui/primitives/Button";
 
-import { getLocationCategoryOptions } from "../constants/locationCategories";
 import { useLocationsData } from "../hooks/useLocationsData";
 import { useLogisticsEvents } from "../hooks/useLogisticsEvents";
+import { locationsViewHref } from "../lib/locationsView";
 
 import { LocationDetail } from "./LocationDetail";
 import { LocationEditorPanel } from "./LocationEditorPanel";
 import { LocationRow } from "./LocationRow";
 import { LocationSheet } from "./LocationSheet";
 import { LocationsAtlas } from "./LocationsAtlas";
+import { LocationsToolbar } from "./LocationsToolbar";
 import { LogisticsEventRow } from "./LogisticsEventRow";
-import { LogisticsOverviewBar } from "./LogisticsOverviewBar";
 import { LogisticsTimezoneBand } from "./LogisticsTimezoneBand";
 
 export const LocationsManager = (): React.JSX.Element => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const {
     isError,
     locations,
+    view,
+    mapLocations,
     displayLocations,
-    metrics,
-    categoryStats,
-    activeFilters,
-    hasActiveFilters,
+    filterTokens,
+    isFiltered,
+    isNarrowed,
     searchTerm,
     setSearchTerm,
     categoryFilter,
     setCategoryFilter,
+    noCoordinatesCount,
+    noCoordinatesOnly,
+    setNoCoordinatesOnly,
     resetFilters,
-    mobileView,
-    setMobileView,
-    railTab,
-    setRailTab,
     activeLocationId,
     activeLocation,
     selectLocation,
@@ -86,40 +89,37 @@ export const LocationsManager = (): React.JSX.Element => {
     isArchiving,
   } = useLocationsData();
 
-  const { upcomingEvents, venueActivity, timezoneClocks, scheduleMetrics } =
-    useLogisticsEvents(locations);
+  const { upcomingEvents, venueActivity, timezoneClocks } = useLogisticsEvents(locations);
 
   const deferredLocations = useDeferredValue(displayLocations);
-  const categoryOptions = useMemo(() => getLocationCategoryOptions(t), [t]);
+  const deferredMapLocations = useDeferredValue(mapLocations);
 
-  // Master-detail focus: on desktop the detail replaces the rail list; on
-  // tablet/mobile the map takes over the viewport and a bottom sheet carries
-  // the detail — the map is never hidden behind a modal in either case.
   const isDesktop = useMediaQuery("(min-width: 1024px)");
   const isVenueFocused = activeLocation !== null;
   const mobileFocus = isVenueFocused && !isDesktop;
   const showRailDetail = isVenueFocused && isDesktop;
+  const showsEvents = view === "nadchodzace";
+  const showsMap = view === "mapa" && !isDesktop;
 
-  // The overlays (editor, archive confirm, the mobile venue sheet) hold their
-  // own locks for as long as they are on screen; the desktop rail detail is no
-  // overlay, so the page locks for it.
+  // A latch, set while rendering: the phone's map mounts the first time it
+  // shows and stays, so it never first lays out inside a hidden box.
+  const wantsPhoneAtlas = showsMap || mobileFocus;
+  const [isPhoneAtlasMounted, setIsPhoneAtlasMounted] = useState<boolean>(wantsPhoneAtlas);
+  if (wantsPhoneAtlas && !isPhoneAtlasMounted) setIsPhoneAtlasMounted(true);
+
+  // The overlays (editor, archive confirm, the phone's venue sheet) hold their
+  // own locks while they are on screen; the desktop rail detail is no overlay,
+  // so the page locks for it.
   useBodyScrollLock(showRailDetail);
 
   useEffect(() => {
     if (!isError) return;
-    toast.error(
-      t("logistics.toast.sync_warning", "Ostrzeżenie synchronizacji"),
-      {
-        description: t(
-          "logistics.dashboard.sync_error",
-          "Nie udało się pobrać bazy lokacji.",
-        ),
-      },
-    );
+    toast.error(t("logistics.toast.sync_warning", "Ostrzeżenie synchronizacji"), {
+      description: t("logistics.dashboard.sync_error", "Nie udało się pobrać bazy lokacji."),
+    });
   }, [isError, t]);
 
-  // Escape clears the venue focus (rail detail / bottom sheet), mirroring the
-  // old dossier's behaviour now that there is no modal to trap it.
+  // Escape clears the venue focus (the rail detail, the bottom sheet).
   useEffect(() => {
     if (!isVenueFocused) return;
     const onKey = (event: KeyboardEvent): void => {
@@ -132,9 +132,7 @@ export const LocationsManager = (): React.JSX.Element => {
   const filteredUpcoming = useMemo(() => {
     const term = foldDiacritics(searchTerm.trim());
     return upcomingEvents.filter((event) => {
-      const matchesCategory = categoryFilter
-        ? event.location?.category === categoryFilter
-        : true;
+      const matchesCategory = categoryFilter ? event.location?.category === categoryFilter : true;
       const matchesSearch =
         term.length === 0 ||
         foldDiacritics(event.title).includes(term) ||
@@ -143,310 +141,284 @@ export const LocationsManager = (): React.JSX.Element => {
     });
   }, [upcomingEvents, searchTerm, categoryFilter]);
 
-  const handleEditFromDossier = (location: typeof activeLocation): void => {
+  const handleEditFromDetail = (location: typeof activeLocation): void => {
     if (!location) return;
     selectLocation(null);
     openPanel(location);
   };
 
-  const handleArchiveFromDossier = (location: typeof activeLocation): void => {
+  const handleArchiveFromDetail = (location: typeof activeLocation): void => {
     if (!location) return;
     selectLocation(null);
     requestArchive(location);
   };
 
-  // The counts ride in the labels: both are scoped to exactly what the tab
-  // will show, so the number a reader compares is the number they will count.
-  const RAIL_TABS = [
+  // The tabs carry the whole lists' sizes; the census says how far a filter
+  // narrows the one on screen.
+  const tabs: RouteTabItem[] = [
     {
-      id: "locations" as const,
-      label: `${t("logistics.rail.tab_locations", "Lokacje")} ${deferredLocations.length}`,
-      Icon: MapPin,
+      to: locationsViewHref("miejsca"),
+      label: t("logistics.tabs.venues", "Miejsca"),
+      count: locations.length,
+      active: !showsEvents && !showsMap,
     },
     {
-      id: "upcoming" as const,
-      label: `${t("logistics.rail.tab_upcoming", "Nadchodzące")} ${filteredUpcoming.length}`,
-      Icon: CalendarClock,
+      to: locationsViewHref("nadchodzace"),
+      label: t("logistics.tabs.upcoming", "Nadchodzące"),
+      count: upcomingEvents.length,
+      active: showsEvents,
     },
+    ...(isDesktop
+      ? []
+      : [
+          {
+            to: locationsViewHref("mapa"),
+            label: t("logistics.tabs.map", "Mapa"),
+            active: showsMap,
+          },
+        ]),
   ];
+  const tabRow = (
+    <RouteTabs variant="underline" items={tabs} ariaLabel={t("logistics.tabs.aria", "Widoki miejsc")} />
+  );
 
-  const MOBILE_VIEWS = [
-    { id: "map" as const, label: t("logistics.rail.view_map", "Mapa"), Icon: MapIcon },
-    { id: "list" as const, label: t("logistics.rail.view_list", "Lista"), Icon: List },
-  ];
+  const narrowedLabel = (visible: number, total: number): string =>
+    t("logistics.census.narrowed", "{{visible}} z {{total}}", { visible, total });
+  const venuesNoun = t("logistics.census.venues", "miejsc", { count: locations.length });
+  const census = showsEvents ? (
+    <ListCensus
+      total={upcomingEvents.length}
+      noun={t("logistics.census.events", "wydarzeń", { count: upcomingEvents.length })}
+      narrowed={isFiltered ? narrowedLabel(filteredUpcoming.length, upcomingEvents.length) : null}
+    />
+  ) : showsMap ? (
+    <ListCensus
+      total={locations.length}
+      noun={venuesNoun}
+      narrowed={isFiltered ? narrowedLabel(mapLocations.length, locations.length) : null}
+    />
+  ) : (
+    <ListCensus
+      total={locations.length}
+      noun={venuesNoun}
+      narrowed={isNarrowed ? narrowedLabel(displayLocations.length, locations.length) : null}
+    />
+  );
+
+  // A venue without coordinates has no pin, so on the map the chip is the way
+  // to the list of them, where they get fixed; it narrows nothing there.
+  const quickFilter =
+    !showsEvents && noCoordinatesCount > 0 ? (
+      <FilterToggle
+        label={t("logistics.quick.no_coordinates", "{{count}} bez współrzędnych", {
+          count: noCoordinatesCount,
+        })}
+        pressed={noCoordinatesOnly && !showsMap}
+        onToggle={() => {
+          if (showsMap) {
+            setNoCoordinatesOnly(true);
+            navigate(locationsViewHref("miejsca"));
+            return;
+          }
+          setNoCoordinatesOnly((pressed) => !pressed);
+        }}
+      />
+    ) : null;
+
+  const toolbar = (
+    <LocationsToolbar
+      searchTerm={searchTerm}
+      onSearch={setSearchTerm}
+      categoryFilter={categoryFilter}
+      onCategory={setCategoryFilter}
+      census={census}
+      quickFilters={quickFilter}
+      tokens={filterTokens}
+      onResetFilters={resetFilters}
+    />
+  );
+
+  const clearFiltersButton = (
+    <Button variant="outline" casing="sentence" onClick={resetFilters}>
+      {t("logistics.filters.clear_filters", "Wyczyść filtry")}
+    </Button>
+  );
+
+  const renderList = (edge: RecordListEdge): React.JSX.Element => {
+    const emptyVariant = edge === "inset" ? "inline" : undefined;
+
+    if (showsEvents) {
+      return filteredUpcoming.length > 0 ? (
+        <RecordList edge={edge} label={t("logistics.tabs.upcoming", "Nadchodzące")}>
+          {filteredUpcoming.map((event) => (
+            <LogisticsEventRow
+              key={event.id}
+              event={event}
+              isCurrent={event.locationId !== null && event.locationId === activeLocationId}
+              onSelect={selectLocation}
+            />
+          ))}
+        </RecordList>
+      ) : (
+        <StatePanel
+          variant={emptyVariant}
+          icon={<CalendarClock size={22} aria-hidden="true" />}
+          title={
+            isFiltered
+              ? t("logistics.rail.no_upcoming_filtered", "Żadne wydarzenie nie pasuje do filtrów")
+              : t("logistics.rail.no_upcoming_title", "Brak nadchodzących wydarzeń")
+          }
+          description={
+            isFiltered
+              ? undefined
+              : t("logistics.rail.no_upcoming_desc", "Tu pojawią się zaplanowane koncerty i próby.")
+          }
+          actions={isFiltered ? clearFiltersButton : undefined}
+        />
+      );
+    }
+
+    return deferredLocations.length > 0 ? (
+      <RecordList edge={edge} label={t("logistics.tabs.venues", "Miejsca")}>
+        {deferredLocations.map((location) => (
+          <LocationRow
+            key={location.id}
+            location={location}
+            isCurrent={String(location.id) === activeLocationId}
+            nextEvent={venueActivity.get(String(location.id))?.nextEvent ?? null}
+            onSelect={selectLocation}
+            onEdit={openPanel}
+          />
+        ))}
+      </RecordList>
+    ) : (
+      <StatePanel
+        variant={emptyVariant}
+        icon={<MapPin size={22} aria-hidden="true" />}
+        title={
+          isNarrowed
+            ? t("logistics.empty_state.title_filtered", "Żadne miejsce nie pasuje do filtrów")
+            : t("logistics.empty_state.title", "Nie ma jeszcze żadnego miejsca")
+        }
+        description={
+          isNarrowed
+            ? undefined
+            : t(
+                "logistics.empty_state.start_building",
+                "Dodaj pierwszą salę, kościół albo hotel zespołu.",
+              )
+        }
+        actions={
+          isNarrowed ? (
+            clearFiltersButton
+          ) : (
+            <Button
+              variant="secondary"
+              casing="sentence"
+              onClick={() => openPanel(null)}
+              leftIcon={<MapPinPlusInside size={16} aria-hidden="true" />}
+            >
+              {t("logistics.dashboard.add_location", "Dodaj miejsce")}
+            </Button>
+          )
+        }
+      />
+    );
+  };
+
+  const atlas = (
+    <LocationsAtlas
+      locations={deferredMapLocations}
+      venueActivity={venueActivity}
+      activeLocationId={activeLocationId}
+      onSelectLocation={selectLocation}
+      fullscreen={mobileFocus}
+    />
+  );
+
+  const timezoneBand = <LogisticsTimezoneBand clocks={timezoneClocks} />;
 
   return (
     <PageTransition>
       <div className="relative mx-auto flex max-w-[1500px] flex-col gap-5 pb-24 pt-6">
-        <StaggeredBentoContainer className="flex flex-col gap-5">
-          <StaggeredBentoItem>
-            <PageHeader
-              size="standard"
-              roleText={t("logistics.dashboard.subtitle", "Moduł Logistyczny")}
-              title={t("logistics.dashboard.title", "Centrum")}
-              titleHighlight={t(
-                "logistics.dashboard.title_highlight",
-                "Logistyki",
-              )}
-              rightContent={
-                <Button
-                  variant="primary"
-                  onClick={() => openPanel(null)}
-                  leftIcon={<Plus size={16} aria-hidden="true" />}
-                >
-                  {t("logistics.dashboard.add_location", "Dodaj lokację")}
-                </Button>
-              }
-            />
-          </StaggeredBentoItem>
-
-          <StaggeredBentoItem className="md:hidden">
-            <Button
+        <PageHeader
+          size="compact"
+          title={t("logistics.dashboard.title", "Miejsca")}
+          rightContent={
+            <ToolbarButton
               variant="primary"
-              fullWidth
+              icon={<MapPinPlusInside size={16} aria-hidden="true" />}
+              label={t("logistics.dashboard.add_location", "Dodaj miejsce")}
               onClick={() => openPanel(null)}
-              leftIcon={<Plus size={16} aria-hidden="true" />}
-            >
-              {t("logistics.dashboard.add_location", "Dodaj lokację")}
-            </Button>
-          </StaggeredBentoItem>
-
-          <StaggeredBentoItem>
-            <LogisticsOverviewBar
-              categoryOptions={categoryOptions}
-              categoryStats={categoryStats}
-              metrics={metrics}
-              scheduleMetrics={scheduleMetrics}
-              activeCategory={categoryFilter}
-              onSelectCategory={setCategoryFilter}
             />
-          </StaggeredBentoItem>
+          }
+        />
 
-          <StaggeredBentoItem>
-            <LogisticsTimezoneBand clocks={timezoneClocks} />
-          </StaggeredBentoItem>
+        {isDesktop ? (
+          <>
+            {timezoneBand}
+            <div className="grid grid-cols-12 gap-5">
+              <div className="sticky top-6 col-span-7 self-start xl:col-span-8">{atlas}</div>
 
-          {/* Mobile-only map ↔ list switch (both panes show side-by-side on lg) */}
-          <StaggeredBentoItem className="lg:hidden">
-            <SegmentedTabs
-              items={MOBILE_VIEWS}
-              value={mobileView}
-              onChange={setMobileView}
-              ariaLabel={t("logistics.rail.view_label", "Widok")}
-            />
-          </StaggeredBentoItem>
-
-          <StaggeredBentoItem>
-            <div className="grid gap-5 lg:grid-cols-12">
-              {/* Map — the protagonist. On tablet/mobile focus it takes over
-                  the viewport so the cinematic dive stays visible under the
-                  bottom sheet. */}
-              <div
-                className={cn(
-                  "lg:col-span-7 lg:sticky lg:top-6 lg:self-start xl:col-span-8",
-                  mobileView === "list" && !mobileFocus && "hidden lg:block",
-                  mobileFocus && "fixed inset-0 z-40",
-                )}
-              >
-                <LocationsAtlas
-                  locations={deferredLocations}
-                  venueActivity={venueActivity}
-                  activeLocationId={activeLocationId}
-                  onSelectLocation={selectLocation}
-                  fullscreen={mobileFocus}
-                />
-              </div>
-
-              {/* Command rail */}
-              <div
-                className={cn(
-                  "lg:col-span-5 lg:sticky lg:top-6 lg:self-start xl:col-span-4",
-                  mobileView === "map" && "hidden lg:block",
-                )}
-              >
+              <div className="sticky top-6 col-span-5 self-start xl:col-span-4">
                 <GlassCard
                   variant="solid"
                   padding="none"
                   isHoverable={false}
                   className={cn(
                     "flex flex-col",
-                    showRailDetail
-                      ? "lg:h-[calc(100dvh-11rem)]"
-                      : "lg:max-h-[calc(100dvh-11rem)]",
+                    showRailDetail ? "h-[calc(100dvh-11rem)]" : "max-h-[calc(100dvh-11rem)]",
                   )}
                 >
                   {showRailDetail && activeLocation ? (
                     <LocationDetail
                       location={activeLocation}
-                      activity={
-                        activeLocationId
-                          ? venueActivity.get(activeLocationId)
-                          : undefined
-                      }
+                      activity={activeLocationId ? venueActivity.get(activeLocationId) : undefined}
                       onClose={() => selectLocation(null)}
-                      onEdit={handleEditFromDossier}
-                      onArchive={handleArchiveFromDossier}
-                      backLabel={t(
-                        "logistics.rail.back_to_list",
-                        "Wszystkie lokacje",
-                      )}
+                      onEdit={handleEditFromDetail}
+                      onArchive={handleArchiveFromDetail}
+                      backLabel={t("logistics.rail.back_to_list", "Wszystkie miejsca")}
                     />
                   ) : (
                     <>
-                  <div className="shrink-0 space-y-3 border-b border-hairline p-4">
-                    <Input
-                      leftIcon={<Search size={16} />}
-                      type="search"
-                      aria-label={t("logistics.filters.search_label", "Wyszukiwanie")}
-                      placeholder={t(
-                        "logistics.filters.search_placeholder",
-                        "Szukaj po nazwie lub adresie...",
-                      )}
-                      value={searchTerm}
-                      onChange={(event) => setSearchTerm(event.target.value)}
-                    />
-
-                    <SegmentedTabs
-                      items={RAIL_TABS}
-                      value={railTab}
-                      onChange={setRailTab}
-                      wrap
-                      ariaLabel={t("logistics.rail.tabs_label", "Zawartość szyny")}
-                    />
-
-                    <FilterTokens tokens={activeFilters} onClearAll={resetFilters} />
-                  </div>
-
-                  <div className="min-h-0 flex-1 space-y-2 overflow-y-auto p-3">
-                    {railTab === "locations" ? (
-                      deferredLocations.length > 0 ? (
-                        <AnimatePresence mode="popLayout" initial={false}>
-                          {deferredLocations.map((location) => (
-                            <LocationRow
-                              key={location.id}
-                              location={location}
-                              isActive={String(location.id) === activeLocationId}
-                              nextEvent={
-                                venueActivity.get(String(location.id))?.nextEvent ??
-                                null
-                              }
-                              upcomingCount={
-                                venueActivity.get(String(location.id))?.upcoming
-                                  .length ?? 0
-                              }
-                              onSelect={selectLocation}
-                              onEdit={openPanel}
-                            />
-                          ))}
-                        </AnimatePresence>
-                      ) : (
-                        <StatePanel
-                          variant="inline"
-                          icon={<MapPin size={22} aria-hidden="true" />}
-                          title={t(
-                            "logistics.empty_state.title",
-                            "Brak lokacji w bieżącym widoku",
-                          )}
-                          description={
-                            hasActiveFilters
-                              ? t(
-                                  "logistics.empty_state.filters_blocked",
-                                  "Aktualne filtry ukrywają całą bazę. Wyczyść je, aby wrócić do pełnego atlasu.",
-                                )
-                              : t(
-                                  "logistics.empty_state.start_building",
-                                  "Rozpocznij budowę globalnego atlasu, dodając pierwszą salę, kościół lub hotel zespołu.",
-                                )
-                          }
-                          actions={
-                            hasActiveFilters ? (
-                              <Button variant="outline" onClick={resetFilters}>
-                                {t("logistics.filters.clear_filters", "Wyczyść filtry")}
-                              </Button>
-                            ) : (
-                              <Button
-                                variant="primary"
-                                onClick={() => openPanel(null)}
-                                leftIcon={<Plus size={16} aria-hidden="true" />}
-                              >
-                                {t("logistics.dashboard.add_location", "Dodaj lokację")}
-                              </Button>
-                            )
-                          }
-                        />
-                      )
-                    ) : filteredUpcoming.length > 0 ? (
-                      <AnimatePresence mode="popLayout" initial={false}>
-                        {filteredUpcoming.map((event) => (
-                          <LogisticsEventRow
-                            key={event.id}
-                            event={event}
-                            isActive={
-                              event.locationId !== null &&
-                              event.locationId === activeLocationId
-                            }
-                            onSelect={selectLocation}
-                          />
-                        ))}
-                      </AnimatePresence>
-                    ) : (
-                      <StatePanel
-                        variant="inline"
-                        icon={<CalendarClock size={22} aria-hidden="true" />}
-                        title={t(
-                          "logistics.rail.no_upcoming_title",
-                          "Brak nadchodzących wydarzeń",
-                        )}
-                        description={t(
-                          "logistics.rail.no_upcoming_desc",
-                          "Koncerty i próby z przypisaną lokacją pojawią się tutaj automatycznie.",
-                        )}
-                      />
-                    )}
-                  </div>
+                      <div className="flex shrink-0 flex-col gap-3 border-b border-hairline px-5 pb-4 pt-2">
+                        {tabRow}
+                        {toolbar}
+                      </div>
+                      <div className="min-h-0 flex-1 overflow-y-auto">{renderList("inset")}</div>
                     </>
                   )}
                 </GlassCard>
-
-                {/* A sentence, so it is set as prose — an overline would put a
-                    label's clothing on a full instruction. */}
-                <Text
-                  as="p"
-                  size="xs"
-                  color="muted"
-                  className="mt-3 px-1 text-center lg:hidden"
-                >
-                  {t(
-                    "logistics.rail.hint",
-                    "Wybierz lokację, aby zobaczyć szczegóły i wydarzenia.",
-                  )}
-                </Text>
               </div>
             </div>
-          </StaggeredBentoItem>
-        </StaggeredBentoContainer>
+          </>
+        ) : (
+          <>
+            {tabRow}
+            {toolbar}
+            {isPhoneAtlasMounted && (
+              <div className={cn(mobileFocus ? "fixed inset-0 z-40" : !showsMap && "hidden")}>
+                {atlas}
+              </div>
+            )}
+            {!showsMap && renderList("flush")}
+            {timezoneBand}
+          </>
+        )}
 
         <LocationSheet isOpen={mobileFocus} onClose={() => selectLocation(null)}>
           {activeLocation && (
             <LocationDetail
               location={activeLocation}
-              activity={
-                activeLocationId
-                  ? venueActivity.get(activeLocationId)
-                  : undefined
-              }
+              activity={activeLocationId ? venueActivity.get(activeLocationId) : undefined}
               onClose={() => selectLocation(null)}
-              onEdit={handleEditFromDossier}
-              onArchive={handleArchiveFromDossier}
+              onEdit={handleEditFromDetail}
+              onArchive={handleArchiveFromDetail}
             />
           )}
         </LocationSheet>
 
-        <LocationEditorPanel
-          isOpen={isPanelOpen}
-          onClose={closePanel}
-          location={editingLocation}
-        />
+        <LocationEditorPanel isOpen={isPanelOpen} onClose={closePanel} location={editingLocation} />
 
         <ConfirmModal
           isOpen={!!locationToArchive}

@@ -1,155 +1,71 @@
 /**
  * @file LogisticsEventRow.tsx
- * @description Upcoming-event row for the command rail. A calendar chip tinted
- * by imminence, the concert/rehearsal title and its venue. Clicking flies the
- * atlas to the venue and opens its dossier (events without coordinates are
- * inert but still listed so nothing silently disappears).
+ * @description One upcoming concert or rehearsal, as a `RecordRow`: the type's
+ * icon leads, the event is the title, and the byline names its type and its
+ * venue. The date stands on the right, and under it, within a week, how soon
+ * ("Jutro", "za 3 dni"). A row with a venue focuses it, so the atlas flies
+ * there; one without stays listed, so nothing silently disappears, and opens
+ * nothing.
  * @module features/logistics/components/LogisticsEventRow
  */
 
 import React from "react";
-import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
-import type { TFunction } from "i18next";
-import { MapPin, Music, Repeat } from "lucide-react";
+import { Music, Repeat } from "lucide-react";
 
-import { cn } from "@/shared/lib/utils";
-import { Caption, Eyebrow, Text } from "@/shared/ui/primitives/typography";
+import { RecordRow } from "@/shared/ui/composites/RecordList";
+import { Text } from "@/shared/ui/primitives/typography";
 
-import {
-  daysUntil,
-  getImminenceDefinition,
-} from "../constants/eventImminence";
 import type { LogisticsEvent } from "../hooks/useLogisticsEvents";
 import { getLogisticsEventPresentation } from "../lib/eventLabel";
+import { formatRelativeDay, formatShortDate } from "../lib/relativeDay";
 
 interface LogisticsEventRowProps {
-  event: LogisticsEvent;
-  isActive: boolean;
-  onSelect: (locationId: string) => void;
+  readonly event: LogisticsEvent;
+  /** Whether the event's venue is the one the map has focused. */
+  readonly isCurrent: boolean;
+  readonly onSelect: (locationId: string) => void;
 }
-
-const formatRelativeDay = (date: Date, t: TFunction): string => {
-  const diff = daysUntil(date);
-  if (diff <= 0) return t("logistics.imminence.today", "Dziś");
-  if (diff === 1) return t("logistics.timezone.tomorrow", "Jutro");
-  if (diff <= 7)
-    return t("logistics.timezone.in_days", "za {{count}} dni", { count: diff });
-  return "";
-};
 
 const LogisticsEventRowComponent = ({
   event,
-  isActive,
+  isCurrent,
   onSelect,
 }: LogisticsEventRowProps): React.JSX.Element => {
-  const { t } = useTranslation();
-  const imminence = getImminenceDefinition(event.imminence);
+  const { t, i18n } = useTranslation();
   const TypeIcon = event.type === "CONCERT" ? Music : Repeat;
   const typeLabel = getLogisticsEventPresentation(event);
-  const dayNumber = new Intl.DateTimeFormat("pl-PL", { day: "numeric" }).format(
-    event.date,
-  );
-  const monthShort = new Intl.DateTimeFormat("pl-PL", { month: "short" })
-    .format(event.date)
-    .replace(".", "");
+  const venue = event.location;
   const relative = formatRelativeDay(event.date, t);
-  const isClickable = Boolean(event.locationId);
 
   return (
-    <motion.div
-      layout
-      initial={{ opacity: 0, y: 6 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -6 }}
-      transition={{ duration: 0.22, ease: "easeOut" }}
-      role={isClickable ? "button" : undefined}
-      tabIndex={isClickable ? 0 : undefined}
-      aria-pressed={isClickable ? isActive : undefined}
-      onClick={() => isClickable && onSelect(event.locationId as string)}
-      onKeyDown={(domEvent) => {
-        if (!isClickable) return;
-        if (domEvent.key === "Enter" || domEvent.key === " ") {
-          domEvent.preventDefault();
-          onSelect(event.locationId as string);
-        }
-      }}
-      className={cn(
-        "group flex items-center gap-3 rounded-nested border px-3 py-2.5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40",
-        isClickable && "cursor-pointer",
-        isActive
-          ? "border-ethereal-gold/45 bg-ethereal-gold/[0.06] ring-1 ring-ethereal-gold/25"
-          : "border-hairline-strong bg-ethereal-alabaster hover:border-ethereal-gold/30",
-      )}
-    >
-      <div
-        className="flex h-12 w-12 shrink-0 flex-col items-center justify-center rounded-control border tabular-nums"
-        style={{
-          borderColor: imminence.marker,
-          backgroundColor: "color-mix(in srgb, var(--color-ethereal-marble) 88%, transparent)",
-        }}
-        aria-hidden="true"
-      >
-        <span
-          className="text-base font-semibold leading-none text-ethereal-ink"
-        >
-          {dayNumber}
+    <RecordRow
+      open={venue ? { onOpen: () => onSelect(String(venue.id)) } : undefined}
+      title={event.title}
+      voice="name"
+      current={isCurrent}
+      leading={
+        <span className="flex size-9 items-center justify-center text-ethereal-graphite">
+          <TypeIcon size={18} strokeWidth={1.75} aria-hidden="true" />
         </span>
-        <Eyebrow size="overline-sm" color="muted" className="mt-0.5 block">
-          {monthShort}
-        </Eyebrow>
-      </div>
-
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-1.5">
-          <TypeIcon
-            size={12}
-            strokeWidth={1.75}
-            aria-hidden="true"
-            style={{ color: imminence.marker }}
-            className="shrink-0"
-          />
-          <Eyebrow color="muted">
-            {t(typeLabel.labelKey, typeLabel.fallbackLabel)}
-          </Eyebrow>
-        </div>
-        <Text
-          as="p"
-          size="sm"
-          weight="semibold"
-          truncate
-          className="mt-0.5 text-ethereal-ink"
-        >
-          {event.title}
-        </Text>
-        <Caption color="muted" truncate className="mt-0.5 flex items-center gap-1">
-          <MapPin size={10} aria-hidden="true" className="shrink-0" />
-          {event.location?.name ??
-            t("logistics.event.no_venue", "Bez lokacji")}
-        </Caption>
-      </div>
-
-      {relative && (
-        <div className="flex shrink-0 items-center gap-1.5">
-          <span
-            className={cn(
-              "h-1.5 w-1.5 rounded-full",
-              imminence.pulse && "animate-pulse",
-            )}
-            style={{ backgroundColor: imminence.marker }}
-            aria-hidden="true"
-          />
-          <Text
-            as="span"
-            size="xs"
-            weight="semibold"
-            className="whitespace-nowrap text-ethereal-graphite"
-          >
-            {relative}
+      }
+      facts={[
+        t(typeLabel.labelKey, typeLabel.fallbackLabel),
+        venue?.name ?? t("logistics.event.no_venue", "Bez miejsca"),
+      ]}
+      figure={
+        <>
+          <Text as="span" size="sm" color="graphite" className="whitespace-nowrap">
+            {formatShortDate(event.date, i18n.language)}
           </Text>
-        </div>
-      )}
-    </motion.div>
+          {relative && (
+            <Text as="span" size="sm" color="muted" className="whitespace-nowrap">
+              {relative}
+            </Text>
+          )}
+        </>
+      }
+    />
   );
 };
 

@@ -3467,8 +3467,7 @@
       "markers_count_few": "{{count}} places",
       "markers_count_many": "{{count}} places",
       "markers_count_other": "{{count}} places",
-      "open_maps": "Google Maps",
-      "missing_count": "{{count}} without coordinates"
+      "open_maps": "Google Maps"
     },
     "autocomplete": {
       "placeholder": "Type a venue, hotel, or address..."
@@ -3483,26 +3482,26 @@
     "categories": {
       "airport": "Airport",
       "church": "Church",
-      "concert_hall": "Concert Hall",
+      "concert_hall": "Concert hall",
       "hotel": "Hotel",
       "other": "Other",
-      "parking": "Car Park",
-      "rehearsal_room": "Rehearsal Room",
+      "parking": "Car park",
+      "rehearsal_room": "Rehearsal room",
       "restaurant": "Restaurant",
       "transit": "Station / Transit",
-      "workspace": "Private Space"
+      "workspace": "Private space"
     },
     "categories_plural": {
       "airport": "Airports",
       "church": "Churches",
-      "concert_hall": "Concert Halls",
+      "concert_hall": "Concert halls",
       "hotel": "Hotels",
       "other": "Other",
-      "parking": "Car Parks",
-      "rehearsal_room": "Rehearsal Rooms",
+      "parking": "Car parks",
+      "rehearsal_room": "Rehearsal rooms",
       "restaurant": "Restaurants",
       "transit": "Stations & Transit",
-      "workspace": "Private Spaces"
+      "workspace": "Private spaces"
     },
     "category_descriptions": {
       "airport": "Airports serving the team's transfers.",
@@ -3520,14 +3519,8 @@
       "add_location": "Add location",
       "archive_desc": "The location will disappear from the main operational base but will be retained for historical projects.",
       "archive_title": "Archive this location?",
-      "collection_desc": "Each location knows its time zone and stores internal instructions for the production team.",
-      "collection_title": "Global base",
-      "filtered_view": "Filtered view",
-      "in_view": "{{count}} in view",
-      "subtitle": "Logistics Module",
       "sync_error": "Failed to load the locations base.",
-      "title": "Atlas of",
-      "title_highlight": "locations"
+      "title": "Locations"
     },
     "dossier": {
       "close": "Close",
@@ -3564,49 +3557,18 @@
       "title_new": "New location"
     },
     "empty_state": {
-      "add_location": "Add location",
-      "filters_blocked": "Current filters hide the entire base. Clear them to return to the full atlas.",
-      "search_results": "We couldn't find a location matching \"{{term}}\". Add a new entry or adjust your filters.",
-      "start_building": "Start building the global atlas by adding your first hall, church, or hotel.",
-      "title": "No locations in the current view"
+      "start_building": "Add the ensemble’s first hall, church or hotel.",
+      "title": "No locations yet",
+      "title_filtered": "No location matches the filters"
     },
     "event": {
-      "no_venue": "No venue",
+      "no_venue": "No location",
       "rehearsal": "Rehearsal"
     },
     "filters": {
-      "active_description": "Click a chip to remove it without resetting the entire view.",
-      "active_filters": "{{count}} active filters",
-      "all_categories": "All categories",
-      "category_label": "Category",
-      "chip_category": "Category: {{label}}",
       "chip_search": "Search: \"{{term}}\"",
       "clear_filters": "Clear filters",
-      "heading": "Base filters",
-      "no_active_filters": "No active filters",
-      "no_filters_message": "View shows the complete locations base.",
-      "search_label": "Search",
-      "search_placeholder": "Search by name or address...",
-      "summary": "{{visible}} of {{total}} locations in the current view.",
-      "view_aria": "View mode",
-      "view_atlas": "Atlas",
-      "view_grid": "Grid"
-    },
-    "hero": {
-      "badge": "Global Locations Base",
-      "coverage": {
-        "geo": "GPS coverage",
-        "notes": "Team notes",
-        "ratio": "{{value}} / {{total}}"
-      },
-      "description": "Concert halls, churches, rehearsal rooms, hotels, and airports — synced with Google Maps, time zones, and team instructions.",
-      "stats": {
-        "countries": "{{count}} countries",
-        "locations": "{{count}} locations",
-        "timezones": "{{count}} time zones",
-        "top_category": "Most: {{label}} ({{count}})"
-      },
-      "title": "Every stage, every hub — in one atlas."
+      "search_placeholder": "Search locations…"
     },
     "imminence": {
       "today": "Today"
@@ -3622,22 +3584,6 @@
       "zoom_in": "Zoom in",
       "zoom_out": "Zoom out"
     },
-    "metrics": {
-      "countries": "Countries",
-      "geo_coverage": "GPS coverage",
-      "locations": "Locations in base",
-      "notes_coverage": "Team notes"
-    },
-    "overview": {
-      "all": "All",
-      "all_hint": "All categories",
-      "live": "active places",
-      "timezones": "time zones",
-      "title": "Operations overview",
-      "today": "today",
-      "upcoming": "upcoming",
-      "venues": "venues"
-    },
     "preview": {
       "default_category": "Location",
       "get_directions": "Get directions",
@@ -3645,26 +3591,15 @@
       "unknown_location": "Unknown location"
     },
     "rail": {
-      "back_to_list": "All venues",
-      "hint": "Select a venue to see its details and events.",
-      "no_upcoming_desc": "Concerts and rehearsals with an assigned venue will appear here automatically.",
+      "back_to_list": "All locations",
+      "no_upcoming_desc": "Scheduled concerts and rehearsals will appear here.",
       "no_upcoming_title": "No upcoming events",
-      "tab_locations": "Venues",
-      "tab_upcoming": "Upcoming",
-      "tabs_label": "Rail content",
-      "view_label": "View",
-      "view_list": "List",
-      "view_map": "Map"
+      "no_upcoming_filtered": "No event matches the filters"
     },
     "row": {
-      "edit_aria": "Edit {{name}}",
-      "upcoming_here": "Scheduled here: {{count}}"
+      "edit_aria": "Edit {{name}}"
     },
     "timezone": {
-      "count_one": "{{count}} time zone",
-      "count_few": "{{count}} time zones",
-      "count_many": "{{count}} time zones",
-      "count_other": "{{count}} time zones",
       "in_days_one": "in {{count}} day",
       "in_days_few": "in {{count}} days",
       "in_days_many": "in {{count}} days",
@@ -3682,6 +3617,34 @@
       "sync_warning": "Sync warning",
       "update_success": "Updated!",
       "updating": "Updating..."
+    },
+    "tabs": {
+      "aria": "Location views",
+      "venues": "Locations",
+      "upcoming": "Upcoming",
+      "map": "Map"
+    },
+    "toolbar": {
+      "filters": "Filters",
+      "category_label": "Type of location",
+      "category_all": "All"
+    },
+    "census": {
+      "venues_one": "location",
+      "venues_few": "locations",
+      "venues_many": "locations",
+      "venues_other": "locations",
+      "events_one": "event",
+      "events_few": "events",
+      "events_many": "events",
+      "events_other": "events",
+      "narrowed": "{{visible}} of {{total}}"
+    },
+    "quick": {
+      "no_coordinates_one": "{{count}} without coordinates",
+      "no_coordinates_few": "{{count}} without coordinates",
+      "no_coordinates_many": "{{count}} without coordinates",
+      "no_coordinates_other": "{{count}} without coordinates"
     }
   },
   "materials": {

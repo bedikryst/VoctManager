@@ -1,179 +1,89 @@
 /**
  * @file LocationRow.tsx
- * @description Dense, click-to-open row for a venue in the command rail
- * (replaces the old big LocationCard). Clicking selects the venue — the atlas
- * flies to it and the dossier opens. The soonest event here is stated where
- * there is one; a venue with nothing booked simply says nothing, because most
- * of the atlas is quiet most of the time and forty em-dashes hide the two rows
- * that matter. Quiet inline edit stays always-visible (touch-safe), never
- * hover-gated.
+ * @description One venue, as a `RecordRow`: the row focuses the venue, so the
+ * atlas flies to it and the detail opens. The category's icon leads in its
+ * accent, the colour of the venue's pin, so the row and the pin agree; the
+ * address is the byline. The soonest event stands on the right as its day
+ * ("Dziś", "za 3 dni", "31 sty"); a venue with nothing booked says nothing,
+ * since most of the list is quiet most of the time. The edit icon opens the
+ * editor without focusing the venue.
  * @module features/logistics/components/LocationRow
  */
 
 import React from "react";
-import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
-import type { TFunction } from "i18next";
-import { MapPin, Pencil } from "lucide-react";
+import { Pencil } from "lucide-react";
 
-import { cn } from "@/shared/lib/utils";
-import { onActivate } from "@/shared/lib/dom/a11y";
-import {
-  Caption,
-  Text,
-} from "@/shared/ui/primitives/typography";
+import { ACCENT_TEXT } from "@/shared/ui/primitives/accents";
+import { RecordRow, recordActionClass } from "@/shared/ui/composites/RecordList";
+import { Button } from "@/shared/ui/primitives/Button";
+import { Text } from "@/shared/ui/primitives/typography";
 
-import {
-  daysUntil,
-  getImminenceDefinition,
-} from "../constants/eventImminence";
 import { getLocationCategoryOption } from "../constants/locationCategories";
 import type { LogisticsEvent } from "../hooks/useLogisticsEvents";
+import { formatRelativeDay, formatShortDate } from "../lib/relativeDay";
 import type { LocationDto } from "../types/logistics.dto";
 
 interface LocationRowProps {
-  location: LocationDto;
-  isActive: boolean;
-  nextEvent: LogisticsEvent | null;
-  upcomingCount: number;
-  onSelect: (id: string) => void;
-  onEdit: (location: LocationDto) => void;
+  readonly location: LocationDto;
+  /** The venue the map has focused. */
+  readonly isCurrent: boolean;
+  readonly nextEvent: LogisticsEvent | null;
+  readonly onSelect: (id: string) => void;
+  readonly onEdit: (location: LocationDto) => void;
 }
-
-const formatRelativeDay = (date: Date, t: TFunction): string => {
-  const diff = daysUntil(date);
-  if (diff <= 0) return t("logistics.imminence.today", "Dziś");
-  if (diff === 1) return t("logistics.timezone.tomorrow", "Jutro");
-  if (diff <= 7) return t("logistics.timezone.in_days", "za {{count}} dni", { count: diff });
-  return new Intl.DateTimeFormat("pl-PL", {
-    day: "numeric",
-    month: "short",
-  }).format(date);
-};
-
-const tzCity = (timezone: string): string =>
-  (timezone.split("/").pop() ?? timezone).replace(/_/g, " ");
 
 const LocationRowComponent = ({
   location,
-  isActive,
+  isCurrent,
   nextEvent,
-  upcomingCount,
   onSelect,
   onEdit,
 }: LocationRowProps): React.JSX.Element => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const option = getLocationCategoryOption(t, location.category);
   const Icon = option.icon;
-  const imminence = nextEvent
-    ? getImminenceDefinition(nextEvent.imminence)
+  const nextDay = nextEvent
+    ? (formatRelativeDay(nextEvent.date, t) ?? formatShortDate(nextEvent.date, i18n.language))
     : null;
 
   return (
-    <motion.div
-      layout
-      initial={{ opacity: 0, y: 6 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -6 }}
-      transition={{ duration: 0.22, ease: "easeOut" }}
-      role="button"
-      tabIndex={0}
-      aria-pressed={isActive}
-      onClick={() => onSelect(String(location.id))}
-      onKeyDown={onActivate(() => onSelect(String(location.id)))}
-      className={cn(
-        "group flex cursor-pointer items-center gap-3 rounded-nested border px-3 py-3 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40",
-        isActive
-          ? "border-ethereal-gold/45 bg-ethereal-gold/[0.06] ring-1 ring-ethereal-gold/25"
-          : "border-hairline-strong bg-ethereal-alabaster hover:border-ethereal-gold/30",
-      )}
-    >
-      <span
-        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-control border bg-ethereal-marble"
-        style={{ borderColor: option.atlasMarker, color: option.atlasMarker }}
-        aria-hidden="true"
-      >
-        <Icon size={17} strokeWidth={1.6} />
-      </span>
-
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2">
-          <Text as="p" size="sm" weight="semibold" truncate className="text-ethereal-ink">
-            {location.name}
-          </Text>
-          {/* How many events are booked here is one of the venue's own facts,
-              so it reads as plain type — a chip would make it an alert. */}
-          {upcomingCount > 1 && (
-            <Caption
-              color="muted"
-              className="shrink-0 tabular-nums"
-              title={t("logistics.row.upcoming_here", {
-                defaultValue: "Zaplanowane tutaj: {{count}}",
-                count: upcomingCount,
-              })}
-            >
-              ×{upcomingCount}
-            </Caption>
-          )}
-        </div>
-        <Caption
-          color="muted"
-          truncate
-          className="mt-0.5 flex items-center gap-1"
+    <RecordRow
+      open={{ onOpen: () => onSelect(String(location.id)) }}
+      title={location.name}
+      voice="name"
+      current={isCurrent}
+      leading={
+        <Text
+          as="span"
+          color={ACCENT_TEXT[option.accent]}
+          className="flex size-9 items-center justify-center"
         >
-          <MapPin size={10} aria-hidden="true" className="shrink-0" />
-          {location.formatted_address || tzCity(location.timezone)}
-        </Caption>
-      </div>
-
-      {nextEvent && imminence && (
-        <div className="flex shrink-0 items-center gap-1.5">
-          <span
-            className={cn(
-              "h-1.5 w-1.5 rounded-full",
-              imminence.pulse && "animate-pulse",
-            )}
-            style={{ backgroundColor: imminence.marker }}
-            aria-hidden="true"
-          />
-          <Text
-            as="span"
-            size="xs"
-            weight="semibold"
-            className="whitespace-nowrap text-ethereal-graphite"
-          >
-            {formatRelativeDay(nextEvent.date, t)}
+          <Icon size={18} strokeWidth={1.75} aria-hidden="true" />
+        </Text>
+      }
+      facts={[location.formatted_address?.trim() || null]}
+      figure={
+        nextDay && (
+          <Text as="span" size="sm" color="graphite" className="whitespace-nowrap">
+            {nextDay}
           </Text>
-        </div>
-      )}
-
-      <button
-        type="button"
-        onClick={(event) => {
-          event.stopPropagation();
-          onEdit(location);
-        }}
-        aria-label={t("logistics.row.edit_aria", "Edytuj {{name}}", {
-          name: location.name,
-        })}
-        className="shrink-0 rounded-chip p-1.5 text-ethereal-graphite/40 transition-colors hover:bg-ethereal-ink/4 hover:text-ethereal-gold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40"
-      >
-        <Pencil size={14} aria-hidden="true" />
-      </button>
-    </motion.div>
+        )
+      }
+      actions={
+        <Button
+          variant="icon"
+          size="icon"
+          className={recordActionClass}
+          onClick={() => onEdit(location)}
+          aria-label={t("logistics.row.edit_aria", "Edytuj {{name}}", { name: location.name })}
+        >
+          <Pencil size={16} aria-hidden="true" />
+        </Button>
+      }
+    />
   );
 };
 
-const arePropsEqual = (
-  prev: Readonly<LocationRowProps>,
-  next: Readonly<LocationRowProps>,
-): boolean =>
-  prev.location === next.location &&
-  prev.isActive === next.isActive &&
-  prev.nextEvent === next.nextEvent &&
-  prev.upcomingCount === next.upcomingCount &&
-  prev.onSelect === next.onSelect &&
-  prev.onEdit === next.onEdit;
-
-export const LocationRow = React.memo(LocationRowComponent, arePropsEqual);
+export const LocationRow = React.memo(LocationRowComponent);
 LocationRow.displayName = "LocationRow";

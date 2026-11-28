@@ -195,12 +195,14 @@ interface ToolbarPanelProps {
   /**
    * `ToolbarPanelField`s to a row: three from `md` up, or four from `lg` up
    * (two at `md`), so a panel of four does not leave one field alone on a row.
+   * One for a panel with a single field, or one that stands in a narrow rail.
    */
-  readonly columns?: 3 | 4;
+  readonly columns?: 1 | 3 | 4;
   readonly children: React.ReactNode;
 }
 
 const PANEL_COLUMNS: Readonly<Record<NonNullable<ToolbarPanelProps["columns"]>, string>> = {
+  1: "",
   3: "md:grid-cols-3",
   4: "md:grid-cols-2 lg:grid-cols-4",
 };

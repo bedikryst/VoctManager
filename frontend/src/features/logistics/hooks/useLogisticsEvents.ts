@@ -6,8 +6,8 @@
  * project/rehearsal payloads omits coordinates, so we resolve the full
  * LocationDto (with lat/lng) by id here, entirely client-side — zero backend.
  *
- * Derives: upcoming event feed, per-venue activity (for the dossier), a live
- * timezone roster (world-clock band) and headline schedule metrics.
+ * Derives: upcoming event feed, per-venue activity (for the dossier) and a live
+ * timezone roster (world-clock band).
  * @module features/logistics/hooks/useLogisticsEvents
  */
 
@@ -67,13 +67,6 @@ export interface TimezoneClock {
   nextEvent: LogisticsEvent | null;
 }
 
-export interface LogisticsScheduleMetrics {
-  upcomingCount: number;
-  todayCount: number;
-  weekCount: number;
-  liveVenues: number;
-}
-
 const tzCity = (timezone: string): string => {
   if (!timezone) return "—";
   const tail = timezone.split("/").pop() ?? timezone;
@@ -87,7 +80,6 @@ export interface UseLogisticsEventsResult {
   upcomingEvents: LogisticsEvent[];
   venueActivity: Map<string, VenueActivity>;
   timezoneClocks: TimezoneClock[];
-  scheduleMetrics: LogisticsScheduleMetrics;
 }
 
 export const useLogisticsEvents = (
@@ -229,34 +221,10 @@ export const useLogisticsEvents = (
     });
   }, [locations, venueActivity]);
 
-  const scheduleMetrics = useMemo<LogisticsScheduleMetrics>(() => {
-    let todayCount = 0;
-    let weekCount = 0;
-    upcomingEvents.forEach((event) => {
-      if (event.imminence === "TODAY") {
-        todayCount += 1;
-        weekCount += 1;
-      } else if (event.imminence === "SOON") {
-        weekCount += 1;
-      }
-    });
-    let liveVenues = 0;
-    venueActivity.forEach((activity) => {
-      if (activity.upcoming.length > 0) liveVenues += 1;
-    });
-    return {
-      upcomingCount: upcomingEvents.length,
-      todayCount,
-      weekCount,
-      liveVenues,
-    };
-  }, [upcomingEvents, venueActivity]);
-
   return {
     events,
     upcomingEvents,
     venueActivity,
     timezoneClocks,
-    scheduleMetrics,
   };
 };

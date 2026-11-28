@@ -3480,8 +3480,7 @@
       "markers_count_few": "{{count}} lieux",
       "markers_count_many": "{{count}} lieux",
       "markers_count_other": "{{count}} lieux",
-      "open_maps": "Google Maps",
-      "missing_count": "{{count}} sans coordonnées"
+      "open_maps": "Google Maps"
     },
     "autocomplete": {
       "placeholder": "Rechercher une adresse, un hôtel..."
@@ -3533,14 +3532,8 @@
       "add_location": "Ajouter un lieu",
       "archive_desc": "Le lieu disparaîtra de la base opérationnelle mais restera conservé pour les projets historiques.",
       "archive_title": "Archiver ce lieu ?",
-      "collection_desc": "Chaque lieu connaît son fuseau horaire et stocke des instructions internes pour l'équipe de production.",
-      "collection_title": "Base globale",
-      "filtered_view": "Vue filtrée",
-      "in_view": "{{count}} dans la vue",
-      "subtitle": "Module Logistique",
       "sync_error": "Échec du chargement de la base des lieux.",
-      "title": "Atlas des",
-      "title_highlight": "Lieux"
+      "title": "Lieux"
     },
     "dossier": {
       "close": "Fermer",
@@ -3577,49 +3570,18 @@
       "title_new": "Nouveau lieu"
     },
     "empty_state": {
-      "add_location": "Ajouter un lieu",
-      "filters_blocked": "Les filtres actuels masquent toute la base. Effacez-les pour revenir à l'atlas complet.",
-      "search_results": "Aucun lieu ne correspond à \"{{term}}\". Ajoutez une nouvelle entrée ou ajustez les filtres.",
-      "start_building": "Commencez à construire l'atlas global en ajoutant votre première salle, église ou hôtel.",
-      "title": "Aucun lieu dans la vue actuelle"
+      "start_building": "Ajoutez une première salle, une église ou un hôtel de l’ensemble.",
+      "title": "Aucun lieu pour l’instant",
+      "title_filtered": "Aucun lieu ne correspond aux filtres"
     },
     "event": {
       "no_venue": "Sans lieu",
       "rehearsal": "Répétition"
     },
     "filters": {
-      "active_description": "Cliquez sur un filtre pour le supprimer sans réinitialiser toute la vue.",
-      "active_filters": "{{count}} filtres actifs",
-      "all_categories": "Toutes les catégories",
-      "category_label": "Catégorie",
-      "chip_category": "Catégorie : {{label}}",
       "chip_search": "Recherche : \"{{term}}\"",
       "clear_filters": "Effacer les filtres",
-      "heading": "Filtres de la base",
-      "no_active_filters": "Aucun filtre actif",
-      "no_filters_message": "La vue présente la base complète des lieux.",
-      "search_label": "Recherche",
-      "search_placeholder": "Rechercher par nom ou adresse...",
-      "summary": "{{visible}} sur {{total}} lieux dans la vue actuelle.",
-      "view_aria": "Mode d'affichage",
-      "view_atlas": "Atlas",
-      "view_grid": "Grille"
-    },
-    "hero": {
-      "badge": "Base globale des lieux",
-      "coverage": {
-        "geo": "Couverture GPS",
-        "notes": "Notes d'équipe",
-        "ratio": "{{value}} / {{total}}"
-      },
-      "description": "Salles, églises, salles de répétition, hôtels et aéroports — synchronisés avec Google Maps, fuseaux horaires et instructions de l'équipe.",
-      "stats": {
-        "countries": "{{count}} pays",
-        "locations": "{{count}} lieux",
-        "timezones": "{{count}} fuseaux horaires",
-        "top_category": "Plus nombreux : {{label}} ({{count}})"
-      },
-      "title": "Chaque scène, chaque hub — dans un seul atlas."
+      "search_placeholder": "Rechercher un lieu…"
     },
     "imminence": {
       "today": "Aujourd'hui"
@@ -3635,22 +3597,6 @@
       "zoom_in": "Zoom avant",
       "zoom_out": "Zoom arrière"
     },
-    "metrics": {
-      "countries": "Pays",
-      "geo_coverage": "Couverture GPS",
-      "locations": "Lieux dans la base",
-      "notes_coverage": "Notes d'équipe"
-    },
-    "overview": {
-      "all": "Tous",
-      "all_hint": "Toutes les catégories",
-      "live": "lieux actifs",
-      "timezones": "fuseaux",
-      "title": "Vue opérationnelle",
-      "today": "aujourd'hui",
-      "upcoming": "à venir",
-      "venues": "lieux"
-    },
     "preview": {
       "default_category": "Lieu",
       "get_directions": "Itinéraire",
@@ -3659,25 +3605,14 @@
     },
     "rail": {
       "back_to_list": "Tous les lieux",
-      "hint": "Sélectionnez un lieu pour voir ses détails et événements.",
-      "no_upcoming_desc": "Les concerts et répétitions avec un lieu attribué apparaîtront ici automatiquement.",
+      "no_upcoming_desc": "Les concerts et répétitions programmés apparaîtront ici.",
       "no_upcoming_title": "Aucun événement à venir",
-      "tab_locations": "Lieux",
-      "tab_upcoming": "À venir",
-      "tabs_label": "Contenu du rail",
-      "view_label": "Affichage",
-      "view_list": "Liste",
-      "view_map": "Carte"
+      "no_upcoming_filtered": "Aucun événement ne correspond aux filtres"
     },
     "row": {
-      "edit_aria": "Modifier {{name}}",
-      "upcoming_here": "Planifié ici : {{count}}"
+      "edit_aria": "Modifier {{name}}"
     },
     "timezone": {
-      "count_one": "{{count}} fuseau",
-      "count_few": "{{count}} fuseaux",
-      "count_many": "{{count}} fuseaux",
-      "count_other": "{{count}} fuseaux",
       "in_days_one": "dans {{count}} jour",
       "in_days_few": "dans {{count}} jours",
       "in_days_many": "dans {{count}} jours",
@@ -3695,6 +3630,34 @@
       "sync_warning": "Avertissement de synchronisation",
       "update_success": "Mis à jour !",
       "updating": "Mise à jour..."
+    },
+    "tabs": {
+      "aria": "Vues des lieux",
+      "venues": "Lieux",
+      "upcoming": "À venir",
+      "map": "Carte"
+    },
+    "toolbar": {
+      "filters": "Filtres",
+      "category_label": "Type de lieu",
+      "category_all": "Tous"
+    },
+    "census": {
+      "venues_one": "lieu",
+      "venues_few": "lieux",
+      "venues_many": "lieux",
+      "venues_other": "lieux",
+      "events_one": "événement",
+      "events_few": "événements",
+      "events_many": "événements",
+      "events_other": "événements",
+      "narrowed": "{{visible}} sur {{total}}"
+    },
+    "quick": {
+      "no_coordinates_one": "{{count}} sans coordonnées",
+      "no_coordinates_few": "{{count}} sans coordonnées",
+      "no_coordinates_many": "{{count}} sans coordonnées",
+      "no_coordinates_other": "{{count}} sans coordonnées"
     }
   },
   "materials": {

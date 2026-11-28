@@ -1,136 +1,43 @@
 /**
  * @file useLocationsData.ts
- * @description Operational orchestrator for the Logistics domain — derives metrics,
- * filter state, active filter chips, view-mode persistence, and archive lifecycle on
- * top of the React Query cache. Server state stays delegated to `logistics.queries`;
- * this hook owns purely UI logic.
+ * @description The locations page's UI state on top of the React Query cache:
+ * the view read from the address (`?widok=`), the search, the category, the
+ * quick filter for venues without coordinates, the tokens of the filters in
+ * use, the venue the map has focused, the editor, and the archive lifecycle.
+ * Server state stays in `logistics.queries`.
+ *
+ * Two narrowed lists: `displayLocations` is the rail's (search, category and
+ * the quick filter), `mapLocations` the map's (search and category). A venue
+ * without coordinates has no pin, so the quick filter would only empty the map.
  * @module features/logistics/hooks/useLocationsData
  */
 
 import { useCallback, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
-import { toastApiError } from "@/shared/api/errors";
 import { useTranslation } from "react-i18next";
-import type { TFunction } from "i18next";
 
+import { toastApiError } from "@/shared/api/errors";
 import { foldDiacritics } from "@/shared/lib/text";
 import type { LocationCategory } from "@/shared/types";
+import type { FilterToken } from "@/shared/ui/composites/FilterTokens";
+
 import { useDeleteLocation, useLocations } from "../api/logistics.queries";
+import { getLocationCategoryOption } from "../constants/locationCategories";
 import {
-  getLocationCategoryOption,
-} from "../constants/locationCategories";
+  isLocationsView,
+  LOCATIONS_VIEW_PARAM,
+  type LocationsView,
+} from "../lib/locationsView";
 import type { LocationDto } from "../types/logistics.dto";
 
-export type LocationsMobileView = "map" | "list";
-export type LocationsRailTab = "locations" | "upcoming";
-
-export interface LocationsActiveFilter {
-  id: string;
-  label: string;
-  clear: () => void;
-}
-
-export interface LocationsMetrics {
-  totalLocations: number;
-  uniqueCategories: number;
-  uniqueCountries: number;
-  uniqueTimezones: number;
-  geoTagged: number;
-  withNotes: number;
-  topCategory: {
-    value: LocationCategory;
-    count: number;
-  } | null;
-}
-
-const extractCountry = (formattedAddress: string | null | undefined): string => {
-  if (!formattedAddress) return "";
-  const parts = formattedAddress.split(",");
-  return parts[parts.length - 1]?.trim().toLowerCase() ?? "";
-};
-
-const computeMetrics = (locations: LocationDto[]): LocationsMetrics => {
-  const categories = new Set<LocationCategory>();
-  const countries = new Set<string>();
-  const timezones = new Set<string>();
-  let geoTagged = 0;
-  let withNotes = 0;
-  const categoryCounts = new Map<LocationCategory, number>();
-
-  locations.forEach((loc) => {
-    categories.add(loc.category);
-    categoryCounts.set(
-      loc.category,
-      (categoryCounts.get(loc.category) ?? 0) + 1,
-    );
-
-    const country = extractCountry(loc.formatted_address);
-    if (country) countries.add(country);
-
-    if (loc.timezone) timezones.add(loc.timezone);
-
-    if (loc.latitude !== null && loc.longitude !== null) geoTagged += 1;
-    if (loc.internal_notes && loc.internal_notes.trim().length > 0) {
-      withNotes += 1;
-    }
-  });
-
-  let topCategory: LocationsMetrics["topCategory"] = null;
-  categoryCounts.forEach((count, value) => {
-    if (!topCategory || count > topCategory.count) {
-      topCategory = { value, count };
-    }
-  });
-
-  return {
-    totalLocations: locations.length,
-    uniqueCategories: categories.size,
-    uniqueCountries: countries.size,
-    uniqueTimezones: timezones.size,
-    geoTagged,
-    withNotes,
-    topCategory,
-  };
-};
-
-const buildActiveFilters = (
-  t: TFunction,
-  searchTerm: string,
-  categoryFilter: LocationCategory | "",
-  resetters: {
-    setSearchTerm: (value: string) => void;
-    setCategoryFilter: (value: LocationCategory | "") => void;
-  },
-): LocationsActiveFilter[] => {
-  const filters: LocationsActiveFilter[] = [];
-
-  if (searchTerm.trim()) {
-    filters.push({
-      id: "search",
-      label: t("logistics.filters.chip_search", 'Wyszukiwanie: "{{term}}"', {
-        term: searchTerm.trim(),
-      }),
-      clear: () => resetters.setSearchTerm(""),
-    });
-  }
-
-  if (categoryFilter) {
-    const option = getLocationCategoryOption(t, categoryFilter);
-    filters.push({
-      id: `category-${categoryFilter}`,
-      label: t("logistics.filters.chip_category", "Kategoria: {{label}}", {
-        label: option.label,
-      }),
-      clear: () => resetters.setCategoryFilter(""),
-    });
-  }
-
-  return filters;
-};
+const lacksCoordinates = (location: LocationDto): boolean =>
+  location.latitude === null || location.longitude === null;
 
 export const useLocationsData = () => {
   const { t } = useTranslation();
   const { data: locationsData, isError } = useLocations();
+  const [searchParams] = useSearchParams();
 
   const deleteLocationMutation = useDeleteLocation();
 
@@ -139,38 +46,43 @@ export const useLocationsData = () => {
     [locationsData],
   );
 
+  const rawView = searchParams.get(LOCATIONS_VIEW_PARAM);
+  const view: LocationsView = isLocationsView(rawView) ? rawView : "miejsca";
+
   const [searchTerm, setSearchTerm] = useState<string>("");
-  const [categoryFilter, setCategoryFilter] = useState<LocationCategory | "">(
-    "",
-  );
-  const [mobileView, setMobileView] = useState<LocationsMobileView>("map");
-  const [railTab, setRailTab] = useState<LocationsRailTab>("locations");
+  const [categoryFilter, setCategoryFilter] = useState<LocationCategory | "">("");
+  const [noCoordinatesPressed, setNoCoordinatesOnly] = useState<boolean>(false);
   const [activeLocationId, setActiveLocationId] = useState<string | null>(null);
 
   const [isPanelOpen, setIsPanelOpen] = useState<boolean>(false);
-  const [editingLocation, setEditingLocation] = useState<LocationDto | null>(
-    null,
-  );
-  const [locationToArchive, setLocationToArchive] =
-    useState<LocationDto | null>(null);
+  const [editingLocation, setEditingLocation] = useState<LocationDto | null>(null);
+  const [locationToArchive, setLocationToArchive] = useState<LocationDto | null>(null);
 
-  const displayLocations = useMemo(() => {
-    // Folded, so "kosciol" finds Kościół — the one fold, shared with every
+  // List-wide, like the total beside it; at zero the chip leaves and its
+  // filter switches itself off.
+  const noCoordinatesCount = useMemo(
+    () => locations.filter(lacksCoordinates).length,
+    [locations],
+  );
+  const noCoordinatesOnly = noCoordinatesPressed && noCoordinatesCount > 0;
+
+  const mapLocations = useMemo(() => {
+    // Folded, so "kosciol" finds Kościół: the one fold, shared with every
     // other search in the panel.
     const term = foldDiacritics(searchTerm.trim());
     return locations.filter((loc) => {
       const name = foldDiacritics(loc.name ?? "");
       const address = foldDiacritics(loc.formatted_address ?? "");
-      const matchesSearch =
-        term.length === 0 || name.includes(term) || address.includes(term);
-      const matchesCategory = categoryFilter
-        ? loc.category === categoryFilter
-        : true;
+      const matchesSearch = term.length === 0 || name.includes(term) || address.includes(term);
+      const matchesCategory = categoryFilter ? loc.category === categoryFilter : true;
       return matchesSearch && matchesCategory;
     });
   }, [locations, searchTerm, categoryFilter]);
 
-  const metrics = useMemo(() => computeMetrics(locations), [locations]);
+  const displayLocations = useMemo(
+    () => (noCoordinatesOnly ? mapLocations.filter(lacksCoordinates) : mapLocations),
+    [mapLocations, noCoordinatesOnly],
+  );
 
   const activeLocation = useMemo(
     () =>
@@ -180,28 +92,37 @@ export const useLocationsData = () => {
     [locations, activeLocationId],
   );
 
-  const categoryStats = useMemo(() => {
-    const stats: Partial<Record<LocationCategory, number>> = {};
-    locations.forEach((loc) => {
-      stats[loc.category] = (stats[loc.category] ?? 0) + 1;
-    });
-    return stats;
-  }, [locations]);
+  const term = searchTerm.trim();
 
-  const activeFilters = useMemo(
-    () =>
-      buildActiveFilters(t, searchTerm, categoryFilter, {
-        setSearchTerm,
-        setCategoryFilter,
-      }),
-    [t, searchTerm, categoryFilter],
-  );
+  // The search and the category; the quick filter is its own pressed chip.
+  const filterTokens = useMemo<FilterToken[]>(() => {
+    const tokens: FilterToken[] = [];
+    if (term) {
+      tokens.push({
+        id: "search",
+        label: t("logistics.filters.chip_search", 'Wyszukiwanie: "{{term}}"', { term }),
+        clear: () => setSearchTerm(""),
+      });
+    }
+    if (categoryFilter) {
+      tokens.push({
+        id: "category",
+        label: getLocationCategoryOption(t, categoryFilter).label,
+        clear: () => setCategoryFilter(""),
+      });
+    }
+    return tokens;
+  }, [t, term, categoryFilter]);
 
-  const hasActiveFilters = activeFilters.length > 0;
+  /** Whether the search or the category narrows the lists; the events know no other filter. */
+  const isFiltered = term.length > 0 || categoryFilter !== "";
+  /** Whether anything narrows the venues. */
+  const isNarrowed = isFiltered || noCoordinatesOnly;
 
   const resetFilters = useCallback(() => {
     setSearchTerm("");
     setCategoryFilter("");
+    setNoCoordinatesOnly(false);
   }, []);
 
   const selectLocation = useCallback((id: string | null) => {
@@ -228,21 +149,16 @@ export const useLocationsData = () => {
 
   const executeArchive = useCallback(async () => {
     if (!locationToArchive) return;
-    const toastId = toast.loading(
-      t("logistics.toast.archiving", "Dezaktywacja lokacji..."),
-    );
+    const toastId = toast.loading(t("logistics.toast.archiving", "Dezaktywacja lokacji..."));
 
     try {
       await deleteLocationMutation.mutateAsync(locationToArchive.id);
       toast.success(
-        t(
-          "logistics.toast.archived_success",
-          "Lokacja zarchiwizowana pomyślnie.",
-        ),
+        t("logistics.toast.archived_success", "Lokacja zarchiwizowana pomyślnie."),
         { id: toastId },
       );
     } catch (error) {
-        toastApiError(error, t, {
+      toastApiError(error, t, {
         id: toastId,
         fallbackDescription: t(
           "logistics.toast.archive_error",
@@ -257,20 +173,20 @@ export const useLocationsData = () => {
   return {
     isError,
     locations,
+    view,
+    mapLocations,
     displayLocations,
-    metrics,
-    categoryStats,
-    activeFilters,
-    hasActiveFilters,
+    filterTokens,
+    isFiltered,
+    isNarrowed,
     searchTerm,
     setSearchTerm,
     categoryFilter,
     setCategoryFilter,
+    noCoordinatesCount,
+    noCoordinatesOnly,
+    setNoCoordinatesOnly,
     resetFilters,
-    mobileView,
-    setMobileView,
-    railTab,
-    setRailTab,
     activeLocationId,
     activeLocation,
     selectLocation,

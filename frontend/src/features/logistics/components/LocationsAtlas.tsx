@@ -16,11 +16,10 @@ import React, { useEffect, useMemo, useRef } from "react";
 import { AdvancedMarker, Map, useMap } from "@vis.gl/react-google-maps";
 import { motion, useReducedMotion } from "framer-motion";
 import { useTranslation } from "react-i18next";
-import { Layers, MapPin, MapPinOff, Minus, Plus } from "lucide-react";
+import { Layers, MapPin, Minus, Plus } from "lucide-react";
 
 import { cn } from "@/shared/lib/utils";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
-import { Badge } from "@/shared/ui/primitives/Badge";
 import { Eyebrow, Text } from "@/shared/ui/primitives/typography";
 
 import type { LocationCategory } from "@/shared/types";
@@ -241,11 +240,9 @@ const VenueMarker = ({
 };
 
 /**
- * Colour ↔ meaning for the pins that are actually on screen. It carried a
- * per-category count as well, computed over the WHOLE base while the map drew
- * the filtered one: scoping to "Kościoły" left the legend cheerfully reporting
- * twelve concert halls that no longer had a single pin. The census lives in the
- * overview bar, which owns one denominator; here a category simply drops out
+ * Colour ↔ meaning for the pins that are actually on screen, without counts:
+ * the list's census owns the one denominator, and a count over the whole base
+ * beside a filtered map reports pins that are not there. A category drops out
  * when the map has none of it.
  */
 const AtlasLegend = ({
@@ -311,9 +308,6 @@ const AtlasSurface = ({
     () => new Set(taggedLocations.map((loc) => loc.category)),
     [taggedLocations],
   );
-  // Venues the map cannot show, because nobody gave them coordinates. Silent
-  // when there are none — which is the healthy case and needs no chip.
-  const missingFromMap = locations.length - taggedLocations.length;
 
   const handleZoom = (delta: number): void => {
     if (!map) return;
@@ -385,20 +379,6 @@ const AtlasSurface = ({
             categoryOptions={categoryOptions}
             present={presentCategories}
           />
-
-          {/* The overview bar states how many venues and how many are live.
-              The map only speaks when it disagrees with it — i.e. when some
-              venues are missing from the picture. */}
-          {missingFromMap > 0 && (
-            <div className="pointer-events-none absolute right-4 top-4 z-10 flex flex-col items-end gap-2">
-              <Badge variant="glass" icon={<MapPinOff size={12} />}>
-                {t("logistics.atlas.missing_count", {
-                  defaultValue: "{{count}} bez współrzędnych",
-                  count: missingFromMap,
-                })}
-              </Badge>
-            </div>
-          )}
 
           {/* Zoom cluster — lifted above the peek sheet in fullscreen focus. */}
           <div

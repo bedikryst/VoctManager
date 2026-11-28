@@ -474,7 +474,11 @@ export const router = createBrowserRouter(
               element={<Navigate to=".." replace relative="path" />}
             />
             <Route path="crew" handle={PLAIN_ROUTE_HANDLE} element={<CrewManagement />} />
-            <Route path="locations" element={<LogisticsLocationsPage />} />
+            <Route
+              path="locations"
+              handle={PLAIN_ROUTE_HANDLE}
+              element={<LogisticsLocationsPage />}
+            />
           </Route>
           <Route path="resources" element={<ChoristerHubPage />} />
           <Route path="materials" element={<MaterialsLayout />}>

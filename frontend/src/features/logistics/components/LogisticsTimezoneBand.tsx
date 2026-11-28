@@ -3,7 +3,9 @@
  * @description Live world-clock strip for every timezone the ensemble touches.
  * Each tile shows the local time, a day/night cue, how many venues sit in that
  * zone, and the soonest event there — the quick "what time is it on tour right
- * now" glance a conductor needs before calling a venue.
+ * now" glance a conductor needs before calling a venue. It renders only while
+ * the venues span more than one zone: a single clock says nothing the reader's
+ * own does not.
  * @module features/logistics/components/LogisticsTimezoneBand
  */
 
@@ -97,12 +99,11 @@ export const LogisticsTimezoneBand = ({
   clocks,
 }: LogisticsTimezoneBandProps): React.JSX.Element | null => {
   const { t } = useTranslation();
-  if (clocks.length === 0) return null;
+  if (clocks.length < 2) return null;
 
   return (
     <GlassCard variant="solid" padding="none" isHoverable={false}>
-      {/* No zone count here: the overview bar states it, and this strip IS the
-          list of them — counting a list above the list is chrome. */}
+      {/* No zone count: this strip is the list of them. */}
       <div className="flex items-center gap-2.5 border-b border-hairline px-5 py-3">
         <Globe2 size={14} className="text-ethereal-gold/70" aria-hidden="true" />
         <Eyebrow as="h2" color="graphite">
