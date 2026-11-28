@@ -1,8 +1,12 @@
 /**
  * @file ArtistEditorPanel.tsx
- * @description The editor that creates or updates an artist profile, on
- * `SidePanel`. React Hook Form + Zod through `useArtistForm`; closing with
- * unsaved changes asks first. Under the conductor's own range
+ * @description The editor that creates or updates an artist, on `SidePanel`.
+ * React Hook Form + Zod through `useArtistForm`; closing with unsaved changes
+ * asks first. Three `FormSection`s: the person (names, vocative, phone), the
+ * voice profile, and the account (the e-mail, the language and form of
+ * address, platform access). Once the member has activated the account, the
+ * address and the two preferences are theirs to change, so they read as text
+ * here under one sentence saying so. Under the conductor's own range
  * (`AssessedRangeField`) it shows the singer's proposal, read-only, once one
  * exists, with the one action that copies it into the form.
  * @module features/artists/components/ArtistEditorPanel
@@ -11,10 +15,10 @@
 import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
-import { CheckCircle2, Send } from "lucide-react";
 import { Controller, useWatch } from "react-hook-form";
 
 import { ConfirmModal } from "@ui/composites/ConfirmModal";
+import { FormSection } from "@ui/composites/FormSection";
 import { SidePanel } from "@ui/composites/SidePanel";
 import { Button } from "@ui/primitives/Button";
 import { Checkbox } from "@ui/primitives/Checkbox";
@@ -36,10 +40,9 @@ import {
   ASSESSED_FIELDS,
   voiceToSalutation,
 } from "../types/artist.dto";
-import { canReceiveMessages } from "../lib/accountState";
 import { vocativeFromTable } from "../lib/polishVocative";
 import { AssessedRangeField } from "./AssessedRangeField";
-import { NewThreadModal } from "@/features/messages/components/NewThreadModal";
+import { SightReadingInput } from "./SightReadingInput";
 
 interface ArtistEditorPanelProps {
   isOpen: boolean;
@@ -49,21 +52,18 @@ interface ArtistEditorPanelProps {
   initialSearchContext?: string;
 }
 
-const SectionTitle = ({ children }: { children: React.ReactNode }) => (
-  <Eyebrow
-    as="h4"
-    color="gold"
-    className="block border-b border-hairline-strong pb-2.5"
-  >
-    {children}
-  </Eyebrow>
-);
-
 const PROPOSAL_DATE_FORMAT: Intl.DateTimeFormatOptions = {
   day: "2-digit",
   month: "2-digit",
   year: "numeric",
 };
+
+/** The message languages, each named in itself. */
+const LANGUAGE_OPTIONS = [
+  { value: "pl", label: "Polski" },
+  { value: "en", label: "English" },
+  { value: "fr", label: "Français" },
+];
 
 /** A sentence under a field. An overline would set it uppercase and tracked
  *  out, which is a label's clothing on a piece of prose. */
@@ -71,6 +71,59 @@ const FieldHint = ({ children }: { children: React.ReactNode }) => (
   <Text as="p" size="xs" color="muted" className="ml-1 mt-2">
     {children}
   </Text>
+);
+
+/**
+ * A value the manager can no longer change, as text under the field's label.
+ * A disabled control would still look like something to click. The error
+ * stays: a rejected value stops the submit, and nothing else on screen would
+ * say why.
+ */
+const LockedValue = ({
+  label,
+  value,
+  error,
+}: {
+  label: string;
+  value: string;
+  error?: string;
+}) => (
+  <div className="flex flex-col gap-1.5">
+    <Eyebrow color="muted" className="ml-1">
+      {label}
+    </Eyebrow>
+    <Text as="p" size="base" className="ml-1 wrap-break-word">
+      {value}
+    </Text>
+    {error && (
+      <Text as="p" size="sm" color="crimson" className="ml-1">
+        {error}
+      </Text>
+    )}
+  </div>
+);
+
+/** A checkbox with its title and one sentence, on the form's own ground. */
+const CheckboxRow = ({
+  control,
+  title,
+  description,
+}: {
+  control: React.ReactNode;
+  title: string;
+  description: string;
+}) => (
+  <label className="flex cursor-pointer items-start gap-3">
+    {control}
+    <span className="min-w-0">
+      <Text as="span" size="sm" weight="semibold" className="block">
+        {title}
+      </Text>
+      <Text as="span" size="sm" color="muted" className="mt-0.5 block">
+        {description}
+      </Text>
+    </span>
+  </label>
 );
 
 export default function ArtistEditorPanel({
@@ -85,7 +138,6 @@ export default function ArtistEditorPanel({
   const notation = usePitchNotation();
   const proposal = proposalOf(artist ?? undefined);
   const [showExitConfirm, setShowExitConfirm] = useState<boolean>(false);
-  const [showNotifyModal, setShowNotifyModal] = useState(false);
 
   const { form, isDirty, isSubmitting, onSubmit } = useArtistForm(
     artist,
@@ -99,13 +151,10 @@ export default function ArtistEditorPanel({
   const errorText = (key?: string) => (key ? t(key) : undefined);
 
   // Past activation the address is that person's sign-in credential, and the
-  // server refuses to move it from here. Lock the field rather than let a
-  // manager type a change that can only come back rejected.
-  const isEmailLocked = Boolean(artist?.id && artist.account_activated);
-  // The language and the form of address pass to the member at the same
-  // moment: until then only the manager can set them, after it the member
-  // does, in their own settings.
-  const arePreferencesLocked = isEmailLocked;
+  // server refuses to move it from here. The language and the form of address
+  // pass to the member at the same moment: until then only the manager can set
+  // them, after it the member does, in their own settings.
+  const isAccountTheirs = Boolean(artist?.id && artist.account_activated);
   const isCreating = !artist?.id;
 
   const firstNameValue = useWatch({ control: form.control, name: "first_name" });
@@ -122,12 +171,25 @@ export default function ArtistEditorPanel({
   // form cannot carry an address and the waiver at once. On edit the waiver is
   // never shown — a member without an address may gain one, which invites them.
   const isEmailWaived = isCreating && withoutEmail;
-  const languageValue = useWatch({ control: form.control, name: "language" });
+  const [emailValue, languageValue, salutationValue] = useWatch({
+    control: form.control,
+    name: ["email", "language", "salutation"],
+  });
   const voiceValue = useWatch({ control: form.control, name: "voice_type" });
   const isPlayer = isInstrumentalist(voiceValue as VoiceType);
   const isSinger = isSingingVoiceType(voiceValue as VoiceType);
   // The assessment's keyboard opens on this voice's own window.
   const singingVoice = singingVoiceOf(voiceValue);
+
+  const salutationOptions = [
+    { value: "N", label: t("common.salutation.neutral", "Neutralna") },
+    { value: "F", label: t("common.salutation.feminine", "Kobieca") },
+    { value: "M", label: t("common.salutation.masculine", "Męska") },
+  ];
+  const optionLabel = (
+    options: readonly { value: string; label: string }[],
+    value: string | undefined,
+  ): string => options.find((option) => option.value === value)?.label ?? "—";
 
   const [tessituraLow, tessituraHigh, extremeLow, extremeHigh] = useWatch({
     control: form.control,
@@ -149,8 +211,8 @@ export default function ArtistEditorPanel({
   const { setValue, clearErrors, trigger } = form;
 
   // While adding someone, choosing the voice suggests the form of address —
-  // until the manager picks one by hand. The field sits above the voice, so a
-  // choice made there first must survive the voice chosen after it.
+  // until the manager picks one by hand. A choice made by hand survives a
+  // voice chosen after it.
   const salutationPickedByHand = useRef(false);
   useEffect(() => {
     if (isOpen) salutationPickedByHand.current = false;
@@ -184,140 +246,269 @@ export default function ArtistEditorPanel({
       onCloseRequest={handleCloseRequest}
       size="lg"
       title={
-        artist?.id
-          ? t("artists.editor.title_edit", "Edycja Profilu")
-          : t("artists.editor.title_new", "Nowy Artysta")
-      }
-      actions={
-        artist?.id && canReceiveMessages(artist) ? (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowNotifyModal(true)}
-            leftIcon={<Send size={14} aria-hidden="true" />}
-            className="text-ethereal-amethyst hover:text-ethereal-amethyst"
-          >
-            {t("artists.editor.message_artist", "Napisz wiadomość")}
-          </Button>
-        ) : undefined
+        isCreating
+          ? t("artists.editor.title_new", "Nowy artysta")
+          : t("artists.editor.title_edit", "Edytuj artystę")
       }
       footer={
         <Button
           type="submit"
           form={formId}
           variant="primary"
+          casing="sentence"
+          fullWidth
           disabled={isSubmitting}
           isLoading={isSubmitting}
-          fullWidth
-          leftIcon={
-            !isSubmitting ? (
-              <CheckCircle2 size={16} aria-hidden="true" />
-            ) : undefined
-          }
         >
-          {artist?.id
-            ? t("artists.editor.save_profile", "Zapisz Profil")
-            : t("artists.editor.create_artist", "Utwórz Artystę")}
+          {isCreating
+            ? t("artists.editor.submit", "Dodaj artystę")
+            : t("artists.editor.save", "Zapisz")}
         </Button>
       }
     >
-      <form
-        id={formId}
-        onSubmit={onSubmit}
-        className="flex min-h-full flex-col space-y-8 rounded-surface border border-hairline bg-ethereal-alabaster/60 p-6 shadow-glass-ethereal md:p-8"
-      >
-        <div className="flex-1 space-y-8">
-          <div className="space-y-5">
-            <SectionTitle>
-              {t("artists.editor.section_basic", "Dane Podstawowe")}
-            </SectionTitle>
-            <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-              <div className="space-y-3">
+      <form id={formId} onSubmit={onSubmit} className="space-y-9">
+        <FormSection
+          heading={t("artists.editor.section_basic", "Dane podstawowe")}
+          className="space-y-5"
+        >
+          {/* Only the name pairs up: anything else in half of the panel is
+              cut off ("Męska (Drogi…)", a real e-mail address). */}
+          <div className="grid gap-x-4 gap-y-5 md:grid-cols-2">
+            <Input
+              type="text"
+              label={t("artists.editor.first_name", "Imię")}
+              {...form.register("first_name")}
+              disabled={isSubmitting}
+              error={errorText(errors.first_name?.message)}
+              autoComplete="given-name"
+            />
+            <Input
+              type="text"
+              label={t("artists.editor.last_name", "Nazwisko")}
+              {...form.register("last_name")}
+              disabled={isSubmitting}
+              error={errorText(errors.last_name?.message)}
+              autoComplete="family-name"
+            />
+          </div>
+          <AnimatePresence initial={false}>
+            {firstNameValue && languageValue === "pl" && (
+              <motion.div
+                key="vocative-input"
+                initial={{ opacity: 0, transform: "translateY(-6px)" }}
+                animate={{ opacity: 1, transform: "translateY(0px)" }}
+                exit={{ opacity: 0, transform: "translateY(-6px)" }}
+                transition={{ duration: 0.18 }}
+              >
                 <Input
                   type="text"
-                  label={t("artists.editor.first_name", "Imię *")}
-                  {...form.register("first_name")}
-                  disabled={isSubmitting}
-                  error={errorText(errors.first_name?.message)}
-                  className="font-bold"
-                />
-                <AnimatePresence>
-                  {firstNameValue && languageValue === "pl" && (
-                    <motion.div
-                      key="vocative-input"
-                      initial={{ opacity: 0, y: -6 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -6 }}
-                      transition={{ duration: 0.18 }}
-                    >
-                      <Input
-                        type="text"
-                        label={t(
-                          "artists.editor.first_name_vocative",
-                          "Wołacz",
-                        )}
-                        {...form.register("first_name_vocative")}
-                        placeholder={t(
-                          "artists.editor.first_name_vocative_placeholder",
-                          "np. Krystianie",
-                        )}
-                        disabled={isSubmitting}
-                        className="font-medium text-ethereal-amethyst"
-                      />
-                      <FieldHint>
-                        {isNameMissingFromTable
-                          ? t(
-                              "artists.editor.first_name_vocative_not_in_table",
-                              "Tego imienia nie ma w tabeli wołaczy. Wpisz formę ręcznie.",
-                            )
-                          : t(
-                              "artists.editor.first_name_vocative_hint",
-                              "Forma używana w powitaniach, np. w mailach.",
-                            )}
-                      </FieldHint>
-                    </motion.div>
+                  label={t("artists.editor.first_name_vocative", "Wołacz")}
+                  {...form.register("first_name_vocative")}
+                  placeholder={t(
+                    "artists.editor.first_name_vocative_placeholder",
+                    "np. Krystianie",
                   )}
-                </AnimatePresence>
-              </div>
-              <Input
-                type="text"
-                label={t("artists.editor.last_name", "Nazwisko *")}
-                {...form.register("last_name")}
-                disabled={isSubmitting}
-                error={errorText(errors.last_name?.message)}
-                className="font-bold"
-              />
-            </div>
+                  disabled={isSubmitting}
+                  className="font-medium text-ethereal-amethyst"
+                />
+                <FieldHint>
+                  {isNameMissingFromTable
+                    ? t(
+                        "artists.editor.first_name_vocative_not_in_table",
+                        "Tego imienia nie ma w tabeli wołaczy. Wpisz formę ręcznie.",
+                      )
+                    : t(
+                        "artists.editor.first_name_vocative_hint",
+                        "Forma używana w powitaniach, np. w mailach.",
+                      )}
+                </FieldHint>
+              </motion.div>
+            )}
+          </AnimatePresence>
+          <Input
+            type="tel"
+            label={t("artists.editor.phone", "Telefon")}
+            {...form.register("phone_number")}
+            disabled={isSubmitting}
+            autoComplete="tel"
+          />
+        </FormSection>
 
-            <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+        <FormSection
+          heading={t("artists.editor.section_voice", "Profil wokalny")}
+          className="space-y-5"
+        >
+          <Controller
+            control={form.control}
+            name="voice_type"
+            render={({ field }) => (
+              <Select
+                label={t("artists.editor.voice_type", "Rodzaj głosu")}
+                name={field.name}
+                value={field.value ?? ""}
+                onValueChange={(value) => {
+                  field.onChange(value);
+                  if (isCreating && !salutationPickedByHand.current) {
+                    setValue("salutation", voiceToSalutation(value));
+                  }
+                }}
+                // Until the dictionary lands the field says it is waiting,
+                // rather than offering one placeholder voice that would be
+                // submitted verbatim.
+                disabled={isSubmitting || voiceTypes.length === 0}
+                placeholder={
+                  voiceTypes.length === 0
+                    ? t("artists.editor.loading", "Ładowanie...")
+                    : undefined
+                }
+                error={errorText(errors.voice_type?.message)}
+                options={voiceTypes}
+              />
+            )}
+          />
+
+          {/* What a player plays, in the words the sheets will print
+              ("Organy", "Trąbka"). Only a player has one; the range and
+              sight-reading below are a singer's facts and are not asked of
+              anyone who does not stand in a section. */}
+          {isPlayer && (
+            <Input
+              type="text"
+              label={t("artists.editor.instrument", "Instrument")}
+              {...form.register("instrument")}
+              placeholder={t("artists.editor.instrument_placeholder", "np. Organy")}
+              disabled={isSubmitting}
+              error={errorText(errors.instrument?.message)}
+            />
+          )}
+
+          {singingVoice && (
+            <AssessedRangeField
+              value={assessed}
+              voice={singingVoice}
+              notation={notation}
+              disabled={isSubmitting}
+              error={assessedError}
+              onChange={(slot, midi) => setAssessed({ ...assessed, [slot]: midi })}
+            />
+          )}
+
+          {/* The singer's own proposal, read-only. "Przyjmij propozycję"
+              copies its four notes into the field above, where the conductor
+              adjusts them; nothing is written until the editor is saved. One
+              singer at a time, on purpose: a bulk copy would turn the
+              conductor's verdict into the singer's. Absent until they send
+              one. */}
+          {singingVoice && proposal && artist?.vocal_range_proposed_at && (
+            <div>
+              <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+                <Text size="sm" color="graphite">
+                  {t("artists.editor.range_proposal", "Propozycja chórzysty")}
+                  {": "}
+                  <Text as="span" size="sm" color="inherit" className="text-ethereal-ink">
+                    <VocalRangeText
+                      range={proposal}
+                      notation={notation}
+                      className="font-semibold"
+                    />
+                  </Text>
+                  <span className="tabular-nums">
+                    {", "}
+                    {formatLocalizedDateTime(
+                      artist.vocal_range_proposed_at,
+                      PROPOSAL_DATE_FORMAT,
+                    )}
+                  </span>
+                </Text>
+                {!sameRange(assessed, proposal) && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    casing="sentence"
+                    onClick={() => setAssessed(proposal)}
+                    disabled={isSubmitting}
+                  >
+                    {t(
+                      "artists.editor.assessed_range.accept_proposal",
+                      "Przyjmij propozycję",
+                    )}
+                  </Button>
+                )}
+              </div>
+              {artist.vocal_range_comment?.trim() && (
+                <Text
+                  size="sm"
+                  color="muted"
+                  className="mt-1.5 whitespace-pre-line wrap-break-word"
+                >
+                  {artist.vocal_range_comment.trim()}
+                </Text>
+              )}
+            </div>
+          )}
+
+          {isSinger && (
+            <Controller
+              control={form.control}
+              name="sight_reading_skill"
+              render={({ field }) => (
+                <SightReadingInput
+                  label={t("artists.editor.sight_reading", "Czytanie a vista (ocena)")}
+                  name={field.name}
+                  value={field.value ? String(field.value) : ""}
+                  onChange={field.onChange}
+                  onBlur={field.onBlur}
+                  disabled={isSubmitting}
+                />
+              )}
+            />
+          )}
+        </FormSection>
+
+        <FormSection
+          heading={t("artists.editor.section_account", "Konto")}
+          className="space-y-5"
+        >
+          {isAccountTheirs ? (
+            <>
+              <LockedValue
+                label={t("artists.editor.email", "E-mail")}
+                value={emailValue || "—"}
+              />
+              <LockedValue
+                label={t("artists.editor.language", "Język wiadomości")}
+                value={optionLabel(LANGUAGE_OPTIONS, languageValue)}
+                error={errorText(errors.language?.message)}
+              />
+              <LockedValue
+                label={t("common.salutation.label", "Forma zwrotu")}
+                value={optionLabel(salutationOptions, salutationValue)}
+                error={errorText(errors.salutation?.message)}
+              />
+              <Text as="p" size="sm" color="muted">
+                {t(
+                  "artists.editor.account_theirs",
+                  "Adres, język i formę zwrotu zmienia już tylko sam członek, w ustawieniach swojego konta.",
+                )}
+              </Text>
+            </>
+          ) : (
+            <>
               <div>
                 <Input
                   type="email"
-                  label={
-                    withoutEmail
-                      ? t("artists.editor.email_optional", "E-mail")
-                      : t("artists.editor.email", "E-mail *")
-                  }
+                  label={t("artists.editor.email", "E-mail")}
                   {...form.register("email")}
                   placeholder={
                     isEmailWaived
-                      ? t(
-                          "artists.editor.email_waived_placeholder",
-                          "Bez adresu e-mail",
-                        )
+                      ? t("artists.editor.email_waived_placeholder", "Bez adresu e-mail")
                       : undefined
                   }
-                  disabled={isSubmitting || isEmailLocked || isEmailWaived}
+                  disabled={isSubmitting || isEmailWaived}
                   error={errorText(errors.email?.message)}
+                  autoComplete="email"
                 />
-                {isEmailLocked && (
-                  <FieldHint>
-                    {t(
-                      "artists.editor.email_locked",
-                      "Adres logowania — zmienić może go tylko właściciel konta, w swoich ustawieniach.",
-                    )}
-                  </FieldHint>
-                )}
                 {!isCreating && withoutEmail && (
                   <FieldHint>
                     {t(
@@ -327,91 +518,60 @@ export default function ArtistEditorPanel({
                   </FieldHint>
                 )}
               </div>
-              <Input
-                type="tel"
-                label={t("artists.editor.phone", "Telefon")}
-                {...form.register("phone_number")}
-                disabled={isSubmitting}
-              />
-            </div>
 
-            {/* The waiver is a box of its own rather than an empty
-                field: leaving the address blank is refused, so a member
-                ends up outside the app only because somebody said so. */}
-            {isCreating && (
-              <label className="flex cursor-pointer items-start gap-4 rounded-control border border-hairline-strong bg-ethereal-alabaster/70 p-4 shadow-glass-ethereal transition-colors hover:border-ethereal-gold/40">
-                <Controller
-                  control={form.control}
-                  name="without_email"
-                  render={({ field }) => (
-                    <Checkbox
-                      size="md"
-                      checked={Boolean(field.value)}
-                      onChange={(event) => {
-                        const waived = event.target.checked;
-                        field.onChange(waived);
-                        if (waived) {
-                          setValue("email", "", { shouldDirty: true });
-                          clearErrors("email");
-                        }
-                      }}
-                      onBlur={field.onBlur}
-                      name={field.name}
-                      disabled={isSubmitting}
-                      className="mt-0.5"
-                    />
+              {/* The waiver is a checkbox of its own rather than an empty
+                  field: leaving the address blank is refused, so a member
+                  ends up outside the app only because somebody said so. */}
+              {isCreating && (
+                <CheckboxRow
+                  title={t("artists.editor.without_email_title", "Dodaj bez adresu e-mail")}
+                  description={t(
+                    "artists.editor.without_email_desc",
+                    "Tylko dla osoby, która nie chce korzystać z aplikacji. Nie dostanie zaproszenia ani powiadomień, więc plan, zmiany i nuty trzeba jej przekazywać osobiście. Adres można dopisać później, wtedy wyjdzie zaproszenie.",
                   )}
-                />
-                <div>
-                  <Text size="sm" weight="bold">
-                    {t(
-                      "artists.editor.without_email_title",
-                      "Dodaj bez adresu e-mail",
-                    )}
-                  </Text>
-                  <Text as="p" size="xs" color="muted" className="mt-1">
-                    {t(
-                      "artists.editor.without_email_desc",
-                      "Tylko dla osoby, która nie chce korzystać z aplikacji. Nie dostanie zaproszenia ani powiadomień, więc plan, zmiany i nuty trzeba jej przekazywać osobiście. Adres można dopisać później, wtedy wyjdzie zaproszenie.",
-                    )}
-                  </Text>
-                </div>
-              </label>
-            )}
-
-            <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-              <div>
-                <Controller
-                  control={form.control}
-                  name="language"
-                  render={({ field }) => (
-                    <Select
-                      label={t(
-                        "artists.editor.language",
-                        "Język wiadomości *",
+                  control={
+                    <Controller
+                      control={form.control}
+                      name="without_email"
+                      render={({ field }) => (
+                        <Checkbox
+                          size="md"
+                          checked={Boolean(field.value)}
+                          onChange={(event) => {
+                            const waived = event.target.checked;
+                            field.onChange(waived);
+                            if (waived) {
+                              setValue("email", "", { shouldDirty: true });
+                              clearErrors("email");
+                            }
+                          }}
+                          onBlur={field.onBlur}
+                          name={field.name}
+                          disabled={isSubmitting}
+                          className="mt-0.5"
+                        />
                       )}
-                      name={field.name}
-                      value={field.value ?? ""}
-                      onValueChange={field.onChange}
-                      disabled={isSubmitting || arePreferencesLocked}
-                      error={errorText(errors.language?.message)}
-                      options={[
-                        { value: "pl", label: "Polski" },
-                        { value: "en", label: "English" },
-                        { value: "fr", label: "Français" },
-                      ]}
                     />
-                  )}
+                  }
                 />
-                {arePreferencesLocked && (
-                  <FieldHint>
-                    {t(
-                      "artists.editor.language_edit_disabled",
-                      "Język jest zarządzany indywidualnie przez artystę w ustawieniach konta.",
-                    )}
-                  </FieldHint>
+              )}
+
+              <Controller
+                control={form.control}
+                name="language"
+                render={({ field }) => (
+                  <Select
+                    label={t("artists.editor.language", "Język wiadomości")}
+                    name={field.name}
+                    value={field.value ?? ""}
+                    onValueChange={field.onChange}
+                    disabled={isSubmitting}
+                    error={errorText(errors.language?.message)}
+                    options={LANGUAGE_OPTIONS}
+                  />
                 )}
-              </div>
+              />
+
               <div>
                 <Controller
                   control={form.control}
@@ -425,207 +585,38 @@ export default function ArtistEditorPanel({
                         salutationPickedByHand.current = true;
                         field.onChange(value);
                       }}
-                      disabled={isSubmitting || arePreferencesLocked}
-                      // Shown even while the field is locked: a
-                      // rejection here stops the submit, and nothing
-                      // else on screen would say why.
+                      disabled={isSubmitting}
                       error={errorText(errors.salutation?.message)}
-                      options={[
-                        {
-                          value: "N",
-                          label: t("common.salutation.neutral", "Neutralna"),
-                        },
-                        {
-                          value: "F",
-                          label: t("common.salutation.feminine", "Kobieca"),
-                        },
-                        {
-                          value: "M",
-                          label: t("common.salutation.masculine", "Męska"),
-                        },
-                      ]}
+                      options={salutationOptions}
                     />
                   )}
                 />
                 <FieldHint>
-                  {arePreferencesLocked
+                  {isCreating
                     ? t(
-                        "artists.editor.salutation_edit_disabled",
-                        "Forma zwrotu jest zarządzana przez członka w ustawieniach konta.",
+                        "artists.editor.salutation_hint",
+                        "Tylko do powitań (np. „Droga”, „Drogi”). Podpowiadana na podstawie głosu, dopóki nie wybierzesz jej ręcznie.",
                       )
-                    : isCreating
-                      ? t(
-                          "artists.editor.salutation_hint",
-                          "Tylko do powitań (np. „Droga”, „Drogi”). Podpowiadana na podstawie głosu, dopóki nie wybierzesz jej ręcznie.",
-                        )
-                      : t(
-                          "artists.editor.salutation_hint_pending",
-                          "Tylko do powitań. Do aktywacji konta możesz ją tu poprawić, potem zmienia ją już tylko sam członek.",
-                        )}
+                    : t(
+                        "artists.editor.salutation_hint_pending",
+                        "Tylko do powitań. Do aktywacji konta możesz ją tu poprawić, potem zmienia ją już tylko sam członek.",
+                      )}
                 </FieldHint>
               </div>
-            </div>
-          </div>
+            </>
+          )}
 
-          <div className="space-y-5 pt-2">
-            <SectionTitle>
-              {t("artists.editor.section_voice", "Profil Wokalny")}
-            </SectionTitle>
-
-            <Controller
-              control={form.control}
-              name="voice_type"
-              render={({ field }) => (
-                <Select
-                  label={t("artists.editor.voice_type", "Rodzaj Głosu *")}
-                  name={field.name}
-                  value={field.value ?? ""}
-                  onValueChange={(value) => {
-                    field.onChange(value);
-                    if (isCreating && !salutationPickedByHand.current) {
-                      setValue("salutation", voiceToSalutation(value));
-                    }
-                  }}
-                  // Until the dictionary lands the field says it is
-                  // waiting, rather than offering one placeholder voice
-                  // that would be submitted verbatim.
-                  disabled={isSubmitting || voiceTypes.length === 0}
-                  placeholder={
-                    voiceTypes.length === 0
-                      ? t("artists.editor.loading", "Ładowanie...")
-                      : undefined
-                  }
-                  error={errorText(errors.voice_type?.message)}
-                  options={voiceTypes}
-                />
+          {!isCreating && (
+            <CheckboxRow
+              title={t("artists.editor.active_access_title", "Aktywny dostęp do platformy")}
+              description={t(
+                "artists.editor.active_access_desc",
+                "Zablokuje logowanie w przypadku odznaczenia.",
               )}
-            />
-
-            {/* What a player plays, in the words the sheets will print
-                ("Organy", "Trąbka"). Only a player has one; the range
-                and sight-reading below are a singer's facts and are
-                not asked of anyone who does not stand in a section. */}
-            {isPlayer && (
-              <Input
-                type="text"
-                label={t("artists.editor.instrument", "Instrument *")}
-                {...form.register("instrument")}
-                placeholder={t(
-                  "artists.editor.instrument_placeholder",
-                  "np. Organy",
-                )}
-                disabled={isSubmitting}
-                error={errorText(errors.instrument?.message)}
-              />
-            )}
-
-            {singingVoice && (
-              <AssessedRangeField
-                value={assessed}
-                voice={singingVoice}
-                notation={notation}
-                disabled={isSubmitting}
-                error={assessedError}
-                onChange={(slot, midi) =>
-                  setAssessed({ ...assessed, [slot]: midi })
-                }
-              />
-            )}
-
-            {/* The singer's own proposal, read-only. "Przyjmij
-                propozycję" copies its four notes into the field above,
-                where the conductor adjusts them; nothing is written
-                until the editor is saved. One singer at a time, on
-                purpose: a bulk copy would turn the conductor's verdict
-                into the singer's. Absent until they send one. */}
-            {singingVoice && proposal && artist?.vocal_range_proposed_at && (
-              <div className="rounded-control border border-hairline bg-ethereal-parchment/40 px-4 py-3">
-                <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
-                  <Text size="sm">
-                    <Text as="span" size="sm" color="graphite">
-                      {t("artists.editor.range_proposal", "Propozycja chórzysty")}
-                      {": "}
-                    </Text>
-                    <VocalRangeText
-                      range={proposal}
-                      notation={notation}
-                      className="font-semibold"
-                    />
-                    <Text
-                      as="span"
-                      size="sm"
-                      color="graphite"
-                      className="tabular-nums"
-                    >
-                      {" · "}
-                      {formatLocalizedDateTime(
-                        artist.vocal_range_proposed_at,
-                        PROPOSAL_DATE_FORMAT,
-                      )}
-                    </Text>
-                  </Text>
-                  {!sameRange(assessed, proposal) && (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setAssessed(proposal)}
-                      disabled={isSubmitting}
-                    >
-                      {t(
-                        "artists.editor.assessed_range.accept_proposal",
-                        "Przyjmij propozycję",
-                      )}
-                    </Button>
-                  )}
-                </div>
-                {artist.vocal_range_comment?.trim() && (
-                  <Text
-                    size="sm"
-                    color="muted"
-                    className="mt-1.5 whitespace-pre-line wrap-break-word"
-                  >
-                    {artist.vocal_range_comment.trim()}
-                  </Text>
-                )}
-              </div>
-            )}
-
-            {isSinger && (
-            <Controller
-              control={form.control}
-              name="sight_reading_skill"
-              render={({ field }) => (
-                <Select
-                  label={t(
-                    "artists.editor.sight_reading",
-                    "Czytanie a vista (Ocena)",
-                  )}
-                  name={field.name}
-                  value={field.value ? String(field.value) : ""}
-                  onValueChange={field.onChange}
-                  disabled={isSubmitting}
-                  placeholder={t("artists.editor.no_rating", "Brak oceny")}
-                  clearLabel={t("artists.editor.no_rating", "Brak oceny")}
-                  options={[1, 2, 3, 4, 5].map((value) => ({
-                    value: String(value),
-                    label: t("artists.editor.stars_count", {
-                      defaultValue: "{{count}} Gwiazdki",
-                      count: value,
-                    }),
-                  }))}
-                />
-              )}
-            />
-            )}
-          </div>
-
-          {artist?.id && (
-            <div className="border-t border-hairline-strong pt-6">
-              <label className="flex cursor-pointer items-center gap-4 rounded-control border border-hairline-strong bg-ethereal-alabaster/70 p-4 shadow-glass-ethereal transition-colors hover:border-ethereal-gold/40">
-                {/* `Checkbox` is a controlled primitive (the tick is
-                    drawn from the prop, not the DOM node), so this one
-                    field cannot ride on `register`. */}
+              control={
+                // `Checkbox` is a controlled primitive (the tick is drawn from
+                // the prop, not the DOM node), so this field cannot ride on
+                // `register`.
                 <Controller
                   control={form.control}
                   name="is_active"
@@ -633,58 +624,30 @@ export default function ArtistEditorPanel({
                     <Checkbox
                       size="md"
                       checked={Boolean(field.value)}
-                      onChange={(event) =>
-                        field.onChange(event.target.checked)
-                      }
+                      onChange={(event) => field.onChange(event.target.checked)}
                       onBlur={field.onBlur}
                       name={field.name}
                       disabled={isSubmitting}
+                      className="mt-0.5"
                     />
                   )}
                 />
-                <div>
-                  <Text size="sm" weight="bold">
-                    {t(
-                      "artists.editor.active_access_title",
-                      "Aktywny dostęp do platformy",
-                    )}
-                  </Text>
-                  <Text as="p" size="xs" color="muted" className="mt-1">
-                    {t(
-                      "artists.editor.active_access_desc",
-                      "Zablokuje logowanie w przypadku odznaczenia.",
-                    )}
-                  </Text>
-                </div>
-              </label>
-            </div>
+              }
+            />
           )}
-        </div>
+        </FormSection>
       </form>
 
       <ConfirmModal
         isOpen={showExitConfirm}
-        title={t(
-          "artists.editor.unsaved_title",
-          "Masz niezapisane zmiany!",
-        )}
+        title={t("common.unsaved_title", "Masz niezapisane zmiany!")}
         description={t(
-          "artists.editor.unsaved_desc",
-          "Wprowadziłeś zmiany w formularzu, które nie zostały zapisane. Zamknięcie panelu spowoduje ich utratę.",
+          "common.unsaved_desc",
+          "Wprowadziłeś zmiany w formularzu, które nie zostały zapisane. Zamknięcie edytora spowoduje ich utratę.",
         )}
         onConfirm={forceClose}
         onCancel={() => setShowExitConfirm(false)}
       />
-
-      {artist && (
-        <NewThreadModal
-          isOpen={showNotifyModal}
-          onClose={() => setShowNotifyModal(false)}
-          isManager
-          presetArtistId={artist.id}
-          presetArtistName={`${artist.first_name} ${artist.last_name}`}
-        />
-      )}
     </SidePanel>
   );
 }

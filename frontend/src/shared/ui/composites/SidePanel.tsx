@@ -3,7 +3,8 @@
  * @description The shell of a long record or an editor opened from a list: a
  * panel on the right edge, full height, the phone's whole screen below its
  * width cap. A modal Radix Dialog: focus stays inside, Escape closes, and focus
- * goes back to whatever opened it (a list row, an "add" button).
+ * goes back to whatever opened it (a list row, an "add" button). A panel opened
+ * from inside one that is leaving goes back to what opened that one.
  *
  * Every way out (the scrim, Escape, the close button) goes through
  * `onCloseRequest`, so an editor with unsaved changes can ask first and close
@@ -44,6 +45,15 @@ const SIZE_CLASS: Record<SidePanelSize, string> = {
   lg: "sm:max-w-xl",
   xl: "sm:max-w-2xl",
 };
+
+/** What each open panel's layer was opened from, and whether it is still open
+ *  rather than leaving. */
+interface PanelOrigin {
+  readonly opener: React.RefObject<HTMLElement | null>;
+  readonly isOpen: React.RefObject<boolean>;
+}
+const PANEL_ORIGINS = new WeakMap<Element, PanelOrigin>();
+const LAYER_SELECTOR = "[data-side-panel-layer]";
 
 const ENTER: Transition = { type: "spring", damping: 26, stiffness: 220 };
 /** A short ease-in: the entrance spring's settling tail would hold the panel
@@ -99,6 +109,10 @@ export const SidePanel = ({
   const requestClose = (): void => {
     if (isOpenRef.current) onCloseRequest();
   };
+  const setLayerElement = (element: HTMLDivElement | null): void => {
+    setLayer(element);
+    if (element) PANEL_ORIGINS.set(element, { opener: openerRef, isOpen: isOpenRef });
+  };
 
   return (
     <Dialog.Root
@@ -112,14 +126,23 @@ export const SidePanel = ({
           <Dialog.Portal forceMount>
             <Dialog.Content
               forceMount
-              ref={setLayer}
+              ref={setLayerElement}
+              data-side-panel-layer=""
               aria-describedby={undefined}
               onOpenAutoFocus={() => {
                 // Focus has not moved yet: this is what opened the panel.
-                openerRef.current =
+                const active =
                   document.activeElement instanceof HTMLElement
                     ? document.activeElement
                     : null;
+                // Opened from inside a panel that is leaving at the same moment
+                // (the dossier's "Edytuj" opens the editor), this one inherits
+                // that panel's opener: the button it was opened from is gone
+                // by the time this one closes, and focus would fall to the body.
+                const host = active?.closest(LAYER_SELECTOR);
+                const origin = host ? PANEL_ORIGINS.get(host) : undefined;
+                openerRef.current =
+                  origin && !origin.isOpen.current ? origin.opener.current : active;
               }}
               onCloseAutoFocus={(event) => {
                 // Radix returns focus to a `Dialog.Trigger`, and a list row is
