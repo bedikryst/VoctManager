@@ -3473,7 +3473,6 @@
       "live_venues_few": "{{count}} actifs",
       "live_venues_many": "{{count}} actifs",
       "live_venues_other": "{{count}} actifs",
-      "local_time": "Heure locale",
       "markers_count_one": "{{count}} lieu",
       "markers_count_few": "{{count}} lieux",
       "markers_count_many": "{{count}} lieux",
@@ -3487,8 +3486,7 @@
       "archive": "Archiver",
       "deep_link": "Ouvrir dans Google Maps",
       "deep_link_aria": "Ouvrir {{name}} dans Google Maps",
-      "edit": "Modifier",
-      "no_address": "Aucune adresse"
+      "edit": "Modifier"
     },
     "categories": {
       "airport": "Aéroport",
@@ -3528,40 +3526,35 @@
     },
     "dashboard": {
       "add_location": "Ajouter un lieu",
-      "archive_desc": "Le lieu disparaîtra de la base opérationnelle mais restera conservé pour les projets historiques.",
+      "archive_desc": "Le lieu quittera la liste, mais les projets qui s'y sont tenus le garderont dans leur historique.",
       "archive_title": "Archiver ce lieu ?",
-      "sync_error": "Échec du chargement de la base des lieux.",
+      "sync_error": "Échec du chargement des lieux.",
       "title": "Lieux"
     },
     "dossier": {
-      "close": "Fermer",
-      "events_here": "Événements ici",
-      "eyebrow": "Fiche du lieu",
-      "no_upcoming": "Aucun événement programmé",
-      "past_count_one": "{{count}} passé",
-      "past_count_few": "{{count}} passés",
-      "past_count_many": "{{count}} passés",
-      "past_count_other": "{{count}} passés"
+      "local_time": "Heure locale {{time}}, {{city}}",
+      "menu_aria": "Plus : {{name}}",
+      "no_upcoming": "Rien n'est encore prévu ici.",
+      "notes": "Notes",
+      "past_fold": "Passés : {{count}}",
+      "past_label": "Passés ici",
+      "upcoming_here": "À venir ici"
     },
     "editor": {
-      "action_bar": {
-        "description": "Confirmez pour enregistrer le lieu dans la base globale."
-      },
-      "address": "Adresse officielle *",
-      "category": "Classification *",
-      "internal_notes": "Notes de l'équipe (optionnel)",
-      "name": "Nom d'affichage *",
-      "notes_hint": "Apparaissent comme un murmure interne dans la fiche du lieu — jamais exposé à l'extérieur.",
+      "address": "Adresse",
+      "category": "Type de lieu",
+      "internal_notes": "Notes pour l'équipe",
+      "name": "Nom",
+      "notes_hint": "Seule l'équipe les voit, dans la fiche du lieu.",
       "notes_placeholder": "ex. Entrée artistes côté parking. Code du portail : 1234#.",
       "placeholder_address": "ex. 5 rue Jasna, 00-013 Varsovie",
       "placeholder_name": "ex. Philharmonie nationale — Salle de chambre",
-      "position_hint": "Faites glisser l'épingle ou cliquez sur la carte pour ajuster la position et l'adresse exactes de ce lieu.",
-      "search_hint": "Recherchez un lieu pour remplir automatiquement les données, coordonnées et fuseau horaire — essentiel pour planifier intelligemment.",
+      "save": "Enregistrer",
       "section_basic": "Données de base",
       "section_notes": "Instructions internes",
       "section_position": "Position sur la carte",
       "section_search": "Base globale Google",
-      "submit": "Ajouter à la base",
+      "submit": "Ajouter le lieu",
       "title_edit": "Modifier le lieu",
       "title_new": "Nouveau lieu"
     },
@@ -3589,7 +3582,7 @@
       "locate_me": "Ma position",
       "pin_dropped": "Point sélectionné",
       "recenter": "Recentrer sur l'épingle",
-      "search_placeholder": "Rechercher des lieux globaux...",
+      "search_placeholder": "Rechercher un lieu…",
       "zoom_in": "Zoom avant",
       "zoom_out": "Zoom arrière"
     },
@@ -3600,7 +3593,7 @@
       "unknown_location": "Lieu inconnu"
     },
     "rail": {
-      "back_to_list": "Tous les lieux",
+      "back_to_list": "Lieux",
       "no_upcoming_desc": "Les concerts et répétitions programmés apparaîtront ici.",
       "no_upcoming_title": "Aucun événement à venir",
       "no_upcoming_filtered": "Aucun événement ne correspond aux filtres"
@@ -3619,8 +3612,8 @@
     },
     "toast": {
       "archive_error": "Échec de l'archivage du lieu.",
-      "archived_success": "Lieu archivé avec succès.",
-      "archiving": "Désactivation du lieu...",
+      "archived_success": "Lieu archivé.",
+      "archiving": "Archivage du lieu…",
       "create_success": "Ajouté !",
       "creating": "Création...",
       "sync_warning": "Avertissement de synchronisation",

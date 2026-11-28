@@ -417,7 +417,7 @@ const AtlasSurface = ({
                 <Text size="sm" color="graphite" className="mt-2 max-w-xs">
                   {t(
                     "logistics.atlas.empty_desc",
-                    "Dodaj lokację z mapy Google, aby zobaczyć ją na atlasie.",
+                    "Dodaj miejsce z mapy Google, aby zobaczyć je na atlasie.",
                   )}
                 </Text>
               </div>

@@ -1,48 +1,54 @@
 /**
  * @file LocationDetail.tsx
- * @description The venue read-out, decoupled from any container. It is the
- * single master-detail body shared by the desktop command rail (replaces the
- * venue list when one is selected) and the tablet/mobile bottom sheet — so the
- * map is never covered by a modal again. Surfaces what a conductor needs at a
- * glance: live local time, booked events, the internal "gate code" whisper, and
- * one-tap Maps / directions deep-links. Edit is one tap deeper.
+ * @description A venue's record, decoupled from any container: the body of the
+ * desktop rail (in place of the venue list while one is focused) and of the
+ * phone's bottom sheet, so the map is never covered by a modal.
+ *
+ * The head is the record's: on desktop a back link to the list, the venue's
+ * name in the sans (a place is a name, not a titled work), the category with
+ * its icon in the accent of its pin, then the address; "Edytuj" and a menu
+ * holding "Archiwizuj" beside it, as on a row. On a phone the sheet has no
+ * list to go back to, so a close button takes the back link's place.
+ *
+ * Below: the local time, only when the venue's clock differs from the
+ * reader's; the Maps and directions links; the team's notes; what is coming up
+ * here, each event opening its project, with the past folded into one line.
  * @module features/logistics/components/LocationDetail
  */
 
-import React from "react";
+import React, { useId, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Archive,
-  CalendarOff,
-  ChevronLeft,
-  Clock,
+  ArrowLeft,
   ExternalLink,
   History,
-  Music,
+  MoreHorizontal,
   Navigation,
   Pencil,
-  Repeat,
-  StickyNote,
+  X,
 } from "lucide-react";
 
 import { cn } from "@/shared/lib/utils";
 import { useLocalTime } from "@/shared/lib/time/hooks/useLocalTime";
-import { Button } from "@/shared/ui/primitives/Button";
-import { StatePanel } from "@/shared/ui/composites/StatePanel";
 import {
-  Caption,
-  Eyebrow,
-  Heading,
-  Text,
-} from "@/shared/ui/primitives/typography";
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/shared/ui/composites/DropdownMenu";
+import { FoldLine } from "@/shared/ui/composites/FoldLine";
+import { RecordList } from "@/shared/ui/composites/RecordList";
+import { ACCENT_TEXT } from "@/shared/ui/primitives/accents";
+import { Button } from "@/shared/ui/primitives/Button";
+import { Text } from "@/shared/ui/primitives/typography";
 
-import { getImminenceDefinition } from "../constants/eventImminence";
+import { getLocationCategoryOption } from "../constants/locationCategories";
+import { tzCity, type VenueActivity } from "../hooks/useLogisticsEvents";
 import { buildDirectionsUrl, buildPlaceUrl } from "../lib/mapsLinks";
-import type { LogisticsEvent, VenueActivity } from "../hooks/useLogisticsEvents";
-import { getLogisticsEventPresentation } from "../lib/eventLabel";
 import type { LocationDto } from "../types/logistics.dto";
 
-import { LocationCategoryBadge } from "./LocationCategoryBadge";
+import { LogisticsEventRow } from "./LogisticsEventRow";
 
 interface LocationDetailProps {
   location: LocationDto;
@@ -50,10 +56,14 @@ interface LocationDetailProps {
   onClose: () => void;
   onEdit: (location: LocationDto) => void;
   onArchive: (location: LocationDto) => void;
-  /** Label for the back affordance ("All venues" on desktop). */
+  /** The back link's label, on desktop ("Miejsca"); without it, a close
+   *  button. */
   backLabel?: string;
   className?: string;
 }
+
+/** The reader's own zone, against which a venue's clock is worth stating. */
+const READER_TIMEZONE = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
 /** The shape both deep-link builders read, from a full venue record. */
 const toMapsTarget = (location: LocationDto) => ({
@@ -64,52 +74,8 @@ const toMapsTarget = (location: LocationDto) => ({
   longitude: location.longitude,
 });
 
-const DetailEventRow = ({
-  event,
-}: {
-  event: LogisticsEvent;
-}): React.JSX.Element => {
-  const { t } = useTranslation();
-  const imminence = getImminenceDefinition(event.imminence);
-  const TypeIcon = event.type === "CONCERT" ? Music : Repeat;
-  const typeLabel = getLogisticsEventPresentation(event);
-  const dateLabel = new Intl.DateTimeFormat("pl-PL", {
-    weekday: "short",
-    day: "numeric",
-    month: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(event.date);
-
-  return (
-    <div className="flex items-center gap-3 rounded-control border border-hairline-strong bg-ethereal-alabaster/70 px-3 py-2.5">
-      <span
-        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-chip border"
-        style={{ borderColor: imminence.marker, color: imminence.marker }}
-        aria-hidden="true"
-      >
-        <TypeIcon size={14} strokeWidth={1.75} />
-      </span>
-      <div className="min-w-0 flex-1">
-        <Text as="p" size="sm" weight="semibold" truncate className="text-ethereal-ink">
-          {event.title}
-        </Text>
-        <Caption color="muted" truncate className="mt-0.5">
-          {t(typeLabel.labelKey, typeLabel.fallbackLabel)}{" "}
-          · {dateLabel}
-        </Caption>
-      </div>
-      <span
-        className={cn(
-          "h-1.5 w-1.5 shrink-0 rounded-full",
-          imminence.pulse && "animate-pulse",
-        )}
-        style={{ backgroundColor: imminence.marker }}
-        aria-hidden="true"
-      />
-    </div>
-  );
-};
+const MAPS_LINK_CLASS =
+  "inline-flex items-center gap-1.5 rounded-chip border border-hairline-strong bg-ethereal-marble/70 px-3 py-1.5 text-xs font-semibold text-ethereal-graphite transition-colors hover:border-ethereal-gold/40 hover:text-ethereal-gold";
 
 export const LocationDetail = ({
   location,
@@ -121,66 +87,139 @@ export const LocationDetail = ({
   className,
 }: LocationDetailProps): React.JSX.Element => {
   const { t } = useTranslation();
-  const liveTime = useLocalTime(location.timezone ?? "");
+  const notesHeadingId = useId();
+  const eventsHeadingId = useId();
+  // Archive opens its confirmation once the menu has handed focus back to its
+  // trigger, so the dialog does not race the menu for it.
+  const archiveChosen = useRef(false);
+  // The fold is open for one venue; focusing another starts it closed.
+  const [pastOpenFor, setPastOpenFor] = useState<string | null>(null);
+
+  const locationId = String(location.id);
+  const category = getLocationCategoryOption(t, location.category);
+  const CategoryIcon = category.icon;
+  const address = location.formatted_address?.trim() || null;
+  const notes = location.internal_notes?.trim() || null;
+
+  const venueTime = useLocalTime(location.timezone ?? "");
+  const readerTime = useLocalTime(READER_TIMEZONE);
+  const showsLocalTime = venueTime !== "" && venueTime !== readerTime;
 
   const upcoming = activity?.upcoming ?? [];
-  const pastCount = activity?.past.length ?? 0;
+  const past = activity?.past ?? [];
+  const pastOpen = pastOpenFor === locationId;
+  const eventsHeading = t("logistics.dossier.upcoming_here", "Nadchodzące tutaj");
+  const pastLabel = t("logistics.dossier.past_label", "Minione tutaj");
 
   return (
     <div className={cn("flex h-full min-h-0 flex-col", className)}>
-      <header className="flex shrink-0 items-start justify-between gap-3 border-b border-hairline bg-ethereal-marble/60 px-5 py-4">
-        <div className="flex min-w-0 items-start gap-2.5">
+      <header className="shrink-0 border-b border-hairline px-5 py-4">
+        {backLabel && (
           <button
             type="button"
             onClick={onClose}
-            aria-label={backLabel ?? t("logistics.dossier.close", "Zamknij")}
-            className="mt-0.5 shrink-0 rounded-chip border border-hairline-strong bg-ethereal-marble/70 p-1.5 text-ethereal-graphite transition-colors hover:text-ethereal-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40"
+            className="mb-3 inline-flex items-center gap-2 rounded-chip text-ethereal-graphite transition-colors hover:text-ethereal-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40"
           >
-            <ChevronLeft size={16} aria-hidden="true" />
+            <ArrowLeft size={16} strokeWidth={1.75} aria-hidden="true" />
+            <Text as="span" size="base" color="inherit">
+              {backLabel}
+            </Text>
           </button>
-          <div className="min-w-0 space-y-1.5">
-            <Eyebrow color="muted">
-              {t("logistics.dossier.eyebrow", "Karta lokacji")}
-            </Eyebrow>
-            <Heading as="h2" size="lg" truncate className="text-ethereal-ink">
-              {location.name}
-            </Heading>
-            <LocationCategoryBadge category={location.category} />
-          </div>
-        </div>
-      </header>
-
-      <div className="min-h-0 flex-1 space-y-5 overflow-y-auto overflow-x-hidden px-5 py-5">
-        {/* Live local time */}
-        <div className="flex items-center justify-between gap-3 rounded-nested border border-hairline bg-ethereal-marble/50 px-4 py-3">
-          <div className="flex items-center gap-2 text-ethereal-graphite/70">
-            <Clock size={14} aria-hidden="true" />
-            <Eyebrow color="muted">
-              {t("logistics.atlas.local_time", "Czas lokalny")}
-            </Eyebrow>
-          </div>
+        )}
+        <div className="flex items-start gap-3">
           <Text
-            as="span"
+            as="h2"
             size="lg"
             weight="semibold"
-            className="tabular-nums text-ethereal-ink"
+            className="min-w-0 flex-1 self-center wrap-break-word"
           >
-            {liveTime || location.timezone}
+            {location.name}
           </Text>
+          <div className="-mr-2 -my-1.5 flex shrink-0 items-center">
+            <Button
+              variant="icon"
+              size="icon"
+              onClick={() => onEdit(location)}
+              aria-label={t("logistics.card.edit", "Edytuj")}
+              title={t("logistics.card.edit", "Edytuj")}
+            >
+              <Pencil size={18} aria-hidden="true" />
+            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="icon"
+                  size="icon"
+                  aria-label={t("logistics.dossier.menu_aria", "Więcej: {{name}}", {
+                    name: location.name,
+                  })}
+                >
+                  <MoreHorizontal size={18} aria-hidden="true" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                align="end"
+                onCloseAutoFocus={() => {
+                  if (!archiveChosen.current) return;
+                  archiveChosen.current = false;
+                  onArchive(location);
+                }}
+              >
+                <DropdownMenuItem
+                  destructive
+                  icon={<Archive size={16} />}
+                  onSelect={() => {
+                    archiveChosen.current = true;
+                  }}
+                >
+                  {t("logistics.card.archive", "Archiwizuj")}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            {!backLabel && (
+              <Button
+                variant="icon"
+                size="icon"
+                onClick={onClose}
+                aria-label={t("common.actions.close", "Zamknij")}
+              >
+                <X size={18} aria-hidden="true" />
+              </Button>
+            )}
+          </div>
         </div>
-
-        {/* Address + deep links */}
-        <div className="space-y-2">
-          <Text as="p" size="sm" color="graphite" className="leading-relaxed">
-            {location.formatted_address ||
-              t("logistics.card.no_address", "Brak adresu")}
+        {/* Under the whole row, not beside the actions: an address runs long,
+            and on a phone three icon buttons would leave it a narrow column. */}
+        <Text as="div" size="sm" color="muted" className="mt-1 flex gap-1.5">
+          <Text
+            as="span"
+            color={ACCENT_TEXT[category.accent]}
+            className="flex h-5 shrink-0 items-center"
+          >
+            <CategoryIcon size={14} strokeWidth={1.75} aria-hidden="true" />
           </Text>
+          <span className="min-w-0">
+            {[category.label, address].filter(Boolean).join(", ")}
+          </span>
+        </Text>
+      </header>
+
+      <div className="min-h-0 flex-1 space-y-7 overflow-y-auto overflow-x-hidden px-5 py-5">
+        <div className="space-y-3">
+          {showsLocalTime && (
+            <Text as="p" size="sm" color="graphite" className="tabular-nums">
+              {t("logistics.dossier.local_time", "Czas lokalny {{time}}, {{city}}", {
+                time: venueTime,
+                city: tzCity(location.timezone ?? ""),
+              })}
+            </Text>
+          )}
           <div className="flex flex-wrap gap-2">
             <a
               href={buildPlaceUrl(toMapsTarget(location))}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 rounded-chip border border-hairline-strong bg-ethereal-marble/70 px-3 py-1.5 text-xs font-semibold text-ethereal-graphite transition-colors hover:border-ethereal-gold/40 hover:text-ethereal-gold"
+              className={MAPS_LINK_CLASS}
             >
               <ExternalLink size={12} aria-hidden="true" />
               {t("logistics.atlas.open_maps", "Mapy Google")}
@@ -189,7 +228,7 @@ export const LocationDetail = ({
               href={buildDirectionsUrl(toMapsTarget(location))}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 rounded-chip border border-hairline-strong bg-ethereal-marble/70 px-3 py-1.5 text-xs font-semibold text-ethereal-graphite transition-colors hover:border-ethereal-gold/40 hover:text-ethereal-gold"
+              className={MAPS_LINK_CLASS}
             >
               <Navigation size={12} aria-hidden="true" />
               {t("logistics.preview.get_directions", "Wyznacz trasę")}
@@ -197,74 +236,53 @@ export const LocationDetail = ({
           </div>
         </div>
 
-        {/* Internal notes */}
-        {location.internal_notes && location.internal_notes.trim() && (
-          <div className="flex items-start gap-2 rounded-nested border border-ethereal-gold/15 bg-ethereal-gold/5 px-4 py-3">
-            <StickyNote
-              size={14}
-              strokeWidth={1.6}
-              className="mt-0.5 shrink-0 text-ethereal-gold"
-              aria-hidden="true"
-            />
-            <Text as="p" size="sm" color="graphite" className="italic leading-relaxed">
-              {location.internal_notes}
+        {notes && (
+          <section aria-labelledby={notesHeadingId}>
+            <Text as="h3" id={notesHeadingId} size="base" weight="semibold">
+              {t("logistics.dossier.notes", "Notatki")}
             </Text>
-          </div>
+            <Text as="p" size="sm" color="graphite" className="mt-1 whitespace-pre-line">
+              {notes}
+            </Text>
+          </section>
         )}
 
-        {/* Events at this venue */}
-        <section className="space-y-3">
-          <div className="flex items-center justify-between gap-2">
-            <Eyebrow as="h3" color="graphite">
-              {t("logistics.dossier.events_here", "Wydarzenia tutaj")}
-            </Eyebrow>
-            {pastCount > 0 && (
-              <Caption color="muted" className="inline-flex items-center gap-1">
-                <History size={11} aria-hidden="true" />
-                {t("logistics.dossier.past_count", "{{count}} minionych", {
-                  count: pastCount,
-                })}
-              </Caption>
-            )}
-          </div>
-
+        <section aria-labelledby={eventsHeadingId}>
+          <Text as="h3" id={eventsHeadingId} size="base" weight="semibold" className="mb-1">
+            {eventsHeading}
+          </Text>
           {upcoming.length > 0 ? (
-            <div className="space-y-2">
+            <RecordList edge="inset" label={eventsHeading}>
               {upcoming.map((event) => (
-                <DetailEventRow key={event.id} event={event} />
+                <LogisticsEventRow key={event.id} event={event} />
               ))}
-            </div>
+            </RecordList>
           ) : (
-            <StatePanel
-              variant="inline"
-              icon={<CalendarOff size={20} aria-hidden="true" />}
-              title={t(
-                "logistics.dossier.no_upcoming",
-                "Brak zaplanowanych wydarzeń",
-              )}
-            />
+            <Text as="p" size="sm" color="graphite">
+              {t("logistics.dossier.no_upcoming", "Nic tu jeszcze nie zaplanowano.")}
+            </Text>
+          )}
+          {past.length > 0 && (
+            <div className="mt-2">
+              <FoldLine
+                label={pastLabel}
+                summary={t("logistics.dossier.past_fold", "Minione: {{count}}", {
+                  count: past.length,
+                })}
+                icon={<History size={16} className="text-ethereal-graphite" />}
+                open={pastOpen}
+                onToggle={() => setPastOpenFor(pastOpen ? null : locationId)}
+              >
+                <RecordList edge="inset" label={pastLabel}>
+                  {past.map((event) => (
+                    <LogisticsEventRow key={event.id} event={event} />
+                  ))}
+                </RecordList>
+              </FoldLine>
+            </div>
           )}
         </section>
       </div>
-
-      <footer className="flex shrink-0 gap-3 border-t border-hairline bg-ethereal-marble/40 px-5 py-4">
-        <Button
-          variant="outline"
-          onClick={() => onEdit(location)}
-          leftIcon={<Pencil size={14} aria-hidden="true" />}
-          className="flex-1 justify-center"
-        >
-          {t("logistics.card.edit", "Edytuj")}
-        </Button>
-        <Button
-          variant="ghost"
-          onClick={() => onArchive(location)}
-          leftIcon={<Archive size={14} aria-hidden="true" />}
-          className="justify-center text-ethereal-crimson hover:bg-ethereal-crimson/10 hover:text-ethereal-crimson"
-        >
-          {t("logistics.card.archive", "Archiwizuj")}
-        </Button>
-      </footer>
     </div>
   );
 };

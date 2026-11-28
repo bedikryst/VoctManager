@@ -394,7 +394,7 @@ const MapPickerSurface = ({
             value={inputValue}
             placeholder={t(
               "logistics.map.search_placeholder",
-              "Wyszukaj globalne lokacje...",
+              "Wyszukaj miejsce…",
             )}
             onChange={(event) => setInputValue(event.target.value)}
             onKeyDown={handleInputKeyDown}
@@ -450,6 +450,7 @@ const MapPickerSurface = ({
         <Button
           type="button"
           variant="secondary"
+          casing="sentence"
           onClick={handleLocateMe}
           disabled={isLocating}
           leftIcon={
@@ -461,7 +462,7 @@ const MapPickerSurface = ({
           }
           className="shrink-0"
         >
-          {t("logistics.map.locate_me", "Moja Lokalizacja")}
+          {t("logistics.map.locate_me", "Moja lokalizacja")}
         </Button>
       </div>
 

@@ -104,7 +104,7 @@ export const LocationPreview = ({
   const popoverRef = useRef<HTMLDivElement>(null);
 
   const displayFallback =
-    fallback || t("logistics.preview.unknown_location", "Nieznana lokacja");
+    fallback || t("logistics.preview.unknown_location", "Nieznane miejsce");
   const normalizedLocation = location
     ? normalizeLocation(location, displayFallback)
     : null;
@@ -209,10 +209,10 @@ export const LocationPreview = ({
     normalizedLocation?.longitude !== null;
 
   // The stored value is an enum code, not a label - resolve it, or say nothing
-  // more specific than "Lokacja".
+  // more specific than "Miejsce".
   const categoryLabel = normalizedLocation?.category
     ? getLocationCategoryOption(t, normalizedLocation.category).label
-    : t("logistics.preview.default_category", "Lokacja");
+    : t("logistics.preview.default_category", "Miejsce");
 
   // Variant Styles Architecture
   const anchorStyles =

@@ -163,7 +163,7 @@ const LOCATION_CATEGORY_DEFINITIONS: LocationCategoryDefinition[] = [
     pluralKey: "logistics.categories_plural.other",
     defaultPlural: "Pozostałe",
     descriptionKey: "logistics.category_descriptions.other",
-    defaultDescription: "Lokacje spoza standardowych grup.",
+    defaultDescription: "Miejsca spoza standardowych grup.",
     icon: MapPin,
     accent: "incense",
   },

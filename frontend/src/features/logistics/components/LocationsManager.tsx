@@ -115,15 +115,16 @@ export const LocationsManager = (): React.JSX.Element => {
   useEffect(() => {
     if (!isError) return;
     toast.error(t("logistics.toast.sync_warning", "Ostrzeżenie synchronizacji"), {
-      description: t("logistics.dashboard.sync_error", "Nie udało się pobrać bazy lokacji."),
+      description: t("logistics.dashboard.sync_error", "Nie udało się pobrać miejsc."),
     });
   }, [isError, t]);
 
-  // Escape clears the venue focus (the rail detail, the bottom sheet).
+  // Escape clears the venue focus (the rail detail, the bottom sheet), unless
+  // something opened over it answered the key first (the detail's menu).
   useEffect(() => {
     if (!isVenueFocused) return;
     const onKey = (event: KeyboardEvent): void => {
-      if (event.key === "Escape") selectLocation(null);
+      if (event.key === "Escape" && !event.defaultPrevented) selectLocation(null);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -377,7 +378,7 @@ export const LocationsManager = (): React.JSX.Element => {
                       onClose={() => selectLocation(null)}
                       onEdit={handleEditFromDetail}
                       onArchive={handleArchiveFromDetail}
-                      backLabel={t("logistics.rail.back_to_list", "Wszystkie miejsca")}
+                      backLabel={t("logistics.rail.back_to_list", "Miejsca")}
                     />
                   ) : (
                     <>
@@ -422,10 +423,10 @@ export const LocationsManager = (): React.JSX.Element => {
 
         <ConfirmModal
           isOpen={!!locationToArchive}
-          title={t("logistics.dashboard.archive_title", "Zarchiwizować lokację?")}
+          title={t("logistics.dashboard.archive_title", "Zarchiwizować miejsce?")}
           description={t(
             "logistics.dashboard.archive_desc",
-            "Lokacja zniknie z głównej bazy operacyjnej, ale zostanie zachowana dla projektów historycznych.",
+            "Miejsce zniknie z listy, ale projekty, które się w nim odbyły, zachowają je w swojej historii.",
           )}
           onConfirm={executeArchive}
           onCancel={cancelArchive}

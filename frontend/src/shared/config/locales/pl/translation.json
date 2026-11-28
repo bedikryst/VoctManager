@@ -3497,15 +3497,14 @@
       "search": "Szukaj po nazwie lub adresie"
     },
     "atlas": {
-      "empty_desc": "Dodaj lokację z mapy Google, aby zobaczyć ją na atlasie.",
+      "empty_desc": "Dodaj miejsce z mapy Google, aby zobaczyć je na atlasie.",
       "empty_title": "Brak współrzędnych do wyświetlenia",
       "legend_title": "Legenda kategorii",
-      "live_badge": "Atlas lokacji",
+      "live_badge": "Atlas miejsc",
       "live_venues_one": "{{count}} aktywnych",
       "live_venues_few": "{{count}} aktywnych",
       "live_venues_many": "{{count}} aktywnych",
       "live_venues_other": "{{count}} aktywnych",
-      "local_time": "Czas lokalny",
       "markers_count_one": "{{count}} miejsc",
       "markers_count_few": "{{count}} miejsc",
       "markers_count_many": "{{count}} miejsc",
@@ -3519,8 +3518,7 @@
       "archive": "Archiwizuj",
       "deep_link": "Otwórz w Google Maps",
       "deep_link_aria": "Otwórz {{name}} w Google Maps",
-      "edit": "Edytuj",
-      "no_address": "Brak adresu"
+      "edit": "Edytuj"
     },
     "categories": {
       "airport": "Lotnisko",
@@ -3551,7 +3549,7 @@
       "church": "Świątynie, bazyliki i sale parafialne.",
       "concert_hall": "Filharmonie, opery i sceny koncertowe.",
       "hotel": "Zakwaterowanie zespołu i artystów gościnnych.",
-      "other": "Lokacje spoza standardowych grup.",
+      "other": "Miejsca spoza standardowych grup.",
       "parking": "Miejsca postoju i punkty odbioru autokaru.",
       "rehearsal_room": "Studia akustyczne i sale przygotowań.",
       "restaurant": "Miejsca posiłków zespołu w dniu wyjazdu.",
@@ -3560,42 +3558,37 @@
     },
     "dashboard": {
       "add_location": "Dodaj miejsce",
-      "archive_desc": "Lokacja zniknie z głównej bazy operacyjnej, ale zostanie zachowana dla projektów historycznych.",
-      "archive_title": "Zarchiwizować lokację?",
-      "sync_error": "Nie udało się pobrać bazy lokacji.",
+      "archive_desc": "Miejsce zniknie z listy, ale projekty, które się w nim odbyły, zachowają je w swojej historii.",
+      "archive_title": "Zarchiwizować miejsce?",
+      "sync_error": "Nie udało się pobrać miejsc.",
       "title": "Miejsca"
     },
     "dossier": {
-      "close": "Zamknij",
-      "events_here": "Wydarzenia tutaj",
-      "eyebrow": "Karta lokacji",
-      "no_upcoming": "Brak zaplanowanych wydarzeń",
-      "past_count_one": "{{count}} minionych",
-      "past_count_few": "{{count}} minionych",
-      "past_count_many": "{{count}} minionych",
-      "past_count_other": "{{count}} minionych"
+      "local_time": "Czas lokalny {{time}}, {{city}}",
+      "menu_aria": "Więcej: {{name}}",
+      "no_upcoming": "Nic tu jeszcze nie zaplanowano.",
+      "notes": "Notatki",
+      "past_fold": "Minione: {{count}}",
+      "past_label": "Minione tutaj",
+      "upcoming_here": "Nadchodzące tutaj"
     },
     "editor": {
-      "action_bar": {
-        "description": "Zatwierdź, aby zapisać lokację w globalnej bazie."
-      },
-      "address": "Oficjalny adres *",
-      "category": "Klasyfikacja *",
-      "internal_notes": "Notatki dla zespołu (opcjonalnie)",
-      "name": "Nazwa wyświetlana *",
-      "notes_hint": "Pojawiają się jako wewnętrzny szept zespołu w karcie lokacji — niewidoczne na zewnątrz.",
+      "address": "Adres",
+      "category": "Rodzaj miejsca",
+      "internal_notes": "Notatki dla zespołu",
+      "name": "Nazwa",
+      "notes_hint": "Widzi je tylko zespół, w karcie miejsca.",
       "notes_placeholder": "np. Wejście dla artystów od strony parkingu. Kod do bramy: 1234#.",
       "placeholder_address": "np. ul. Jasna 5, 00-013 Warszawa",
       "placeholder_name": "np. Filharmonia Narodowa — Sala Kameralna",
-      "position_hint": "Przeciągnij pinezkę lub kliknij na mapie, aby skorygować dokładną pozycję i adres tej lokacji.",
-      "search_hint": "Wyszukaj miejsce, aby automatycznie uzupełnić dane, koordynaty i strefę czasową — kluczowe dla inteligentnego planowania.",
+      "save": "Zapisz",
       "section_basic": "Dane podstawowe",
       "section_notes": "Instrukcje wewnętrzne",
       "section_position": "Pozycja na mapie",
       "section_search": "Globalna baza Google",
-      "submit": "Dodaj do bazy",
-      "title_edit": "Edycja lokacji",
-      "title_new": "Nowa lokacja"
+      "submit": "Dodaj miejsce",
+      "title_edit": "Edytuj miejsce",
+      "title_new": "Nowe miejsce"
     },
     "empty_state": {
       "start_building": "Dodaj pierwszą salę, kościół albo hotel zespołu.",
@@ -3618,21 +3611,21 @@
       "drag_hint": "Przeciągnij pinezkę, aby dostroić",
       "helper": "Wyszukaj miejsce, kliknij na mapie lub przeciągnij pinezkę, aby ustawić dokładną pozycję.",
       "loading": "Wczytywanie atlasu…",
-      "locate_me": "Moja Lokalizacja",
+      "locate_me": "Moja lokalizacja",
       "pin_dropped": "Wybrany punkt",
       "recenter": "Wyśrodkuj na pinezce",
-      "search_placeholder": "Wyszukaj globalne lokacje...",
+      "search_placeholder": "Wyszukaj miejsce…",
       "zoom_in": "Przybliż",
       "zoom_out": "Oddal"
     },
     "preview": {
-      "default_category": "Lokacja",
+      "default_category": "Miejsce",
       "get_directions": "Wyznacz trasę",
       "no_map": "Brak współrzędnych",
-      "unknown_location": "Nieznana lokacja"
+      "unknown_location": "Nieznane miejsce"
     },
     "rail": {
-      "back_to_list": "Wszystkie miejsca",
+      "back_to_list": "Miejsca",
       "no_upcoming_desc": "Tu pojawią się zaplanowane koncerty i próby.",
       "no_upcoming_title": "Brak nadchodzących wydarzeń",
       "no_upcoming_filtered": "Żadne wydarzenie nie pasuje do filtrów"
@@ -3650,9 +3643,9 @@
       "tomorrow": "Jutro"
     },
     "toast": {
-      "archive_error": "Nie udało się zarchiwizować lokacji.",
-      "archived_success": "Lokacja zarchiwizowana pomyślnie.",
-      "archiving": "Dezaktywacja lokacji...",
+      "archive_error": "Nie udało się zarchiwizować miejsca.",
+      "archived_success": "Miejsce zarchiwizowane.",
+      "archiving": "Archiwizowanie miejsca…",
       "create_success": "Dodano!",
       "creating": "Tworzenie...",
       "sync_warning": "Ostrzeżenie synchronizacji",

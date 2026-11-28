@@ -3460,7 +3460,6 @@
       "live_venues_few": "{{count}} active",
       "live_venues_many": "{{count}} active",
       "live_venues_other": "{{count}} active",
-      "local_time": "Local time",
       "markers_count_one": "{{count}} place",
       "markers_count_few": "{{count}} places",
       "markers_count_many": "{{count}} places",
@@ -3474,8 +3473,7 @@
       "archive": "Archive",
       "deep_link": "Open in Google Maps",
       "deep_link_aria": "Open {{name}} in Google Maps",
-      "edit": "Edit",
-      "no_address": "No address provided"
+      "edit": "Edit"
     },
     "categories": {
       "airport": "Airport",
@@ -3515,40 +3513,35 @@
     },
     "dashboard": {
       "add_location": "Add location",
-      "archive_desc": "The location will disappear from the main operational base but will be retained for historical projects.",
+      "archive_desc": "The location will leave the list, but the projects held there keep it in their history.",
       "archive_title": "Archive this location?",
-      "sync_error": "Failed to load the locations base.",
+      "sync_error": "Failed to load the locations.",
       "title": "Locations"
     },
     "dossier": {
-      "close": "Close",
-      "events_here": "Events here",
-      "eyebrow": "Venue card",
-      "no_upcoming": "No scheduled events",
-      "past_count_one": "{{count}} past",
-      "past_count_few": "{{count}} past",
-      "past_count_many": "{{count}} past",
-      "past_count_other": "{{count}} past"
+      "local_time": "Local time {{time}}, {{city}}",
+      "menu_aria": "More: {{name}}",
+      "no_upcoming": "Nothing is scheduled here yet.",
+      "notes": "Notes",
+      "past_fold": "Past: {{count}}",
+      "past_label": "Past here",
+      "upcoming_here": "Coming up here"
     },
     "editor": {
-      "action_bar": {
-        "description": "Confirm to commit the location to the global base."
-      },
-      "address": "Official address *",
-      "category": "Classification *",
-      "internal_notes": "Team notes (optional)",
-      "name": "Display name *",
-      "notes_hint": "Surfaced as the team's internal whisper on the location card — never visible externally.",
+      "address": "Address",
+      "category": "Kind of place",
+      "internal_notes": "Notes for the team",
+      "name": "Name",
+      "notes_hint": "Only the team sees them, on the location's card.",
       "notes_placeholder": "e.g. Artist entrance from the parking side. Gate code: 1234#.",
       "placeholder_address": "e.g. 5 Jasna St, 00-013 Warsaw",
       "placeholder_name": "e.g. National Philharmonic — Chamber Hall",
-      "position_hint": "Drag the pin or click on the map to fine-tune this venue's exact position and address.",
-      "search_hint": "Find a place to auto-fill the name, coordinates, and time zone — essential for smart scheduling.",
+      "save": "Save",
       "section_basic": "Core data",
       "section_notes": "Internal instructions",
       "section_position": "Position on the map",
       "section_search": "Google global base",
-      "submit": "Commit to base",
+      "submit": "Add location",
       "title_edit": "Edit location",
       "title_new": "New location"
     },
@@ -3573,10 +3566,10 @@
       "drag_hint": "Drag the pin to fine-tune",
       "helper": "Search for a place, click on the map, or drag the pin to set the exact position.",
       "loading": "Loading the atlas…",
-      "locate_me": "My Location",
+      "locate_me": "My location",
       "pin_dropped": "Selected point",
       "recenter": "Recentre on the pin",
-      "search_placeholder": "Search global locations...",
+      "search_placeholder": "Search for a place…",
       "zoom_in": "Zoom in",
       "zoom_out": "Zoom out"
     },
@@ -3587,7 +3580,7 @@
       "unknown_location": "Unknown location"
     },
     "rail": {
-      "back_to_list": "All locations",
+      "back_to_list": "Locations",
       "no_upcoming_desc": "Scheduled concerts and rehearsals will appear here.",
       "no_upcoming_title": "No upcoming events",
       "no_upcoming_filtered": "No event matches the filters"
@@ -3606,8 +3599,8 @@
     },
     "toast": {
       "archive_error": "Failed to archive location.",
-      "archived_success": "Location archived successfully.",
-      "archiving": "Deactivating location...",
+      "archived_success": "Location archived.",
+      "archiving": "Archiving location…",
       "create_success": "Added!",
       "creating": "Creating...",
       "sync_warning": "Sync warning",

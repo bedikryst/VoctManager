@@ -149,12 +149,12 @@ export const useLocationsData = () => {
 
   const executeArchive = useCallback(async () => {
     if (!locationToArchive) return;
-    const toastId = toast.loading(t("logistics.toast.archiving", "Dezaktywacja lokacji..."));
+    const toastId = toast.loading(t("logistics.toast.archiving", "Archiwizowanie miejsca…"));
 
     try {
       await deleteLocationMutation.mutateAsync(locationToArchive.id);
       toast.success(
-        t("logistics.toast.archived_success", "Lokacja zarchiwizowana pomyślnie."),
+        t("logistics.toast.archived_success", "Miejsce zarchiwizowane."),
         { id: toastId },
       );
     } catch (error) {
@@ -162,7 +162,7 @@ export const useLocationsData = () => {
         id: toastId,
         fallbackDescription: t(
           "logistics.toast.archive_error",
-          "Nie udało się zarchiwizować lokacji.",
+          "Nie udało się zarchiwizować miejsca.",
         ),
       });
     } finally {

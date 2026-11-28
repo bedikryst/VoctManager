@@ -67,7 +67,8 @@ export interface TimezoneClock {
   nextEvent: LogisticsEvent | null;
 }
 
-const tzCity = (timezone: string): string => {
+/** The city an IANA zone is named after, as the zone spells it ("London"). */
+export const tzCity = (timezone: string): string => {
   if (!timezone) return "—";
   const tail = timezone.split("/").pop() ?? timezone;
   return tail.replace(/_/g, " ");
