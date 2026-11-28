@@ -230,6 +230,32 @@ refill. The compose build takes it from the image that target tags
 `docker-compose.prod.yml`), so image lines under a `[frontend …]` step mean the
 compose build is running Astro again and the named context is not being applied.
 
+### 6. Reboot after an unattended upgrade that needs one
+
+Ubuntu's `unattended-upgrades` installs security updates daily
+(`/etc/apt/apt.conf.d/20auto-upgrades`), but a new kernel or libc only takes
+effect after a reboot, and the stock config never reboots. Left alone, fixes sit
+installed and inactive until someone happens to reboot by hand. A drop-in file
+turns the reboot on; it sorts after `50unattended-upgrades`, so it overrides it
+without editing the packaged file (which apt would then ask about on upgrade):
+
+```bash
+cat > /etc/apt/apt.conf.d/52voct-auto-reboot <<'EOF'
+// Reboot only when an upgrade leaves /var/run/reboot-required, at an hour clear
+// of the night schedule (server-local time, UTC): Celery's hourly ticks at :00
+// and its purges at 03:00/03:10, the 03:30 backup, the 04:00 docker-gc.
+Unattended-Upgrade::Automatic-Reboot "true";
+Unattended-Upgrade::Automatic-Reboot-WithUsers "true";
+Unattended-Upgrade::Automatic-Reboot-Time "02:20";
+EOF
+apt-config dump | grep Automatic-Reboot   # the three values above, nothing else
+```
+
+The time is server-local: check `date` shows UTC before trusting it, and move it
+if the night schedule above changes. Every container is `restart: always`, so the
+stack comes back on its own; the healthchecks.io pings are what say it did not.
+This file is server state like the crontab: nothing deploys it.
+
 ## Restore drill (routine — non-destructive)
 
 Run [`infra/restore-drill.sh`](../infra/restore-drill.sh) on the droplet. It
