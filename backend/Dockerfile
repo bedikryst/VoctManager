@@ -118,4 +118,4 @@ RUN fc-cache -f -v
 
 # Define process execution entrypoint and application server command
 ENTRYPOINT ["/app/entrypoint.sh"]
-CMD ["gunicorn", "config.asgi:application", "-k", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:8000", "--workers", "3"]
+CMD ["gunicorn", "config.asgi:application", "-k", "uvicorn_worker.UvicornWorker", "--bind", "0.0.0.0:8000", "--workers", "3"]

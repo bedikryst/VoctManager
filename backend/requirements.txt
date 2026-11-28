@@ -1,20 +1,25 @@
+# Every direct dependency is pinned exactly. A floor resolves to whatever is newest
+# when the image's pip layer rebuilds, which is how kombu 5.7 and pypdf 7 reached
+# production unseen. Transitive packages stay unpinned and resolve fresh on that
+# rebuild, so a change to this file is also what picks up their security fixes.
+
 # Core Framework
-Django==6.0.4
+Django==6.0.10
 asgiref==3.11.1
 tzdata==2025.3
 
 # Database (PostgreSQL - Modern Driver)
 psycopg[binary]==3.3.3
-sqlparse==0.5.5
+sqlparse==0.6.1
 
 # REST API & Security
-djangorestframework==3.16.1
-djangorestframework-simplejwt==5.3.1
+djangorestframework==3.18.3
+djangorestframework-simplejwt==5.5.1
 django-cors-headers==4.3.1
 django-filter==25.2
 
 # Environment & Static Files
-python-dotenv==1.0.1
+python-dotenv==1.2.4
 whitenoise==6.12.0
 
 # Asynchronous Tasks
@@ -26,15 +31,21 @@ redis==5.0.3
 kombu==5.6.2
 
 # Document Generation
-weasyprint>=68.0
+# Moved deliberately: a release can shift line breaks and page fits, and the
+# score book fits each card by rendering it. Compare a day sheet and a QR print
+# by eye after a bump.
+weasyprint==70.0
 # QR codes for printed artifacts. Pure Python, zero dependencies, emits SVG the
 # PDF embeds as a data URI — a raster would print blocky at the 15mm a scannable
 # code needs. Only ever pointed at targets a phone can open without a login.
 segno==1.6.6
 
 # Production Server
-gunicorn==21.2.0
-uvicorn[standard]>=0.29.0
+# gunicorn runs the ASGI app through `uvicorn_worker.UvicornWorker`; the worker
+# that ships inside uvicorn (`uvicorn.workers`) is deprecated upstream.
+gunicorn==23.0.0
+uvicorn[standard]==0.54.0
+uvicorn-worker==0.4.0
 
 # API Documentation
 drf-spectacular==0.27.1
@@ -49,17 +60,17 @@ django-anymail[resend]==13.0
 python-json-logger==3.2.1
 
 pydantic==2.12.5
-email-validator>=2.1.1
+email-validator==2.4.0
 
-requests==2.31.0
+requests==2.34.2
 
 # File type detection (reads magic bytes, not file extension)
 python-magic==0.4.27
 
 # Image processing (avatars: validate, re-encode/strip EXIF, square crop, resize)
-Pillow==12.2.0
+Pillow==13.0.0
 
-pywebpush>=2.0.0
+pywebpush==2.5.0
 
 # AI / Score Package Compiler
 # Pinned exact, not floored: the ingestion pipeline depends on version-sensitive
@@ -73,4 +84,4 @@ pypdf==7.0.1
 # Page rasterisation for the build-cockpit page-trim thumbnails. PDFium binding
 # with a permissive (Apache-2.0/BSD-3) licence; ships self-contained wheels with
 # the native engine bundled, so it needs NO system package (unlike WeasyPrint).
-pypdfium2>=4.30.0
+pypdfium2==5.15.2

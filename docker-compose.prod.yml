@@ -13,7 +13,7 @@ services:
     # (Django runs them in a threadpool). This matches the image's default CMD.
     command: >
       gunicorn config.asgi:application
-      -k uvicorn.workers.UvicornWorker
+      -k uvicorn_worker.UvicornWorker
       --bind 0.0.0.0:8000 --workers 3
 
   celery:

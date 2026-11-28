@@ -194,7 +194,7 @@ COPY --from=astro-cache-harvest /out/ /
 # ==========================================
 # Stage 3: Production Server (Nginx) — serves BOTH builds
 # ==========================================
-FROM nginx:1.27-alpine AS runtime
+FROM nginx:1.28-alpine AS runtime
 
 LABEL org.opencontainers.image.title="voctmanager-frontend" \
       org.opencontainers.image.description="VoctManager SaaS — panel SPA + Astro public site, served by Nginx." \

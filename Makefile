@@ -85,12 +85,24 @@ prod:
 # `migrate` and `migrate --check` share one exec, so Django boots once on the one
 # vCPU instead of twice; `&&` keeps the check from running after a failed migrate.
 # The `[deploy]` lines timestamp each step, so a deploy log shows where the time went.
+#
+# Base images are floating tags (python:3.12-slim, nginx:1.28-alpine, postgres:15-alpine,
+# redis:7-alpine), and without a pull they stay at whatever the droplet first fetched,
+# with none of the OS and point-release security fixes published since. `build --pull`
+# refreshes the bases of the images built here; `pull --ignore-buildable` refreshes the
+# ones run as published (db, redis), within their major. The price: a deploy that lands
+# after upstream republished a base rebuilds that image from its first layer, and the
+# unpinned transitive Python packages resolve fresh on that rebuild. A failed pull of
+# db/redis is ignored and leaves them as they were; the build's own pull cannot be split
+# from the build, so an unreachable registry fails the deploy there, before `up`.
 deploy:
 	-@bash infra/docker-gc.sh
 	@echo "[deploy] $$(date +%T) astro-stage"
 	$(MAKE) astro-stage
+	@echo "[deploy] $$(date +%T) pull"
+	-$(COMPOSE_PROD) pull --ignore-buildable --quiet
 	@echo "[deploy] $$(date +%T) build"
-	$(BUILD_ENV) $(COMPOSE_PROD) build
+	$(BUILD_ENV) $(COMPOSE_PROD) build --pull
 	@echo "[deploy] $$(date +%T) up"
 	$(COMPOSE_PROD) up -d
 	@echo "[deploy] $$(date +%T) migrate"

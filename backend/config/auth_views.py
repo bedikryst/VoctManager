@@ -50,9 +50,7 @@ def _set_token_cookie(response: Response, *, cookie_key: str, token: str, lifeti
 
 
 class CookieTokenObtainPairView(TokenObtainPairView):
-    # SimpleJWT types TokenViewBase.serializer_class as a `None` sentinel meant to be
-    # overridden; assigning the concrete serializer is the documented API.
-    serializer_class = EmailTokenObtainPairSerializer  # type: ignore[assignment]
+    serializer_class = EmailTokenObtainPairSerializer
 
     def post(self, request, *args, **kwargs):
         response = super().post(request, *args, **kwargs)
