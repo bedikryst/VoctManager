@@ -294,7 +294,7 @@ class AxeptaWebhookView(APIView):
             # Signature verified, but the payload is unprocessable, references an
             # unknown order, or fails reconciliation. Retrying identical bytes
             # cannot help, so acknowledge to stop the gateway's retry loop. Each
-            # case is already logged at ERROR by the service (captured by Sentry).
+            # case is already logged at ERROR by the service.
             logger.warning("Axepta webhook acknowledged without action: %s", exc)
 
         # Axepta API v1.0.2 mandates this exact 200 OK body on acknowledgement.

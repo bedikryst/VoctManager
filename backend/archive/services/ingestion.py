@@ -12,7 +12,7 @@ Description:
     Why a façade:
       * Hides Celery wiring details from callers.
       * Single place to enforce preconditions (status, file present, key set).
-      * Single place to add metrics / Sentry breadcrumbs in Phase 6.
+      * Single place to add metrics in Phase 6.
 
 Standards: SaaS 2026, Service-Layer-First, fail-fast preconditions.
 ===============================================================================

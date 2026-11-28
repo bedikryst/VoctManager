@@ -153,7 +153,7 @@ Budgets, fees, expenses and grants for each project, in one ledger approved by t
 
 - Two health endpoints: `/api/health/` for liveness (touches nothing) and `/api/health/ready/` for readiness (Postgres and Redis). The Redis check writes and reads a key, because a Redis at `maxmemory` with `noeviction` still answers `PING`.
 - A Celery beat task pings an external heartbeat monitor, and the alert fires when the pings stop.
-- Sentry, uptime checks and TLS expiry checks.
+- External uptime and TLS expiry checks.
 - A record of processing activities, a list of sub-processors with their DPAs, and scheduled purges of data past its retention period. Off-site backups go to the foundation's own Google Workspace, so they add no new sub-processor.
 - Daily off-site backups and a restore drill ([`infra/restore-drill.sh`](infra/restore-drill.sh)) that restores them into a scratch database and checks row counts, media files and migration state. Runbooks: [`docs/backups.md`](docs/backups.md), [`docs/monitoring.md`](docs/monitoring.md).
 - CI runs ruff, mypy (strict) and the backend tests against PostgreSQL 16 on every push.
@@ -162,7 +162,7 @@ Budgets, fees, expenses and grants for each project, in one ledger approved by t
 
 ## Not doing
 
-- **Prometheus, Grafana, OpenTelemetry.** One droplet, one maintainer, no SLO. Sentry and the health checks tell me what I need to know.
+- **Prometheus, Grafana, OpenTelemetry.** One droplet, one maintainer, no SLO. The uptime checks, the heartbeat and the logs tell me what I need to know.
 - **Postgres replication.** A replica on the same droplet shares its disk and power supply. Losing the instance is covered by backups, and the restore has been tested.
 - **A Redis cluster.** One instance is enough for the cache and the Celery broker.
 
@@ -185,7 +185,7 @@ Budgets, fees, expenses and grants for each project, in one ledger approved by t
 
 **Documents and AI:** WeasyPrint, pypdf, pypdfium2. The Anthropic SDK is pinned to an exact version, because the pipeline depends on version-specific behaviour: native PDF input, structured outputs, prompt caching, adaptive thinking.
 
-**Infrastructure:** Docker Compose (the same setup in dev and prod), Nginx, Gunicorn with Uvicorn workers, GitHub Actions, Sentry.
+**Infrastructure:** Docker Compose (the same setup in dev and prod), Nginx, Gunicorn with Uvicorn workers, GitHub Actions.
 
 ## Architecture
 

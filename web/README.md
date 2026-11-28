@@ -42,7 +42,7 @@ web/
     │   ├── index.astro    # / — landing (full sacred-minimalism choreography)
     │   ├── koncerty.astro # /koncerty — concert stations + 5-century repertoire
     │   ├── o-nas.astro    # /o-nas — ensemble identity, director, partners
-    │   └── kontakt.astro  # /kontakt — channels-only (form pulled pending RODO; backend ready)
+    │   └── kontakt.astro  # /kontakt — contact channels only, no form
     │
     ├── layouts/
     │   └── BaseLayout.astro  # <head> + SEO/OG + ClientRouter + Lenis + reveal/parallax
@@ -133,11 +133,16 @@ Each Astro island is a **separate React root** — context providers from one do
 
 ## Backend Surface
 
-Three endpoints are consumed:
+The site calls only its own Django backend. Everything below is public except the comment mode, the one client that signs in.
 
-* **`POST /api/payments/donations/initiate/`** — Axepta hosted-link redirect. The Vault initiates the donation, the gateway returns `?donated=success|failure` and the result modal self-triggers.
+* **`POST /api/payments/donations/initiate/`** — returns the link to Axepta's hosted payment page, and the Vault sends the browser there. The gateway returns `?donated=success|failure` and the result modal self-triggers.
 * **`GET /api/payments/donations/progress/`** — the Vault's campaign line: SETTLED gateway donations plus the offline tallies (Zrzutka, transfers, other) that editors keep at `/panel/redakcja/zbiorka`, the goal, and whether the fill rail is drawn. Cached 60 s server-side; the Vault reads it once per page load.
-* **`POST /api/contact/`** (since 2026-05-25) — public contact form (Django `contact` app). Currently surfaced as channels-only on `/kontakt`; form is pending a final RODO review.
+* **`POST /api/payments/patronage/interest/`** — the patronage form: stores the lead and notifies the foundation.
+* **`POST /api/outreach/notices/{subscribe,confirm,unsubscribe,preferences}/`** — the concert notice list (`/nuntius`), double opt-in. Confirm and unsubscribe are POSTs sent by the page, so a link scanner opening the mail cannot spend them.
+* **`POST /api/outreach/reservations/`** — a guest's reply on `/rsvp`.
+* **`/api/copydesk/*`** — the comment mode for signed-in editors (`src/comment-mode/api.ts`). It reuses the panel's session cookie, CSRF token (`/api/csrf/`) and token refresh (`/api/token/refresh/`).
+
+`/kontakt` lists channels only; there is no contact form and no endpoint behind one.
 
 ---
 
@@ -213,7 +218,7 @@ The site does not set first-party cookies or embed third-party trackers; its onl
 | `voct.preloader.rite-at` | localStorage | When the full rite was last met (watched or skipped); later sessions within the day get the question without it | 24 hours |
 | `voct.preloader.last-load` | sessionStorage | Distinguish reload from ClientRouter swap | tab close |
 
-Payment-gateway scripts (BNP Paribas Axepta / PayU) load only when the user enters the donation funnel; cookies they set are strictly necessary for the transaction (PSD2 SCA, fraud detection).
+No payment-gateway script loads on this site. The Vault gets a payment link from the backend and redirects the browser to the hosted page of BNP Paribas Axepta (PayU settles card payments). The gateway's scripts, and any cookies they set for the transaction (PSD2 SCA, fraud detection), run on that page, outside our domain, which is how the privacy policy describes them.
 
 ---
 

@@ -41,8 +41,7 @@ export const LEGAL_DOCS_UPDATED_DISPLAY = "10.11.2026";
  * ⚠ NOT yet reviewed by a lawyer. Items for counsel: the art. 6(1)(b) vs (f)
  * split for members (volunteers vs contracted), the US-transfer mechanism per
  * provider (DPF / SCC), the "continued use = acceptance" amendment clause, and
- * whether the hosting provider should be named. Sentry is deliberately NOT
- * listed — it is not enabled; if a DSN is ever set, disclose it here first.
+ * whether the hosting provider should be named.
  */
 
 /**

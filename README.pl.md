@@ -151,7 +151,7 @@ Budżety, honoraria, wydatki i granty projektów w jednej księdze, którą zatw
 
 - Dwa endpointy zdrowia: `/api/health/` do liveness (niczego nie dotyka) i `/api/health/ready/` do readiness (Postgres i Redis). Redis jest sprawdzany zapisem i odczytem klucza, bo Redis na `maxmemory` z `noeviction` dalej odpowiada na `PING`.
 - Zadanie Celery beat pinguje zewnętrzny monitor heartbeat, a alert przychodzi, gdy pingi ustają.
-- Sentry, monitoring dostępności i ważności certyfikatu TLS.
+- Zewnętrzny monitoring dostępności i ważności certyfikatu TLS.
 - Rejestr czynności przetwarzania, lista podmiotów przetwarzających z umowami powierzenia i zaplanowane usuwanie danych po okresie retencji. Kopie zapasowe trafiają do Google Workspace fundacji, więc nie dochodzi żaden nowy podmiot przetwarzający.
 - Codzienne kopie zapasowe poza serwerem i próba odtworzenia ([`infra/restore-drill.sh`](infra/restore-drill.sh)), która wgrywa je do tymczasowej bazy i sprawdza liczby wierszy, pliki mediów i stan migracji. Instrukcje: [`docs/backups.md`](docs/backups.md), [`docs/monitoring.md`](docs/monitoring.md).
 - CI puszcza ruff, mypy (strict) i testy backendu na PostgreSQL 16 przy każdym pushu.
@@ -160,7 +160,7 @@ Budżety, honoraria, wydatki i granty projektów w jednej księdze, którą zatw
 
 ## Czego nie robię
 
-- **Prometheus, Grafana, OpenTelemetry.** Jeden droplet, jedna osoba do utrzymania, brak SLO. To, co muszę wiedzieć, mówią mi Sentry i health checki.
+- **Prometheus, Grafana, OpenTelemetry.** Jeden droplet, jedna osoba do utrzymania, brak SLO. To, co muszę wiedzieć, mówią mi monitoring dostępności, heartbeat i logi.
 - **Replikacja Postgresa.** Replika na tym samym droplecie dzieli z bazą dysk i zasilanie. Utratę instancji pokrywają kopie zapasowe, których odtwarzanie jest przetestowane.
 - **Klaster Redisa.** Jedna instancja wystarcza na cache i brokera Celery.
 
@@ -183,7 +183,7 @@ Budżety, honoraria, wydatki i granty projektów w jednej księdze, którą zatw
 
 **Dokumenty i AI:** WeasyPrint, pypdf, pypdfium2. SDK Anthropic jest przypięte do konkretnej wersji, bo pipeline zależy od zachowań, które zmieniają się między wersjami: natywnego wejścia PDF, structured outputs, prompt cachingu, myślenia adaptacyjnego.
 
-**Infrastruktura:** Docker Compose (ta sama konfiguracja na dev i prod), Nginx, Gunicorn z workerami Uvicorn, GitHub Actions, Sentry.
+**Infrastruktura:** Docker Compose (ta sama konfiguracja na dev i prod), Nginx, Gunicorn z workerami Uvicorn, GitHub Actions.
 
 ## Architektura
 

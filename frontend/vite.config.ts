@@ -3,7 +3,7 @@
  * @description Production-grade Vite build pipeline.
  *  - Deterministic vendor chunking by domain (react-core, motion, maps, pdf, dnd, radix, i18n, query, forms, dates, icons).
  *  - Modern ES2022 target aligned with tsconfig (no legacy transpile cost).
- *  - Hidden source maps (debuggable from sentry-style symbol uploads, never exposed publicly).
+ *  - Hidden source maps: written beside each chunk for decoding a production stack trace, but with no `sourceMappingURL` comment, so browsers never load them.
  *  - Optional bundle visualizer in `analyze` mode (npm run build:analyze).
  *  - PWA in injectManifest mode for push-only integration.
  * @module build/vite

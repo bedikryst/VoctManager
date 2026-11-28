@@ -12,7 +12,6 @@ from email.utils import formataddr, parseaddr
 from pathlib import Path
 
 import environ
-import sentry_sdk
 from celery.schedules import crontab
 
 # Base directory path
@@ -668,15 +667,6 @@ LOGGING = {
         }
     },
 }
-
-# --- SENTRY ---
-sentry_dsn = env('SENTRY_DSN', default='')
-if sentry_dsn:
-    sentry_sdk.init(
-        dsn=sentry_dsn,
-        traces_sample_rate=0.2,
-        profiles_sample_rate=0.2,
-    )
 
 # --- PRODUCTION SECURITY ---
 if not DEBUG:
