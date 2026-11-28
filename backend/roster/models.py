@@ -231,7 +231,9 @@ class Artist(SoftDeleteModel):
             # Unique among live rows only, so an archived ghost never blocks a
             # re-invitation. Blank addresses are excluded: two members without
             # one are not a collision, and the same condition is what keeps
-            # DRF's derived UniqueValidator from refusing the second of them.
+            # the serializers' UniqueValidator, built from it by
+            # `roster.serializers.field_unique_validator`, from refusing the
+            # second of them.
             models.UniqueConstraint(
                 fields=['email'],
                 condition=models.Q(is_deleted=False) & ~models.Q(email=''),
@@ -1670,8 +1672,9 @@ class Collaborator(SoftDeleteModel):
             # Only a real address is a shared identity worth rejecting a duplicate
             # over — an address-less crew member must be storable any number of
             # times. Blank is excluded alongside NULL because Postgres treats ''
-            # as a value (NULLs never collide, '' does), and because DRF derives a
-            # UniqueValidator from this very condition: a condition covering ''
+            # as a value (NULLs never collide, '' does), and because the serializer
+            # builds its UniqueValidator from this very condition
+            # (`roster.serializers.field_unique_validator`): a condition covering ''
             # rejects the second contactless collaborator with a spurious
             # "already exists" long before the database is asked.
             models.UniqueConstraint(

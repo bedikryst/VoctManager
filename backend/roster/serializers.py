@@ -12,10 +12,12 @@ from datetime import date, timedelta
 from typing import Any
 
 from django.conf import settings
+from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext as _
 from rest_framework import serializers
-from rest_framework.validators import UniqueTogetherValidator
+from rest_framework.utils.field_mapping import get_unique_error_message
+from rest_framework.validators import UniqueTogetherValidator, UniqueValidator
 
 from archive.services.voice_scope import voice_scope
 from core.models import UserProfile
@@ -65,6 +67,36 @@ def refuse_moving(instance: Any, attrs: dict[str, Any], fields: tuple[str, ...])
     if moved:
         message = _("An existing booking keeps its person and project; remove it and add a new one.")
         raise serializers.ValidationError({name: message for name in moved})
+
+
+def field_unique_validator(model: type[models.Model], constraint_name: str) -> UniqueValidator:
+    """The field-level check for a one-field `UniqueConstraint` whose condition
+    names other columns (`is_deleted`, the blank address it exempts).
+
+    DRF's own discovery turns such a constraint into a `UniqueTogetherValidator`,
+    which reports a duplicate address under `non_field_errors` as "the fields
+    email must make a unique set" instead of on the field the person typed it
+    into. This states the same rule on the field: the constraint's condition
+    becomes the queryset, so the API refuses exactly what the database would,
+    with the model field's own "already exists" message. A serializer using it
+    sets `Meta.validators = []` so the discovered duplicate is not added back."""
+    constraint = next(
+        c for c in model._meta.constraints
+        if isinstance(c, models.UniqueConstraint) and c.name == constraint_name
+    )
+    (field_name,) = constraint.fields
+    model_field = model._meta.get_field(field_name)
+    assert isinstance(model_field, models.Field)
+    queryset = model._default_manager.all()
+    if constraint.condition is not None:
+        queryset = queryset.filter(constraint.condition)
+    return UniqueValidator(
+        queryset=queryset,
+        message=get_unique_error_message(model_field),
+    )
+
+
+ARTIST_EMAIL_UNIQUE = field_unique_validator(Artist, 'unique_active_artist_email')
 
 
 # --- 1. ARTIST SERIALIZERS ---
@@ -137,6 +169,8 @@ class ArtistMeSerializer(serializers.ModelSerializer):
             'sight_reading_skill',
             *ASSESSED_RANGE_FIELDS,
         )
+        extra_kwargs = {'email': {'validators': [ARTIST_EMAIL_UNIQUE]}}
+        validators: list[Any] = []
 
 class ArtistDetailedSerializer(ArtistBasicSerializer):
     """
@@ -221,9 +255,13 @@ class ArtistDetailedSerializer(ArtistBasicSerializer):
             'vocal_range_comment', 'vocal_range_proposed_at',
         )
         extra_kwargs = {
-            name: {'min_value': VOCAL_RANGE_MIDI_MIN, 'max_value': VOCAL_RANGE_MIDI_MAX}
-            for name in ASSESSED_RANGE_FIELDS
+            **{
+                name: {'min_value': VOCAL_RANGE_MIDI_MIN, 'max_value': VOCAL_RANGE_MIDI_MAX}
+                for name in ASSESSED_RANGE_FIELDS
+            },
+            'email': {'validators': [ARTIST_EMAIL_UNIQUE]},
         }
+        validators: list[Any] = []
 
     def validate_email(self, value: str) -> str:
         """An address can be corrected but never taken away. Being without one is
@@ -1131,6 +1169,14 @@ class CollaboratorSerializer(CollaboratorBasicSerializer):
     class Meta:
         model = Collaborator
         fields = '__all__'
+        extra_kwargs = {
+            'email': {
+                'validators': [
+                    field_unique_validator(Collaborator, 'unique_active_collaborator_email')
+                ]
+            }
+        }
+        validators: list[Any] = []
 
     def to_internal_value(self, data: Any) -> Any:
         """Fold a blank e-mail into NULL, the column's single spelling of "absent".
