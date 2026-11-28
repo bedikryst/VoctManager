@@ -1,25 +1,22 @@
 /**
  * @file CrewEditorPanel.tsx
- * @description Slide-over editor for creating or updating a collaborator profile.
- * Built on Ethereal primitives — Heading/Eyebrow typography, Select primitive,
- * Input with native label slot — and a portal-managed motion shell.
+ * @description The editor that creates or updates a collaborator, on
+ * `SidePanel`. Closing with unsaved changes asks first.
  * @module features/crew/components/CrewEditorPanel
  */
 
-import React, { useEffect, useState } from "react";
-import { createPortal } from "react-dom";
-import { AnimatePresence, motion } from "framer-motion";
+import React, { useEffect, useId, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { CheckCircle2, X } from "lucide-react";
+import { CheckCircle2 } from "lucide-react";
 
-import { BodyScrollLock } from "@/shared/lib/dom/useBodyScrollLock";
 import type { Collaborator } from "@/shared/types";
 import { ConfirmModal } from "@/shared/ui/composites/ConfirmModal";
+import { SidePanel } from "@/shared/ui/composites/SidePanel";
 import { Divider } from "@/shared/ui/primitives/Divider";
 import { Button } from "@/shared/ui/primitives/Button";
 import { Input } from "@/shared/ui/primitives/Input";
 import { Select } from "@/shared/ui/primitives/Select";
-import { Eyebrow, Heading } from "@/shared/ui/primitives/typography";
+import { Eyebrow } from "@/shared/ui/primitives/typography";
 
 import { getCrewSpecialtyOptions } from "../constants/crewSpecialties";
 import { useCrewForm } from "../hooks/useCrewForm";
@@ -37,10 +34,10 @@ export function CrewEditorPanel({
   onClose,
   person,
   initialSearchContext = "",
-}: CrewEditorPanelProps): React.ReactPortal | null {
+}: CrewEditorPanelProps): React.JSX.Element {
   const { t } = useTranslation();
+  const formId = useId();
   const [showExitConfirm, setShowExitConfirm] = useState<boolean>(false);
-  const [mounted, setMounted] = useState<boolean>(false);
 
   const {
     formData,
@@ -50,10 +47,6 @@ export function CrewEditorPanel({
     isSubmitting,
     handleSubmit,
   } = useCrewForm(person, initialSearchContext, onClose, isOpen);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   useEffect(() => {
     if (isOpen) setFormData(initialFormData);
@@ -67,18 +60,6 @@ export function CrewEditorPanel({
     onClose();
   }, [isFormDirty, onClose]);
 
-  useEffect(() => {
-    if (!isOpen || showExitConfirm) return;
-    const handleKeyDown = (event: KeyboardEvent) => {
-      // An open select inside the panel dismisses itself on Escape and marks the
-      // event handled; the panel must not close on that same keypress.
-      if (event.defaultPrevented) return;
-      if (event.key === "Escape") handleCloseRequest();
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [handleCloseRequest, isOpen, showExitConfirm]);
-
   const forceClose = () => {
     setShowExitConfirm(false);
     onClose();
@@ -86,202 +67,160 @@ export function CrewEditorPanel({
 
   const specialtyOptions = getCrewSpecialtyOptions(t);
 
-  if (!mounted) return null;
-
   const updateField = <K extends keyof CrewFormData>(
     key: K,
     value: CrewFormData[K],
   ) => setFormData({ ...formData, [key]: value });
 
-  return createPortal(
-    <AnimatePresence>
-      {isOpen && (
-        <React.Fragment key="crew-panel-wrapper">
-          <motion.div
-            key="crew-backdrop"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={handleCloseRequest}
-            className="fixed inset-0 z-focus-trap bg-black/35 backdrop-blur-sm"
-            aria-hidden="true"
+  return (
+    <SidePanel
+      isOpen={isOpen}
+      onCloseRequest={handleCloseRequest}
+      size="md"
+      title={
+        person?.id
+          ? t("crew.editor.title_edit", "Edycja danych")
+          : t("crew.editor.title_new", "Nowy współpracownik")
+      }
+      footer={
+        <Button
+          type="submit"
+          form={formId}
+          variant="primary"
+          fullWidth
+          disabled={isSubmitting}
+          isLoading={isSubmitting}
+          leftIcon={
+            !isSubmitting ? (
+              <CheckCircle2 size={16} aria-hidden="true" />
+            ) : undefined
+          }
+        >
+          {t("crew.editor.btn_save", "Zapisz do bazy")}
+        </Button>
+      }
+    >
+      <form
+        id={formId}
+        onSubmit={handleSubmit}
+        className="flex min-h-full flex-col gap-7 rounded-surface border border-ethereal-incense/15 bg-ethereal-marble/65 p-6 shadow-[inset_0_1px_0_var(--glass-highlight)] md:p-8"
+      >
+        <section className="space-y-5">
+          <div className="flex items-center gap-3">
+            <Eyebrow color="gold">
+              {t("crew.editor.contact_person", "Osoba kontaktowa")}
+            </Eyebrow>
+            <Divider variant="gradient-right" />
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            <Input
+              label={t("crew.editor.first_name", "Imię *")}
+              type="text"
+              required
+              value={formData.first_name}
+              onChange={(event) =>
+                updateField("first_name", event.target.value)
+              }
+              disabled={isSubmitting}
+              autoComplete="given-name"
+            />
+            <Input
+              label={t("crew.editor.last_name", "Nazwisko *")}
+              type="text"
+              required
+              value={formData.last_name}
+              onChange={(event) =>
+                updateField("last_name", event.target.value)
+              }
+              disabled={isSubmitting}
+              autoComplete="family-name"
+            />
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            <Input
+              label={t("crew.editor.email", "E-mail")}
+              type="email"
+              value={formData.email}
+              onChange={(event) =>
+                updateField("email", event.target.value)
+              }
+              disabled={isSubmitting}
+              autoComplete="email"
+            />
+            <Input
+              label={t("crew.editor.phone", "Telefon")}
+              type="tel"
+              value={formData.phone_number}
+              onChange={(event) =>
+                updateField("phone_number", event.target.value)
+              }
+              disabled={isSubmitting}
+              autoComplete="tel"
+            />
+          </div>
+        </section>
+
+        <section className="space-y-5">
+          <div className="flex items-center gap-3">
+            <Eyebrow color="gold">
+              {t(
+                "crew.editor.business_profile",
+                "Profil działalności",
+              )}
+            </Eyebrow>
+            <Divider variant="gradient-right" />
+          </div>
+
+          {/* No "chosen specialty" preview under it: the select prints
+              the same label two rows higher. */}
+          <Select
+            label={t("crew.editor.specialty", "Specjalizacja *")}
+            value={formData.specialty}
+            onValueChange={(value) =>
+              updateField(
+                "specialty",
+                value as CrewFormData["specialty"],
+              )
+            }
+            disabled={isSubmitting}
+            options={specialtyOptions}
           />
 
-          <motion.div
-            key="crew-panel"
-            initial={{ transform: "translateX(100%)" }}
-            animate={{ transform: "translateX(0%)" }}
-            exit={{ transform: "translateX(100%)" }}
-            transition={{ type: "spring", damping: 26, stiffness: 220 }}
-            className="fixed inset-y-0 right-0 z-focus-trap flex w-full max-w-md flex-col border-l border-ethereal-incense/20 bg-ethereal-alabaster/95 shadow-glass-solid"
-            role="dialog"
-            aria-modal="true"
-          >
-            <BodyScrollLock />
-            <header className="flex flex-shrink-0 items-center justify-between gap-4 border-b border-ethereal-incense/15 bg-ethereal-marble/60 px-6 py-5 md:px-8">
-              <div className="min-w-0 space-y-1.5">
-                <Eyebrow color="muted">
-                  {t("crew.editor.eyebrow", "Profil współpracownika")}
-                </Eyebrow>
-                <Heading as="h3" size="2xl" truncate>
-                  {person?.id
-                    ? t("crew.editor.title_edit", "Edycja danych")
-                    : t("crew.editor.title_new", "Nowy współpracownik")}
-                </Heading>
-              </div>
-              <button
-                type="button"
-                onClick={handleCloseRequest}
-                aria-label={t("crew.editor.close_aria", "Zamknij panel")}
-                className="rounded-control border border-ethereal-incense/20 bg-ethereal-marble/70 p-2.5 text-ethereal-graphite shadow-sm transition-all duration-300 hover:border-ethereal-gold/40 hover:text-ethereal-ink active:scale-95"
-              >
-                <X size={18} aria-hidden="true" />
-              </button>
-            </header>
+          <Input
+            label={t(
+              "crew.editor.company_name",
+              "Firma / Marka (opcjonalnie)",
+            )}
+            type="text"
+            placeholder={t(
+              "crew.editor.company_placeholder",
+              "np. SoundTech Pro Sp. z o.o.",
+            )}
+            value={formData.company_name}
+            onChange={(event) =>
+              updateField("company_name", event.target.value)
+            }
+            disabled={isSubmitting}
+            autoComplete="organization"
+          />
+        </section>
+      </form>
 
-            <div className="relative flex-1 overflow-y-auto px-6 py-6 md:px-8 md:py-8">
-              <form
-                onSubmit={handleSubmit}
-                className="flex min-h-full flex-col gap-7 rounded-surface border border-ethereal-incense/15 bg-ethereal-marble/65 p-6 shadow-[inset_0_1px_0_var(--glass-highlight)] md:p-8"
-              >
-                <section className="space-y-5">
-                  <div className="flex items-center gap-3">
-                    <Eyebrow color="gold">
-                      {t("crew.editor.contact_person", "Osoba kontaktowa")}
-                    </Eyebrow>
-                    <Divider variant="gradient-right" />
-                  </div>
-
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <Input
-                      label={t("crew.editor.first_name", "Imię *")}
-                      type="text"
-                      required
-                      value={formData.first_name}
-                      onChange={(event) =>
-                        updateField("first_name", event.target.value)
-                      }
-                      disabled={isSubmitting}
-                      autoComplete="given-name"
-                    />
-                    <Input
-                      label={t("crew.editor.last_name", "Nazwisko *")}
-                      type="text"
-                      required
-                      value={formData.last_name}
-                      onChange={(event) =>
-                        updateField("last_name", event.target.value)
-                      }
-                      disabled={isSubmitting}
-                      autoComplete="family-name"
-                    />
-                  </div>
-
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <Input
-                      label={t("crew.editor.email", "E-mail")}
-                      type="email"
-                      value={formData.email}
-                      onChange={(event) =>
-                        updateField("email", event.target.value)
-                      }
-                      disabled={isSubmitting}
-                      autoComplete="email"
-                    />
-                    <Input
-                      label={t("crew.editor.phone", "Telefon")}
-                      type="tel"
-                      value={formData.phone_number}
-                      onChange={(event) =>
-                        updateField("phone_number", event.target.value)
-                      }
-                      disabled={isSubmitting}
-                      autoComplete="tel"
-                    />
-                  </div>
-                </section>
-
-                <section className="space-y-5">
-                  <div className="flex items-center gap-3">
-                    <Eyebrow color="gold">
-                      {t(
-                        "crew.editor.business_profile",
-                        "Profil działalności",
-                      )}
-                    </Eyebrow>
-                    <Divider variant="gradient-right" />
-                  </div>
-
-                  {/* No "chosen specialty" preview under it: the select prints
-                      the same label two rows higher. */}
-                  <Select
-                    label={t("crew.editor.specialty", "Specjalizacja *")}
-                    value={formData.specialty}
-                    onValueChange={(value) =>
-                      updateField(
-                        "specialty",
-                        value as CrewFormData["specialty"],
-                      )
-                    }
-                    disabled={isSubmitting}
-                    options={specialtyOptions}
-                  />
-
-                  <Input
-                    label={t(
-                      "crew.editor.company_name",
-                      "Firma / Marka (opcjonalnie)",
-                    )}
-                    type="text"
-                    placeholder={t(
-                      "crew.editor.company_placeholder",
-                      "np. SoundTech Pro Sp. z o.o.",
-                    )}
-                    value={formData.company_name}
-                    onChange={(event) =>
-                      updateField("company_name", event.target.value)
-                    }
-                    disabled={isSubmitting}
-                    autoComplete="organization"
-                  />
-                </section>
-
-                <div className="sticky bottom-0 -mx-6 -mb-6 mt-auto border-t border-ethereal-incense/15 bg-ethereal-marble/80 px-6 py-5 backdrop-blur-xl md:-mx-8 md:-mb-8 md:px-8">
-                  <Button
-                    type="submit"
-                    variant="primary"
-                    fullWidth
-                    disabled={isSubmitting}
-                    isLoading={isSubmitting}
-                    leftIcon={
-                      !isSubmitting ? (
-                        <CheckCircle2 size={16} aria-hidden="true" />
-                      ) : undefined
-                    }
-                  >
-                    {t("crew.editor.btn_save", "Zapisz do bazy")}
-                  </Button>
-                </div>
-              </form>
-            </div>
-
-            <ConfirmModal
-              isOpen={showExitConfirm}
-              title={t(
-                "crew.editor.confirm_exit_title",
-                "Masz niezapisane zmiany!",
-              )}
-              description={t(
-                "crew.editor.confirm_exit_desc",
-                "Wprowadziłeś zmiany w formularzu, które nie zostały zapisane. Zamknięcie panelu spowoduje ich utratę.",
-              )}
-              onConfirm={forceClose}
-              onCancel={() => setShowExitConfirm(false)}
-            />
-          </motion.div>
-        </React.Fragment>
-      )}
-    </AnimatePresence>,
-    document.body,
+      <ConfirmModal
+        isOpen={showExitConfirm}
+        title={t(
+          "crew.editor.confirm_exit_title",
+          "Masz niezapisane zmiany!",
+        )}
+        description={t(
+          "crew.editor.confirm_exit_desc",
+          "Wprowadziłeś zmiany w formularzu, które nie zostały zapisane. Zamknięcie panelu spowoduje ich utratę.",
+        )}
+        onConfirm={forceClose}
+        onCancel={() => setShowExitConfirm(false)}
+      />
+    </SidePanel>
   );
 }

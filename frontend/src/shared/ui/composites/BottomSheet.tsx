@@ -11,6 +11,9 @@
  * handled. A sheet opens over panels that listen for ESC on the window (the
  * artist editor, for one), and those registered first, so a window listener
  * here would run after theirs and the one keypress would close both.
+ *
+ * Opened from a `SidePanel`, it portals into the panel's layer
+ * (`portalContainer.ts`).
  * @module shared/ui/composites/BottomSheet
  */
 
@@ -36,6 +39,10 @@ import { cn } from "@/shared/lib/utils";
 import { Eyebrow, Heading } from "@/shared/ui/primitives/typography";
 import { BodyScrollLock } from "@/shared/lib/dom/useBodyScrollLock";
 import { useFocusTrap } from "@/shared/lib/dom/useFocusTrap";
+import {
+  usePortalContainer,
+  wasEscapePassedOn,
+} from "@/shared/lib/dom/portalContainer";
 
 export interface BottomSheetProps {
   isOpen: boolean;
@@ -80,6 +87,7 @@ export const BottomSheet = ({
   const dragControls = useDragControls();
   const dragY = useMotionValue(0);
   const isDark = tone === "dark";
+  const container = usePortalContainer();
 
   useFocusTrap(dialogRef, isOpen && mounted);
 
@@ -96,10 +104,15 @@ export const BottomSheet = ({
   }, [isOpen, dragY]);
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (event.key !== "Escape") return;
+    // React also bubbles keys here from overlays portalled out of the sheet's
+    // subtree (an editor opened from a field in it); those answer their own.
+    if (!(event.target instanceof Node) || !event.currentTarget.contains(event.target)) return;
     // A popover opened from inside the sheet (a select, a menu, a calendar)
     // dismisses itself on Escape and marks the event handled. The sheet must
-    // not ride that same keypress out from under it.
-    if (event.key !== "Escape" || event.defaultPrevented) return;
+    // not ride that same keypress out from under it. A side panel the sheet
+    // opened from marks it too, but only to leave it to the sheet.
+    if (event.defaultPrevented && !wasEscapePassedOn(event.nativeEvent)) return;
     event.preventDefault();
     onClose();
   };
@@ -260,6 +273,6 @@ export const BottomSheet = ({
         </div>
       )}
     </AnimatePresence>,
-    document.body,
+    container,
   );
 };

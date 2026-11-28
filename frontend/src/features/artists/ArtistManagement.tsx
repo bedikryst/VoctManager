@@ -331,11 +331,16 @@ export default function ArtistManagement(): React.JSX.Element {
           isOpen={isDossierOpen}
           onClose={closeDossier}
           artist={dossierTarget}
+          // The dossier is modal and leaves first: a sheet opened over it from
+          // the page would sit outside its layer, shown and unreachable.
           onEdit={(artist) => {
             closeDossier();
             openPanel(artist);
           }}
-          onMessage={openMessage}
+          onMessage={(artist) => {
+            closeDossier();
+            openMessage(artist);
+          }}
           onResendActivation={handleResendActivation}
           isResending={
             dossierTarget !== null && resendingIds.has(dossierTarget.id)

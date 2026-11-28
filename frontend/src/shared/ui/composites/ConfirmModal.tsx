@@ -4,7 +4,7 @@
  * Uses a glassmorphism backdrop, portal rendering, and physical spring animations.
  * Strictly decoupled from hardcoded texts via i18next and relies on core primitives.
  * Focus moves in as it opens, Tab stays inside, and focus returns to the opener
- * as it closes.
+ * as it closes. Opened from a `SidePanel`, it portals into the panel's layer.
  * @module shared/ui/composites/ConfirmModal
  */
 
@@ -18,6 +18,10 @@ import { Button, type ButtonProps } from "@/shared/ui/primitives/Button";
 import { Heading, Text } from "@/shared/ui/primitives/typography";
 import { BodyScrollLock } from "@/shared/lib/dom/useBodyScrollLock";
 import { useFocusTrap } from "@/shared/lib/dom/useFocusTrap";
+import {
+  usePortalContainer,
+  wasEscapePassedOn,
+} from "@/shared/lib/dom/portalContainer";
 import { OVERLAY_POP_TRANSITION } from "@/shared/ui/kinematics/motion-presets";
 
 const iconContainerVariants = cva(
@@ -85,6 +89,7 @@ export const ConfirmModal = ({
   const dialogRef = useRef<HTMLDivElement>(null);
   const cancelRef = useRef<HTMLButtonElement>(null);
   const confirmRef = useRef<HTMLButtonElement>(null);
+  const container = usePortalContainer();
 
   useEffect(() => {
     setMounted(true);
@@ -95,9 +100,13 @@ export const ConfirmModal = ({
   useFocusTrap(dialogRef, isOpen && mounted, isDestructive ? cancelRef : confirmRef);
 
   const handleEscape = useCallback((event: KeyboardEvent) => {
-    if (event.key === "Escape" && !isLoading) {
-      onCancel();
-    }
+    if (event.key !== "Escape" || isLoading) return;
+    // An Escape something below already answered is not this modal's, unless
+    // a side panel answered it only to pass it on. That includes the Escape
+    // that opened it: a side panel asks on Escape, and React registers this
+    // listener before that same keypress reaches the window.
+    if (event.defaultPrevented && !wasEscapePassedOn(event)) return;
+    onCancel();
   }, [isLoading, onCancel]);
 
   useEffect(() => {
@@ -190,6 +199,6 @@ export const ConfirmModal = ({
         </div>
       )}
     </AnimatePresence>,
-    document.body,
+    container,
   );
 };

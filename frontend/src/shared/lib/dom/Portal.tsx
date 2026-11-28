@@ -11,11 +11,15 @@
  * *under* the dock and becomes unclickable. Portalling to <body> lifts it into the
  * root stacking context where its z-index actually wins. React context still
  * flows through the React tree, so hooks/providers keep working across the seam.
+ * Inside a `SidePanel` it renders into the panel's layer instead
+ * (`portalContainer.ts`).
  * @module shared/lib/dom/Portal
  */
 
 import React, { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
+
+import { usePortalContainer } from "./portalContainer";
 
 export interface PortalProps {
   readonly children: React.ReactNode;
@@ -23,12 +27,13 @@ export interface PortalProps {
 
 export const Portal = ({ children }: PortalProps): React.ReactPortal | null => {
   const [mounted, setMounted] = useState(false);
+  const container = usePortalContainer();
 
   useEffect(() => setMounted(true), []);
 
   if (!mounted) return null;
 
-  return createPortal(children, document.body);
+  return createPortal(children, container);
 };
 
 Portal.displayName = "Portal";

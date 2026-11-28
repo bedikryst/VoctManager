@@ -5,14 +5,13 @@
  * leadership (projects led, evenings actually stood in front of), the voice
  * lines they actually sing, and a per-project casting history ("sang T1 in X,
  * B2 in Y"). All derived from relational state via GET /artists/{id}/dossier/.
- * Editing lives one click deeper, behind the "Edit profile" action.
+ * Editing lives one click deeper, behind the "Edit profile" action. On
+ * `SidePanel`.
  * @module features/artists/components/ArtistDossier
  */
 
-import React, { useEffect, useState } from "react";
-import { createPortal } from "react-dom";
+import React from "react";
 import { Link } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import {
   BadgeCheck,
@@ -32,10 +31,8 @@ import {
   Send,
   UserRound,
   Users,
-  X,
 } from "lucide-react";
 
-import { BodyScrollLock } from "@/shared/lib/dom/useBodyScrollLock";
 import { cn } from "@/shared/lib/utils";
 import { artistRoleLabel } from "@/shared/lib/voiceTypes";
 import type { Artist } from "@/shared/types";
@@ -49,6 +46,7 @@ import {
 } from "@/shared/ui/primitives/typography";
 import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
 import { StatePanel } from "@/shared/ui/composites/StatePanel";
+import { SidePanel } from "@/shared/ui/composites/SidePanel";
 import { Avatar } from "@/shared/ui/composites/Avatar";
 import { ACCENT_BADGE } from "@/shared/ui/primitives/accents";
 import { formatLocalizedDate, formatLocalizedDateTime } from "@/shared/lib/time/intl";
@@ -489,27 +487,12 @@ export const ArtistDossier = ({
   onMessage,
   onResendActivation,
   isResending = false,
-}: ArtistDossierProps): React.ReactPortal | null => {
+}: ArtistDossierProps): React.JSX.Element => {
   const { t } = useTranslation();
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   const { data, isLoading, isError } = useArtistDossier(
     isOpen && artist ? artist.id : null,
   );
-
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape" && isOpen) onClose();
-    };
-    if (isOpen) window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, onClose]);
-
-  if (!mounted) return null;
 
   const section = artist ? getSectionPresentation(artist.voice_type) : null;
   const voiceLabel = artist?.voice_type
@@ -518,259 +501,224 @@ export const ArtistDossier = ({
   const accountPending = artist ? isAwaitingActivation(artist) : false;
   const withoutEmail = artist ? isWithoutEmail(artist) : false;
   const linkExpired = accountPending && artist?.activation_link_expired === true;
+  const fullName = artist ? `${artist.first_name} ${artist.last_name}` : "";
 
-  return createPortal(
-    <AnimatePresence>
-      {isOpen && artist && (
-        <>
-          <motion.div
-            key="dossier-backdrop"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={onClose}
-            className="fixed inset-0 z-focus-trap bg-black/30 backdrop-blur-sm"
-            aria-hidden="true"
+  return (
+    <SidePanel
+      isOpen={isOpen && artist !== null}
+      onCloseRequest={onClose}
+      size="lg"
+      // Sans, like the roster rows this opened from: the serif marks a titled
+      // work or event, and a person is neither.
+      title={fullName}
+      leading={
+        artist && (
+          <Avatar
+            src={artist.avatar_thumb_url}
+            name={fullName}
+            size="md"
+            shape="rounded"
+            tone="neutral"
+            className="border border-ethereal-marble bg-ethereal-alabaster shadow-glass-solid"
           />
-
-          <motion.div
-            key="dossier-panel"
-            initial={{ transform: "translateX(100%)" }}
-            animate={{ transform: "translateX(0%)" }}
-            exit={{ transform: "translateX(100%)" }}
-            transition={{ type: "spring", damping: 25, stiffness: 200 }}
-            className="fixed inset-y-0 right-0 z-focus-trap flex w-full max-w-xl flex-col border-l border-ethereal-incense/20 bg-ethereal-parchment shadow-2xl"
-            role="dialog"
-            aria-modal="true"
+        )
+      }
+      byline={
+        <Badge
+          variant={section ? ACCENT_BADGE[section.accent] : "neutral"}
+          icon={<Music2 size={9} />}
+        >
+          {voiceLabel}
+        </Badge>
+      }
+      actions={
+        // The dossier answers "who is this person to us"; the preview answers
+        // "and what does the app tell them". Offered here as an icon rather
+        // than a third footer slab: the footer already carries the two things
+        // a manager does FROM this panel.
+        artist?.is_active && artist.user ? (
+          <Link
+            to={`/panel/artists/${artist.id}/preview`}
+            onClick={onClose}
+            title={t("artists.card.preview_title", "Zobacz, co widzi ta osoba")}
+            aria-label={t("artists.card.preview_aria", {
+              defaultValue: "Zobacz, co widzi {{name}}",
+              name: fullName,
+            })}
+            className="rounded-control border border-ethereal-incense/20 bg-ethereal-alabaster p-2.5 text-ethereal-graphite shadow-sm transition-all hover:bg-ethereal-gold/12 hover:text-ethereal-gold active:scale-95"
           >
-            <BodyScrollLock />
-            {/* Header */}
-            <div className="z-20 flex shrink-0 items-center justify-between gap-3 border-b border-hairline-strong bg-ethereal-alabaster/80 p-5 md:p-6">
-              <div className="flex min-w-0 items-center gap-3.5">
-                <Avatar
-                  src={artist.avatar_thumb_url}
-                  name={`${artist.first_name} ${artist.last_name}`}
-                  size="md"
-                  shape="rounded"
-                  tone="neutral"
-                  className="border border-ethereal-marble bg-ethereal-alabaster shadow-glass-solid"
-                />
-                <div className="min-w-0">
-                  {/* Sans, like the roster rows and tiles this opened from: the
-                      serif marks a titled work or event, and a person is neither.
-                      Weight matches them too, so the name does not gain colour
-                      just because the panel it opened into is larger. */}
-                  <Text as="h3" size="lg" weight="semibold" truncate>
-                    {artist.first_name} {artist.last_name}
-                  </Text>
-                  <div className="mt-1 flex items-center gap-1.5">
-                    <Badge
-                      variant={section ? ACCENT_BADGE[section.accent] : "neutral"}
-                      icon={<Music2 size={9} />}
-                    >
-                      {voiceLabel}
-                    </Badge>
-                  </div>
-                </div>
-              </div>
-              <div className="flex shrink-0 items-center gap-2">
-                {/* The dossier answers "who is this person to us"; the preview
-                    answers "and what does the app tell them". Offered here as
-                    an icon rather than a third footer slab — the footer already
-                    carries the two things a manager does FROM this panel. */}
-                {artist.is_active && artist.user && (
-                  <Link
-                    to={`/panel/artists/${artist.id}/preview`}
-                    onClick={onClose}
-                    title={t("artists.card.preview_title", "Zobacz, co widzi ta osoba")}
-                    aria-label={t("artists.card.preview_aria", {
-                      defaultValue: "Zobacz, co widzi {{name}}",
-                      name: `${artist.first_name} ${artist.last_name}`,
-                    })}
-                    className="rounded-control border border-ethereal-incense/20 bg-ethereal-alabaster p-2.5 text-ethereal-graphite shadow-sm transition-all hover:bg-ethereal-gold/12 hover:text-ethereal-gold active:scale-95"
-                  >
-                    <Eye size={20} aria-hidden="true" />
-                  </Link>
-                )}
-                <button
-                  type="button"
-                  onClick={onClose}
-                  aria-label={t("common.actions.close", "Zamknij")}
-                  className="rounded-control border border-ethereal-incense/20 bg-ethereal-alabaster p-2.5 text-ethereal-graphite shadow-sm transition-all hover:bg-ethereal-marble hover:text-ethereal-ink active:scale-95"
-                >
-                  <X size={20} aria-hidden="true" />
-                </button>
-              </div>
-            </div>
-
-            {/* Body */}
-            <div className="flex-1 overflow-y-auto p-5 md:p-6">
-              {/* Neutral, not gold: nothing here is waiting on anyone. It says
-                  what the manager has taken on by adding this member so. */}
-              {withoutEmail && (
-                <div className="mb-6 flex items-start gap-2.5 rounded-nested border border-hairline-strong bg-ethereal-alabaster/70 p-4 text-ethereal-graphite">
-                  <MailX size={18} className="mt-0.5 shrink-0" aria-hidden="true" />
-                  <div className="min-w-0">
-                    <Eyebrow color="muted">
-                      {t("artists.dossier.no_email_title", "Bez adresu e-mail")}
-                    </Eyebrow>
-                    <Caption color="muted" className="mt-0.5 block">
-                      {t(
-                        "artists.dossier.no_email_desc",
-                        "Ta osoba nie ma dostępu do aplikacji i nie dostaje żadnych powiadomień. Plan, zmiany i nuty trzeba jej przekazywać osobiście; ikona oka u góry pokazuje, co ma w planie. Wpisanie adresu w edycji profilu wyśle jej zaproszenie.",
-                      )}
-                    </Caption>
-                  </div>
-                </div>
-              )}
-              {accountPending && (
-                <div
-                  className={cn(
-                    "mb-6 flex flex-col gap-3 rounded-nested border p-4 sm:flex-row sm:items-center sm:justify-between",
-                    linkExpired
-                      ? "border-ethereal-crimson/25 bg-ethereal-crimson/[0.06]"
-                      : "border-ethereal-gold/25 bg-ethereal-gold/[0.07]",
-                  )}
-                >
-                  <div
-                    className={cn(
-                      "flex min-w-0 items-start gap-2.5",
-                      linkExpired ? "text-ethereal-crimson" : "text-ethereal-gold",
-                    )}
-                  >
-                    <MailWarning size={18} className="mt-0.5 shrink-0" aria-hidden="true" />
-                    <div className="min-w-0">
-                      <Eyebrow color={linkExpired ? "crimson" : "gold"}>
-                        {linkExpired
-                          ? t("artists.card.link_expired", "Link wygasł")
-                          : t("artists.card.pending_activation", "Nie aktywowano")}
-                      </Eyebrow>
-                      <Caption color="muted" className="mt-0.5 block">
-                        {linkExpired
-                          ? t(
-                              "artists.dossier.link_expired_desc",
-                              "Link aktywacyjny stracił ważność. Wyślij zaproszenie ponownie, aby ten artysta mógł aktywować konto.",
-                            )
-                          : t(
-                              "artists.dossier.pending_activation_desc",
-                              "Zaproszenie zostało wysłane, ale ten artysta nie aktywował jeszcze konta na platformie.",
-                            )}
-                      </Caption>
-                      {artist.activation_email_sent_at && (
-                        <Caption
-                          className={cn(
-                            "mt-1 block font-semibold tabular-nums",
-                            linkExpired
-                              ? "text-ethereal-crimson/90"
-                              : "text-ethereal-gold/90",
-                          )}
-                        >
-                          {t("artists.card.invite_sent_at", {
-                            defaultValue: "Wysłano {{when}}",
-                            when: formatLocalizedDateTime(
-                              artist.activation_email_sent_at,
-                              {
-                                day: "2-digit",
-                                month: "2-digit",
-                                year: "numeric",
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              },
-                            ),
-                          })}
-                        </Caption>
-                      )}
-                    </div>
-                  </div>
-                  {onResendActivation && (
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      onClick={() => onResendActivation(artist)}
-                      isLoading={isResending}
-                      leftIcon={<Send size={13} aria-hidden="true" />}
-                      className="shrink-0 self-start sm:self-auto"
-                    >
-                      {t("artists.card.resend_activation", "Wyślij ponownie zaproszenie")}
-                    </Button>
-                  )}
-                </div>
-              )}
-              {isLoading ? (
-                <EtherealLoader className="h-64" />
-              ) : isError ? (
-                <StatePanel
-                  tone="danger"
-                  icon={<Users size={28} aria-hidden="true" />}
-                  title={t("artists.dossier.error_title", "Nie udało się wczytać historii")}
-                  description={t(
-                    "artists.dossier.error_desc",
-                    "Spróbuj ponownie za chwilę lub odśwież stronę.",
-                  )}
-                />
-              ) : data ? (
-                <div className="space-y-7">
-                  <StatsSection stats={data.stats} />
-
-                  <LeadershipSection leadership={data.leadership} />
-
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <Eyebrow as="h4" color="graphite">
-                        {t("artists.dossier.history_title", "Historia projektów")}
-                      </Eyebrow>
-                      <Caption color="muted" className="tabular-nums">
-                        {data.projects.length}
-                      </Caption>
-                    </div>
-
-                    {data.projects.length > 0 ? (
-                      <div className="flex flex-col gap-2">
-                        {data.projects.map((project) => (
-                          <ProjectHistoryItem key={project.project_id} project={project} />
-                        ))}
-                      </div>
-                    ) : (
-                      <StatePanel
-                        variant="inline"
-                        icon={<Layers size={22} aria-hidden="true" />}
-                        title={t(
-                          "artists.dossier.empty_history",
-                          "Ten artysta nie brał jeszcze udziału w żadnym projekcie.",
-                        )}
-                      />
-                    )}
-                  </div>
-                </div>
-              ) : null}
-            </div>
-
-            {/* Footer actions */}
-            <div className="flex shrink-0 items-center gap-3 border-t border-hairline-strong bg-ethereal-alabaster/85 p-4 backdrop-blur-xl md:px-6">
-              {canReceiveMessages(artist) && (
-                <Button
-                  variant="secondary"
-                  onClick={() => onMessage(artist)}
-                  leftIcon={<MessageSquare size={15} aria-hidden="true" />}
-                  className="flex-1"
-                >
-                  {t("artists.card.message_title", "Napisz wiadomość")}
-                </Button>
-              )}
+            <Eye size={20} aria-hidden="true" />
+          </Link>
+        ) : undefined
+      }
+      footer={
+        artist && (
+          <div className="flex items-center gap-3">
+            {canReceiveMessages(artist) && (
               <Button
-                variant="primary"
-                onClick={() => onEdit(artist)}
-                leftIcon={<Pencil size={15} aria-hidden="true" />}
-                rightIcon={<ChevronRight size={15} aria-hidden="true" />}
+                variant="secondary"
+                onClick={() => onMessage(artist)}
+                leftIcon={<MessageSquare size={15} aria-hidden="true" />}
                 className="flex-1"
               >
-                {t("artists.dossier.edit_profile", "Edytuj profil")}
+                {t("artists.card.message_title", "Napisz wiadomość")}
               </Button>
+            )}
+            <Button
+              variant="primary"
+              onClick={() => onEdit(artist)}
+              leftIcon={<Pencil size={15} aria-hidden="true" />}
+              rightIcon={<ChevronRight size={15} aria-hidden="true" />}
+              className="flex-1"
+            >
+              {t("artists.dossier.edit_profile", "Edytuj profil")}
+            </Button>
+          </div>
+        )
+      }
+    >
+      {artist && (
+        <>
+          {/* Neutral, not gold: nothing here is waiting on anyone. It says
+              what the manager has taken on by adding this member so. */}
+          {withoutEmail && (
+            <div className="mb-6 flex items-start gap-2.5 rounded-nested border border-hairline-strong bg-ethereal-alabaster/70 p-4 text-ethereal-graphite">
+              <MailX size={18} className="mt-0.5 shrink-0" aria-hidden="true" />
+              <div className="min-w-0">
+                <Eyebrow color="muted">
+                  {t("artists.dossier.no_email_title", "Bez adresu e-mail")}
+                </Eyebrow>
+                <Caption color="muted" className="mt-0.5 block">
+                  {t(
+                    "artists.dossier.no_email_desc",
+                    "Ta osoba nie ma dostępu do aplikacji i nie dostaje żadnych powiadomień. Plan, zmiany i nuty trzeba jej przekazywać osobiście; ikona oka u góry pokazuje, co ma w planie. Wpisanie adresu w edycji profilu wyśle jej zaproszenie.",
+                  )}
+                </Caption>
+              </div>
             </div>
-          </motion.div>
+          )}
+          {accountPending && (
+            <div
+              className={cn(
+                "mb-6 flex flex-col gap-3 rounded-nested border p-4 sm:flex-row sm:items-center sm:justify-between",
+                linkExpired
+                  ? "border-ethereal-crimson/25 bg-ethereal-crimson/[0.06]"
+                  : "border-ethereal-gold/25 bg-ethereal-gold/[0.07]",
+              )}
+            >
+              <div
+                className={cn(
+                  "flex min-w-0 items-start gap-2.5",
+                  linkExpired ? "text-ethereal-crimson" : "text-ethereal-gold",
+                )}
+              >
+                <MailWarning size={18} className="mt-0.5 shrink-0" aria-hidden="true" />
+                <div className="min-w-0">
+                  <Eyebrow color={linkExpired ? "crimson" : "gold"}>
+                    {linkExpired
+                      ? t("artists.card.link_expired", "Link wygasł")
+                      : t("artists.card.pending_activation", "Nie aktywowano")}
+                  </Eyebrow>
+                  <Caption color="muted" className="mt-0.5 block">
+                    {linkExpired
+                      ? t(
+                          "artists.dossier.link_expired_desc",
+                          "Link aktywacyjny stracił ważność. Wyślij zaproszenie ponownie, aby ten artysta mógł aktywować konto.",
+                        )
+                      : t(
+                          "artists.dossier.pending_activation_desc",
+                          "Zaproszenie zostało wysłane, ale ten artysta nie aktywował jeszcze konta na platformie.",
+                        )}
+                  </Caption>
+                  {artist.activation_email_sent_at && (
+                    <Caption
+                      className={cn(
+                        "mt-1 block font-semibold tabular-nums",
+                        linkExpired
+                          ? "text-ethereal-crimson/90"
+                          : "text-ethereal-gold/90",
+                      )}
+                    >
+                      {t("artists.card.invite_sent_at", {
+                        defaultValue: "Wysłano {{when}}",
+                        when: formatLocalizedDateTime(
+                          artist.activation_email_sent_at,
+                          {
+                            day: "2-digit",
+                            month: "2-digit",
+                            year: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          },
+                        ),
+                      })}
+                    </Caption>
+                  )}
+                </div>
+              </div>
+              {onResendActivation && (
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => onResendActivation(artist)}
+                  isLoading={isResending}
+                  leftIcon={<Send size={13} aria-hidden="true" />}
+                  className="shrink-0 self-start sm:self-auto"
+                >
+                  {t("artists.card.resend_activation", "Wyślij ponownie zaproszenie")}
+                </Button>
+              )}
+            </div>
+          )}
+          {isLoading ? (
+            <EtherealLoader className="h-64" />
+          ) : isError ? (
+            <StatePanel
+              tone="danger"
+              icon={<Users size={28} aria-hidden="true" />}
+              title={t("artists.dossier.error_title", "Nie udało się wczytać historii")}
+              description={t(
+                "artists.dossier.error_desc",
+                "Spróbuj ponownie za chwilę lub odśwież stronę.",
+              )}
+            />
+          ) : data ? (
+            <div className="space-y-7">
+              <StatsSection stats={data.stats} />
+
+              <LeadershipSection leadership={data.leadership} />
+
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <Eyebrow as="h4" color="graphite">
+                    {t("artists.dossier.history_title", "Historia projektów")}
+                  </Eyebrow>
+                  <Caption color="muted" className="tabular-nums">
+                    {data.projects.length}
+                  </Caption>
+                </div>
+
+                {data.projects.length > 0 ? (
+                  <div className="flex flex-col gap-2">
+                    {data.projects.map((project) => (
+                      <ProjectHistoryItem key={project.project_id} project={project} />
+                    ))}
+                  </div>
+                ) : (
+                  <StatePanel
+                    variant="inline"
+                    icon={<Layers size={22} aria-hidden="true" />}
+                    title={t(
+                      "artists.dossier.empty_history",
+                      "Ten artysta nie brał jeszcze udziału w żadnym projekcie.",
+                    )}
+                  />
+                )}
+              </div>
+            </div>
+          ) : null}
         </>
       )}
-    </AnimatePresence>,
-    document.body,
+    </SidePanel>
   );
 };
