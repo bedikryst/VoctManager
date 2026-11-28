@@ -286,6 +286,8 @@ const VOCATIVES: Readonly<Record<string, string>> = {
   Kordian: "Kordianie",
   Kornel: "Kornelu",
   Kosma: "Kosmo",
+  Florent: "Florent",
+  Florentyn: "Florentynie",
   Krystian: "Krystianie",
   Krzysztof: "Krzysztofie",
   Ksawery: "Ksawery",
